@@ -2,12 +2,14 @@ from typing import Literal
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
-from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
-from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
 from wagtail import hooks
 from wagtail.search.backends import get_search_backend
 
+from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
+
 from aplans.types import WatchAdminRequest
+
 from budget.models import DatasetSchema
 
 from .models.action import Action
@@ -98,9 +100,10 @@ class CategoryLevelChooserMixin(ModelChooserMixin):
     def get_unfiltered_object_list(self):
         plan = self.request.get_active_admin_plan()
         objects = CategoryLevel.objects.filter(type__plan=plan)
-        type = self.request.GET.get('type')
-        if type:
-            objects = objects.filter(type=type)
+
+        type_str = self.request.GET.get('type')
+        if type_str:
+            objects = objects.filter(type=int(type_str))
         return objects
 
     def user_can_create(self, user):
@@ -222,8 +225,8 @@ class AttributeTypeChooserMixin(WatchModelChooserBase):
     def get_unfiltered_object_list(self):
         scope = self.request.GET.get('scope', None)
         plan = self.request.get_active_admin_plan()
-        cat_qs = AttributeType.objects.for_categories(plan)
-        act_qs = AttributeType.objects.for_actions(plan)
+        cat_qs = AttributeType.objects.get_queryset().for_categories(plan)
+        act_qs = AttributeType.objects.get_queryset().for_actions(plan)
         if scope:
             if scope == 'category':
                 qs = cat_qs

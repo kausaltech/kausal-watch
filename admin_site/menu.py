@@ -1,8 +1,9 @@
 from django.urls import reverse
 from wagtail.admin.menu import MenuItem
 
-from actions.models.plan import Plan
 from aplans.types import WatchAdminRequest
+
+from actions.models.plan import Plan
 
 
 class PlanSpecificSingletonModelMenuItem(MenuItem):

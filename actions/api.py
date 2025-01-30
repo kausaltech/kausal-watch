@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import typing
 from collections import Counter
-from typing import Any, Callable, Dict, Optional, Protocol, Set, Tuple
+from typing import Any, Callable, Protocol
 from uuid import UUID
 
 import rest_framework.fields
@@ -12,13 +12,12 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from rest_framework import exceptions, permissions, serializers, viewsets
+
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
-from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework_nested import routers
 
-from actions.models.action import ActionContactPerson, ActionImplementationPhase
-from actions.models.attributes import AttributeType, ModelWithAttributes
 from aplans.api_router import router
 from aplans.model_images import (
     ModelWithImageSerializerMixin,
@@ -32,6 +31,9 @@ from aplans.rest_api import (
     PlanRelatedModelSerializer,
 )
 from aplans.utils import generate_identifier, public_fields, register_view_helper
+
+from actions.models.action import ActionContactPerson, ActionImplementationPhase
+from actions.models.attributes import AttributeType, ModelWithAttributes
 from orgs.models import Organization
 from people.models import Person
 from users.models import User
@@ -59,8 +61,9 @@ if typing.TYPE_CHECKING:
         QuerySet,  # noqa
     )
 
-    from actions.models.plan import PlanQuerySet
     from aplans.types import AuthenticatedWatchRequest, WatchAdminRequest, WatchAPIRequest
+
+    from actions.models.plan import PlanQuerySet
 
 all_views = []
 all_routers = []
@@ -242,7 +245,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
             if plan is None:
                 raise exceptions.NotFound(detail='Plan not found')
         else:
-            plan = Plan.objects.live().first()
+            plan = Plan.objects.get_queryset().live().first()
         perms = self.get_required_permissions(request.method, Action)
         for perm in perms:
             if not self.check_permission(request.user, perm, plan):
@@ -439,7 +442,7 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
     def get_available_instances(self, plan) -> set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_person_ids' not in cache:
-            return Person.objects.available_for_plan(plan, include_contact_persons=True)
+            return Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True)
         return cache['available_person_ids']
 
     def get_allowed_roles(self):
@@ -990,7 +993,7 @@ class ActionSerializer(
 
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
-        if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule'):
+        if field_name in ('status', 'implementation_phase', 'decision_level'):
             field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan=self.plan)
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
@@ -998,9 +1001,6 @@ class ActionSerializer(
                 field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
-        elif field_name == 'related_actions':
-            related_plans = self.plan.get_all_related_plans(inclusive=True)
-            field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan__in=related_plans)
 
         return field_class, field_kwargs
 
@@ -1070,7 +1070,7 @@ class ActionSerializer(
             remove_fields=[
                 'impact', 'status_updates', 'monitoring_quality_points', 'image', 'tasks', 'links',
                 'related_indicators', 'indicators', 'impact_groups', 'merged_actions', 'superseded_actions',
-                'dependent_relationships',
+                'dependent_relationships', 'copies',
             ],
         )
         read_only_fields = ['plan']
@@ -1336,7 +1336,7 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
             # Called during schema generation
             return Category.objects.none()
         category_type_pk = self.kwargs['category_type_pk']
-        return Category.objects.filter(type=category_type_pk)
+        return Category.objects.filter(type=category_type_pk).select_related("type")
 
 
 category_type_router.register('categories', CategoryViewSet, basename='category')

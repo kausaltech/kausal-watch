@@ -3,17 +3,16 @@ from __future__ import annotations
 import datetime
 import typing
 import uuid
-from typing import Optional, Self
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
 
 import reversion
-from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.contrib.admin import display
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.db.models.functions import Collate
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -21,14 +20,23 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from modeltrans.manager import MultilingualManager
+from modeltrans.manager import MultilingualManager, MultilingualQuerySet
 from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from actions.models.features import OrderBy
+from dateutil.relativedelta import relativedelta
+
+from kausal_common.models.types import (
+    JSONField,
+    MLModelManager,
+    ModelManager,
+    manager_from_mlqs,
+)
+
 from aplans import utils
 from aplans.utils import (
+    AdminSaveContext,
     IdentifierField,
     ModificationTracking,
     OrderedModel,
@@ -37,29 +45,33 @@ from aplans.utils import (
     TranslatedModelMixin,
     get_available_variants_for_language,
 )
+
+from actions.models.features import OrderBy
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 
 if typing.TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager
+    from kausal_common.models.types import FK, M2M, MLMM, RevMany
 
-    from actions.models import Action, Plan
-    from actions.models.category import CategoryType
     from aplans.types import UserOrAnon
+
+    from actions.models import Action
+    from actions.models.category import Category, CategoryType
+    from actions.models.plan import Plan
+    from people.models import Person
 
 
 User = get_user_model()
 
 
 def latest_plan():
-    Plan = apps.get_model('actions', 'Plan')
-    if Plan.objects.exists():
-        return Plan.objects.latest()
-    else:
-        return None
+    PlanModel = cast('Plan', apps.get_model('actions', 'Plan'))  # noqa: N806
+    if PlanModel.objects.exists():
+        return PlanModel.objects.latest()
+    return None
 
 
-@reversion.register()
+@reversion.register
 class Quantity(ClusterableModel, TranslatedModelMixin, ModificationTracking):
     """The quantity that an indicator measures."""
 
@@ -69,11 +81,11 @@ class Quantity(ClusterableModel, TranslatedModelMixin, ModificationTracking):
 
     autocomplete_search_field = 'name'
 
-    objects = MultilingualManager()
+    objects: ClassVar[MLMM[Self, MultilingualQuerySet[Self]]] = manager_from_mlqs(MultilingualQuerySet[Self])
 
     # type annotations
-    indicators: RelatedManager[Indicator]
-    common_indicators: RelatedManager[CommonIndicator]
+    indicators: RevMany[Indicator]
+    common_indicators: RevMany[CommonIndicator]
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
@@ -107,11 +119,13 @@ class Unit(ClusterableModel, ModificationTracking):
         fields=['name', 'short_name', 'verbose_name', 'verbose_name_plural'],
     )
 
+    objects: ClassVar[MLMM[Self, MultilingualQuerySet[Self]]] = manager_from_mlqs(MultilingualQuerySet[Self])
+
     autocomplete_search_field = 'name'
 
     # type annotations
-    indicators: RelatedManager[Indicator]
-    common_indicators: RelatedManager[CommonIndicator]
+    indicators: RevMany[Indicator]
+    common_indicators: RevMany[CommonIndicator]
 
     class Meta:
         verbose_name = _('unit')
@@ -125,7 +139,7 @@ class Unit(ClusterableModel, ModificationTracking):
         return str(self)
 
 
-class DatasetLicense(models.Model):  # type: ignore[django-manager-missing]
+class DatasetLicense(models.Model):
     name = models.CharField(max_length=50, verbose_name=_('name'), unique=True)
 
     class Meta:
@@ -216,10 +230,10 @@ class CommonIndicator(ClusterableModel):
         Unit, related_name='common_indicators', on_delete=models.PROTECT,
         verbose_name=_('unit'),
     )
-    plans = models.ManyToManyField(
+    plans: M2M[Plan, PlanCommonIndicator] = models.ManyToManyField(
         'actions.Plan', blank=True, related_name='common_indicators', through='PlanCommonIndicator',
     )
-    normalization_indicators = models.ManyToManyField(
+    normalization_indicators: M2M[Self, CommonIndicatorNormalizator] = models.ManyToManyField(
         'self', blank=True, related_name='normalizable_indicators', symmetrical=False,
         through='CommonIndicatorNormalizator', through_fields=('normalizable', 'normalizer'),
     )
@@ -234,6 +248,9 @@ class CommonIndicator(ClusterableModel):
         'indicators', 'dimensions', 'related_causes', 'related_effects',
         'normalization_indicators', 'normalize_by_label', 'normalizations',
     ]
+
+    normalizations: RevMany[CommonIndicatorNormalizator]
+    indicators: RevMany[Indicator]
 
     class Meta:
         verbose_name = _('common indicator')
@@ -254,6 +271,9 @@ class CommonIndicatorNormalizator(models.Model):
 
     class Meta:
         unique_together = (('normalizable', 'normalizer'),)
+
+    def __str__(self) -> str:
+        return "'%s' normalized by '%s'" % (self.normalizable, self.normalizer)
 
 
 class PlanCommonIndicator(models.Model):
@@ -303,15 +323,17 @@ class FrameworkIndicator(models.Model):
         return '%s ∈ %s' % (str(self.common_indicator), str(self.framework))
 
 
-class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
-    def available_for_plan(self, plan):
+class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator']):
+    def available_for_plan(self, plan: Plan):
         related_orgs = Organization.objects.available_for_plan(plan)
         return self.filter(organization__in=related_orgs)
 
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """
-        A None value is interpreted identically
-        to a non-authenticated user"""
+        Filter by visibility for a specific user.
+
+        A None value is interpreted identically to a non-authenticated user
+        """
         if user is None or not user.is_authenticated:
             return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
@@ -320,7 +342,14 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
         return self.visible_for_user(None)
 
 
-@reversion.register()
+if TYPE_CHECKING:
+    class IndicatorManager(MLModelManager['Indicator', IndicatorQuerySet]):
+        pass
+else:
+    IndicatorManager = MLModelManager.from_queryset(IndicatorQuerySet)
+
+
+@reversion.register(follow=('goals',))
 class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel, RestrictedVisibilityModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
@@ -344,7 +373,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         Organization, related_name='indicators', on_delete=models.CASCADE,
         verbose_name=_('organization'),
     )
-    plans = models.ManyToManyField(
+    plans: M2M[Plan, IndicatorLevel] = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
         verbose_name=_('plans'), related_name='indicators',
     )
@@ -369,7 +398,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                     'It is used in visualizations as the Y axis maximum.'),
     )
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
-    categories = models.ManyToManyField('actions.Category', blank=True, related_name='indicators')
+    categories: M2M[Category, Any] = models.ManyToManyField(
+        'actions.Category', blank=True, related_name='indicators',
+        through='indicators.IndicatorCategoryThrough',
+    )
     time_resolution = models.CharField(
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
         verbose_name=_('time resolution'),
@@ -383,7 +415,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'IndicatorValue', null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL, editable=False,
     )
-    datasets = models.ManyToManyField(
+    datasets: M2M[Dataset, Any] = models.ManyToManyField(
         Dataset, blank=True, verbose_name=_('datasets'),
     )
 
@@ -394,8 +426,8 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     #    "yearly_ghg_emission_reductions_left": "1963000",
     # }
 
-    contact_persons_unordered = models.ManyToManyField(
-        'people.Person', through='IndicatorContactPerson', blank=True,
+    contact_persons_unordered: M2M[Person, Any] = models.ManyToManyField(
+        'people.Person', through='indicators.IndicatorContactPerson', blank=True,
         related_name='contact_for_indicators', verbose_name=_('contact persons'),
     )
 
@@ -407,6 +439,27 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         blank=True, null=True, verbose_name=_('reference'), max_length=255,
         help_text=_("What is the reference or source for this indicator?"),
         features=['link'],
+    )
+
+    show_trendline = models.BooleanField(
+        default=True, verbose_name=_('show trendline'),
+    )
+
+    desired_trend = models.CharField(
+        blank=True, null=False, verbose_name=_('desired trend'), max_length=20, default='',
+        choices=(
+            ('increasing', _('increasing')),
+            ('decreasing', _('decreasing')),
+            ('', _('attempt to detect automatically')),
+        ),
+        help_text=_(
+            "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing "
+            "or decreasing?",
+        ),
+    )
+
+    show_total_line = models.BooleanField(
+        default=True, verbose_name=_('show total line'),
     )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
@@ -425,17 +478,23 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
-        'related_causes', 'related_effects', 'dimensions', 'reference',
+        'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline', 'desired_trend',
+        'show_total_line',
     ]
 
-    objects = IndicatorQuerySet.as_manager()
+    wagtail_reference_index_ignore = True
+
+    objects: ClassVar[IndicatorManager] = IndicatorManager()  # pyright: ignore
 
     # type annotations
     id: int
-    levels: RelatedManager[IndicatorLevel]
-    values: RelatedManager[IndicatorValue]
-    actions: RelatedManager[Action]
-    related_actions: RelatedManager[ActionIndicator]
+    levels: RevMany[IndicatorLevel]
+    values: RevMany[IndicatorValue]
+    actions: RevMany[Action]
+    related_actions: RevMany[ActionIndicator]
+    goals: RevMany[IndicatorGoal]
+    latest_value_id: int | None
+    name_i18n: str
 
     class Meta:
         verbose_name = _('indicator')
@@ -443,17 +502,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         unique_together = (('common', 'organization'),)
         ordering = ('-updated_at',)
 
-    def handle_admin_save(self, context: dict | None = None):
-        for rel_action in self.related_actions.all():
+    def handle_admin_save(self, context: AdminSaveContext):
+        for rel_action in self.related_actions.get_queryset().all():
             rel_action.action.recalculate_status()
 
     def get_latest_graph(self):
-        return self.graphs.latest()
+        return self.graphs.latest()  # type: ignore
 
     def get_plans_with_access(self):
-        Plan = apps.get_model('actions', 'Plan')
+        from actions.models import Plan
+        plan_qs = self.plans.all()
         return (
-            self.plans.all() |
+            plan_qs |
             # For unconnected indicators, allow seeing and
             # connecting them for plan admins for plans
             # with same organization as indicator organization
@@ -526,7 +586,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     @display(boolean=True, description=_('Has a graph'))
     def has_graph(self):
-        return self.latest_graph_id is not None
+        return self.latest_graph_id is not None  # type: ignore
 
     def get_notification_context(self, plan):
         edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
@@ -543,7 +603,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         if plan is None:
             plan = self.plans.first()
         assert plan is not None
-        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url), self.id)
+        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url, active_locale=translation.get_language()), self.id)
 
     def clean(self):
         if self.updated_values_due_at:
@@ -558,26 +618,43 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         if self.common:
             if self.common.quantity != self.quantity:
-                raise ValidationError({'quantity': _("Quantity must be the same as in common indicator (%s)"
+                raise ValidationError({'quantity': _("Quantity must be the same as in common indicator (%s)"  # noqa: INT003
                                                      % self.common.quantity)})
             if self.common.unit != self.unit:
-                raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
+                raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"  # noqa: INT003
                                                  % self.common.unit)})
             # Unfortunately it seems we need to check whether dimensions are equal in the form
 
-    def set_categories(self, ctype: CategoryType, categories: list[int]):
+    def set_categories(self, ctype: CategoryType | str, categories: list[int | Category], plan: Plan | None = None):
+        if plan is None:
+            plan = self.plans.first()
+        assert plan, "No default plan found."
+        if isinstance(ctype, str):
+            ctype = plan.category_types.get(identifier=ctype)
         all_cats = {x.id: x for x in ctype.categories.all()}
         existing_cats = set(self.categories.filter(type=ctype))
-        new_cats = set()
+        new_cats: set[Category] = set()
         for cat in categories:
-            if isinstance(cat, int):
-                cat = all_cats[cat]
-            new_cats.add(cat)
+            cat_obj = all_cats[cat] if isinstance(cat, int) else cat
+            new_cats.add(cat_obj)
 
         for cat in existing_cats - new_cats:
             self.categories.remove(cat)
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
+
+    def set_contact_persons(self, data: list):
+        existing_persons = {p.person for p in self.contact_persons.all()}
+        new_persons = {d['person'] for d in data}
+        IndicatorContactPerson.objects.filter(
+            indicator=self, person__in=(existing_persons - new_persons),
+        ).delete()
+        for d in data:
+            IndicatorContactPerson.objects.update_or_create(
+                indicator=self,
+                person_id=d['person'],
+            )
+
 
     def generate_normalized_values(self, cin: CommonIndicatorNormalizator):
         assert cin.normalizable == self.common
@@ -585,10 +662,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
         if not ni:
-            return None
+            return
 
         # Generate only for non-categorized values
-        ni_vals = ni.values.filter(categories__isnull=True)
+        ni_vals = ni.values.filter(categories__isnull=True)  # noqa: PD011
         ni_vals_by_date = {v.date: v for v in ni_vals}
 
         vals = list(self.values.filter(categories__isnull=True))
@@ -601,7 +678,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                 v.value /= niv.value
                 v.value *= cin.unit_multiplier
                 nvals = v.normalized_values or {}
-                nvals[str(nci.id)] = val
+                nvals[str(nci.pk)] = val
             v.normalized_values = nvals
             v.save(update_fields=['normalized_values'])
 
@@ -611,7 +688,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
         if not ni:
-            return None
+            return
 
         ni_goals_by_date = {g.date: g for g in ni.goals.all()}
 
@@ -624,19 +701,21 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                 g.value /= nig.value
                 g.value *= cin.unit_multiplier
                 nvals = g.normalized_values or {}
-                nvals[str(nci.id)] = val
+                nvals[str(nci.pk)] = val
             g.normalized_values = nvals
             g.save(update_fields=['normalized_values'])
 
-    def is_visible_for_user(self, user: UserOrAnon):
+    def is_visible_for_user(self, user: UserOrAnon | None):
         """
-        A None value is interpreted identically
-        to a non-authenticated user"""
+        Determine if this indicator is visible for a user.
+
+        A None value is interpreted identically to a non-authenticated user.
+        """
         if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
             return False
         return True
 
-    def is_visible_for_public(self) -> Self:
+    def is_visible_for_public(self) -> bool:
         return self.is_visible_for_user(None)
 
     @property
@@ -655,7 +734,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         return self.name_i18n
 
     @classmethod
-    def get_indexed_objects(cls):
+    def get_indexed_objects(cls) -> QuerySet[Self]:
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         lang_variants = get_available_variants_for_language(lang)
@@ -670,6 +749,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     def autocomplete_label(self):
         return str(self)
+
+
+class IndicatorCategoryThrough(models.Model):
+    indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, related_name='indicator_category_through')
+    category = models.ForeignKey('actions.Category', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'indicators_indicator_categories'
+        unique_together = ['indicator', 'category']
+
+    def __str__(self):
+        return f'{self.indicator}: {self.category}'
 
 
 @reversion.register()
@@ -705,7 +796,7 @@ class DimensionCategory(OrderedModel):
     public_fields = ['id', 'dimension', 'name', 'order']
 
     # type annotations
-    values: RelatedManager[IndicatorValue]
+    values: RevMany[IndicatorValue]
 
     class Meta:
         verbose_name = _('dimension category')
@@ -757,18 +848,25 @@ class CommonIndicatorDimension(OrderedModel):
     def __str__(self):
         return "%s ∈ %s" % (str(self.dimension), str(self.common_indicator))
 
-class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet):
-
+class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet['IndicatorLevel']):
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """
-        A None value is interpreted identically
-        to a non-authenticated user"""
+        Filter by visibility for a specific user.
+
+        A None value is interpreted identically to a non-authenticated user
+        """
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
+
+
+if TYPE_CHECKING:
+    class IndicatorLevelManager(ModelManager['IndicatorLevel', IndicatorLevelQuerySet]): ...
+else:
+    IndicatorLevelManager = ModelManager.from_queryset(IndicatorLevelQuerySet)
 
 
 class IndicatorLevel(ClusterableModel):
@@ -778,18 +876,17 @@ class IndicatorLevel(ClusterableModel):
     Indicator levels include: operational, tactical and strategic.
     """
 
-    indicator = models.ForeignKey(
+    indicator: FK[Indicator] = models.ForeignKey(
         Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE,
     )
-    plan = models.ForeignKey(
+    plan: FK[Plan] = models.ForeignKey(
         'actions.Plan', related_name='indicator_levels', verbose_name=_('plan'), on_delete=models.CASCADE,
     )
     level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS)
 
     public_fields: typing.ClassVar = ['id', 'indicator', 'plan', 'level']
 
-    objects = IndicatorLevelQuerySet.as_manager()
-
+    objects = IndicatorLevelManager()  # pyright: ignore
 
     class Meta:
         unique_together = (('indicator', 'plan'),)
@@ -828,7 +925,7 @@ class IndicatorValue(ClusterableModel):
     date = models.DateField(verbose_name=_('date'))
 
     # Cached here for performance reasons
-    normalized_values = models.JSONField(null=True, blank=True)
+    normalized_values = JSONField[dict[str, float]](null=True, blank=True)
 
     public_fields = ['id', 'indicator', 'categories', 'value', 'date']
 
@@ -852,6 +949,7 @@ class IndicatorValue(ClusterableModel):
         return f"{indicator} {date_str} {self.value}"
 
 
+@reversion.register()
 class IndicatorGoal(models.Model):
     """The numeric goal which the organization has set for an indicator."""
 
@@ -863,7 +961,7 @@ class IndicatorGoal(models.Model):
     date = models.DateField(verbose_name=_('date'))
 
     # Cached here for performance reasons
-    normalized_values = models.JSONField(null=True, blank=True)
+    normalized_values = JSONField[dict[str, float]](null=True, blank=True)
 
     public_fields = ['id', 'indicator', 'value', 'date']
 
@@ -919,8 +1017,10 @@ class RelatedIndicator(IndicatorRelationship):
 class ActionIndicatorQuerySet(models.QuerySet):
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """
-        A None value is interpreted identically
-        to a non-authenticated user"""
+        Filter by visibility for a specific user.
+
+        A None value is interpreted identically to a non-authenticated user
+        """
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
@@ -940,14 +1040,22 @@ class ActionIndicatorQuerySet(models.QuerySet):
 
         return self
 
+
+if TYPE_CHECKING:
+    class ActionIndicatorManager(ModelManager['ActionIndicator', ActionIndicatorQuerySet]): ...
+else:
+    ActionIndicatorManager = ModelManager.from_queryset(ActionIndicatorQuerySet)
+
+
+@reversion.register(follow=['indicator'])
 class ActionIndicator(models.Model):
     """Link between an action and an indicator."""
 
-    action = ParentalKey(
+    action: ParentalKey[Action, Action] = ParentalKey(
         'actions.Action', related_name='related_indicators', on_delete=models.CASCADE,
         verbose_name=_('action'),
     )
-    indicator = ParentalKey(
+    indicator: ParentalKey[Indicator, Indicator] = ParentalKey(
         Indicator, related_name='related_actions', on_delete=models.CASCADE,
         verbose_name=_('indicator'),
     )
@@ -962,13 +1070,15 @@ class ActionIndicator(models.Model):
 
     public_fields: typing.ClassVar = ['id', 'action', 'indicator', 'effect_type', 'indicates_action_progress']
 
-    objects = ActionIndicatorQuerySet.as_manager()
+    objects: ActionIndicatorManager = ActionIndicatorManager()
 
     class Meta:
         unique_together = (('action', 'indicator'),)
         verbose_name = _('action indicator')
         verbose_name_plural = _('action indicators')
         ordering = ["indicator"]
+
+    get_effect_type_display: Callable[[], str]
 
     def __str__(self):
         return "%s ➜ %s ➜ %s" % (self.action, self.get_effect_type_display(), self.indicator)

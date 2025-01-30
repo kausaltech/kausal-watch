@@ -1,21 +1,34 @@
-from dal import autocomplete, forward as dal_forward
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
+
 from django import forms
+from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
-from generic_chooser.views import ModelChooserViewSet
-from generic_chooser.widgets import AdminChooser
 from wagtail import hooks
 from wagtail.admin.panels import (
     FieldPanel,
+    FieldRowPanel,
     HelpPanel,
     InlinePanel,
     MultiFieldPanel,
     ObjectList,
 )
+
+from dal import autocomplete, forward as dal_forward
+from generic_chooser.views import ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.extensions import modeladmin_register
+from aplans.wagtail_utils import _get_category_fields
+
+from actions.models.plan import Plan
+from admin_site.utils import admin_req
 from admin_site.wagtail import (
     AplansAdminModelForm,
     AplansCreateView,
@@ -25,17 +38,19 @@ from admin_site.wagtail import (
     BuiltInFieldCustomizationAwareEditHandlerMixin,
     CondensedInlinePanel,
     CustomizableBuiltInFieldPanel,
+    InitializeFormWithInitialPlanMixin,
     InitializeFormWithPlanMixin,
     get_translation_tabs,
 )
-from aplans.context_vars import ctx_instance, ctx_request
-from aplans.extensions import modeladmin_register
-from aplans.wagtail_utils import _get_category_fields
 from orgs.models import Organization
 from people.chooser import PersonChooser
-from users.models import User
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+
+if TYPE_CHECKING:
+    from wagtail.admin.panels.base import Panel
+
+    from users.models import User
 
 
 class DisconnectedIndicatorFilter(SimpleListFilter):
@@ -50,7 +65,7 @@ class DisconnectedIndicatorFilter(SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        plan = request.user.get_active_admin_plan()
+        plan = admin_req(request).user.get_active_admin_plan()
         if self.value() == '1':
             pass
         elif self.value() == '2':
@@ -160,7 +175,7 @@ class DimensionAdmin(AplansModelAdmin):
     ]
 
 
-class QuantityForm(AplansAdminModelForm):
+class QuantityForm(AplansAdminModelForm[Quantity]):
     pass
 
 
@@ -223,7 +238,9 @@ class IndicatorForm(AplansAdminModelForm):
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
+        self.initial_plan_id = kwargs.pop('initial_plan_id', None)
         super().__init__(*args, **kwargs)
+
         if self.instance.pk is not None:
             # We are editing an existing indicator. If the indicator is in the
             # active plan, set this form's `level` field to the proper value.
@@ -254,10 +271,12 @@ class IndicatorForm(AplansAdminModelForm):
         return organization
 
     def clean(self):
-        data = super().clean()
-        common = data.get('common')
+        super().clean()
+
+        common = self.cleaned_data.get('common')
         # Dimensions cannot be accessed from self.instance.dimensions yet
         new_dimensions = self.get_dimension_ids_from_formset()
+
         if common and new_dimensions is not None:
             common_indicator_dimensions = list(common.dimensions.values_list('dimension', flat=True))
             if new_dimensions != common_indicator_dimensions:
@@ -269,9 +288,22 @@ class IndicatorForm(AplansAdminModelForm):
                 # common indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_("Dimensions must be the same as in common indicator"))
-        return data
+
+        return self.cleaned_data
 
     def save(self, commit=True):
+        initial_plan_id = self.initial_plan_id
+        # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
+        if initial_plan_id and str(initial_plan_id) != str(self.plan.id):
+            initial_plan = Plan.objects.get(id=initial_plan_id)
+
+            request = ctx_request.get()
+            messages.add_message(request, messages.WARNING,
+                                 _('While editing this indicator you have switched to a different plan. '
+                                   'This indicator was still saved with the original plan "%s".')
+                                 % initial_plan.name)
+            self.plan = initial_plan
+
         if self.instance.organization_id is None:
             self.instance.organization = self.plan.organization
         old_dimensions = list(self.instance.dimensions.values_list('dimension', flat=True))
@@ -281,6 +313,7 @@ class IndicatorForm(AplansAdminModelForm):
             self.instance.latest_value = None
             self.instance.save()
             self.instance.values.all().delete()
+
         obj = super().save(commit)
         plan = self.plan
         for field_name, field in _get_category_fields(plan, Indicator, obj).items():
@@ -288,7 +321,7 @@ class IndicatorForm(AplansAdminModelForm):
             if field_data is None:
                 continue
             cat_type = field.category_type
-            obj.set_categories(cat_type, field_data)
+            obj.set_categories(cat_type, field_data, plan=plan)
         return obj
 
     def _save_m2m(self):
@@ -330,20 +363,16 @@ class IndicatorAdminOrganizationFilter(SimpleListFilter):
         return queryset
 
 
-class IndicatorCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView):
     pass
 
-
-class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
+class IndicatorEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView):
     pass
 
-
-class IndicatorEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTabbedInterface):
+class IndicatorEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTabbedInterface[Indicator]):
     def get_form_class(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
-        assert request is not None
-        user = request.user
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(Indicator)
         plan = request.get_active_admin_plan()
         cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
 
@@ -373,128 +402,190 @@ class IndicatorAdmin(AplansModelAdmin):
     edit_handler = IndicatorEditHandler
     base_form_class = IndicatorForm
 
-    basic_panels = [
-        CustomizableBuiltInFieldPanel('name'),
-        CustomizableBuiltInFieldPanel('time_resolution'),
-        CustomizableBuiltInFieldPanel('updated_values_due_at'),
-        CustomizableBuiltInFieldPanel('min_value'),
-        CustomizableBuiltInFieldPanel('max_value'),
-        CustomizableBuiltInFieldPanel('level'),
-        CustomizableBuiltInFieldPanel('reference'),
-        CustomizableBuiltInFieldPanel('internal_notes'),
-        InlinePanel(
-            'related_actions',
-            panels=[
-                CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(
-                    url='action-autocomplete',
-                    forward=(
-                        dal_forward.Const(val=True, dst='only_modifiable'),
-                    ),
-                )),
-                CustomizableBuiltInFieldPanel('effect_type'),
-                CustomizableBuiltInFieldPanel('indicates_action_progress'),
-            ],
-            heading=_('Indicator for actions'),
-        ),
-        CustomizableBuiltInFieldPanel('description'),
-    ]
-
-    advanced_panels = []
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new indicator
-        basic_panels = list(self.basic_panels)
-        advanced_panels = list(self.advanced_panels)
+    def _get_basic_information_tab(self, instance, request) -> ObjectList:
+        """Get basic information tab for edit view."""
+        panels: list[Panel] = []
         plan = request.user.get_active_admin_plan()
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
+        is_linked_to_common_indicator = bool(instance and instance.common)
         dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
         if not dimensions_str:
             dimensions_str = _("none")
 
-        # Some fields should only be editable if the indicator is not linked to a common indicator
-        is_general_admin = request.user.is_general_admin_for_plan(plan)
-        if not instance or not instance.common:
-            basic_panels.insert(
-                1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete')),
-            )
-            basic_panels.insert(
-                2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete')),
-            )
-            if is_general_admin:
-                basic_panels.append(CustomizableBuiltInFieldPanel('visibility'))
-                advanced_panels.append(CondensedInlinePanel('dimensions', panels=[
-                    FieldPanel('dimension'),
-                ], heading=_("Dimensions")))
-                # If the indicator has values, show a warning that these would be deleted by changing dimensions
-                num_values = instance.values.count() if instance else 0
-                if num_values:
-                    assert instance
-                    warning_text = ngettext_lazy("If you change the dimensions of this indicator (currently "
-                                                 "%(dimensions)s), its single value will be deleted.",
-                                                 "If you change the dimensions of this indicator (currently "
-                                                 "%(dimensions)s), all its %(num)d values will be deleted.",
-                                                 num_values) % {'dimensions': dimensions_str, 'num': num_values}
-                    # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
-                    # the ugly gap, but it seems nontrivial to do properly.
-                    advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
-        else:
-            info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
-                          "edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {
-                              'quantity': instance.quantity, 'unit': instance.unit, 'dimensions': dimensions_str,
-                          }
-            basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
-
-        advanced_panels.insert(
-            1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        )
-        advanced_panels.insert(
-            2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
-        )
-        advanced_panels.append(InlinePanel(
-            'related_effects',
-            panels=[
-                FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                FieldPanel('effect_type'),
-                FieldPanel('confidence_level'),
-            ],
-            heading=_('Effects'),
-        ))
-        advanced_panels.append(InlinePanel(
-            'related_causes',
-            panels=[
-                FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                FieldPanel('effect_type'),
-                FieldPanel('confidence_level'),
-            ],
-            heading=_('Causes'),
-        ))
-
-        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
-        cat_panels = []
-        for key, field in cat_fields.items():
-            cat_panels.append(FieldPanel(key, heading=field.label))
-        if cat_panels:
-            basic_panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
-
-        basic_panels.append(
-            MultiFieldPanel(
-                children=advanced_panels, heading=_('Advanced options'), classname='collapsible collapsed',
-            ),
-        )
-        tabs = [
-            ObjectList(basic_panels, heading=_('Basic information')),
-            ObjectList([
-                CondensedInlinePanel(
-                    'contact_persons',
-                    panels=[
-                        FieldPanel('person', widget=PersonChooser),
-                    ],
-                ),
-            ], heading=_('Contact persons')),
+        # Basic panels
+        panels += [
+            CustomizableBuiltInFieldPanel('name'),
+            CustomizableBuiltInFieldPanel('time_resolution'),
+            CustomizableBuiltInFieldPanel('level'),
         ]
 
-        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
-        tabs += i18n_tabs
+        if is_linked_to_common_indicator:
+            info_text = _(
+                "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. "
+                "Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s",
+            ) % {
+                'quantity': instance.quantity,
+                'unit': instance.unit,
+                'dimensions': dimensions_str,
+            }
+            panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
+        else:
+            panels.insert(1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete')))
+            panels.insert(2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete')))
+            if is_general_admin:
+                panels.insert(4, CustomizableBuiltInFieldPanel('visibility'))
+
+        # Further information
+        panels.append(
+            MultiFieldPanel(
+                children=[
+                    CustomizableBuiltInFieldPanel('description'),
+                    CustomizableBuiltInFieldPanel('reference'),
+                ],
+                heading=_("Further information"),
+                classname='collapsed',
+            ),
+        )
+
+        # Categories
+        category_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+        category_panels = [FieldPanel(key, heading=field.label) for key, field in category_fields.items()]
+        if category_panels:
+            panels.append(MultiFieldPanel(category_panels, heading=_('Categories'), classname='collapsed'))
+
+        # Visualisation settings
+        visualisation_settings_panels = [
+            FieldRowPanel(
+                children=[
+                    CustomizableBuiltInFieldPanel('min_value'),
+                    CustomizableBuiltInFieldPanel('max_value'),
+                ],
+                heading=_('Value bounds'),
+            ),
+            CustomizableBuiltInFieldPanel('show_trendline'),
+            CustomizableBuiltInFieldPanel('desired_trend'),
+            CustomizableBuiltInFieldPanel('show_total_line'),
+        ]
+        panels.append(
+            MultiFieldPanel(
+                visualisation_settings_panels,
+                heading=_('Visualization settings'),
+                classname='collapsed',
+            ),
+        )
+
+        # Advanced settings
+        advanced_panels: list[Panel] = [
+            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+        ]
+
+        if not is_linked_to_common_indicator and is_general_admin:
+            advanced_panels.append(
+                CondensedInlinePanel('dimensions', panels=[FieldPanel('dimension')], heading=_("Dimensions")),
+            )
+
+            # If the indicator has values, show a warning that these would be deleted by changing dimensions
+            num_values = instance.values.count() if instance else 0
+            if num_values:
+                warning_text = ngettext_lazy(
+                    "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will "
+                    "be deleted.",
+                    "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d "
+                    "values will be deleted.",
+                    num_values,
+                ) % {
+                    'dimensions': dimensions_str,
+                    'num': num_values,
+                }
+                # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
+                # the ugly gap, but it seems nontrivial to do properly.
+                advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+
+        panels.append(
+            MultiFieldPanel(advanced_panels, heading=_('Advanced settings'), classname='collapsed'),
+        )
+
+        return ObjectList(panels, heading=_('Basic information'))
+
+    def _get_contact_persons_tab(self) -> ObjectList:
+        """Get contact persons tab for edit view."""
+        panels: list[Panel] = [
+            CondensedInlinePanel(
+                'contact_persons',
+                panels=[
+                    FieldPanel('person', widget=PersonChooser),
+                ],
+            ),
+        ]
+        return ObjectList(panels, heading=_('Contact persons'))
+
+    def _get_reporting_tab(self) -> ObjectList:
+        """Get reporting tab for edit view."""
+        panels: list[Panel] = [
+            CustomizableBuiltInFieldPanel('internal_notes'),
+            CustomizableBuiltInFieldPanel('updated_values_due_at'),
+        ]
+        return ObjectList(panels, heading=_('Reporting'))
+
+    def _get_relationships_tab(self) -> ObjectList:
+        """Get relationships tab for edit view."""
+        actions_panels: list[Panel] = [
+            InlinePanel(
+                'related_actions',
+                panels=[
+                    CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(
+                        url='action-autocomplete',
+                        forward=(
+                            dal_forward.Const(val=True, dst='only_modifiable'),
+                        ),
+                    )),
+                    CustomizableBuiltInFieldPanel('effect_type'),
+                    CustomizableBuiltInFieldPanel('indicates_action_progress'),
+                ],
+                heading=_('Indicator for actions'),
+            ),
+        ]
+
+        other_indicators_panels = [
+            InlinePanel(
+                'related_effects',
+                panels=[
+                    FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Effects'),
+            ),
+            InlinePanel(
+                'related_causes',
+                panels=[
+                    FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Causes'),
+            ),
+        ]
+
+        panels = [
+            FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
+            MultiFieldPanel(actions_panels, heading=_('Actions')),
+            MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
+        ]
+
+        return ObjectList(panels, heading=_('Relationships'))
+
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = cast(Indicator, ctx_instance.get())  # FIXME: Fails when creating a new indicator
+
+        tabs = [
+            self._get_basic_information_tab(instance, request),
+            self._get_contact_persons_tab(),
+            self._get_reporting_tab(),
+            self._get_relationships_tab(),
+            *get_translation_tabs(instance, request),
+        ]
 
         return IndicatorEditHandler(tabs)
 
@@ -526,7 +617,7 @@ class IndicatorAdmin(AplansModelAdmin):
 
 class CommonIndicatorForm(AplansAdminModelForm):
     def clean(self):
-        if self.instance and 'dimensions' in self.formsets:
+        if self.instance.pk and 'dimensions' in self.formsets:
             # Dimensions cannot be accessed from self.instance.dimensions yet
             sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
             new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
@@ -562,7 +653,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
         basic_panels = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator
-        if not instance or not instance.indicators.exists():
+        if not instance.pk or not instance.indicators.exists():
             basic_panels.insert(1, FieldPanel('quantity'))
             basic_panels.insert(2, FieldPanel('unit'))
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
@@ -587,7 +678,9 @@ class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'kausal-indicator'
     menu_order = 20
-    items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin)
+    items: tuple[type[AplansModelAdmin[Any]], ...] = (
+        IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin
+    )
 
 
 modeladmin_register(IndicatorGroup)

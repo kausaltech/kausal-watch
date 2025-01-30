@@ -16,8 +16,8 @@ class BaseFactoryMeta(FactoryMetaClass):
                 if len(type_args) == 1:
                     if "Meta" not in attrs:
                         attrs["Meta"] = type("Meta", (), {})
-                    setattr(attrs["Meta"], "model", type_args[0])
-                    setattr(attrs["Meta"], "abstract", False)  # not in original snippet
+                    attrs["Meta"].model = type_args[0]
+                    attrs["Meta"].abstract = False  # not in original snippet
         return super().__new__(mcs, class_name, bases, attrs)
 
 

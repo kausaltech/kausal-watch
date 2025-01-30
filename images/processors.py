@@ -1,6 +1,7 @@
-import willow
 from wagtail.images.image_operations import FillOperation, ImageTransform
 from wagtail.images.rect import Rect
+
+import willow
 
 
 class FocalPointImage:

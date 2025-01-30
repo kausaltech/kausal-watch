@@ -1,4 +1,5 @@
 from django.utils.translation import gettext_lazy as _
+
 from import_export.fields import Field
 from import_export.resources import ModelResource
 

@@ -2,25 +2,42 @@ default_install_hook_types: [pre-commit, pre-push]
 repos:
   - repo: local
     hooks:
-      - id: check-submodules
-        name: Check submodules
-        entry: ./.hooks/check-submodules
-        language: script
-        stages: [pre-push]
-        types: [directory]
-
       - id: run-ruff
         name: Run Ruff
-        language: system
         types: [python]
         stages: [pre-commit]
-        entry: |
-          ruff check
-
-      - id: run-reviewdog
-        name: Run Reviewdog
         language: script
-        entry: ./.hooks/reviewdog.sh
+        require_serial: true
+        entry: kausal_common/development/git-hooks/ruff-pre-commit.sh
+
+      #- id: run-mypy
+      #  name: Run Mypy
+      #  types: [python]
+      #  stages: [pre-commit]
+      #  language: script
+      #  require_serial: true
+      #  entry: kausal_common/development/git-hooks/mypy-pre-push.sh
+
+      - id: check-submodules
+        name: Check submodules
+        stages: [pre-push]
+        types: [directory]
+        language: script
+        require_serial: true
+        entry: kausal_common/development/git-hooks/check-submodules.sh
+
+      # - id: run-ruff-pre-push
+      #   name: Run Ruff
+      #   types: [python]
+      #   stages: [pre-push]
+      #   language: script
+      #   require_serial: true
+      #   entry: kausal_common/development/git-hooks/ruff-pre-push.sh
+
+      - id: run-mypy-pre-push
+        name: Run Mypy
         types: [python]
         stages: [pre-push]
-        verbose: true
+        language: script
+        require_serial: true
+        entry: kausal_common/development/git-hooks/mypy-pre-push.sh

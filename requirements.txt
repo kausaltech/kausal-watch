@@ -6,6 +6,8 @@ aniso8601==9.0.1
     # via
     #   -r requirements.in
     #   graphene
+annotated-types==0.7.0
+    # via pydantic
 anyascii==0.3.2
     # via wagtail
 asgiref==3.8.1
@@ -33,7 +35,7 @@ cachetools==5.3.3
     # via django-helusers
 celery==5.4.0
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   elasticsearch
     #   requests
@@ -57,13 +59,15 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.3.0
     # via celery
+colorama==0.4.6
+    # via diffsync
 coreapi==2.3.3
     # via -r requirements.in
 coreschema==0.0.4
     # via coreapi
 coverage==7.5.1
     # via pytest-cov
-cryptography==42.0.7
+cryptography==43.0.3
     # via
     #   -r requirements.in
     #   jwcrypto
@@ -77,12 +81,17 @@ defusedxml==0.7.1
     #   social-auth-core
     #   willow
 deprecated==1.2.14
-    # via pygithub
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+    #   pygithub
 deprecation==2.1.0
     # via django-helusers
 diff-match-patch==20230430
     # via django-import-export
-django==5.0.6
+diffsync==2.0.1
+    # via -r requirements.in
+django==5.0.10
     # via
     #   -r requirements.in
     #   django-anymail
@@ -102,6 +111,7 @@ django==5.0.6
     #   django-redis
     #   django-reversion
     #   django-storages
+    #   django-stubs-ext
     #   django-taggit
     #   django-treebeard
     #   djangorestframework
@@ -157,15 +167,19 @@ django-permissionedforms==0.1
     # via wagtail
 django-redis==5.4.0
     # via -r requirements.in
-django-reversion==5.0.12
+django-relations-iterator==0.0.5
+    # via -r requirements.in
+django-reversion==5.1.0
     # via -r requirements.in
 django-storages==1.14.3
+    # via -r requirements.in
+django-stubs-ext==5.1.1
     # via -r requirements.in
 django-taggit==5.0.1
     # via wagtail
 django-treebeard==4.7.1
     # via wagtail
-djangorestframework==3.15.1
+djangorestframework==3.15.2
     # via
     #   -r requirements.in
     #   drf-nested-routers
@@ -200,12 +214,16 @@ faker==25.2.0
 filetype==1.2.0
     # via willow
 graphene==3.3
-    # via graphene-django
+    # via
+    #   graphene-django
+    #   graphene-pydantic
 graphene-django==3.2.1
     # via
     #   -r requirements.in
     #   wagtail-grapple
 graphene-django-optimizer @ https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip
+    # via -r requirements.in
+graphene-pydantic==0.6.1
     # via -r requirements.in
 graphql-core==3.2.3
     # via
@@ -224,6 +242,8 @@ humanize==4.9.0
     # via -r requirements.in
 idna==3.7
     # via requests
+importlib-metadata==8.5.0
+    # via opentelemetry-api
 inflection==0.5.1
     # via
     #   drf-spectacular
@@ -232,7 +252,7 @@ iniconfig==2.0.0
     # via pytest
 itypes==1.2.0
     # via coreapi
-jinja2==3.1.4
+jinja2==3.1.5
     # via
     #   -r requirements.in
     #   coreschema
@@ -282,9 +302,27 @@ oauthlib==3.2.2
     #   social-auth-core
 openpyxl==3.1.2
     # via wagtail
-packaging==24.0
+opentelemetry-api==1.28.1
+    # via
+    #   opentelemetry-distro
+    #   opentelemetry-instrumentation
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-distro==0.49b1
+    # via sentry-sdk
+opentelemetry-instrumentation==0.49b1
+    # via opentelemetry-distro
+opentelemetry-sdk==1.28.1
+    # via opentelemetry-distro
+opentelemetry-semantic-conventions==0.49b1
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-sdk
+packaging==23.2
     # via
     #   deprecation
+    #   diffsync
+    #   opentelemetry-instrumentation
     #   pytest
     #   pytest-factoryboy
 pillow==10.3.0
@@ -319,6 +357,12 @@ pycparser==2.22
     # via cffi
 pycryptodome==3.20.0
     # via -r requirements.in
+pydantic==2.9.2
+    # via
+    #   diffsync
+    #   graphene-pydantic
+pydantic-core==2.23.4
+    # via pydantic
 pygithub==2.3.0
     # via -r requirements.in
 pygments==2.18.0
@@ -333,16 +377,19 @@ pyjwt==2.8.0
     #   social-auth-core
 pynacl==1.5.0
     # via pygithub
-pytest==8.2.1
+pytest==8.3.4
     # via
     #   pytest-cov
     #   pytest-django
+    #   pytest-env
     #   pytest-factoryboy
     #   pytest-html
     #   pytest-metadata
 pytest-cov==5.0.0
     # via -r requirements.in
 pytest-django==4.8.0
+    # via -r requirements.in
+pytest-env==1.1.5
     # via -r requirements.in
 pytest-factoryboy==2.7.0
     # via -r requirements.in
@@ -379,7 +426,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.3
     # via
     #   -r requirements.in
     #   coreapi
@@ -407,7 +454,7 @@ s3cmd==2.4.0
     # via -r requirements.in
 s3transfer==0.10.1
     # via boto3
-sentry-sdk==2.2.0
+sentry-sdk==2.18.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -416,6 +463,7 @@ six==1.16.0
     #   l18n
     #   promise
     #   python-dateutil
+    #   treelib
 social-auth-app-django==5.4.1
     # via -r requirements.in
 social-auth-core==4.5.4
@@ -424,6 +472,8 @@ soupsieve==2.5
     # via beautifulsoup4
 sqlparse==0.5.0
     # via django
+structlog==24.4.0
+    # via diffsync
 tablib==3.5.0
     # via django-import-export
 telepath==0.3.1
@@ -432,11 +482,17 @@ text-unidecode==1.3
     # via graphene-django
 tinycss2==1.3.0
     # via -r requirements.in
+treelib==1.7.0
+    # via -r requirements.in
 typing-extensions==4.11.0
     # via
     #   django-countries
+    #   django-stubs-ext
     #   jwcrypto
+    #   opentelemetry-sdk
     #   psycopg
+    #   pydantic
+    #   pydantic-core
     #   pygithub
     #   pytest-factoryboy
     #   wagtail-localize
@@ -451,7 +507,7 @@ uritemplate==4.1.1
     #   -r requirements.in
     #   coreapi
     #   drf-spectacular
-urllib3==1.26.18
+urllib3==1.26.20
     # via
     #   botocore
     #   django-anymail
@@ -459,7 +515,7 @@ urllib3==1.26.18
     #   pygithub
     #   requests
     #   sentry-sdk
-uuid-utils==0.8.0
+uuid-utils==0.9.0
     # via -r kausal_common/requirements-common.txt
 vine==5.1.0
     # via
@@ -499,8 +555,12 @@ webencodings==0.5.1
 willow==1.8.0
     # via wagtail
 wrapt==1.16.0
-    # via deprecated
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
 xlsx2csv==0.8.2
     # via polars
 xlsxwriter==3.2.0
     # via -r requirements.in
+zipp==3.21.0
+    # via importlib-metadata

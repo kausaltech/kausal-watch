@@ -1,34 +1,44 @@
+from __future__ import annotations
+
 import hashlib
 import importlib
+import importlib.util
 import json
 import os
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
-import sentry_sdk
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from graphene_django.views import GraphQLView
-from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
 from graphql.error import GraphQLError
-from graphql.execution import ExecutionContext
 from graphql.language.ast import StringValueNode, VariableNode
+from rest_framework.authentication import TokenAuthentication
+
+import sentry_sdk
 from loguru import logger
 from rich.console import Console
 from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
 
-from actions.models import Plan
-from aplans.settings import LOG_SQL_QUERIES
 from aplans.types import WatchAPIRequest
+
+from actions.models import Plan
 from users.models import User
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import AuthenticatedUserNode, WorkflowStateEnum
 
 if TYPE_CHECKING:
+    from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
+    from rest_framework.authentication import TokenAuthentication
+
+    from aplans.types import WatchAPIRequest
+
     from actions.models.plan import PlanQuerySet
+
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
@@ -54,11 +64,11 @@ class APITokenMiddleware:
                         raise GraphQLError("Invalid type: %s" % str(type(arg.value)), [arg])
                     val = arg.value.value
                 try:
-                    user = User.objects.get(uuid=val)
-                except User.DoesNotExist:
-                    raise GraphQLAuthFailedError("User not found", [arg])
-                except ValidationError:
-                    raise GraphQLAuthFailedError("Invalid UUID", [arg])
+                    user = User.objects.get(uuid=UUID(val))
+                except User.DoesNotExist as e:
+                    raise GraphQLAuthFailedError("User not found", [arg]) from e
+                except (ValidationError, ValueError, TypeError) as e:
+                    raise GraphQLAuthFailedError("Invalid UUID", [arg]) from e
 
             elif arg.name.value == 'token':
                 if isinstance(arg.value, VariableNode):
@@ -78,7 +88,7 @@ class APITokenMiddleware:
             if user.auth_token.key != token:
                 raise GraphQLAuthFailedError("Invalid token", [directive])
         except User.auth_token.RelatedObjectDoesNotExist:  # type: ignore
-            raise GraphQLAuthFailedError("Invalid token", [directive])
+            raise GraphQLAuthFailedError("Invalid token", [directive]) from None
 
         info.context.user = user
 
@@ -93,9 +103,8 @@ class APITokenMiddleware:
 
         rt = info.return_type
         gt = getattr(rt, 'graphene_type', None)
-        if gt and issubclass(gt, AuthenticatedUserNode):
-            if not getattr(context, 'user', None):
-                raise GraphQLAuthRequiredError("Authentication required")
+        if gt and issubclass(gt, AuthenticatedUserNode) and not getattr(context, 'user', None):
+            raise GraphQLAuthRequiredError("Authentication required")
         return next(root, info, **kwargs)
 
 
@@ -158,10 +167,10 @@ class LocaleMiddleware:
         return next(root, info, **kwargs)
 
 
+IDTokenAuthentication: type[TokenAuthentication] | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions.auth.authentication import IDTokenAuthentication
-else:
-    IDTokenAuthentication = None
+    id_token_authentication_found = True
 
 
 def perform_auth(request):

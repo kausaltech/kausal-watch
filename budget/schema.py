@@ -1,7 +1,15 @@
+from __future__ import annotations
+
+import typing
+
 import graphene
 
-from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
+if typing.TYPE_CHECKING:
+    from kausal_common.graphene import GQLInfo
+
 from aplans.graphql_types import DjangoNode, register_django_node
+
+from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
 from budget.models import (
     DataPoint,
     Dataset,
@@ -12,6 +20,11 @@ from budget.models import (
     DimensionCategory,
     DimensionScope,
 )
+
+if typing.TYPE_CHECKING:
+    from actions.models.action import Action
+    from actions.models.category import Category, CategoryType
+    from actions.models.plan import Plan
 
 
 class DimensionNode(DjangoNode):
@@ -42,7 +55,7 @@ class DimensionScopeNode(DjangoNode):
         fields = '__all__'
 
     @staticmethod
-    def resolve_scope(root, info):
+    def resolve_scope(root, info) -> Plan | CategoryType:
         return root.scope
 
 
@@ -68,7 +81,7 @@ class DatasetSchemaScopeNode(DjangoNode):
         fields = '__all__'
 
     @staticmethod
-    def resolve_scope(root, info):
+    def resolve_scope(root, info) -> Plan | CategoryType:
         return root.scope
 
 
@@ -100,7 +113,7 @@ class DatasetNode(DjangoNode):
         fields = ('uuid', 'schema', 'data_points')
 
     @staticmethod
-    def resolve_scope(root, info):
+    def resolve_scope(root: Dataset, info: GQLInfo) -> Action | Category:
         return root.scope
 
 

@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('fields', wagtail.fields.StreamField([('implementation_phase', reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock()), ('text_attribute', wagtail.blocks.StructBlock([('name', wagtail.blocks.CharBlock(heading='Name')), ('identifier', wagtail.blocks.CharBlock(heading='Identifier'))]))], blank=True, null=True)),
                 ('plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='report_types', to='actions.plan')),
             ],
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='Report',

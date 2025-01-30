@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 from django import forms
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
-from actions.models import Plan
 from aplans.graphql_types import DjangoObjectType
 from aplans.utils import public_fields
+
+from actions.models import Plan
 
 from .models import UserFeedback
 
 
 class UserFeedbackForm(forms.ModelForm):
     plan = forms.ModelChoiceField(queryset=Plan.objects.all(), to_field_name='identifier')
-
     class Meta:
         model = UserFeedback
-        fields = ('plan', 'type', 'action', 'name', 'email', 'comment', 'url')
+        fields = ('plan', 'type', 'action', 'category', 'name', 'email', 'comment', 'url', 'additional_fields', 'page_id')
 
 
 class UserFeedbackNode(DjangoObjectType):

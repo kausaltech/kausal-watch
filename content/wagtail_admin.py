@@ -1,15 +1,21 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 
-from actions.models.plan import Plan
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.panels import TranslatedFieldPanel
 from admin_site.viewsets import WatchEditView, WatchViewSet
 
 from .models import SiteGeneralContent
+
+if TYPE_CHECKING:
+    from actions.models.plan import Plan
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
@@ -46,11 +52,14 @@ class SiteGeneralContentEditView(SuccessUrlEditPageMixin, WatchEditView):
 class SiteGeneralContentViewSet(WatchViewSet):
     model = SiteGeneralContent
     edit_view_class = SiteGeneralContentEditView
-    permission_policy = SiteGeneralContentPermissionPolicy(model)
     add_to_settings_menu = True
     icon = 'cogs'
     menu_label = _('Site settings')
     menu_order = 503
+
+    @property
+    def permission_policy(self):
+        return SiteGeneralContentPermissionPolicy(self.model)
 
     @property
     def panels(self):

@@ -2,8 +2,9 @@ import pytest
 from factory import SubFactory
 from pytest_factoryboy import register
 
-from actions.tests.factories import PlanFactory
 from aplans.factories import ModelFactory
+
+from actions.tests.factories import PlanFactory
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization
 
 pytestmark = pytest.mark.django_db
@@ -25,7 +26,7 @@ register(ReportActionPrintLayoutCustomizationFactory)
 KEYS = ['max_columns', 'width_needed', 'approximate_chars_per_line', 'approximate_lines_per_page']
 
 
-@pytest.fixture()
+@pytest.fixture
 def global_db_defaults():
     return ReportActionPrintLayoutCustomization.objects.get(plan=None)
 

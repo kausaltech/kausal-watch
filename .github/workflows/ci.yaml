@@ -12,6 +12,8 @@ jobs:
     with:
       project_id: watch-backend
       project_type: django
+      django_project: aplans
+      dockerfile: ./kausal_common/docker/Dockerfile
 
   test:
     needs: [build]
@@ -23,7 +25,7 @@ jobs:
       build_id: ${{ needs.build.outputs.build_id }}
 
   deploy:
-    needs: [build]
+    needs: [build, test]
     uses: kausaltech/github-actions/.github/workflows/deploy.yaml@main
     secrets:
       gitops_pat: ${{ secrets.GHA_GITOPS_PAT }}

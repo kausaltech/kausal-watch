@@ -2,6 +2,7 @@ from django.contrib.gis.db.backends.postgis.base import (
     DatabaseWrapper as PostGisPsycopg2DatabaseWrapper,
 )
 from django.db import close_old_connections, connection as db_connection
+
 from psycopg.errors import InterfaceError
 
 

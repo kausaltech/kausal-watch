@@ -1,10 +1,12 @@
 import graphene
 from graphql.error import GraphQLError
+
 from grapple.registry import registry as grapple_registry
 
-from actions.models import Action
 from aplans.graphql_types import DjangoNode, register_django_node
 from aplans.utils import public_fields
+
+from actions.models import Action
 from reports.blocks.action_content import ReportFieldBlock
 from reports.graphene_types import ReportValueInterface
 from reports.models import ActionSnapshot, Report, ReportType

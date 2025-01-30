@@ -3,7 +3,7 @@ import pytest
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_contact_person_user_maker(action_contact_factory):
     def make_action_contact_person_with_role(plan, role):
         action = plan.actions.get()
@@ -12,22 +12,22 @@ def action_contact_person_user_maker(action_contact_factory):
     return make_action_contact_person_with_role
 
 
-@pytest.fixture()
+@pytest.fixture
 def moderator_user_without_publishing_rights(plan_with_double_task_moderation, action_contact_person_user_maker):
     return action_contact_person_user_maker(plan_with_double_task_moderation, 'moderator')
 
 
-@pytest.fixture()
+@pytest.fixture
 def moderator_user_with_publishing_rights(plan_with_single_task_moderation, action_contact_person_user_maker):
     return action_contact_person_user_maker(plan_with_single_task_moderation, 'moderator')
 
 
-@pytest.fixture()
+@pytest.fixture
 def editor_user_without_publishing_rights_double(plan_with_double_task_moderation, action_contact_person_user_maker):
     return action_contact_person_user_maker(plan_with_double_task_moderation, 'editor')
 
 
-@pytest.fixture()
+@pytest.fixture
 def editor_user_without_publishing_rights_single(plan_with_single_task_moderation, action_contact_person_user_maker):
     return action_contact_person_user_maker(plan_with_single_task_moderation, 'editor')
 

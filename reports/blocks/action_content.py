@@ -3,14 +3,15 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from django.apps import apps
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
 from wagtail import blocks
 from wagtail.admin.panels import HelpPanel
 
-from actions.blocks.action_content import get_action_block_for_field
+from grapple.helpers import register_streamfield_block
+
+from actions.action_fields import action_registry
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
+from actions.blocks.stream_block import generate_stream_block
 from reports import report_formatters as formatters
 from reports.report_formatters import ActionReportContentField
 
@@ -84,12 +85,10 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
 
 @register_streamfield_block
 class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    """
-    FIXME: Note that this block is currently actually exporting only the primary
-    responsible parties. That's why the label is set accordingly.
-    There should be a field to configure which role(s) should
-    be exported and that should affect the label(s)
-    """
+    # FIXME: Note that this block is currently actually exporting only the primary
+    # responsible parties. That's why the label is set accordingly.
+    # There should be a field to configure which role(s) should
+    # be exported and that should affect the label(s)
 
     target_ancestor_depth = blocks.IntegerBlock(
         label=_('Level of containing organization'),
@@ -109,39 +108,34 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
     class Meta:
         label = _("Primary responsible party")
+        default = {
+            'target_ancestor_depth': None
+        }
 
 
 """
-We are reusing generated action field block classes from the action app
-
-If adding reporting support for a block, the block should be explicitly added here
-and correct report generation should be verified.
+Whenever possible, try to use the existing report block classes
+that can be retrieved from the action_registry simply with the
+field name, instead of implenting a custom ReportFieldBlock from scratch.
 """
-ActionDescriptionBlock = get_action_block_for_field('description')
-ActionManualStatusReasonBlock = get_action_block_for_field('manual_status_reason')
-ActionTasksBlock = get_action_block_for_field('tasks')
 
-
-@register_streamfield_block
-class ReportFieldBlock(blocks.StreamBlock):
-    # All blocks mentioned here must have a formatter which implements
-    # xlsx_column_labels, value_for_action and value_for_action_snapshot
-    implementation_phase = ActionImplementationPhaseReportFieldBlock()
-    attribute_type = ActionAttributeTypeReportFieldBlock()
-    responsible_party = ActionResponsiblePartyReportFieldBlock()
-    category = ActionCategoryReportFieldBlock()
-    status = ActionStatusReportFieldBlock()
-    manual_status_reason = ActionManualStatusReasonBlock()
-    description = ActionDescriptionBlock()
-    tasks = ActionTasksBlock()
-
-    graphql_types = [
-        ActionImplementationPhaseReportFieldBlock,
-        ActionAttributeTypeReportFieldBlock,
-        ActionResponsiblePartyReportFieldBlock,
-        ActionCategoryReportFieldBlock,
-        ActionStatusReportFieldBlock,
-        ActionManualStatusReasonBlock,
-        ActionDescriptionBlock,
-        ActionTasksBlock,
-    ]
+ReportFieldBlock = generate_stream_block(
+    'ReportFieldBlock',
+    fields = (
+        'implementation_phase',
+        'attribute',
+        'responsible_parties',
+        'categories',
+        'status',
+        'manual_status_reason',
+        'description',
+        'tasks',
+        'start_date',
+        'end_date',
+        'updated_at',
+        'related_indicators',
+        'primary_org',
+    ),
+    support_editing_from_other_form=False,
+    block_context='report',
+)

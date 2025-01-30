@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -5,15 +9,21 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from sentry_sdk import capture_exception
 from wagtail.images.models import SourceImageIOError
 from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
+
+from sentry_sdk import capture_exception
 
 from aplans.fields import HostnameField
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModel
 
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
 
-class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, ClusterableModel):
+    from actions.models.plan import Plan
+
+
+class Client(ClusterableModel):
     class AuthBackend(models.TextChoices):
         NONE = '', _('Only allow password login')
         # Values are social auth backend names
@@ -72,7 +82,7 @@ class ClientPlan(OrderedModel):
     client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans',
     )
-    plan = ParentalKey(
+    plan = ParentalKey['Plan'](
         'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients',
     )
 
@@ -121,8 +131,12 @@ class EmailDomains(OrderedModel, ClusterableModel):
 #     return [(field_name, Action._meta.get_field(field_name).verbose_name) for field_name in field_names]
 
 
-class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMixin, models.Model, PlanRelatedModel):
-    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='built_in_action_attribute_types')
+class BuiltInFieldCustomization(
+    PlanRelatedModel, InstancesEditableByMixin, InstancesVisibleForMixin,
+):
+    plan: FK[Plan] = models.ForeignKey(
+        'actions.Plan', on_delete=models.CASCADE, related_name='built_in_field_customizations',
+    )
     # Model of the customized field
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     # Name of the field in the model
@@ -144,10 +158,11 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
         # for now we don't have an model admin class for this model but rely on creating instances manually in the REPL,
         # we must manually trigger the validation by calling full_clean().
         model = self.content_type.model_class()
+        assert model is not None
         try:
             model._meta.get_field(self.field_name)
         except FieldDoesNotExist:
-            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {
+            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {  # noqa: B904
                 'field': self.field_name,
                 'model': self.content_type.model,
             }})
@@ -155,10 +170,16 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
 
     def __str__(self):
         model = self.content_type.model_class()
+        assert model is not None
         model_name = model._meta.verbose_name
-        field_name = model._meta.get_field(self.field_name).verbose_name
+        target_field = model._meta.get_field(self.field_name)
+        if isinstance(target_field, models.Field):
+            field_label = target_field.verbose_name
+        else:
+            # ForeignObjectRel or GenericForeignKey
+            field_label = self.field_name
         return _("Field '%(field)s' in model '%(model)s' of plan '%(plan)s'") % {
-            'field': field_name,
+            'field': field_label,
             'model': model_name,
             'plan': str(self.plan),
         }

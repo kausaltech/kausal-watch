@@ -1,10 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
+
 from factory import LazyAttribute, Sequence, SubFactory
 from factory.django import DjangoModelFactory
 
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
+
 from actions.tests.factories import PlanFactory
 from admin_site.models import Client
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 
 class EmailDomainsFactory(DjangoModelFactory):

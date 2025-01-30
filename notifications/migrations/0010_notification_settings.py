@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'notification settings',
                 'verbose_name_plural': 'notification settings',
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.RunPython(migrate_notification_settings, reverse_code=migrations.RunPython.noop),
     ]

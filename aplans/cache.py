@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from wagtail.models import Revision
 
+from aplans.graphql_types import WorkflowStateEnum
+
 from actions.models import (
     Action,
     ActionImplementationPhase,
@@ -17,12 +19,11 @@ from actions.models import (
     CategoryType,
     Plan,
 )
-from aplans.graphql_types import WorkflowStateEnum
+from actions.models.action import ActionQuerySet
 from budget.models import Dataset
 from reports.models import Report
 
 if typing.TYPE_CHECKING:
-    from actions.models.action import ActionQuerySet
     from orgs.models import Organization, OrganizationQuerySet
     from people.models import Person, PersonQuerySet
 
@@ -62,10 +63,10 @@ class PlanSpecificCache:
             schema__scopes__scope_content_type=category_type_content_type, schema__scopes__scope_id__in=category_type_ids,
         )
         for ds in action_datasets:
-            if ds.scope_id is not None:
+            if ds.scope_id is not None and ds.schema is not None:
                 result.setdefault('actions.Action', {}).setdefault(ds.scope_id, {})[str(ds.schema.uuid)] = ds
         for ds in category_datasets:
-            if ds.scope_id is not None:
+            if ds.scope_id is not None and ds.schema is not None:
                 result.setdefault('actions.Category', {}).setdefault(ds.scope_id, {})[str(ds.schema.uuid)] = ds
         return result
 
@@ -180,7 +181,7 @@ class WatchObjectCache:
 class OrganizationActionCountCache:
     plans: list[Plan]
     data: dict[int, int]
-    action_qs: ActionQuerySet
+    action_qs: 'ActionQuerySet'
     organization_responsible_party_queryset_filter: Q
 
     def __init__(self, action_qs: ActionQuerySet) -> None:

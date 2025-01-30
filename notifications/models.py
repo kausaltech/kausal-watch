@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import typing
-from typing import Dict, Sequence
+from typing import TYPE_CHECKING, Sequence, TypeVar, cast
 
 import reversion
 from django.conf import settings
@@ -12,18 +12,28 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.fields import RichTextField
 
+from kausal_common.models.types import ModelManager
+
 from aplans.utils import PlanRelatedModel
+
 from people.models import Person
 
 from .notifications import NotificationType
 
 if typing.TYPE_CHECKING:
+    from modelcluster.fields import PK
+
+    from actions.models.plan import Plan
+    from admin_site.models import Client
+
     from .recipients import EmailRecipient, NotificationRecipient
+
 
 DEFAULT_FONT_FAMILY = (
     '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
@@ -77,9 +87,16 @@ class NotificationSettings(ClusterableModel, PlanRelatedModel):
         return str(self.plan)
 
 
-class SentNotificationQuerySet(models.QuerySet):
+class SentNotificationQuerySet(QuerySet['SentNotification']):
     def recipient(self, recipient: NotificationRecipient):
         return recipient.filter_sent_notifications(self)
+
+
+if TYPE_CHECKING:
+    class SentNotificationManager(ModelManager['SentNotification', SentNotificationQuerySet]):
+        pass
+else:
+    SentNotificationManager = ModelManager.from_queryset(SentNotificationQuerySet)
 
 
 class SentNotification(models.Model):
@@ -98,9 +115,10 @@ class SentNotification(models.Model):
         help_text=_('Set if the notification was sent to an email address instead of a person'),
     )
 
-    objects = SentNotificationQuerySet.as_manager()
+    objects = SentNotificationManager()  # pyright: ignore
 
     class Meta:
+        default_manager_name = 'objects'
         constraints = [
             models.CheckConstraint(
                 check=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
@@ -112,20 +130,25 @@ class SentNotification(models.Model):
         return '%s: %s -> %s' % (self.content_object, self.type, self.person)
 
 
-class BaseTemplateManager(models.Manager):
-    def get_by_natural_key(self, plan_identifier):
+class BaseTemplateManager(models.Manager['BaseTemplate']):
+    def get_by_natural_key(self, plan_identifier: str):
         return self.get(plan__identifier=plan_identifier)
 
 
+_QS = TypeVar('_QS', bound=models.QuerySet)
+
 class IndirectPlanRelatedModel(PlanRelatedModel):
+    class Meta:
+        abstract = True
+
     @classmethod
-    def filter_by_plan(cls, plan, qs):
+    def filter_by_plan(cls, plan: Plan, qs: _QS) -> _QS:
         return qs.filter(base__plan=plan)
 
 
 @reversion.register()
 class BaseTemplate(ClusterableModel, PlanRelatedModel):
-    plan = models.OneToOneField(
+    plan: models.OneToOneField[Plan] = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),
     )
@@ -142,7 +165,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
     font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True,
                                    help_text=_('Leave empty unless custom font required by customer'))
 
-    objects = BaseTemplateManager()
+    objects = BaseTemplateManager()  # pyright: ignore
 
     verbose_name_partitive = pgettext_lazy('partitive', 'base templates')
 
@@ -182,7 +205,9 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
+class NotificationTemplate(IndirectPlanRelatedModel):
+    base: ParentalKey[BaseTemplate, BaseTemplate]
+
     type = models.CharField(
         verbose_name=_('type'), choices=notification_type_choice_builder(include_manual=False),
         max_length=100,
@@ -210,7 +235,7 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
 
     def natural_key(self):
         return (self.base.natural_key(), self.type)
-    natural_key.dependencies = ['notifications.BaseTemplate']
+    natural_key.dependencies = ['notifications.BaseTemplate']  # type: ignore
 
     def clean(self):
         if not self.custom_email and self.send_to_custom_email:
@@ -242,19 +267,20 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         if not self.custom_email:
             return None
         plan = self.base.plan
-        client = plan.clients.first()
-        if client:
-            client = client.client
+        client_plan = plan.clients.first()
+        client: Client | None
+        if client_plan:
+            client = client_plan.client
         else:
             admin = plan.general_admins.first()
             if admin:
                 client = admin.get_admin_client()
         assert client
-        return EmailRecipient(email=self.custom_email, client=client)
+        return EmailRecipient(email=cast(str, self.custom_email), client=client)
 
 
 class AutomaticNotificationTemplate(NotificationTemplate):
-    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
+    base: PK[BaseTemplate] = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
 
     class ContactPersonFallbackChain(models.TextChoices):
         DO_NOT_SEND = '', _('Do not send to contact persons')
@@ -280,7 +306,7 @@ class AutomaticNotificationTemplate(NotificationTemplate):
         indicator_contacts: dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
         organization_plan_admins: dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
     ) -> Sequence[NotificationRecipient]:
-        recipients = []
+        recipients: list[NotificationRecipient] = []
         if self.send_to_plan_admins:
             recipients += plan_admins
         if self.send_to_custom_email:
@@ -355,7 +381,9 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
         db_default=NotificationType.MANUALLY_SCHEDULED.identifier,
         editable=False,
     )
-    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='manually_scheduled_notification_templates', editable=False)
+    base: ParentalKey[BaseTemplate, BaseTemplate] = ParentalKey(
+        BaseTemplate, on_delete=models.CASCADE, related_name='manually_scheduled_notification_templates', editable=False,
+    )
     date = models.DateField(null=False, blank=False)  # Must be interpreted as local to the plan timezone
     content = RichTextField(verbose_name=_('content'), help_text=_('The content of the notification'))
 
@@ -364,6 +392,21 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
     send_to_action_contact_persons = models.BooleanField(verbose_name=_('send to action contact persons'), default=True)
     send_to_indicator_contact_persons = models.BooleanField(verbose_name=_('send to indicator contact persons'), default=True)
     send_to_organization_admins = models.BooleanField(verbose_name=_('send to organization admins'), default=True)
+
+    class Meta(NotificationTemplate.Meta):
+        ordering = ('date', 'subject')
+        verbose_name = _('scheduled notification')
+        verbose_name_plural = _('scheduled notifications')
+        unique_together = (('base', 'date', 'subject'),)
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    (Q(custom_email='') & Q(send_to_custom_email=False))
+                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
+                ),
+                name='custom_email_iff_send_to_custom_email_the_sequel',
+            ),
+        ]
 
     def clean(self):
         # In practice this should not be called, it's only a safeguard if future admin UIs expose the type
@@ -378,7 +421,7 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
         indicator_contacts: dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
         organization_plan_admins: dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
     ) -> Sequence[NotificationRecipient]:
-        recipients = []
+        recipients: list[NotificationRecipient] = []
         if self.send_to_plan_admins:
             recipients += plan_admins
         if self.send_to_action_contact_persons:
@@ -396,21 +439,6 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
                 raise Exception(f'There is no custom email recipient for notifications of type {self.type}')
             recipients += [recipient]
         return recipients
-
-    class Meta(NotificationTemplate.Meta):
-        ordering = ('date', 'subject')
-        verbose_name = _('scheduled notification')
-        verbose_name_plural = _('scheduled notifications')
-        unique_together = (('base', 'date', 'subject'),)
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    (Q(custom_email='') & Q(send_to_custom_email=False))
-                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
-                ),
-                name='custom_email_iff_send_to_custom_email_the_sequel',
-            ),
-        ]
 
 
 class ContentBlockManager(models.Manager):

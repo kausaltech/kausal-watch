@@ -11,10 +11,11 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 
+from aplans.utils import OrderedModel
+
 from actions.models.action import Action
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
-from aplans.utils import OrderedModel
 
 
 class Dimension(ClusterableModel):
@@ -87,6 +88,12 @@ class DatasetSchema(models.Model):
     )
     unit = models.CharField(max_length=100, blank=True, verbose_name=_('unit'))
     name = models.CharField(max_length=100, blank=False, verbose_name=_('name'))
+    start_date = models.DateField(
+        verbose_name=_('start date'),
+        blank=True,
+        null=True,
+        help_text=_("First applicable date for datapoints in these datasets"),
+    )
 
     i18n = TranslationField(fields=['unit', 'name'])
     unit_i18n: str
@@ -131,25 +138,27 @@ class DatasetSchema(models.Model):
 
 
 class DatasetSchemaDimensionCategory(OrderedModel):
-    schema = models.ForeignKey(DatasetSchema, on_delete=models.PROTECT, related_name='dimension_categories', null=False, blank=False)
+    schema = models.ForeignKey(
+        DatasetSchema,
+        on_delete=models.PROTECT,
+        related_name='dimension_categories',
+        null=False,
+        blank=False,
+    )
     category = models.ForeignKey(DimensionCategory, related_name='schemas', on_delete=models.PROTECT, null=False, blank=False)
 
-    def filter_siblings(self, qs: models.QuerySet[DatasetSchemaDimensionCategory]) -> models.QuerySet[DatasetSchemaDimensionCategory]:
+    def filter_siblings(
+        self,
+        qs: models.QuerySet[DatasetSchemaDimensionCategory],
+    ) -> models.QuerySet[DatasetSchemaDimensionCategory]:
         return qs.filter(schema=self.schema, category__dimension=self.category.dimension)
-
-
-def schema_default():
-    """By default, new datasets will have their own unique schema."""
-    schema = DatasetSchema.objects.create()
-    return schema.pk
 
 
 class Dataset(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     schema = models.ForeignKey(
-        DatasetSchema, null=False, blank=False, related_name='datasets',
+        DatasetSchema, null=True, blank=True, related_name='datasets',
         verbose_name=_('schema'), on_delete=models.PROTECT,
-        default=schema_default,
     )
     # The "scope" generic foreign key links this dataset to an action or category
     scope_content_type = models.ForeignKey(
@@ -172,6 +181,14 @@ class Dataset(models.Model):
             ),
         )
 
+    def __str__(self):
+        return f'Dataset {self.uuid}'
+
+    def save(self, *args, **kwargs):
+        if self.schema is None:
+            self.schema = DatasetSchema.objects.create()
+        super().save(*args, **kwargs)
+
 
 class DatasetSchemaScope(models.Model):
     """Link a dataset schema to a context in which it can be used, such as a plan."""
@@ -183,6 +200,9 @@ class DatasetSchemaScope(models.Model):
     scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(  # pyright: ignore
         'scope_content_type', 'scope_id',
     ) # type: ignore[assignment]
+
+    def __str__(self):
+        return f'DatasetSchemaScope schema:{self.schema.uuid} scope:{self.scope}'
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -206,7 +226,16 @@ class DataPoint(models.Model):
         verbose_name=_('date'),
         help_text=_("Date of this data point in context of the dataset's time resolution"),
     )
-    value = models.DecimalField(max_digits=10, decimal_places=4, verbose_name=_('value'))
+    value = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        verbose_name=_('value'),
+        # null means that the data point is explicitly marked as not available or not applicable, for example
+        # - category combination not applicable or
+        # - data is known to be unavailable for date
+        null=True,
+        blank=True,
+    )
 
     class Meta:  # pyright:ignore
         verbose_name = _('data point')
@@ -218,3 +247,6 @@ class DataPoint(models.Model):
         #     models.UniqueConstraint(fields=['dataset', 'dimension_categories', 'date'],
         #                             name='unique_data_point_value')
         # ]
+
+    def __str__(self):
+        return f'Datapoint {self.uuid} / dataset {self.dataset.uuid}'

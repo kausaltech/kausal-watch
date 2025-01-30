@@ -1,4 +1,5 @@
 from django.conf import settings
+
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
 from social_core.backends.open_id_connect import OpenIdConnectAuth
 
@@ -48,7 +49,7 @@ class AzureADAuth(AzureADTenantOAuth2):
 
 
 class ADFSOpenIDConnectAuth(OpenIdConnectAuth):
-    """ Integrate with an on-premises Microsoft ADFS implementation """
+    """Integrate with an on-premises Microsoft ADFS implementation."""
 
     name = 'adfs-openidconnect'
     # When more than one customer needs this backend,

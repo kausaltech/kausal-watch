@@ -1,5 +1,6 @@
-from dal import autocomplete
 from django.db.models import Q
+
+from dal import autocomplete
 
 from .models import Person
 

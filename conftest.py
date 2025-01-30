@@ -4,17 +4,18 @@ import json
 import typing
 from typing import Protocol, Type
 
-import factory
-import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.urls import reverse
-from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
-from pytest_factoryboy import LazyFixture, register
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 from wagtail.test.utils import wagtail_factories
+
+import factory
+import pytest
+from factory import LazyAttribute, Sequence, SubFactory
+from pytest_factoryboy import LazyFixture, register
 
 from actions.models.attributes import AttributeType
 from actions.tests import factories as actions_factories
@@ -32,13 +33,14 @@ from users.tests import factories as users_factories
 if typing.TYPE_CHECKING:
     import django.test.client
     from django.db.models import Model
+
     from wagtail_modeladmin.options import ModelAdmin
 
     from users.models import User
 
 import logging
 
-logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARN)
+logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARNING)
 
 
 class JSONAPIClient(APIClient):
@@ -140,7 +142,7 @@ register(wagtail_factories.blocks.ImageChooserBlockFactory)
 register(wagtail_factories.factories.CollectionFactory)
 
 
-@pytest.fixture()
+@pytest.fixture
 @factory.django.mute_signals(post_save)
 def plan_with_pages(plan):
     plan.create_default_site()
@@ -148,24 +150,24 @@ def plan_with_pages(plan):
     return plan
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_admin_user(plan_admin_person):
     return plan_admin_person.user
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_contact_person(action):
     user = users_factories.UserFactory.create()
     person = people_factories.PersonFactory.create(contact_for_actions=[action], user=user)
     return person
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_contact_person_user(action_contact_person):
     return action_contact_person.user
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client_query(client):
     def func(*args, **kwargs):
         response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
@@ -173,7 +175,7 @@ def graphql_client_query(client):
     return func
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client_query_data(graphql_client_query):
     """Make a GraphQL request, make sure the `error` field is not present and return the `data` field."""
     def func(*args, **kwargs):
@@ -183,17 +185,17 @@ def graphql_client_query_data(graphql_client_query):
     return func
 
 
-@pytest.fixture()
+@pytest.fixture
 def uuid(user):
     return str(user.uuid)
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(user):
     return Token.objects.create(user=user).key
 
 
-@pytest.fixture()
+@pytest.fixture
 def contains_error():
     def func(response, code=None, message=None):
         if 'errors' not in response:
@@ -208,18 +210,18 @@ def contains_error():
 
 
 @pytest.fixture(autouse=True)
-def disable_search_autoupdate(settings):
+def _disable_search_autoupdate(settings) -> None:
     for conf in settings.WAGTAILSEARCH_BACKENDS.values():
         conf['AUTO_UPDATE'] = False
 
 
 class ModelAdminEditTest(Protocol):
-    def __call__(
+    def __call__(  # noqa: PLR0913
         self, admin_class: type[ModelAdmin], instance: Model, user: User,
-        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...
+        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...  # noqa: B006
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTest:
     def test_admin(
         admin_class: type[ModelAdmin], instance: Model, user: User,
@@ -262,7 +264,7 @@ def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTes
     return test_admin
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client():
     client = JSONAPIClient()
     return client
@@ -295,22 +297,22 @@ for format in AttributeType.AttributeFormat:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_attribute_type__category_choice__attribute_category_type(plan, category_type_factory):
     return category_type_factory(plan=plan)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type_choice_option(attribute_type_choice_option_factory, action_attribute_type__ordered_choice):
     return attribute_type_choice_option_factory(type=action_attribute_type__ordered_choice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type_choice_option__optional(attribute_type_choice_option_factory, action_attribute_type__optional_choice):
     return attribute_type_choice_option_factory(type=action_attribute_type__optional_choice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_choice(attribute_choice_factory, action_attribute_type__ordered_choice, action, action_attribute_type_choice_option):
     return attribute_choice_factory(
         type=action_attribute_type__ordered_choice,
@@ -325,7 +327,7 @@ def n_of_a_kind(factory, count, context={}):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def actions_having_attributes(
         plan,
         category_type,

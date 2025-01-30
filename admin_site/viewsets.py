@@ -1,44 +1,47 @@
-from typing import Generic, Type, TypeVar
+from __future__ import annotations
 
-from django.db import models
-from django.db.models import ProtectedError
+from typing import TYPE_CHECKING
+
+from django.db.models import Model, ProtectedError
+from django.forms.models import ModelForm
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from wagtail.admin import messages
-from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet
+from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.snippets.views.snippets import CreateView, EditView, IndexView, SnippetViewSet
+
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel
 
 from admin_site.forms import WatchAdminModelForm
 from admin_site.mixins import (
     ActivatePermissionHelperPlanContextMixin,
     ContinueEditingMixin,
-    PersistFiltersEditingMixin,
     PlanRelatedViewMixin,
     SetInstanceMixin,
 )
 from admin_site.permissions import PlanRelatedPermissionPolicy
+from admin_site.utils import admin_req
 from admin_site.wagtail import execute_admin_post_save_tasks
-from aplans.types import WatchAdminRequest
-from aplans.utils import PlanRelatedModel
 
-M = TypeVar('M', bound=models.Model)
+if TYPE_CHECKING:
+    from aplans.types import WatchAdminRequest
 
 
-class WatchEditView(
-    PersistFiltersEditingMixin,
+class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
+    # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
     ContinueEditingMixin,
     PlanRelatedViewMixin,
     ActivatePermissionHelperPlanContextMixin,
-    EditView,
-    SetInstanceMixin,
-    Generic[M],
+    EditView[ModelT, FormT],
+    # SetInstanceMixin, # TODO: Is this needed? Causes linting errors right now.
 ):
-    request: WatchAdminRequest
-    model: type[M]
+    object: ModelT
+    model: type[ModelT]
 
     def get_form_kwargs(self):
         return {
             **super().get_form_kwargs(),
-            'plan': self.request.user.get_active_admin_plan(),
+            'plan': admin_req(self.request).user.get_active_admin_plan(),
         }
 
     def form_valid(self, form, *args, **kwargs):
@@ -53,7 +56,7 @@ class WatchEditView(
             messages.validation_error(self.request, self.get_error_message(), form)
             return self.render_to_response(self.get_context_data(form=form))
 
-        execute_admin_post_save_tasks(form.instance, self.request.user)
+        execute_admin_post_save_tasks(form.instance, admin_req(self.request).user)
         return form_valid_return
 
     def get_error_message(self):
@@ -65,9 +68,45 @@ class WatchEditView(
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class WatchCreateView(CreateView, Generic[M]):
+class WatchCreateView[ModelT: Model, FormT: ModelForm](
+    # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
+    ContinueEditingMixin,
+    PlanRelatedViewMixin,
+    CreateView[ModelT, FormT],
+    # SetInstanceMixin,  # TODO: Is this needed? Causes linting errors right now.
+):
     request: WatchAdminRequest
-    model: type[M]
+
+    def initialize_instance(self, request: WatchAdminRequest, instance: ModelT) -> None:
+        """
+        Initialize the instance with plan defaults.
+
+        Override this in subclasses to implement custom initialization logic.
+        """
+        if isinstance(instance, PlanDefaultsModel):
+            plan = request.user.get_active_admin_plan()
+            instance.initialize_plan_defaults(plan)
+
+    def get_initial_form_instance(self):
+        instance = super().get_initial_form_instance()
+        if instance is None:
+            instance = self.model()
+
+        self.initialize_instance(self.request, instance)
+        return instance
+
+    def save_instance(self):
+        instance = super().save_instance()
+
+        if hasattr(instance, 'handle_admin_save'):
+            instance.handle_admin_save(
+                context={
+                    'user': self.request.user,
+                    'operation': 'create',
+                },
+            )
+
+        return instance
 
     def get_form_kwargs(self):
         return {
@@ -75,9 +114,15 @@ class WatchCreateView(CreateView, Generic[M]):
             'plan': self.request.user.get_active_admin_plan(),
         }
 
+class WatchIndexView[ModelT: Model, FormT: ModelForm](
+    ActivatePermissionHelperPlanContextMixin,
+    IndexView,
+):
+    pass
 
-class WatchViewSet(SnippetViewSet, Generic[M]):
-    model: type[M]
+
+class WatchViewSet[ModelT: Model, FormT: ModelForm](SnippetViewSet[ModelT, FormT]):
+    index_view_class = WatchIndexView
     add_view_class = WatchCreateView
     edit_view_class = WatchEditView
 
@@ -88,6 +133,6 @@ class WatchViewSet(SnippetViewSet, Generic[M]):
         return super().permission_policy
 
     def get_form_class(self, for_update: bool = False):
-        if not self._edit_handler.base_form_class:
-            self._edit_handler.base_form_class = WatchAdminModelForm
+        if self._edit_handler and not self._edit_handler.base_form_class:
+            self._edit_handler.base_form_class = WatchAdminModelForm[ModelT]
         return super().get_form_class(for_update)

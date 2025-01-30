@@ -1,9 +1,14 @@
+from __future__ import annotations
+
+import typing
 from functools import lru_cache
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
+
+from treelib import Tree
 
 from content.models import SiteGeneralContent
 from indicators.models import (
@@ -24,7 +29,7 @@ from indicators.models import (
     Unit,
 )
 from notifications.models import AutomaticNotificationTemplate, BaseTemplate, ContentBlock
-from orgs.models import Organization
+from orgs.models import Organization, OrganizationPlanAdmin
 from people.models import Person
 from reports.models import Report, ReportType
 
@@ -43,17 +48,20 @@ from .models import (
     AttributeTypeChoiceOption,
     Category,
     CategoryType,
+    GeneralPlanAdmin,
     ImpactGroup,
     ImpactGroupAction,
     MonitoringQualityPoint,
     Plan,
 )
 
+if typing.TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+
+
 User = get_user_model()
 
-
 ACTIONS_APP = 'actions'
-
 ALL_PERMS = ('view', 'change', 'publish', 'delete', 'add')
 
 
@@ -102,6 +110,7 @@ def get_action_contact_person_perms():
     new_perms += _get_perm_objs(Action, ('view', 'change', 'publish'))
     new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
     new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
+    new_perms += _get_perm_objs(Plan, ('view',))
     new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)
     new_perms += _get_perm_objs(ActionStatusUpdate, ALL_PERMS)
     new_perms += _get_perm_objs(ActionIndicator, ('view',))
@@ -239,7 +248,7 @@ def remove_contact_person_perms(user, model):
 
 
 PLAN_ADMIN_PERMS = (
-    (Plan, ('view', 'change')),
+    (Plan, ('view', 'change', 'publish', 'add')),
     (Action, ALL_PERMS),
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),
@@ -319,8 +328,8 @@ def _sync_plan_admin_groups(user):
         if plan.root_collection is not None:
             _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
         root_pages = set()
-        if plan.root_page is not None:
-            root_pages |= set(plan.root_page.get_translations(inclusive=True))
+        if plan.site and plan.site.root_page:
+            root_pages |= set(plan.site.root_page.get_translations(inclusive=True))
         root_pages |= set(plan.documentation_root_pages.all())
         _sync_group_page_perms(root_pages, group)
 
@@ -362,3 +371,99 @@ class ActionRelatedAdminPermMixin:
         if not isinstance(obj, Action):
             obj = None
         return request.user.can_modify_action(obj)
+
+
+@lru_cache
+def get_people_with_login_rights():
+    all_orgs = _make_organization_tree(
+        Organization.objects.order_by('path').all(),
+    )
+    return calculate_people_with_login_rights(
+        superusers=set(
+            Person.objects.filter(user__is_superuser=True).values_list('pk', flat=True),
+        ),
+        general_plan_admins=set(
+            GeneralPlanAdmin.objects.values_list('person_id', flat=True),
+        ),
+        action_contact_persons=set(
+            ActionContactPerson.objects.values_list('person_id', flat=True),
+        ),
+        indicator_contact_persons=set(
+            IndicatorContactPerson.objects.values_list('person_id', flat=True),
+        ),
+        responsible_orgs=set(
+            ActionResponsibleParty.objects.values_list('organization_id', flat=True),
+        ),
+        primary_orgs=set(
+            Action.objects.values_list('primary_org_id', flat=True),
+        ),
+        indicator_orgs=set(
+            Indicator.objects.values_list('organization_id', flat=True),
+        ),
+        organization_plan_admins=set(
+            OrganizationPlanAdmin.objects.values_list('organization_id', 'person_id'),
+        ),
+        all_orgs=all_orgs,
+    )
+
+
+def calculate_people_with_login_rights(  # noqa: PLR0913
+    *,
+    superusers: set[int],
+    general_plan_admins: set[int],
+    action_contact_persons: set[int],
+    indicator_contact_persons: set[int],
+    responsible_orgs: set[int],
+    primary_orgs: set[int],
+    indicator_orgs: set[int],
+    organization_plan_admins: set[tuple[int, int]],
+    all_orgs: Tree,
+) -> set[int]:
+    """
+    Return a set of Person pks specifying all the persons who have any edit rights in the system.
+
+    Receive a snapshot with sets of pks for all model instances in the db which are needed for determining
+    if a person has some edit rights anywhere in the system to determine this.
+
+    """
+    persons_with_permissions_pks = (
+        superusers |
+        general_plan_admins |
+        action_contact_persons |
+        indicator_contact_persons
+    )
+    used_org_ids = (
+        responsible_orgs |
+        primary_orgs |
+        indicator_orgs
+    )
+    for org_id, person_id in organization_plan_admins:
+        org_and_descendants = set(all_orgs.expand_tree(org_id))
+        if org_and_descendants.intersection(used_org_ids):
+            persons_with_permissions_pks.add(person_id)
+
+    return persons_with_permissions_pks
+
+
+def _make_organization_tree(all_orgs: QuerySet[Organization]) -> Tree:
+    orgs_by_path = { org.path: org for org in all_orgs }
+    tree = Tree()
+    root_id = -1
+    tree.create_node(
+        tag='<root>',
+        identifier=root_id,
+        parent=None,
+    )
+    for o in all_orgs:
+        if o.is_root():
+            parent_id = root_id
+        else:
+            parent_path = o.get_parent_path()
+            assert parent_path is not None
+            parent_id = orgs_by_path[parent_path].pk
+        tree.create_node(
+            tag=o.name,
+            identifier=o.pk,
+            parent=parent_id,
+        )
+    return tree

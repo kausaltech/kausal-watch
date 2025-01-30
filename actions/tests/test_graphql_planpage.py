@@ -1,5 +1,6 @@
-import pytest
 from wagtail import blocks
+
+import pytest
 
 from actions.tests.factories import ActionListBlockFactory
 from indicators.blocks import IndicatorBlock

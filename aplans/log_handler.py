@@ -113,7 +113,7 @@ class LogHandler(RichHandler):
 
     def render_message(self, record: LogRecord, message: str) -> ConsoleRenderable:
         extra: dict[str, Any] = getattr(record, 'extra', {})
-        tenant_id = extra.get('tenant', None)
+        tenant_id = extra.get('tenant')
         if tenant_id:
             message = '[%s] %s' % (extra['tenant'], message)
         if 'session' in extra:
@@ -132,12 +132,15 @@ class LogHandler(RichHandler):
         Render log for display.
 
         Args:
+        ----
             record (LogRecord): logging Record.
             traceback (Optional[Traceback]): Traceback instance or None for no Traceback.
             message_renderable (ConsoleRenderable): Renderable (typically Text) containing log message contents.
 
         Returns:
+        -------
             ConsoleRenderable: Renderable to display log.
+
         """
         path = Path(record.pathname).name
         level = self.get_level_text(record)

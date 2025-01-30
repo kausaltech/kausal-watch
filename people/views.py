@@ -11,6 +11,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext as _, gettext_lazy
 from wagtail.admin import messages
 from wagtail.admin.forms.auth import PasswordResetForm
+
 from wagtail_modeladmin.views import WMABaseView
 
 from people.models import Person

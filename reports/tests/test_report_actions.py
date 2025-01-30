@@ -1,8 +1,9 @@
 import typing
 
-import pytest
 import reversion
 from reversion.models import Revision, Version
+
+import pytest
 
 from actions.models import Action
 from reports.models import ActionSnapshot, Report, SerializedActionVersion
@@ -12,7 +13,7 @@ from .fixtures import *  # noqa
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def report_type_with_multiple_reports(plan, report_type_factory, report_factory):
     rt = report_type_factory(plan=plan)
     report_factory(type=rt, name='Report 1')
@@ -21,7 +22,7 @@ def report_type_with_multiple_reports(plan, report_type_factory, report_factory)
     return rt
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_with_some_actions(plan, action_factory):
     for _ in range(9):
         action_factory(plan=plan)

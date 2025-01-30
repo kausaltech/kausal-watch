@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
@@ -6,10 +10,14 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 
 from actions.models.plan import Plan
+from pages.models import DefaultSlugForCopyingMixin
+
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
 
 
-class DocumentationRootPage(Page):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='documentation_root_pages')
+class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[misc]
+    plan: FK[Plan] = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='documentation_root_pages')
 
     content_panels = [
         FieldPanel('title'),
@@ -30,7 +38,7 @@ class DocumentationPage(Page):
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
     ], blank=True)
-    css_style = models.CharField(
+    css_style = models.CharField[str, str](
         max_length=1000, blank=True, verbose_name=_('CSS style'),
         help_text=_('CSS style to be applied to the container of the body'),
     )

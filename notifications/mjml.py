@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils.formats import date_format
 from django.utils.translation import get_language
 from django.utils.translation.trans_real import DjangoTranslation
+
 from jinja2 import FileSystemLoader, StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
 from sentry_sdk import capture_exception

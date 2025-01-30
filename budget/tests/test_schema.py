@@ -484,10 +484,10 @@ def test_integration_for_action(graphql_client_query_data, action):
     dataset1 = DatasetFactory(scope=action, schema=schema1)
     dataset2 = DatasetFactory(scope=action, schema=schema2)
 
-    data_point1 = DataPointFactory(dataset=dataset1, date=date(2024, 1, 1), value=10.51)
-    data_point1.dimension_categories.set([dim_category1])
     data_point2 = DataPointFactory(dataset=dataset1, date=date(2024, 2, 1), value=15.22)
     data_point2.dimension_categories.set([dim_category2])
+    data_point1 = DataPointFactory(dataset=dataset1, date=date(2024, 1, 1), value=10.51)
+    data_point1.dimension_categories.set([dim_category1])
     data_point3 = DataPointFactory(dataset=dataset2, date=date(2024, 3, 1), value=8)
     data_point3.dimension_categories.set([dim_category1, dim_category2])
 

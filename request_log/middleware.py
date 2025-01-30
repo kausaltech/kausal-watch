@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpRequest
 from django.utils.deprecation import MiddlewareMixin
+
 from sentry_sdk import capture_exception
 
 from request_log.models import LoggedRequest

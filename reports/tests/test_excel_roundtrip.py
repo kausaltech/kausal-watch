@@ -1,10 +1,11 @@
 from io import BytesIO
 
+from django.utils import translation
+from django.utils.translation import gettext as _
+
 import polars
 import polars.selectors as cs
 import pytest
-from django.utils import translation
-from django.utils.translation import gettext as _
 
 from .fixtures import *  # noqa
 
@@ -15,7 +16,7 @@ polars.Config.set_tbl_cols(20)
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def excel_file_from_report_factory(actions_having_attributes, report_with_all_attributes):
     def _excel_factory():
         assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True
@@ -41,7 +42,8 @@ def assert_report_dimensions(excel_file, report, actions):
         non_report_fields.extend(['marked_as_complete_by', 'marked_as_complete_at'])
 
     # optional choice attribute results in two columns, hence + 1
-    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1
+    # responsible parties columns result in 3 columns, hence + 2
+    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1 + 2
     assert df_actions.height == len(actions)
     return df_actions
 
@@ -53,7 +55,7 @@ def test_excel_export(
         user,
         django_assert_max_num_queries,
 ):
-    with django_assert_max_num_queries(272):
+    with django_assert_max_num_queries(283):
         # report.get_live_action_versions hack still causes some extra queries
         # because of implementation details wrt. reversion
         excel_file_incomplete = excel_file_from_report_factory()

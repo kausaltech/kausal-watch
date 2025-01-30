@@ -1,6 +1,7 @@
+from aplans.types import WatchAdminRequest
+
 from actions.models.plan import Plan
 from admin_site.models import Client
-from aplans.types import WatchAdminRequest
 
 
 class AdminContextRequest(WatchAdminRequest):
@@ -17,6 +18,7 @@ def current_plan(request: AdminContextRequest):
     else:
         plan = request.user.get_active_admin_plan(required=False)
         request._active_plan = plan
+
     if getattr(request, '_active_client', None):
         client = request._active_client
     else:

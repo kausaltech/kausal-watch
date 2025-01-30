@@ -1,24 +1,17 @@
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Type, TypeGuard, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from django.http import HttpRequest
 
-if typing.TYPE_CHECKING:
-    from django.contrib.auth.models import AnonymousUser
+from kausal_common.users import UserOrAnon  # noqa: TCH001, TCH002
 
+if typing.TYPE_CHECKING:
     from actions.models import Plan
     from users.models import User
 
     from .cache import PlanSpecificCache, WatchObjectCache
-
-
-UserOrAnon: typing.TypeAlias = 'User | AnonymousUser'
-
-
-def is_authenticated(user: UserOrAnon) -> TypeGuard[User]:
-    return user.is_authenticated
 
 
 class WatchRequest(HttpRequest):

@@ -2,9 +2,10 @@ import io
 import logging
 from uuid import uuid4
 
+from wagtail.users.models import UserProfile
+
 from sentry_sdk import capture_exception
 from social_core.backends.oauth import OAuthAuth
-from wagtail.users.models import UserProfile
 
 from admin_site.msgraph import get_user_photo
 

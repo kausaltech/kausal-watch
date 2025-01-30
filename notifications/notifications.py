@@ -7,6 +7,7 @@ from enum import Enum
 
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _, pgettext
+
 from markupsafe import Markup
 
 if typing.TYPE_CHECKING:
@@ -29,8 +30,8 @@ class Notification(ABC):
     plan: Plan
     obj: NotificationObject
 
-    def __init__(self, type: NotificationType, plan: Plan, obj: typing.Any):
-        self.type = type
+    def __init__(self, type_: NotificationType, plan: Plan, obj: NotificationObject):
+        self.type = type_
         self.plan = plan
         self.obj = obj
 
@@ -72,7 +73,8 @@ class Notification(ABC):
     def get_default_intro_text(cls) -> str | None:
         """
         Return None if this notification type does not need a default text
-        when initializing the default notification templates, otherwise a string"""
+        when initializing the default notification templates, otherwise a string
+        """
         pass
 
     @classmethod
@@ -95,7 +97,7 @@ class DeadlinePassedNotification(Notification):
                 if days < MINIMUM_NOTIFICATION_PERIOD:
                     # We don't want to remind too often
                     continue
-                if self.days_late not in (1, 7) and not (self.days_late % 30 == 0):
+                if self.days_late not in (1, 7) and self.days_late % 30 != 0:
                     # If we have reminded about this before, let's only
                     # send a reminder if it's late one day, a week or 30, 60, 90... days
                     continue
@@ -108,6 +110,8 @@ class DeadlinePassedNotification(Notification):
 
 
 class TaskLateNotification(DeadlinePassedNotification):
+    obj: ActionTask
+
     def __init__(self, plan: Plan, task: ActionTask, days_late: int):
         super().__init__(NotificationType.TASK_LATE, plan, task, days_late)
 
@@ -131,6 +135,7 @@ class TaskLateNotification(DeadlinePassedNotification):
 
 
 class UpdatedIndicatorValuesLateNotification(DeadlinePassedNotification):
+    obj: Indicator
     def __init__(self, plan: Plan, indicator: Indicator, days_late: int):
         super().__init__(NotificationType.UPDATED_INDICATOR_VALUES_LATE, plan, indicator, days_late)
 
@@ -179,6 +184,7 @@ class DeadlineSoonNotification(Notification):
 
 
 class TaskDueSoonNotification(DeadlineSoonNotification):
+    obj: ActionTask
     def __init__(self, plan: Plan, task: ActionTask, days_left: int):
         super().__init__(NotificationType.TASK_DUE_SOON, plan, task, days_left)
 
@@ -204,6 +210,7 @@ class TaskDueSoonNotification(DeadlineSoonNotification):
 
 
 class UpdatedIndicatorValuesDueSoonNotification(DeadlineSoonNotification):
+    obj: Indicator
     def __init__(self, plan: Plan, indicator: Indicator, days_left: int):
         super().__init__(NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON, plan, indicator, days_left)
 
@@ -227,6 +234,7 @@ class UpdatedIndicatorValuesDueSoonNotification(DeadlineSoonNotification):
 
 
 class NotEnoughTasksNotification(Notification):
+    obj: Action
     def __init__(self, plan: Plan, action: Action):
         super().__init__(NotificationType.NOT_ENOUGH_TASKS, plan, action)
 
@@ -265,6 +273,7 @@ class NotEnoughTasksNotification(Notification):
 
 
 class ActionNotUpdatedNotification(Notification):
+    obj: Action
     def __init__(self, plan: Plan, action: Action):
         super().__init__(NotificationType.ACTION_NOT_UPDATED, plan, action)
 
@@ -330,6 +339,8 @@ class UserFeedbackReceivedNotification(Notification):
 
 
 class ManuallyScheduledNotification(Notification):
+    obj: ManuallyScheduledNotificationTemplate
+
     def __init__(self, plan: Plan, template: ManuallyScheduledNotificationTemplate):
         super().__init__(NotificationType.MANUALLY_SCHEDULED, plan, template)
 
@@ -389,7 +400,7 @@ class NotificationType(Enum):
     MANUALLY_SCHEDULED = ManuallyScheduledNotification
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self.name.lower()
 
     @property

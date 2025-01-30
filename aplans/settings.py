@@ -3,22 +3,28 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from django.utils.translation import gettext_lazy as _
+
 import environ
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers as default_cors_headers
-from django.utils.translation import gettext_lazy as _
 from environ.environ import ImproperlyConfigured
 
+from kausal_common import ENV_SCHEMA as COMMON_ENV_SCHEMA, register_settings as register_common_settings
+from kausal_common.deployment import set_secret_file_vars
 from kausal_common.sentry.init import init_sentry
 from kausal_common.storage import storage_settings_from_s3_url
 
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
+
+
+# TODO: Rename to `watch`. But then we need to also rename the `aplans` directory and references.
+PROJECT_NAME = 'aplans'
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(
@@ -32,17 +38,14 @@ env = environ.FileAwareEnv(
     CONFIGURE_LOGGING=(bool, True),
     DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     DATABASE_CONN_MAX_AGE=(int, 20),
+    REDIS_URL=(str, ''),
     CACHE_URL=(str, 'locmemcache://'),
     MEDIA_ROOT=(environ.Path(), root('media')),
     STATIC_ROOT=(environ.Path(), root('static')),
     MEDIA_URL=(str, '/media/'),
     STATIC_URL=(str, '/static/'),
     SENTRY_DSN=(str, ''),
-    COOKIE_PREFIX=(str, 'aplans'),
-    ALLOWED_SENDER_EMAILS=(list, []),
-    SERVER_EMAIL=(str, ''),
-    DEFAULT_FROM_EMAIL=(str, 'noreply@mj.kausal.tech'),
-    DEFAULT_FROM_NAME=(str, 'Kausal'),
+    COOKIE_PREFIX=(str, PROJECT_NAME),
     INTERNAL_IPS=(list, []),
     OIDC_ISSUER_URL=(str, ''),
     OIDC_CLIENT_ID=(str, ''),
@@ -57,39 +60,53 @@ env = environ.FileAwareEnv(
     ADFS_CLIENT_ID=(str, ''),
     ADFS_CLIENT_SECRET=(str, ''),
     ADFS_API_URL=(str, ''),
-    MAILGUN_API_KEY=(str, ''),
-    MAILGUN_SENDER_DOMAIN=(str, ''),
-    MAILGUN_REGION=(str, ''),
-    MAILJET_API_KEY=(str, ''),
-    MAILJET_SECRET_KEY=(str, ''),
-    SENDGRID_API_KEY=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
-    CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
-    CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
     LOG_GRAPHQL_QUERIES=(bool, False),
+    LOG_PEOPLE_VERBOSE=(bool, True),
+    LOG_DJANGO_RUNSERVER_MINIMIZE_NOISE=(bool, False),
+    LOG_DJANGO_RUNSERVER_REQUESTS_MEDIA=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_STATIC=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_FAVICON=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_BROKEN_PIPE=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_MEDIA=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_STATIC=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_FAVICON=(bool, True),
     S3_MEDIA_STORAGE_URL=(str, ''),
     REQUEST_LOG_MAX_DAYS=(int, 90),
     REQUEST_LOG_METHODS=(list, ['POST', 'PUT', 'PATCH', 'DELETE']),
     REQUEST_LOG_IGNORE_PATHS=(list, ['/v1/graphql/']),
     GITHUB_APP_ID=(str, ''),
-    GITHUB_APP_PRIVATE_KEY_FILE=(str, ''),
     GITHUB_APP_PRIVATE_KEY=(str, ''),
-    DEPLOY_ALLOWED_CNAMES=(list, []),
+    DEPLOY_ALLOWED_CNAMES_PRODUCTION=(list, []),
+    DEPLOY_ALLOWED_CNAMES_PREVIEW=(list, []),
+    DEPLOY_ALLOWED_CNAMES_DEVELOPMENT=(list, []),
     DEPLOY_TASK_GITOPS_REPO=(str, ''),
+    MOUNTED_SECRET_PATHS=(list, []),
+    ENABLE_DEBUG_TOOLBAR=(bool, False),
+    KAUSAL_PATHS_URL=(str, ''),
+    **COMMON_ENV_SCHEMA,
 )
 
 BASE_DIR = root()
 
-if env.bool('ENV_FILE'):
-    environ.Env.read_env(env.str('ENV_FILE'))
+ENV_FILE = env.str('ENV_FILE', None)  # pyright: ignore[reportArgumentType]
+if ENV_FILE:
+    if not Path(ENV_FILE).exists():
+        raise ImproperlyConfigured(f'File {ENV_FILE} specified in ENV_FILE does not exist')
+    environ.Env.read_env(ENV_FILE)
 else:
-    dotenv_path = Path(BASE_DIR) / Path('.env')
+    dotenv_path = BASE_DIR / Path('.env')
     if dotenv_path.exists():
         environ.Env.read_env(dotenv_path)
+
+# Read all files in the directories given in MOUNTED_SECRET_PATHS whose names look like environment variables and use
+# the contents of the files for the corresponding variables
+for directory in env('MOUNTED_SECRET_PATHS'):
+    set_secret_file_vars(env, directory)
 
 DEBUG = env('DEBUG')
 DEPLOYMENT_TYPE = env('DEPLOYMENT_TYPE')
@@ -105,50 +122,49 @@ DATABASES['default']['ATOMIC_REQUESTS'] = True
 # https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# If Redis is configured, but no CACHE_URL is set in the environment,
+# default to using Redis as the cache.
+REDIS_URL = env('REDIS_URL')
+
+cache_var = 'CACHE_URL'
+if env.get_value('CACHE_URL', default=None) is None and REDIS_URL:  # pyright: ignore
+    cache_var = 'REDIS_URL'
 CACHES = {
-    'default': env.cache(),
+    'default': env.cache_url(var=cache_var),
     'renditions': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'watch-renditions',
     },
 }
+if 'KEY_PREFIX' not in CACHES['default']:
+    CACHES['default']['KEY_PREFIX'] = PROJECT_NAME
 
 ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
 
 SECRET_KEY = env('SECRET_KEY')
 
-ALLOWED_SENDER_EMAILS = env('ALLOWED_SENDER_EMAILS')
-SERVER_EMAIL = env('SERVER_EMAIL')
-if not SERVER_EMAIL and ALLOWED_SENDER_EMAILS:
-    SERVER_EMAIL = ALLOWED_SENDER_EMAILS[0]
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
-if not DEFAULT_FROM_EMAIL and ALLOWED_SENDER_EMAILS:
-    DEFAULT_FROM_EMAIL = ALLOWED_SENDER_EMAILS[0]
-DEFAULT_FROM_NAME = env('DEFAULT_FROM_NAME')
-
 ADMIN_BASE_URL = env('ADMIN_BASE_URL')
 WAGTAILADMIN_BASE_URL = ADMIN_BASE_URL
 WAGTAILADMIN_COMMENTS_ENABLED = True
 
-# Information needed to authentiacte as a GitHub App
+# Information needed to authenticate as a GitHub App
 GITHUB_APP_ID = env('GITHUB_APP_ID')
+GITHUB_APP_PRIVATE_KEY = env('GITHUB_APP_PRIVATE_KEY')
 
-github_private_key_file_path = env('GITHUB_APP_PRIVATE_KEY_FILE')
-if github_private_key_file_path:
-    with open(github_private_key_file_path, 'r') as key_file:
-        GITHUB_APP_PRIVATE_KEY = key_file.read()
-else:
-    GITHUB_APP_PRIVATE_KEY = env('GITHUB_APP_PRIVATE_KEY')
+DEPLOY_ALLOWED_CNAMES_PRODUCTION = env('DEPLOY_ALLOWED_CNAMES_PRODUCTION')
+DEPLOY_ALLOWED_CNAMES_PREVIEW = env('DEPLOY_ALLOWED_CNAMES_PREVIEW')
+DEPLOY_ALLOWED_CNAMES_DEVELOPMENT = env('DEPLOY_ALLOWED_CNAMES_DEVELOPMENT')
 
-
-DEPLOY_ALLOWED_CNAMES = env('DEPLOY_ALLOWED_CNAMES')
 DEPLOY_TASK_GITOPS_REPO = env('DEPLOY_TASK_GITOPS_REPO')
+
+KAUSAL_PATHS_URL = env('KAUSAL_PATHS_URL')
 
 SITE_ID = 1
 
 # Application definition
 
 INSTALLED_APPS = [
+    'kausal_common',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
     'dal',
@@ -165,7 +181,6 @@ INSTALLED_APPS = [
     'social_django',
     'django_extensions',
     'import_export',
-    'anymail',
     'modeltrans',
     'corsheaders',
 
@@ -212,6 +227,7 @@ INSTALLED_APPS += [
     'actions',
     'budget',
     'content',
+    'copying',
     'documentation',
     'feedback',
     'indicators',
@@ -234,19 +250,19 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'aplans.middleware.SocialAuthExceptionMiddleware',
-    'aplans.middleware.RequestMiddleware',
-    'aplans.middleware.AdminMiddleware',
+    f'{PROJECT_NAME}.middleware.SocialAuthExceptionMiddleware',
+    f'{PROJECT_NAME}.middleware.RequestMiddleware',
+    f'{PROJECT_NAME}.middleware.AdminMiddleware',
     'request_log.middleware.LogUnsafeRequestMiddleware',
     'hijack.middleware.HijackUserMiddleware',
 ]
 
-ROOT_URLCONF = 'aplans.urls'
+ROOT_URLCONF = f'{PROJECT_NAME}.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [BASE_DIR / Path('templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -274,18 +290,23 @@ STORAGES: dict[str, dict[str, Any]] = {
     },
 }
 
-media_storage_url: ParseResult = env.url('S3_MEDIA_STORAGE_URL')
-if media_storage_url.scheme:
-    if media_storage_url.scheme != 's3':
-        raise ImproperlyConfigured('S3_MEDIA_STORAGE_URL only supports s3 scheme')
-    STORAGES['default'] = storage_settings_from_s3_url(media_storage_url, DEPLOYMENT_TYPE)
+# If we're running under pytest, use InMemoryStorage. Otherwise, we check
+# if the S3 backend is configured and use that instead.
+if 'pytest' in sys.modules:
+    STORAGES['default']['BACKEND'] = 'django.core.files.storage.InMemoryStorage'
+else:
+    media_storage_url: ParseResult = env.url('S3_MEDIA_STORAGE_URL')
+    if media_storage_url.scheme:
+        if media_storage_url.scheme != 's3':
+            raise ImproperlyConfigured('S3_MEDIA_STORAGE_URL only supports s3 scheme')
+        STORAGES['default'] = storage_settings_from_s3_url(media_storage_url, DEPLOYMENT_TYPE)
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-WSGI_APPLICATION = 'aplans.wsgi.application'
+WSGI_APPLICATION = f'{PROJECT_NAME}.wsgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -392,13 +413,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PERMISSION_CLASSES': (
-        'aplans.permissions.AnonReadOnly',
+        f'{PROJECT_NAME}.permissions.AnonReadOnly',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'DEFAULT_SCHEMA_CLASS': 'aplans.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': f'{PROJECT_NAME}.openapi.AutoSchema',
 }
 
 
@@ -414,9 +435,9 @@ CORS_ALLOW_HEADERS = list(default_cors_headers) + [
 # GraphQL
 #
 GRAPHENE = {
-    'SCHEMA': 'aplans.schema.schema',
+    'SCHEMA': f'{PROJECT_NAME}.schema.schema',
     'MIDDLEWARE': [
-        'aplans.graphene_views.APITokenMiddleware',
+        f'{PROJECT_NAME}.graphene_views.APITokenMiddleware',
     ],
     'DJANGO_CHOICE_FIELD_ENUM_V2_NAMING': True,
 }
@@ -495,7 +516,7 @@ WAGTAIL_I18N_ENABLED = True
 USE_TZ = True
 
 LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
+    str(BASE_DIR / Path('locale')),
 ]
 
 SPECTACULAR_SETTINGS = {
@@ -509,28 +530,6 @@ SPECTACULAR_SETTINGS = {
         'OtherLanguagesEnum': LANGUAGES,
     },
 }
-
-#
-# Email
-#
-EMAIL_BACKEND = "anymail.backends.console.EmailBackend"
-ANYMAIL = {}
-
-if env.str('MAILGUN_API_KEY'):
-    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-    ANYMAIL['MAILGUN_API_KEY'] = env.str('MAILGUN_API_KEY')
-    ANYMAIL['MAILGUN_SENDER_DOMAIN'] = env.str('MAILGUN_SENDER_DOMAIN')
-    if env.str('MAILGUN_REGION'):
-        ANYMAIL['MAILGUN_API_URL'] = 'https://api.%s.mailgun.net/v3' % env.str('MAILGUN_REGION')
-
-if env.str('SENDGRID_API_KEY'):
-    EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
-    ANYMAIL['SENDGRID_API_KEY'] = env.str('SENDGRID_API_KEY')
-
-if env.str('MAILJET_API_KEY'):
-    EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
-    ANYMAIL['MAILJET_API_KEY'] = env.str('MAILJET_API_KEY')
-    ANYMAIL['MAILJET_SECRET_KEY'] = env.str('MAILJET_SECRET_KEY')
 
 # ckeditor for rich-text admin fields
 CKEDITOR_CONFIGS = {
@@ -575,19 +574,37 @@ WAGTAILEMBEDS_FINDERS = [
         'class': 'wagtail.embeds.finders.oembed',
     },
     {
-        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'Google Maps',
+        'domain_whitelist': ('google.com/maps',),
+        'title': 'Map',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'OpenStreetMap',
+        'domain_whitelist': ('openstreetmap.org',),
+        'title': 'Map',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'ArcGIS',
         'domain_whitelist': ('arcgis.com', 'maps.arcgis.com'),
         'title': 'Map',
     },
     {
-        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'Plotly Chart Studio',
         'domain_whitelist': ('chart-studio.plotly.com',),
         'title': 'Chart',
     },
     {
-        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'PowerBI',
+        'domain_whitelist': ('app.powerbi.com',),
+        'title': 'Chart',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'Sharepoint',
         'domain_whitelist': ('sharepoint.com', ),
         'title': 'Document',
@@ -600,7 +617,7 @@ WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
 WAGTAIL_PASSWORD_RESET_ENABLED = True
 WAGTAILADMIN_PERMITTED_LANGUAGES = list(LANGUAGES)
 WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
-WAGTAILSEARCH_BACKENDS = {
+WAGTAILSEARCH_BACKENDS: dict[str, dict[str, Any]] = {
     # Will be overridden below if ELASTICSEARCH_URL is specified
     'default': {
         'BACKEND': 'wagtail.search.backends.database',
@@ -608,7 +625,7 @@ WAGTAILSEARCH_BACKENDS = {
 }
 
 if ELASTICSEARCH_URL:
-    ANALYSIS_CONFIG = {
+    ANALYSIS_CONFIG: dict[str, dict[str, Any]] = {
         'fi': {
             'analyzer': {
                 'default': {
@@ -695,7 +712,7 @@ THUMBNAIL_PROCESSORS = (
     'images.processors.scale_and_crop',
     'easy_thumbnails.processors.filters',
 )
-IMAGE_CROPPING_JQUERY_URL = None
+IMAGE_CROPPING_JQUERY_URL: str | None = None
 THUMBNAIL_HIGH_RESOLUTION = True
 
 WAGTAIL_SLIM_SIDEBAR = False
@@ -724,11 +741,11 @@ SILENCED_SYSTEM_CHECKS = [
     'fields.W904',  # postgres JSONField -> django JSONField
 ]
 
-ENABLE_DEBUG_TOOLBAR = False
+ENABLE_DEBUG_TOOLBAR = env('ENABLE_DEBUG_TOOLBAR')
 
 # Show full SQL queries when running `runserver_plus` or `shell_plus` with `--print-sql`
-SHELL_PLUS_PRINT_SQL_TRUNCATE = None
-RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
+SHELL_PLUS_PRINT_SQL_TRUNCATE: int | None = None
+RUNSERVER_PLUS_PRINT_SQL_TRUNCATE: int | None = None
 
 
 HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
@@ -740,35 +757,36 @@ COMMON_CATEGORIES_COLLECTION = 'Common Categories'
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
-f = os.path.join(BASE_DIR, "local_settings.py")
-if os.path.exists(f):
+local_settings = Path(BASE_DIR) / Path("local_settings.py")
+if local_settings.exists():
     import types
     module_name = "%s.local_settings" % ROOT_URLCONF.split('.')[0]
     module = types.ModuleType(module_name)
-    module.__file__ = f
+    module.__file__ = str(local_settings)
     sys.modules[module_name] = module
-    exec(open(f, "rb").read())
+    exec(local_settings.read_bytes())  # noqa: S102
 
 if not locals().get('SECRET_KEY', ''):
-    secret_file = os.path.join(BASE_DIR, '.django_secret')
+    secret_file = Path(BASE_DIR) / Path('.django_secret')
     try:
-        with open(secret_file) as f:
+        with secret_file.open() as f:
             SECRET_KEY = f.read().strip()
-    except IOError:
+    except OSError:
         import random
+
         system_random = random.SystemRandom()
         try:
-            SECRET_KEY = ''.join([system_random.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(64)])  # noqa
-            secret = open(secret_file, 'w')
-            import os
-            os.chmod(secret_file, 0o0600)
-            secret.write(SECRET_KEY)
-            secret.close()
-        except IOError:
-            Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)
+            SECRET_KEY = ''.join([system_random.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(64)])
+            with secret_file.open('w') as f:
+                secret_file.chmod(0o0600)
+                f.write(SECRET_KEY)
+        except OSError:
+            raise ImproperlyConfigured(
+                'Please create a %s file with random characters to generate your secret key!' % secret_file,
+            ) from None
 
 
-if DEBUG:
+if DEBUG:  # noqa: SIM102
     if len(sys.argv) > 1 and 'runserver' in sys.argv[1]:
         try:
             from aplans.watchfiles_reloader import replace_reloader
@@ -776,18 +794,44 @@ if DEBUG:
         except ImportError:
             pass
 
-    from rich.traceback import install
-    install()
 
 LOG_SQL_QUERIES = env('LOG_SQL_QUERIES') and DEBUG
 LOG_GRAPHQL_QUERIES = env('LOG_GRAPHQL_QUERIES') and DEBUG
 
+
 # Logging
+LOGGING = None
 if env('CONFIGURE_LOGGING'):
-    from kausal_common.logging.init import init_logging_django
+    from kausal_common.logging.init import LogFormat, UserLoggingOptions, init_logging_django
 
     is_kube = env.bool('KUBERNETES_MODE') or env.bool('KUBERNETES_LOGGING', False) # type: ignore
-    init_logging_django('logfmt' if is_kube or not DEBUG else 'rich', log_sql_queries=LOG_SQL_QUERIES)
+    log_format: LogFormat | None
+    if not is_kube and DEBUG:
+        # If logfmt hasn't been explicitly selected and DEBUG is on, fall back to autodetection.
+        log_format = None
+    else:
+        log_format = 'logfmt'
+
+    if DEBUG:
+        runserver_logging = dict(
+            django_runserver_minimize_noise=env('LOG_DJANGO_RUNSERVER_MINIMIZE_NOISE'),
+            django_runserver_requests_media=env('LOG_DJANGO_RUNSERVER_REQUESTS_MEDIA'),
+            django_runserver_requests_static=env('LOG_DJANGO_RUNSERVER_REQUESTS_STATIC'),
+            django_runserver_requests_favicon=env('LOG_DJANGO_RUNSERVER_REQUESTS_FAVICON'),
+            django_runserver_errors_media=env('LOG_DJANGO_RUNSERVER_ERRORS_MEDIA'),
+            django_runserver_errors_static=env('LOG_DJANGO_RUNSERVER_ERRORS_STATIC'),
+            django_runserver_errors_favicon=env('LOG_DJANGO_RUNSERVER_ERRORS_FAVICON'),
+            django_runserver_requests_broken_pipe=env('LOG_DJANGO_RUNSERVER_REQUESTS_BROKEN_PIPE'),
+            people_verbose=env('LOG_PEOPLE_VERBOSE'),
+        )
+    else:
+        runserver_logging = dict()
+
+    options = UserLoggingOptions(
+        sql_queries=LOG_SQL_QUERIES,
+        **runserver_logging,
+    )
+    LOGGING = init_logging_django(log_format, options=options)
 
 
 REQUEST_LOG_MAX_DAYS = env('REQUEST_LOG_MAX_DAYS')
@@ -802,36 +846,40 @@ if SENTRY_DSN:
 
 
 DATABASES['default']['CONN_MAX_AGE'] = env('DATABASE_CONN_MAX_AGE')
-
-if ENABLE_DEBUG_TOOLBAR:
+if DEBUG and ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 
 if DEBUG:
     MIDDLEWARE.insert(
-        0, 'aplans.middleware.PrintQueryCountMiddleware',
+        0, f'{PROJECT_NAME}.middleware.PrintQueryCountMiddleware',
     )
 
+if REDIS_URL:
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
+else:
+    # TODO: Consider taking django-celery-results into use, as we have in KP
+    CELERY_BROKER_URL = 'redis://localhost:6379'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
-CELERY_BROKER_URL = env('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
 CELERY_BEAT_SCHEDULE = {
     'update-action-status': {
         'task': 'actions.tasks.update_action_status',
-        'schedule': crontab(hour=4, minute=0),
+        'schedule': crontab(hour='4', minute='0'),
     },
     'calculate-indicators': {
         'task': 'indicators.tasks.calculate_indicators',
-        'schedule': crontab(hour=23, minute=0),
+        'schedule': crontab(hour='23', minute='0'),
     },
     'send_daily_notifications': {
         'task': 'notifications.tasks.send_daily_notifications',
-        'schedule': crontab(minute=0),
+        'schedule': crontab(minute='0'),
     },
     'update-index': {
         'task': 'actions.tasks.update_index',
-        'schedule': crontab(hour=3, minute=0),
+        'schedule': crontab(hour='3', minute='0'),
     },
 }
 # Required for Celery exporter: https://github.com/OvalMoney/celery-exporter
@@ -869,7 +917,11 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
 }
 
 HIJACK_PERMISSION_CHECK = "admin_site.permissions.superusers_only_hijack"
-HIJACK_INSERT_BEFORE = None
+HIJACK_INSERT_BEFORE: str | None = None
+
+register_common_settings(locals())
+# Put type hints for stuff registered in register_common_settings here because mypy doesn't figure it out
+DEFAULT_FROM_NAME: str
 
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     INSTALLED_APPS.append('kausal_watch_extensions')

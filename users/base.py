@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import uuid
 from uuid import UUID
@@ -57,7 +59,7 @@ class AbstractUser(DjangoAbstractUser):
 
     def get_display_name(self):
         if self.first_name and self.last_name:
-            return '{0} {1}'.format(self.first_name, self.last_name).strip()
+            return f'{self.first_name} {self.last_name}'.strip()
         else:
             return self.email
 

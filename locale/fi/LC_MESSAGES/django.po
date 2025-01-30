@@ -11,10 +11,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
-"PO-Revision-Date: 2024-06-04 14:20+0000\n"
-"Last-Translator: Jan-Erik Sundman <jan-erik.sundman@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"PO-Revision-Date: 2024-12-19 14:20+0000\n"
+"Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
+">\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -35,12 +36,12 @@ msgstr "%s toistuu toimenpiteen tiedoissa"
 msgid "Unspecified"
 msgstr "Määrittelemätön"
 
-#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
-#: actions/blocks/action_dashboard.py
+#: actions/action_admin.py actions/api.py
+#: actions/blocks/action_content_blocks.py
 msgid "Responsible parties"
 msgstr "Toimenpiteen vastuutahot"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
@@ -69,10 +70,11 @@ msgstr "Peru tämän toimenpiteen valmiiksi merkitseminen raporttia %s varten"
 msgid "Last updated"
 msgstr "Viimeksi päivitetty"
 
-#: actions/action_admin.py actions/blocks/action_dashboard.py
-#: actions/templates/actions/chooser_results.html admin_site/models.py
-#: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
-#: orgs/wagtail_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
+#: admin_site/templates/admin_site/own_indicators_panel.html copying/views.py
+#: orgs/models.py orgs/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 msgid "Name"
 msgstr "Nimi"
 
@@ -105,18 +107,15 @@ msgstr "Sisäiset muistiinpanot"
 msgid "Internal notes for plan administrators"
 msgstr "Sisäiset muistiinpanot pääkäyttäjille"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Raportointi"
 
 #: actions/action_admin.py
-#, fuzzy
-#| msgid "Recent actions"
 msgid "Dependent actions"
-msgstr "Viimeisimmät tapahtumat"
+msgstr "Riippuvat toimenpiteet"
 
 #: actions/action_admin.py
-#, fuzzy
 msgid "Dependencies"
 msgstr "Riippuvuudet"
 
@@ -182,7 +181,6 @@ msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on peruutettu."
 
 #: actions/action_admin_mixins.py
 #, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' updated and published."
 msgid "%(model_name)s '%(object)s' approved and published."
 msgstr "%(model_name)s '%(object)s' on päivitetty ja julkaistu."
 
@@ -199,6 +197,15 @@ msgstr "Peruuta ajastettu julkaisu"
 #: admin_site/wagtail.py
 msgid "Edit"
 msgstr "Muokkaa"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+#, fuzzy
+msgid "Action dependencies"
+msgstr "Toimenpiteen aikataulu"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+msgid "Merged actions"
+msgstr "Yhdistetyt toimenpiteet"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
@@ -236,7 +243,8 @@ msgstr "Yhdistetty"
 msgid "Postponed"
 msgstr "Lykätty"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 msgid "Unknown"
 msgstr "Tuntematon"
 
@@ -254,7 +262,7 @@ msgstr "Yli %d päivää"
 msgid "Organization occurs multiple times as responsible party"
 msgstr "Sama organisaatio toistuu vastuutahona"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 msgid "Person occurs multiple times as contact person"
 msgstr "Sama henkilö toistuu yhteyshenkilönä"
 
@@ -293,8 +301,8 @@ msgid "Cancel moderation"
 msgstr "Peruuta moderointi"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -326,7 +334,6 @@ msgstr "Jos muoto on 'numeerinen', yksikkö vaaditaan"
 
 #: actions/attribute_type_admin.py actions/category_admin.py
 #, fuzzy
-#| msgid "order"
 msgid "Order"
 msgstr "järjestys"
 
@@ -358,86 +365,14 @@ msgstr "%(attribute_type)s (valinta)"
 msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (teksti)"
 
+#: actions/attributes.py
+#, fuzzy, python-format
+msgid "%(attribute_type)s"
+msgstr "ominaisuustyypit"
+
 #: actions/blocks/__init__.py
 msgid "Related plans"
 msgstr "Liittyvät toimenpideohjelmat"
-
-#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
-#: actions/blocks/category_page_layout.py actions/blocks/choosers.py
-#: actions/blocks/filters.py
-msgid "Field"
-msgstr "kentät"
-
-#: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
-msgid "Category"
-msgstr "Luokka"
-
-#: actions/blocks/action_content.py
-msgid "Heading to show instead of the default"
-msgstr "Otsikko, joka näytetään oletusarvon sijasta"
-
-#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
-msgid "Contact form"
-msgstr "Yhteydenottolomake"
-
-#: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "Indicator action"
-msgid "Indicator Causal Chain"
-msgstr "Toimenpiteen mittari"
-
-#: actions/blocks/action_content.py
-msgid "What label should be used in the public UI for the official name?"
-msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
-
-#: actions/blocks/action_content.py
-msgid "Field label"
-msgstr "Kentän nimi"
-
-#: actions/blocks/action_content.py
-msgid "Description to show after the field content"
-msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
-
-#: actions/blocks/action_content.py
-msgid "Caption"
-msgstr "Kuvateksti"
-
-#: actions/blocks/action_content.py
-msgid "Official name"
-msgstr "Virallinen nimi"
-
-#: actions/blocks/action_content.py
-#, fuzzy
-msgid "Help text for the field to be shown in the UI"
-msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Ohjeteksti"
-
-#: actions/blocks/action_content.py
-#, python-format
-msgid "Content block: %(label)s"
-msgstr "Sisältölohko: %(label)s"
-
-#: actions/blocks/action_content.py actions/models/action.py pages/models.py
-msgid "Lead paragraph"
-msgstr "Ingressi"
-
-#: actions/blocks/action_content.py
-msgid "Merged actions"
-msgstr "Yhdistetyt toimenpiteet"
-
-#: actions/blocks/action_content.py
-msgid "Related actions"
-msgstr "Liittyvät toimenpiteet"
-
-#: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "Action schedules"
-msgid "Action dependencies"
-msgstr "Toimenpiteen aikataulu"
 
 #: actions/blocks/action_content.py
 msgid "Full width"
@@ -447,10 +382,17 @@ msgstr "Täysi leveys"
 msgid "Grid"
 msgstr "Ruudukko (grid)"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py pages/blocks.py
 msgid "Heading"
 msgstr "Otsikko"
+
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py aplans/dynamic_blocks.py
+msgid "Help text"
+msgstr "Ohjeteksti"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -460,58 +402,208 @@ msgstr "Lohkot"
 msgid "Section"
 msgstr "Osio"
 
-#: actions/blocks/action_dashboard.py
+#: actions/blocks/action_content_blocks.py actions/blocks/action_dashboard.py
+#: actions/blocks/category_page_layout.py actions/blocks/choosers.py
+#: actions/blocks/filters.py
+msgid "Field"
+msgstr "kentät"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
+msgid "Category"
+msgstr "Luokka"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Heading to show instead of the default"
+msgstr "Otsikko, joka näytetään oletusarvon sijasta"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/column_block_base.py
 msgid "Label"
 msgstr "Selite"
 
-#: actions/blocks/action_dashboard.py
-msgid "Label for the column to be used instead of the default"
-msgstr "Sarakkeen selite, jota käytetään oletusarvon sijasta"
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Value"
+msgstr "arvo"
 
-#: actions/blocks/action_dashboard.py reports/spreadsheets/excel_report.py
-msgid "Identifier"
-msgstr "Tunniste"
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+#, fuzzy
+msgid "Choice"
+msgstr "ominaisuuden valintavaihtoehdot"
 
-#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
-#: actions/blocks/filters.py reports/blocks/action_content.py
-#: reports/spreadsheets/excel_report.py
-msgid "Implementation phase"
-msgstr "Toteutusvaihe"
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Field Label"
+msgstr "Kentän nimi"
 
-#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
-#: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "Status"
-msgstr "Tila"
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
 
-#: actions/blocks/action_dashboard.py content/models.py
-msgid "Tasks"
-msgstr "Tehtävät"
+#: actions/blocks/action_content_blocks.py
+msgid "Checkbox"
+msgstr ""
 
-#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
-#: indicators/blocks.py indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr "Mittarit"
+#: actions/blocks/action_content_blocks.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Alasvetovalikko"
 
-#: actions/blocks/action_dashboard.py
-msgid "Updated at"
-msgstr "Päivitysaika"
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Field Type"
+msgstr "Kentän nimi"
 
-#: actions/blocks/action_dashboard.py content/models.py
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr "Organisaatio"
+#: actions/blocks/action_content_blocks.py
+msgid "Required"
+msgstr ""
 
-#: actions/blocks/action_dashboard.py
-msgid "Impact"
-msgstr "Vaikuttavuus"
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Choices"
+msgstr "ominaisuuden valintavaihtoehdot"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Form Field"
+msgstr "kentät"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Description"
+msgstr "kuvaus"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Feedback required"
+msgstr "Palautetta vastaanotettu"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the email field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Additional form fields"
+msgstr "Toimenpiteen kenttä"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content_blocks.py
+#: actions/blocks/category_page_layout.py
+msgid "Contact form"
+msgstr "Yhteydenottolomake"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Indicator Causal Chain"
+msgstr "Toimenpiteen mittari"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the dataset?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+msgid "Datasets"
+msgstr "tietoaineistot"
+
+#: actions/blocks/action_content_blocks.py
+msgid "What label should be used in the public UI for the official name?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Field label"
+msgstr "Kentän nimi"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Description to show after the field content"
+msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Caption"
+msgstr "Kuvateksti"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Official name"
+msgstr "Virallinen nimi"
 
 #: actions/blocks/action_list.py
 msgid "Action highlights"
 msgstr "Toimenpidenostot"
 
 #: actions/blocks/action_list.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
 
 #: actions/blocks/action_list.py
 msgid "Action list"
@@ -547,26 +639,56 @@ msgstr "kentät"
 msgid "Category tree map"
 msgstr "Luokkien puuvisualisaatio"
 
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Filter by level"
+msgstr "luokan taso"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Category level list"
+msgstr "Kategorian tasot"
+
 #: actions/blocks/category_page_layout.py
 msgid "Body"
 msgstr "Pääsisältö"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-msgid "Description"
-msgstr "kuvaus"
-
-#: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr "Perusta"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py reports/spreadsheets/excel_report.py
+msgid "Implementation phase"
+msgstr "Toteutusvaihe"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
+msgid "Status"
+msgstr "Tila"
+
+#: actions/blocks/choosers.py
+#, fuzzy
+msgid "Dataset Schema"
+msgstr "tietoaineiston lisenssi"
+
+#: actions/blocks/column_block_base.py
+msgid "Label for the column to be used instead of the default"
+msgstr "Sarakkeen selite, jota käytetään oletusarvon sijasta"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
 msgstr "Selite vaihtoehdolle 'näytä kaikki'"
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
-msgstr "Alasvetovalikko"
 
 #: actions/blocks/filters.py
 msgid "Buttons"
@@ -605,11 +727,60 @@ msgstr "Toimenpideohjelma"
 msgid "Schedule"
 msgstr "Julkaisu ajastettu"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 #, fuzzy
-#| msgid "continuous action"
 msgid "Continuous Action"
 msgstr "jatkuva toimenpide"
+
+#: actions/blocks/mixins.py
+msgid "[not included]"
+msgstr "[ei mukana]"
+
+#: actions/blocks/mixins.py
+msgid "in primary filters"
+msgstr "ensisijaisissa suotimissa"
+
+#: actions/blocks/mixins.py
+msgid "in main filters"
+msgstr "pääsuotimissa"
+
+#: actions/blocks/mixins.py
+msgid "in advanced filters"
+msgstr "tarkentavissa suotimissa"
+
+#: actions/blocks/mixins.py
+msgid "in main column (top)"
+msgstr "pääpalstalla (ylhäällä)"
+
+#: actions/blocks/mixins.py
+msgid "in main column (bottom)"
+msgstr "pääpalstalla (alhaalla)"
+
+#: actions/blocks/mixins.py
+msgid "in side column"
+msgstr "sivupalstalla"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -688,6 +859,16 @@ msgstr "Valitse kenttä"
 msgid "Choose another field"
 msgstr "Valitse toinen kenttä"
 
+#: actions/chooser.py
+#, fuzzy
+msgid "Choose a dataset schema"
+msgstr "Valitse luokan tyyppi"
+
+#: actions/chooser.py
+#, fuzzy
+msgid "Choose another dataset schema"
+msgstr "Valitse toinen ominaisuus"
+
 #: actions/defaults.py
 msgid "Cancelled or postponed"
 msgstr "Ei toteuteta tässä vaiheessa"
@@ -759,6 +940,10 @@ msgstr "Toimenpiteen tunniste (esim. numero)"
 msgid "Image"
 msgstr "Kuva"
 
+#: actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Ingressi"
+
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py
 msgid "description"
@@ -801,7 +986,8 @@ msgid "specifier for status"
 msgstr "tilan tarkenne"
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
+#, fuzzy
+msgid "Describe the reason why this action has this status"
 msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
 
 #: actions/models/action.py
@@ -857,7 +1043,7 @@ msgstr "vastuuorganisaatiot"
 msgid "updated at"
 msgstr "päivitysaika"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
 msgstr "alkupäivämäärä"
 
@@ -892,12 +1078,21 @@ msgid "Set if this action is superseded by another action"
 msgstr "Aseta jos toimenpide on korvattu toisella toimenpiteellä"
 
 #: actions/models/action.py
+msgctxt "action"
+msgid "copy of"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+msgid "Set if this action has been created by copying another action"
+msgstr "Aseta jos toimenpide on korvattu toisella toimenpiteellä"
+
+#: actions/models/action.py
 msgid "Role in dependencies"
 msgstr ""
 
 #: actions/models/action.py
 #, fuzzy
-#| msgid "Set if this action is merged with another action"
 msgid "Set if this action has the same role in all its dependency relationships with other actions"
 msgstr "Aseta jos toimenpide on yhdistetty toiseen toimenpiteeseen"
 
@@ -951,15 +1146,16 @@ msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
 msgstr "Toimenpiteen '%(action)s' merkitseminen valmiiksi raporttia '%(report)s' varten peruttiin"
 
 #: actions/models/action.py reports/blocks/action_content.py
+#: reports/report_formatters.py
 msgid "Primary responsible party"
 msgstr "Päävastuutaho"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/report_formatters.py
 msgid "Collaborator"
 msgstr "Yhteistyötaho"
 
-#: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py people/wagtail_admin.py
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py people/wagtail_admin.py
 msgid "organization"
 msgstr "organisaatio"
 
@@ -1194,13 +1390,11 @@ msgstr "Tallenna muutokset"
 
 #: actions/models/action_deps.py
 #, fuzzy
-#| msgid "Recent actions"
 msgid "Preceding action"
 msgstr "Viimeisimmät tapahtumat"
 
 #: actions/models/action_deps.py
 #, fuzzy
-#| msgid "Recent actions"
 msgid "Dependent action"
 msgstr "Viimeisimmät tapahtumat"
 
@@ -1215,15 +1409,6 @@ msgstr "Järjestetty valinta"
 #: actions/models/attributes.py
 msgid "Optional choice with optional text"
 msgstr "Valinnainen vaihtoehto ja valinnainen seliteteksti"
-
-#: actions/models/attributes.py
-#, fuzzy
-msgid "Choice"
-msgstr "ominaisuuden valintavaihtoehdot"
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr "Teksti"
 
 #: actions/models/attributes.py
 msgid "Rich text"
@@ -1419,6 +1604,14 @@ msgid "Set if the category has a theme color"
 msgstr "Aseta jos kategorialla on teemaväri"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 msgid "common category"
 msgstr "yleinen luokka"
 
@@ -1430,7 +1623,7 @@ msgstr "yleiset luokat"
 msgid "parent category"
 msgstr "yläluokka"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
 msgstr "luokka"
 
@@ -1505,7 +1698,6 @@ msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
 #, fuzzy
-#| msgid "indicator contact persons"
 msgid "Show profile pictures for contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
@@ -1516,7 +1708,6 @@ msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
 #, fuzzy
-#| msgid "Show only actions with me as a contact person"
 msgid "Show organization ancestors in contact details of contact persons"
 msgstr "Näytä vain toimenpiteet joiden yhteyshenkilö olen"
 
@@ -1526,7 +1717,6 @@ msgstr ""
 
 #: actions/models/features.py
 #, fuzzy
-#| msgid "indicator contact persons"
 msgid "Hide moderators from the contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
@@ -1618,7 +1808,6 @@ msgstr "Valitse kuinka mittarit järjestetään toimenpiteiden sivuilla"
 
 #: actions/models/features.py
 #, fuzzy
-#| msgid "Set to enable drafting and reviewing functionality"
 msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Aseta ottaaksesi käyttöön luonnostelu- ja katselmointitoiminnot"
 
@@ -1672,7 +1861,6 @@ msgstr ""
 
 #: actions/models/plan.py
 #, fuzzy
-#| msgid "in progress"
 msgid "Offboarding in progress"
 msgstr "käynnissä"
 
@@ -1702,6 +1890,15 @@ msgid "A shorter version of the plan name"
 msgstr "Lyhyt versio toimenpideohjelman nimestä"
 
 #: actions/models/plan.py
+#, fuzzy
+msgid "short identifier"
+msgstr "tunniste"
+
+#: actions/models/plan.py
+msgid "A unique short identifier for the plan to be shown in the UI. Could be, e.g., a number or an abbreviation."
+msgstr ""
+
+#: actions/models/plan.py
 msgid "version name"
 msgstr "version nimi"
 
@@ -1719,7 +1916,6 @@ msgstr "arkistointiaika"
 
 #: actions/models/plan.py
 #, fuzzy
-#| msgid "status"
 msgid "Usage status"
 msgstr "tila"
 
@@ -1740,7 +1936,8 @@ msgid "Can actions be added and the official metadata edited?"
 msgstr "Voidaanko toimenpiteitä lisätä ja virallisia tietoja muokata?"
 
 #: actions/models/plan.py
-msgid "main organization for the plan"
+#, fuzzy
+msgid "The main organization for the plan"
 msgstr "toimenpideohjelman pääorganisaatio"
 
 #: actions/models/plan.py
@@ -1774,7 +1971,6 @@ msgstr "Emo-ohjelma"
 
 #: actions/models/plan.py
 #, fuzzy
-#| msgid "The primary action classification"
 msgid "Primary action classification"
 msgstr "Toimenpiteiden pääluokittelu"
 
@@ -1784,7 +1980,6 @@ msgstr "Käytetään toimenpiteiden ensisijaiseen luokitteluun esimerkiksi sivus
 
 #: actions/models/plan.py
 #, fuzzy
-#| msgid "A secondary action classification"
 msgid "Secondary action classification"
 msgstr "Toimenpiteiden toissijainen luokittelu"
 
@@ -1825,6 +2020,24 @@ msgstr "korvattu ohjelmalla"
 msgid "Set if this plan is superseded by another plan"
 msgstr "Aseta jos toimenpideohjelma on korvattu toisella ohjelmalla"
 
+#: actions/models/plan.py
+msgctxt "plan"
+msgid "copy of"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+msgid "Set if this plan has been created by copying another plan"
+msgstr "Aseta jos toimenpideohjelma on korvattu toisella ohjelmalla"
+
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr "toimenpideohjelmat"
@@ -1846,12 +2059,40 @@ msgid "Primary and secondary classification cannot be the same"
 msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 
 #: actions/models/plan.py
+#, fuzzy
+msgid "This short identifier is already in use within the parent plan."
+msgstr "Organisaatio on jo toimenpideohjelmassa"
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
+msgstr ""
+
+#: actions/models/plan.py indicators/apps.py indicators/blocks.py
+#: indicators/wagtail_admin.py reports/report_formatters.py
+msgid "Indicators"
+msgstr "Mittarit"
+
+#: actions/models/plan.py
 msgid "Privacy"
 msgstr "Tietosuoja"
 
 #: actions/models/plan.py feedback/models.py
 msgid "Accessibility"
 msgstr "Saavutettavuus"
+
+#: actions/models/plan.py
+#, python-format
+msgid "%(plan)s (copy from %(date)s)"
+msgstr ""
+
+#: actions/models/plan.py
+#, python-format
+msgid "Copy from %(date)s"
+msgstr ""
+
+#: actions/models/plan.py actions/wagtail_admin.py
+msgid "Clients"
+msgstr "Asiakkaat"
 
 #: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
@@ -1883,15 +2124,17 @@ msgstr ""
 
 #: actions/models/plan.py
 #, fuzzy
-#| msgid "Location"
 msgid "Production"
 msgstr "Sijainti"
 
 #: actions/models/plan.py
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
 #, fuzzy
-#| msgid "Question"
-msgid "Testing"
-msgstr "Kysymys"
+msgid "Development"
+msgstr "asiakirja"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -1988,14 +2231,6 @@ msgstr "seurannan laatupisteet"
 
 #: actions/templates/site_summary/actions.html
 #, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "        <span>%(n)s</span> active action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
-#| msgid_plural ""
-#| "\n"
-#| "        <span>%(n)s</span> active actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
 msgid ""
 "\n"
 "        <span>%(n)s</span> active action <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
@@ -2051,6 +2286,47 @@ msgstr "%(model_name)s '%(object)s' poistettu."
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr "%(model_name)s '%(object)s' poistettu."
 
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+msgid "You can view the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "Moderointipyyntö on peruttu kohteelle %(model_name)s \"%(title)s\""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Tunniste on jo olemassa"
@@ -2082,10 +2358,6 @@ msgid "Only set if explicitly required by customer. Use a color key from the UI 
 msgstr "Aseta ainoastaan jos asiakas erikseen pyytää. Käytä väriavainta UI-teeman graphColors -arvoista, esimerkiksi red070 tai grey030."
 
 #: actions/wagtail_admin.py
-msgid "Clients"
-msgstr "Asiakkaat"
-
-#: actions/wagtail_admin.py
 msgid "Domains"
 msgstr "Verkkotunnukset"
 
@@ -2107,7 +2379,6 @@ msgstr "Toimenpiteen aikataulu"
 
 #: actions/wagtail_admin.py
 #, fuzzy
-#| msgid "Action schedules"
 msgid "Action dependency roles"
 msgstr "Toimenpiteen aikataulu"
 
@@ -2133,7 +2404,6 @@ msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä yllä
 
 #: admin_site/api.py
 #, fuzzy
-#| msgid "This user does not have access to admin."
 msgid "You do not have access to the public site."
 msgstr "Tällä käyttäjällä ei ole pääsyä ylläpitoon."
 
@@ -2318,9 +2588,21 @@ msgstr " %(filter_title)s "
 
 #: admin_site/templates/wagtailadmin/base.html
 #, fuzzy
-#| msgid "Can administrate all actions"
 msgid "Administration"
 msgstr "Voi ylläpitää kaikkia toimenpiteitä"
+
+#: admin_site/templates/wagtailadmin/base.html
+#, fuzzy
+msgid "locked plan"
+msgstr "Liittyvät toimenpideohjelmat"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Public"
+msgstr "Julkinen"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Internal"
+msgstr "Ei-julkinen"
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Sign in to Kausal Watch admin"
@@ -2340,10 +2622,6 @@ msgstr "Julkaistu"
 msgid "Non-public field"
 msgstr "Julkaistu"
 
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr "Tilisi asetukset muutettiin onnistuneesti!"
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2360,6 +2638,16 @@ msgid "%s could not be created due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, fuzzy, python-format
+msgid "Add %(schema_name)s"
+msgstr "Lisää uusi %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
 msgid "View live"
 msgstr "Näytä julkaistu"
 
@@ -2369,49 +2657,13 @@ msgid "View %s live"
 msgstr "Näytä julkaistu %s"
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+#, fuzzy
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr "Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on vielä luokkia joiden tyyppi on kytketty siihen."
-
-#: admin_site/wagtail.py
-msgid "[not included]"
-msgstr "[ei mukana]"
-
-#: admin_site/wagtail.py
-msgid "in primary filters"
-msgstr "ensisijaisissa suotimissa"
-
-#: admin_site/wagtail.py
-msgid "in main filters"
-msgstr "pääsuotimissa"
-
-#: admin_site/wagtail.py
-msgid "in advanced filters"
-msgstr "tarkentavissa suotimissa"
-
-#: admin_site/wagtail.py
-msgid "in main column (top)"
-msgstr "pääpalstalla (ylhäällä)"
-
-#: admin_site/wagtail.py
-msgid "in main column (bottom)"
-msgstr "pääpalstalla (alhaalla)"
-
-#: admin_site/wagtail.py
-msgid "in side column"
-msgstr "sivupalstalla"
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Raportit"
-
-#: admin_site/wagtail_hooks.py
-msgid "Create plan"
-msgstr "Luo toimenpideohjelma"
-
-#: admin_site/wagtail_hooks.py
-msgid "Choose plan"
-msgstr "Valitse ohjelma"
 
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
@@ -2425,6 +2677,16 @@ msgstr "Video-oppaat"
 msgid "https://kausal.gitbook.io/watch"
 msgstr "https://kausal.gitbook.io/watch"
 
+#: aplans/dynamic_blocks.py
+#, fuzzy
+msgid "Help text for the field to be shown in the UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: aplans/dynamic_blocks.py
+#, python-format
+msgid "Content block: %(label)s"
+msgstr "Sisältölohko: %(label)s"
+
 #: aplans/fields.py
 msgid "Enter a valid hostname."
 msgstr "Syötä sallittu hostname."
@@ -2435,7 +2697,6 @@ msgstr "Täydellinen verkkotunnus (FQDN)"
 
 #: aplans/graphql_types.py
 #, fuzzy
-#| msgid "Approve"
 msgid "Approved"
 msgstr "Hyväksy"
 
@@ -2528,17 +2789,9 @@ msgstr ""
 msgid "Year (2020)"
 msgstr ""
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
 msgstr "järjestys"
-
-#: aplans/utils.py
-msgid "Internal"
-msgstr "Sisäinen"
-
-#: aplans/utils.py
-msgid "Public"
-msgstr "Julkinen"
 
 #: aplans/utils.py
 msgid "visibility"
@@ -2601,7 +2854,6 @@ msgstr "dimension luokat"
 
 #: budget/models.py
 #, fuzzy
-#| msgid "Year"
 msgid "Yearly"
 msgstr "Vuosi"
 
@@ -2612,6 +2864,10 @@ msgstr ""
 #: budget/models.py indicators/models.py
 msgid "unit"
 msgstr "yksikkö"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr ""
 
 #: budget/models.py
 msgid "schema"
@@ -2635,19 +2891,16 @@ msgstr "arvo"
 
 #: budget/models.py
 #, fuzzy
-#| msgid "Last data point"
 msgid "data point"
 msgstr "Viimeisin datapiste"
 
 #: budget/models.py
 #, fuzzy
-#| msgid "Last data point"
 msgid "data points"
 msgstr "Viimeisin datapiste"
 
 #: budget/wagtail_admin.py
 #, fuzzy
-#| msgid "dimensions"
 msgid "Budget dimensions"
 msgstr "mittarin dimensiot"
 
@@ -2689,8 +2942,17 @@ msgid "Milestone"
 msgstr "Virstanpylväs"
 
 #: content/models.py
+msgid "Tasks"
+msgstr "Tehtävät"
+
+#: content/models.py
 msgid "Milestones"
 msgstr "Virstanpylväät"
+
+#: content/models.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisaatio"
 
 #: content/models.py
 #, fuzzy
@@ -2784,6 +3046,71 @@ msgstr "sivuston yleiset sisällöt"
 msgid "Site settings"
 msgstr "Sivuston asetukset"
 
+#: copying/views.py reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Tunniste"
+
+#: copying/views.py
+msgid "A unique value that identifies the copy internally and appears in URLs of testing or preview environments"
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+msgid "Name to use for the copy"
+msgstr "Nimi, jolla kutsutaan toimenpiteitä"
+
+#: copying/views.py
+#, fuzzy
+msgid "Version name"
+msgstr "version nimi"
+
+#: copying/views.py
+msgid "Version name to be set for the copied plan in order to distinguish it from other versions"
+msgstr ""
+
+#: copying/views.py
+msgid "Supersede original plan"
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+msgid "Set if the copy should supersede the original plan"
+msgstr "Aseta jos toimenpideohjelma on korvattu toisella ohjelmalla"
+
+#: copying/views.py
+#, fuzzy
+msgid "Supersede original actions"
+msgstr "muokattavissa toimenpiteille"
+
+#: copying/views.py
+#, fuzzy
+msgid "Set if copies of actions should supersede their original"
+msgstr "Aseta jos toimenpide on korvattu toisella toimenpiteellä"
+
+#: copying/views.py
+#, fuzzy
+msgid "A plan with this identifier already exists"
+msgstr "Tällä sähköpostiosoitteella on jo henkilö"
+
+#: copying/views.py
+#, fuzzy
+msgid "A plan with this name already exists"
+msgstr "Tällä sähköpostiosoitteella on jo henkilö"
+
+#: copying/views.py
+#, fuzzy
+msgid "Copy plan"
+msgstr "Valitse ohjelma"
+
+#: copying/views.py
+msgid "The copy will be created in the background. This may take a few minutes. The copy will appear in the list of plans as soon as copying is finished."
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+msgid "Create copy"
+msgstr "Luo toimenpideohjelma"
+
 #: documentation/models.py
 #, fuzzy
 msgid "CSS style"
@@ -2812,6 +3139,11 @@ msgid "Report this error to your webmaster with the following information:"
 msgstr "Kerro tästä virheestä palvelun ylläpidolle seuraavin tiedoin:"
 
 #: documents/models.py
+#, fuzzy
+msgid "uploaded by user"
+msgstr "viimeksi päivittänyt"
+
+#: documents/models.py
 msgid "document"
 msgstr "asiakirja"
 
@@ -2819,9 +3151,19 @@ msgstr "asiakirja"
 msgid "documents"
 msgstr "asiakirjat"
 
-#: feedback/models.py orgs/models.py people/models.py users/models.py
+#: feedback/models.py kausal_common/users/models.py orgs/models.py
+#: people/models.py users/models.py
 msgid "email address"
 msgstr "sähköpostiosoite"
+
+#: feedback/models.py
+#, fuzzy
+msgid "page id"
+msgstr "ulkopuolinen linkki"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr ""
 
 #: feedback/models.py
 msgid "is processed"
@@ -2834,6 +3176,10 @@ msgstr "käyttäjän palaute"
 #: feedback/models.py
 msgid "user feedbacks"
 msgstr "käyttäjien palautteet"
+
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
 
 #: feedback/views.py
 msgid "Mark user feedback as processed"
@@ -2882,6 +3228,10 @@ msgid "User feedback '%(user_feedback)s' has been marked as unprocessed."
 msgstr "Käyttäjän palaute '%(user_feedback)s' merkittiin käsittelemättömäksi."
 
 #: feedback/wagtail_admin.py
+msgid "N/A"
+msgstr ""
+
+#: feedback/wagtail_admin.py
 msgid "Mark as processed"
 msgstr "Merkitse käsitellyksi"
 
@@ -2902,8 +3252,8 @@ msgid "User feedback"
 msgstr "Käyttäjien palautteet"
 
 #: images/image_formats.py
-msgid "Full width (zoomable)"
-msgstr "Täysi leveys (suurennettava)"
+msgid "Full width (zoomable) only if width > 1000 px"
+msgstr "Täysi leveys (suurennettava) vain jos leveys > 1000 px"
 
 #: images/models.py
 msgid "Image byline or credits"
@@ -3121,6 +3471,36 @@ msgid "What is the reference or source for this indicator?"
 msgstr ""
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr "näytä nykytrendi-viiva"
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+msgid "increasing"
+msgstr "lisää"
+
+#: indicators/models.py
+#, fuzzy
+msgid "decreasing"
+msgstr "pienentää"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
+msgid "show total line"
+msgstr "näytä yhteensä-viiva"
+
+#: indicators/models.py
 msgid "indicator"
 msgstr "mittari"
 
@@ -3252,14 +3632,6 @@ msgstr "Ei käyttövaltuuksia"
 
 #: indicators/templates/site_summary/indicators.html
 #, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "        <span>%(total)s</span> indicator <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
-#| msgid_plural ""
-#| "\n"
-#| "        <span>%(total)s</span> indicators <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
 msgid ""
 "\n"
 "        <span>%(total)s</span> indicator <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
@@ -3330,12 +3702,28 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensioiden täytyy olla samat kuin yleisessä mittarissa"
 
 #: indicators/wagtail_admin.py
-msgid "Indicator for actions"
-msgstr "Mittari toimenpiteille"
-
-#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "tyhjä"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Mittari on kytketty yleiseen mittariin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Further information"
+msgstr "Perustiedot"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Value bounds"
+msgstr "kentät"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Visualization settings"
+msgstr "heräteasetukset"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3350,9 +3738,13 @@ msgstr[0] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), sen arv
 msgstr[1] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), kaikki sen %(num)d arvoa poistetaan."
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr "Mittari on kytketty yleiseen mittariin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+#, fuzzy
+msgid "Advanced settings"
+msgstr "Edistyneet valinnat"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Mittari toimenpiteille"
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
@@ -3363,8 +3755,13 @@ msgid "Causes"
 msgstr "Syyt"
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
-msgstr "Edistyneet valinnat"
+msgid "Other indicators"
+msgstr "muut mittarit"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Relationships"
+msgstr "Liittyvät toimenpiteet"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
@@ -3382,6 +3779,25 @@ msgstr "Yleiset mittarit"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Created at"
+msgstr "luomisaika"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Last modified by"
+msgstr "Viimeksi muokattu"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Last modified at"
+msgstr "Viimeksi muokattu"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
@@ -3590,17 +4006,17 @@ msgid "send to organization admins"
 msgstr "lähetä organisaatioylläpitäjille"
 
 #: notifications/models.py
-#, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr "Tyypin on oltava \"%(t)s\"."
-
-#: notifications/models.py
 msgid "scheduled notification"
 msgstr "ajastettu ilmoitus"
 
 #: notifications/models.py
 msgid "scheduled notifications"
 msgstr "ajastetut ilmoitukset"
+
+#: notifications/models.py
+#, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr "Tyypin on oltava \"%(t)s\"."
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -3751,25 +4167,21 @@ msgstr "Manuaalisesti ajastettu ilmoitus"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "%s could not be created due to errors."
 msgid "Notifications could not be modified due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "%s could not be created due to errors."
 msgid "Notifications could not be set up due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "scheduled notifications"
 msgid "Cannot schedule a notification for the past"
 msgstr "ajastetut ilmoitukset"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "scheduled notifications"
 msgid "Cannot reschedule a notification for the past"
 msgstr "ajastetut ilmoitukset"
 
@@ -3782,12 +4194,12 @@ msgid "The email message will be sent on the specified day at"
 msgstr "Sähköpostiviesti lähetetään valittuna päivänä klo"
 
 #: notifications/wagtail_admin.py
-msgid "Single notifications"
-msgstr "Yksittäiset herätteet"
+msgid "One-off notifications"
+msgstr "Kertaluonteiset ilmoitukset"
 
 #: notifications/wagtail_admin.py
-msgid "Automatic notifications"
-msgstr "Automaattiset herätteet"
+msgid "Event-based notifications"
+msgstr "Tapahtumapohjaiset ilmoitukset"
 
 #: notifications/wagtail_admin.py
 msgid "Notification contents"
@@ -3862,8 +4274,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Organisaation yksikäsitteinen nimi (luodaan automaattisesti)"
 
 #: orgs/models.py
-msgid "An optional logo for this organization"
-msgstr "Valinnainen logo tälle organisaatiolle"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr "Organisaation logo. Toimita neliön muotoinen kuva (vähintään 250x250px). Organisaation sosiaalisessa mediassa käytetty logo toimii usein parhaiten."
 
 #: orgs/models.py
 msgid "A date of founding"
@@ -3895,7 +4307,6 @@ msgstr "perustietojen ylläpitäjät"
 
 #: orgs/views.py
 #, fuzzy
-#| msgid "This will mark the following actions as complete:"
 msgid "This will delete the following objects:"
 msgstr "Seuraavat toimenpiteet merkitään valmiiksi raporttia varten:"
 
@@ -4153,7 +4564,6 @@ msgstr "Näytetäänkö lisätietolinkeissä linkki tähän sivuun?"
 
 #: pages/models.py
 #, fuzzy
-#| msgid "show in additional links"
 msgid "show link in child plans"
 msgstr "näytä lisätietolinkeissä"
 
@@ -4378,6 +4788,20 @@ msgid "Display insights"
 msgstr ""
 
 #: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+msgid "Display level"
+msgstr "luokan taso"
+
+#: pages/models.py
+#, fuzzy
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Ota käyttöön jos haluat että sivulla näytetään toimenpiteitä tähän toimenpideohjelmaan kytketyistä muista toimenpideohjelmista"
+
+#: pages/models.py
 msgid "Indicator list page"
 msgstr "Mittariluettelosivu"
 
@@ -4518,11 +4942,13 @@ msgstr "Kyllä, poista"
 msgid "No, don't delete"
 msgstr "Ei, älä poista"
 
-#: people/templates/people/view_as_user.html templates/aplans/confirmation.html
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
 msgid "Yes"
 msgstr "Kyllä"
 
-#: people/templates/people/view_as_user.html templates/aplans/confirmation.html
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
 msgid "No"
 msgstr "Ei"
 
@@ -4558,7 +4984,6 @@ msgstr "Varmistathan, ettei kukaan muu kuin %(person)s pääse käsiksi linkkiin
 
 #: people/views.py people/wagtail_admin.py
 #, fuzzy
-#| msgid "View %s live"
 msgid "View as user"
 msgstr "Näytä julkaistu %s"
 
@@ -4746,6 +5171,18 @@ msgstr "toimenpiteen tallenne"
 msgid "action snapshots"
 msgstr "toimenpiteiden tallenteet"
 
+#: reports/report_formatters.py
+msgid "Has goals"
+msgstr "On tavoitearvoja"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
+
+#: reports/report_formatters.py
+msgid "Other responsible parties"
+msgstr "Muut vastuutahot"
+
 #: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
@@ -4910,6 +5347,36 @@ msgstr "Käyttäjät"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
 
+#~ msgid "Related actions"
+#~ msgstr "Liittyvät toimenpiteet"
+
+#~ msgid "Updated at"
+#~ msgstr "Päivitysaika"
+
+#, fuzzy
+#~ msgid "Start date"
+#~ msgstr "alkupäivämäärä"
+
+#, fuzzy
+#~ msgid "End date"
+#~ msgstr "loppupäivämäärä"
+
+#~ msgid "Impact"
+#~ msgstr "Vaikuttavuus"
+
+#~ msgid "Automatic notifications"
+#~ msgstr "Automaattiset herätteet"
+
+#, fuzzy
+#~ msgid "Testing"
+#~ msgstr "Kysymys"
+
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "Tilisi asetukset muutettiin onnistuneesti!"
+
+#~ msgid "An optional logo for this organization"
+#~ msgstr "Valinnainen logo tälle organisaatiolle"
+
 #~ msgid "Notification types"
 #~ msgstr "Herätetyypit"
 
@@ -4951,10 +5418,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Enable moderation workflow"
 #~ msgstr "Ota moderointi käyttöön"
-
-#, python-format
-#~ msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
-#~ msgstr "Moderointipyyntö on peruttu kohteelle %(model_name)s \"%(title)s\""
 
 #, fuzzy
 #~ msgid "Internal field"
@@ -5103,9 +5566,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 #~ msgid "Choose an attribute"
 #~ msgstr "Valitse ominaisuus"
 
-#~ msgid "Choose another attribute"
-#~ msgstr "Valitse toinen ominaisuus"
-
 #~ msgid "Azure AD tenant id"
 #~ msgstr "Azure AD:n tenant-tunniste"
 
@@ -5114,9 +5574,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "attribute type"
 #~ msgstr "ominaisuustyyppi"
-
-#~ msgid "attribute types"
-#~ msgstr "ominaisuustyypit"
 
 #, python-format
 #~ msgid "Add another %(model)s"
@@ -5152,10 +5609,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 #~ msgstr "Olet kirjautunut ulos."
 
 #, python-format
-#~ msgid "Add %(related_verbose_name)s"
-#~ msgstr "Lisää uusi %(related_verbose_name)s"
-
-#, python-format
 #~ msgid "New %(related_verbose_name)s"
 #~ msgstr "Uusi %(related_verbose_name)s"
 
@@ -5176,9 +5629,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "[nothing]"
 #~ msgstr "[ei mitään]"
-
-#~ msgid "has goals"
-#~ msgstr "on tavoitteita"
 
 #~ msgid "Select action plan"
 #~ msgstr "Valitse toimenpideohjelma"
@@ -5228,3 +5678,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Log out"
 #~ msgstr "Kirjaudu ulos"
+
+#~ msgid "has goals"
+#~ msgstr "on tavoitteita"

@@ -1,8 +1,9 @@
 import graphene
-import graphene_django_optimizer as gql_optimizer
-import sentry_sdk
 from graphql.error import GraphQLError
 from wagtail.images.models import SourceImageIOError
+
+import graphene_django_optimizer as gql_optimizer
+import sentry_sdk
 
 from aplans.graphql_types import DjangoNode, replace_image_node
 

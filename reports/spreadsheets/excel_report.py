@@ -1,174 +1,45 @@
 from __future__ import annotations
 
-import inspect
 import pathlib
 import typing
-from datetime import datetime
 from io import BytesIO
-from typing import Any, Sequence, TypedDict
+from typing import Any, Iterable, Sequence
 
-import polars
-import xlsxwriter
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone, translation
 from django.utils.text import slugify
 from django.utils.translation import gettext as _, pgettext
 from reversion.models import Version
 
+import polars as pl
+import xlsxwriter
+from loguru import logger
+
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from orgs.models import Organization
-from reports.utils import group_by_model
+from reports.utils import ReportCellValue, group_by_model
 
 from .action_print_layout import write_action_summaries
 from .cursor_writer import Cell, CursorWriter
+from .excel_formats import ExcelFormats
 
 if typing.TYPE_CHECKING:
-    from django.db.models import QuerySet
-    from xlsxwriter.format import Format
+    from django.db.models import Model, QuerySet
 
     from actions.models.category import Category, CategoryType
-    from reports.blocks.action_content import ReportFieldBlock
-    from reports.models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
+    from actions.models.plan import Plan
+    from reports.models import Report
+    from reports.types import SerializedActionVersion, SerializedVersion
 
 
-def clean(value: Any) -> Any:
-    """Translate Windows linefeeds to \n for Excel"""
+def clean(value: ReportCellValue) -> ReportCellValue:
+    r"""Translate Windows linefeeds to \n for Excel."""
     if not isinstance(value, str):
         return value
     return value.replace("\r\n", "\n")
 
-class ExcelFormats(dict):
-    workbook: xlsxwriter.Workbook
-    _formats_for_fields: dict
 
-    def __init__(self, workbook, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.workbook = workbook
-        self._formats_for_fields = dict()
-
-    class StyleSpecifications:
-        BG_COLOR_ODD = '#f4f4f4'
-        BG_COLOR_HEADER = '#0a5e43'
-        COLOR_WHITE = '#ffffff'
-        COLOR_LIGHT_HEADER = '#f0f0f0'
-        COLOR_PAGE_HEADER = '#3c504a'
-
-        @classmethod
-        def header_row(cls, f: Format) -> None:
-            f.set_font_color('#ffffff')
-            f.set_bg_color(cls.BG_COLOR_HEADER)
-            f.set_bold()
-
-        @classmethod
-        def date(cls, f: Format) -> None:
-            f.set_num_format('d mmmm yyyy')
-            f.set_align('left')
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def timestamp(cls, f: Format) -> None:
-            cls.date(f)
-            f.set_num_format('d mmmm yyyy hh:mm')
-
-        @classmethod
-        def odd_row(cls, f: Format) -> None:
-            f.set_bg_color(cls.BG_COLOR_ODD)
-
-        @classmethod
-        def even_row(cls, f: Format) -> None:
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def title(cls, f: Format) -> None:
-            f.set_bold()
-            f.set_font_size(24)
-            cls.header_row(f)
-
-        @classmethod
-        def sub_title(cls, f: Format) -> None:
-            f.set_bold()
-            f.set_font_size(18)
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def metadata_label(cls, f: Format) -> None:
-            f.set_bold()
-            f.set_align('right')
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def metadata_value(cls, f: Format) -> None:
-            f.set_align('left')
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def sub_sub_title(cls, f: Format) -> None:
-            f.set_font_size(16)
-            f.set_bg_color(cls.COLOR_WHITE)
-
-        @classmethod
-        def all_rows(cls, f: Format) -> None:
-            f.set_border(0)
-            f.set_align('top')
-            f.set_text_wrap(True)
-
-        @classmethod
-        def action_digest_value(cls, f: Format) -> None:
-            f.set_font_size(8)
-            f.set_left()
-            f.set_bottom()
-            f.set_right()
-            f.set_align('vjustify')
-            f.set_text_wrap(True)
-
-        @classmethod
-        def action_digest_label(cls, f: Format) -> None:
-            f.set_bg_color(cls.COLOR_LIGHT_HEADER)
-            f.set_font_size(8)
-            f.set_left()
-            f.set_top()
-            f.set_right()
-            f.set_align('vjustify')
-            f.set_text_wrap(True)
-
-        @classmethod
-        def action_digest_page_header(cls, f: Format) -> None:
-            f.set_bg_color(cls.COLOR_PAGE_HEADER)
-            f.set_color('#ffffff')
-            f.set_align('top')
-            f.set_font_size(10)
-            f.set_bold()
-            f.set_align('vjustify')
-            f.set_text_wrap(True)
-
-        @classmethod
-        def action_digest_value_long(cls, f: Format) -> None:
-            cls.action_digest_value(f)
-            f.set_bold(False)
-            f.set_font_size(8)
-            f.set_align('top')
-            f.set_align('vjustify')
-            f.set_text_wrap(True)
-
-    def __getattr__(self, name):
-        return self[name]
-
-    def set_for_field(self, field: ReportFieldBlock, labels: list) -> None:
-        if None not in {self._formats_for_fields.get(label) for label in labels}:
-            return
-        cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
-        cell_format = self.workbook.add_format(cell_format_specs)
-        self.StyleSpecifications.all_rows(cell_format)
-        for label in labels:
-            self._formats_for_fields[label] = cell_format
-
-    def set_for_label(self, label: str, format: Format) -> None:
-        cell_format = self._formats_for_fields.get(label)
-        if not cell_format:
-            self._formats_for_fields[label] = format
-
-    def get_for_label(self, label):
-        return self._formats_for_fields.get(label)
+# T = TypeVar('T')
 
 
 class ExcelReport:
@@ -179,6 +50,11 @@ class ExcelReport:
     plan_current_related_objects: PlanRelatedObjects
     field_to_column_labels: dict[str, set[str]]
     has_macros: bool
+    plan: Plan
+    child_plans: list[Plan]
+    # Is this report and its type dynamically created
+    # (not loaded from database)
+    is_dynamic: bool
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -188,47 +64,72 @@ class ExcelReport:
         statuses: dict[int, ActionStatus]
         action_content_type: ContentType
 
-        def __init__(self, report: Report):
+        def __init__(self, report: Report, child_plans: list[Plan] | None = None):
             plan = report.type.plan
+            if child_plans is None:
+                child_plans = []
             self.category_types = self._keyed_dict(plan.category_types.all())
             self.categories = self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()])
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
             self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
             self.action_content_type = ContentType.objects.get_for_model(Action)
+            # Aggregate related objects from child plans
+            for child_plan in child_plans:
+                self.category_types.update(self._keyed_dict(child_plan.category_types.all()))
+                self.categories.update(self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()]))
+                self.implementation_phases.update(self._keyed_dict(child_plan.action_implementation_phases.all()))
+                self.statuses.update(self._keyed_dict(child_plan.action_statuses.all()))
+                self.organizations.update(self._keyed_dict(Organization.objects.available_for_plan(child_plan)))
+
             self.category_level_category_mappings = {
                 ct.pk: ct.categories_projected_by_level() for ct in self.category_types.values()
             }
 
         @staticmethod
-        def _keyed_dict(seq, key='pk'):
-            return {getattr(el, key): el for el in seq}
+        def _keyed_dict[T: Model](seq: Iterable[T]) -> dict[int, T]:
+            return {el.pk: el for el in seq}
 
-    def __init__(self, report: Report, language: str|None = None):
+    def __init__(self, report: Report, language: str|None = None, is_dynamic: bool = False):
         # Currently only language None is properly supported, defaulting
         # to the plan's primary language. When implementing support for
         # other languages, make sure the action contents and other
         # plan object contents are translated.
+
         self.language = report.type.plan.primary_language if language is None else language
         self.report = report
+        self.is_dynamic = is_dynamic
         self.output = BytesIO()
-        self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
+        self.workbook = xlsxwriter.Workbook(
+            self.output,
+            {
+                'in_memory': True,
+            }
+        )
         self.formats = ExcelFormats(self.workbook)
-        if report.type.plan.features.output_report_action_print_layout:
+        self.plan = self.report.type.plan
+        if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
             self.has_macros = True
         else:
             self.has_macros = False
-        self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
-        self.field_to_column_labels = dict()
-        self._initialize_formats()
 
-    def get_filename(self) -> str:
-        suffix = '.xlsm' if self.has_macros else '.xlsx'
+        if (child_plans := report.type.plan.children.get_queryset().prefetch_related(
+                'category_types', 'action_implementation_phases', 'action_statuses', 'related_organizations')) and \
+                report.type.get_action_list_page().include_related_plans:
+            self.child_plans = list(child_plans)  # TODO: add .visible_for_user() when it is implemented
+            self.plan_current_related_objects = self.PlanRelatedObjects(self.report, self.child_plans)
+        else:
+            self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
+        self.field_to_column_labels = dict()
+
+    def get_filename(self, suffix: str | None = None) -> str:
+        if suffix is None:
+            suffix = '.xlsm' if self.has_macros else '.xlsx'
         return slugify(self.report.name, allow_unicode=True) + suffix
 
-    def generate_actions_dataframe(self) -> polars.DataFrame:
+    def generate_actions_dataframe(self) -> pl.DataFrame:
         with translation.override(self.language):
             action_version_data, related_versions = self._prepare_serialized_report_data()
             return self.create_populated_actions_dataframe(action_version_data, related_versions)
@@ -243,7 +144,14 @@ class ExcelReport:
         self.close()
         return self.output.getvalue()
 
+    def generate_csv(self) -> str:
+        actions_df = self.generate_actions_dataframe()
+        with translation.override(self.language):
+            return actions_df.write_csv()
+
     def _write_title_sheet(self) -> None:
+        if self.report.disable_title_sheet:
+            return
         worksheet = self.workbook.add_worksheet(_('Lead'))
         plan = self.report.type.plan
         start = self.report.start_date
@@ -252,6 +160,7 @@ class ExcelReport:
         complete_label = _('complete')
         not_complete_label = _('in progress')
         completed = complete_label if self.report.is_complete else not_complete_label
+        datetime_now = timezone.make_naive(timezone.now(), timezone=self.report.type.plan.tzinfo)
         cells: Sequence[Sequence[Cell]] = [
             [Cell(plan.name, 'title')],
             [Cell(self.report.type.name, 'sub_title')],
@@ -260,7 +169,7 @@ class ExcelReport:
             [Cell(complete_key, 'metadata_label'), Cell(completed, 'metadata_value')],
             [Cell(str(self.report._meta.get_field('start_date').verbose_name), 'metadata_label'), Cell(start, 'date')],
             [Cell(str(self.report._meta.get_field('end_date').verbose_name), 'metadata_label'), Cell(end, 'date')],
-            [Cell(_('updated at'), 'metadata_label'), Cell(plan.to_local_timezone(datetime.now()).replace(tzinfo=None), 'date')],
+            [Cell(_('updated at'), 'metadata_label'), Cell(datetime_now, 'date')],
             [],
             [Cell(_('Exported from Kausal Watch'), 'metadata_value')],
             [Cell('kausal.tech', 'metadata_value', url='https://kausal.tech')],
@@ -278,10 +187,15 @@ class ExcelReport:
         worksheet.autofit()
         worksheet.set_column(1, 1, 40)
 
-    def _write_actions_sheet(self, df: polars.DataFrame):
+    def _write_actions_sheet(self, df: pl.DataFrame) -> xlsxwriter.worksheet.Worksheet:
         return self._write_sheet(self.workbook.add_worksheet(_('Actions')), df)
 
-    def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
+    def _write_sheet(
+            self,
+            worksheet: xlsxwriter.worksheet.Worksheet,
+            df: pl.DataFrame,
+            small: bool = False,
+    ) -> xlsxwriter.worksheet.Worksheet:
 
         # col_width = 40 if small else 50
         # first_col_width = col_width if small else 10
@@ -299,9 +213,9 @@ class ExcelReport:
             worksheet.set_row(i + 1, row_height)
         i = 0
         for label in df.columns:
-            format = self.formats.get_for_label(label)
-            if format is None:
-                format = self.formats.all_rows
+            _format = self.formats.get_for_label(label)
+            if _format is None:
+                _format = self.formats.all_rows
             width: int | None = col_width
             if i == 0:
                 width = first_col_width
@@ -309,7 +223,7 @@ class ExcelReport:
                 width = last_col_width
             if small:
                 width = None
-            worksheet.set_column(i, i, width, format)
+            worksheet.set_column(i, i, width, _format)
             i += 1
         worksheet.conditional_format(1, 0, df.height, df.width-1, {
             'type': 'formula',
@@ -332,7 +246,7 @@ class ExcelReport:
         self.workbook.close()
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
-        from reports.models import SerializedActionVersion, SerializedVersion
+        from reports.types import SerializedActionVersion, SerializedVersion
         if self.report.is_complete:
             serialized_actions: list[SerializedActionVersion] = []
             snapshots = (
@@ -340,13 +254,13 @@ class ExcelReport:
                 .select_related('action_version__revision__user')
                 .prefetch_related('action_version__revision__version_set')
             )
-            snapshots = typing.cast(typing.Iterable['ActionSnapshot'], snapshots)
             related_versions: QuerySet[Version] = Version.objects.none()
             for snapshot in snapshots:
                 action_version_data = snapshot.get_serialized_data()
                 serialized_actions.append(action_version_data)
                 related_versions |= snapshot.get_related_versions()
             serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in related_versions]
+            serialized_actions = sorted(serialized_actions, key=lambda x: x.data['order'])
             return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
@@ -363,15 +277,15 @@ class ExcelReport:
             all_actions: list[SerializedActionVersion],
             all_related_versions: list[SerializedVersion],
     ):
-        from reports.models import SerializedAttributeVersion
-        data = {}
+        from reports.types import SerializedAttributeVersion
+        data: dict[str, list[Any]] = {}
 
-        def append_to_key(key, value, field_name):
+        def append_to_key(key: str, value: ReportCellValue, field_name: str) -> None:
             self.field_to_column_labels.setdefault(field_name, set()).add(key)
             data.setdefault(key, []).append(value)
 
-        COMPLETED_BY_LABEL = _('Marked as complete by')
-        COMPLETED_AT_LABEL = _('Marked as complete at')
+        completed_by_label = _('Marked as complete by')
+        completed_at_label = _('Marked as complete at')
 
         related_objects = group_by_model(all_related_versions)
         attribute_versions = {
@@ -379,6 +293,14 @@ class ExcelReport:
             for v in all_related_versions
             if isinstance(v, SerializedAttributeVersion)
         }
+
+        fields = []
+        for field in self.report.type.fields:
+            if field is not None and field.value is not None and 'attribute_type' in field.value and \
+                    field.value['attribute_type'] is None:
+                logger.error(f"Field has NoneType attribute_type in report type {self.report.type.name}.")
+                continue
+            fields.append(field)
         for action in all_actions:
             action_identifier = action.data['identifier']
             action_obj = Action(**{key: action.data[key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
@@ -392,8 +314,8 @@ class ExcelReport:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier, 'identifier')
             append_to_key(_('Action'), action_name, 'name')
-            for field in self.report.type.fields:
-                labels = [label for label in field.block.xlsx_column_labels(field.value, plan=self.report.type.plan)]
+            for field in fields:
+                labels = list(field.block.xlsx_column_labels(field.value, plan=self.report.type.plan))
                 values = field.block.extract_action_values(
                     self, field.value, action.data, related_objects, attribute_versions,
                 )
@@ -403,19 +325,19 @@ class ExcelReport:
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
                 values = [clean(v) for v in values]
-                for label, value in zip(labels, values):
+                for label, value in zip(labels, values, strict=False):
                     append_to_key(label, value, field_name)
-            append_to_key(COMPLETED_BY_LABEL, completed_by or '', 'completed_by')
-            append_to_key(COMPLETED_AT_LABEL, completed_at, 'completed_at')
-            self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
-        if data and set(data.get(COMPLETED_AT_LABEL)) == {None}:
-            if COMPLETED_AT_LABEL in data:
-                del data[COMPLETED_AT_LABEL]
-            if COMPLETED_BY_LABEL in data:
-                del data[COMPLETED_BY_LABEL]
-        return polars.DataFrame(data)
+            append_to_key(completed_by_label, completed_by or '', 'completed_by')
+            append_to_key(completed_at_label, completed_at, 'completed_at')
+            self.formats.set_for_label(completed_at_label, self.formats.timestamp)
+        if data and set(data.get(completed_at_label) or [None]) == {None}:
+            if completed_at_label in data:
+                del data[completed_at_label]
+            if completed_by_label in data:
+                del data[completed_by_label]
+        return pl.DataFrame(data)
 
-    def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
+    def _get_aggregates(self, labels: Sequence[str], action_df: pl.DataFrame) -> pl.DataFrame | None:
         for label in labels:
             if label not in action_df.columns:
                 return None
@@ -423,19 +345,20 @@ class ExcelReport:
             raise ValueError('Only one or two dimensional pivot tables supported')
         action_df = action_df.fill_null('[' + _('Unknown') + ']')
         if len(labels) == 1:
-            return action_df\
-                .groupby(labels)\
-                .count()\
-                .sort(reversed(labels), descending=False)\
-                .rename({'count': _('Actions')})
-        return action_df.pivot(
+            return (action_df
+                    .groupby(labels)
+                    .count()
+                    .rename({'count': _('Actions')}))
+        return action_df.pivot(  # noqa: PD010
             values=_("Identifier"),
             index=labels[0],
             columns=labels[1],
-            aggregate_function="count",
+            aggregate_function="len",
             ).sort(labels[0])
 
-    def post_process(self, action_df: polars.DataFrame):
+    def post_process(self, action_df: pl.DataFrame):
+        if self.report.disable_summary_sheets:
+            return
         if getattr(self.report.type.plan.features, 'output_report_action_print_layout', False):
             write_action_summaries(self, action_df)
 
@@ -453,7 +376,6 @@ class ExcelReport:
                 'type': 'column',
             },
         ]
-
         # Pivot sheet: Category (level) x Implementation phase
         category_labels = self.report.type.get_field_labels_for_type('category')
         implementation_phase_fields = self.report.type.get_fields_for_type('implementation_phase')
@@ -466,8 +388,15 @@ class ExcelReport:
                     'subtype': 'stacked',
                 })
         sheet_number = 1
+
+        def is_column_data_missing(field_label: str) -> bool:
+            return field_label not in action_df or action_df.get_column(field_label).dtype.is_(pl.datatypes.Null)
+
         for spec in pivot_specs:
             grouping = spec['group']
+            if any(is_column_data_missing(field_label) for field_label in grouping):
+                continue
+
             aggregated = self._get_aggregates(grouping, action_df)
             if aggregated is None:
                 continue
@@ -486,18 +415,4 @@ class ExcelReport:
                 chart.add_series(series)
             if chart_type == 'column':
                 chart.set_size({'width': 720, 'height': 576})
-            # The gradient is ugly on native Excel, some color design is needed before this should be enabled again
-            #
-            # chart.set_plotarea({
-            #     'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
-            # })
             worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
-
-    def _initialize_format(self, key, initializer):
-        format = self.workbook.add_format()
-        self.formats[key] = format
-        initializer(format)
-
-    def _initialize_formats(self):
-        for name, callback in inspect.getmembers(ExcelFormats.StyleSpecifications, inspect.ismethod):
-            self._initialize_format(name, callback)

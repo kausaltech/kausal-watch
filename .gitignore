@@ -13,6 +13,7 @@ tmp/**
 *.bz2
 *.xlsx
 .env*
+!/.env.test
 venv/**
 bin/**
 Attic/**
@@ -27,3 +28,5 @@ data/**
 .git
 /docker-compose.override.yml
 /kausal_watch_extensions
+requirements-local.in
+requirements-local.txt

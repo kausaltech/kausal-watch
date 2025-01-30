@@ -1,15 +1,24 @@
 import logging
 
-from anymail.signals import post_send, pre_send
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from wagtail.signals import task_cancelled, task_submitted
+from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
+from anymail.signals import post_send, pre_send
+
+from indicators.models import Indicator, IndicatorContactPerson
 from notifications.models import NotificationSettings
+from orgs.models import Organization, OrganizationPlanAdmin
+from people.models import Person
 
-from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
-from .models import Action, Category, Plan, PlanFeatures
+from .mail import (
+    ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
+    ActionModeratorCancelTaskStateSubmissionEmailNotifier,
+    WorkflowStateApprovalWithCommentEmailNotifier,
+)
+from .models import Action, ActionContactPerson, ActionResponsibleParty, Category, GeneralPlanAdmin, Plan, PlanFeatures
 from .models.attributes import AttributeType
+from .perms import get_people_with_login_rights
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +57,52 @@ def invalidate_attribute_type_cache(sender, instance, **kwargs):
     Category.get_attribute_types_for_plan.cache_clear()
 
 
+@receiver(post_delete, sender=ActionContactPerson)
+def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):
+    # When deleting an ActionContactPerson, drafts of that action may reference the deleted instance, which causes an
+    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
+    # draft is published, the ActionContactPerson is created anew instead of trying (and failing) to change the one that
+    # doesn't exist anymore.
+    # TODO: This may need to be done for other models as well; investigate.
+    assert isinstance(instance, ActionContactPerson)
+    instance.fix_action_draft_after_deletion()
+
+
+@receiver(post_delete, sender=ActionResponsibleParty)
+def fix_deleted_responsible_party_in_draft(sender, instance, **kwargs):
+    # When deleting an ActionResponsibleParty, drafts of that action may reference the deleted instance, which causes an
+    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
+    # draft is published, the ActionResponsibleParty is created anew instead of trying (and failing) to change the one
+    # that doesn't exist anymore.
+    # TODO: This may need to be done for other models as well; investigate.
+    assert isinstance(instance, ActionResponsibleParty)
+    instance.fix_action_draft_after_deletion()
+
+
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
+workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
+
+MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
+    Person,
+    GeneralPlanAdmin,
+    ActionContactPerson,
+    IndicatorContactPerson,
+    ActionResponsibleParty,
+    Action,
+    Indicator,
+    OrganizationPlanAdmin,
+    Organization,
+)
+
+
+def clear_login_rights_cache(sender, instance, **kwargs):
+    get_people_with_login_rights.cache_clear()
+
+
+for model in MODELS_WHICH_AFFECT_LOGIN_RIGHTS:
+    post_save.connect(clear_login_rights_cache, sender=model)
+    post_delete.connect(clear_login_rights_cache, sender=model)
 
 
 def register_signal_handlers():
@@ -60,4 +113,8 @@ def register_signal_handlers():
     task_cancelled.connect(
         action_moderator_cancel_task_submission_email_notifier,
         dispatch_uid='action_moderator_cancel_task_submitted_email_notification',
+    )
+    workflow_approved.connect(
+        workflow_approval_email_notifier,
+        dispatch_uid="workflow_state_approved_email_notification",
     )

@@ -3,6 +3,7 @@ from functools import cache
 from typing import Type
 
 import graphene
+
 from grapple.registry import registry as grapple_registry
 from grapple.types.streamfield import StreamFieldBlock
 

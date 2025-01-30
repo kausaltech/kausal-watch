@@ -1,8 +1,9 @@
 from typing import Type, TypeVar
 
-from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.db.models import Model
+
+from dal import autocomplete, forward as dal_forward
 
 from actions.models.action import Action
 from actions.models.category import CategoryType

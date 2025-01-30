@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import datetime
 
-import factory
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
-from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from wagtail.models import Task as WagtailTask, Workflow, WorkflowTask
 from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
+
+import factory
+from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
+
+from aplans.factories import ModelFactory
 
 from actions.blocks import ActionListBlock, CategoryListBlock
 from actions.models import (
@@ -45,7 +48,6 @@ from actions.models import (
     PlanFeatures,
     Scenario,
 )
-from aplans.factories import ModelFactory
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
@@ -68,6 +70,7 @@ class PlanFactory(ModelFactory[Plan]):
     notification_settings = RelatedFactory(
         'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan',
     )
+    kausal_paths_instance_uuid = 'paths_uuid'
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Plan:
@@ -180,6 +183,7 @@ class CategoryFactory(ModelFactory[Category]):
     common = SubFactory(CommonCategoryFactory)
     lead_paragraph = "foo"
     help_text = "bar"
+    kausal_paths_node_uuid = "kausal_paths_node_uuid"
 
 
 class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):

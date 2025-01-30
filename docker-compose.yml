@@ -2,7 +2,7 @@ x-django-environment: &django-environment
   - ENV_FILE
   # Ensure username and pw match with POSTGRES_* defined below
   - DATABASE_URL=postgis://watch:changemeforprod@db/watch
-  - CACHE_URL=rediscache://redis:6379
+  - REDIS_URL=redis://redis:6379
   - STATIC_ROOT=/srv/static
   - LC_CTYPE=C.UTF-8
   - DEBUG
@@ -33,8 +33,6 @@ x-django-environment: &django-environment
   - MAILJET_SECRET_KEY
   - HOSTNAME_PLAN_DOMAINS
   - ELASTICSEARCH_URL
-  - CELERY_BROKER_URL=redis://redis:6379
-  - CELERY_RESULT_BACKEND=redis://redis:6379
   - GOOGLE_MAPS_V3_APIKEY
   - ALLOWED_SENDER_EMAILS
   - SERVER_EMAIL
@@ -48,14 +46,19 @@ x-django-environment: &django-environment
   - GITHUB_APP_ID
   - GITHUB_APP_PRIVATE_KEY_FILE
   - GITHUB_APP_PRIVATE_KEY
-  - DEPLOY_ALLOWED_CNAMES
+  - DEPLOY_ALLOWED_CNAMES_PRODUCTION
+  - DEPLOY_ALLOWED_CNAMES_PREVIEW
+  - DEPLOY_ALLOWED_CNAMES_DEVELOPMENT
   - DEPLOY_TASK_GITOPS_REPO
 
 x-django-build: &django-build
   context: .
-  dockerfile: docker/app/Dockerfile
+  dockerfile: kausal_common/docker/Dockerfile
   args:
     - STATIC_ROOT
+    - DJANGO_PROJECT=aplans
+    - SENTRY_PROJECT=watch-backend
+
   secrets:
     - EXTRA_PYPI_INDEX
 

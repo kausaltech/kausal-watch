@@ -1,7 +1,8 @@
 from datetime import date
 
-import pytest
 from django.core.exceptions import ValidationError
+
+import pytest
 
 from indicators.tests.factories import IndicatorFactory, IndicatorValueFactory
 

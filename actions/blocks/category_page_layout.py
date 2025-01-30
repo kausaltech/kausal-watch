@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLString
 from wagtail import blocks
 
-from actions.blocks.action_content import BaseDatasetsBlock
-from actions.blocks.choosers import CategoryAttributeTypeChooserBlock, CategoryTypeDatasetSchemaChooserBlock
+from grapple.helpers import register_streamfield_block
+from grapple.models import GraphQLForeignKey
+
+from actions.blocks.action_content_blocks import BaseContactFormBlock, BaseDatasetsBlock
+from actions.blocks.choosers import (
+    CategoryAttributeTypeChooserBlock,
+    CategoryTypeDatasetSchemaChooserBlock,
+)
 from actions.models.attributes import AttributeType
 from budget.models import DatasetSchema
 
@@ -38,17 +44,9 @@ class CategoryPageCategoryListBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
-class CategoryPageContactFormBlock(blocks.StructBlock):
-    heading = blocks.CharBlock(required=False, label=_('Heading'))
-    description = blocks.CharBlock(required=False, label=_('Description'))
-
+class CategoryPageContactFormBlock(BaseContactFormBlock):
     class Meta:
-        label = _('Contact form')
-
-    graphql_fields = [
-        GraphQLString('heading'),
-        GraphQLString('description'),
-    ]
+        label = _("Contact form")
 
 
 @register_streamfield_block
@@ -68,7 +66,6 @@ class CategoryPageProgressBlock(blocks.StructBlock):
 
     class Meta:
         label = _('Progress')
-
 
 @register_streamfield_block
 class CategoryPageMainTopBlock(blocks.StreamBlock):

@@ -2,8 +2,9 @@ import json
 
 import pytest
 
-from actions.tests.factories import ActionFactory, CategoryFactory, PlanFactory
 from aplans.utils import RestrictedVisibilityModel
+
+from actions.tests.factories import ActionFactory, CategoryFactory, PlanFactory
 from indicators.tests.factories import (
     ActionIndicatorFactory,
     CommonIndicatorFactory,
@@ -548,6 +549,9 @@ def test_indicator_node(graphql_client_query_data):
             description
             minValue
             maxValue
+            showTrendline
+            desiredTrend
+            showTotalLine
             categories {
               __typename
               id
@@ -627,6 +631,9 @@ def test_indicator_node(graphql_client_query_data):
             'description': indicator.description,
             'minValue': indicator.min_value,
             'maxValue': indicator.max_value,
+            'showTrendline': indicator.show_trendline,
+            'desiredTrend': indicator.desired_trend.upper(),
+            'showTotalLine': indicator.show_total_line,
             'categories': [{
                 '__typename': 'Category',
                 'id': str(category.id),

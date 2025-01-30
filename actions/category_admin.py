@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
+
+from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.forms import ModelChoiceField
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms.models import WagtailAdminModelForm
@@ -11,14 +17,21 @@ from wagtail.admin.panels import (
     MultiFieldPanel,
     ObjectList,
 )
+from wagtail.admin.panels.base import Panel
+
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.utils import append_query_parameter
+
+from actions.blocks.mixins import ActionListPageBlockFormMixin
+from actions.models.plan import Plan
+from admin_site.utils import admin_req
 from admin_site.wagtail import (
-    ActionListPageBlockFormMixin,
     AplansAdminModelForm,
     AplansCreateView,
     AplansEditView,
@@ -26,31 +39,33 @@ from admin_site.wagtail import (
     AplansTabbedInterface,
     CondensedInlinePanel,
     DatasetButtonMixin,
+    InitializeFormWithInitialPlanMixin,
     InitializeFormWithPlanMixin,
     PlanFilteredFieldPanel,
     get_translation_tabs,
+    insert_model_translation_panels,
 )
-from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import append_query_parameter
 
-from .models import Category, CategoryType, CommonCategory, CommonCategoryType
+from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 
 class CategoryTypeFilter(SimpleListFilter):
     title = _('Category type')
     parameter_name = 'category_type'
 
-    def lookups(self, request, model_admin):
-        user = request.user
+    def lookups(self, request: HttpRequest, model_admin):
+        user = admin_req(request).user
         plan = user.get_active_admin_plan()
-        choices = [(i.id, i.name) for i in plan.category_types.all()]
+        choices = [(i.pk, i.name) for i in plan.category_types.all()]
         return choices
 
     def queryset(self, request, queryset):
         if self.value() is not None:
             return queryset.filter(type=self.value())
-        else:
-            return queryset
+        return queryset
 
 
 class CommonCategoryTypeFilter(SimpleListFilter):
@@ -61,30 +76,31 @@ class CommonCategoryTypeFilter(SimpleListFilter):
         # user = request.user
         # plan = user.get_active_admin_plan()
         # choices = [(i.id, i.name) for i in plan.category_types.all()]
-        choices = [(i.id, i.name) for i in CommonCategoryType.objects.all()]
+        choices = [(i.pk, i.name) for i in CommonCategoryType.objects.all()]
         return choices
 
     def queryset(self, request, queryset):
         if self.value() is not None:
             return queryset.filter(type=self.value())
-        else:
-            return queryset
+        return queryset
 
 
-class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+class CategoryTypeCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView):
     pass
 
 
-class CategoryTypeEditView(InitializeFormWithPlanMixin, AplansEditView):
+class CategoryTypeEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView):
     pass
 
 
 class CategoryTypeDeleteView(DeleteView):
     def delete_instance(self):
         # When deleting a category type which is an instantiation of a common category type, remove link from plan
+        assert isinstance(self.instance, CategoryType)
         plan = self.instance.plan
         cct = self.instance.common
-        plan.common_category_types.remove(cct)
+        if cct is not None:
+            plan.common_category_types.remove(cct)
         return super().delete_instance()
 
 
@@ -137,14 +153,15 @@ class CategoryTypeAdmin(AplansModelAdmin):
                 FieldPanel('editable_for_indicators'),
             ]),
         ], heading=_('Action and indicator categorization'), classname='collapsible'),
-        CondensedInlinePanel('levels', panels=[
-            FieldPanel('name'),
-            FieldPanel('name_plural'),
-        ], heading=_("Category levels")),
         FieldPanel('synchronize_with_pages'),
         FieldPanel('instances_editable_by'),
         FieldPanel('action_list_filter_section'),
         FieldPanel('action_detail_content_section'),
+    ]
+
+    levels_panels = [
+        FieldPanel('name'),
+        FieldPanel('name_plural'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -159,11 +176,20 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return qs.filter(plan=plan)
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(CategoryType)
+        plan = instance.plan
+
         panels = list(self.panels)
+
         if instance and instance.common:
             panels.insert(1, FieldPanel('common'))
+
+        levels_panels = insert_model_translation_panels(CategoryLevel, self.levels_panels, request, plan)
+        panels.append(
+            CondensedInlinePanel('levels', panels=levels_panels, heading=_("Category levels")),
+        )
+
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
@@ -172,11 +198,13 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
 
 
-class CategoryAdminForm(WagtailAdminModelForm):
+class CategoryAdminForm(WagtailAdminModelForm[Category]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # For the parent field, only show categories of the same type
-        self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type=self.instance.type)
+        parent_field = cast(ModelChoiceField[Category], self.fields['parent'])
+        assert parent_field.queryset is not None
+        parent_field.queryset = parent_field.queryset.filter(type=self.instance.type)
 
     def clean_identifier(self):
         # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
@@ -207,8 +235,8 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(Category)
         user = request.user
         plan = request.get_active_admin_plan()
         if instance is not None:
@@ -239,7 +267,24 @@ class CategoryEditHandler(AplansTabbedInterface):
 class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
+        self.initial_plan_id = kwargs.pop('initial_plan_id')
         super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        obj = super().save(commit)
+        initial_plan_id = self.initial_plan_id
+        if initial_plan_id and str(initial_plan_id) != str(self.plan.id):
+            initial_plan = Plan.objects.get(pk=initial_plan_id)
+            request = ctx_request.get_admin_request()
+            messages.add_message(request, messages.WARNING,
+                                 _('While editing this category type you have switched to a different plan. '
+                                   'This category type was still saved with the original plan "%s".')
+                                 % initial_plan.name)
+            self.plan = initial_plan
+            obj.plan = self.plan
+            obj.save()
+
+        return obj
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):
@@ -255,6 +300,8 @@ class CategoryTypeEditHandler(AplansTabbedInterface):
 
 
 class CategoryTypeQueryParameterMixin:
+    request: HttpRequest
+
     @property
     def index_url(self):
         return append_query_parameter(self.request, super().index_url, 'category_type')
@@ -365,7 +412,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     list_filter = (CategoryTypeFilter,)
     model = Category
 
-    panels = [
+    panels: list[FieldPanel[Any]] = [
         PlanFilteredFieldPanel('parent'),
         FieldPanel('name'),
         FieldPanel('identifier'),
@@ -406,7 +453,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(Category)
         panels = list(self.panels)
         # If the category type doesn't have semantic identifiers, we
         # hide the whole panel.
@@ -419,14 +466,17 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(request.user)
         panels += main_attribute_panels
 
+        all_panels = cast(list[Panel[Any]], panels)
+
         if request.user.is_superuser:
             # Didn't use CondensedInlinePanel for the following because there is a bug:
             # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
             # and only if the inline instance is collapsed.
-            panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
+            all_panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
                 FieldPanel('language'),
                 FieldPanel('image'),
             ]))
+            all_panels.append(FieldPanel('kausal_paths_node_uuid'))
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -487,7 +537,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(CommonCategoryType)
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -632,7 +682,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(CommonCategory)
         panels = list(self.panels)
 
         if request.user.is_superuser:

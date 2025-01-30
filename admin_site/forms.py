@@ -21,7 +21,7 @@ class LoginForm(AuthenticationForm):
         }))
 
     def __init__(self, request=None, *args, **kwargs):
-        super().__init__(request=request, *args, **kwargs)
+        super().__init__(request, *args, **kwargs)
         email_attrs = self.fields['username'].widget.attrs
         email_attrs['placeholder'] = gettext_lazy("Enter your email address")
         email_attrs['autofocus'] = True
@@ -36,11 +36,11 @@ class LoginForm(AuthenticationForm):
         return self.cleaned_data['username'].lower()
 
 
-class WatchAdminModelForm(WagtailAdminModelForm):
+class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
     plan: Plan | None = None
 
     def prune_i18n_fields(self):
-        model: type[Model] = self._meta.model
+        model: type[ModelT] = self._meta.model
         i18n_field = get_i18n_field(model)
         if not i18n_field:
             return

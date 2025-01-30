@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import importlib
+import importlib.util
+import typing
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -10,12 +11,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.admin.views.pages import search
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtail.models import Page
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
+
+from kausal_common.deployment.health_check_view import health_view
 
 from actions.api import all_routers as actions_api_routers, all_views as actions_api_views
 from actions.autocomplete import (
@@ -30,17 +34,20 @@ from budget.api import all_routers as budget_api_routers
 from indicators.api import all_views as indicators_api_views
 from indicators.autocomplete import CommonIndicatorAutocomplete, IndicatorAutocomplete, QuantityAutocomplete, UnitAutocomplete
 from insight.api import all_views as insight_api_views
-from kausal_common.deployment.health_check_view import health_view
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
+from reports.views import export_report_view
 from users.views import change_admin_plan
 
 from .api_router import router as api_router
 from .graphene_views import SentryGraphQLView
 
+if typing.TYPE_CHECKING:
+    from types import ModuleType
+
 extensions_api_views = []
-kwe_urls = []
+kwe_urls: ModuleType | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions import urls
     from kausal_watch_extensions.api import all_views
@@ -188,6 +195,7 @@ urlpatterns = [
     ),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
+    re_path('^report_export/(?:(?P<plan_identifier>[-a-z0-9]+)/)?$', export_report_view, name='action-report-export'),
     path('auth/', include('social_django.urls', namespace='social')),
     path("logout/", KausalLogoutView.as_view(), name="logout"),
     path('healthz/', csrf_exempt(health_view)),

@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import graphene
-import graphene_django_optimizer as gql_optimizer
 from django.db.models import Count, Q
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
@@ -12,13 +11,16 @@ from graphql.type import (
     GraphQLString,
     specified_directives,
 )
+
+import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
-from actions import schema as actions_schema
-from actions.models.action import Action
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.utils import public_fields
+
+from actions import schema as actions_schema
+from actions.models.action import Action
 from budget import schema as budget_schema
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema

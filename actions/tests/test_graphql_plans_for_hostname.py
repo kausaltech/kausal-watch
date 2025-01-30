@@ -1,7 +1,8 @@
 from datetime import timedelta
 
-import pytest
 from django.utils import timezone
+
+import pytest
 
 from actions.models.plan import PublicationStatus
 
@@ -108,7 +109,7 @@ def test_get_correct_domain_by_hostname(graphql_client_query_data,
 DUMMY_DOMAIN = 'dummy.io'
 
 
-@pytest.fixture()
+@pytest.fixture
 def use_dummy_plan_hostname(settings):
     settings.HOSTNAME_PLAN_DOMAINS = [DUMMY_DOMAIN]
 

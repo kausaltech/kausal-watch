@@ -1,9 +1,18 @@
-from django.utils.functional import Promise
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
+from django.http.request import HttpRequest
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from aplans.types import WatchAdminRequest
 
-def render_html_label_for_visibility(text_content: str | Promise, public: bool):
+if TYPE_CHECKING:
+    from django_stubs_ext import StrOrPromise
+
+
+def render_html_label_for_visibility(text_content: StrOrPromise, public: bool):
     class_specifier = 'primary' if public else 'secondary'
     label = _("Public field") if public else _("Non-public field")
     return mark_safe(
@@ -24,7 +33,14 @@ class FieldLabelRenderer:
     def __init__(self, plan):
         self.plan_features = plan.features
 
-    def __call__(self, text_content: str |Promise, public: bool = True):
+    def __call__(self, text_content: StrOrPromise, public: bool = True):
         if self.plan_features.display_field_visibility_restrictions:
             return render_html_label_for_visibility(text_content, public)
         return text_content
+
+
+def admin_req(request: HttpRequest) -> WatchAdminRequest:
+    """Cast the HTTP request into an instance of (authenticated) WatchAdminRequest."""
+    assert request.user is not None
+    assert request.user.is_authenticated
+    return cast(WatchAdminRequest, request)

@@ -1,23 +1,18 @@
+from __future__ import annotations
+
 import functools
-from typing import ClassVar, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
 
 import graphene
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, URLValidator
 from django.db import models
+from django.db.models.aggregates import Max
+from django.db.models.functions import Cast, Substr
 from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from grapple.models import (
-    GraphQLBoolean,
-    GraphQLField,
-    GraphQLForeignKey,
-    GraphQLImage,
-    GraphQLInt,
-    GraphQLStreamfield,
-    GraphQLString,
-)
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -27,29 +22,44 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, PagePermissionTester, Site
 from wagtail.search import index
 
+from grapple.models import (
+    GraphQLBoolean,
+    GraphQLField,
+    GraphQLForeignKey,
+    GraphQLImage,
+    GraphQLInt,
+    GraphQLStreamfield,
+    GraphQLString,
+)
+
+from aplans.extensions import get_body_blocks
+from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
+
 from actions.blocks import (
-    ActionAsideContentBlock,
     ActionHighlightsBlock,
     ActionListBlock,
     ActionListFilterBlock,
-    ActionMainContentBlock,
     CategoryListBlock,
     CategoryTreeMapBlock,
     RelatedPlanListBlock,
     get_default_action_content_blocks,
     get_default_action_filter_blocks,
 )
+from actions.blocks.action_content import (
+    ActionAsideContentBlock,
+    ActionMainContentBlock,
+)
 from actions.blocks.action_dashboard import ActionDashboardColumnBlock
+from actions.blocks.category_list import CategoryTypeLevelListBlock
 from actions.blocks.category_page_layout import (
     CategoryPageAsideBlock,
     CategoryPageMainBottomBlock,
     CategoryPageMainTopBlock,
 )
+from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
-from aplans.extensions import get_body_blocks
-from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
 from indicators.blocks import (
     IndicatorGroupBlock,
     IndicatorHighlightsBlock,
@@ -74,21 +84,38 @@ from .blocks import (
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from wagtail.query import PageQuerySet
+
+    from kausal_common.models.types import FK
+
+    from images.models import AplansImage
+
+
 class AplansPage(Page):
     i18n = models.JSONField(blank=True, null=True)
-    show_in_footer = models.BooleanField(default=False, verbose_name=_('show in footer'),
-                                         help_text=_('Should the page be shown in the footer?'))
-    show_in_additional_links = models.BooleanField(default=False, verbose_name=_('show in additional links'),
-                                                   help_text=_('Should the page be shown in the additional links?'))
-    link_in_all_child_plans = models.BooleanField(default=False, verbose_name=_('show link in child plans'),
-                                                help_text=_("Should this additional link be displayed in child plans?"))
+    show_in_footer: models.BooleanField = models.BooleanField(
+        default=False, verbose_name=_('show in footer'), help_text=_('Should the page be shown in the footer?'),
+    )
+    show_in_additional_links: models.BooleanField = models.BooleanField(
+        default=False,
+        verbose_name=_('show in additional links'),
+        help_text=_('Should the page be shown in the additional links?'),
+    )
+    link_in_all_child_plans: models.BooleanField = models.BooleanField(
+        default=False,
+        verbose_name=_('show link in child plans'),
+        help_text=_('Should this additional link be displayed in child plans?'),
+    )
 
-    children_use_secondary_navigation = models.BooleanField(
+    children_use_secondary_navigation: models.BooleanField = models.BooleanField(
         default=False, verbose_name=_('children use secondary navigation'),
         help_text=_('Should subpages of this page use secondary navigation?'),
     )
 
-    content_panels = [
+    content_panels: ClassVar[list[Panel[Any]]] = [
         FieldPanel('title', classname="full title"),
     ]
 
@@ -127,9 +154,6 @@ class AplansPage(Page):
     class Meta:
         abstract = True
 
-    @property
-    def preview_modes(self):
-        return []
 
     @classmethod
     def get_subclasses(cls):
@@ -166,7 +190,31 @@ class AplansPage(Page):
         return []
 
 
-class PlanRootPage(AplansPage):
+class PageProtocol(Protocol):
+    slug: models.SlugField
+    def get_siblings(self) -> PageQuerySet[Page]: ...
+
+
+class DefaultSlugForCopyingMixin:
+    def default_slug_for_copying(self: PageProtocol) -> str:
+        """Get a slug a copy of this page should have by default."""
+        # Build a string of the form '{slug}-copy{i}', where '{slug}' is this page's slug and '{i}' is a positive
+        # integer such that:
+        # (a) if no sibling page with such a slug exists: '{i}' is 1.
+        # (b) otherwise, '{i}' is the greatest integer such that a sibling page with slug '{slug}-copy{i-1}' exists.
+        slug_base = f'{self.slug}-copy'
+        regex = rf'^{slug_base}\d+$'
+        max_copy_number = (
+            self.get_siblings().filter(slug__regex=regex)
+            .annotate(copy_number=Cast(Substr('slug', len(slug_base) + 1), models.IntegerField()))
+            .aggregate(Max('copy_number'))['copy_number__max']
+        )
+        if not max_copy_number:
+            max_copy_number = 0
+        return f'{slug_base}{max_copy_number+1}'
+
+
+class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc]
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock()),
         ('category_list', CategoryListBlock()),
@@ -182,6 +230,7 @@ class PlanRootPage(AplansPage):
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
         ('embed', AdaptiveEmbedBlock()),
+        ('paths_outcome', PathsOutcomeBlock()),
     ])
 
     content_panels = [
@@ -218,19 +267,23 @@ class EmptyPage(AplansPage):
 
 
 class StaticPage(AplansPage):
-    header_image = models.ForeignKey(
+    header_image: FK[AplansImage | None] = models.ForeignKey(  # pyright: ignore
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
         verbose_name=_('Header image'), help_text=_('Image to use in the header for this page'),
     )
-    lead_paragraph = models.TextField(
-        null=True, blank=True,
+    lead_paragraph = models.TextField[str | None, str | None](  # pyright: ignore
+        null=True,
+        blank=True,
         verbose_name=_('Lead paragraph'),
         help_text=_('Lead paragraph right under the heading'),
     )
+
     body = StreamField([
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('category_list', CategoryListBlock()),
+        ('category_level_list', CategoryTypeLevelListBlock()),
+        ('paths_outcome', PathsOutcomeBlock()),
         ('indicator_group', IndicatorGroupBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
@@ -303,8 +356,11 @@ class CategoryPagePermissionTester(CategoryTypeRelatedPagePermissionTester):
         super().__init__(user, page, page.category.type)
 
 
+
+
+
 class CategoryTypePage(StaticPage):
-    category_type = models.ForeignKey(
+    category_type: FK[CategoryType] = models.ForeignKey(  # pyright: ignore
         CategoryType, on_delete=models.CASCADE, null=False, verbose_name=_('Category type'),
         related_name='category_type_pages',
     )
@@ -313,7 +369,7 @@ class CategoryTypePage(StaticPage):
         # We use a version of FieldPanel with a hacked read-only template to provide the ID of the selected category
         # type as a hidden <input> element.
         ReadOnlyFieldPanelWithRawValueId('category_type', widget=CategoryTypeChooser),
-        InlinePanel('level_layouts', heading=_('Level layouts'), panels=[
+        InlinePanel['CategoryTypePage', 'CategoryTypePageLevelLayout']('level_layouts', heading=_('Level layouts'), panels=[
             FieldPanel('level', widget=CategoryLevelChooser(linked_fields={
                 # ID of the hidden <input> element with the category type ID
                 'type': '#panel-child-content-child-category_type-raw-value-id',
@@ -480,7 +536,7 @@ class CategoryPage(AplansPage):
 
 class FixedSlugPage(AplansPage):
     """
-    Page with fixed slug
+    Page with fixed slug.
 
     Define `force_slug` in the body of subclasses. You may also want to set is_creatable to False there to allow only
     programmatic creation.
@@ -631,7 +687,10 @@ class ActionListPage(FixedSlugPage):
     ]
 
     def set_default_content_blocks(self):
-        plan: Plan = self.get_site().plan
+        site = self.get_site()
+        if site is None:
+            raise ValueError('ActionListPage has no site.')
+        plan: Plan = site.plan
 
         blks = get_default_action_content_blocks(plan)
         for key, val in blks.items():
@@ -673,12 +732,28 @@ class IndicatorListPage(FixedSlugPage):
         verbose_name=_('Display insights'),
     )
 
+    display_level = models.BooleanField(
+        default=True,
+        help_text=_('Should the indicator level be shown for indicators? (Displayed in the column "Type")'),
+        verbose_name=_('Display level'),
+    )
+
+    include_related_plans = models.BooleanField(
+        verbose_name=_('Include related plans'),
+        help_text=_('Enable to make this page include indicators from related plans.'),
+        default=False,
+    )
+
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('display_insights'),
+        FieldPanel('display_level'),
+        FieldPanel('include_related_plans'),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLBoolean('display_insights'),
+        GraphQLBoolean('display_level'),
+        GraphQLBoolean('include_related_plans'),
     ]
 
     class Meta:
@@ -765,3 +840,6 @@ class PlanLink(OrderedModel):
         if self.title:
             return f'{self.title}: {self.url}'
         return self.url
+
+    def filter_siblings(self, qs: models.QuerySet[Self, Self]) -> models.QuerySet[Self, Self]:
+        return qs.filter(plan=self.plan)

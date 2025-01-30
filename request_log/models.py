@@ -24,7 +24,7 @@ class LoggedRequest(models.Model):
         return result
 
     def __str__(self):
-        date_str = self.created_at.strftime('%Y-%M-%d %H:%M:%S')
+        date_str = self.created_at.strftime('%Y-%m-%d %H:%M:%S')
         result = f'{date_str} {self.method} {self.path}'
         if self.user:
             result += f' by {self.user}'

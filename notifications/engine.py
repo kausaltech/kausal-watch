@@ -5,11 +5,13 @@ from typing import Dict, Sequence
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import translation
+
 from markupsafe import Markup
 from sentry_sdk import capture_exception
 
-from actions.models import Action, ActionContactPerson, ActionTask, Plan
 from aplans.email_sender import EmailSender
+
+from actions.models import Action, ActionContactPerson, ActionTask, Plan
 from feedback.models import UserFeedback
 from indicators.models import Indicator, IndicatorContactPerson
 

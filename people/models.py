@@ -1,48 +1,59 @@
 from __future__ import annotations
 
+import contextlib
+import copy
 import hashlib
 import io
 import logging
 import os
 import re
-import typing
 import uuid
 from datetime import timedelta
+from typing import TYPE_CHECKING, ClassVar
 
-import requests
 import reversion
-import willow
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from easy_thumbnails.files import get_thumbnailer  # type: ignore
-from image_cropping import ImageRatioField  # type: ignore
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from sentry_sdk import capture_exception
+from modeltrans.manager import MultilingualQuerySet
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 from wagtail.images.rect import Rect
 from wagtail.search import index
 
-from actions.models import ActionContactPerson
+import requests
+import willow
+from easy_thumbnails.files import get_thumbnailer
+from image_cropping import ImageRatioField
+from sentry_sdk import capture_exception
+
+from kausal_common.models.types import MLModelManager
+
+from aplans.utils import PlanDefaultsModel
+
+from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
 from orgs.models import Organization
+from users.models import User
 
-if typing.TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK, M2M, OneToOne, RevMany
 
-    from actions.models import Action, Plan
     from aplans.types import UserOrAnon, WatchRequest
+
+    from actions.models.action import Action
+    from actions.models.plan import Plan, PlanPublicSiteViewer
     from indicators.models import Indicator
     from orgs.models import OrganizationPlanAdmin
     from users.models import User as UserModel
 
 
 logger = logging.getLogger(__name__)
-User: type[UserModel] = get_user_model()  # type: ignore
+#User: type[UserModel] = get_user_model()  # type: ignore
 
 DEFAULT_AVATAR_SIZE = 360
 
@@ -55,11 +66,11 @@ def determine_image_dim(image_width, image_height, width, height):
         try:
             x = int(x)
             if x <= 0:
-                raise ValueError()
+                raise ValueError()  # noqa: TRY301
             if x > 4000:
-                raise ValueError()
+                raise ValueError()  # noqa: TRY301
         except (ValueError, TypeError):
-            raise ValueError("invalid %s dimension: %s" % (name, x))
+            raise ValueError("invalid %s dimension: %s" % (name, x)) from None
 
     if width is not None:
         width = int(width)
@@ -80,7 +91,7 @@ def image_upload_path(instance, filename):
     return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
 
 
-class PersonQuerySet(models.QuerySet['Person']):
+class PersonQuerySet(MultilingualQuerySet['Person']):
     def available_for_plan(self, plan: Plan, include_contact_persons=False):
         """Return persons from an organization related to the plan."""
         related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
@@ -91,18 +102,27 @@ class PersonQuerySet(models.QuerySet['Person']):
             q |= Q(id__in=ActionContactPerson.objects.filter(action__plan=plan).values_list('person'))
         return self.filter(q)
 
-    def is_action_contact_person(self, plan):
+    def is_action_contact_person(self, plan: Plan):
         return self.filter(contact_for_actions__plan=plan).distinct()
 
     def visible_for_user(self, user: UserModel | None, plan: Plan):
-        if not plan.features.public_contact_persons:
-            if user is None or not user.is_authenticated or not user.can_access_public_site(plan):
-                return self.none()
+        if plan.features.public_contact_persons:
+            return self
+        if user is None or not user.is_authenticated or not user.can_access_public_site(plan):
+            return self.none()
         return self
 
 
+if TYPE_CHECKING:
+    _PersonManager = models.Manager.from_queryset(PersonQuerySet)
+    class PersonManager(MLModelManager['Person', PersonQuerySet], _PersonManager): ...  # pyright: ignore
+    del _PersonManager
+else:
+    PersonManager = MLModelManager.from_queryset(PersonQuerySet)
+
+
 @reversion.register()
-class Person(index.Indexed, ClusterableModel):
+class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
@@ -112,11 +132,11 @@ class Person(index.Indexed, ClusterableModel):
         verbose_name=pgettext_lazy("person's role", 'title'),
     )
     postal_address = models.TextField(max_length=100, verbose_name=_('postal address'), null=True, blank=True)
-    organization = models.ForeignKey(
+    organization: FK[Organization] = models.ForeignKey(
         Organization, related_name='people', on_delete=models.CASCADE, verbose_name=_('organization'),
         help_text=_("What is this person's organization"),
     )
-    user = models.OneToOneField(
+    user: OneToOne[User | None] = models.OneToOneField(
         User, null=True, blank=True, related_name='person', on_delete=models.SET_NULL,
         editable=False, verbose_name=_('user'),
         help_text=_('Set if the person has an user account'),
@@ -136,19 +156,19 @@ class Person(index.Indexed, ClusterableModel):
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
-    contact_for_actions_unordered = models.ManyToManyField(
+    contact_for_actions_unordered: M2M[Action, ActionContactPerson] = models.ManyToManyField(
         'actions.Action',
         through='actions.ActionContactPerson',
         blank=True,
         verbose_name=_('contact for actions'),
     )
-    created_by = models.ForeignKey(
+    created_by: FK[UserModel | None] = models.ForeignKey(
         User, related_name='created_persons', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'),
     )
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language_lowercase')
 
-    objects = PersonQuerySet.as_manager()
+    objects: ClassVar[PersonManager] = PersonManager()  # pyright: ignore
 
     search_fields = [
         index.FilterField('id'),
@@ -166,10 +186,11 @@ class Person(index.Indexed, ClusterableModel):
     ]
 
     # Type annotations for related models etc.
-    contact_for_actions: RelatedManager[Action]
-    contact_for_indicators: RelatedManager[Indicator]
-    organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
-    general_admin_plans: RelatedManager[Plan]
+    contact_for_actions: RevMany[Action]
+    contact_for_indicators: RevMany[Indicator]
+    organization_plan_admins: RevMany[OrganizationPlanAdmin]
+    general_admin_plans: RevMany[Plan]
+    plans_with_public_site_access: RevMany[PlanPublicSiteViewer]
     organization_id: int
     created_by_id: int
 
@@ -184,6 +205,9 @@ class Person(index.Indexed, ClusterableModel):
         field: ImageRatioField = self._meta.get_field('image_cropping')  # type: ignore
         field.width = DEFAULT_AVATAR_SIZE
         field.height = DEFAULT_AVATAR_SIZE
+
+    def initialize_plan_defaults(self, plan: Plan):
+        self.organization = plan.organization
 
     def validate_unique(self, exclude=None):
         super().validate_unique(exclude)
@@ -213,7 +237,7 @@ class Person(index.Indexed, ClusterableModel):
         if self.email.endswith('@hel.fi'):
             url = f'https://api.hel.fi/avatar/{self.email}?s={DEFAULT_AVATAR_SIZE}&d=404'
         else:
-            md5_hash = hashlib.md5(self.email.encode('utf8')).hexdigest()
+            md5_hash = hashlib.md5(self.email.encode('utf8'), usedforsecurity=False).hexdigest()
             url = f'https://www.gravatar.com/avatar/{md5_hash}?f=y&s={DEFAULT_AVATAR_SIZE}&d=404'
 
         try:
@@ -268,7 +292,7 @@ class Person(index.Indexed, ClusterableModel):
             return None
 
         try:
-            with self.image.open() as file:  # noqa
+            with self.image.open():
                 pass
         except FileNotFoundError:
             logger.info('Avatar file for %s not found' % self)
@@ -352,7 +376,7 @@ class Person(index.Indexed, ClusterableModel):
             clients = Client.objects.filter(plans__plan__in=plans).distinct()
             if len(clients) == 1:
                 client = clients[0]
-            else:
+            elif not user.is_superuser:
                 logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
                     self.email, self.id, len(clients),  # pyright: ignore
                 ))
@@ -392,10 +416,8 @@ class Person(index.Indexed, ClusterableModel):
                 # If we change the email address to that of an existing deactivated user, we need to deactivate the
                 # user with the old email address (done after this returns because it returns a user different from
                 # `self.user`) and re-activate the user with the new email address (done further down in this method).
-                try:
+                with contextlib.suppress(User.DoesNotExist):
                     user = User.objects.get(email__iexact=email, is_active=False)
-                except User.DoesNotExist:
-                    pass
         else:
             user = User(
                 email=email,
@@ -433,6 +455,8 @@ class Person(index.Indexed, ClusterableModel):
 
     def visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
         if not plan.features.public_contact_persons:
+            if isinstance(user, AnonymousUser):
+                return False
             if user is None or not user.is_authenticated or not user.can_access_public_site(plan):
                 return False
         return True
@@ -441,6 +465,29 @@ class Person(index.Indexed, ClusterableModel):
         if plan is None:
             return self.plans_with_public_site_access.exists()
         return plan.pk in self.plans_with_public_site_access.values_list('plan_id', flat=True)
+
+    def get_redacted_copy(self, plan: Plan):
+        """
+        Return a copy of self with redacted information according to the configuration of the given plan.
+
+        You better not save the returned object.
+        """
+        if plan.features.contact_persons_public_data in (
+            PlanFeatures.ContactPersonsPublicData.ALL,
+            PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
+            return copy.copy(self)
+        if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NAME:
+            return Person(
+                id=self.id,  # if we omit this, GraphQL will complain that we return null for nun-nullable `id` fields
+                first_name=self.first_name,
+                last_name=self.last_name,
+                title=self.title,
+                organization=self.organization,
+            )
+        if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
+            return Person(id=self.id)
+        raise AssertionError("Unexpected value for PlanFeatures.contact_persons_public_data")
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

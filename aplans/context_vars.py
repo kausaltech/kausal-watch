@@ -1,41 +1,24 @@
 from __future__ import annotations
 
 import typing
-from contextlib import contextmanager
-from contextvars import ContextVar
+from dataclasses import dataclass
 
-if typing.TYPE_CHECKING:
-    from django.db.models import Model
+from django.db.models import Model
+from django.http.request import HttpRequest
 
-    from aplans.types import WatchAdminRequest
+from kausal_common.context.single import SingleValueContext, SubclassableContext
 
-
-ctx_request: ContextVar[WatchAdminRequest] = ContextVar('request')
-ctx_instance: ContextVar[Model] = ContextVar('instance')
+from aplans.types import WatchAdminRequest
 
 
-@contextmanager
-def set_context_var(var: ContextVar, value):
-    try:
-        var.get()
-    except LookupError:
-        pass  # expected
-    else:
-        raise Exception("context variable already set")
-    token = var.set(value)
-    try:
-        yield
-    finally:
-        var.reset(token)
+@dataclass
+class HttpRequestContext(SingleValueContext):
+    def get_admin_request(self) -> WatchAdminRequest:
+        req = self.get()
+        assert hasattr(req, 'admin_cache')
+        assert not req.user.is_anonymous
+        return typing.cast(WatchAdminRequest, req)
 
+ctx_instance = SubclassableContext('instance', Model)
 
-@contextmanager
-def set_request(request: WatchRequest):
-    with set_context_var(ctx_request, request):
-        yield
-
-
-@contextmanager
-def set_instance(instance: Model):
-    with set_context_var(ctx_instance, instance):
-        yield
+ctx_request = HttpRequestContext('request', HttpRequest)

@@ -12,6 +12,7 @@ import typing
 from datetime import UTC, datetime
 
 from django.core.wsgi import get_wsgi_application
+
 from loguru import logger
 
 if typing.TYPE_CHECKING:

@@ -47,7 +47,7 @@ class Command(BaseCommand):
         self.set_passwords(options['emails'], main_part, prepend_initials)
 
     @transaction.atomic
-    def set_passwords(self, emails: List[str], main_part: str, prepend_initials: bool = True):
+    def set_passwords(self, emails: list[str], main_part: str, prepend_initials: bool = True):
         for email in emails:
             self.set_password(email, main_part, prepend_initials)
 

@@ -1,9 +1,8 @@
-from datetime import date
-from decimal import Decimal
+from __future__ import annotations
 
 import pytest
 
-from actions.models.features import OrderBy
+from actions.models.features import OrderBy, PlanFeatures
 from actions.tests.factories import (
     ActionContactFactory,
     ActionFactory,
@@ -152,6 +151,7 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             additionalLinks {
               __typename
             }
+            kausalPathsInstanceUuid
           }
         }
         """,
@@ -246,6 +246,7 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             'additionalLinks': {
                 '__typename': 'AdditionalLinks',
             },
+            'kausalPathsInstanceUuid': plan.kausal_paths_instance_uuid,
         },
     }
     assert data == expected
@@ -774,6 +775,7 @@ def test_category_node(
             level {
               __typename
             }
+            kausalPathsNodeUuid
           }
         }
         """,
@@ -814,6 +816,7 @@ def test_category_node(
             'level': {
                 '__typename': 'CategoryLevel',
             },
+            'kausalPathsNodeUuid': category.kausal_paths_node_uuid,
         }],
     }
     assert data == expected
@@ -1679,6 +1682,65 @@ def test_action_contact_person_node(graphql_client_query_data):
                 'order': action_contact.order,
                 'primaryContact': action_contact.primary_contact,
             }],
+        },
+    }
+    assert data == expected
+
+
+@pytest.mark.parametrize('public_data', [
+    PlanFeatures.ContactPersonsPublicData.ALL,
+    PlanFeatures.ContactPersonsPublicData.NAME,
+    PlanFeatures.ContactPersonsPublicData.NONE,
+])
+def test_action_contact_persons_redacted(graphql_client_query_data, public_data):
+    plan = PlanFactory(features__contact_persons_public_data=public_data)
+    action = ActionFactory(plan=plan)
+    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
+    person = action_contact.person
+    assert person.email
+    data = graphql_client_query_data(
+        """
+        query($action: ID!) {
+          action(id: $action) {
+            contactPersons {
+              person {
+                firstName
+                lastName
+                title
+                organization {
+                  id
+                }
+                email
+              }
+            }
+          }
+        }
+        """,
+        variables={'action': action.id},
+    )
+    if public_data == PlanFeatures.ContactPersonsPublicData.NONE:
+        expected_contact_persons = []
+    else:
+        if public_data == PlanFeatures.ContactPersonsPublicData.NAME:
+            expected_email = ''
+        elif public_data == PlanFeatures.ContactPersonsPublicData.ALL:
+            expected_email = person.email
+        else:
+            pytest.fail("invalid ContactPersonsPublicData value")
+        expected_contact_persons = [{
+            'person': {
+                'firstName': person.first_name,
+                'lastName': person.last_name,
+                'title': person.title,
+                'organization': {
+                    'id': str(person.organization.id),
+                },
+                'email': expected_email,
+            },
+        }]
+    expected = {
+        'action': {
+            'contactPersons': expected_contact_persons,
         },
     }
     assert data == expected

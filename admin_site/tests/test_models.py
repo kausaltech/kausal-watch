@@ -1,10 +1,12 @@
-import pytest
 from django.contrib.auth.models import AnonymousUser
+
+import pytest
+
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 from actions.models import ActionContactPerson
 from actions.tests.factories import ActionContactFactory
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 pytestmark = pytest.mark.django_db
 

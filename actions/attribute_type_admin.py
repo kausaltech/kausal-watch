@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.decorators import display
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
@@ -9,15 +14,19 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList
+
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView, IndexView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.utils import OrderedModelChildFormSet
+
+from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
-    ActionListPageBlockFormMixin,
     AplansAdminModelForm,
     AplansCreateView,
     AplansEditView,
@@ -27,11 +36,12 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     insert_model_translation_panels,
 )
-from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import OrderedModelChildFormSet
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -61,6 +71,8 @@ def _append_content_type_query_parameter(request, url):
 
 
 class ContentTypeQueryParameterMixin:
+    request: HttpRequest
+
     @property
     def index_url(self):
         return _append_content_type_query_parameter(self.request, super().index_url)
@@ -82,7 +94,11 @@ class AttributeTypeIndexView(IndexView):
     page_title = _("Fields")
 
 
-class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansCreateView):
+class AttributeTypeCreateView(
+    ContentTypeQueryParameterMixin,
+    InitializeFormWithPlanMixin,
+    AplansCreateView,
+):
     def get_object_content_type(self):
         object_ct_id = self.request.GET.get('content_type')
         if not object_ct_id:
@@ -91,6 +107,7 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
 
     def get_page_subtitle(self):
         content_type = self.get_object_content_type()
+        assert content_type is not None
         model_name = content_type.model_class()._meta.verbose_name_plural
         return _("Field for %s") % model_name
 
@@ -119,7 +136,11 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
         return instance
 
 
-class AttributeTypeEditView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansEditView):
+class AttributeTypeEditView(
+    ContentTypeQueryParameterMixin,
+    InitializeFormWithPlanMixin,
+    AplansEditView,
+):
     pass
 
 
@@ -242,20 +263,19 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
     # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
     # wagtailorderable hasn't accounted for this.
+    @display(ordering='order', description=_('Order'))
     def index_order(self, obj):
-        return mark_safe(
+        return mark_safe(  # noqa: S308
             '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
             '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
             '<use href="#icon-grip"></use>'
             '</svg>'
             '</div>',
         )
-    index_order.admin_order_field = 'order'
-    index_order.short_description = _('Order')
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(AttributeType)
         choice_option_panels = insert_model_translation_panels(
             AttributeTypeChoiceOption, self.choice_option_panels, request, instance,
         )

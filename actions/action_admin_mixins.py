@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.admin.utils import quote, unquote
@@ -355,11 +356,9 @@ class CreateEditViewOptionalFeaturesMixin:
     def restart_workflow_action(self):
         self.workflow_state.cancel(user=self.request.user)
         self.workflow.start(self.object, self.request.user)
-        return None
 
     def cancel_workflow_action(self):
         self.workflow_state.cancel(user=self.request.user)
-        return None
 
     def workflow_action_action(self):
         extra_workflow_data_json = self.request.POST.get(
@@ -372,7 +371,6 @@ class CreateEditViewOptionalFeaturesMixin:
             self.workflow_action,
             **extra_workflow_data,
         )
-        return None
 
     def run_action_method(self):
         action_method = getattr(self, self.action.replace("-", "_") + "_action", None)
@@ -570,7 +568,7 @@ class BeforeAfterHookMixin(HookResponseMixin):
         hook response will be returned as the view response, skipping the default
         response.
         """
-        return None
+        return
 
     def run_after_hook(self):
         """
@@ -582,7 +580,7 @@ class BeforeAfterHookMixin(HookResponseMixin):
         response immediately after the operation finishes, skipping the default
         response.
         """
-        return None
+        return
 
     def dispatch(self, *args, **kwargs):
         hooks_result = self.run_before_hook()
@@ -651,7 +649,13 @@ class GenericModelEditViewMixin(BeforeAfterHookMixin):
         return reverse(self.edit_url_name, args=(quote(self.object.pk),))
 
 
-class PermissionCheckedMixin:
+if TYPE_CHECKING:
+    from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+else:
+    PermissionCheckedMixin = object
+
+
+class WatchPermissionCheckedMixin(PermissionCheckedMixin):
     # Source: wagtail.admin.views.generic.permissions.PermissionCheckedMixin
     """
     Mixin for class-based views to enforce permission checks according to
@@ -694,7 +698,7 @@ class PermissionCheckedMixin:
 class SnippetsEditViewCompatibilityMixin(
     CreateEditViewOptionalFeaturesMixin,
     GenericModelEditViewMixin,
-    PermissionCheckedMixin,
+    WatchPermissionCheckedMixin,
 ):
     # Source: wagtail.snippets.views.snippets.EditView and other classes
     view_name = "edit"

@@ -1,8 +1,9 @@
 from django.utils.translation import gettext_lazy as _
-from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
-from generic_chooser.widgets import AdminChooser
 from wagtail import hooks
 from wagtail.search.backends import get_search_backend
+
+from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
 
 from aplans.types import WatchAdminRequest
 

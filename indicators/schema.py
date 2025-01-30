@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import graphene
-import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
 from graphql.error import GraphQLError
 from wagtail.rich_text import RichText
 
-from actions.models import Action
-from actions.schema import ScenarioNode
+import graphene_django_optimizer as gql_optimizer
+
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import RestrictedVisibilityModel, public_fields
+
+from actions.models import Action
+from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator,
     CommonIndicator,
@@ -21,6 +25,7 @@ from indicators.models import (
     IndicatorGoal,
     IndicatorGraph,
     IndicatorLevel,
+    IndicatorQuerySet,
     IndicatorValue,
     Quantity,
     RelatedCommonIndicator,
@@ -308,6 +313,10 @@ class Query:
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
     )
+    related_plan_indicators = graphene.List(
+        graphene.NonNull(IndicatorNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
+    )
 
     def resolve_plan_indicators(
         self, info, plan, first=None, order_by=None, has_data=None,
@@ -317,7 +326,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        qs = Indicator.objects.visible_for_public()
+        qs = Indicator.objects.get_queryset().visible_for_public()
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
@@ -332,6 +341,19 @@ class Query:
 
         return gql_optimizer.query(qs, info)
 
+
+    @staticmethod
+    def resolve_related_plan_indicators(
+        root, info, plan, **kwargs) -> IndicatorQuerySet | None:
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        plans = plan_obj.get_all_related_plans()
+        qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
+        return gql_optimizer.query(qs, info)
+
+
     def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
@@ -340,7 +362,7 @@ class Query:
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
         user = info.context.user
-        qs = Indicator.objects.all()
+        qs = Indicator.objects.get_queryset()
 
         if obj_id:
             try:
@@ -374,6 +396,25 @@ class Query:
             return None
 
         return obj
+
+def plans_indicators_queryset(plans, user, **kwargs):
+    first = kwargs.get('first')
+    order_by = kwargs.get('order_by')
+    restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)
+    qs = Indicator.objects.get_queryset()
+    if restrict_to_publicly_visible:
+        qs = qs.visible_for_public()
+    else:
+        qs = qs.visible_for_user(user)
+    qs = qs.filter(plans__in=plans)
+
+    if isinstance(plans, list) and len(plans) == 1:
+        plan = plans[0]
+        qs = qs.annotate_related_indicator_counts(plan)
+    qs = order_queryset(qs, IndicatorNode, order_by)
+    if first is not None:
+        qs = qs[0:first]
+    return qs
 
 
 class IndicatorForm(ModelForm):

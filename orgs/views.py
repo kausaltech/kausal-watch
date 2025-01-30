@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _, gettext_lazy, ngettext_lazy
 from wagtail.admin import messages
+
 from wagtail_modeladmin.views import DeleteView, EditView, WMABaseView
 
 from admin_site.wagtail import AplansCreateView, SetInstanceModelAdminMixin

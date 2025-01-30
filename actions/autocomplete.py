@@ -1,9 +1,17 @@
-from dal import autocomplete
+from __future__ import annotations
+
+import typing
+
 from django.db.models import Q
+
+from dal import autocomplete
 
 from actions.models import Action, Category, CommonCategoryType, Plan
 from actions.models.action import ActionQuerySet
-from aplans.types import WatchAdminRequest
+
+if typing.TYPE_CHECKING:
+    from aplans.types import WatchAdminRequest
+
 
 
 class ActionAutocomplete(autocomplete.Select2QuerySetView):

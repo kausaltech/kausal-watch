@@ -6,3 +6,4 @@ pdbpp
 pre-commit
 uv
 watchfiles
+django-debug-toolbar

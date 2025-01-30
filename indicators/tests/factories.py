@@ -1,9 +1,10 @@
 import datetime
 
-from factory import SelfAttribute, Sequence, SubFactory, post_generation
-from factory.django import DjangoModelFactory
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import ListBlockFactory, StructBlockFactory
+
+from factory import SelfAttribute, Sequence, SubFactory, post_generation
+from factory.django import DjangoModelFactory
 
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
@@ -59,6 +60,9 @@ class IndicatorFactory(DjangoModelFactory):
     description = "Indicator description"
     min_value = 0.0
     max_value = 100.0
+    show_trendline = False
+    desired_trend = 'decreasing'
+    show_total_line = False
     time_resolution = indicators.models.Indicator.TIME_RESOLUTIONS[0][0]
     updated_values_due_at = None
     internal_notes = "Indicator internal note"

@@ -7,9 +7,10 @@ from wagtail.permission_policies.collections import (
     CollectionOwnershipPermissionPolicy,
 )
 
-from actions.models.plan import Plan
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
+
+from actions.models.plan import Plan
 from users.models import User
 
 

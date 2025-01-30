@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 'ordering': ('date', 'subject'),
                 'abstract': False,
             },
-            bases=(models.Model, notifications.models.IndirectPlanRelatedModel),
+            bases=(notifications.models.IndirectPlanRelatedModel,),
         ),
         migrations.AddConstraint(
             model_name='manuallyschedulednotificationtemplate',

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import typing
+from datetime import date, datetime
 
 if typing.TYPE_CHECKING:
     from typing import Any, Literal
 
     from django.db.models import Model
 
-    from .models import AttributePath, SerializedAttributeVersion, SerializedVersion
+    from .types import AttributePath, SerializedAttributeVersion, SerializedVersion
 
 def get_attribute_for_type_from_related_objects(
         required_content_type_id: int,
@@ -25,17 +26,21 @@ def get_attribute_for_type_from_related_objects(
 
 def get_related_model_instances_for_action(
         # TODO: this is used in formatters -- see if it needs to be refactored
-        action_id: int,
+        match_criterion: tuple[str, Any] | None,
         related_objects: dict[str, list[SerializedVersion]],
         desired_model: type[Model] | Literal['self'] | Any | None,
 ):
+    match_key = None
+    match_value = None
+    if match_criterion is not None:
+        match_key, match_value = match_criterion
     model_full_path = f"{desired_model.__module__}.{desired_model.__name__}"
     objects = related_objects.get(model_full_path)
     if objects is None:
         return []
     return [
         x for x in objects
-        if action_id == int(x.data['action_id'])
+        if match_criterion is None or match_value == int(x.data[match_key])
     ]
 
 
@@ -47,3 +52,13 @@ def group_by_model(serialized_versions: list[SerializedVersion]) -> dict[str, li
         result.setdefault(key, [])
         result[key].append(version)
     return result
+
+
+type ReportCellValue = str | datetime | date | float | None
+
+# These are magic numbers referring to the Excel built-in, non-custom,
+# and locale-independent formats for date with or without time. It is used to make
+# Excel always display the column in the active locale of the user.
+# https://xlsxwriter.readthedocs.io/format.html#format-set-num-format
+EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE = 14
+EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE = 22

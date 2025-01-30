@@ -1,5 +1,7 @@
 import pytest
 
+from aplans.utils import hyphenate_fi
+
 from actions.tests.factories import (
     ActionFactory,
     ActionResponsiblePartyFactory,
@@ -7,7 +9,6 @@ from actions.tests.factories import (
     CategoryFactory,
     PlanFactory,
 )
-from aplans.utils import hyphenate_fi
 
 pytestmark = pytest.mark.django_db
 

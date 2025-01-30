@@ -1,5 +1,6 @@
-import pytest
 from django.urls import reverse
+
+import pytest
 
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
 from admin_site.models import Client

@@ -1,7 +1,5 @@
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 from wagtail.blocks import (
     BooleanBlock,
     CharBlock,
@@ -12,6 +10,9 @@ from wagtail.blocks import (
     StaticBlock,
     StructBlock,
 )
+
+from grapple.helpers import register_streamfield_block
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 
 from pages.blocks import PageLinkBlock
 

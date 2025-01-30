@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class UserManager(BaseUserManager['User']):
     use_in_migrations = True
 
-    def _create_user(self, email, password=None, **extra_fields):
+    def _create_user(self, email, password=None, **extra_fields) -> User:
         if not email:
             raise ValueError("Users must have an email address")
         email = self.normalize_email(email)
@@ -26,11 +26,11 @@ class UserManager(BaseUserManager['User']):
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields) -> User:
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(email, password, **extra_fields)
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, email, password=None, **extra_fields) -> User:
         extra_fields.setdefault('is_superuser', True)
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superusers must have is_superuser set to True')

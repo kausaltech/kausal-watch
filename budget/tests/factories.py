@@ -2,10 +2,12 @@ import uuid
 from datetime import date
 
 from django.contrib.contenttypes.models import ContentType
+
 from factory import LazyAttribute, LazyFunction, Sequence, SubFactory
 
-from actions.tests.factories import ActionFactory, PlanFactory
 from aplans.factories import ModelFactory
+
+from actions.tests.factories import ActionFactory, PlanFactory
 from budget.models import (
     DataPoint,
     Dataset,

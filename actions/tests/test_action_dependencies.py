@@ -1,5 +1,6 @@
-import pytest
 from django.core.exceptions import ValidationError
+
+import pytest
 
 from actions.models import ActionDependencyRelationship, ActionDependencyRole
 

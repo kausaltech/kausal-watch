@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import logging
 import typing
 from datetime import timedelta
 
-from dal import autocomplete
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
@@ -15,11 +16,18 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+
+from dal import autocomplete
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.utils import naturaltime
+
 from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
+from actions.perms import get_people_with_login_rights
+from admin_site.utils import admin_req
 from admin_site.wagtail import (
     ActivatePermissionHelperPlanContextModelAdminMixin,
     AplansAdminModelForm,
@@ -32,15 +40,14 @@ from admin_site.wagtail import (
     PlanContextModelAdminPermissionHelper,
     get_translation_tabs,
 )
-from aplans.context_vars import ctx_instance, ctx_request
-from aplans.types import WatchAdminRequest
-from aplans.utils import naturaltime
 from orgs.models import Organization, OrganizationPlanAdmin
 
 from .models import Person
 from .views import ImpersonateUserView, ResetPasswordView
 
 if typing.TYPE_CHECKING:
+    from aplans.types import WatchAdminRequest
+
     from users.models import User
 
 
@@ -52,6 +59,7 @@ class IsContactPersonFilter(SimpleListFilter):
     parameter_name = 'contact_person'
 
     def lookups(self, request, model_admin):
+        request = admin_req(request)
         plan = request.user.get_active_admin_plan()
         related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
         # If there are related plans that have action contact persons, show a filter for each of these plans
@@ -105,8 +113,7 @@ class IsContactPersonFilter(SimpleListFilter):
 def smart_truncate(content, length=100, suffix='...'):
     if len(content) <= length:
         return content
-    else:
-        return ' '.join(content[:length + 1].split(' ')[0:-1]) + suffix
+    return ' '.join(content[:length + 1].split(' ')[0:-1]) + suffix
 
 
 class AvatarWidget(AdminFileWidget):
@@ -164,10 +171,9 @@ class PersonFormForGeneralAdmin(PersonForm):
                 del self.fields['is_admin_for_active_plan']
                 del self.fields['contact_for_actions_unordered']
                 del self.fields['participated_in_training']
-        else:
+        elif initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
             # Allow removing lingering public site restriction if public site login was recently removed
-            if initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
-                del self.fields['access_level']
+            del self.fields['access_level']
         if 'organization_plan_admin_orgs' in self.fields:
             self.fields['organization_plan_admin_orgs'].queryset = (
                 Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
@@ -296,6 +302,11 @@ class PersonPermissionHelper(PlanContextModelAdminPermissionHelper):
             return False
         return super().user_can_create(user)
 
+
+def _person_can_access_admin(person) -> bool:
+    return person.pk in get_people_with_login_rights()
+
+
 class PersonButtonHelper(ButtonHelper):
     def delete_button(self, *args, **kwargs):
         button = super().delete_button(*args, **kwargs)
@@ -335,7 +346,7 @@ class PersonButtonHelper(ButtonHelper):
                 **kwargs,
             )
             buttons.append(reset_password_button)
-        if user.is_superuser and obj.user != user and obj.user.can_access_admin():
+        if user.is_superuser and obj.user != user and _person_can_access_admin(obj):
             impersonation_button = self.impersonation_button(
                 pk=getattr(obj, self.opts.pk.attname),
                 **kwargs,
@@ -414,7 +425,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_empty_value_display(self, field=None):
         if getattr(field, '_name', field) == 'last_logged_in':
-            return display_for_value(False, None, boolean=True)
+            return display_for_value(value=False, empty_value_display='', boolean=True)
         return super().get_empty_value_display(field)
 
     def get_list_display(self, request: WatchAdminRequest):
@@ -448,8 +459,8 @@ class PersonAdmin(AplansModelAdmin):
                 return img
         avatar.short_description = ''
 
-        def cannot_access_admin_warning(obj):
-            if obj.user and not obj.user.can_access_admin():
+        def cannot_access_admin_warning(obj: Person) -> str:
+            if not _person_can_access_admin(obj):
                 tooltip = _(
                     "This person has no access to the admin interface. This is commonly because no actions or "
                     "indicators are assigned to them.",
@@ -499,6 +510,7 @@ class PersonAdmin(AplansModelAdmin):
         organization.admin_order_field = 'organization__name'
 
         fields = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
+        #fields = [avatar, first_name, last_name, 'title', organization]
 
         def last_logged_in(obj):
             user = obj.user
@@ -594,7 +606,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_extra_attrs_for_row(self, obj, context):
         assert isinstance(obj, Person)
-        if obj.user and not obj.user.can_access_admin():
+        if not _person_can_access_admin(obj):
             # Add CSS class to highlight rows of users without admin access
             return {
                 'class': 'user-without-admin-access',

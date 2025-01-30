@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, NotRequired, TypedDict
+
 from django.utils.translation import gettext_lazy as _
 
-DEFAULT_ACTION_STATUSES = [
+if TYPE_CHECKING:
+    from django_stubs_ext.aliases import StrOrPromise  # pyright: ignore
+
+
+class DefaultActionStatus(TypedDict):
+    identifier: str
+    name: StrOrPromise
+    is_completed: NotRequired[bool]
+
+
+DEFAULT_ACTION_STATUSES: list[DefaultActionStatus] = [
     {
         'identifier': 'on_time',
         'name': _("On time"),

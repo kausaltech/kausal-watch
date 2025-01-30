@@ -1,4 +1,6 @@
-from typing import Callable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Protocol, cast
 from urllib.parse import urljoin
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -8,12 +10,19 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from wagtail.permission_policies.base import ModelPermissionPolicy
+from django.utils.translation import gettext_lazy as _
+from wagtail.snippets.action_menu import ActionMenuItem
 
-from admin_site.permissions import PlanContextPermissionPolicy
-from aplans.context_vars import set_instance
+from aplans.context_vars import ctx_instance
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
+
+from admin_site.permissions import PlanContextPermissionPolicy
+from users.models import User
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+    from django.http.response import HttpResponseBase
 
 
 class SuccessUrlEditPageMixin:
@@ -35,25 +44,29 @@ class SuccessUrlEditPageMixin:
         return []
 
 
-class SetInstanceMixin:
+class HasObject(Protocol):
     object: Model
 
-    def setup(self, *args, **kwargs):
-        with set_instance(self.object):
-            super().setup(*args, **kwargs)  # type: ignore[misc]
 
-    def dispatch(self, *args, **kwargs):
-        with set_instance(self.object):
-            return super().dispatch(*args, **kwargs)  # type: ignore[misc]
+class SetInstanceMixin(HasObject):
+    def setup(self, request: HttpRequest, *args: Any, **kwargs: Any) -> None:
+        with ctx_instance.activate(self.object):
+            super().setup(request, *args, **kwargs)  # type: ignore[misc]
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
+        with ctx_instance.activate(self.object):
+            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
+# FIXME: Does not work.
 class PersistFiltersEditingMixin:
-    request: WatchAdminRequest
+    request: HttpRequest
+    model_name: str
 
     def get_success_url(self):
         if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():  # type: ignore[misc]
             return super().get_success_url()  # type: ignore[misc]
-        model = getattr(self, 'model_name')
+        model = self.model_name
         url = super().get_success_url()  # type: ignore[misc]
         if model is None:
             return url
@@ -67,8 +80,15 @@ class PersistFiltersEditingMixin:
 
 
 class ContinueEditingMixin:
-    request: WatchAdminRequest
+    """Mixin to add "Save and continue editing" functionality to a view."""
+
+    request: HttpRequest
     get_edit_url: Callable
+
+    class ContinueEditingActionMenuItem(ActionMenuItem):
+        label = _("Save and continue editing")
+        name = "_continue"
+        icon_name = "download"
 
     def continue_editing_active(self):
         return '_continue' in self.request.POST
@@ -87,29 +107,34 @@ class ContinueEditingMixin:
 
         return super().get_success_buttons()  # type: ignore[misc]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)  # type: ignore[misc]
+        context['action_menu'].menu_items.append(self.ContinueEditingActionMenuItem())
+        return context
+
 
 class PlanRelatedViewMixin:
-    request: WatchAdminRequest
+    request: HttpRequest
 
     def form_valid(self, form, *args, **kwargs):
         obj = form.instance
         if isinstance(obj, PlanRelatedModel):
             # Sanity check to ensure we're saving the model to a currently active
             # action plan.
-            active_plan = self.request.user.get_active_admin_plan()
+            active_plan = cast(WatchAdminRequest, self.request).user.get_active_admin_plan()
             plans = obj.get_plans()
             assert active_plan in plans
 
         return super().form_valid(form, *args, **kwargs)  # type: ignore[misc]
 
-    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
         user = request.user
         instance = getattr(self, 'object', None)
         # Check if we need to change the active action plan to be able to modify
         # the instance. This might happen e.g. when the user clicks on an edit link
         # in the email notification.
         if (instance is not None and isinstance(instance, PlanRelatedModel) and
-                user is not None and user.is_authenticated):
+                user is not None and user.is_authenticated and isinstance(user, User)):
             plan = user.get_active_admin_plan()
             instance_plans = instance.get_plans()
             if plan not in instance_plans:
@@ -122,19 +147,19 @@ class PlanRelatedViewMixin:
 
 
 class ActivatePermissionHelperPlanContextMixin:
-    permission_policy: ModelPermissionPolicy
-
     @method_decorator(login_required)
-    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
         """Set the plan context for permission helper before dispatching request."""
+        request = cast(WatchAdminRequest, request)
+        permission_policy = getattr(self, 'permission_policy', None)
+        super_dispatch: Callable[[HttpRequest, ...], HttpResponseBase] = super().dispatch  # type: ignore
+        if not isinstance(permission_policy, PlanContextPermissionPolicy):
+            return super_dispatch(request, *args, **kwargs)  # type: ignore
 
-        if isinstance(self.permission_policy, PlanContextPermissionPolicy):
-            with self.permission_policy.activate_plan_context(request.get_active_admin_plan()):
-                ret = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
-                # We trigger render here, because the plan context is needed
-                # still in the render stage.
-                if hasattr(ret, 'render'):
-                    ret = ret.render()
+        with permission_policy.activate_plan_context(request.get_active_admin_plan()):
+            ret = super_dispatch(request, *args, **kwargs)  # type: ignore[misc]
+            # We trigger render here, because the plan context is needed
+            # still in the render stage.
+            if hasattr(ret, 'render'):
+                ret = ret.render()  # type: ignore
             return ret
-        else:
-            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]

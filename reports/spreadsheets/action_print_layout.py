@@ -24,6 +24,7 @@ from typing import Any, cast
 
 from django.db import models
 from django.utils.translation import gettext as _
+
 from loguru import logger
 
 from .cursor_writer import Cell, CellBase, CursorWriter
@@ -126,7 +127,7 @@ class NewPageMarker(CellBase):
 def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFrame) -> None:
     keys_with_total_length = _keys_with_total_length(action_df)
 
-    plan = excel_report.report.type.plan
+    plan: Plan = excel_report.report.type.plan
     custom_variables = ReportActionPrintLayoutCustomization.get_plan_variables_with_fallback(plan)
     MAX_COLUMNS = custom_variables.max_columns
     WIDTH_NEEDED: list[list[int | None]] = custom_variables.width_needed

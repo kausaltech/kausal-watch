@@ -1,21 +1,28 @@
-import re
+from __future__ import annotations
 
-import sentry_sdk
+import json
+import re
+from collections.abc import Mapping
+
 from django.conf import settings
+from django.contrib import messages
 from django.db import connection, transaction
+from django import http
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate, gettext_lazy as _
-from loguru import logger
-from social_core.exceptions import SocialAuthBaseException
-from wagtail.admin import messages
 from wagtail.users.models import UserProfile
 
-from actions.models import Plan
+import sentry_sdk
+from loguru import logger
+from social_core.exceptions import SocialAuthBaseException
+
 from aplans.cache import WatchObjectCache
-from aplans.context_vars import set_request
+from aplans.context_vars import ctx_request
 from aplans.types import WatchAdminRequest, WatchRequest
+
+from actions.models import Plan
 
 
 class SocialAuthExceptionMiddleware(MiddlewareMixin):
@@ -93,8 +100,11 @@ class RequestMiddleware:
         log_context = {}
         if request.session and request.session.session_key:
             log_context['session'] = str(request.session.session_key)[0:8]
-        with set_request(request), logger.contextualize(**log_context):
+        with ctx_request.activate(request), logger.contextualize(**log_context):
             return self.get_response(request)
+
+
+QUERIES_TO_IGNORE = ['BEGIN', 'COMMIT', 'ROLLBACK']
 
 
 class PrintQueryCountMiddleware:
@@ -103,17 +113,37 @@ class PrintQueryCountMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        queries = [q for q in connection.queries if q['sql'] not in QUERIES_TO_IGNORE]
 
-        sqltime = 0
-        for query in connection.queries:
+        sqltime = 0.0
+        for query in queries:
             sqltime += float(query["time"])
         sqltime = round(1000 * sqltime)
 
-        query_count = len(connection.queries)
-        level = 'INFO'
-        if query_count >= 50:
-            level = 'WARNING'
+        query_count = len(queries)
+        if query_count == 0:
+            return response
         if query_count >= 100:
             level = 'ERROR'
-        logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms")
+        elif query_count >= 50:
+            level = 'WARNING'
+        elif query_count >= 20:
+            level = 'INFO'
+        else:
+            level = 'DEBUG'
+
+        graphql_operation_name = '-'
+        try:
+            body = json.loads(request.body)
+        except json.JSONDecodeError:
+            pass
+        except http.RawPostDataException:
+            pass
+        except Exception as e:
+            logger.error(e)
+        else:
+            if isinstance(body, Mapping) and 'operationName' in body:
+                graphql_operation_name = str(body.get('operationName', '-'))
+
+        logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms {request.path} {graphql_operation_name}")
         return response

@@ -10,8 +10,9 @@ from django.utils.translation import gettext_lazy as _
 from aplans.utils import ConstantMetadata, MetadataEnum
 
 if TYPE_CHECKING:
-    from actions.models import Action, ActionStatus, Plan
     from aplans.cache import WatchObjectCache
+
+    from .models import Action, ActionStatus, Plan
 
 Sentiment = Enum('Sentiment', names='POSITIVE NEGATIVE NEUTRAL')
 
@@ -143,7 +144,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         return self.name.lower()
 
     def __str__(self):
-        return f'{self.name}.{str(self.value)}'
+        return f'{self.name}.{self.value!s}'
 
     @classmethod
     def for_status(cls, status: ActionStatus):

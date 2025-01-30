@@ -7,1920 +7,2196 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"PO-Revision-Date: 2024-12-19 14:20+0000\n"
+"Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
+"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/"
+">\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.4.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
-msgstr ""
+msgstr "Ya existe una acción con este identificador."
 
 #: actions/action_admin.py
 #, python-format
 msgid "%s is listed multiple times in the action."
-msgstr ""
+msgstr "%s aparece varias veces en la acción."
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
-msgstr ""
+msgstr "Sin especificar"
 
-#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
-#: actions/blocks/action_dashboard.py
+#: actions/action_admin.py actions/api.py
+#: actions/blocks/action_content_blocks.py
 msgid "Responsible parties"
-msgstr ""
+msgstr "Responsables"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
-msgstr ""
+msgstr "Personas de contacto"
 
 #: actions/action_admin.py
 #, python-format
 msgid "Mark as complete for report %s"
-msgstr ""
+msgstr "Marcar como completo para el informe %s"
 
 #: actions/action_admin.py
 #, python-format
 msgid "Mark this action as complete for the report %s"
-msgstr ""
+msgstr "Marcar esta acción como completa para el informe %s"
 
 #: actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
-msgstr ""
+msgstr "Deshacer el marcado como completo para el informe %s"
 
 #: actions/action_admin.py
 #, python-format
 msgid "Undo marking this action as complete for the report %s"
-msgstr ""
+msgstr "Deshacer el marcado de esta acción como completa para el informe %s"
 
 #: actions/action_admin.py
 msgid "Last updated"
-msgstr ""
+msgstr "Última actualización"
 
-#: actions/action_admin.py actions/blocks/action_dashboard.py
-#: actions/templates/actions/chooser_results.html admin_site/models.py
-#: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
-#: orgs/wagtail_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
+#: admin_site/templates/admin_site/own_indicators_panel.html copying/views.py
+#: orgs/models.py orgs/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 msgid "Name"
-msgstr ""
+msgstr "Nombre"
 
 #: actions/action_admin.py actions/category_admin.py
 #: admin_site/wagtail_hooks.py budget/wagtail_admin.py
 #: indicators/wagtail_admin.py
 msgid "Categories"
-msgstr ""
+msgstr "Categorías"
 
 #: actions/action_admin.py actions/wagtail_admin.py
 msgid "External links"
-msgstr ""
+msgstr "Enlaces externos"
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
 msgid "Basic information"
-msgstr ""
+msgstr "Información básica"
 
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
-msgstr ""
+msgstr "Progreso"
 
 #: actions/action_admin.py
 msgid "Internal notes"
-msgstr ""
+msgstr "Notas internas"
 
 #: actions/action_admin.py
 msgid "Internal notes for plan administrators"
-msgstr ""
+msgstr "Notas internas para los administradores de planes"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
-msgstr ""
+msgstr "Informes"
 
 #: actions/action_admin.py
 msgid "Dependent actions"
-msgstr ""
+msgstr "Acciones dependientes"
 
 #: actions/action_admin.py
 msgid "Dependencies"
-msgstr ""
+msgstr "Dependencias"
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "The %(model_name)s could not be saved as it is locked"
-msgstr ""
+msgstr "La página %(model_name)s no se ha podido guardar porque está bloqueada."
 
 #: actions/action_admin_mixins.py admin_site/wagtail.py
 #, python-format
 msgid "%(model_name)s '%(object)s' updated."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' actualizado."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' creado."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s Se ha programado la publicación de '%(object)s'."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' creado y programado para su publicación."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' está en directo y se ha programado la publicación de esta versión."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' updated and published."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' actualizado y publicado."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and published."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' creado y publicado."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' ha sido sometido a moderación."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' creado y sometido a moderación."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr ""
+msgstr "Se ha reiniciado el flujo de trabajo en %(model_name)s '%(object)s'."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr ""
+msgstr "El flujo de trabajo en %(model_name)s '%(object)s' ha sido cancelado."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' approved and published."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' aprobado y publicado."
 
 #: actions/action_admin_mixins.py
 msgid "Unlock"
-msgstr ""
+msgstr "Desbloquear"
 
 #: actions/action_admin_mixins.py
 msgid "Cancel scheduled publish"
-msgstr ""
+msgstr "Cancelar la publicación programada"
 
 #: actions/action_admin_mixins.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #: admin_site/wagtail.py
 msgid "Edit"
-msgstr ""
+msgstr "Editar"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+msgid "Action dependencies"
+msgstr "Dependencias de acción"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+msgid "Merged actions"
+msgstr "Acciones fusionadas"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
-msgstr ""
+msgstr "Completado"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "On time"
-msgstr ""
+msgstr "A tiempo"
 
 #: actions/action_status_summary.py
 msgid "In progress"
-msgstr ""
+msgstr "En curso"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Not started"
-msgstr ""
+msgstr "No iniciado"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Late"
-msgstr ""
+msgstr "Tarde"
 
 #: actions/action_status_summary.py
 msgid "Cancelled"
-msgstr ""
+msgstr "Cancelado"
 
 #: actions/action_status_summary.py
 msgid "Out of scope"
-msgstr ""
+msgstr "Fuera del ámbito de aplicación"
 
 #: actions/action_status_summary.py
 msgid "Merged"
-msgstr ""
+msgstr "Fusionado"
 
 #: actions/action_status_summary.py
 msgid "Postponed"
-msgstr ""
+msgstr "Aplazado"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 msgid "Unknown"
-msgstr ""
+msgstr "Desconocido"
 
 #: actions/action_status_summary.py
 #, python-format
 msgid "Under %d days"
-msgstr ""
+msgstr "Menos de %d días"
 
 #: actions/action_status_summary.py
 #, python-format
 msgid "Over %d days"
-msgstr ""
+msgstr "Más de %d días"
 
 #: actions/api.py
 msgid "Organization occurs multiple times as responsible party"
-msgstr ""
+msgstr "La organización aparece varias veces como parte responsable"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 msgid "Person occurs multiple times as contact person"
-msgstr ""
+msgstr "La persona aparece varias veces como persona de contacto"
 
 #: actions/api.py
 msgid "Identifier must be set"
-msgstr ""
+msgstr "Debe fijarse el identificador"
 
 #: actions/api.py
 msgid "Identifier already exists"
-msgstr ""
+msgstr "El identificador ya existe"
 
 #: actions/api.py people/models.py
 msgid "Person with this email already exists"
-msgstr ""
+msgstr "La persona con este email ya existe"
 
 #: actions/api.py
 msgid "Not all objects have an email address"
-msgstr ""
+msgstr "No todos los objetos tienen una dirección de correo electrónico"
 
 #: actions/api.py
 #, python-format
 msgid "Duplicate email addresses: %s"
-msgstr ""
+msgstr "Direcciones de correo electrónico duplicadas: %s"
 
 #: actions/apps.py
 msgid "collection"
-msgstr ""
+msgstr "colección"
 
 #: actions/apps.py
 msgid "Resubmit for moderation"
-msgstr ""
+msgstr "Volver a enviar para moderación"
 
 #: actions/apps.py
 msgid "Cancel moderation"
-msgstr ""
+msgstr "Cancelar la moderación"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
-msgstr ""
+msgstr "Acciones"
 
 #: actions/attribute_type_admin.py
 msgid "Object type"
-msgstr ""
+msgstr "Tipo de objeto"
 
 #: actions/attribute_type_admin.py
 msgid "Fields"
-msgstr ""
+msgstr "Campos"
 
 #: actions/attribute_type_admin.py
 #, python-format
 msgid "Field for %s"
-msgstr ""
+msgstr "Campo para %s"
 
 #: actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
-msgstr ""
+msgstr "Campos (%(model)s)"
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Category', a category type must be set"
-msgstr ""
+msgstr "Si el formato es \"Categoría\", debe establecerse un tipo de categoría"
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
-msgstr ""
+msgstr "Si el formato es \"Numérico\", debe establecerse una unidad"
 
 #: actions/attribute_type_admin.py actions/category_admin.py
 msgid "Order"
-msgstr ""
+msgstr "Pida"
 
 #: actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
-msgstr ""
+msgstr "Este campo ya tiene valores. Si desea cambiar el formato, primero debe eliminar los valores existentes."
 
 #: actions/attribute_type_admin.py
 msgid "Choice options"
-msgstr ""
+msgstr "Opciones de elección"
 
 #: actions/attribute_type_admin.py actions/blocks/choosers.py
 #: actions/category_admin.py pages/models.py
 msgid "Category type"
-msgstr ""
+msgstr "Tipo de categoría"
 
 #: actions/attribute_type_admin.py feedback/models.py
 #: indicators/wagtail_admin.py people/wagtail_admin.py
 msgid "General"
-msgstr ""
+msgstr "General"
 
 #: actions/attributes.py
 #, python-format
 msgid "%(attribute_type)s (choice)"
-msgstr ""
+msgstr "%(attribute_type)s (elección)"
 
 #: actions/attributes.py
 #, python-format
 msgid "%(attribute_type)s (text)"
-msgstr ""
+msgstr "%(attribute_type)s (texto)"
+
+#: actions/attributes.py
+#, fuzzy, python-format
+#| msgid "%(attribute_type)s (text)"
+msgid "%(attribute_type)s"
+msgstr "%(attribute_type)s (texto)"
 
 #: actions/blocks/__init__.py
 msgid "Related plans"
-msgstr ""
-
-#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
-#: actions/blocks/category_page_layout.py actions/blocks/choosers.py
-#: actions/blocks/filters.py
-msgid "Field"
-msgstr ""
-
-#: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
-msgid "Category"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Heading to show instead of the default"
-msgstr ""
-
-#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
-msgid "Contact form"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Indicator Causal Chain"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "What label should be used in the public UI for the official name?"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Field label"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Description to show after the field content"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Caption"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Official name"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Help text for the field to be shown in the UI"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr ""
-
-#: actions/blocks/action_content.py
-#, python-format
-msgid "Content block: %(label)s"
-msgstr ""
-
-#: actions/blocks/action_content.py actions/models/action.py pages/models.py
-msgid "Lead paragraph"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Merged actions"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Related actions"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Action dependencies"
-msgstr ""
+msgstr "Planes relacionados"
 
 #: actions/blocks/action_content.py
 msgid "Full width"
-msgstr ""
+msgstr "Ancho total"
 
 #: actions/blocks/action_content.py
 msgid "Grid"
-msgstr ""
+msgstr "Rejilla"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py pages/blocks.py
 msgid "Heading"
-msgstr ""
+msgstr "Rúbrica"
+
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py aplans/dynamic_blocks.py
+msgid "Help text"
+msgstr "Texto de ayuda"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
-msgstr ""
+msgstr "Bloquea"
 
 #: actions/blocks/action_content.py
 msgid "Section"
-msgstr ""
+msgstr "Sección"
 
-#: actions/blocks/action_dashboard.py
+#: actions/blocks/action_content_blocks.py actions/blocks/action_dashboard.py
+#: actions/blocks/category_page_layout.py actions/blocks/choosers.py
+#: actions/blocks/filters.py
+msgid "Field"
+msgstr "Campo"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
+msgid "Category"
+msgstr "Categoría"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Heading to show instead of the default"
+msgstr "Encabezado a mostrar en lugar del predeterminado"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/column_block_base.py
 msgid "Label"
+msgstr "Etiqueta"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Value"
+msgstr "Valor"
+
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+msgid "Choice"
+msgstr "Elección"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Field Label"
+msgstr "Etiqueta de campo"
+
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Texto"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Checkbox"
+msgstr "Casilla de verificación"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Desplegable"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Field Type"
+msgstr "Tipo de campo"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Required"
+msgstr "Requerido"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Choices"
+msgstr "Opciones"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Las opciones sólo se permiten para los tipos de campo \"Desplegable\" o \"Casilla de verificación\"."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr "Se deben proporcionar opciones para los tipos de campo \"Desplegable\" o \"Casilla de verificación\"."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Form Field"
+msgstr "Campo de formulario"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Description"
+msgstr "Descripción"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback field visible"
 msgstr ""
 
-#: actions/blocks/action_dashboard.py
-msgid "Label for the column to be used instead of the default"
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the feedback field."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py reports/spreadsheets/excel_report.py
-msgid "Identifier"
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "Feedback required"
+msgstr "Comentarios de los usuarios"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the feedback field required when visible."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
-#: actions/blocks/filters.py reports/blocks/action_content.py
-#: reports/spreadsheets/excel_report.py
-msgid "Implementation phase"
+#: actions/blocks/action_content_blocks.py
+msgid "Email field visible"
 msgstr ""
 
-#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
-#: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "Status"
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the email field."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py content/models.py
-msgid "Tasks"
+#: actions/blocks/action_content_blocks.py
+msgid "Email required"
+msgstr "Correo electrónico requerido"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the email field required when visible."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
-#: indicators/blocks.py indicators/wagtail_admin.py
-msgid "Indicators"
+#: actions/blocks/action_content_blocks.py
+msgid "Additional form fields"
+msgstr "Campos de formulario adicionales"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr "Campos de formulario que se mostrarán además de los campos Nombre, Correo electrónico y Comentario"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback can't be required if it's not visible."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py
-msgid "Updated at"
+#: actions/blocks/action_content_blocks.py
+msgid "Email can't be required if it's not visible."
 msgstr ""
 
-#: actions/blocks/action_dashboard.py content/models.py
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr ""
+#: actions/blocks/action_content_blocks.py
+#: actions/blocks/category_page_layout.py
+msgid "Contact form"
+msgstr "Formulario de contacto"
 
-#: actions/blocks/action_dashboard.py
-msgid "Impact"
-msgstr ""
+#: actions/blocks/action_content_blocks.py
+msgid "Indicator Causal Chain"
+msgstr "Indicador Cadena causal"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the dataset?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Datasets"
+msgstr "Conjuntos de datos"
+
+#: actions/blocks/action_content_blocks.py
+msgid "What label should be used in the public UI for the official name?"
+msgstr "¿Qué etiqueta debe utilizarse en la IU pública para el nombre oficial?"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Field label"
+msgstr "Etiqueta de campo"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Description to show after the field content"
+msgstr "Descripción a mostrar tras el contenido del campo"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Caption"
+msgstr "Leyenda"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Official name"
+msgstr "Nombre oficial"
 
 #: actions/blocks/action_list.py
 msgid "Action highlights"
-msgstr ""
+msgstr "Acciones destacadas"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
 
 #: actions/blocks/action_list.py
 msgid "Filter on category"
+msgstr "Filtrar por categoría"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
 msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
 
 #: actions/blocks/action_list.py
 msgid "Action list"
-msgstr ""
+msgstr "Lista de acciones"
 
 #: actions/blocks/category_list.py pages/blocks.py
 #: reports/spreadsheets/excel_report.py
 msgid "Lead"
-msgstr ""
+msgstr "Plomo"
 
 #: actions/blocks/category_list.py actions/blocks/filters.py
 msgid "Style"
-msgstr ""
+msgstr "Estilo"
 
 #: actions/blocks/category_list.py pages/blocks.py pages/models.py
 msgid "Cards"
-msgstr ""
+msgstr "Tarjetas"
 
 #: actions/blocks/category_list.py
 msgid "Table"
-msgstr ""
+msgstr "Cuadro"
 
 #: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Category list"
-msgstr ""
+msgstr "Lista de categorías"
 
 #: actions/blocks/category_list.py
 msgid "Value field"
-msgstr ""
+msgstr "Campo de valor"
 
 #: actions/blocks/category_list.py
 msgid "Category tree map"
-msgstr ""
+msgstr "Mapa del árbol de categorías"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "category level"
+msgid "Filter by level"
+msgstr "nivel de categoría"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Category levels"
+msgid "Category level list"
+msgstr "Categorías"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
-msgstr ""
-
-#: actions/blocks/category_page_layout.py
-msgid "Description"
-msgstr ""
+msgstr "Cuerpo"
 
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
-msgstr ""
+msgstr "Base"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py reports/spreadsheets/excel_report.py
+msgid "Implementation phase"
+msgstr "Fase de aplicación"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
+msgid "Status"
+msgstr "Estado"
+
+#: actions/blocks/choosers.py
+msgid "Dataset Schema"
+msgstr "Esquema del conjunto de datos"
+
+#: actions/blocks/column_block_base.py
+msgid "Label for the column to be used instead of the default"
+msgstr "Etiqueta de la columna que se utilizará en lugar de la predeterminada"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
-msgstr ""
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
-msgstr ""
+msgstr "Etiqueta para \"mostrar todo"
 
 #: actions/blocks/filters.py
 msgid "Buttons"
-msgstr ""
+msgstr "Botones"
 
 #: actions/blocks/filters.py
 msgid "How many levels of category hierarchy to show"
-msgstr ""
+msgstr "Cuántos niveles de jerarquía de categorías mostrar"
 
 #: actions/blocks/filters.py
 msgid "Depth"
-msgstr ""
+msgstr "Profundidad"
 
 #: actions/blocks/filters.py
 #, python-format
 msgid "Filter: %(filter_label)s"
-msgstr ""
+msgstr "Filtrar: %(filter_label)s"
 
 #: actions/blocks/filters.py
 msgid "Responsible party"
-msgstr ""
+msgstr "Responsable"
 
 #: actions/blocks/filters.py
 msgid "Primary organization"
-msgstr ""
+msgstr "Organización primaria"
 
 #: actions/blocks/filters.py actions/templates/actions/chooser_results.html
 #: actions/wagtail_admin.py
 msgid "Plan"
-msgstr ""
+msgstr "Plan"
 
 #: actions/blocks/filters.py
 msgid "Schedule"
-msgstr ""
+msgstr "Programar"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 msgid "Continuous Action"
+msgstr "Acción continua"
+
+#: actions/blocks/mixins.py
+msgid "[not included]"
+msgstr "[no incluido]"
+
+#: actions/blocks/mixins.py
+msgid "in primary filters"
+msgstr "en filtros primarios"
+
+#: actions/blocks/mixins.py
+msgid "in main filters"
+msgstr "en los filtros principales"
+
+#: actions/blocks/mixins.py
+msgid "in advanced filters"
+msgstr "en filtros avanzados"
+
+#: actions/blocks/mixins.py
+msgid "in main column (top)"
+msgstr "en la columna principal (arriba)"
+
+#: actions/blocks/mixins.py
+msgid "in main column (bottom)"
+msgstr "en la columna principal (abajo)"
+
+#: actions/blocks/mixins.py
+msgid "in side column"
+msgstr "en columna lateral"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Kausal Paths node UUID"
+msgid "Kausal Paths outcome node ID"
+msgstr "UUID del nodo Kausal Paths"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Kausal Paths node UUID"
+msgid "Kausal Paths outcome node to be used"
+msgstr "UUID del nodo Kausal Paths"
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
 msgstr ""
 
 #: actions/category_admin.py
 msgid "Common category type"
-msgstr ""
+msgstr "Tipo de categoría común"
 
 #: actions/category_admin.py
 msgid "Category types"
-msgstr ""
+msgstr "Categorías"
 
 #: actions/category_admin.py
 msgid "Action and indicator categorization"
-msgstr ""
+msgstr "Categorización de acciones e indicadores"
 
 #: actions/category_admin.py
 msgid "Category levels"
-msgstr ""
+msgstr "Categorías"
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
-msgstr ""
+msgstr "Ya existe una categoría con este identificador."
 
 #: actions/category_admin.py
 msgid "Icons"
-msgstr ""
+msgstr "Iconos"
 
 #: actions/category_admin.py
 msgid "Common category types"
-msgstr ""
+msgstr "Tipos de categorías comunes"
 
 #: actions/category_admin.py admin_site/wagtail_hooks.py
 msgid "Common categories"
-msgstr ""
+msgstr "Categorías comunes"
 
 #: actions/chooser.py
 msgid "Choose a category"
-msgstr ""
+msgstr "Elija una categoría"
 
 #: actions/chooser.py
 msgid "Choose another category"
-msgstr ""
+msgstr "Elija otra categoría"
 
 #: actions/chooser.py
 msgid "Choose a category type"
-msgstr ""
+msgstr "Elija un tipo de categoría"
 
 #: actions/chooser.py
 msgid "Choose another category type"
-msgstr ""
+msgstr "Elija otro tipo de categoría"
 
 #: actions/chooser.py
 msgid "Choose a category level"
-msgstr ""
+msgstr "Elija un nivel de categoría"
 
 #: actions/chooser.py
 msgid "Choose an action"
-msgstr ""
+msgstr "Elija una acción"
 
 #: actions/chooser.py
 msgid "Choose another action"
-msgstr ""
+msgstr "Elija otra acción"
 
 #: actions/chooser.py
 msgid "Choose a plan"
-msgstr ""
+msgstr "Elija un plan"
 
 #: actions/chooser.py
 msgid "Choose another plan"
-msgstr ""
+msgstr "Elija otro plan"
 
 #: actions/chooser.py
 msgid "Choose a field"
-msgstr ""
+msgstr "Elija un campo"
 
 #: actions/chooser.py
 msgid "Choose another field"
-msgstr ""
+msgstr "Elija otro campo"
+
+#: actions/chooser.py
+msgid "Choose a dataset schema"
+msgstr "Elegir un esquema de conjunto de datos"
+
+#: actions/chooser.py
+msgid "Choose another dataset schema"
+msgstr "Elija otro esquema de conjunto de datos"
 
 #: actions/defaults.py
 msgid "Cancelled or postponed"
-msgstr ""
+msgstr "Cancelado o aplazado"
 
 #: actions/defaults.py
 msgid "Planning"
-msgstr ""
+msgstr "Planificación"
 
 #: actions/defaults.py
 msgid "Implementation"
-msgstr ""
+msgstr "Aplicación"
 
 #: actions/export.py aplans/utils.py notifications/models.py
 msgid "identifier"
-msgstr ""
+msgstr "identificador"
 
 #: actions/export.py actions/models/action.py actions/models/action_deps.py
 #: actions/models/attributes.py actions/models/category.py
 #: actions/models/plan.py budget/models.py feedback/models.py
 #: indicators/models.py orgs/models.py reports/models.py
 msgid "name"
-msgstr ""
+msgstr "nombre"
 
 #: actions/export.py actions/models/action.py
 msgid "impact"
-msgstr ""
+msgstr "impacto"
 
 #: actions/export.py actions/models/action.py
 #: reports/spreadsheets/excel_report.py
 msgid "status"
-msgstr ""
+msgstr "estado"
 
 #: actions/export.py
 msgid "progress indicators"
-msgstr ""
+msgstr "indicadores de progreso"
 
 #: actions/export.py
 msgid "other indicators"
-msgstr ""
+msgstr "otros indicadores"
 
 #: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
-msgstr ""
+msgstr "Personas de contacto"
 
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: feedback/models.py indicators/models.py notifications/models.py
 #: orgs/models.py pages/models.py
 msgid "plan"
-msgstr ""
+msgstr "plan"
 
 #: actions/models/action.py
 msgid "primary organization"
-msgstr ""
+msgstr "Organización primaria"
 
 #: actions/models/action.py
 msgid "official name"
-msgstr ""
+msgstr "nombre oficial"
 
 #: actions/models/action.py
 msgid "The name as approved by an official party"
-msgstr ""
+msgstr "El nombre aprobado por un partido oficial"
 
 #: actions/models/action.py
 msgid "The identifier for this action (e.g. number)"
-msgstr ""
+msgstr "El identificador de esta acción (por ejemplo, número)"
 
 #: actions/models/action.py admin_site/draftail_rich_text_area.py
 #: pages/blocks.py
 msgid "Image"
-msgstr ""
+msgstr "Imagen"
+
+#: actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Párrafo principal"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py
 msgid "description"
-msgstr ""
+msgstr "descripción"
 
 #: actions/models/action.py
 msgid "What does this action involve in more detail?"
-msgstr ""
+msgstr "¿En qué consiste esta acción con más detalle?"
 
 #: actions/models/action.py
 msgid "The impact of this action"
-msgstr ""
+msgstr "El impacto de esta acción"
 
 #: actions/models/action.py
 msgid "internal priority"
-msgstr ""
+msgstr "prioridad interna"
 
 #: actions/models/action.py
 msgid "internal notes for plan administrators"
-msgstr ""
+msgstr "notas internas para los administradores de planes"
 
 #: actions/models/action.py indicators/models.py
 msgid "internal notes"
-msgstr ""
+msgstr "notas internas"
 
 #: actions/models/action.py
 msgid "implementation phase"
-msgstr ""
+msgstr "Fase de aplicación"
 
 #: actions/models/action.py
 msgid "override status manually"
-msgstr ""
+msgstr "anular el estado manualmente"
 
 #: actions/models/action.py
 msgid "Set if you want to prevent the action status from being determined automatically"
-msgstr ""
+msgstr "Establezca si desea evitar que el estado de la acción se determine automáticamente"
 
 #: actions/models/action.py
 msgid "specifier for status"
-msgstr ""
+msgstr "especificador de estado"
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
-msgstr ""
+#, fuzzy
+#| msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
+msgstr "Describa la razón por la que esta acción tiene este estatus"
 
 #: actions/models/action.py
 msgid "merged with action"
-msgstr ""
+msgstr "Fusionado con la acción"
 
 #: actions/models/action.py
 msgid "Set if this action is merged with another action"
-msgstr ""
+msgstr "Establecer si esta acción se fusiona con otra acción"
 
 #: actions/models/action.py
 msgid "completion"
-msgstr ""
+msgstr "finalización"
 
 #: actions/models/action.py
 msgid "The completion percentage for this action"
-msgstr ""
+msgstr "El porcentaje de finalización de esta acción"
 
 #: actions/models/action.py
 msgid "schedule"
-msgstr ""
+msgstr "horario"
 
 #: actions/models/action.py
 msgid "continuous action"
-msgstr ""
+msgstr "acción continua"
 
 #: actions/models/action.py
 msgid "Set if the action does not have a start or an end date"
-msgstr ""
+msgstr "Establecer si la acción no tiene fecha de inicio o fin"
 
 #: actions/models/action.py
 msgid "decision-making level"
-msgstr ""
+msgstr "nivel decisorio"
 
 #: actions/models/action.py actions/models/category.py indicators/models.py
 msgid "categories"
-msgstr ""
+msgstr "categorías"
 
 #: actions/models/action.py indicators/models.py
 msgid "indicators"
-msgstr ""
+msgstr "indicadores"
 
 #: actions/models/action.py
 msgid "related actions"
-msgstr ""
+msgstr "Acciones relacionadas"
 
 #: actions/models/action.py
 msgid "responsible organizations"
-msgstr ""
+msgstr "Organizaciones responsables"
 
 #: actions/models/action.py aplans/utils.py
 #: reports/spreadsheets/excel_report.py
 msgid "updated at"
-msgstr ""
+msgstr "actualizado en"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
-msgstr ""
+msgstr "fecha de inicio"
 
 #: actions/models/action.py
 msgid "The date when implementation of this action starts"
-msgstr ""
+msgstr "Fecha de inicio de la ejecución de esta acción"
 
 #: actions/models/action.py reports/models.py
 msgid "end date"
-msgstr ""
+msgstr "fecha final"
 
 #: actions/models/action.py
 msgid "The date when implementation of this action ends"
-msgstr ""
+msgstr "Fecha en que finaliza la ejecución de esta acción"
 
 #: actions/models/action.py
 msgid "Date format"
-msgstr ""
+msgstr "Formato de fecha"
 
 #: actions/models/action.py
 msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
-msgstr ""
+msgstr "Formato de las fechas de inicio y fin de las acciones que se muestran en la interfaz de usuario pública.             El valor predeterminado para todas las acciones se puede especificar en la página de acciones."
 
 #: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
-msgstr ""
+msgstr "sustituido por"
 
 #: actions/models/action.py
 msgid "Set if this action is superseded by another action"
+msgstr "Establecer si esta acción es sustituida por otra acción"
+
+#: actions/models/action.py
+msgctxt "action"
+msgid "copy of"
 msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Set if this action is superseded by another action"
+msgid "Set if this action has been created by copying another action"
+msgstr "Establecer si esta acción es sustituida por otra acción"
 
 #: actions/models/action.py
 msgid "Role in dependencies"
-msgstr ""
+msgstr "Papel en las relaciones"
 
 #: actions/models/action.py
 msgid "Set if this action has the same role in all its dependency relationships with other actions"
-msgstr ""
+msgstr "Establecer si esta acción tiene el mismo rol en todas sus relaciones de dependencia con otras acciones."
 
 #: actions/models/action.py
 msgctxt "partitive"
 msgid "action"
-msgstr ""
+msgstr "acción"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
 msgid "action"
-msgstr ""
+msgstr "acción"
 
 #: actions/models/action.py
 msgid "actions"
-msgstr ""
+msgstr "acciones"
 
 #: actions/models/action.py
 msgid "Can administrate all actions"
-msgstr ""
+msgstr "Puede administrar todas las acciones"
 
 #: actions/models/action.py
 msgid "Other action is merged with this one"
-msgstr ""
+msgstr "La otra acción se fusiona con ésta"
 
 #: actions/models/action.py
 msgid "Has contact persons"
-msgstr ""
+msgstr "Tiene personas de contacto"
 
 #: actions/models/action.py
 msgid "Active tasks"
-msgstr ""
+msgstr "Tareas activas"
 
 #: actions/models/action.py
 #, python-format
 msgid "The action is already marked as complete for report %s."
-msgstr ""
+msgstr "La acción ya está marcada como completa para el informe %s."
 
 #: actions/models/action.py
 #, python-format
 msgid "Marked action '%(action)s' as complete for report '%(report)s'"
-msgstr ""
+msgstr "Marcada la acción '%(action)s' como completa para el informe '%(report)s'"
 
 #: actions/models/action.py
 #, python-format
 msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr ""
+msgstr "No se puede deshacer la acción de marcado como completa ya que hay instantáneas %s"
 
 #: actions/models/action.py
 #, python-format
 msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
-msgstr ""
+msgstr "Deshacer el marcado de la acción '%(action)s' como completa para el informe '%(report)s'"
 
 #: actions/models/action.py reports/blocks/action_content.py
+#: reports/report_formatters.py
 msgid "Primary responsible party"
-msgstr ""
+msgstr "Responsable principal"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/report_formatters.py
 msgid "Collaborator"
-msgstr ""
+msgstr "Colaborador"
 
-#: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py people/wagtail_admin.py
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py people/wagtail_admin.py
 msgid "organization"
-msgstr ""
+msgstr "Organización"
 
 #: actions/models/action.py
 msgid "role"
-msgstr ""
+msgstr "papel"
 
 #: actions/models/action.py
 msgid "specifier"
-msgstr ""
+msgstr "especificador"
 
 #: actions/models/action.py
 msgid "The responsibility domain for the organization"
-msgstr ""
+msgstr "El ámbito de responsabilidad de la organización"
 
 #: actions/models/action.py
 msgid "action responsible party"
-msgstr ""
+msgstr "acción parte responsable"
 
 #: actions/models/action.py
 msgid "action responsible parties"
-msgstr ""
+msgstr "acción partes responsables"
 
 #: actions/models/action.py
 msgid "Editor"
-msgstr ""
+msgstr "Editor"
 
 #: actions/models/action.py
 msgid "Moderator"
-msgstr ""
+msgstr "Moderador"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py people/models.py
 msgid "person"
-msgstr ""
+msgstr "persona"
 
 #: actions/models/action.py
 msgid "primary contact person"
-msgstr ""
+msgstr "persona de contacto principal"
 
 #: actions/models/action.py
 msgid "Is this person the primary contact person for the action?"
-msgstr ""
+msgstr "¿Es esta persona el contacto principal para la acción?"
 
 #: actions/models/action.py
 msgid "action contact person"
-msgstr ""
+msgstr "persona de contacto para la acción"
 
 #: actions/models/action.py
 msgid "action contact persons"
-msgstr ""
+msgstr "personas de contacto para la acción"
 
 #: actions/models/action.py
 msgid "action schedule"
-msgstr ""
+msgstr "calendario de actuaciones"
 
 #: actions/models/action.py
 msgid "action schedules"
-msgstr ""
+msgstr "calendarios de actuación"
 
 #: actions/models/action.py
 msgid "is completed"
-msgstr ""
+msgstr "se completa"
 
 #: actions/models/action.py actions/models/plan.py
 msgid "color"
-msgstr ""
+msgstr "color"
 
 #: actions/models/action.py
 msgid "action status"
-msgstr ""
+msgstr "estado de la acción"
 
 #: actions/models/action.py
 msgid "action statuses"
-msgstr ""
+msgstr "estados de acción"
 
 #: actions/models/action.py
 msgid "action implementation phase"
-msgstr ""
+msgstr "fase de ejecución de la acción"
 
 #: actions/models/action.py
 msgid "action implementation phases"
-msgstr ""
+msgstr "fases de ejecución de las acciones"
 
 #: actions/models/action.py
 msgid "not started"
-msgstr ""
+msgstr "no iniciado"
 
 #: actions/models/action.py reports/spreadsheets/excel_report.py
 msgid "in progress"
-msgstr ""
+msgstr "en curso"
 
 #: actions/models/action.py
 msgid "completed"
-msgstr ""
+msgstr "completado"
 
 #: actions/models/action.py
 msgid "cancelled"
-msgstr ""
+msgstr "cancelado"
 
 #: actions/models/action.py
 msgid "state"
-msgstr ""
+msgstr "estado"
 
 #: actions/models/action.py feedback/models.py
 msgid "comment"
-msgstr ""
+msgstr "comentario"
 
 #: actions/models/action.py
 msgid "due date"
-msgstr ""
+msgstr "fecha de vencimiento"
 
 #: actions/models/action.py
 msgid "The date by which the task should be completed (deadline)"
-msgstr ""
+msgstr "La fecha en la que debe completarse la tarea (fecha límite)"
 
 #: actions/models/action.py
 msgid "Due date format"
-msgstr ""
+msgstr "Formato de la fecha de vencimiento"
 
 #: actions/models/action.py
 msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
-msgstr ""
+msgstr "Formato de las fechas de vencimiento de las tareas de acción que se muestran en la interfaz de usuario pública.             El valor predeterminado para todas las acciones se puede especificar en la página de acciones."
 
 #: actions/models/action.py
 msgid "completion date"
-msgstr ""
+msgstr "fecha de finalización"
 
 #: actions/models/action.py
 msgid "The date when the task was completed"
-msgstr ""
+msgstr "Fecha de finalización de la tarea"
 
 #: actions/models/action.py
 msgid "completed by"
-msgstr ""
+msgstr "completado por"
 
 #: actions/models/action.py aplans/utils.py feedback/models.py
 msgid "created at"
-msgstr ""
+msgstr "creado en"
 
 #: actions/models/action.py
 msgid "modified at"
-msgstr ""
+msgstr "modificado en"
 
 #: actions/models/action.py
 msgctxt "partitive"
 msgid "action task"
-msgstr ""
+msgstr "tarea de acción"
 
 #: actions/models/action.py
 msgid "action task"
-msgstr ""
+msgstr "tarea de acción"
 
 #: actions/models/action.py
 msgid "action tasks"
-msgstr ""
+msgstr "tareas de acción"
 
 #: actions/models/action.py
 msgid "Non-completed tasks cannot have a completion date"
-msgstr ""
+msgstr "Las tareas no completadas no pueden tener fecha de finalización"
 
 #: actions/models/action.py
 msgid "Completed tasks must have a completion date"
-msgstr ""
+msgstr "Las tareas completadas deben tener una fecha de finalización"
 
 #: actions/models/action.py
 msgid "action impact class"
-msgstr ""
+msgstr "clase de impacto de la acción"
 
 #: actions/models/action.py
 msgid "action impact classes"
-msgstr ""
+msgstr "clases de impacto de la acción"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
 #: orgs/models.py pages/blocks.py pages/models.py
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 #: actions/models/action.py pages/models.py
 msgid "title"
-msgstr ""
+msgstr "título"
 
 #: actions/models/action.py
 msgid "action link"
-msgstr ""
+msgstr "enlace de acción"
 
 #: actions/models/action.py
 msgid "action links"
-msgstr ""
+msgstr "enlaces de acción"
 
 #: actions/models/action.py budget/models.py indicators/models.py
 msgid "date"
-msgstr ""
+msgstr "fecha"
 
 #: actions/models/action.py
 msgid "author"
-msgstr ""
+msgstr "autor"
 
 #: actions/models/action.py notifications/models.py
 msgid "content"
-msgstr ""
+msgstr "contenido"
 
 #: actions/models/action.py aplans/utils.py people/models.py
 msgid "created by"
-msgstr ""
+msgstr "creado por"
 
 #: actions/models/action.py
 msgid "action status update"
-msgstr ""
+msgstr "actualización del estado de las acciones"
 
 #: actions/models/action.py
 msgid "action status updates"
-msgstr ""
+msgstr "actualizaciones del estado de las acciones"
 
 #: actions/models/action.py
 msgid "impact group action"
-msgstr ""
+msgstr "impact group action"
 
 #: actions/models/action.py
 msgid "impact group actions"
-msgstr ""
+msgstr "acciones del grupo de impacto"
 
 #: actions/models/action.py
 msgid "Approve"
-msgstr ""
+msgstr "Aprobar"
 
 #: actions/models/action.py
 msgid "Request changes"
-msgstr ""
+msgstr "Solicitar cambios"
 
 #: actions/models/action_deps.py
 msgid "Preceding action"
-msgstr ""
+msgstr "Acción precedente"
 
 #: actions/models/action_deps.py
 msgid "Dependent action"
-msgstr ""
+msgstr "Acción dependiente"
 
 #: actions/models/action_deps.py
 msgid "Maximum dependency chain length exceeded."
-msgstr ""
+msgstr "Se ha superado la longitud máxima de la cadena de dependencia."
 
 #: actions/models/attributes.py
 msgid "Ordered choice"
-msgstr ""
+msgstr "Elección ordenada"
 
 #: actions/models/attributes.py
 msgid "Optional choice with optional text"
-msgstr ""
-
-#: actions/models/attributes.py
-msgid "Choice"
-msgstr ""
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr ""
+msgstr "Opción con texto opcional"
 
 #: actions/models/attributes.py
 msgid "Rich text"
-msgstr ""
+msgstr "Texto enriquecido"
 
 #: actions/models/attributes.py
 msgid "Numeric"
-msgstr ""
+msgstr "Numérico"
 
 #: actions/models/attributes.py actions/models/category.py admin_site/models.py
 msgid "help text"
-msgstr ""
+msgstr "texto de ayuda"
 
 #: actions/models/attributes.py
 msgid "Format"
-msgstr ""
+msgstr "Formato"
 
 #: actions/models/attributes.py
 msgid "Unit (only if format is numeric)"
-msgstr ""
+msgstr "Unidad (sólo si el formato es numérico)"
 
 #: actions/models/attributes.py
 msgid "Category type (if format is category)"
-msgstr ""
+msgstr "Tipo de categoría (si el formato es categoría)"
 
 #: actions/models/attributes.py
 msgid "If the format is \"Category\", choose which category type the field values can be chosen from"
-msgstr ""
+msgstr "Si el formato es \"Categoría\", elija de qué tipo de categoría pueden elegirse los valores del campo"
 
 #: actions/models/attributes.py
 msgid "show choice names"
-msgstr ""
+msgstr "mostrar nombres de elección"
 
 #: actions/models/attributes.py
 msgid "If the format is \"ordered choice\", determines whether the choice names are displayed"
-msgstr ""
+msgstr "Si el formato es \"elección ordenada\", determina si se muestran los nombres de las opciones"
 
 #: actions/models/attributes.py
 msgid "has zero option"
-msgstr ""
+msgstr "tiene opción cero"
 
 #: actions/models/attributes.py
 msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
-msgstr ""
+msgstr "Si el formato es \"elección ordenada\", determina si la primera opción se muestra con cero viñetas en lugar de una"
 
 #: actions/models/attributes.py
 msgid "character limit for text fields"
-msgstr ""
+msgstr "límite de caracteres para los campos de texto"
 
 #: actions/models/attributes.py
 msgid "show in reporting tab"
-msgstr ""
+msgstr "mostrar en la pestaña de informes"
 
 #: actions/models/attributes.py admin_site/models.py
 msgid "field"
-msgstr ""
+msgstr "campo"
 
 #: actions/models/attributes.py reports/wagtail_admin.py
 msgid "fields"
-msgstr ""
+msgstr "campos"
 
 #: actions/models/attributes.py
 msgid "Unit must only be used for numeric fields"
-msgstr ""
+msgstr "La unidad sólo debe utilizarse para campos numéricos"
 
 #: actions/models/attributes.py
 msgid "If no primary language is set, there must not be other languages"
-msgstr ""
+msgstr "Si no se establece ninguna lengua principal, no debe haber otras lenguas"
 
 #: actions/models/attributes.py
 msgid "This value is only allowed for action fields"
-msgstr ""
+msgstr "Este valor sólo se permite para los campos de acción"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
-msgstr ""
+msgstr "opción de elección de atributos"
 
 #: actions/models/attributes.py
 msgid "attribute choice options"
-msgstr ""
+msgstr "opciones de elección de atributos"
 
 #: actions/models/category.py
 msgid "Single"
-msgstr ""
+msgstr "Único"
 
 #: actions/models/category.py
 msgid "Multiple"
-msgstr ""
+msgstr "Múltiples"
 
 #: actions/models/category.py
 msgid "hide category identifiers"
-msgstr ""
+msgstr "ocultar identificadores de categoría"
 
 #: actions/models/category.py
 msgid "Set if the categories do not have meaningful identifiers"
-msgstr ""
+msgstr "Establecer si las categorías no tienen identificadores significativos"
 
 #: actions/models/category.py
 msgid "lead paragraph"
-msgstr ""
+msgstr "párrafo principal"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
-msgstr ""
+msgstr "utilizable para la categorización de acciones"
 
 #: actions/models/category.py
 msgid "usable for indicator categorization"
-msgstr ""
+msgstr "utilizable para la categorización de indicadores"
 
 #: actions/models/category.py
 msgid "editable for actions"
-msgstr ""
+msgstr "editable para acciones"
 
 #: actions/models/category.py
 msgid "editable for indicators"
-msgstr ""
+msgstr "editable para indicadores"
 
 #: actions/models/category.py
 msgid "single or multiple selection"
-msgstr ""
+msgstr "selección única o múltiple"
 
 #: actions/models/category.py
 #, python-brace-format
 msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
-msgstr ""
+msgstr "Elija \"{choice_multiple}\" sólo si puede seleccionar más de una categoría a la vez; en caso contrario, elija \"{choice_single}\", que es la opción por defecto."
 
 #: actions/models/category.py
 msgid "has a collection"
-msgstr ""
+msgstr "tiene una colección"
 
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
-msgstr ""
+msgstr "Establecer si este tipo de categoría debe tener su propia colección de imágenes"
 
 #: actions/models/category.py orgs/models.py
 msgid "primary language"
-msgstr ""
+msgstr "idioma principal"
 
 #: actions/models/category.py
 msgid "common category type"
-msgstr ""
+msgstr "tipo de categoría común"
 
 #: actions/models/category.py
 msgid "common category types"
-msgstr ""
+msgstr "tipos de categorías comunes"
 
 #: actions/models/category.py
 msgid "synchronize with pages"
-msgstr ""
+msgstr "sincronizar con páginas"
 
 #: actions/models/category.py
 msgid "Set if categories of this type should be synchronized with pages"
-msgstr ""
+msgstr "Establece si las categorías de este tipo deben sincronizarse con las páginas"
 
 #: actions/models/category.py
 msgid "category type"
-msgstr ""
+msgstr "tipo de categoría"
 
 #: actions/models/category.py
 msgid "category types"
-msgstr ""
+msgstr "tipos de categorías"
 
 #: actions/models/category.py
 msgid "This value is not allowed for category types"
-msgstr ""
+msgstr "Este valor no está permitido para los tipos de categoría"
 
 #: actions/models/category.py feedback/models.py notifications/models.py
 msgid "type"
-msgstr ""
+msgstr "tipo"
 
 #: actions/models/category.py
 msgid "plural name"
-msgstr ""
+msgstr "nombre plural"
 
 #: actions/models/category.py
 msgid "category level"
-msgstr ""
+msgstr "nivel de categoría"
 
 #: actions/models/category.py
 msgid "category levels"
-msgstr ""
+msgstr "niveles de categoría"
 
 #: actions/models/category.py
 msgid "theme color"
-msgstr ""
+msgstr "color del tema"
 
 #: actions/models/category.py
 msgid "Set if the category has a theme color"
-msgstr ""
+msgstr "Establecer si la categoría tiene un color de tema"
+
+#: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr "UUID del nodo Kausal Paths"
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr "Nodo Kausal Paths para vincular esta categoría a"
 
 #: actions/models/category.py
 msgid "common category"
-msgstr ""
+msgstr "categoría común"
 
 #: actions/models/category.py
 msgid "common categories"
-msgstr ""
+msgstr "categorías comunes"
 
 #: actions/models/category.py
 msgid "parent category"
-msgstr ""
+msgstr "categoría superior"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
-msgstr ""
+msgstr "categoría"
 
 #: actions/models/category.py
 msgid "Parent forms a loop. Leave empty if top-level category."
-msgstr ""
+msgstr "El padre forma un bucle. Dejar vacío si la categoría es de nivel superior."
 
 #: actions/models/category.py
 msgid "Parent must be of same type"
-msgstr ""
+msgstr "El padre debe ser del mismo tipo"
 
 #: actions/models/category.py
 msgid "Subcategories"
-msgstr ""
+msgstr "Subcategorías"
 
 #: actions/models/features.py
 msgid "No ordering"
-msgstr ""
+msgstr "Sin pedido"
 
 #: actions/models/features.py
 msgid "Order by name"
-msgstr ""
+msgstr "Ordenar por nombre"
 
 #: actions/models/features.py
 msgid "Do not show contact persons publicly"
-msgstr ""
+msgstr "No mostrar públicamente las personas de contacto"
 
 #: actions/models/features.py
 msgid "Show only name, role and affiliation"
-msgstr ""
+msgstr "Mostrar sólo nombre, función y afiliación"
 
 #: actions/models/features.py
 msgid "Show all information"
-msgstr ""
+msgstr "Mostrar toda la información"
 
 #: actions/models/features.py
 msgid "Show all information but only for authenticated users"
-msgstr ""
+msgstr "Mostrar toda la información pero sólo para usuarios autentificados"
 
 #: actions/models/features.py
 msgid "Allow images for actions"
-msgstr ""
+msgstr "Permitir imágenes para las acciones"
 
 #: actions/models/features.py
 msgid "Should custom images for individual actions be allowed"
-msgstr ""
+msgstr "¿Deben permitirse las imágenes personalizadas para acciones individuales?"
 
 #: actions/models/features.py
 msgid "Show admin link"
-msgstr ""
+msgstr "Mostrar enlace admin"
 
 #: actions/models/features.py
 msgid "Should the public website contain a link to the admin login?"
-msgstr ""
+msgstr "¿Debería el sitio web público contener un enlace al inicio de sesión de administrador?"
 
 #: actions/models/features.py
 msgid "Allow logging in to the public website"
-msgstr ""
+msgstr "Permitir el acceso al sitio web público"
 
 #: actions/models/features.py
 msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr ""
+msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"
 
 #: actions/models/features.py
 msgid "Publicly visible data about contact persons"
-msgstr ""
+msgstr "Datos públicamente visibles sobre las personas de contacto"
 
 #: actions/models/features.py
 msgid "Choose which information about contact persons is visible in the public UI"
-msgstr ""
+msgstr "Elija qué información sobre las personas de contacto es visible en la interfaz de usuario pública"
 
 #: actions/models/features.py
 msgid "Show profile pictures for contact persons"
-msgstr ""
+msgstr "Mostrar fotos de perfil de las personas de contacto"
 
 #: actions/models/features.py
 msgid "Should profile pictures be shown for contact persons in the public UI?"
-msgstr ""
+msgstr "¿Deben mostrarse las fotos de perfil de las personas de contacto en la interfaz de usuario pública?"
 
 #: actions/models/features.py
 msgid "Show organization ancestors in contact details of contact persons"
-msgstr ""
+msgstr "Mostrar ancestros de la organización en los datos de contacto de las personas de contacto"
 
 #: actions/models/features.py
 msgid "When displaying a contact person's contact details, should the contact person's organization be displayed along with all its ancestors?"
-msgstr ""
+msgstr "Al mostrar los datos de contacto de una persona, ¿debe mostrarse la organización de la persona de contacto junto con todos sus antepasados?"
 
 #: actions/models/features.py
 msgid "Hide moderators from the contact persons"
-msgstr ""
+msgstr "Ocultar moderadores de las personas de contacto"
 
 #: actions/models/features.py
 msgid "Should moderators be hidden from the visible contact persons in the public UI?"
-msgstr ""
+msgstr "¿Deberían ocultarse los moderadores de las personas de contacto visibles en la interfaz de usuario pública?"
 
 #: actions/models/features.py
 msgid "Has action identifiers"
-msgstr ""
+msgstr "Tiene identificadores de acción"
 
 #: actions/models/features.py
 msgid "Set if the plan uses meaningful action identifiers"
-msgstr ""
+msgstr "Establecer si el plan utiliza identificadores de acción significativos"
 
 #: actions/models/features.py
 msgid "Show action identifiers"
-msgstr ""
+msgstr "Mostrar identificadores de acción"
 
 #: actions/models/features.py
 msgid "Set if action identifiers should be visible in the public UI"
-msgstr ""
+msgstr "Establece si los identificadores de acción deben ser visibles en la interfaz de usuario pública"
 
 #: actions/models/features.py
 msgid "Action contact persons have different roles"
-msgstr ""
+msgstr "Las personas de contacto para la acción tienen diferentes funciones"
 
 #: actions/models/features.py
 msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
-msgstr ""
+msgstr "Establecer si hay personas de contacto separadas con derechos de publicación y otras que sólo pueden sugerir cambios."
 
 #: actions/models/features.py
 msgid "Minimal statuses"
-msgstr ""
+msgstr "Estados mínimos"
 
 #: actions/models/features.py
 msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
-msgstr ""
+msgstr "Establecer para evitar mostrar gráficos específicos de estado y otros elementos si los estados no se utilizan sistemáticamente en este plan de acción."
 
 #: actions/models/features.py
 msgid "Has action official name field"
-msgstr ""
+msgstr "Tiene acción campo de nombre oficial"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the official name field"
-msgstr ""
+msgstr "Establecer si el plan utiliza el campo de nombre oficial"
 
 #: actions/models/features.py
 msgid "Has action lead paragraph"
-msgstr ""
+msgstr "Tiene un párrafo de acción"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the lead paragraph field"
-msgstr ""
+msgstr "Establecer si el plan utiliza el campo de párrafo principal"
 
 #: actions/models/features.py
 msgid "Has primary organizations for actions"
-msgstr ""
+msgstr "Tiene organizaciones primarias para las acciones"
 
 #: actions/models/features.py
 msgid "Set if actions have a clear primary organization (such as multi-city plans)"
-msgstr ""
+msgstr "Establecer si las acciones tienen una organización primaria clara (como los planes para varias ciudades)"
 
 #: actions/models/features.py
 msgid "Enable site search"
-msgstr ""
+msgstr "Activar la búsqueda en el sitio"
 
 #: actions/models/features.py
 msgid "Enable site-wide search functionality"
-msgstr ""
+msgstr "Habilitar la función de búsqueda en todo el sitio"
 
 #: actions/models/features.py
 msgid "Enable indicator comparison"
-msgstr ""
+msgstr "Activar la comparación de indicadores"
 
 #: actions/models/features.py
 msgid "Set to enable comparing indicators between organizations"
-msgstr ""
+msgstr "Activar la comparación de indicadores entre organizaciones"
 
 #: actions/models/features.py
 msgid "Indicator order"
-msgstr ""
+msgstr "Indicador de orden"
 
 #: actions/models/features.py
 msgid "Choose how to order indicators in the action pages"
-msgstr ""
+msgstr "Elija cómo ordenar los indicadores en las páginas de acción"
 
 #: actions/models/features.py
 msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
-msgstr ""
+msgstr "Active la función de redacción y revisión y elija el flujo de trabajo deseado para la revisión."
 
 #: actions/models/features.py
 msgid "Display field visibility as a label in edit views"
-msgstr ""
+msgstr "Mostrar la visibilidad del campo como una etiqueta en las vistas de edición"
 
 #: actions/models/features.py
 msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
-msgstr ""
+msgstr "Para los planes que tienen restricciones de visibilidad específicas para cada campo, muestre a los usuarios qué campos son públicos y cuáles están restringidos."
 
 #: actions/models/features.py
 msgid "Include action print layout in reports"
-msgstr ""
+msgstr "Incluir el diseño de impresión de acciones en los informes"
 
 #: actions/models/features.py
 msgid "In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing."
-msgstr ""
+msgstr "En la salida de la hoja de cálculo del informe, incluya una hoja con todas las acciones en un diseño optimizado para la impresión."
 
 #: actions/models/features.py
 msgid "Password protected"
-msgstr ""
+msgstr "Protegido por contraseña"
 
 #: actions/models/features.py
 msgid "Is this plan password protected?"
-msgstr ""
+msgstr "¿Este plan está protegido por contraseña?"
 
 #: actions/models/features.py
 msgid "plan feature"
-msgstr ""
+msgstr "característica del plan"
 
 #: actions/models/features.py
 msgid "plan features"
-msgstr ""
+msgstr "características del plan"
 
 #: actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
-msgstr ""
+msgstr "Si lo deja en blanco, la aplicación utilizará el valor por defecto"
 
 #: actions/models/plan.py
 msgid "Customer use"
-msgstr ""
+msgstr "Uso del cliente"
 
 #: actions/models/plan.py
 msgid "Sales and demos"
-msgstr ""
+msgstr "Ventas y demostraciones"
 
 #: actions/models/plan.py
 msgid "Internal testing, training, development or other non-public use"
-msgstr ""
+msgstr "Pruebas internas, formación, desarrollo u otro uso no público"
 
 #: actions/models/plan.py
 msgid "Offboarding in progress"
-msgstr ""
+msgstr "Incorporación en curso"
 
 #: actions/models/plan.py
 msgid "Inactive, not in use currently"
-msgstr ""
+msgstr "Inactivo, no se utiliza actualmente"
 
 #: actions/models/plan.py
 msgid "Deprecated, should be deleted"
-msgstr ""
+msgstr "Obsoleto, debe suprimirse"
 
 #: actions/models/plan.py
 msgid "The official plan name in full form"
-msgstr ""
+msgstr "El nombre completo del plan oficial"
 
 #: actions/models/plan.py
 msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
-msgstr ""
+msgstr "Un identificador único para el plan utilizado internamente para distinguir entre planes. Forma parte de la URL del sitio de pruebas: https://[identificador].watch-test.kausal.tech. Utilice letras minúsculas y guiones."
 
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
-msgstr ""
+msgstr "nombre corto"
 
 #: actions/models/plan.py
 msgid "A shorter version of the plan name"
+msgstr "Una versión abreviada del nombre del plan"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "identifier"
+msgid "short identifier"
+msgstr "identificador"
+
+#: actions/models/plan.py
+msgid "A unique short identifier for the plan to be shown in the UI. Could be, e.g., a number or an abbreviation."
 msgstr ""
 
 #: actions/models/plan.py
 msgid "version name"
-msgstr ""
+msgstr "nombre de la versión"
 
 #: actions/models/plan.py
 msgid "If this plan has multiple versions, name of this version"
-msgstr ""
+msgstr "Si este plan tiene varias versiones, nombre de esta versión"
 
 #: actions/models/plan.py
 msgid "published at"
-msgstr ""
+msgstr "publicado en"
 
 #: actions/models/plan.py
 msgid "archived at"
-msgstr ""
+msgstr "archivado en"
 
 #: actions/models/plan.py
 msgid "Usage status"
-msgstr ""
+msgstr "Estado de utilización"
 
 #: actions/models/plan.py
 msgid "If unsure, use the default value representing customer use. For statistical purposes specify what the plan will be used for in order to differentiate between plans actually in use by customers and those created for some other reason."
-msgstr ""
+msgstr "Si no está seguro, utilice el valor por defecto que representa el uso del cliente. A efectos estadísticos, especifique para qué se utilizará el plan con el fin de diferenciar entre los planes realmente utilizados por los clientes y los creados por algún otro motivo."
 
 #: actions/models/plan.py
 msgid "site URL"
-msgstr ""
+msgstr "URL del sitio"
 
 #: actions/models/plan.py
 msgid "actions locked"
-msgstr ""
+msgstr "acciones bloqueadas"
 
 #: actions/models/plan.py
 msgid "Can actions be added and the official metadata edited?"
-msgstr ""
+msgstr "¿Se pueden añadir acciones y editar los metadatos oficiales?"
 
 #: actions/models/plan.py
-msgid "main organization for the plan"
-msgstr ""
+#, fuzzy
+#| msgid "main organization for the plan"
+msgid "The main organization for the plan"
+msgstr "organización principal del plan"
 
 #: actions/models/plan.py
 msgid "general administrators"
-msgstr ""
+msgstr "administradores generales"
 
 #: actions/models/plan.py
 msgid "Persons that can modify everything related to the action plan"
-msgstr ""
+msgstr "Personas que pueden modificar todo lo relacionado con el plan de acción"
 
 #: actions/models/plan.py
 msgid "Link to accessibility statement"
-msgstr ""
+msgstr "Enlace a la declaración de accesibilidad"
 
 #: actions/models/plan.py
 msgid "Link to external feedback form"
-msgstr ""
+msgstr "Enlace al formulario de opinión externo"
 
 #: actions/models/plan.py
 msgid "If not empty, the system's built-in user feedback feature will be replaced by a link to an external feedback form available at this web address."
-msgstr ""
+msgstr "Si no está vacía, la función de comentarios del usuario integrada en el sistema se sustituirá por un enlace a un formulario de comentarios externo disponible en esta dirección web."
 
 #: actions/models/plan.py
 msgid "Theme identifier"
-msgstr ""
+msgstr "Identificador de temas"
 
 #: actions/models/plan.py
 msgctxt "plan"
 msgid "parent"
-msgstr ""
+msgstr "padre"
 
 #: actions/models/plan.py
 msgid "Primary action classification"
-msgstr ""
+msgstr "Clasificación de las acciones primarias"
 
 #: actions/models/plan.py
 msgid "Used for primary navigation and grouping of actions"
-msgstr ""
+msgstr "Se utiliza para la navegación principal y la agrupación de acciones"
 
 #: actions/models/plan.py
 msgid "Secondary action classification"
-msgstr ""
+msgstr "Clasificación de las acciones secundarias"
 
 #: actions/models/plan.py
 msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
-msgstr ""
+msgstr "Dejar vacío a menos que se requiera específicamente. Los filtros de acción basados en esta categoría se muestran de forma más destacada que los filtros de otras categorías."
 
 #: actions/models/plan.py
 msgid "Days until actions considered stale"
-msgstr ""
+msgstr "Días hasta que las acciones se consideran caducadas"
 
 #: actions/models/plan.py
 msgid "Actions not updated since this many days are considered stale."
-msgstr ""
+msgstr "Las acciones no actualizadas desde hace tantos días se consideran obsoletas."
 
 #: actions/models/plan.py
 msgid "Target interval in days to update actions"
-msgstr ""
+msgstr "Intervalo objetivo en días para actualizar las acciones"
 
 #: actions/models/plan.py
 msgid "A desirable time interval in days within which actions should be updated in the optimal case."
-msgstr ""
+msgstr "Intervalo de tiempo deseable en días dentro del cual deben actualizarse las acciones en el caso óptimo."
 
 #: actions/models/plan.py
 msgid "Acceptable interval in days to update actions"
-msgstr ""
+msgstr "Intervalo aceptable en días para actualizar las acciones"
 
 #: actions/models/plan.py
 msgid "A maximum time interval in days within which actions should always be updated."
-msgstr ""
+msgstr "Un intervalo de tiempo máximo en días dentro del cual las acciones deben actualizarse siempre."
 
 #: actions/models/plan.py
 msgctxt "plan"
 msgid "superseded by"
-msgstr ""
+msgstr "sustituido por"
 
 #: actions/models/plan.py
 msgid "Set if this plan is superseded by another plan"
+msgstr "Establecer si este plan es sustituido por otro plan"
+
+#: actions/models/plan.py
+msgctxt "plan"
+msgid "copy of"
 msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Set if this plan is superseded by another plan"
+msgid "Set if this plan has been created by copying another plan"
+msgstr "Establecer si este plan es sustituido por otro plan"
+
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr "UUID de la instancia Kausal Paths"
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr "UUID de la instancia de Kausal Paths correspondiente para la integración de Kausal Paths"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
-msgstr ""
+msgstr "planos"
 
 #: actions/models/plan.py
 msgid "Primary language must not be selected"
-msgstr ""
+msgstr "No se debe seleccionar la lengua principal"
 
 #: actions/models/plan.py
 msgid "Category type must belong to plan"
-msgstr ""
+msgstr "El tipo de categoría debe pertenecer al plan"
 
 #: actions/models/plan.py
 msgid "You must create and choose a primary category type for classifying actions"
-msgstr ""
+msgstr "Debe crear y elegir un tipo de categoría principal para clasificar las acciones"
 
 #: actions/models/plan.py
 msgid "Primary and secondary classification cannot be the same"
+msgstr "La clasificación primaria y secundaria no pueden ser la misma"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "The organization is already included in the plan"
+msgid "This short identifier is already in use within the parent plan."
+msgstr "La organización ya está incluida en el plan"
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
 msgstr ""
+
+#: actions/models/plan.py indicators/apps.py indicators/blocks.py
+#: indicators/wagtail_admin.py reports/report_formatters.py
+msgid "Indicators"
+msgstr "Indicadores"
 
 #: actions/models/plan.py
 msgid "Privacy"
-msgstr ""
+msgstr "Privacidad"
 
 #: actions/models/plan.py feedback/models.py
 msgid "Accessibility"
+msgstr "Accesibilidad"
+
+#: actions/models/plan.py
+#, python-format
+msgid "%(plan)s (copy from %(date)s)"
 msgstr ""
+
+#: actions/models/plan.py
+#, python-format
+msgid "Copy from %(date)s"
+msgstr ""
+
+#: actions/models/plan.py actions/wagtail_admin.py
+msgid "Clients"
+msgstr "Clientes"
 
 #: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
-msgstr ""
+msgstr "Publicado en"
 
 #: actions/models/plan.py
 msgid "Unpublished"
-msgstr ""
+msgstr "Sin publicar"
 
 #: actions/models/plan.py
 msgid "Scheduled"
-msgstr ""
+msgstr "Programado"
 
 #: actions/models/plan.py
 msgid "general plan admin"
-msgstr ""
+msgstr "administración del plan general"
 
 #: actions/models/plan.py
 msgid "general plan admins"
-msgstr ""
+msgstr "administradores del plan general"
 
 #: actions/models/plan.py
 msgid "public site viewer"
-msgstr ""
+msgstr "visor de sitios públicos"
 
 #: actions/models/plan.py
 msgid "public site viewers"
-msgstr ""
+msgstr "espectadores de sitios públicos"
 
 #: actions/models/plan.py
 msgid "Production"
-msgstr ""
+msgstr "Producción"
 
 #: actions/models/plan.py
-msgid "Testing"
-msgstr ""
+msgid "Preview"
+msgstr "Vista previa"
+
+#: actions/models/plan.py
+msgid "Development"
+msgstr "Desarrollo"
 
 #: actions/models/plan.py
 msgid "host name"
-msgstr ""
+msgstr "nombre del host"
 
 #: actions/models/plan.py
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr ""
+msgstr "El nombre de dominio completo, por ejemplo clima.nombreciudad.gov. Déjelo en blanco si aún no lo conoce."
 
 #: actions/models/plan.py
 msgid "base path"
-msgstr ""
+msgstr "ruta base"
 
 #: actions/models/plan.py
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr ""
+msgstr "Rellene esto para un sitio multi-plan cuando el plan no vive en la raíz del dominio."
 
 #: actions/models/plan.py
 msgid "Base path must begin with a '/' and not end with '/'"
-msgstr ""
+msgstr "La ruta base debe empezar por \"/\" y no terminar por \"/\"."
 
 #: actions/models/plan.py
 msgid "deployment environment"
-msgstr ""
+msgstr "entorno de despliegue"
 
 #: actions/models/plan.py
 msgid "Domain names that will we used to redirect to the main hostname. Multiple domains are separated by commas."
-msgstr ""
+msgstr "Nombres de dominio que se utilizarán para redirigir al nombre de host principal. Los dominios múltiples se separan por comas."
 
 #: actions/models/plan.py
 msgid "Immediate override of publishing status"
-msgstr ""
+msgstr "Anulación inmediata del estado de publicación"
 
 #: actions/models/plan.py
 msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
-msgstr ""
+msgstr "Establezca esta opción sólo si está seguro de que desea anular la hora de publicación establecida en el plan. Tenga en cuenta que esto cambiará inmediatamente el estado de publicación del plan en este dominio."
 
 #: actions/models/plan.py
 msgid "The site is not public at this time."
-msgstr ""
+msgstr "El sitio no es público en este momento."
 
 #: actions/models/plan.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"
-msgstr ""
+msgstr "El nombre de host debe ser un nombre de dominio completo sólo en minúsculas."
 
 #: actions/models/plan.py
 msgid "plan domain"
-msgstr ""
+msgstr "dominio del plan"
 
 #: actions/models/plan.py
 msgid "plan domains"
-msgstr ""
+msgstr "planificar dominios"
 
 #: actions/models/plan.py
 msgid "scenario"
-msgstr ""
+msgstr "escenario"
 
 #: actions/models/plan.py
 msgid "scenarios"
-msgstr ""
+msgstr "escenarios"
 
 #: actions/models/plan.py
 msgctxt "impact group"
 msgid "parent"
-msgstr ""
+msgstr "padre"
 
 #: actions/models/plan.py
 msgid "weight"
-msgstr ""
+msgstr "peso"
 
 #: actions/models/plan.py
 msgid "impact group"
-msgstr ""
+msgstr "grupo de impacto"
 
 #: actions/models/plan.py
 msgid "impact groups"
-msgstr ""
+msgstr "grupos de impacto"
 
 #: actions/models/plan.py
 msgid "description when action fulfills criteria"
-msgstr ""
+msgstr "descripción cuando la acción cumple los criterios"
 
 #: actions/models/plan.py
 msgid "description when action doesn't fulfill criteria"
-msgstr ""
+msgstr "descripción cuando la acción no cumple los criterios"
 
 #: actions/models/plan.py
 msgid "monitoring quality point"
-msgstr ""
+msgstr "punto de control de calidad"
 
 #: actions/models/plan.py
 msgid "monitoring quality points"
-msgstr ""
+msgstr "control de los puntos de calidad"
 
 #: actions/templates/site_summary/actions.html
 #, python-format
@@ -1933,1205 +2209,1375 @@ msgid_plural ""
 "        <span>%(n)s</span> active actions <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
 "    "
 msgstr[0] ""
+"\n"
+"        <span>%(n)s</span> acción activa <span class=\"w-sr-only\">supervisada en %(plan)s</span>\n"
+"    "
 msgstr[1] ""
+"\n"
+"        <span>%(n)s</span> acciones activas <span class=\"w-sr-only\">supervisadas en %(plan)s</span>\n"
+"    "
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 #, python-format
 msgid "The page \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\"."
-msgstr ""
+msgstr "La página \"%(title)s\" ha sido enviada para su aprobación a la etapa de moderación \"%(task)s\"."
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 msgid "You can preview the page here:"
-msgstr ""
+msgstr "Puede previsualizar la página aquí:"
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 msgid "You can edit the page here:"
-msgstr ""
+msgstr "Puede editar la página aquí:"
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 #, python-format
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from the moderation stage \"%(task)s\". It does not require approval until it has been resubmitted for moderation again."
-msgstr ""
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la fase de moderación \"%(task)s\". No requiere aprobación hasta que se haya vuelto a someter a moderación."
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 #, python-format
 msgid "You can preview the %(model_name)s here:"
-msgstr ""
+msgstr "Puede consultar una vista previa de %(model_name)s aquí:"
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 #, python-format
 msgid "You can edit the %(model_name)s here:"
-msgstr ""
+msgstr "Puede editar la página %(model_name)s aquí:"
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
 #, python-format
 msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
-msgstr ""
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
 #, python-format
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
 msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy
+#| msgid "You can preview the page here:"
+msgid "You can view the page here:"
+msgstr "Puede previsualizar la página aquí:"
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
 
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
-msgstr ""
+msgstr "Identificador ya utilizado"
 
 #: actions/wagtail_admin.py
 msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
-msgstr ""
+msgstr "Para los identificadores, utilice sólo letras minúsculas del alfabeto inglés con guiones separando las palabras. Los números sólo se permiten al final."
 
 #: actions/wagtail_admin.py
 msgid "Plan name already in use"
-msgstr ""
+msgstr "Nombre del plan ya utilizado"
 
 #: actions/wagtail_admin.py
 msgid "A plan's other language cannot be the same as its primary language"
-msgstr ""
+msgstr "La otra lengua de un plan no puede ser la misma que su lengua principal"
 
 #: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
-msgstr ""
+msgstr "Planes"
 
 #: actions/wagtail_admin.py
 msgid "General administrators"
-msgstr ""
+msgstr "Administradores generales"
 
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgid "Clients"
-msgstr ""
+msgstr "Establecer sólo si el cliente lo requiere explícitamente. Utilice una clave de color de graphColors del tema de interfaz de usuario, por ejemplo red070 o grey030."
 
 #: actions/wagtail_admin.py
 msgid "Domains"
-msgstr ""
+msgstr "Dominios"
 
 #: actions/wagtail_admin.py
 msgid "Action statuses"
-msgstr ""
+msgstr "Estados de las acciones"
 
 #: actions/wagtail_admin.py
 msgid "Action implementation phases"
-msgstr ""
+msgstr "Fases de ejecución de las acciones"
 
 #: actions/wagtail_admin.py
 msgid "Action impacts"
-msgstr ""
+msgstr "Impactos de la acción"
 
 #: actions/wagtail_admin.py
 msgid "Action schedules"
-msgstr ""
+msgstr "Planes de acción"
 
 #: actions/wagtail_admin.py
 msgid "Action dependency roles"
-msgstr ""
+msgstr "Funciones de dependencia de la acción"
 
 #: actions/wagtail_admin.py
 msgid "Action classifications"
-msgstr ""
+msgstr "Clasificación de las acciones"
 
 #: actions/wagtail_admin.py
 msgid "Plan features"
-msgstr ""
+msgstr "Características del plan"
 
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
-msgstr ""
+msgstr "Ajustes de notificación del plan"
 
 #: admin_site/api.py
 msgid "Invalid email address"
-msgstr ""
+msgstr "Dirección de correo electrónico no válida"
 
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
-msgstr ""
+msgstr "No se ha encontrado ningún usuario con esta dirección de correo electrónico. Pida a su administrador que le cree una cuenta."
 
 #: admin_site/api.py
 msgid "You do not have access to the public site."
-msgstr ""
+msgstr "No tiene acceso al sitio público."
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr ""
+msgstr "No tiene acceso de administrador. Es posible que su administrador tenga que asignarle una acción o un indicador, o concederle el estatus de administrador del plan."
 
 #: admin_site/api.py
 msgid "Cannot determine authentication method. The email address domain may be unknown."
-msgstr ""
+msgstr "No se puede determinar el método de autenticación. El dominio de la dirección de correo electrónico puede ser desconocido."
 
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
-msgstr ""
+msgstr "Se requiere autenticación de contraseña, pero el usuario no tiene contraseña."
 
 #: admin_site/apps.py
 msgid "History"
-msgstr ""
+msgstr "Historia"
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
-msgstr ""
+msgstr "¿Qué parte aparece después de @ en la dirección de correo electrónico de la organización responsable del plan?"
 
 #: admin_site/chooser.py
 msgid "Choose a client"
-msgstr ""
+msgstr "Elija un cliente"
 
 #: admin_site/chooser.py
 msgid "Choose another client"
-msgstr ""
+msgstr "Elegir otro cliente"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Link"
-msgstr ""
+msgstr "Enlace"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Document"
-msgstr ""
+msgstr "Documento"
 
 #: admin_site/draftail_rich_text_area.py pages/blocks.py
 msgid "Embed"
-msgstr ""
+msgstr "Insertar"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bold"
-msgstr ""
+msgstr "Negrita"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Italic"
-msgstr ""
+msgstr "Cursiva"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Superscript"
-msgstr ""
+msgstr "Superíndice"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Subscript"
-msgstr ""
+msgstr "Subíndice"
 
 #: admin_site/draftail_rich_text_area.py
 #, python-format
 msgid "Heading %(level)d"
-msgstr ""
+msgstr "Rúbrica %(level)d"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Numbered list"
-msgstr ""
+msgstr "Lista numerada"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bulleted list"
-msgstr ""
+msgstr "Lista con viñetas"
 
 #: admin_site/forms.py
 msgid "Enter password"
-msgstr ""
+msgstr "Introduzca la contraseña"
 
 #: admin_site/forms.py
 msgid "Enter your email address"
-msgstr ""
+msgstr "Introduzca su dirección de correo electrónico"
 
 #: admin_site/models.py
 msgid "Only allow password login"
-msgstr ""
+msgstr "Permitir sólo el acceso con contraseña"
 
 #: admin_site/models.py
 msgid "Microsoft Azure AD"
-msgstr ""
+msgstr "Microsoft Azure AD"
 
 #: admin_site/models.py
 msgid "Google"
-msgstr ""
+msgstr "Google"
 
 #: admin_site/models.py
 msgid "Tunnistamo"
-msgstr ""
+msgstr "Tunnistamo"
 
 #: admin_site/models.py
 msgid "OKTA"
-msgstr ""
+msgstr "OKTA"
 
 #: admin_site/models.py
 msgid "ADFS OpenID Connect"
-msgstr ""
+msgstr "ADFS OpenID Connect"
 
 #: admin_site/models.py
 msgid "Name of the customer organization administering the plan"
-msgstr ""
+msgstr "Nombre de la organización del cliente que administra el plan"
 
 #: admin_site/models.py
 msgid "login method"
-msgstr ""
+msgstr "método de acceso"
 
 #: admin_site/models.py
 msgid "Login method that will be used for users that don't have a password set"
-msgstr ""
+msgstr "Método de inicio de sesión que se utilizará para los usuarios que no tienen una contraseña establecida."
 
 #: admin_site/models.py budget/models.py
 msgid "label"
-msgstr ""
+msgstr "etiqueta"
 
 #: admin_site/models.py
 #, python-format
 msgid "%(field)s is not a valid field in the model '%(model)s'"
-msgstr ""
+msgstr "%(field)s no es un campo válido en el modelo '%(model)s'"
 
 #: admin_site/models.py
 #, python-format
 msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
-msgstr ""
+msgstr "Campo '%(field)s' en el modelo '%(model)s' del plan '%(plan)s'"
 
 #: admin_site/signals.py
 #, python-format
 msgid "You are now viewing the site as %(user)s."
-msgstr ""
+msgstr "Ahora está viendo el sitio como %(user)s."
 
 #: admin_site/signals.py
 #, python-format
 msgid "You have stopped viewing the site as %(user)s and have returned to your original account."
-msgstr ""
+msgstr "Has dejado de ver el sitio como %(user)s y has vuelto a tu cuenta original."
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Indicators assigned to me"
-msgstr ""
+msgstr "Indicadores que me han sido asignados"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Last modified"
-msgstr ""
+msgstr "Última modificación"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Last data point"
-msgstr ""
+msgstr "Último dato"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit this indicator"
-msgstr ""
+msgstr "Editar este indicador"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
-msgstr ""
+msgstr "Editar datos"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #, python-format
 msgid "%(time_period)s ago"
-msgstr ""
+msgstr "%(time_period)s hace"
 
 #: admin_site/templates/admin_site/release_impersonation.html
 msgid "Back to own user"
-msgstr ""
+msgstr "Volver al propio usuario"
 
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
 #, python-format
 msgid " By %(filter_title)s "
-msgstr ""
+msgstr " Por %(filter_title)s "
 
 #: admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
-msgstr ""
+msgstr "Administración"
+
+#: admin_site/templates/wagtailadmin/base.html
+#, fuzzy
+#| msgid "Related plans"
+msgid "locked plan"
+msgstr "Planes relacionados"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Public"
+msgstr "Público"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Internal"
+msgstr "Interno"
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Sign in to Kausal Watch admin"
-msgstr ""
+msgstr "Iniciar sesión en Kausal Watch admin"
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
-msgstr ""
+msgstr "Nuestras disculpas, el servidor está experimentando dificultades temporalmente."
 
 #: admin_site/utils.py
 msgid "Public field"
-msgstr ""
+msgstr "Ámbito público"
 
 #: admin_site/utils.py
 msgid "Non-public field"
-msgstr ""
-
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr ""
+msgstr "Ámbito no público"
 
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
-msgstr ""
+msgstr "Error al borrar elementos. Intente borrar primero cualquier %(name)s que esté en uso."
 
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
-msgstr ""
+msgstr "En uso: \"%(instance)s\"."
 
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "%s could not be created due to errors."
-msgstr ""
+msgstr "%s no se ha podido crear debido a errores."
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr "Editar %(schema_name)s"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(schema_name)s"
+msgstr "Añadir %(schema_name)s"
 
 #: admin_site/wagtail.py
 msgid "View live"
-msgstr ""
+msgstr "Ver en directo"
 
 #: admin_site/wagtail.py
 #, python-format
 msgid "View %s live"
-msgstr ""
+msgstr "Ver %s en directo"
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "[not included]"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in primary filters"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in main filters"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in advanced filters"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in main column (top)"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in main column (bottom)"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "in side column"
-msgstr ""
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "No se ha podido eliminar el tipo de categoría común \"%(removed_cct)\" del plan porque existen categorías con el tipo de categoría correspondiente."
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
-msgid "Create plan"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
-msgid "Choose plan"
-msgstr ""
+msgstr "Informes"
 
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
-msgstr ""
+msgstr "Dominios de correo electrónico"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
-msgstr ""
+msgstr "Tutoriales en vídeo"
 
 #: admin_site/wagtail_hooks.py
 msgid "https://kausal.gitbook.io/watch"
-msgstr ""
+msgstr "https://kausal.gitbook.io/watch"
+
+#: aplans/dynamic_blocks.py
+msgid "Help text for the field to be shown in the UI"
+msgstr "Texto de ayuda para el campo que se mostrará en la interfaz de usuario"
+
+#: aplans/dynamic_blocks.py
+#, python-format
+msgid "Content block: %(label)s"
+msgstr "Bloque de contenido: %(label)s"
 
 #: aplans/fields.py
 msgid "Enter a valid hostname."
-msgstr ""
+msgstr "Introduzca un nombre de host válido."
 
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
-msgstr ""
+msgstr "Nombre de host completo (FQDN)"
 
 #: aplans/graphql_types.py
 msgid "Approved"
-msgstr ""
+msgstr "Aprobado"
 
 #: aplans/graphql_types.py
 msgid "Draft"
-msgstr ""
+msgstr "Borrador"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
-msgstr ""
+msgstr "No se ha podido iniciar sesión."
 
 #: aplans/rest_api.py
 msgid "Cannot delete instance because other objects reference it."
-msgstr ""
+msgstr "No se puede eliminar la instancia porque otros objetos hacen referencia a ella."
 
 #: aplans/rest_api.py
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
-msgstr ""
+msgstr "No se puede eliminar \"%s\" porque está conectado a otros objetos como planes, personas o acciones."
 
 #: aplans/settings.py
 msgid "Danish"
-msgstr ""
+msgstr "Danés"
 
 #: aplans/settings.py
 msgid "German"
-msgstr ""
+msgstr "Alemán"
 
 #: aplans/settings.py
 msgid "German (Switzerland)"
-msgstr ""
+msgstr "Alemán (Suiza)"
 
 #: aplans/settings.py
 msgid "Greek"
-msgstr ""
+msgstr "Griego"
 
 #: aplans/settings.py
 msgid "English (United States)"
-msgstr ""
+msgstr "Inglés (Estados Unidos)"
 
 #: aplans/settings.py
 msgid "English (Australia)"
-msgstr ""
+msgstr "Inglés (Australia)"
 
 #: aplans/settings.py
 msgid "English (United Kingdom)"
-msgstr ""
+msgstr "Inglés (Reino Unido)"
 
 #: aplans/settings.py
 msgid "Spanish"
-msgstr ""
+msgstr "Español"
 
 #: aplans/settings.py
 msgid "Spanish (United States)"
-msgstr ""
+msgstr "Español (Estados Unidos)"
 
 #: aplans/settings.py
 msgid "Finnish"
-msgstr ""
+msgstr "En finés"
 
 #: aplans/settings.py
 msgid "Latvian"
-msgstr ""
+msgstr "Letón"
 
 #: aplans/settings.py
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugués"
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
-msgstr ""
+msgstr "Portugués (Brasil)"
 
 #: aplans/settings.py
 msgid "Swedish"
-msgstr ""
+msgstr "Sueco"
 
 #: aplans/settings.py
 msgid "Swedish (Finland)"
-msgstr ""
+msgstr "Sueco (Finlandia)"
 
 #: aplans/utils.py
 msgid "Day, month and year (31.12.2020)"
-msgstr ""
+msgstr "Día, mes y año (31.12.2020)"
 
 #: aplans/utils.py
 msgid "Month and year (12.2020)"
-msgstr ""
+msgstr "Mes y año (12.2020)"
 
 #: aplans/utils.py
 msgid "Year (2020)"
-msgstr ""
+msgstr "Año (2020)"
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
-msgstr ""
-
-#: aplans/utils.py
-msgid "Internal"
-msgstr ""
-
-#: aplans/utils.py
-msgid "Public"
-msgstr ""
+msgstr "pedir"
 
 #: aplans/utils.py
 msgid "visibility"
-msgstr ""
+msgstr "visibilidad"
 
 #: aplans/utils.py
 msgid "Authenticated users"
-msgstr ""
+msgstr "Usuarios autentificados"
 
 #: aplans/utils.py
 msgid "Contact persons with moderator permissions"
-msgstr ""
+msgstr "Personas de contacto con permisos de moderador"
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
-msgstr ""
+msgstr "Administradores del plan"
 
 #: aplans/utils.py
 msgid "Not editable"
-msgstr ""
+msgstr "No editable"
 
 #: aplans/utils.py
 msgid "Edit rights"
-msgstr ""
+msgstr "Editar derechos"
 
 #: aplans/utils.py
 msgid "Contact persons with \"moderator\" role"
-msgstr ""
+msgstr "Personas de contacto con función de \"moderador"
 
 #: aplans/utils.py
 msgid "Visibility"
-msgstr ""
+msgstr "Visibilidad"
 
 #: aplans/utils.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
-msgstr ""
+msgstr "%(color)s no es un color CSS (por ejemplo, \"#112233\", \"red\" o \"rgb(0, 255, 127)\")"
 
 #: aplans/utils.py
 msgid "updated by"
-msgstr ""
+msgstr "actualizado por"
 
 #: budget/models.py indicators/models.py
 msgid "dimension"
-msgstr ""
+msgstr "dimensión"
 
 #: budget/models.py indicators/models.py
 msgid "dimensions"
-msgstr ""
+msgstr "dimensiones"
 
 #: budget/models.py indicators/models.py
 msgid "dimension category"
-msgstr ""
+msgstr "categoría de dimensión"
 
 #: budget/models.py indicators/models.py
 msgid "dimension categories"
-msgstr ""
+msgstr "categorías de dimensión"
 
 #: budget/models.py
 msgid "Yearly"
-msgstr ""
+msgstr "Anualmente"
 
 #: budget/models.py
 msgid "Time resolution of the time stamps of data points in this dataset"
-msgstr ""
+msgstr "Resolución temporal de las marcas de tiempo de los puntos de datos en este conjunto de datos"
 
 #: budget/models.py indicators/models.py
 msgid "unit"
-msgstr ""
+msgstr "unidad"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr "Primera fecha aplicable a los puntos de datos de estos conjuntos de datos"
 
 #: budget/models.py
 msgid "schema"
-msgstr ""
+msgstr "esquema"
 
 #: budget/models.py indicators/models.py
 msgid "dataset"
-msgstr ""
+msgstr "conjunto de datos"
 
 #: budget/models.py indicators/models.py
 msgid "datasets"
-msgstr ""
+msgstr "conjuntos de datos"
 
 #: budget/models.py
 msgid "Date of this data point in context of the dataset's time resolution"
-msgstr ""
+msgstr "Fecha de este punto de datos en el contexto de la resolución temporal del conjunto de datos"
 
 #: budget/models.py indicators/models.py
 msgid "value"
-msgstr ""
+msgstr "valor"
 
 #: budget/models.py
 msgid "data point"
-msgstr ""
+msgstr "punto de datos"
 
 #: budget/models.py
 msgid "data points"
-msgstr ""
+msgstr "puntos de datos"
 
 #: budget/wagtail_admin.py
 msgid "Budget dimensions"
-msgstr ""
+msgstr "Dimensiones del presupuesto"
 
 #: content/apps.py
 msgid "According to the action plan"
-msgstr ""
+msgstr "Según el plan de acción"
 
 #: content/apps.py
 msgid "Content"
-msgstr ""
+msgstr "Contenido"
 
 #: content/models.py feedback/models.py reports/spreadsheets/excel_report.py
 msgid "Action"
-msgstr ""
+msgstr "Acción"
 
 #: content/models.py
 msgid "Strategy"
-msgstr ""
+msgstr "Estrategia"
 
 #: content/models.py
 msgid "Case study"
-msgstr ""
+msgstr "Estudio de caso"
 
 #: content/models.py
 msgid "Strategies"
-msgstr ""
+msgstr "Estrategias"
 
 #: content/models.py
 msgid "Case studies"
-msgstr ""
+msgstr "Casos prácticos"
 
 #: content/models.py
 msgid "Task"
-msgstr ""
+msgstr "Tarea"
 
 #: content/models.py
 msgid "Milestone"
-msgstr ""
+msgstr "Hito"
+
+#: content/models.py
+msgid "Tasks"
+msgstr "Tareas"
 
 #: content/models.py
 msgid "Milestones"
-msgstr ""
+msgstr "Hitos"
+
+#: content/models.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organización"
 
 #: content/models.py
 msgid "Division"
-msgstr ""
+msgstr "División"
 
 #: content/models.py orgs/apps.py orgs/wagtail_admin.py
 msgid "Organizations"
-msgstr ""
+msgstr "Organizaciones"
 
 #: content/models.py
 msgid "Divisions"
-msgstr ""
+msgstr "Divisiones"
 
 #: content/models.py
 msgid "site title"
-msgstr ""
+msgstr "título del sitio"
 
 #: content/models.py
 msgid "site description"
-msgstr ""
+msgstr "descripción del sitio"
 
 #: content/models.py
 msgid "URL for the owner of the site"
-msgstr ""
+msgstr "URL del propietario del sitio"
 
 #: content/models.py
 msgid "Name of the owner of the site"
-msgstr ""
+msgstr "Nombre del propietario del sitio"
 
 #: content/models.py
 msgid "official name description"
-msgstr ""
+msgstr "nombre oficial descripción"
 
 #: content/models.py
 msgid "The text to show when displaying official content"
-msgstr ""
+msgstr "El texto que se mostrará cuando se visualicen contenidos oficiales"
 
 #: content/models.py
 msgid "copyright text"
-msgstr ""
+msgstr "texto del copyright"
 
 #: content/models.py
 msgid "creative commons license"
-msgstr ""
+msgstr "licencia creative commons"
 
 #: content/models.py
 msgid "If the site is under a Creative Commons license, which CC license it is"
-msgstr ""
+msgstr "Si el sitio está bajo una licencia Creative Commons, ¿qué licencia CC es?"
 
 #: content/models.py
 msgid "Link to GitHub repository for API"
-msgstr ""
+msgstr "Enlace al repositorio GitHub de la API"
 
 #: content/models.py
 msgid "Link to GitHub repository for UI"
-msgstr ""
+msgstr "Enlace al repositorio GitHub para la interfaz de usuario"
 
 #: content/models.py
 msgid "Term to use for 'action'"
-msgstr ""
+msgstr "Término a utilizar para \"acción"
 
 #: content/models.py
 msgid "Term to use for 'task'"
-msgstr ""
+msgstr "Término a utilizar para \"tarea"
 
 #: content/models.py
 msgid "Term to use for 'organization'"
-msgstr ""
+msgstr "Término a utilizar para \"organización"
 
 #: content/models.py
 msgid "Sitewide announcement"
-msgstr ""
+msgstr "Anuncio en todo el sitio"
 
 #: content/models.py
 msgid "A message prominently displayed in a banner at the top of every page on the public website"
-msgstr ""
+msgstr "Un mensaje destacado en un banner en la parte superior de cada página del sitio web público"
 
 #: content/models.py
 msgid "site general content"
-msgstr ""
+msgstr "contenido general del sitio"
 
 #: content/models.py
 msgid "site general contents"
-msgstr ""
+msgstr "contenidos generales del sitio"
 
 #: content/wagtail_admin.py
 msgid "Site settings"
+msgstr "Configuración del sitio"
+
+#: copying/views.py reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Identificador"
+
+#: copying/views.py
+msgid "A unique value that identifies the copy internally and appears in URLs of testing or preview environments"
 msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Name to use for the copy"
+msgstr "Término a utilizar para \"acción"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "version name"
+msgid "Version name"
+msgstr "nombre de la versión"
+
+#: copying/views.py
+msgid "Version name to be set for the copied plan in order to distinguish it from other versions"
+msgstr ""
+
+#: copying/views.py
+msgid "Supersede original plan"
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Set if this plan is superseded by another plan"
+msgid "Set if the copy should supersede the original plan"
+msgstr "Establecer si este plan es sustituido por otro plan"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Supersede original actions"
+msgstr "editable para acciones"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Set if this action is superseded by another action"
+msgid "Set if copies of actions should supersede their original"
+msgstr "Establecer si esta acción es sustituida por otra acción"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "A plan with this identifier already exists"
+msgstr "La persona con este email ya existe"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "A plan with this name already exists"
+msgstr "La persona con este email ya existe"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Choose plan"
+msgid "Copy plan"
+msgstr "Elegir plan"
+
+#: copying/views.py
+msgid "The copy will be created in the background. This may take a few minutes. The copy will appear in the list of plans as soon as copying is finished."
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Create plan"
+msgid "Create copy"
+msgstr "Crear plan"
 
 #: documentation/models.py
 msgid "CSS style"
-msgstr ""
+msgstr "Estilo CSS"
 
 #: documentation/models.py
 msgid "CSS style to be applied to the container of the body"
-msgstr ""
+msgstr "Estilo CSS que se aplicará al contenedor del cuerpo"
 
 #: documentation/models.py
 msgid "Documentation page"
-msgstr ""
+msgstr "Página de documentación"
 
 #: documentation/models.py
 msgid "Documentation pages"
-msgstr ""
+msgstr "Páginas de documentación"
 
 #: documents/chooser.py
 msgid "Server Error"
-msgstr ""
+msgstr "Error del servidor"
 
 #: documents/chooser.py
 msgid "Report this error to your webmaster with the following information:"
-msgstr ""
+msgstr "Informe de este error a su webmaster con la siguiente información:"
+
+#: documents/models.py
+msgid "uploaded by user"
+msgstr "subido por el usuario"
 
 #: documents/models.py
 msgid "document"
-msgstr ""
+msgstr "documento"
 
 #: documents/models.py
 msgid "documents"
-msgstr ""
+msgstr "documentos"
 
-#: feedback/models.py orgs/models.py people/models.py users/models.py
+#: feedback/models.py kausal_common/users/models.py orgs/models.py
+#: people/models.py users/models.py
 msgid "email address"
-msgstr ""
+msgstr "dirección de correo electrónico"
+
+#: feedback/models.py
+msgid "page id"
+msgstr "id de página"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr "última revisión"
 
 #: feedback/models.py
 msgid "is processed"
-msgstr ""
+msgstr "se procesa"
 
 #: feedback/models.py
 msgid "user feedback"
-msgstr ""
+msgstr "comentarios de los usuarios"
 
 #: feedback/models.py
 msgid "user feedbacks"
+msgstr "opiniones de los usuarios"
+
+#: feedback/models.py
+msgid "At least one field must be filled."
 msgstr ""
 
 #: feedback/views.py
 msgid "Mark user feedback as processed"
-msgstr ""
+msgstr "Marcar los comentarios de los usuarios como procesados"
 
 #: feedback/views.py
 msgid "Mark user feedback as unprocessed"
-msgstr ""
+msgstr "Marcar los comentarios de los usuarios como no procesados"
 
 #: feedback/views.py
 #, python-format
 msgid "Confirm marking %(user_feedback)s as processed"
-msgstr ""
+msgstr "Confirme el marcado de %(user_feedback)s como procesado"
 
 #: feedback/views.py
 #, python-format
 msgid "Confirm marking %(user_feedback)s as unprocessed"
-msgstr ""
+msgstr "Confirme el marcado de %(user_feedback)s como no procesado"
 
 #: feedback/views.py
 #, python-format
 msgid "Do you really want to mark the user feedback '%(user_feedback)s' as processed?"
-msgstr ""
+msgstr "¿Realmente quieres marcar la respuesta del usuario '%(user_feedback)s' como procesada?"
 
 #: feedback/views.py
 #, python-format
 msgid "Do you really want to mark the user feedback '%(user_feedback)s' as unprocessed?"
-msgstr ""
+msgstr "¿Realmente quieres marcar la opinión del usuario '%(user_feedback)s' como no procesada?"
 
 #: feedback/views.py
 msgid "The user feedback is already processed"
-msgstr ""
+msgstr "Los comentarios de los usuarios ya se han procesado"
 
 #: feedback/views.py
 msgid "The user feedback is already unprocessed"
-msgstr ""
+msgstr "Los comentarios de los usuarios ya están sin procesar"
 
 #: feedback/views.py
 #, python-format
 msgid "User feedback '%(user_feedback)s' has been marked as processed."
-msgstr ""
+msgstr "El comentario del usuario '%(user_feedback)s' ha sido marcado como procesado."
 
 #: feedback/views.py
 #, python-format
 msgid "User feedback '%(user_feedback)s' has been marked as unprocessed."
+msgstr "User feedback '%(user_feedback)s' has been marked as unprocessed."
+
+#: feedback/wagtail_admin.py
+msgid "N/A"
 msgstr ""
 
 #: feedback/wagtail_admin.py
 msgid "Mark as processed"
-msgstr ""
+msgstr "Marcar como procesado"
 
 #: feedback/wagtail_admin.py
 msgid "Mark this user feedback as processed"
-msgstr ""
+msgstr "Marcar esta opinión como procesada"
 
 #: feedback/wagtail_admin.py
 msgid "Mark as unprocessed"
-msgstr ""
+msgstr "Marcar como no procesado"
 
 #: feedback/wagtail_admin.py
 msgid "Mark this user feedback as unprocessed"
-msgstr ""
+msgstr "Marcar esta opinión como no procesada"
 
 #: feedback/wagtail_admin.py
 msgid "User feedback"
-msgstr ""
+msgstr "Comentarios de los usuarios"
 
 #: images/image_formats.py
-msgid "Full width (zoomable)"
-msgstr ""
+msgid "Full width (zoomable) only if width > 1000 px"
+msgstr "Ancho completo (con zoom) solo si el ancho > 1000 px"
 
 #: images/models.py
 msgid "Image byline or credits"
-msgstr ""
+msgstr "Créditos de la imagen"
 
 #: images/models.py
 msgid "Alt text"
-msgstr ""
+msgstr "Texto alternativo"
 
 #: images/models.py people/models.py
 msgid "image"
-msgstr ""
+msgstr "imagen"
 
 #: images/models.py
 msgid "images"
-msgstr ""
+msgstr "imágenes"
 
 #: indicators/blocks.py
 msgid "Indicator"
-msgstr ""
+msgstr "Indicador"
 
 #: indicators/blocks.py
 msgid "Indicator highlights"
-msgstr ""
+msgstr "Indicadores destacados"
 
 #: indicators/blocks.py
 msgid "Graph"
-msgstr ""
+msgstr "Gráfico"
 
 #: indicators/blocks.py
 msgid "Animated"
-msgstr ""
+msgstr "Animación"
 
 #: indicators/blocks.py
 msgid "Indicator showcase"
-msgstr ""
+msgstr "Indicador escaparate"
 
 #: indicators/chooser.py
 msgid "Choose an indicator"
-msgstr ""
+msgstr "Elija un indicador"
 
 #: indicators/chooser.py
 msgid "Choose another indicator"
-msgstr ""
+msgstr "Elija otro indicador"
 
 #: indicators/models.py
 msgctxt "physical"
 msgid "quantity"
-msgstr ""
+msgstr "cantidad"
 
 #: indicators/models.py
 msgctxt "physical"
 msgid "quantities"
-msgstr ""
+msgstr "cantidades"
 
 #: indicators/models.py
 msgid "verbose name"
-msgstr ""
+msgstr "nombre verbose"
 
 #: indicators/models.py
 msgid "verbose name plural"
-msgstr ""
+msgstr "verbose nombre plural"
 
 #: indicators/models.py
 msgid "units"
-msgstr ""
+msgstr "unidades"
 
 #: indicators/models.py
 msgid "dataset license"
-msgstr ""
+msgstr "licencia del conjunto de datos"
 
 #: indicators/models.py
 msgid "dataset licenses"
-msgstr ""
+msgstr "licencias de conjuntos de datos"
 
 #: indicators/models.py
 msgid "last retrieved at"
-msgstr ""
+msgstr "recuperado por última vez en"
 
 #: indicators/models.py
 msgid "owner"
-msgstr ""
+msgstr "propietario"
 
 #: indicators/models.py
 msgid "owner name"
-msgstr ""
+msgstr "nombre del propietario"
 
 #: indicators/models.py
 msgid "Set if owner organization is not available"
-msgstr ""
+msgstr "Establecer si la organización propietaria no está disponible"
 
 #: indicators/models.py
 msgid "license"
-msgstr ""
+msgstr "licencia"
 
 #: indicators/models.py
 msgid "framework"
-msgstr ""
+msgstr "marco"
 
 #: indicators/models.py
 msgid "frameworks"
-msgstr ""
+msgstr "marcos"
 
 #: indicators/models.py
 msgid "increases"
-msgstr ""
+msgstr "aumenta"
 
 #: indicators/models.py
 msgid "decreases"
-msgstr ""
+msgstr "disminuye"
 
 #: indicators/models.py
 msgid "is a part of"
-msgstr ""
+msgstr "forma parte de"
 
 #: indicators/models.py
 msgid "effect type"
-msgstr ""
+msgstr "tipo de efecto"
 
 #: indicators/models.py
 msgid "What type of causal effect is there between the indicators"
-msgstr ""
+msgstr "¿Qué tipo de efecto causal existe entre los indicadores"
 
 #: indicators/models.py
 msgid "normalize by label"
-msgstr ""
+msgstr "normalizar por etiqueta"
 
 #: indicators/models.py
 msgid "common indicator"
-msgstr ""
+msgstr "indicador común"
 
 #: indicators/models.py
 msgid "common indicators"
-msgstr ""
+msgstr "indicadores comunes"
 
 #: indicators/models.py
 msgid "causal indicator"
-msgstr ""
+msgstr "indicador causal"
 
 #: indicators/models.py
 msgid "effect indicator"
-msgstr ""
+msgstr "indicador de efecto"
 
 #: indicators/models.py
 msgid "related indicator"
-msgstr ""
+msgstr "indicador relacionado"
 
 #: indicators/models.py
 msgid "related indicators"
-msgstr ""
+msgstr "indicadores relacionados"
 
 #: indicators/models.py
 msgid "framework indicator"
-msgstr ""
+msgstr "indicador marco"
 
 #: indicators/models.py
 msgid "framework indicators"
-msgstr ""
+msgstr "indicadores marco"
 
 #: indicators/models.py
 msgid "year"
-msgstr ""
+msgstr "año"
 
 #: indicators/models.py
 msgid "month"
-msgstr ""
+msgstr "mes"
 
 #: indicators/models.py
 msgid "day"
-msgstr ""
+msgstr "día"
 
 #: indicators/models.py
 msgid "strategic"
-msgstr ""
+msgstr "estratégico"
 
 #: indicators/models.py
 msgid "tactical"
-msgstr ""
+msgstr "táctico"
 
 #: indicators/models.py
 msgid "operational"
-msgstr ""
+msgstr "operativo"
 
 #: indicators/models.py
 msgid "minimum value"
-msgstr ""
+msgstr "valor mínimo"
 
 #: indicators/models.py
 msgid "What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum."
-msgstr ""
+msgstr "¿Cuál es el valor mínimo que puede alcanzar este indicador? Se utiliza en visualizaciones como el mínimo del eje Y."
 
 #: indicators/models.py
 msgid "maximum value"
-msgstr ""
+msgstr "valor máximo"
 
 #: indicators/models.py
 msgid "What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum."
-msgstr ""
+msgstr "¿Cuál es el valor máximo que puede alcanzar este indicador? Se utiliza en las visualizaciones como el máximo del eje Y."
 
 #: indicators/models.py
 msgid "time resolution"
-msgstr ""
+msgstr "resolución temporal"
 
 #: indicators/models.py
 msgid "updated values due at"
-msgstr ""
+msgstr "valores actualizados debidos a"
 
 #: indicators/models.py
 msgid "reference"
-msgstr ""
+msgstr "referencia"
 
 #: indicators/models.py
 msgid "What is the reference or source for this indicator?"
-msgstr ""
+msgstr "¿Cuál es la referencia o fuente de este indicador?"
+
+#: indicators/models.py
+msgid "show trendline"
+msgstr "mostrar línea de tendencia"
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr "tendencia deseada"
+
+#: indicators/models.py
+msgid "increasing"
+msgstr "aumentando"
+
+#: indicators/models.py
+msgid "decreasing"
+msgstr "disminuyendo"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr "intentar detectar automáticamente"
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr "¿Qué tendencia en los valores numéricos de los objetivos de este indicador indica una mejora: cuando los valores aumentan o cuando disminuyen?"
+
+#: indicators/models.py
+msgid "show total line"
+msgstr "mostrar línea total"
 
 #: indicators/models.py
 msgid "indicator"
-msgstr ""
+msgstr "indicador"
 
 #: indicators/models.py
 msgid "Has datasets"
-msgstr ""
+msgstr "Dispone de conjuntos de datos"
 
 #: indicators/models.py
 msgid "Has data"
-msgstr ""
+msgstr "Tiene datos"
 
 #: indicators/models.py
 msgid "Has a graph"
-msgstr ""
+msgstr "Tiene un gráfico"
 
 #: indicators/models.py
 msgid "Deadlines for value updates are currently only possible for yearly indicators"
-msgstr ""
+msgstr "Actualmente, los plazos de actualización de los valores sólo son posibles para los indicadores anuales."
 
 #: indicators/models.py
 msgid "There is already an indicator value for the year preceding the deadline"
-msgstr ""
+msgstr "Ya existe un valor indicador para el año anterior a la fecha límite"
 
 #: indicators/models.py
 #, python-format
 msgid "Quantity must be the same as in common indicator (%s)"
-msgstr ""
+msgstr "La cantidad debe ser la misma que en el indicador común (%s)"
 
 #: indicators/models.py
 #, python-format
 msgid "Unit must be the same as in common indicator (%s)"
-msgstr ""
+msgstr "La unidad debe ser la misma que en el indicador común (%s)"
 
 #: indicators/models.py
 msgid "indicator dimension"
-msgstr ""
+msgstr "indicador dimensión"
 
 #: indicators/models.py
 msgid "indicator dimensions"
-msgstr ""
+msgstr "dimensiones del indicador"
 
 #: indicators/models.py
 msgid "common indicator dimension"
-msgstr ""
+msgstr "indicador común dimensión"
 
 #: indicators/models.py
 msgid "common indicator dimensions"
-msgstr ""
+msgstr "dimensiones comunes de los indicadores"
 
 #: indicators/models.py pages/models.py
 msgid "level"
-msgstr ""
+msgstr "nivel"
 
 #: indicators/models.py
 msgid "indicator levels"
-msgstr ""
+msgstr "niveles de indicadores"
 
 #: indicators/models.py
 msgid "indicator value"
-msgstr ""
+msgstr "valor del indicador"
 
 #: indicators/models.py
 msgid "indicator values"
-msgstr ""
+msgstr "valores de los indicadores"
 
 #: indicators/models.py
 msgid "indicator goal"
-msgstr ""
+msgstr "indicador objetivo"
 
 #: indicators/models.py
 msgid "indicator goals"
-msgstr ""
+msgstr "objetivos de los indicadores"
 
 #: indicators/models.py
 msgid "high"
-msgstr ""
+msgstr "alta"
 
 #: indicators/models.py pages/blocks.py
 msgid "medium"
-msgstr ""
+msgstr "medio"
 
 #: indicators/models.py
 msgid "low"
-msgstr ""
+msgstr "bajo"
 
 #: indicators/models.py
 msgid "confidence level"
-msgstr ""
+msgstr "nivel de confianza"
 
 #: indicators/models.py
 msgid "How confident we are that the causal effect is present"
-msgstr ""
+msgstr "Nivel de confianza en la existencia del efecto causal"
 
 #: indicators/models.py
 msgid "What type of effect should the action cause?"
-msgstr ""
+msgstr "¿Qué tipo de efecto debe causar la acción?"
 
 #: indicators/models.py
 msgid "indicates action progress"
-msgstr ""
+msgstr "indica el progreso de la acción"
 
 #: indicators/models.py
 msgid "Set if the indicator should be used to determine action progress"
-msgstr ""
+msgstr "Establezca si el indicador debe utilizarse para determinar el progreso de la acción"
 
 #: indicators/models.py
 msgid "action indicator"
-msgstr ""
+msgstr "indicador de acción"
 
 #: indicators/models.py
 msgid "action indicators"
-msgstr ""
+msgstr "indicadores de acción"
 
 #: indicators/models.py
 msgid "indicator contact person"
-msgstr ""
+msgstr "indicador persona de contacto"
 
 #: indicators/models.py
 msgid "indicator contact persons"
-msgstr ""
+msgstr "personas de contacto del indicador"
 
 #: indicators/resources.py
 msgid "Creating new indicators is not allowed"
-msgstr ""
+msgstr "No se permite crear nuevos indicadores"
 
 #: indicators/resources.py
 msgid "Permission denied"
-msgstr ""
+msgstr "Permiso denegado"
 
 #: indicators/templates/site_summary/indicators.html
 #, python-format
@@ -3144,148 +3590,190 @@ msgid_plural ""
 "        <span>%(total)s</span> indicators <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
 "    "
 msgstr[0] ""
+"\n"
+"        <span>%(total)s</span> indicador <span class=\"w-sr-only\">supervisado en %(plan)s</span>\n"
+"    "
 msgstr[1] ""
+"\n"
+"        <span>%(total)s</span> indicadores <span class=\"w-sr-only\">supervisados en %(plan)s</span>\n"
+"    "
 
 #: indicators/wagtail_admin.py
 msgid "Show indicators"
-msgstr ""
+msgstr "Mostrar indicadores"
 
 #: indicators/wagtail_admin.py
 msgid "in active plan"
-msgstr ""
+msgstr "en plan activo"
 
 #: indicators/wagtail_admin.py
 msgid "not in active plan"
-msgstr ""
+msgstr "no en plan activo"
 
 #: indicators/wagtail_admin.py
 msgid "all"
-msgstr ""
+msgstr "todos"
 
 #: indicators/wagtail_admin.py
 msgid "Choose a quantity"
-msgstr ""
+msgstr "Elija una cantidad"
 
 #: indicators/wagtail_admin.py
 msgid "Choose another quantity"
-msgstr ""
+msgstr "Elija otra cantidad"
 
 #: indicators/wagtail_admin.py
 msgid "Edit this quantity"
-msgstr ""
+msgstr "Editar esta cantidad"
 
 #: indicators/wagtail_admin.py
 msgid "Indicator dimensions"
-msgstr ""
+msgstr "Dimensiones del indicador"
 
 #: indicators/wagtail_admin.py
 msgid "Quantities"
-msgstr ""
+msgstr "Cantidades"
 
 #: indicators/wagtail_admin.py
 msgid "Units"
-msgstr ""
+msgstr "Unidades"
 
 #: indicators/wagtail_admin.py
 msgid "[not in active plan]"
-msgstr ""
+msgstr "[no en el plan activo]"
 
 #: indicators/wagtail_admin.py
 msgid "Changing the organization to one with a different primary language is currently not supported"
-msgstr ""
+msgstr "Actualmente no es posible cambiar la organización por otra que tenga un idioma diferente."
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
-msgstr ""
-
-#: indicators/wagtail_admin.py
-msgid "Indicator for actions"
-msgstr ""
+msgstr "Las dimensiones deben ser las mismas que en el indicador común"
 
 #: indicators/wagtail_admin.py
 msgid "none"
-msgstr ""
+msgstr "ninguno"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Este indicador está vinculado a un indicador común, por lo que la cantidad, la unidad y las dimensiones no pueden editarse. Cantidad actual: %(quantity)s; unidad: %(unit)s; dimensiones: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+msgid "Further information"
+msgstr "Para más información"
+
+#: indicators/wagtail_admin.py
+msgid "Value bounds"
+msgstr "Límites de valor"
+
+#: indicators/wagtail_admin.py
+msgid "Visualization settings"
+msgstr "Ajustes de visualización"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions"
-msgstr ""
+msgstr "Dimensiones"
 
 #: indicators/wagtail_admin.py
 #, python-format
 msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Si cambia las dimensiones de este indicador (actualmente %(dimensions)s), se borrará su valor único."
+msgstr[1] "Si cambia las dimensiones de este indicador (actualmente %(dimensions)s), se borrarán todos sus valores de %(num)d."
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr ""
+msgid "Advanced settings"
+msgstr "Ajustes avanzados"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Indicador de acciones"
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
-msgstr ""
+msgstr "Efectos"
 
 #: indicators/wagtail_admin.py
 msgid "Causes"
-msgstr ""
+msgstr "Causas"
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
-msgstr ""
+msgid "Other indicators"
+msgstr "Otros indicadores"
+
+#: indicators/wagtail_admin.py
+msgid "Relationships"
+msgstr "Relaciones"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
-msgstr ""
+msgstr "Unidad"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in all indicators linked to this one"
-msgstr ""
+msgstr "Las dimensiones deben ser las mismas que en todos los indicadores vinculados a éste"
 
 #: indicators/wagtail_admin.py
 msgid "Common indicators"
-msgstr ""
+msgstr "Indicadores comunes"
 
 #: indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr ""
+msgstr "Este indicador común tiene indicadores vinculados, por lo que la cantidad, la unidad y las dimensiones no pueden editarse. Cantidad actual: %(quantity)s; unidad: %(unit)s; dimensiones: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+msgid "Created at"
+msgstr "Creado en"
+
+#: kausal_common/models/modification_tracking.py
+msgid "Last modified by"
+msgstr "Última modificación"
+
+#: kausal_common/models/modification_tracking.py
+msgid "Last modified at"
+msgstr "Última modificación en"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr "UUID"
 
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
-msgstr ""
+msgstr "Notificaciones"
 
 #: notifications/forms.py
 #, python-format
 msgid "General notifications for action '%s'"
-msgstr ""
+msgstr "Notificaciones generales de acción '%s'"
 
 #: notifications/forms.py
 msgid "These are sent when there are news about this action such as reminders for deadlines."
-msgstr ""
+msgstr "Se envían cuando hay novedades sobre esta acción, como recordatorios de plazos."
 
 #: notifications/forms.py
 #, python-format
 msgid "Feedback notifications for action '%s'"
-msgstr ""
+msgstr "Notificaciones de retroalimentación para la acción '%s'"
 
 #: notifications/forms.py
 msgid "These are sent when a visitor has left feedback for this action."
-msgstr ""
+msgstr "Se envían cuando un visitante ha dejado un comentario para esta acción."
 
 #: notifications/forms.py
 #, python-format
 msgid "Feeback notifications for plan '%s'"
-msgstr ""
+msgstr "Notificaciones de devolución para el plan '%s'"
 
 #: notifications/forms.py
 msgid "These are sent when a visitor has left feedback for this plan."
-msgstr ""
+msgstr "Se envían cuando un visitante ha dejado comentarios para este plan."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "motivation"
 msgid "Thank you for keeping the action plan updated. Up-to-date information about the actions is essential for us to achieve our goals."
-msgstr ""
+msgstr "Gracias por mantener actualizado el plan de acción. La información actualizada sobre las acciones es esencial para que alcancemos nuestros objetivos."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "outro"
@@ -3297,1397 +3785,1455 @@ msgid ""
 "Kind regards,\n"
 "the action plan administrators"
 msgstr ""
+"Si tiene dificultades para utilizar la plataforma de vigilancia del plan de acción, envíe un correo electrónico a los administradores del plan de acción.\n"
+"\n"
+"Gracias por participar en la aplicación del plan de acción.\n"
+"\n"
+"Un cordial saludo,\n"
+"los administradores del plan de acción"
 
 #: notifications/models.py
 msgid "notifications enabled"
-msgstr ""
+msgstr "notificaciones activadas"
 
 #: notifications/models.py
 msgid "Should notifications be sent?"
-msgstr ""
+msgstr "¿Deben enviarse notificaciones?"
 
 #: notifications/models.py
 msgid "notification sending time"
-msgstr ""
+msgstr "hora de envío de la notificación"
 
 #: notifications/models.py
 msgid "The local time of day when notifications are sent"
-msgstr ""
+msgstr "Hora local del día en que se envían las notificaciones"
 
 #: notifications/models.py
 msgctxt "partitive"
 msgid "notification settings"
-msgstr ""
+msgstr "ajustes de notificación"
 
 #: notifications/models.py
 msgid "notification settings"
-msgstr ""
+msgstr "ajustes de notificación"
 
 #: notifications/models.py
 msgid "Set if the notification was sent to an email address instead of a person"
-msgstr ""
+msgstr "Establece si la notificación se envió a una dirección de correo electrónico en lugar de a una persona"
 
 #: notifications/models.py
 msgid "Email From name"
-msgstr ""
+msgstr "Nombre del remitente"
 
 #: notifications/models.py
 msgid "Email From address"
-msgstr ""
+msgstr "Dirección del remitente"
 
 #: notifications/models.py
 msgid "Email Reply-To address"
-msgstr ""
+msgstr "Dirección de respuesta del correo electrónico"
 
 #: notifications/models.py
 msgid "Brand dark color"
-msgstr ""
+msgstr "Marca color oscuro"
 
 #: notifications/models.py
 msgid "Font family"
-msgstr ""
+msgstr "Familia de fuentes"
 
 #: notifications/models.py
 msgid "Leave empty unless custom font required by customer"
-msgstr ""
+msgstr "Dejar vacío a menos que el cliente requiera una fuente personalizada"
 
 #: notifications/models.py
 msgid "Font CSS style URL"
-msgstr ""
+msgstr "URL de estilo CSS de fuente"
 
 #: notifications/models.py
 msgctxt "partitive"
 msgid "base templates"
-msgstr ""
+msgstr "plantillas base"
 
 #: notifications/models.py
 msgid "base template"
-msgstr ""
+msgstr "plantilla base"
 
 #: notifications/models.py
 msgid "base templates"
-msgstr ""
+msgstr "plantillas base"
 
 #: notifications/models.py
 msgid "subject"
-msgstr ""
+msgstr "tema"
 
 #: notifications/models.py
 msgid "Subject for email notifications"
-msgstr ""
+msgstr "Asunto de las notificaciones por correo electrónico"
 
 #: notifications/models.py
 msgid "custom email address"
-msgstr ""
+msgstr "dirección de correo electrónico personalizada"
 
 #: notifications/models.py
 msgid "Email address used when \"send to custom email address\" is checked"
-msgstr ""
+msgstr "Dirección de correo electrónico utilizada cuando se marca \"enviar a dirección de correo electrónico personalizada\"."
 
 #: notifications/models.py
 msgid "send to plan admins"
-msgstr ""
+msgstr "enviar a los administradores del plan"
 
 #: notifications/models.py
 msgid "send to custom email address"
-msgstr ""
+msgstr "enviar a una dirección de correo electrónico personalizada"
 
 #: notifications/models.py
 msgid "This can only be set if a custom email address is defined"
-msgstr ""
+msgstr "Sólo puede establecerse si se define una dirección de correo electrónico personalizada"
 
 #: notifications/models.py
 msgid "If a custom email address is defined, this must be set"
-msgstr ""
+msgstr "Si se define una dirección de correo electrónico personalizada, ésta debe establecerse"
 
 #: notifications/models.py
 msgid "Do not send to contact persons"
-msgstr ""
+msgstr "No enviar a personas de contacto"
 
 #: notifications/models.py
 msgid "Send to contact persons"
-msgstr ""
+msgstr "Enviar a personas de contacto"
 
 #: notifications/models.py
 msgid "Send to contact persons; fallback: organization admins"
-msgstr ""
+msgstr "Enviar a personas de contacto; alternativa: administradores de la organización"
 
 #: notifications/models.py
 msgid "Send to contact persons; fallback: organization admins, plan admins"
-msgstr ""
+msgstr "Enviar a personas de contacto; alternativa: administradores de la organización, administradores del plan"
 
 #: notifications/models.py
 msgid "send to contact persons"
-msgstr ""
+msgstr "enviar a personas de contacto"
 
 #: notifications/models.py
 msgid "Notifications of this type cannot be sent to contact persons"
-msgstr ""
+msgstr "Las notificaciones de este tipo no pueden enviarse a personas de contacto"
 
 #: notifications/models.py
 msgid "notification template"
-msgstr ""
+msgstr "plantilla de notificación"
 
 #: notifications/models.py
 msgid "notification templates"
-msgstr ""
+msgstr "plantillas de notificación"
 
 #: notifications/models.py
 msgid "The content of the notification"
-msgstr ""
+msgstr "Contenido de la notificación"
 
 #: notifications/models.py
 msgid "send to action contact persons"
-msgstr ""
+msgstr "enviar a las personas de contacto de la acción"
 
 #: notifications/models.py
 msgid "send to indicator contact persons"
-msgstr ""
+msgstr "enviar a las personas de contacto del indicador"
 
 #: notifications/models.py
 msgid "send to organization admins"
-msgstr ""
+msgstr "enviar a los administradores de la organización"
+
+#: notifications/models.py
+msgid "scheduled notification"
+msgstr "notificación programada"
+
+#: notifications/models.py
+msgid "scheduled notifications"
+msgstr "notificaciones programadas"
 
 #: notifications/models.py
 #, python-format
 msgid "The type must be \"%(t)s\"."
-msgstr ""
-
-#: notifications/models.py
-msgid "scheduled notification"
-msgstr ""
-
-#: notifications/models.py
-msgid "scheduled notifications"
-msgstr ""
+msgstr "El tipo debe ser \"%(t)s\"."
 
 #: notifications/models.py
 msgid "HTML content for the block"
-msgstr ""
+msgstr "Contenido HTML del bloque"
 
 #: notifications/models.py
 msgid "template"
-msgstr ""
+msgstr "plantilla"
 
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
-msgstr ""
+msgstr "No establecer si el bloque de contenido se utiliza en varias plantillas"
 
 #: notifications/models.py
 msgid "Introduction block"
-msgstr ""
+msgstr "Bloque de introducción"
 
 #: notifications/models.py
 msgid "Motivation block"
-msgstr ""
+msgstr "Bloque de motivación"
 
 #: notifications/models.py
 msgid "Contact information block"
-msgstr ""
+msgstr "Bloque de información de contacto"
 
 #: notifications/models.py
 msgid "content block"
-msgstr ""
+msgstr "bloque de contenido"
 
 #: notifications/models.py
 msgid "content blocks"
-msgstr ""
+msgstr "bloques de contenido"
 
 #: notifications/models.py
 msgid "receive feedback notifications"
-msgstr ""
+msgstr "recibir notificaciones de comentarios"
 
 #: notifications/models.py
 msgid "receive general action notifications"
-msgstr ""
+msgstr "recibir notificaciones de acciones generales"
 
 #: notifications/models.py
 msgid "receive action feedback notifications"
-msgstr ""
+msgstr "recibir notificaciones de acciones"
 
 #: notifications/notifications.py
 msgctxt "task_late"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
-msgstr ""
+msgstr "Esto es un recordatorio automático sobre la actualización de la información de la tarea de su acción en el plan de acción. Hay una acción cuyo plazo ha vencido. La acción se muestra como retrasada hasta que usted la marque como realizada y rellene algunos detalles."
 
 #: notifications/notifications.py
 msgid "Task is late"
-msgstr ""
+msgstr "Tarea retrasada"
 
 #: notifications/notifications.py
 msgid "Updated indicator values are late"
-msgstr ""
+msgstr "Los valores actualizados de los indicadores llegan tarde"
 
 #: notifications/notifications.py
 msgctxt "updated_indicator_values_late"
 msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
-msgstr ""
+msgstr "Se trata de un recordatorio automático sobre la actualización de los detalles de los indicadores en el plan de acción.  El plazo para actualizar los valores de los indicadores ha vencido. Por favor, actualice el indicador con los últimos valores."
 
 #: notifications/notifications.py
 msgid "Task is due soon"
-msgstr ""
+msgstr "Tarea pendiente en breve"
 
 #: notifications/notifications.py
 msgctxt "task_due_soon"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
-msgstr ""
+msgstr "Esto es un recordatorio automático sobre la actualización de la información de la tarea de su acción en el plan de acción.  Hay una acción en el plan de acción cuyo plazo se acerca. Por favor, recuerde marcar la tarea como realizada tan pronto como se haya completado. Una vez transcurrido el plazo, la acción se marcará como retrasada. Puede editar los detalles de la tarea desde el siguiente enlace."
 
 #: notifications/notifications.py
 msgid "Updated indicator values are due soon"
-msgstr ""
+msgstr "Pronto se actualizarán los valores de los indicadores"
 
 #: notifications/notifications.py
 msgctxt "updated_indicator_values_due_soon"
 msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values is approaching. Please go and update the indicator with the latest values."
-msgstr ""
+msgstr "Se trata de un recordatorio automático sobre la actualización de los detalles de los indicadores en el plan de acción.  Se acerca la fecha límite para actualizar los valores de los indicadores. Por favor, actualice el indicador con los últimos valores."
 
 #: notifications/notifications.py
 msgid "Action doesn't have enough in-progress tasks"
-msgstr ""
+msgstr "La acción no tiene suficientes tareas en curso"
 
 #: notifications/notifications.py
 msgctxt "not_enough_tasks"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
-msgstr ""
+msgstr "Se trata de un recordatorio automático sobre la actualización de los detalles de la acción en el plan de acción.  En la página de seguimiento del plan de acción puede ver lo que ya se ha hecho para impulsar las acciones y lo que se ha planificado para el futuro.  Esto significa que sería preferible que cada acción tuviera al menos una tarea prevista para el próximo año. Por favor, vaya y añada tareas para la acción que muestren cuáles son los próximos pasos previstos para la acción."
 
 #: notifications/notifications.py
 msgid "Action metadata has not been updated recently"
-msgstr ""
+msgstr "Los metadatos de la acción no se han actualizado recientemente"
 
 #: notifications/notifications.py
 msgctxt "action_not_updated"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
-msgstr ""
+msgstr "Se trata de un recordatorio automático sobre la actualización de los detalles de la acción en el plan de acción.  En la página de seguimiento del plan de acción puede ver lo que ya se ha hecho para impulsar las acciones y lo que se ha planificado para el futuro.  Ya han pasado seis meses desde la última vez que actualizó una acción. Por favor, actualice la acción con la información más reciente. Al mismo tiempo, puede añadir una tarea futura a la acción."
 
 #: notifications/notifications.py
 msgid "User feedback received"
-msgstr ""
+msgstr "Comentarios de los usuarios"
 
 #: notifications/notifications.py
 msgctxt "user_feedback_received"
 msgid "A user has submitted feedback."
-msgstr ""
+msgstr "Un usuario ha enviado un comentario."
 
 #: notifications/notifications.py
 msgid "Manually scheduled notification"
-msgstr ""
+msgstr "Notificación programada manualmente"
 
 #: notifications/wagtail_admin.py
 msgid "Notifications could not be modified due to errors."
-msgstr ""
+msgstr "No se han podido modificar las notificaciones debido a errores."
 
 #: notifications/wagtail_admin.py
 msgid "Notifications could not be set up due to errors."
-msgstr ""
+msgstr "No se han podido configurar las notificaciones debido a errores."
 
 #: notifications/wagtail_admin.py
 msgid "Cannot schedule a notification for the past"
-msgstr ""
+msgstr "No se puede programar una notificación para el pasado"
 
 #: notifications/wagtail_admin.py
 msgid "Cannot reschedule a notification for the past"
-msgstr ""
+msgstr "No se puede reprogramar una notificación para el pasado"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"
-msgstr ""
+msgstr "Destinatarios"
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
-msgstr ""
+msgstr "El mensaje de correo electrónico se enviará el día especificado a las"
 
 #: notifications/wagtail_admin.py
-msgid "Single notifications"
-msgstr ""
+msgid "One-off notifications"
+msgstr "Notificaciones puntuales"
 
 #: notifications/wagtail_admin.py
-msgid "Automatic notifications"
-msgstr ""
+msgid "Event-based notifications"
+msgstr "Notificaciones basadas en eventos"
 
 #: notifications/wagtail_admin.py
 msgid "Notification contents"
-msgstr ""
+msgstr "Contenido de la notificación"
 
 #: notifications/wagtail_admin.py
 msgid "Notification preferences"
-msgstr ""
+msgstr "Preferencias de notificación"
 
 #: orgs/chooser.py
 msgid "Choose an organization"
-msgstr ""
+msgstr "Elija una organización"
 
 #: orgs/chooser.py
 msgid "Choose another organization"
-msgstr ""
+msgstr "Elegir otra organización"
 
 #: orgs/forms.py
 msgid "A node cannot be moved under itself in the hierarchy."
-msgstr ""
+msgstr "Un nodo no puede moverse por debajo de sí mismo en la jerarquía."
 
 #: orgs/models.py
 msgctxt "node"
 msgid "Parent"
-msgstr ""
+msgstr "Padres"
 
 #: orgs/models.py
 msgid "The time at which the resource was created"
-msgstr ""
+msgstr "Hora de creación del recurso"
 
 #: orgs/models.py
 msgid "The time at which the resource was updated"
-msgstr ""
+msgstr "Hora de actualización del recurso"
 
 #: orgs/models.py
 msgid "organizations"
-msgstr ""
+msgstr "Organizaciones"
 
 #: orgs/models.py
 msgid "Classification"
-msgstr ""
+msgstr "Clasificación"
 
 #: orgs/models.py
 msgid "An organization category, e.g. committee"
-msgstr ""
+msgstr "Una categoría de organización, por ejemplo, comité"
 
 #: orgs/models.py
 msgid "A primary name, e.g. a legally recognized name"
-msgstr ""
+msgstr "Un nombre principal, por ejemplo, un nombre legalmente reconocido"
 
 #: orgs/models.py
 msgid "Short name"
-msgstr ""
+msgstr "Nombre corto"
 
 #: orgs/models.py
 msgid "A simplified short version of name for the general public"
-msgstr ""
+msgstr "Versión abreviada simplificada del nombre para el público en general"
 
 #: orgs/models.py
 msgid "Internal abbreviation"
-msgstr ""
+msgstr "Abreviatura interna"
 
 #: orgs/models.py
 msgid "An internally used abbreviation"
-msgstr ""
+msgstr "Abreviatura de uso interno"
 
 #: orgs/models.py
 msgid "A distinct name for this organization (generated automatically)"
-msgstr ""
+msgstr "Un nombre distinto para esta organización (generado automáticamente)"
 
 #: orgs/models.py
-msgid "An optional logo for this organization"
-msgstr ""
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr "Logotipo de la organización. Proporcione una imagen cuadrada (mín. 250x250px). El logotipo utilizado para las redes sociales de la organización suele funcionar mejor."
 
 #: orgs/models.py
 msgid "A date of founding"
-msgstr ""
+msgstr "Una fecha de fundación"
 
 #: orgs/models.py
 msgid "A date of dissolution"
-msgstr ""
+msgstr "Una fecha de disolución"
 
 #: orgs/models.py
 msgid "Location"
-msgstr ""
+msgstr "Ubicación"
 
 #: orgs/models.py
 msgid "plan admin"
-msgstr ""
+msgstr "plan admin"
 
 #: orgs/models.py
 msgid "plan admins"
-msgstr ""
+msgstr "administradores de planes"
 
 #: orgs/models.py
 msgid "metadata admin"
-msgstr ""
+msgstr "administrador de metadatos"
 
 #: orgs/models.py
 msgid "metadata admins"
-msgstr ""
+msgstr "administradores de metadatos"
 
 #: orgs/views.py
 msgid "This will delete the following objects:"
-msgstr ""
+msgstr "Esto eliminará los siguientes objetos:"
 
 #: orgs/views.py
 msgid "Add organization to active plan"
-msgstr ""
+msgstr "Añadir organización al plan activo"
 
 #: orgs/views.py
 #, python-format
 msgid "Confirm including %(org)s in plan %(plan)s"
-msgstr ""
+msgstr "Confirmar la inclusión de %(org)s en el plan %(plan)s"
 
 #: orgs/views.py
 #, python-format
 msgid "Confirm excluding %(org)s from plan %(plan)s"
-msgstr ""
+msgstr "Confirmar la exclusión del plan de %(org)s %(plan)s"
 
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
-msgstr ""
+msgstr "¿Realmente quieres incluir la organización '%(org)s' en el plan '%(plan)s'?"
 
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
-msgstr ""
+msgstr "¿Realmente quiere excluir la organización '%(org)s' del plan '%(plan)s'?"
 
 #: orgs/views.py
 msgid "The organization is already included in the plan"
-msgstr ""
+msgstr "La organización ya está incluida en el plan"
 
 #: orgs/views.py
 msgid "The organization is not included in the plan"
-msgstr ""
+msgstr "La organización no está incluida en el plan"
 
 #: orgs/views.py
 #, python-format
 msgid "Organization '%(org)s' has been included in plan '%(plan)s'."
-msgstr ""
+msgstr "La organización '%(org)s' ha sido incluida en el plan '%(plan)s'."
 
 #: orgs/views.py
 #, python-format
 msgid "Organization '%(org)s' has been excluded from plan '%(plan)s'."
-msgstr ""
+msgstr "La organización '%(org)s' ha sido excluida del plan '%(plan)s'."
 
 #: orgs/wagtail_admin.py
 msgid "Add child"
-msgstr ""
+msgstr "Añadir niño"
 
 #: orgs/wagtail_admin.py
 msgid "Add child under this node"
-msgstr ""
+msgstr "Añadir hijo bajo este nodo"
 
 #: orgs/wagtail_admin.py
 msgid "Edit subtree"
-msgstr ""
+msgstr "Editar subárbol"
 
 #: orgs/wagtail_admin.py
 #, python-format
 msgid "Edit subtree rooted at this %s"
-msgstr ""
+msgstr "Editar subárbol enraizado en esto %s"
 
 #: orgs/wagtail_admin.py
 msgid "Creating organizations without a parent not allowed."
-msgstr ""
+msgstr "No se permite la creación de organizaciones sin uno de los padres."
 
 #: orgs/wagtail_admin.py
 msgid "Add suborganization"
-msgstr ""
+msgstr "Añadir suborganización"
 
 #: orgs/wagtail_admin.py
 msgid "Add suborganization under this organization"
-msgstr ""
+msgstr "Añadir suborganización bajo esta organización"
 
 #: orgs/wagtail_admin.py
 msgid "Include in plan"
-msgstr ""
+msgstr "Incluir en el plan"
 
 #: orgs/wagtail_admin.py
 msgid "Include this organization in the active plan"
-msgstr ""
+msgstr "Incluir esta organización en el plan activo"
 
 #: orgs/wagtail_admin.py
 msgid "Exclude from plan"
-msgstr ""
+msgstr "Excluir del plan"
 
 #: orgs/wagtail_admin.py
 msgid "Exclude this organization from the active plan"
-msgstr ""
+msgstr "Excluir a esta organización del plan activo"
 
 #: orgs/wagtail_admin.py reports/report_formatters.py
 #: reports/spreadsheets/excel_report.py
 msgctxt "organization"
 msgid "Parent"
-msgstr ""
+msgstr "Padres"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit plan-specific content related to this organization"
-msgstr ""
+msgstr "Personas que pueden editar contenido específico del plan relacionado con esta organización"
 
 #: orgs/wagtail_admin.py
 msgid "Metadata admins"
-msgstr ""
+msgstr "Administradores de metadatos"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
-msgstr ""
+msgstr "Personas que pueden editar los datos de esta organización y suborganizaciones, pero no el contenido específico del plan"
 
 #: orgs/wagtail_admin.py
 msgid "Is in plan"
-msgstr ""
+msgstr "Está en proyecto"
 
 #: orgs/wagtail_admin.py
 msgid "Permissions"
-msgstr ""
+msgstr "Permisos"
 
 #: pages/blocks.py
 msgid "Question"
-msgstr ""
+msgstr "Pregunta"
 
 #: pages/blocks.py
 msgid "Answer"
-msgstr ""
+msgstr "Respuesta"
 
 #: pages/blocks.py
 msgid "small"
-msgstr ""
+msgstr "pequeño"
 
 #: pages/blocks.py
 msgid "large"
-msgstr ""
+msgstr "grande"
 
 #: pages/blocks.py
 msgid "Size"
-msgstr ""
+msgstr "Talla"
 
 #: pages/blocks.py
 msgid "Title"
-msgstr ""
+msgstr "Título"
 
 #: pages/blocks.py
 msgid "Questions & Answers"
-msgstr ""
+msgstr "Preguntas y respuestas"
 
 #: pages/blocks.py
 msgid "Big image"
-msgstr ""
+msgstr "Imagen grande"
 
 #: pages/blocks.py
 msgid "Small image"
-msgstr ""
+msgstr "Imagen pequeña"
 
 #: pages/blocks.py
 msgid "Front page hero block"
-msgstr ""
+msgstr "Bloque principal de la portada"
 
 #: pages/blocks.py
 msgid "Page link"
-msgstr ""
+msgstr "Enlace de página"
 
 #: pages/blocks.py
 msgid "Card"
-msgstr ""
+msgstr "Tarjeta"
 
 #: pages/blocks.py
 msgid "Action category filter card"
-msgstr ""
+msgstr "Tarjeta filtro de categoría de acción"
 
 #: pages/blocks.py
 msgid "Links"
-msgstr ""
+msgstr "Enlaces"
 
 #: pages/blocks.py
 msgid "Action category filter cards"
-msgstr ""
+msgstr "Tarjetas de filtro de categoría de acción"
 
 #: pages/blocks.py
 msgid "Accessibility statement compliance status"
-msgstr ""
+msgstr "Estado de cumplimiento de la declaración de accesibilidad"
 
 #: pages/blocks.py
 msgid "Accessibility statement preparation information"
-msgstr ""
+msgstr "Información sobre la preparación de la declaración de accesibilidad"
 
 #: pages/blocks.py
 msgid "Publisher name"
-msgstr ""
+msgstr "Nombre del editor"
 
 #: pages/blocks.py
 msgid "Maintenance responsibility paragraph"
-msgstr ""
+msgstr "Párrafo sobre la responsabilidad del mantenimiento"
 
 #: pages/blocks.py
 msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
-msgstr ""
+msgstr "Si se establece, se mostrará en lugar de \"Este servicio está publicado por [editor]\"."
 
 #: pages/blocks.py
 msgid "Email address"
-msgstr ""
+msgstr "Dirección de correo electrónico"
 
 #: pages/blocks.py
 msgid "Accessibility statement contact information"
-msgstr ""
+msgstr "Declaración de accesibilidad Información de contacto"
 
 #: pages/blocks.py
 msgid "Accessibility statement contact form"
-msgstr ""
+msgstr "Declaración de accesibilidad Formulario de contacto"
 
 #: pages/blocks.py
 msgid "Action status pie charts"
-msgstr ""
+msgstr "Gráficos circulares del estado de las acciones"
 
 #: pages/blocks.py
 msgid "Width"
-msgstr ""
+msgstr "Anchura"
 
 #: pages/blocks.py
 msgid "Maximum"
-msgstr ""
+msgstr "Máximo"
 
 #: pages/blocks.py
 msgid "Fit to column"
-msgstr ""
+msgstr "Ajustar a columna"
 
 #: pages/blocks.py
 msgid "Large image"
-msgstr ""
+msgstr "Imagen grande"
 
 #: pages/models.py
 msgid "show in footer"
-msgstr ""
+msgstr "mostrar en el pie de página"
 
 #: pages/models.py
 msgid "Should the page be shown in the footer?"
-msgstr ""
+msgstr "¿Debe aparecer la página en el pie de página?"
 
 #: pages/models.py
 msgid "show in additional links"
-msgstr ""
+msgstr "mostrar en enlaces adicionales"
 
 #: pages/models.py
 msgid "Should the page be shown in the additional links?"
-msgstr ""
+msgstr "¿Debe aparecer la página en los enlaces adicionales?"
 
 #: pages/models.py
 msgid "show link in child plans"
-msgstr ""
+msgstr "mostrar enlace en planes para niños"
 
 #: pages/models.py
 msgid "Should this additional link be displayed in child plans?"
-msgstr ""
+msgstr "¿Debe aparecer este enlace adicional en los planes para niños?"
 
 #: pages/models.py
 msgid "children use secondary navigation"
-msgstr ""
+msgstr "los niños utilizan la navegación secundaria"
 
 #: pages/models.py
 msgid "Should subpages of this page use secondary navigation?"
-msgstr ""
+msgstr "¿Las subpáginas de esta página deben utilizar navegación secundaria?"
 
 #: pages/models.py
 msgid "Common page configuration"
-msgstr ""
+msgstr "Configuración de páginas comunes"
 
 #: pages/models.py
 msgid "Links to actions in specific category"
-msgstr ""
+msgstr "Enlaces a acciones de una categoría específica"
 
 #: pages/models.py
 msgid "Front page"
-msgstr ""
+msgstr "Portada"
 
 #: pages/models.py
 msgid "Front pages"
-msgstr ""
+msgstr "Portada"
 
 #: pages/models.py
 msgid "Empty page"
-msgstr ""
+msgstr "Página vacía"
 
 #: pages/models.py
 msgid "Empty pages"
-msgstr ""
+msgstr "Páginas vacías"
 
 #: pages/models.py
 msgid "Header image"
-msgstr ""
+msgstr "Imagen de cabecera"
 
 #: pages/models.py
 msgid "Image to use in the header for this page"
-msgstr ""
+msgstr "Imagen a utilizar en la cabecera de esta página"
 
 #: pages/models.py
 msgid "Lead paragraph right under the heading"
-msgstr ""
+msgstr "Párrafo principal justo debajo del título"
 
 #: pages/models.py
 msgid "Paragraph"
-msgstr ""
+msgstr "Párrafo"
 
 #: pages/models.py
 msgid "Content page"
-msgstr ""
+msgstr "Página de contenido"
 
 #: pages/models.py
 msgid "Content pages"
-msgstr ""
+msgstr "Páginas de contenido"
 
 #: pages/models.py
 msgid "Level layouts"
-msgstr ""
+msgstr "Disposición de los niveles"
 
 #: pages/models.py
 msgid "Category type page"
-msgstr ""
+msgstr "Página de tipo de categoría"
 
 #: pages/models.py
 msgid "Category type pages"
-msgstr ""
+msgstr "Páginas de tipo categoría"
 
 #: pages/models.py
 msgid "Small"
-msgstr ""
+msgstr "Pequeño"
 
 #: pages/models.py
 msgid "Medium"
-msgstr ""
+msgstr "Medio"
 
 #: pages/models.py
 msgid "Large"
-msgstr ""
+msgstr "Grande"
 
 #: pages/models.py
 msgid "layout main top"
-msgstr ""
+msgstr "diseño principal superior"
 
 #: pages/models.py
 msgid "layout main bottom"
-msgstr ""
+msgstr "diseño fondo principal"
 
 #: pages/models.py
 msgid "layout aside"
-msgstr ""
+msgstr "diseño aparte"
 
 #: pages/models.py
 msgid "icon size"
-msgstr ""
+msgstr "tamaño del icono"
 
 #: pages/models.py
 msgid "Category page"
-msgstr ""
+msgstr "Página de categoría"
 
 #: pages/models.py
 msgid "Category pages"
-msgstr ""
+msgstr "Páginas de categorías"
 
 #: pages/models.py
 msgid "This category already has a page"
-msgstr ""
+msgstr "Esta categoría ya tiene una página"
 
 #: pages/models.py
 msgid "lead content"
-msgstr ""
+msgstr "contenido en plomo"
 
 #: pages/models.py
 msgid "Dashboard"
-msgstr ""
+msgstr "Cuadro de mandos"
 
 #: pages/models.py
 msgid "default view"
-msgstr ""
+msgstr "vista por defecto"
 
 #: pages/models.py
 msgid "Tab of the action list page that should be visible by default"
-msgstr ""
+msgstr "Pestaña de la página de la lista de acciones que debe ser visible por defecto"
 
 #: pages/models.py
 msgid "Subheading hierarchy depth"
-msgstr ""
+msgstr "Profundidad de la jerarquía de subtítulos"
 
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
-msgstr ""
+msgstr "Profundidad de la jerarquía de categorías a presentar como subtítulos empezando por la raíz."
 
 #: pages/models.py
 msgid "Action date format"
-msgstr ""
+msgstr "Formato de la fecha de la acción"
 
 #: pages/models.py
 msgid "Default format of action start and end dates shown in the public UI."
-msgstr ""
+msgstr "Formato por defecto de las fechas de inicio y fin de las acciones mostradas en la interfaz de usuario pública."
 
 #: pages/models.py
 msgid "Task due date format"
-msgstr ""
+msgstr "Formato de la fecha de vencimiento de la tarea"
 
 #: pages/models.py
 msgid "Default format of action task due dates shown in the public UI."
-msgstr ""
+msgstr "Formato predeterminado de las fechas de vencimiento de las tareas de acción que se muestran en la interfaz de usuario pública."
 
 #: pages/models.py
 msgid "Include related plans"
-msgstr ""
+msgstr "Incluir planes relacionados"
 
 #: pages/models.py
 msgid "Enable to make this page include actions from related plans."
-msgstr ""
+msgstr "Habilitar para que esta página incluya acciones de planes relacionados."
 
 #: pages/models.py
 msgid "Primary filters"
-msgstr ""
+msgstr "Filtros primarios"
 
 #: pages/models.py
 msgid "Main filters"
-msgstr ""
+msgstr "Filtros principales"
 
 #: pages/models.py
 msgid "Advanced filters (hidden by default)"
-msgstr ""
+msgstr "Filtros avanzados (ocultos por defecto)"
 
 #: pages/models.py
 msgid "Action list filters"
-msgstr ""
+msgstr "Filtros de la lista de acciones"
 
 #: pages/models.py
 msgid "Main column (top part on mobile)"
-msgstr ""
+msgstr "Columna principal (parte superior en móvil)"
 
 #: pages/models.py
 msgid "Main column (bottom part on mobile)"
-msgstr ""
+msgstr "Columna principal (parte inferior en móvil)"
 
 #: pages/models.py
 msgid "Side column"
-msgstr ""
+msgstr "Columna lateral"
 
 #: pages/models.py
 msgid "Action details page"
-msgstr ""
+msgstr "Página de detalles de la acción"
 
 #: pages/models.py
 msgid "Action dashboard columns"
-msgstr ""
+msgstr "Columnas del panel de acciones"
 
 #: pages/models.py
 msgid "Action list page"
-msgstr ""
+msgstr "Página de la lista de acciones"
 
 #: pages/models.py
 msgid "Action list pages"
-msgstr ""
+msgstr "Páginas de listas de acciones"
 
 #: pages/models.py
 msgid "Should insight network be shown for indicators?"
-msgstr ""
+msgstr "¿Debe mostrarse la red insight para los indicadores?"
 
 #: pages/models.py
 msgid "Display insights"
+msgstr "Mostrar información"
+
+#: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
 msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "category level"
+msgid "Display level"
+msgstr "nivel de categoría"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Enable to make this page include actions from related plans."
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Habilitar para que esta página incluya acciones de planes relacionados."
 
 #: pages/models.py
 msgid "Indicator list page"
-msgstr ""
+msgstr "Página de la lista de indicadores"
 
 #: pages/models.py
 msgid "Indicator list pages"
-msgstr ""
+msgstr "Páginas de la lista de indicadores"
 
 #: pages/models.py
 msgid "Impact group page"
-msgstr ""
+msgstr "Página del grupo Impact"
 
 #: pages/models.py
 msgid "Impact group pages"
-msgstr ""
+msgstr "Páginas de grupos de impacto"
 
 #: pages/models.py
 msgid "Privacy policy page"
-msgstr ""
+msgstr "Política de privacidad"
 
 #: pages/models.py
 msgid "Privacy policy pages"
-msgstr ""
+msgstr "Política de privacidad"
 
 #: pages/models.py
 msgid "Accessibility statement page"
-msgstr ""
+msgstr "Página de la declaración de accesibilidad"
 
 #: pages/models.py
 msgid "Accessibility statement pages"
-msgstr ""
+msgstr "Páginas de la declaración de accesibilidad"
 
 #: pages/models.py
 msgid "external plan link"
-msgstr ""
+msgstr "enlace externo al plan"
 
 #: pages/models.py
 msgid "external plan links"
-msgstr ""
+msgstr "enlaces externos del plan"
 
 #: pages/wagtail_admin.py
 msgid "More"
-msgstr ""
+msgstr "Más"
 
 #: people/apps.py people/wagtail_admin.py
 msgid "People"
-msgstr ""
+msgstr "Personas"
 
 #: people/chooser.py
 msgid "Create new"
-msgstr ""
+msgstr "Crear nuevo"
 
 #: people/chooser.py
 msgid "Choose person"
-msgstr ""
+msgstr "Elegir persona"
 
 #: people/chooser.py
 msgid "Choose a person"
-msgstr ""
+msgstr "Elija a una persona"
 
 #: people/chooser.py
 msgid "Choose another person"
-msgstr ""
+msgstr "Elegir a otra persona"
 
 #: people/chooser.py
 msgid "Edit this person"
-msgstr ""
+msgstr "Editar esta persona"
 
 #: people/models.py people/wagtail_admin.py
 msgid "first name"
-msgstr ""
+msgstr "Nombre de pila"
 
 #: people/models.py people/wagtail_admin.py
 msgid "last name"
-msgstr ""
+msgstr "apellido"
 
 #: people/models.py
 msgctxt "person's role"
 msgid "title"
-msgstr ""
+msgstr "título"
 
 #: people/models.py
 msgid "postal address"
-msgstr ""
+msgstr "dirección postal"
 
 #: people/models.py
 msgid "What is this person's organization"
-msgstr ""
+msgstr "¿Cuál es la organización de esta persona?"
 
 #: people/models.py
 msgid "user"
-msgstr ""
+msgstr "usuario"
 
 #: people/models.py
 msgid "Set if the person has an user account"
-msgstr ""
+msgstr "Establecer si la persona tiene una cuenta de usuario"
 
 #: people/models.py
 msgid "participated in training"
-msgstr ""
+msgstr "participó en la formación"
 
 #: people/models.py
 msgid "Set to keep track who have attended training sessions"
-msgstr ""
+msgstr "Establecer un seguimiento de los asistentes a las sesiones de formación"
 
 #: people/models.py
 msgid "image cropping"
-msgstr ""
+msgstr "recorte de imágenes"
 
 #: people/models.py people/wagtail_admin.py
 msgid "contact for actions"
-msgstr ""
+msgstr "contacto para acciones"
 
 #: people/models.py
 msgid "people"
-msgstr ""
+msgstr "gente"
 
 #: people/override_django_translations.py
 #, python-format
 msgid "%(model_name)s '%(object)s' deleted."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' borrado."
 
 #: people/templates/people/delete.html
 #, python-format
 msgid "Confirm deletion of %(model_name)s"
-msgstr ""
+msgstr "Confirme la eliminación de %(model_name)s"
 
 #: people/templates/people/delete.html
 #, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
-msgstr ""
+msgstr "'%(instance_name)s' está actualmente conectado a los siguientes elementos. Por favor, verifique la eliminación:"
 
 #: people/templates/people/delete.html
 msgid "Yes, delete"
-msgstr ""
+msgstr "Sí, borrar"
 
 #: people/templates/people/delete.html
 msgid "No, don't delete"
-msgstr ""
+msgstr "No, no borres"
 
-#: people/templates/people/view_as_user.html templates/aplans/confirmation.html
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
 msgid "Yes"
-msgstr ""
+msgstr "Sí"
 
-#: people/templates/people/view_as_user.html templates/aplans/confirmation.html
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
 msgid "No"
-msgstr ""
+msgstr "No"
 
 #: people/views.py people/wagtail_admin.py
 msgid "Reset password"
-msgstr ""
+msgstr "Restablecer contraseña"
 
 #: people/views.py
 #, python-format
 msgid "Confirm sending password reset link to %(person)s"
-msgstr ""
+msgstr "Confirme el envío del enlace de restablecimiento de contraseña a %(person)s"
 
 #: people/views.py
 #, python-format
 msgid "Do you really want to send a password reset link to %(person)s?"
-msgstr ""
+msgstr "¿Realmente quieres enviar un enlace para restablecer la contraseña a %(person)s?"
 
 #: people/views.py
 #, python-format
 msgid "An email has been sent to %(person)s with a link to reset their password."
-msgstr ""
+msgstr "Se ha enviado un correo electrónico a %(person)s con un enlace para restablecer su contraseña."
 
 #: people/views.py
 #, python-format
 msgid "If the email does not arrive, you can send them the following link: %(url)s"
-msgstr ""
+msgstr "Si el correo electrónico no llega, puedes enviarles el siguiente enlace: %(url)s"
 
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
-msgstr ""
+msgstr "Por favor, tenga mucho cuidado de que nadie excepto %(person)s tenga acceso al enlace. Para mayor seguridad, el enlace caducará en %(days_until_expiration)s días."
 
 #: people/views.py people/wagtail_admin.py
 msgid "View as user"
-msgstr ""
+msgstr "Ver como usuario"
 
 #: people/views.py
 #, python-format
 msgid "Confirm viewing the site as user %(person)s"
-msgstr ""
+msgstr "Confirmar la visualización del sitio como usuario %(person)s"
 
 #: people/views.py
 #, python-format
 msgid "Do you really want to view the site as %(person)s?"
-msgstr ""
+msgstr "¿Realmente quiere ver el sitio como %(person)s?"
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
-msgstr ""
+msgstr "Es persona de contacto"
 
 #: people/wagtail_admin.py
 #, python-format
 msgid "For an action in %(plan)s"
-msgstr ""
+msgstr "Para una acción en %(plan)s"
 
 #: people/wagtail_admin.py
 msgid "For an action"
-msgstr ""
+msgstr "Para una acción"
 
 #: people/wagtail_admin.py
 msgid "For same actions or indicators as me"
-msgstr ""
+msgstr "Para las mismas acciones o indicadores que yo"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"
-msgstr ""
+msgstr "Para un indicador"
 
 #: people/wagtail_admin.py
 msgid "Not a contact person"
-msgstr ""
+msgstr "No es una persona de contacto"
 
 #: people/wagtail_admin.py
 msgid "Access to public site only"
-msgstr ""
+msgstr "Acceso sólo al público"
 
 #: people/wagtail_admin.py
 msgid "Access to admin site and public site"
-msgstr ""
+msgstr "Acceso al sitio de administración y al sitio público"
 
 #: people/wagtail_admin.py
 msgid "Is plan admin"
-msgstr ""
+msgstr "Es plan admin"
 
 #: people/wagtail_admin.py
 msgid "Site access"
-msgstr ""
+msgstr "Acceso al emplazamiento"
 
 #: people/wagtail_admin.py
 msgid "Plan admin organizations"
-msgstr ""
+msgstr "Organizaciones administradoras de planes"
 
 #: people/wagtail_admin.py
 msgid "Deactivate"
-msgstr ""
+msgstr "Desactivar"
 
 #: people/wagtail_admin.py
 msgid "Create a password reset link"
-msgstr ""
+msgstr "Crear un enlace para restablecer la contraseña"
 
 #: people/wagtail_admin.py
 msgid "View site as it looks for this user"
-msgstr ""
+msgstr "Ver el sitio tal y como lo ve este usuario"
 
 #: people/wagtail_admin.py
 msgid "Are you sure you want to deactivate this person?"
-msgstr ""
+msgstr "¿Estás seguro de que quieres desactivar a esta persona?"
 
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
-msgstr ""
+msgstr "Esta persona no tiene acceso a la interfaz de administración. Esto se debe normalmente a que no se le han asignado acciones ni indicadores."
 
 #: people/wagtail_admin.py
 msgid "last login"
-msgstr ""
+msgstr "último acceso"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"
-msgstr ""
+msgstr "contacto para indicadores"
 
 #: reports/blocks/action_content.py
 msgid "Action field"
-msgstr ""
+msgstr "Campo de acción"
 
 #: reports/blocks/action_content.py
 msgid "Action category"
-msgstr ""
+msgstr "Categoría de acción"
 
 #: reports/blocks/action_content.py
 msgid "Level of containing organization"
-msgstr ""
+msgstr "Nivel de organización contenedora"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
-msgstr ""
+msgstr "Además de la propia organización, en el informe se incluye una unidad organizativa que contiene a la organización. Contando a partir de la organización raíz de nivel superior en el nivel 1, ¿qué nivel de la jerarquía organizativa debe utilizarse para encontrar esta organización contenedora? Si se deja vacío, no se añade la organización contenedora al informe."
 
 #: reports/blocks/choosers.py reports/wagtail_admin.py
 msgid "Report type"
-msgstr ""
+msgstr "Tipo de informe"
 
 #: reports/blocks/choosers.py
 msgid "Report type field"
-msgstr ""
+msgstr "Campo Tipo de informe"
 
 #: reports/blocks/report_comparison_block.py
 msgid "UUID of report field"
-msgstr ""
+msgstr "UUID del campo del informe"
 
 #: reports/blocks/report_comparison_block.py
 msgid "Report comparison"
-msgstr ""
+msgstr "Comparación de informes"
 
 #: reports/chooser.py
 msgid "Choose a report type"
-msgstr ""
+msgstr "Elija un tipo de informe"
 
 #: reports/chooser.py
 msgid "Choose another report type"
-msgstr ""
+msgstr "Elija otro tipo de informe"
 
 #: reports/models.py
 msgid "report type"
-msgstr ""
+msgstr "tipo de informe"
 
 #: reports/models.py
 msgid "report types"
-msgstr ""
+msgstr "tipos de informe"
 
 #: reports/models.py reports/spreadsheets/excel_report.py
 msgid "complete"
-msgstr ""
+msgstr "completa"
 
 #: reports/models.py
 msgid "Set if report cannot be changed anymore"
-msgstr ""
+msgstr "Establecer si el informe ya no se puede modificar"
 
 #: reports/models.py
 msgid "public"
-msgstr ""
+msgstr "público"
 
 #: reports/models.py
 msgid "Set if report can be shown to the public"
-msgstr ""
+msgstr "Establecer si el informe puede mostrarse al público"
 
 #: reports/models.py
 msgid "report"
-msgstr ""
+msgstr "informe"
 
 #: reports/models.py
 msgid "reports"
-msgstr ""
+msgstr "informa"
 
 #: reports/models.py
 msgid "The report is already marked as complete."
-msgstr ""
+msgstr "El informe ya está marcado como completo."
 
 #: reports/models.py
 #, python-format
 msgid "Marked report '%s' as complete"
-msgstr ""
+msgstr "Informe '%s' marcado como completo"
 
 #: reports/models.py
 msgid "The report is not marked as complete."
-msgstr ""
+msgstr "El informe no está marcado como completo."
 
 #: reports/models.py
 #, python-format
 msgid "Undid marking report '%s' as complete"
-msgstr ""
+msgstr "Deshacer el marcado del informe '%s' como completo"
 
 #: reports/models.py
 msgid "action snapshot"
-msgstr ""
+msgstr "instantánea de la acción"
 
 #: reports/models.py
 msgid "action snapshots"
+msgstr "instantáneas de la acción"
+
+#: reports/report_formatters.py
+msgid "Has goals"
+msgstr "Tiene objetivos"
+
+#: reports/report_formatters.py
+msgid "empty"
 msgstr ""
+
+#: reports/report_formatters.py
+msgid "Other responsible parties"
+msgstr "Otros responsables"
 
 #: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
-msgstr ""
+msgstr "Perfiles"
 
 #: reports/spreadsheets/action_print_layout.py
 msgid "Prepare for printing"
-msgstr ""
+msgstr "Preparar la impresión"
 
 #: reports/spreadsheets/excel_report.py
 msgid "Exported from Kausal Watch"
-msgstr ""
+msgstr "Exportado de Kausal Watch"
 
 #: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete by"
-msgstr ""
+msgstr "Marcado como completo por"
 
 #: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete at"
-msgstr ""
+msgstr "Marcado como completo en"
 
 #: reports/spreadsheets/excel_report.py
 msgid "Summary"
-msgstr ""
+msgstr "Resumen"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr ""
+msgstr "¿Realmente desea marcar el informe <i>%(report)s</i> como completo?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
-msgstr ""
+msgstr "¿Realmente quiere deshacer el marcado del informe <i>%(report)s</i> como completo?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will mark the following actions as complete:"
-msgstr ""
+msgstr "Esto marcará las siguientes acciones como completadas:"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will undo marking the following actions as complete:"
-msgstr ""
+msgstr "Esto deshará el marcado de las siguientes acciones como completadas:"
 
 #: reports/views.py
 msgid "Mark action as complete"
-msgstr ""
+msgstr "Marcar acción como completa"
 
 #: reports/views.py
 msgid "Undo marking action as complete"
-msgstr ""
+msgstr "Deshacer la acción marcada como completa"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm marking action %(action)s as complete for report %(report)s"
-msgstr ""
+msgstr "Confirmar que se ha completado la acción %(action)s para el informe %(report)s"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgstr ""
+msgstr "Confirmar deshacer marcando la acción %(action)s como completa para el informe %(report)s"
 
 #: reports/views.py
 #, python-format
 msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr ""
+msgstr "¿Realmente desea marcar la acción '%(action)s' como completa para el informe '%(report)s'?"
 
 #: reports/views.py
 #, python-format
 msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr ""
+msgstr "¿Realmente desea deshacer el marcado de la acción '%(action)s' como completa para el informe '%(report)s'?"
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
-msgstr ""
+msgstr "La acción '%(action)s' ha sido marcada como completa para el informe '%(report)s'."
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr ""
+msgstr "La acción '%(action)s' ya no está marcada como completa para el informe '%(report)s'."
 
 #: reports/views.py
 msgid "Mark report as complete"
-msgstr ""
+msgstr "Marcar informe como completo"
 
 #: reports/views.py
 msgid "Undo marking report as complete"
-msgstr ""
+msgstr "Deshacer el marcado del informe como completo"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm marking report %(report)s as complete"
-msgstr ""
+msgstr "Confirme que el informe de marcado %(report)s está completo"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm undoing marking report %(report)s as complete"
-msgstr ""
+msgstr "Confirmar deshacer el marcado del informe %(report)s como completo"
 
 #: reports/views.py
 #, python-format
 msgid "Report '%(report)s' has been marked as complete."
-msgstr ""
+msgstr "El informe '%(report)s' se ha marcado como completo."
 
 #: reports/views.py
 #, python-format
 msgid "Report '%(report)s' is no longer marked as complete."
-msgstr ""
+msgstr "El informe '%(report)s' ya no está marcado como completo."
 
 #: reports/wagtail_admin.py
 msgid "Download XLSX"
-msgstr ""
+msgstr "Descargar XLSX"
 
 #: reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
-msgstr ""
+msgstr "Descargar informe como archivo de hoja de cálculo"
 
 #: reports/wagtail_admin.py
 msgid "Mark as complete"
-msgstr ""
+msgstr "Marcar como completo"
 
 #: reports/wagtail_admin.py
 msgid "Mark this report as complete"
-msgstr ""
+msgstr "Marcar este informe como completo"
 
 #: reports/wagtail_admin.py
 msgid "Undo marking as complete"
-msgstr ""
+msgstr "Deshacer el marcado como completo"
 
 #: reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
-msgstr ""
+msgstr "Deshacer el marcado de este informe como completo"
 
 #: reports/wagtail_admin.py
 msgid "Report types"
-msgstr ""
+msgstr "Tipos de informes"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "This page has unsaved changes."
-msgstr ""
+msgstr "Esta página tiene cambios sin guardar."
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
-msgstr ""
+msgstr "Ahorrar…"
 
 #: templates/modeladmin/create.html
 msgid "Save"
-msgstr ""
+msgstr "Guardar"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Save and continue editing"
-msgstr ""
+msgstr "Guardar y seguir editando"
 
 #: templates/modeladmin/edit.html
 msgid "Delete"
-msgstr ""
+msgstr "Borrar"
 
 #: users/apps.py
 msgid "Users"
-msgstr ""
+msgstr "Usuarios"
 
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
-msgstr ""
+msgstr "Sin permiso para eliminar el usuario perteneciente a planes que no gestiona."
+
+#~ msgid "Related actions"
+#~ msgstr "Acciones relacionadas"
+
+#~ msgid "Updated at"
+#~ msgstr "Actualizado en"
+
+#, fuzzy
+#~| msgid "start date"
+#~ msgid "Start date"
+#~ msgstr "fecha de inicio"
+
+#, fuzzy
+#~| msgid "end date"
+#~ msgid "End date"
+#~ msgstr "fecha final"
+
+#~ msgid "Impact"
+#~ msgstr "Impacto"
+
+#~ msgid "Automatic notifications"
+#~ msgstr "Notificaciones automáticas"

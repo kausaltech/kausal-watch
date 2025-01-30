@@ -1,7 +1,8 @@
 from datetime import date, datetime, timedelta
 
-import pytest
 from django.core import mail
+
+import pytest
 
 from actions.tests.factories import (
     ActionContactFactory,

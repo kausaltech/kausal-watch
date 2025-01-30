@@ -1,8 +1,9 @@
 from django.db.models import Q
 from django.urls import reverse
 
-from actions.models import Action
 from aplans.utils import RestrictedVisibilityModel
+
+from actions.models import Action
 from indicators.models import ActionIndicator, Indicator, RelatedIndicator
 
 
@@ -71,8 +72,7 @@ class ActionGraphGenerator(GraphGenerator):
         for lo in obj.levels.all():
             if lo.plan_id == self.plan.id:
                 return lo.level
-        else:
-            return ''
+        return ''
 
     def make_node(self, obj):
         d = {}

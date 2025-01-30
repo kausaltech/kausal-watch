@@ -6,14 +6,16 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import ClusterForm
 from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.mixins import ThumbnailMixin
 from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as WAGTAILGEOWIDGET_VERSION
 
-from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
+
+from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
 from people.chooser import PersonChooser
 
 from .forms import NodeForm

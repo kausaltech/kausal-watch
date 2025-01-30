@@ -5,27 +5,31 @@ import re
 import typing
 import uuid
 from enum import Enum
-from typing import Any, ClassVar, Generic, Protocol, Sequence, Type, TypeVar
+from typing import Any, ClassVar, Generic, Protocol, Sequence, Type, TypeVar, cast
 
 import graphene
-import graphene_django_optimizer as gql_optimizer
 from django.db.models import Model, QuerySet
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.translation import gettext_lazy as _
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
+from graphene_django.types import DjangoObjectTypeOptions
 from graphql import GraphQLResolveInfo
-from grapple.registry import registry as grapple_registry
 from modeltrans.translator import get_i18n_field
 
-from actions.models.plan import Plan
+import graphene_django_optimizer as gql_optimizer
+from grapple.registry import registry as grapple_registry
+
 from aplans.utils import get_language_from_default_language_field
+
+from actions.models.plan import Plan
 
 if typing.TYPE_CHECKING:
     from graphql.language.ast import OperationDefinitionNode
 
     from aplans.types import WatchAPIRequest
+
     from users.models import User
 
 graphene_registry: list[type[graphene.ObjectType | graphene.Interface]] = []
@@ -75,7 +79,7 @@ class DjangoNode(DjangoObjectType, Generic[M]):
             kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
 
         model: type[M] = kwargs['model']
-        assert model.__doc__ is not None
+        assert model.__doc__ is not None, f"Model {model} does not have __doc__"
         is_autogen = re.match(r'^\w+\([\w_, ]+\)$', model.__doc__)
         if 'description' not in kwargs and not cls.__doc__ and not is_autogen:
             kwargs['description'] = trim_docstring(model.__doc__)
@@ -185,8 +189,11 @@ def register_graphene_interface(cls: type[IT]) -> type[IT]:
     return cls
 
 
-def register_django_node(cls: type[M]) -> type[M]:
-    model = cls._meta.model
+DN = TypeVar('DN', bound=DjangoNode)
+
+def register_django_node(cls: type[DN]) -> type[DN]:
+    meta = cast(DjangoObjectTypeOptions, getattr(cls, '_meta'))
+    model = meta.model
     grapple_registry.django_models[model] = cls
     return cls
 

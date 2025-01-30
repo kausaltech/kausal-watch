@@ -2,7 +2,6 @@ import logging
 from copy import deepcopy
 from typing import Optional
 
-import elasticsearch_dsl as es_dsl
 from django.utils import translation
 from modeltrans.fields import TranslatedVirtualField
 from wagtail.search import index
@@ -14,6 +13,8 @@ from wagtail.search.backends.elasticsearch7 import (
     Elasticsearch7SearchResults,
     ElasticsearchIndexRebuilder,
 )
+
+import elasticsearch_dsl as es_dsl
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class WatchSearchResults(Elasticsearch7SearchResults):
 
             if self._score_field:
                 setattr(obj, self._score_field, scores.get(str(obj.pk)))
-            setattr(obj, '_highlights', highlights.get(str(obj.pk)))
+            obj._highlights = highlights.get(str(obj.pk))
 
         # Yield results in order given by Elasticsearch
         for pk in pks:

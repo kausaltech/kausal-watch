@@ -2,6 +2,7 @@ import typing
 
 from django.apps import AppConfig
 from django.conf import settings
+
 from wagtailorderable.signals import post_reorder
 
 if typing.TYPE_CHECKING:

@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import functools
 import typing
-from typing import ClassVar, Self, cast
+from typing import TYPE_CHECKING, ClassVar, Self
 
-import networkx as nx
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import ForeignKey, Q
@@ -12,9 +11,16 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
 
+import networkx as nx
+from networkx import DiGraph
+
+from kausal_common.models.types import ModelManager
+
 from aplans.utils import OrderedModel
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
+
     from aplans.types import UserOrAnon
 
     from .action import Action
@@ -22,7 +28,7 @@ if typing.TYPE_CHECKING:
 
 
 class ActionDependencyRole(OrderedModel):
-    plan = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='action_dependency_roles')
+    plan = ParentalKey['Plan']('actions.Plan', on_delete=models.CASCADE, related_name='action_dependency_roles')
     name = models.CharField(max_length=1000, verbose_name=_('name'))
 
     i18n = TranslationField(
@@ -64,7 +70,7 @@ class ActionDependencyRelationshipQuerySet(models.QuerySet['ActionDependencyRela
 
     def visible_for_user(self, user: UserOrAnon | None, plan: Plan | None = None):
         from actions.models import Action
-        actions = Action.objects.visible_for_user(user, plan)
+        actions = Action.objects.get_queryset().visible_for_user(user, plan)
         return self.filter(Q(preceding__in=actions) | Q(dependent__in=actions)).distinct()
 
     def for_plan(self, plan: Plan) -> Self:
@@ -73,33 +79,43 @@ class ActionDependencyRelationshipQuerySet(models.QuerySet['ActionDependencyRela
         )
 
 
+if TYPE_CHECKING:
+    class ActionDependencyRelationshipManager(ModelManager['ActionDependencyRelationship', ActionDependencyRelationshipQuerySet]): ...
+else:
+    ActionDependencyRelationshipManager = ModelManager.from_queryset(ActionDependencyRelationshipQuerySet)
+
+
 class ActionDependencyRelationship(models.Model):
-    preceding: ForeignKey[Action] = ParentalKey(
+    preceding: ParentalKey[Action] = ParentalKey(
         'actions.Action', on_delete=models.CASCADE, related_name='dependent_relationships',
         verbose_name=_("Preceding action"),
     )
-    dependent = ForeignKey(
+    dependent: FK[Action] = ForeignKey(
         'actions.Action', on_delete=models.CASCADE, related_name='preceding_relationships',
         verbose_name=_("Dependent action"),
     )
 
-    objects = ActionDependencyRelationshipQuerySet.as_manager()
+    objects: ActionDependencyRelationshipManager = ActionDependencyRelationshipManager()
 
     public_fields: ClassVar = [
         'id', 'preceding', 'dependent',
     ]
 
+    id: int
+    preceding_id: int
+    dependent_id: int
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['preceding', 'dependent'], name='unique_pairs'), # , nulls_distinct=False)  # type: ignore[call-overload]
+            models.UniqueConstraint(fields=['preceding', 'dependent'], name='unique_pairs'), # , nulls_distinct=False)
         ]
 
     @classmethod
-    def get_graph(cls, plan: Plan):
+    def get_graph(cls, plan: Plan) -> DiGraph:
         g = nx.DiGraph()  # Initialize a directed graph
 
         # Fetch all ActionDependencyRelationship instances that involve actions from the same plan.
-        relationships: ActionDependencyRelationshipQuerySet = cls.objects.for_plan(plan)
+        relationships: ActionDependencyRelationshipQuerySet = cls.objects.qs.for_plan(plan)
 
         # Create dictionaries to map action IDs to their corresponding
         preceding_map = {r.preceding_id: r for r in relationships}
@@ -118,25 +134,25 @@ class ActionDependencyRelationship(models.Model):
 
         return g
 
-    def _has_cycle(self):
-        """Checks if the dependency graph has a cycle."""
+    def _has_cycle(self) -> bool:
+        """Check if the dependency graph has a cycle."""
         g = self.get_graph(self.preceding.plan).copy()
         if not self.dependent:
             return False
 
-        if self.id and g.has_node(str(self.id)):
-            g.remove_node(str(self.id))
+        if self.pk and g.has_node(str(self.pk)):
+            g.remove_node(str(self.pk))
 
         deps = ActionDependencyRelationship.objects.filter(Q(preceding=self.dependent) | Q(dependent=self.preceding))
         if not deps:
             return False
         for dep in deps:
             if dep.dependent == self.preceding:
-                g.add_edge(str(dep.id), 'new')
+                g.add_edge(str(dep.pk), 'new')
             else:
-                g.add_edge('new', str(dep.id))
+                g.add_edge('new', str(dep.pk))
 
-        g.add_edge('new', str(self.dependent.id))
+        g.add_edge('new', str(self.dependent.pk))
         if nx.is_directed_acyclic_graph(g):
             return False
         return True

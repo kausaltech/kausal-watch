@@ -1,7 +1,8 @@
 import datetime
 
-import factory
 from django.db.models.signals import post_save
+
+import factory
 from factory import SubFactory
 from factory.django import DjangoModelFactory
 

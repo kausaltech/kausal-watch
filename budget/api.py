@@ -3,6 +3,7 @@ from modeltrans.translator import get_i18n_field
 from modeltrans.utils import build_localized_fieldname
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.fields import Field
+
 from rest_framework_nested import routers
 
 from aplans.api_router import router
@@ -58,7 +59,7 @@ class DataPointSerializer(serializers.ModelSerializer):
         # FIXME: Restrict queryset to dimension categories available to the dataset
         slug_field='uuid', many=True, queryset=DimensionCategory.objects.all(),
     )
-    value = serializers.DecimalField(max_digits=10, decimal_places=4, coerce_to_string=False)
+    value = serializers.DecimalField(max_digits=10, decimal_places=4, coerce_to_string=False, allow_null=True)
 
     class Meta:
         model = DataPoint
@@ -100,7 +101,7 @@ class DatasetSchemaSerializer(I18nFieldSerializerMixin, serializers.ModelSeriali
 
     class Meta:
         model = DatasetSchema
-        fields = ['uuid', 'time_resolution', 'unit', 'name', 'dimension_categories']
+        fields = ['uuid', 'time_resolution', 'unit', 'name', 'dimension_categories', 'start_date']
 
 
 class DatasetSchemaViewSet(viewsets.ModelViewSet):

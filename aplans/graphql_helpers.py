@@ -48,8 +48,11 @@ def get_fields(info: GraphQLResolveInfo):
     A convenience function to call collect_fields with info
     Args:
         info (ResolveInfo)
-    Returns:
+
+    Returns
+    -------
         dict: Returned from collect_fields
+
     """
 
     fragments = {}

@@ -1,6 +1,7 @@
 from dal import autocomplete
 
 from aplans.types import WatchAdminRequest
+
 from indicators.models import CommonIndicator, Indicator, Quantity, Unit
 from orgs.models import Organization
 

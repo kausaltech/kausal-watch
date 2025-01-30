@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import collections
-from functools import lru_cache
+from functools import cache
 
 from django.apps import AppConfig
 from django.contrib.admin.filters import SimpleListFilter
@@ -51,7 +53,7 @@ def monkeypatch_image_chooser_viewset():
         ImageChooserViewSet.permission_policy = permission_policy
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_base_snippet_action_menu_items(model):
     from actions.models.action import Action
     if model == Action:
