@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"POT-Creation-Date: 2025-01-30 11:30+0200\n"
 "PO-Revision-Date: 2024-12-11 10:47+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv_FI/>\n"
@@ -25,6 +25,11 @@ msgstr ""
 #: actions/action_admin.py
 #, python-format
 msgid "%s is listed multiple times in the action."
+msgstr ""
+
+#: actions/action_admin.py
+#, python-format
+msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
 msgstr ""
 
 #: actions/action_admin.py actions/models/action.py
@@ -763,6 +768,11 @@ msgstr ""
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
+msgstr ""
+
+#: actions/category_admin.py
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
 msgstr ""
 
 #: actions/category_admin.py
@@ -2265,8 +2275,8 @@ msgstr ""
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr ""
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
-msgid "Plans"
+#: actions/wagtail_admin.py admin_site/wagtail.py
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -2311,6 +2321,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
+msgstr ""
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
 msgstr ""
 
 #: admin_site/api.py
@@ -2400,6 +2414,11 @@ msgstr ""
 
 #: admin_site/forms.py
 msgid "Enter your email address"
+msgstr ""
+
+#: admin_site/mixins.py templates/modeladmin/create.html
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
 msgstr ""
 
 #: admin_site/models.py
@@ -2560,10 +2579,6 @@ msgstr ""
 #: admin_site/wagtail.py
 #, python-format
 msgid "View %s live"
-msgstr ""
-
-#: admin_site/wagtail.py
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr ""
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
@@ -3571,6 +3586,11 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+#, python-format
+msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "none"
 msgstr ""
 
@@ -3981,14 +4001,6 @@ msgid "Manually scheduled notification"
 msgstr ""
 
 #: notifications/wagtail_admin.py
-msgid "Notifications could not be modified due to errors."
-msgstr ""
-
-#: notifications/wagtail_admin.py
-msgid "Notifications could not be set up due to errors."
-msgstr ""
-
-#: notifications/wagtail_admin.py
 msgid "Cannot schedule a notification for the past"
 msgstr ""
 
@@ -3997,11 +4009,19 @@ msgid "Cannot reschedule a notification for the past"
 msgstr ""
 
 #: notifications/wagtail_admin.py
-msgid "Recipients"
+msgid "Notifications could not be modified due to errors."
+msgstr ""
+
+#: notifications/wagtail_admin.py
+msgid "Notifications could not be set up due to errors."
 msgstr ""
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
+msgstr ""
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
 msgstr ""
 
 #: notifications/wagtail_admin.py
@@ -4893,6 +4913,10 @@ msgid "Choose another report type"
 msgstr ""
 
 #: reports/models.py
+msgid "Only plan admins can mark actions as complete for reports of this type"
+msgstr ""
+
+#: reports/models.py
 msgid "report type"
 msgstr ""
 
@@ -5108,10 +5132,6 @@ msgstr ""
 
 #: templates/modeladmin/create.html
 msgid "Save"
-msgstr ""
-
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Save and continue editing"
 msgstr ""
 
 #: templates/modeladmin/edit.html

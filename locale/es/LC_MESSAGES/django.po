@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"POT-Creation-Date: 2025-01-30 11:30+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/"
-">\n"
+"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -27,6 +26,11 @@ msgstr "Ya existe una acción con este identificador."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s aparece varias veces en la acción."
+
+#: actions/action_admin.py
+#, python-format
+msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
@@ -792,6 +796,11 @@ msgstr "Categorías"
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Ya existe una categoría con este identificador."
+
+#: actions/category_admin.py
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Icons"
@@ -2319,9 +2328,9 @@ msgstr "Nombre del plan ya utilizado"
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "La otra lengua de un plan no puede ser la misma que su lengua principal"
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Planes"
+#: actions/wagtail_admin.py admin_site/wagtail.py
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "No se ha podido eliminar el tipo de categoría común \"%(removed_cct)\" del plan porque existen categorías con el tipo de categoría correspondiente."
 
 #: actions/wagtail_admin.py
 msgid "General administrators"
@@ -2366,6 +2375,10 @@ msgstr "Características del plan"
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
 msgstr "Ajustes de notificación del plan"
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Planes"
 
 #: admin_site/api.py
 msgid "Invalid email address"
@@ -2455,6 +2468,11 @@ msgstr "Introduzca la contraseña"
 #: admin_site/forms.py
 msgid "Enter your email address"
 msgstr "Introduzca su dirección de correo electrónico"
+
+#: admin_site/mixins.py templates/modeladmin/create.html
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Guardar y seguir editando"
 
 #: admin_site/models.py
 msgid "Only allow password login"
@@ -2617,10 +2635,6 @@ msgstr "Ver en directo"
 #, python-format
 msgid "View %s live"
 msgstr "Ver %s en directo"
-
-#: admin_site/wagtail.py
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "No se ha podido eliminar el tipo de categoría común \"%(removed_cct)\" del plan porque existen categorías con el tipo de categoría correspondiente."
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
@@ -3651,6 +3665,11 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Las dimensiones deben ser las mismas que en el indicador común"
 
 #: indicators/wagtail_admin.py
+#, python-format
+msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "ninguno"
 
@@ -4067,14 +4086,6 @@ msgid "Manually scheduled notification"
 msgstr "Notificación programada manualmente"
 
 #: notifications/wagtail_admin.py
-msgid "Notifications could not be modified due to errors."
-msgstr "No se han podido modificar las notificaciones debido a errores."
-
-#: notifications/wagtail_admin.py
-msgid "Notifications could not be set up due to errors."
-msgstr "No se han podido configurar las notificaciones debido a errores."
-
-#: notifications/wagtail_admin.py
 msgid "Cannot schedule a notification for the past"
 msgstr "No se puede programar una notificación para el pasado"
 
@@ -4083,12 +4094,20 @@ msgid "Cannot reschedule a notification for the past"
 msgstr "No se puede reprogramar una notificación para el pasado"
 
 #: notifications/wagtail_admin.py
-msgid "Recipients"
-msgstr "Destinatarios"
+msgid "Notifications could not be modified due to errors."
+msgstr "No se han podido modificar las notificaciones debido a errores."
+
+#: notifications/wagtail_admin.py
+msgid "Notifications could not be set up due to errors."
+msgstr "No se han podido configurar las notificaciones debido a errores."
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
 msgstr "El mensaje de correo electrónico se enviará el día especificado a las"
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr "Destinatarios"
 
 #: notifications/wagtail_admin.py
 msgid "One-off notifications"
@@ -4983,6 +5002,12 @@ msgid "Choose another report type"
 msgstr "Elija otro tipo de informe"
 
 #: reports/models.py
+#, fuzzy
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Only plan admins can mark actions as complete for reports of this type"
+msgstr "Confirmar deshacer marcando la acción %(action)s como completa para el informe %(report)s"
+
+#: reports/models.py
 msgid "report type"
 msgstr "tipo de informe"
 
@@ -5199,10 +5224,6 @@ msgstr "Ahorrar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Guardar"
-
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Save and continue editing"
-msgstr "Guardar y seguir editando"
 
 #: templates/modeladmin/edit.html
 msgid "Delete"

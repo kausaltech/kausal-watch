@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"POT-Creation-Date: 2025-01-30 11:30+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/"
-">\n"
+"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,6 +29,11 @@ msgstr "Det finns redan en åtgärd med denna identifierare."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s anges flera gånger i åtgärden."
+
+#: actions/action_admin.py
+#, python-format
+msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
@@ -820,6 +824,11 @@ msgstr "Kategorinivåer"
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Det finns redan en kategori med denna beteckning."
+
+#: actions/category_admin.py
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Icons"
@@ -2427,9 +2436,11 @@ msgstr "Planens namn redan i bruk"
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "En plans andra språk får inte vara detsamma som dess primära språk"
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Planer"
+#: actions/wagtail_admin.py admin_site/wagtail.py
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Kunde inte ta bort den gemensamma kategoritypen '{removed_cct}' från planen eftersom kategorier med motsvarande kategorityp finns."
 
 #: actions/wagtail_admin.py
 #, fuzzy
@@ -2480,6 +2491,10 @@ msgstr "efternamn"
 #, fuzzy
 msgid "Plan notification settings"
 msgstr "anmälningsmallar"
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Planer"
 
 #: admin_site/api.py
 #, fuzzy
@@ -2577,6 +2592,11 @@ msgstr "Skriv in lösenord"
 #: admin_site/forms.py
 msgid "Enter your email address"
 msgstr "Skriv in din mailadress"
+
+#: admin_site/mixins.py templates/modeladmin/create.html
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Spara och fortsätt redigera"
 
 #: admin_site/models.py
 msgid "Only allow password login"
@@ -2748,12 +2768,6 @@ msgstr "Visa live"
 #, python-format
 msgid "View %s live"
 msgstr "Visa %s live"
-
-#: admin_site/wagtail.py
-#, fuzzy
-#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Kunde inte ta bort den gemensamma kategoritypen '{removed_cct}' från planen eftersom kategorier med motsvarande kategorityp finns."
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
@@ -3830,6 +3844,11 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Mått måste vara samma som i gemensam indikator"
 
 #: indicators/wagtail_admin.py
+#, python-format
+msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "ingen"
 
@@ -4283,18 +4302,6 @@ msgstr "Manuellt schemalagd avisering"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "%s could not be created due to errors."
-msgid "Notifications could not be modified due to errors."
-msgstr "%s kunde inte skapas på grund av fel."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
-#| msgid "%s could not be created due to errors."
-msgid "Notifications could not be set up due to errors."
-msgstr "%s kunde inte skapas på grund av fel."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
 #| msgid "scheduled notifications"
 msgid "Cannot schedule a notification for the past"
 msgstr "schemalagda aviseringar"
@@ -4306,12 +4313,24 @@ msgid "Cannot reschedule a notification for the past"
 msgstr "schemalagda aviseringar"
 
 #: notifications/wagtail_admin.py
-msgid "Recipients"
-msgstr "Mottagare"
+#, fuzzy
+#| msgid "%s could not be created due to errors."
+msgid "Notifications could not be modified due to errors."
+msgstr "%s kunde inte skapas på grund av fel."
+
+#: notifications/wagtail_admin.py
+#, fuzzy
+#| msgid "%s could not be created due to errors."
+msgid "Notifications could not be set up due to errors."
+msgstr "%s kunde inte skapas på grund av fel."
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
 msgstr "E-postmeddelandet skickas på den angivna dagen på"
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr "Mottagare"
 
 #: notifications/wagtail_admin.py
 msgid "One-off notifications"
@@ -5277,6 +5296,12 @@ msgstr "Välj en annan kategori"
 
 #: reports/models.py
 #, fuzzy
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Only plan admins can mark actions as complete for reports of this type"
+msgstr "Bekräfta ångra märkningsåtgärd %(action)s som slutförd för rapport %(report)s"
+
+#: reports/models.py
+#, fuzzy
 msgid "report type"
 msgstr "Kategorityp"
 
@@ -5504,10 +5529,6 @@ msgstr "Sparar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Spara"
-
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Save and continue editing"
-msgstr "Spara och fortsätt redigera"
 
 #: templates/modeladmin/edit.html
 msgid "Delete"

@@ -7,17 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"POT-Creation-Date: 2025-01-30 11:30+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/"
-">\n"
+"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.4.2\n"
 
 #: actions/action_admin.py
@@ -28,6 +26,11 @@ msgstr "Ar šo identifikatoru jau ir veikta rīcība."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s ir minēts vairākkārt."
+
+#: actions/action_admin.py
+#, python-format
+msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
@@ -824,6 +827,11 @@ msgstr "Kategorijas līmeņi"
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Jau ir izveidota kategorija ar šo identifikatoru."
+
+#: actions/category_admin.py
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Icons"
@@ -2391,9 +2399,11 @@ msgstr "Jau izmantotais plāna nosaukums"
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "Plāna otra valoda nevar būt tāda pati kā tā pamatvaloda"
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Plāni"
+#: actions/wagtail_admin.py admin_site/wagtail.py
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Nevarēja no plāna dzēst kopējo kategorijas tipu '{removed_cct}', jo pastāv kategorijas ar atbilstošo kategorijas tipu."
 
 #: actions/wagtail_admin.py
 msgid "General administrators"
@@ -2440,6 +2450,10 @@ msgstr "Plāna iezīmes"
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
 msgstr "Plāna paziņojumu iestatījumi"
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Plāni"
 
 #: admin_site/api.py
 msgid "Invalid email address"
@@ -2529,6 +2543,11 @@ msgstr "Ievadiet paroli"
 #: admin_site/forms.py
 msgid "Enter your email address"
 msgstr "Ievadiet savu e-pasta adresi"
+
+#: admin_site/mixins.py templates/modeladmin/create.html
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Saglabāt un turpināt rediģēšanu"
 
 #: admin_site/models.py
 msgid "Only allow password login"
@@ -2698,12 +2717,6 @@ msgstr "Skatīt tiešraidē"
 #, python-format
 msgid "View %s live"
 msgstr "Skatīt %s tiešraidē"
-
-#: admin_site/wagtail.py
-#, fuzzy
-#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Nevarēja no plāna dzēst kopējo kategorijas tipu '{removed_cct}', jo pastāv kategorijas ar atbilstošo kategorijas tipu."
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
@@ -3753,6 +3766,11 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Izmēriem jābūt tādiem pašiem kā kopīgajā rādītājā"
 
 #: indicators/wagtail_admin.py
+#, python-format
+msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "nav"
 
@@ -4201,18 +4219,6 @@ msgstr ""
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "%s could not be created due to errors."
-msgid "Notifications could not be modified due to errors."
-msgstr "%s nevarēja izveidot kļūdu dēļ."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
-#| msgid "%s could not be created due to errors."
-msgid "Notifications could not be set up due to errors."
-msgstr "%s nevarēja izveidot kļūdu dēļ."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
 #| msgid "Should notifications be sent?"
 msgid "Cannot schedule a notification for the past"
 msgstr "Vai ir jānosūta paziņojumi?"
@@ -4224,12 +4230,24 @@ msgid "Cannot reschedule a notification for the past"
 msgstr "Vai ir jānosūta paziņojumi?"
 
 #: notifications/wagtail_admin.py
-msgid "Recipients"
-msgstr "Saņēmēji"
+#, fuzzy
+#| msgid "%s could not be created due to errors."
+msgid "Notifications could not be modified due to errors."
+msgstr "%s nevarēja izveidot kļūdu dēļ."
+
+#: notifications/wagtail_admin.py
+#, fuzzy
+#| msgid "%s could not be created due to errors."
+msgid "Notifications could not be set up due to errors."
+msgstr "%s nevarēja izveidot kļūdu dēļ."
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
 msgstr ""
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr "Saņēmēji"
 
 #: notifications/wagtail_admin.py
 msgid "One-off notifications"
@@ -5140,6 +5158,12 @@ msgid "Choose another report type"
 msgstr "Izvēlieties citu ziņojuma veidu"
 
 #: reports/models.py
+#, fuzzy
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Only plan admins can mark actions as complete for reports of this type"
+msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
+
+#: reports/models.py
 msgid "report type"
 msgstr "ziņojuma veids"
 
@@ -5356,10 +5380,6 @@ msgstr "Ietaupot…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Saglabāt"
-
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Save and continue editing"
-msgstr "Saglabāt un turpināt rediģēšanu"
 
 #: templates/modeladmin/edit.html
 msgid "Delete"

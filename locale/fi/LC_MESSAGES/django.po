@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"POT-Creation-Date: 2025-01-30 11:30+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
-">\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,6 +30,11 @@ msgstr "Tällä tunnisteella on jo toimenpide."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s toistuu toimenpiteen tiedoissa"
+
+#: actions/action_admin.py
+#, python-format
+msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
@@ -801,6 +805,11 @@ msgstr "Kategorian tasot"
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Tällä tunnisteella on jo luokka."
+
+#: actions/category_admin.py
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Icons"
@@ -2344,9 +2353,10 @@ msgstr "Toimenpideohjelman nimi on jo käytössä"
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Toimenpideohjelmat"
+#: actions/wagtail_admin.py admin_site/wagtail.py
+#, fuzzy
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on vielä luokkia joiden tyyppi on kytketty siihen."
 
 #: actions/wagtail_admin.py
 #, fuzzy
@@ -2393,6 +2403,10 @@ msgstr "Ohjelman ominaisuudet"
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
 msgstr "Toimenpiteen heräteasetukset"
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Toimenpideohjelmat"
 
 #: admin_site/api.py
 msgid "Invalid email address"
@@ -2489,6 +2503,11 @@ msgstr "Syötä salasana"
 #: admin_site/forms.py
 msgid "Enter your email address"
 msgstr "Syötä sähköpostiosoitteesi"
+
+#: admin_site/mixins.py templates/modeladmin/create.html
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Tallenna ja jatka muokkaamista"
 
 #: admin_site/models.py
 msgid "Only allow password login"
@@ -2655,11 +2674,6 @@ msgstr "Näytä julkaistu"
 #, python-format
 msgid "View %s live"
 msgstr "Näytä julkaistu %s"
-
-#: admin_site/wagtail.py
-#, fuzzy
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on vielä luokkia joiden tyyppi on kytketty siihen."
 
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
@@ -3702,6 +3716,11 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensioiden täytyy olla samat kuin yleisessä mittarissa"
 
 #: indicators/wagtail_admin.py
+#, python-format
+msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "tyhjä"
 
@@ -4167,16 +4186,6 @@ msgstr "Manuaalisesti ajastettu ilmoitus"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-msgid "Notifications could not be modified due to errors."
-msgstr "%s ei voitu tallentaa virheiden takia."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
-msgid "Notifications could not be set up due to errors."
-msgstr "%s ei voitu tallentaa virheiden takia."
-
-#: notifications/wagtail_admin.py
-#, fuzzy
 msgid "Cannot schedule a notification for the past"
 msgstr "ajastetut ilmoitukset"
 
@@ -4186,12 +4195,22 @@ msgid "Cannot reschedule a notification for the past"
 msgstr "ajastetut ilmoitukset"
 
 #: notifications/wagtail_admin.py
-msgid "Recipients"
-msgstr "Vastaanottajat"
+#, fuzzy
+msgid "Notifications could not be modified due to errors."
+msgstr "%s ei voitu tallentaa virheiden takia."
+
+#: notifications/wagtail_admin.py
+#, fuzzy
+msgid "Notifications could not be set up due to errors."
+msgstr "%s ei voitu tallentaa virheiden takia."
 
 #: notifications/wagtail_admin.py
 msgid "The email message will be sent on the specified day at"
 msgstr "Sähköpostiviesti lähetetään valittuna päivänä klo"
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr "Vastaanottajat"
 
 #: notifications/wagtail_admin.py
 msgid "One-off notifications"
@@ -5114,6 +5133,12 @@ msgid "Choose another report type"
 msgstr "Valitse toinen raporttityyppi"
 
 #: reports/models.py
+#, fuzzy
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Only plan admins can mark actions as complete for reports of this type"
+msgstr "Varmista että toimenpiteen %(action)s merkitseminen valmiiksi raporttia %(report)s varten perutaan"
+
+#: reports/models.py
 msgid "report type"
 msgstr "raportin tyyppi"
 
@@ -5330,10 +5355,6 @@ msgstr "Tallennetaan…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Tallenna ja poistu"
-
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Save and continue editing"
-msgstr "Tallenna ja jatka muokkaamista"
 
 #: templates/modeladmin/edit.html
 msgid "Delete"
