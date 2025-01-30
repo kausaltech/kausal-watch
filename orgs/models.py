@@ -225,7 +225,6 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
     created_time = models.DateTimeField(auto_now_add=True, help_text=_('The time at which the resource was created'))
     created_by: FK[User | None] = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        # related_name='created_organizations',
         related_name='created_organizations',
         null=True,
         blank=True,
@@ -235,7 +234,6 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
     last_modified_time = models.DateTimeField(auto_now=True, help_text=_('The time at which the resource was updated'))
     last_modified_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        # related_name='modified_organizations',
         related_name='modified_organizations',
         null=True,
         blank=True,
