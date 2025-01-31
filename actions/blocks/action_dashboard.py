@@ -35,6 +35,7 @@ ActionDashboardColumnBlock = generate_stream_block(
         'updated_at',
         'start_date',
         'end_date',
+        'schedule_continuous',
         'attribute',
         'related_indicators',
         'primary_org',

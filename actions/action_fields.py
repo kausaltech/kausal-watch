@@ -35,7 +35,7 @@ def initialize():
     # The following fields will have no blocks created for them whatsoever
     action_registry.disable_fields(
         'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact_groups',
-        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
+        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'status_updates',
         'superseded_actions', 'superseded_by', 'copies', 'copy_of', 'uuid', 'visibility',
     )
 
@@ -126,6 +126,11 @@ def initialize():
         has_details_block=False,
         has_report_block=True,
         report_formatter_class='reports.report_formatters.ActionDateFieldFormatter',
+    )
+    register(
+        'schedule_continuous',
+        has_details_block=False,
+        has_report_block=False,
     )
     register(
         'updated_at',
