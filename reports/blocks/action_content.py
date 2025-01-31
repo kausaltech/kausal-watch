@@ -132,6 +132,7 @@ ReportFieldBlock = generate_stream_block(
         'tasks',
         'start_date',
         'end_date',
+        'schedule_continuous',
         'updated_at',
         'related_indicators',
         'primary_org',

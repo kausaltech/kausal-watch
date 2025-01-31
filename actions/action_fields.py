@@ -130,7 +130,6 @@ def initialize():
     register(
         'schedule_continuous',
         has_details_block=False,
-        has_report_block=False,
     )
     register(
         'updated_at',
