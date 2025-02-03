@@ -5,17 +5,16 @@ from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from modelcluster.forms import ClusterForm
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
-from aplans.context_vars import ctx_request
 from aplans.extensions import modeladmin_register
 
 from admin_site.panels import TranslatedFieldPanel
+from admin_site.utils import admin_req
 from admin_site.wagtail import CondensedInlinePanel
 from people.chooser import PersonChooser
 
@@ -164,27 +163,20 @@ class OrganizationForm(NodeForm):
         return result
 
 
-class OrganizationEditHandler(TabbedInterface):
-    def __init__(self, plan, *args, **kwargs):
-        self.plan = plan
-        super().__init__(*args, **kwargs)
+class InvisiblePlanPanel(FieldPanel):
+    """
+    Panel that adds a hidden plan field to the form.
 
-    def clone_kwargs(self):
-        kwargs = super().clone_kwargs()
-        kwargs['plan'] = self.plan
-        return kwargs
+    The value is set to the user's active plan.
+    """
 
-    def get_form_options(self):
-        class PlanSpecificOrganizationAdminForm(ClusterForm):
-            plan = self.plan
+    class BoundPanel(FieldPanel.BoundPanel):
 
-            def save(self, *args, **kwargs):
-                self.instance.plan = self.plan
-                return super().save(*args, **kwargs)
-
-        options = super().get_form_options()
-        options['formsets']['organization_plan_admins']['form'] = PlanSpecificOrganizationAdminForm
-        return options
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.attrs.update({'hidden': 'true'})
+            user = admin_req(self.request).user
+            self.form.initial['plan'] = user.get_active_admin_plan()
 
 
 class OrganizationButtonHelper(NodeButtonHelper):
@@ -283,7 +275,7 @@ class OrganizationAdmin(NodeAdmin):
         CondensedInlinePanel(
             'organization_plan_admins',
             panels=[
-                # FieldPanel('plan'),  # active plan is automatically set
+                InvisiblePlanPanel('plan'),
                 FieldPanel('person', widget=PersonChooser),
             ],
             heading=_("Plan admins"),
@@ -332,12 +324,8 @@ class OrganizationAdmin(NodeAdmin):
         )
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-
         tabs = [
             ObjectList(self.basic_panels, heading=_('Basic information')),
             ObjectList(self.permissions_panels, heading=_('Permissions')),
         ]
-
-        plan = request.user.get_active_admin_plan()
-        return OrganizationEditHandler(plan, tabs, base_form_class=OrganizationForm)
+        return TabbedInterface(tabs, base_form_class=OrganizationForm)
