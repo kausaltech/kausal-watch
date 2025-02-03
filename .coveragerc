@@ -7,6 +7,9 @@ omit =
     */management/commands/*
     manage.py
     local_settings.py
+    conftest.py
+    run_tests.py
+    */settings.py
     */wsgi.py
     */asgi.py
     */__init__.py
