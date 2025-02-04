@@ -161,6 +161,10 @@ section[role="tabpanel"] .help-block {
   height: auto;
   float: inline-start;
 }
+/* Hack to fix https://app.asana.com/0/1206017643443542/1208668942052483 */
+.modeladmin .result-list ul {
+  width: 100%;
+}
 /* Need to repeat this here from modeladmin's CSS because our custom React-based components won't use that file */
 .modeladmin .listing tbody tr:hover ul.actions {
   visibility: visible;
