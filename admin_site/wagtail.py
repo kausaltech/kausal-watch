@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Callable, Protocol, Sequence, cast
 from urllib.parse import urljoin
 
 import reversion
-from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -37,12 +36,13 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
+from kausal_common.i18n.helpers import convert_language_code
+
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel, get_language_from_default_language_field
 
 from actions.models.plan import Plan
 from budget.models import DatasetSchema
-from pages.models import ActionListPage
 
 from .utils import FieldLabelRenderer, admin_req
 
@@ -82,7 +82,7 @@ def insert_model_translation_panels[M: Model](
             continue
 
         for lang_code in plan.other_languages:
-            tf = t_fields.get(lang_code)
+            tf = t_fields.get(convert_language_code(lang_code, "django"))
             if not tf:
                 continue
             out.append(type(p)(tf.name))
