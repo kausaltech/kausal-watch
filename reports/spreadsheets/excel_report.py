@@ -121,6 +121,7 @@ class ExcelReport:
             self.child_plans = list(child_plans)  # TODO: add .visible_for_user() when it is implemented
             self.plan_current_related_objects = self.PlanRelatedObjects(self.report, self.child_plans)
         else:
+            self.child_plans = []
             self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self.field_to_column_labels = dict()
 
@@ -314,6 +315,8 @@ class ExcelReport:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier, 'identifier')
             append_to_key(_('Action'), action_name, 'name')
+            if self.child_plans:
+                append_to_key(_('Plan'), action_obj.plan.name, 'plan')
             for field in fields:
                 labels = list(field.block.xlsx_column_labels(field.value, plan=self.report.type.plan))
                 values = field.block.extract_action_values(
