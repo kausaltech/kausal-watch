@@ -121,6 +121,7 @@ class Query:
             if include_related_plans:
                 qs |= Q(id__in=related_plans.values_list('id', flat=True))
             plans = Plan.objects.filter(qs)
+        plans = plans.exclude(exclude_from_search=True)
 
         plan_ids = list(plans.values_list('id', flat=True))
 

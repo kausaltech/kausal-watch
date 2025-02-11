@@ -231,6 +231,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             'use by customers and those created for some other reason.',
         ),
     )
+    exclude_from_search = models.BooleanField(
+        default=False,
+        verbose_name=_('exclude from search'),
+        help_text=_('Should information related to the plan be excluded from search results?'),
+    )
 
     site_url = models.URLField(
         blank=True, null=True, verbose_name=_('site URL'),
