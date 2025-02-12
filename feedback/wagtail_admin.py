@@ -42,7 +42,7 @@ class UserFeedbackPermissionPolicy(ModelPermissionPolicy):
     def user_has_permission_for_instance(self, user, action, instance):
         if action == 'delete':
             return user.is_general_admin_for_plan(instance.plan)
-        if action == 'set_is_processed':
+        if action == SetUserFeedbackProcessedView.permission_required:
             return instance.user_can_change_is_processed(user)
 
         return super().user_has_permission_for_instance(user, action, instance)
