@@ -260,6 +260,8 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
     search_fields = [
         index.AutocompleteField('name'),
         index.AutocompleteField('abbreviation'),
+        index.SearchField('name'),
+        index.SearchField('abbreviation'),
     ]
 
     MODEL_ADMIN_CLASS = 'orgs.wagtail_admin.OrganizationAdmin'  # for AdminButtonsMixin
