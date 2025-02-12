@@ -4,14 +4,11 @@ from typing import TYPE_CHECKING
 
 from django.apps import apps
 from django.contrib.admin.utils import quote, unquote
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.translation import gettext as _, gettext_lazy, ngettext_lazy
 from django.views.generic import TemplateView
@@ -22,27 +19,12 @@ from wagtail.permission_policies.base import AuthenticationOnlyPermissionPolicy
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.views.snippets import DeleteView, IndexView
 
-from wagtail_modeladmin.views import DeleteView as ModelAdminDeleteView, EditView, WMABaseView
-
 from admin_site.utils import admin_req
 from admin_site.viewsets import WatchCreateView, WatchEditView
-from admin_site.wagtail import AplansCreateView, SetInstanceModelAdminMixin
 from orgs.models import Organization
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
-
-
-class OrganizationViewMixinOld:
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        kwargs['parent_choices'] = Organization.objects.editable_by_user(self.request.user)
-        # If the parent is not editable, the form would display an empty parent, leading to the org becoming a root when
-        # saved. Prevent this by adding the parent to the queryset.
-        if getattr(self, 'instance', None) and self.instance.get_parent():
-            kwargs['parent_choices'] |= Organization.objects.filter(pk=self.instance.get_parent().pk)
-        return kwargs
 
 
 class OrganizationViewMixin:
@@ -55,27 +37,6 @@ class OrganizationViewMixin:
         if getattr(self, 'object', None) and self.object.get_parent():
             kwargs['parent_choices'] |= Organization.objects.filter(pk=self.object.get_parent().pk)
         return kwargs
-
-
-class CreateChildNodeViewOld(OrganizationViewMixinOld, AplansCreateView):
-    """View class that can take an additional URL param for parent id."""
-
-    parent_pk = None
-
-    def __init__(self, model_admin, parent_pk):
-        self.parent_pk = unquote(parent_pk)
-        object_qs = model_admin.model._default_manager.get_queryset()
-        self.parent_instance = get_object_or_404(object_qs, pk=self.parent_pk)
-        super().__init__(model_admin)
-
-    def get_page_title(self):
-        """Generate a title that explains you are adding a child."""
-        title = super().get_page_title()
-        return f'{title} child {self.opts.verbose_name} for {self.parent_instance}'
-
-    def get_initial(self):
-        """Set the selected parent field to the parent_pk."""
-        return {'parent': self.parent_pk}
 
 
 class CreateChildNodeView(OrganizationViewMixin, WatchCreateView):
@@ -116,22 +77,6 @@ class CreateChildNodeView(OrganizationViewMixin, WatchCreateView):
         return {'parent': self.parent_pk}
 
 
-class OrganizationCreateViewOld(OrganizationViewMixinOld, AplansCreateView):
-    def form_valid(self, form):
-        result = super().form_valid(form)
-        # Add the new organization to the related organizations of the user's active plan
-        org = form.instance
-        plan = self.request.user.get_active_admin_plan()
-        plan.related_organizations.add(org)
-        return result
-
-    def get_form_kwargs(self):
-        return {
-            **super().get_form_kwargs(),
-            'plan': admin_req(self.request).user.get_active_admin_plan(),
-        }
-
-
 class OrganizationCreateView(OrganizationViewMixin, WatchCreateView):
 
     def form_valid(self, form):
@@ -141,15 +86,6 @@ class OrganizationCreateView(OrganizationViewMixin, WatchCreateView):
         plan = self.request.user.get_active_admin_plan()
         plan.related_organizations.add(org)
         return result
-
-
-class OrganizationEditViewOld(OrganizationViewMixinOld, SetInstanceModelAdminMixin, EditView):
-
-    def get_form_kwargs(self):
-        return {
-            **super().get_form_kwargs(),
-            'plan': admin_req(self.request).user.get_active_admin_plan(),
-        }
 
 
 class OrganizationEditView(OrganizationViewMixin, WatchEditView):
@@ -170,35 +106,6 @@ def do_rollback():
     transaction.
     """
     raise Rollback()
-
-class OrganizationDeleteViewOld(OrganizationViewMixinOld, SetInstanceModelAdminMixin, ModelAdminDeleteView):
-    def confirmation_message(self):
-        message = super().confirmation_message()
-        if not self.instance:
-            return message
-        message += '\n' + _("This will delete the following objects:") + '\n'
-        num_deleted_by_model = {}
-        try:
-            with transaction.atomic():
-                num_deleted_by_model = self.instance.delete()[1]
-                raise Rollback()
-        except Rollback:
-            pass
-        except ProtectedError:
-            # After confirming, the user will get an explanation why deletion didn't work
-            return message
-        items = []
-        for model_identifier, num_deleted in num_deleted_by_model.items():
-            model = apps.get_model(model_identifier)
-            singular_str = "%(num_instances)d %(model_name_singular)s"
-            plural_str = "%(num_instances)d %(model_name_plural)s"
-            items.append(ngettext_lazy(singular_str, plural_str, num_deleted) % {
-                'num_instances': num_deleted,
-                'model_name_singular': model._meta.verbose_name,
-                'model_name_plural': model._meta.verbose_name_plural,
-            })
-        message += ';\n'.join(items)
-        return message
 
 
 class OrganizationDeleteView(DeleteView):
@@ -328,72 +235,6 @@ class OrganizationIndexView(NodeIndexView):
             buttons.append(change_related_to_plan_button)
 
         return buttons
-
-
-class SetOrganizationRelatedToActivePlanViewOld(WMABaseView):
-    page_title = gettext_lazy("Add organization to active plan")
-    org_pk = None
-    set_related = True
-    template_name = 'aplans/confirmation.html'
-
-    def __init__(self, model_admin, org_pk, set_related=True):
-        self.org_pk = unquote(org_pk)
-        self.org = get_object_or_404(Organization, pk=self.org_pk)
-        self.set_related = set_related
-        super().__init__(model_admin)
-
-    def check_action_permitted(self, user):
-        plan = user.get_active_admin_plan()
-        return self.org.user_can_change_related_to_plan(user, plan)
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        if not self.check_action_permitted(request.user):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_meta_title(self):
-        plan = self.request.user.get_active_admin_plan()
-        if self.set_related:
-            msg = _("Confirm including %(org)s in plan %(plan)s")
-        else:
-            msg = _("Confirm excluding %(org)s from plan %(plan)s")
-        return msg % {'org': self.org, 'plan': plan}
-
-    def confirmation_message(self):
-        plan = self.request.user.get_active_admin_plan()
-        if self.set_related:
-            msg = _("Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?")
-        else:
-            msg = _("Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?")
-        return msg % {'org': self.org, 'plan': plan}
-
-    def add_to_plan(self, plan):
-        if self.org.pk in plan.related_organizations.values_list('pk', flat=True):
-            raise ValueError(_("The organization is already included in the plan"))
-        plan.related_organizations.add(self.org)
-
-    def remove_from_plan(self, plan):
-        if self.org.pk not in plan.related_organizations.values_list('pk', flat=True):
-            raise ValueError(_("The organization is not included in the plan"))
-        plan.related_organizations.remove(self.org)
-
-    def post(self, request, *args, **kwargs):
-        plan = request.user.get_active_admin_plan()
-        try:
-            if self.set_related:
-                self.add_to_plan(plan)
-            else:
-                self.remove_from_plan(plan)
-        except ValueError as e:
-            messages.error(request, str(e))
-            return redirect(self.index_url)
-        if self.set_related:
-            msg = _("Organization '%(org)s' has been included in plan '%(plan)s'.")
-        else:
-            msg = _("Organization '%(org)s' has been excluded from plan '%(plan)s'.")
-        messages.success(request, msg % {'org': self.org, 'plan': plan})
-        return redirect(self.index_url)
 
 
 class SetOrganizationRelatedToActivePlanView(
