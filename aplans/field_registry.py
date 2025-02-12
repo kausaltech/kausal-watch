@@ -16,6 +16,8 @@ from actions.blocks.column_block_base import ColumnBlockBase, DashboardColumnInt
 from .dynamic_blocks import generate_block_for_field
 
 if typing.TYPE_CHECKING:
+    from typing import Iterator
+
     from django.utils.functional import _StrPromise
     from wagtail import blocks
 
@@ -179,6 +181,9 @@ class ModelFieldRegistry[T: type[Model]]:
 
     def __getitem__(self, name: str) -> ModelFieldProperties:
         return self._registry[name]
+
+    def __iter__(self) -> Iterator[ModelFieldProperties]:
+        yield from self._registry.values()
 
     def register(self, props: ModelFieldProperties) -> None:
         if props.field_name in self._registry:

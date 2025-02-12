@@ -111,7 +111,8 @@ class ActionSimpleFieldFormatter(ReportFieldFormatter):
     """A simple field is a field whose value is trivial to convert to a string with str."""
 
     def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
-        value = snapshot.action_version.field_dict[block_value.get('field_name')]
+        field_name = self.block.meta.field_name
+        value = snapshot.action_version.field_dict[field_name]
         return value
 
     def extract_action_values(

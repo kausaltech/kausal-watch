@@ -45,17 +45,26 @@ class ReportFieldBlockFactory(StreamBlockFactory):
     responsible_party = SubFactory(ActionResponsiblePartyReportFieldBlockFactory)
 
 
+def get_report_blocks():
+    from actions.action_fields import action_registry
+    blocks = {
+        'implementation_phase': SubFactory(ActionImplementationPhaseReportFieldBlockFactory),
+        'attribute': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
+        'responsible_parties': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
+        'categories': SubFactory(ActionCategoryReportFieldBlockFactory),
+    }
+    for field in action_registry:
+        if field.has_report_block and field.field_name not in blocks:
+            blocks[field.field_name] = SubFactory(StructBlockFactory)
+    return blocks
+
+
 class ReportTypeFactory(DjangoModelFactory):
     class Meta:
         model = reports.models.ReportType
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f'Report type {i}')
-    fields = StreamFieldFactory({
-        'implementation_phase': SubFactory(ActionImplementationPhaseReportFieldBlockFactory),
-        'attribute': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
-        'responsible_parties': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
-        'categories': SubFactory(ActionCategoryReportFieldBlockFactory),
-    })
+    fields = StreamFieldFactory(get_report_blocks())
 
 
 class ReportFactory(DjangoModelFactory):

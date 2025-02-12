@@ -51,6 +51,22 @@ def report_type_with_all_attributes(
         fields__7__attribute__attribute_type=action_attribute_type__category_choice,
         fields__8__categories__category_type=category_type,
         fields__9__attribute__attribute_type=action_attribute_type__unordered_choice,
+        fields__10='description',
+        # TODO: enable the fields below one by one and fix
+        # the missing implementations for the ReportComparisonBlock
+        #
+        # fields__11='related_indicators',
+        # fields__12='tasks',
+        # fields__13='end_date',
+        # fields__14='start_date',
+        # fields__15='identifier',
+        # fields__16='name',
+        # fields__17='schedule_continuous',
+        # fields__18='start_date',
+        # fields__19='updated_at',
+        # fields__20='primary_org',
+        # fields__21='status',
+        # fields__22='manual_status_reason',
     )
 
 

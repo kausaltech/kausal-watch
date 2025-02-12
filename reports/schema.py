@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import graphene
 from graphql.error import GraphQLError
 
 from grapple.registry import registry as grapple_registry
+from loguru import logger
 
 from aplans.graphql_types import DjangoNode, register_django_node
 from aplans.utils import public_fields
@@ -39,11 +42,18 @@ class ReportNode(DjangoNode):
             snapshot = action.get_latest_snapshot(root)
         except ActionSnapshot.DoesNotExist:
             return None
-        return [
-            field.block.graphql_value_for_action_snapshot(field, snapshot)
-            for field in root.type.fields
-            if hasattr(field.block, 'graphql_value_for_action_snapshot')
-        ]
+        values = []
+        for field in root.type.fields:
+            if not hasattr(field.block, 'graphql_value_for_action_snapshot'):
+                logger.warning(f'No functional graphql_value_for_action_snapshot method for {type(field.block)}')
+                continue
+            try:
+                value = field.block.graphql_value_for_action_snapshot(field, snapshot)
+            except NotImplementedError:
+                logger.warning(f'No functional graphql_value_for_action_snapshot method for {type(field.block)}')
+            else:
+                values.append(value)
+        return values
 
 
 @register_django_node
