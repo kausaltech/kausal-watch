@@ -1,13 +1,18 @@
+from __future__ import annotations
+
+import typing
 from dataclasses import dataclass
 from functools import cache
-from typing import Type
 
 import graphene
 
 from grapple.registry import registry as grapple_registry
-from grapple.types.streamfield import StreamFieldBlock
 
 from aplans.graphql_types import register_graphene_node
+
+if typing.TYPE_CHECKING:
+    from grapple.types.streamfield import StreamFieldBlock
+
 
 
 def get_report_field_block() -> StreamFieldBlock | None:
@@ -35,7 +40,8 @@ def generate_graphene_report_value_node_class(
         properties: GrapheneValueClassProperties,
 ) -> type[ActionReportValue]:
     """
-    Generates a class representing a report value, and registers it as graphene node
+    Generate a class representing a report value, and registers it as graphene node.
+
     The class would look something like this if created manually:
 
         @register_graphene_node
@@ -47,15 +53,15 @@ def generate_graphene_report_value_node_class(
     It implements the  ReportValueInterface graphene interface and also has a custom field
     with  a custom name for retrieving  the value of this report field.
     """
-    Meta_ = type('Meta', (), {'interfaces': (ReportValueInterface,)})
-    Class = type(
+    meta_ = type('Meta', (), {'interfaces': (ReportValueInterface,)})
+    class_ = type(
         properties.class_name,
         (ActionReportValue,),
         {
-            'Meta': Meta_,
+            'Meta': meta_,
             properties.value_field_name: graphene.Field(properties.value_field_type),
         },
     )
-    globals()[properties.class_name] = Class
-    register_graphene_node(Class)
-    return Class
+    globals()[properties.class_name] = class_
+    register_graphene_node(class_)
+    return class_
