@@ -463,13 +463,13 @@ def test_action_on_form_save_no_commit(
 
     # Clear all attributes first
     cleaned_data_attributes_cleared = {
-        f'attribute_type_{action_attribute_type__numeric.identifier}': None,
-        f'attribute_type_{action_attribute_type__optional_choice.identifier}_choice': None,
-        f'attribute_type_{action_attribute_type__optional_choice.identifier}_text': '',
-        f'attribute_type_{action_attribute_type__ordered_choice.identifier}': None,
-        f'attribute_type_{action_attribute_type__rich_text.identifier}': '',
-        f'attribute_type_{action_attribute_type__text.identifier}': '',
-        f'attribute_type_{action_attribute_type__unordered_choice.identifier}': None,
+        f'attribute_type_{action_attribute_type__numeric.pk}': None,
+        f'attribute_type_{action_attribute_type__optional_choice.pk}_choice': None,
+        f'attribute_type_{action_attribute_type__optional_choice.pk}_text': '',
+        f'attribute_type_{action_attribute_type__ordered_choice.pk}': None,
+        f'attribute_type_{action_attribute_type__rich_text.pk}': '',
+        f'attribute_type_{action_attribute_type__text.pk}': '',
+        f'attribute_type_{action_attribute_type__unordered_choice.pk}': None,
     }
     save_form(cleaned_data_attributes_cleared)
     expected_result_attributes_cleared = {
@@ -486,13 +486,20 @@ def test_action_on_form_save_no_commit(
 
     # Set all attributes to some values
     cleaned_data_attributes_set = {
-        f'attribute_type_{action_attribute_type__numeric.identifier}': 123.0,
-        f'attribute_type_{action_attribute_type__optional_choice.identifier}_choice': action_attribute_type__optional_choice.choice_options.first(),
-        f'attribute_type_{action_attribute_type__optional_choice.identifier}_text': 'foo',
-        f'attribute_type_{action_attribute_type__ordered_choice.identifier}': action_attribute_type__ordered_choice.choice_options.first(),
-        f'attribute_type_{action_attribute_type__rich_text.identifier}': 'bar',
-        f'attribute_type_{action_attribute_type__text.identifier}': 'baz',
-        f'attribute_type_{action_attribute_type__unordered_choice.identifier}': action_attribute_type__unordered_choice.choice_options.first(),
+        f'attribute_type_{action_attribute_type__numeric.pk}':
+         123.0,
+        f'attribute_type_{action_attribute_type__optional_choice.pk}_choice':
+         action_attribute_type__optional_choice.choice_options.first(),
+        f'attribute_type_{action_attribute_type__optional_choice.pk}_text':
+         'foo',
+        f'attribute_type_{action_attribute_type__ordered_choice.pk}':
+         action_attribute_type__ordered_choice.choice_options.first(),
+        f'attribute_type_{action_attribute_type__rich_text.pk}':
+         'bar',
+        f'attribute_type_{action_attribute_type__text.pk}':
+         'baz',
+        f'attribute_type_{action_attribute_type__unordered_choice.pk}':
+         action_attribute_type__unordered_choice.choice_options.first(),
     }
     save_form(cleaned_data_attributes_set)
     expected_result_attributes_set = {

@@ -520,7 +520,7 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
 
     @property
     def form_field_name(self):
-        return f'attribute_type_{self.instance.identifier}'
+        return f'attribute_type_{self.instance.pk}'
 
     def get_all_form_fields(
         self,
@@ -581,7 +581,7 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
 
     @property
     def form_field_name(self):
-        return f'attribute_type_{self.instance.identifier}'
+        return f'attribute_type_{self.instance.pk}'
 
     def get_all_form_fields(
         self,
@@ -657,10 +657,10 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
 
     @property
     def choice_form_field_name(self):
-        return f'attribute_type_{self.instance.identifier}_choice'
+        return f'attribute_type_{self.instance.pk}_choice'
 
     def get_text_form_field_name(self, language):
-        name = f'attribute_type_{self.instance.identifier}_text'
+        name = f'attribute_type_{self.instance.pk}_text'
         if language:
             name += f'_{language}'
         return name
@@ -773,7 +773,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
 
 class GenericTextAttributeType(AttributeType[T]):
     def get_form_field_name(self, language):
-        name = f'attribute_type_{self.instance.identifier}'
+        name = f'attribute_type_{self.instance.pk}'
         if language:
             name += f'_{language}'
         return name
@@ -872,7 +872,7 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
 
     @property
     def form_field_name(self):
-        return f'attribute_type_{self.instance.identifier}'
+        return f'attribute_type_{self.instance.pk}'
 
     def get_all_form_fields(
         self,
