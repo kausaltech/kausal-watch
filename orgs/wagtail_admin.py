@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
-from django.urls import URLPattern, path
+from django.urls import URLPattern, path, reverse
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
+from wagtail.snippets.widgets import SnippetListingButton
 
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
@@ -36,6 +38,8 @@ if TYPE_CHECKING:
     from django.db.models import Q
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
+
+    from actions.models.plan import Plan
 
 
 if int(wagtailgeowidget_version.split('.')[0]) >= 7:
@@ -274,6 +278,106 @@ class OrganizationViewSet(SnippetViewSet):
         ]
         return TabbedInterface(tabs, base_form_class=OrganizationForm).bind_to_model(self.model)
 
+    def get_index_view_kwargs(self, **kwargs: Any) -> dict[str, Any]:
+        kwargs = super().get_index_view_kwargs(**kwargs)
+        kwargs['view_set'] = self
+        return kwargs
+
+    def _get_edit_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            _("Edit"),
+            url=reverse(self.get_url_name("edit"), args=(quote(instance.pk),)),
+            icon_name="edit",
+            attrs={
+                "aria-label": _("Edit '%(title)s'") % {"title": str(instance)}
+            },
+            priority=10,
+        )
+
+    def _get_copy_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            _("Copy"),
+            url=reverse(self.get_url_name("copy"), args=(quote(instance.pk),)),
+            icon_name="copy",
+            attrs={
+                "aria-label": _("Copy '%(title)s'") % {"title": str(instance)}
+            },
+            priority=20,
+        )
+
+    def _get_delete_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            _("Delete"),
+            url=reverse(self.get_url_name("delete"), args=(quote(instance.pk),)),
+            icon_name="bin",
+            attrs={
+                "aria-label": _("Delete '%(title)s'") % {"title": str(instance)}
+            },
+            priority=30,
+        )
+
+    def _get_add_child_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            url=reverse(self.get_url_name(self.add_child_url_name), kwargs={'parent_pk': quote(instance.pk)}),
+            label=_("Add suborganization"),
+            icon_name='plus',
+            attrs={'aria-label': _("Add suborganization")},
+        )
+
+    def _include_organization_in_active_plan_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            url=reverse(
+                self.get_url_name(self.include_organization_in_active_plan_url_name), kwargs={'pk': quote(instance.pk)}
+            ),
+            label=_("Include in active plan"),
+            icon_name='link',
+            attrs={'aria-label': _("Include this organization in the active plan")},
+        )
+
+    def _exclude_organization_from_active_plan_button(self, instance: Organization) -> SnippetListingButton:
+        return SnippetListingButton(
+            url=reverse(
+                self.get_url_name(self.exclude_organization_from_active_plan_url_name), kwargs={'pk': quote(instance.pk)}
+            ),
+            label=_("Exclude from active plan"),
+            icon_name='fontawesome-link-slash',
+            attrs={'aria-label': _("Exclude this organization from the active plan")},
+        )
+
+    def get_index_view_buttons(self, user: User, instance: Organization, plan: Plan):
+        """Get the buttons to show in the index view for an organization."""
+
+        # The button definitions are done here to allow querying them through
+        # GraphQL, as GraphQL has trouble fetching the buttons through
+        # IndexView's get_list_more_buttons method where the definitions are
+        # usually done. The GraphQL-queried buttons are used by the
+        # JavaScript-implemented custom implementation of the index view.
+
+        buttons = []
+
+        # Basic buttons provided by Wagtail
+        if self.permission_policy.user_has_permission_for_instance(user, "change", instance):
+            buttons.append(self._get_edit_button(instance))
+        if self.permission_policy.user_has_permission(user, "add"):
+            buttons.append(self._get_copy_button(instance))
+        if self.permission_policy.user_has_permission_for_instance(user, "delete", instance):
+            buttons.append(self._get_delete_button(instance))
+
+        # Show "add child" button
+        # TODO: allow for organization metadata admins but without the huge
+        # amount of db queries that iterating org.user_can_edit entails
+        if user.is_general_admin_for_plan(plan):
+            buttons.append(self._get_add_child_button(instance))
+
+        # Show "include in / exclude from active plan" button if user has permission and it's a root organization
+        if instance.pk in plan.related_organizations.values_list('pk', flat=True):
+            change_related_to_plan_button = self._exclude_organization_from_active_plan_button(instance)
+        else:
+            change_related_to_plan_button = self._include_organization_in_active_plan_button(instance)
+        if instance.user_can_change_related_to_plan(user, plan) and instance.is_root():
+            buttons.append(change_related_to_plan_button)
+
+        return buttons
 
 # Extended version is registered in kausal-extensions
 register_snippet(OrganizationViewSet)

@@ -1,4 +1,6 @@
-from typing import Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import graphene
 from django.db.models import Model
@@ -8,9 +10,13 @@ from graphql import GraphQLResolveInfo
 from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
+from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.wagtail import AplansModelAdmin, PlanRelatedModelAdminPermissionHelper
 
 from .graphql_types import AdminButton, AuthenticatedUserNode, GQLInfo
+
+if TYPE_CHECKING:
+    from admin_site.viewsets import WatchViewSet
 
 
 def collect_fields(node, fragments):
@@ -125,7 +131,7 @@ class DeleteModelInstanceMutation(graphene.Mutation, AuthenticatedUserNode):
         return cls(ok=True)
 
 
-class AdminButtonsMixin:
+class ModelAdminAdminButtonsMixin:
     admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
 
     @staticmethod
@@ -141,4 +147,27 @@ class AdminButtonsMixin:
         if isinstance(helper.permission_helper, PlanRelatedModelAdminPermissionHelper):
             helper.permission_helper.disable_admin_plan_check()
         buttons = helper.get_buttons_for_obj(root)
+        return buttons
+
+class AdminButtonsMixin:
+    admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
+
+    @staticmethod
+    def resolve_admin_buttons(root: Model, info: GQLInfo) -> list[AdminButton]:
+        if not info.context.user.is_staff:
+            return []
+
+        view_set_class: type[WatchViewSet] = import_string(root.VIEWSET_CLASS)  # type: ignore
+        view_set = view_set_class()
+
+        if isinstance(view_set.permission_policy, PlanRelatedPermissionPolicy):
+            view_set.permission_policy.disable_admin_plan_check()
+
+        buttons = view_set.get_index_view_buttons(info.context.user, root, info.context.user.get_active_admin_plan())
+        # TODO: Temporary workaround to support both the new and old attribute
+        # name for icon, making the code work for modeladmin code as well. The
+        # GraphQL queries should be updated to use the new attribute name once
+        # actions have migrated from modeladmin.
+        for button in buttons:
+            button.icon = button.icon_name
         return buttons

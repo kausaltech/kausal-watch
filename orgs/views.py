@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.apps import apps
-from django.contrib.admin.utils import quote, unquote
+from django.contrib.admin.utils import unquote
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.http.request import HttpRequest
@@ -15,8 +15,6 @@ from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
-from wagtail.permission_policies.base import AuthenticationOnlyPermissionPolicy
-from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.views.snippets import DeleteView, IndexView
 
 from admin_site.utils import admin_req
@@ -25,6 +23,8 @@ from orgs.models import Organization
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
+
+    from orgs.wagtail_admin import OrganizationViewSet
 
 
 class OrganizationViewMixin:
@@ -146,80 +146,12 @@ class OrganizationDeleteView(DeleteView):
 class OrganizationIndexView(IndexView[Organization]):
     # FIXME: in Wagtail 6.2.X this is the default, so this line can be deleted once we upgrade
     any_permission_required = ["add", "change", "delete", "view"]
-    add_child_url_name = None
-    include_organization_in_active_plan_url_name = None
-    exclude_organization_from_active_plan_url_name = None
-
-    def get_add_child_url(self, instance: Organization):
-        return reverse(self.add_child_url_name, kwargs={'parent_pk': quote(instance.pk)})
-
-    def get_include_organization_in_active_plan_url(self, instance: Organization):
-        return reverse(self.include_organization_in_active_plan_url_name, kwargs={'pk': quote(instance.pk)})
-
-    def get_exclude_organization_from_active_plan_url(self, instance: Organization):
-        return reverse(self.exclude_organization_from_active_plan_url_name, kwargs={'pk': quote(instance.pk)})
-
-    def get_add_child_button(self, instance: Organization):
-        return wagtailsnippets_widgets.SnippetListingButton(
-            url=self.get_add_child_url(instance),
-            label=_("Add suborganization"),
-            icon_name='plus',
-            attrs={'aria-label': _("Add suborganization")},
-        )
-
-    def include_organization_in_active_plan_button(self, instance: Organization):
-        return wagtailsnippets_widgets.SnippetListingButton(
-            url=self.get_include_organization_in_active_plan_url(instance),
-            label=_("Include in active plan"),
-            icon_name='link',
-            attrs={'aria-label': _("Include this organization in the active plan")},
-        )
-
-    def exclude_organization_from_active_plan_button(self, instance: Organization):
-        return wagtailsnippets_widgets.SnippetListingButton(
-            url=self.get_exclude_organization_from_active_plan_url(instance),
-            label=_("Exclude from active plan"),
-            icon_name='fontawesome-link-slash',
-            attrs={'aria-label': _("Exclude this organization from the active plan")},
-        )
+    view_set: OrganizationViewSet | None = None
 
     def get_list_more_buttons(self, instance: Organization):
-        # Wagtail does not check instance specific permissions when determining
-        # the list buttons, so we set the permission policy temporarily to
-        # AuthenticationOnlyPermissionPolicy that allows everything for
-        # authenticated users to get all available buttons and then filter the
-        # list ourselves with instance-specific rights.
-        original_permission_policy = self.permission_policy
-        self.permission_policy = AuthenticationOnlyPermissionPolicy(self.model)
-        buttons = super().get_list_more_buttons(instance)
-        self.permission_policy = original_permission_policy
-
-        request = admin_req(self.request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-
-        if not self.permission_policy.user_has_permission_for_instance(user, 'change', instance):
-            buttons = [button for button in buttons if button.url != self.get_edit_url(instance)]
-        if not self.permission_policy.user_has_permission(user, 'add'):
-            buttons = [button for button in buttons if button.url != self.get_copy_url(instance)]
-        if not self.permission_policy.user_has_permission_for_instance(user, 'delete', instance):
-            buttons = [button for button in buttons if button.url != self.get_delete_url(instance)]
-
-        # Show "add child" button
-        # TODO: allow for organization metadata admins but without the huge
-        # amount of db queries that iterating org.user_can_edit entails
-        if user.is_general_admin_for_plan(plan):
-            buttons.append(self.get_add_child_button(instance))
-
-        # Show "include in / exclude from active plan" button if user has permission and it's a root organization
-        if instance.pk in plan.related_organizations.values_list('pk', flat=True):
-            change_related_to_plan_button = self.exclude_organization_from_active_plan_button(instance)
-        else:
-            change_related_to_plan_button = self.include_organization_in_active_plan_button(instance)
-        if instance.user_can_change_related_to_plan(self.request.user, plan) and instance.is_root():
-            buttons.append(change_related_to_plan_button)
-
-        return buttons
+        assert self.view_set is not None
+        user = admin_req(self.request).user
+        return self.view_set.get_index_view_buttons(user, instance, user.get_active_admin_plan())
 
 
 class SetOrganizationRelatedToActivePlanView(

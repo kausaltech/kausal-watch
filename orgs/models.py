@@ -264,7 +264,7 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
         index.SearchField('abbreviation'),
     ]
 
-    MODEL_ADMIN_CLASS = 'orgs.wagtail_admin.OrganizationAdmin'  # for AdminButtonsMixin
+    VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
     id: int
     classification_id: int | None

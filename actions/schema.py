@@ -28,7 +28,7 @@ from kausal_common.datasets.models import Dataset
 from kausal_common.users import is_authenticated
 
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_helpers import AdminButtonsMixin, UpdateModelInstanceMutation
+from aplans.graphql_helpers import ModelAdminAdminButtonsMixin, UpdateModelInstanceMutation
 from aplans.graphql_types import (
     DjangoNode,
     WorkflowStateDescription,
@@ -1045,7 +1045,7 @@ class WorkflowInfoNode(graphene.ObjectType):
 
 
 @register_django_node
-class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
+class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
