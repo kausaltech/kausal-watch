@@ -143,50 +143,29 @@ class OrganizationDeleteView(DeleteView):
         return message
 
 
-class NodeIndexView(IndexView[Organization]):
-    add_child_url_name = None
-
-    def get_add_child_url(self, instance: Organization):
-        return reverse(self.add_child_url_name, kwargs={'parent_pk': quote(instance.pk)})
-
-    def get_add_child_button(self, instance: Organization):
-        return wagtailsnippets_widgets.SnippetListingButton(
-            url=self.get_add_child_url(instance),
-            label=_("Add child"),
-            icon_name='plus',
-            attrs={'aria-label': _("Add child")},
-        )
-
-    def get_list_more_buttons(self, instance: Organization):
-        buttons = super().get_list_more_buttons(instance)
-        user = admin_req(self.request).user
-        plan = user.get_active_admin_plan()
-
-        # TODO: allow for organization metadata admins but without the huge
-        # amount of db queries that iterating org.user_can_edit entails
-        if user.is_general_admin_for_plan(plan):
-            buttons.append(self.get_add_child_button(instance))
-
-        return buttons
-
-
-class OrganizationIndexView(NodeIndexView):
+class OrganizationIndexView(IndexView[Organization]):
     # FIXME: in Wagtail 6.2.X this is the default, so this line can be deleted once we upgrade
     any_permission_required = ["add", "change", "delete", "view"]
+    add_child_url_name = None
     include_organization_in_active_plan_url_name = None
     exclude_organization_from_active_plan_url_name = None
 
-    def get_add_child_button(self, instance: Organization):
-        button = super().get_add_child_button(instance)
-        button.label = _("Add suborganization")
-        button.attrs['aria-label'] = _("Add suborganization")
-        return button
+    def get_add_child_url(self, instance: Organization):
+        return reverse(self.add_child_url_name, kwargs={'parent_pk': quote(instance.pk)})
 
     def get_include_organization_in_active_plan_url(self, instance: Organization):
         return reverse(self.include_organization_in_active_plan_url_name, kwargs={'pk': quote(instance.pk)})
 
     def get_exclude_organization_from_active_plan_url(self, instance: Organization):
         return reverse(self.exclude_organization_from_active_plan_url_name, kwargs={'pk': quote(instance.pk)})
+
+    def get_add_child_button(self, instance: Organization):
+        return wagtailsnippets_widgets.SnippetListingButton(
+            url=self.get_add_child_url(instance),
+            label=_("Add suborganization"),
+            icon_name='plus',
+            attrs={'aria-label': _("Add suborganization")},
+        )
 
     def include_organization_in_active_plan_button(self, instance: Organization):
         return wagtailsnippets_widgets.SnippetListingButton(
@@ -225,6 +204,12 @@ class OrganizationIndexView(NodeIndexView):
             buttons = [button for button in buttons if button.url != self.get_copy_url(instance)]
         if not self.permission_policy.user_has_permission_for_instance(user, 'delete', instance):
             buttons = [button for button in buttons if button.url != self.get_delete_url(instance)]
+
+        # Show "add child" button
+        # TODO: allow for organization metadata admins but without the huge
+        # amount of db queries that iterating org.user_can_edit entails
+        if user.is_general_admin_for_plan(plan):
+            buttons.append(self.get_add_child_button(instance))
 
         # Show "include in / exclude from active plan" button if user has permission and it's a root organization
         if instance.pk in plan.related_organizations.values_list('pk', flat=True):

@@ -44,37 +44,6 @@ else:
     from wagtailgeowidget.edit_handlers import GoogleMapsPanel
 
 
-class NodeViewSet(SnippetViewSet):
-    """ViewSet that provides fundamentals for Node-based models."""
-
-    list_display = ['name', 'parent']
-    add_child_url_name = 'add_child'
-
-    panels = [
-        TranslatedFieldPanel('name'),
-    ]
-
-    @property
-    def add_child_view(self):
-        """Generate a class-based view to provide 'add child' functionality."""
-        return self.construct_view(CreateChildNodeView, **self.get_add_view_kwargs())
-
-    def get_urlpatterns(self) -> list[URLPattern]:
-        urls =  super().get_urlpatterns()
-        add_child_url = path(
-            route=f'{self.add_child_url_name}/<str:parent_pk>/',
-            view=self.add_child_view,
-            name=self.add_child_url_name,
-        )
-        return urls + [add_child_url]
-
-    def get_common_view_kwargs(self, **kwargs):
-        return super().get_common_view_kwargs(
-            add_child_url_name=self.get_url_name(self.add_child_url_name),
-            **kwargs,
-        )
-
-
 class OrganizationPermissionPolicy(ModelPermissionPolicy):
 
     def user_has_permission(self, user: User | AnonymousUser, action: str) -> bool:
@@ -183,7 +152,7 @@ class InvisiblePlanPanel(FieldPanel):
             self.form.initial['plan'] = user.get_active_admin_plan()
 
 
-class OrganizationViewSet(NodeViewSet):
+class OrganizationViewSet(SnippetViewSet):
     model = Organization
     menu_label = _("Organizations")
     icon = 'kausal-organization'
@@ -194,12 +163,14 @@ class OrganizationViewSet(NodeViewSet):
     edit_view_class = OrganizationEditView
     delete_view_class = OrganizationDeleteView
     search_fields = ['name', 'abbreviation']
-    list_display = NodeViewSet.list_display + ['abbreviation']
+    list_display = ['name', 'parent','abbreviation']
     add_to_admin_menu = True
     include_organization_in_active_plan_url_name = 'include_organization_in_active_plan'
     exclude_organization_from_active_plan_url_name = 'exclude_organization_from_active_plan'
+    add_child_url_name = 'add_child'
 
-    basic_panels = NodeViewSet.panels + [
+    basic_panels = [
+        TranslatedFieldPanel('name'),
         FieldPanel(
             # virtual field, needs to be specified in the form
             'parent', heading=pgettext_lazy('organization', 'Parent'),
@@ -241,6 +212,11 @@ class OrganizationViewSet(NodeViewSet):
     ]
 
     @property
+    def add_child_view(self):
+        """Generate a class-based view to provide 'add child' functionality."""
+        return self.construct_view(CreateChildNodeView, **self.get_add_view_kwargs())
+
+    @property
     def include_organization_in_active_plan_view(self):
         return self.construct_view(SetOrganizationRelatedToActivePlanView, set_related=True)
 
@@ -262,6 +238,11 @@ class OrganizationViewSet(NodeViewSet):
 
     def get_urlpatterns(self) -> list[URLPattern]:
         urls =  super().get_urlpatterns()
+        add_child_url = path(
+            route=f'{self.add_child_url_name}/<str:parent_pk>/',
+            view=self.add_child_view,
+            name=self.add_child_url_name,
+        )
         include_organization_in_active_plan_url = path(
             route=f'{self.include_organization_in_active_plan_url_name}/<str:pk>/',
             view=self.include_organization_in_active_plan_view,
@@ -273,12 +254,14 @@ class OrganizationViewSet(NodeViewSet):
             name=self.exclude_organization_from_active_plan_url_name,
         )
         return urls + [
+            add_child_url,
             include_organization_in_active_plan_url,
             exclude_organization_from_active_plan_url,
         ]
 
     def get_common_view_kwargs(self, **kwargs):
         return super().get_common_view_kwargs(
+            add_child_url_name=self.get_url_name(self.add_child_url_name),
             include_organization_in_active_plan_url_name=self.get_url_name(self.include_organization_in_active_plan_url_name),
             exclude_organization_from_active_plan_url_name=self.get_url_name(self.exclude_organization_from_active_plan_url_name),
             **kwargs,
