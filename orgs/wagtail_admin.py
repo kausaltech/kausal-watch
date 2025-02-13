@@ -8,7 +8,6 @@ from django.core.exceptions import ValidationError
 from django.urls import URLPattern, path, reverse
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail.snippets.widgets import SnippetListingButton
 
@@ -380,4 +379,4 @@ class OrganizationViewSet(SnippetViewSet):
         return buttons
 
 # Extended version is registered in kausal-extensions
-register_snippet(OrganizationViewSet)
+# register_snippet(OrganizationViewSet)
