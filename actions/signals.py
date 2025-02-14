@@ -49,14 +49,6 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
         )
 
 
-@receiver(post_save, sender=AttributeType)
-@receiver(post_delete, sender=AttributeType)
-def invalidate_attribute_type_cache(sender, instance, **kwargs):
-    # Attribute type cache may get stale when creating, editing or deleting attribute types
-    Action.get_attribute_types_for_plan.cache_clear()
-    Category.get_attribute_types_for_plan.cache_clear()
-
-
 @receiver(post_delete, sender=ActionContactPerson)
 def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):
     # When deleting an ActionContactPerson, drafts of that action may reference the deleted instance, which causes an

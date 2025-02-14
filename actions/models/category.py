@@ -679,7 +679,6 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         return self.type.levels.filter(order=level).first()
 
     @classmethod
-    @lru_cache
     def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         category_ct = ContentType.objects.get_for_model(cls)
         category_type_content_type = ContentType.objects.get_for_model(CategoryType)

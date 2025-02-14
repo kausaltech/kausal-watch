@@ -784,7 +784,6 @@ class Action(
         return [at for at in attribute_types if at.instance.is_instance_visible_for(user, self.plan, self)]
 
     @classmethod
-    @lru_cache
     def get_attribute_types_for_plan(
         cls, plan: Plan, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False,
     ) -> Sequence[AttributeType[Any]]:
