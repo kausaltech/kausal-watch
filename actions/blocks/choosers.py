@@ -4,7 +4,7 @@ from wagtail import blocks
 
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryLevel, CategoryType
-from budget.models import DatasetSchema
+from kausal_common.budget.models import DatasetSchema
 
 
 class CategoryChooserBlock(blocks.ChooserBlock):

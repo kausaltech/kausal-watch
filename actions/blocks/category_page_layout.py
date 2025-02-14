@@ -12,7 +12,7 @@ from actions.blocks.choosers import (
     CategoryTypeDatasetSchemaChooserBlock,
 )
 from actions.models.attributes import AttributeType
-from budget.models import DatasetSchema
+from kausal_common.budget.models import DatasetSchema
 
 
 @register_streamfield_block

@@ -10,7 +10,7 @@ from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
 
 from aplans.types import WatchAdminRequest
 
-from budget.models import DatasetSchema
+from kausal_common.budget.models import DatasetSchema
 
 from .models.action import Action
 from .models.attributes import AttributeType

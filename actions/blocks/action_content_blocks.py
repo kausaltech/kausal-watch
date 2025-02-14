@@ -13,7 +13,7 @@ from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
-from budget.models import DatasetSchema
+from kausal_common.budget.models import DatasetSchema
 
 
 @register_streamfield_block

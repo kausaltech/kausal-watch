@@ -42,7 +42,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel, get_language_from_default_language_field
 
 from actions.models.plan import Plan
-from budget.models import DatasetSchema
+from kausal_common.budget.models import DatasetSchema
 
 from .utils import FieldLabelRenderer, admin_req
 

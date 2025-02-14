@@ -20,7 +20,7 @@ from actions.models import (
     Plan,
 )
 from actions.models.action import ActionQuerySet
-from budget.models import Dataset
+from kausal_common.budget.models import Dataset
 from reports.models import Report
 
 if typing.TYPE_CHECKING:

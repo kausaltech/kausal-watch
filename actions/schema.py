@@ -83,7 +83,7 @@ from actions.models import (
 from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
-from budget.models import Dataset
+from kausal_common.budget.models import Dataset
 from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, Page
@@ -745,7 +745,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
-    datasets = graphene.List('budget.schema.DatasetNode')
+    datasets = graphene.List('kausal_common.budget.schema.DatasetNode')
 
     @staticmethod
     def _resolve_field_with_fallback_to_common(root: Category, field_name: str):
@@ -1071,7 +1071,7 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     indicators_count = graphene.Int()
     has_indicators_with_goals = graphene.Boolean()
 
-    datasets = graphene.List('budget.schema.DatasetNode')
+    datasets = graphene.List('kausal_common.budget.schema.DatasetNode')
 
     class Meta:
         model = Action

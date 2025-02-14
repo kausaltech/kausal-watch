@@ -30,7 +30,7 @@ from actions.autocomplete import (
 from actions.models import PlanDomain
 from admin_site.views import RootRedirectView, WadminRedirectView
 from admin_site.wagtail_hooks import restrict_chooser_pages_to_plan
-from budget.api import all_routers as budget_api_routers
+from kausal_common.budget.api import all_routers as budget_api_routers
 from indicators.api import all_views as indicators_api_views
 from indicators.autocomplete import CommonIndicatorAutocomplete, IndicatorAutocomplete, QuantityAutocomplete, UnitAutocomplete
 from insight.api import all_views as insight_api_views
