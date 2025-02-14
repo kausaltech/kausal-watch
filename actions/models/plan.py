@@ -457,6 +457,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     def __str__(self):
         return self.name
 
+    def __rich_repr__(self):
+        yield self.name
+        yield 'version_name', self.version_name
+        yield 'identifier', self.identifier
+
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
 
