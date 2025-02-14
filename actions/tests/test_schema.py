@@ -7,8 +7,6 @@ from django.utils import timezone
 
 import pytest
 
-from aplans.utils import RestrictedVisibilityModel
-
 from actions.models.features import OrderBy, PlanFeatures
 from actions.tests.factories import (
     ActionContactFactory,

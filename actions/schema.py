@@ -13,7 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
 from django.urls import reverse
-from django.utils.translation import gettext, get_language, override
+from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
