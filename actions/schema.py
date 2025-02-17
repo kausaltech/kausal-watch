@@ -192,7 +192,7 @@ class PlanInterface(graphene.Interface, Generic[T]):
         if not domain:
             if instance.is_visible_for_user(info.context.user):
                 return PlanNode
-        elif domain.first().status == PublicationStatus.PUBLISHED:
+        elif domain.first().status == PublicationStatus.PUBLISHED or instance.is_visible_for_user(info.context.user):
             return PlanNode
         return RestrictedPlanNode
 
