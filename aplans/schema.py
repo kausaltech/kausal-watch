@@ -21,7 +21,7 @@ from aplans.utils import public_fields
 
 from actions import schema as actions_schema
 from actions.models.action import Action
-from kausal_common.budget import schema as budget_schema
+from budget import schema as budget_schema
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema

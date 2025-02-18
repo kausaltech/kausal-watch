@@ -745,7 +745,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
-    datasets = graphene.List('kausal_common.budget.schema.DatasetNode')
+    datasets = graphene.List('budget.schema.DatasetNode')
 
     @staticmethod
     def _resolve_field_with_fallback_to_common(root: Category, field_name: str):
@@ -1071,7 +1071,7 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     indicators_count = graphene.Int()
     has_indicators_with_goals = graphene.Boolean()
 
-    datasets = graphene.List('kausal_common.budget.schema.DatasetNode')
+    datasets = graphene.List('budget.schema.DatasetNode')
 
     class Meta:
         model = Action
