@@ -36,13 +36,13 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
+from kausal_common.budget.models import DatasetSchema
 from kausal_common.i18n.helpers import convert_language_code
 
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel, get_language_from_default_language_field
 
 from actions.models.plan import Plan
-from kausal_common.budget.models import DatasetSchema
 
 from .utils import FieldLabelRenderer, admin_req
 

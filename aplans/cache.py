@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from wagtail.models import Revision
 
+from kausal_common.budget.models import Dataset
+
 from aplans.graphql_types import WorkflowStateEnum
 
 from actions.models import (
@@ -20,7 +22,6 @@ from actions.models import (
     Plan,
 )
 from actions.models.action import ActionQuerySet
-from kausal_common.budget.models import Dataset
 from reports.models import Report
 
 if typing.TYPE_CHECKING:

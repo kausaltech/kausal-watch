@@ -24,6 +24,7 @@ import sentry_sdk
 from grapple.registry import registry as grapple_registry
 from grapple.types.pages import PageInterface
 
+from kausal_common.budget.models import Dataset
 from kausal_common.users import is_authenticated
 
 from aplans.cache import SerializedDictWithRelatedObjectCache
@@ -83,7 +84,6 @@ from actions.models import (
 from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
-from kausal_common.budget.models import Dataset
 from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, Page

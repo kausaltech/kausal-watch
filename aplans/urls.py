@@ -19,6 +19,7 @@ from wagtail.models import Page
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
+from kausal_common.budget.api import all_routers as budget_api_routers
 from kausal_common.deployment.health_check_view import health_view
 
 from actions.api import all_routers as actions_api_routers, all_views as actions_api_views
@@ -30,7 +31,6 @@ from actions.autocomplete import (
 from actions.models import PlanDomain
 from admin_site.views import RootRedirectView, WadminRedirectView
 from admin_site.wagtail_hooks import restrict_chooser_pages_to_plan
-from kausal_common.budget.api import all_routers as budget_api_routers
 from indicators.api import all_views as indicators_api_views
 from indicators.autocomplete import CommonIndicatorAutocomplete, IndicatorAutocomplete, QuantityAutocomplete, UnitAutocomplete
 from insight.api import all_views as insight_api_views
