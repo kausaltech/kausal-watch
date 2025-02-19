@@ -143,7 +143,13 @@ class PageSearchResultsView(PageSearchFilterByPlanMixin, search.SearchResultsVie
 
 
 api_urls = []
-for router in [api_router] + actions_api_routers + budget_api_routers:
+for router in budget_api_routers:
+    for prefix, viewset, basename in router.registry:
+        api_router.register(prefix, viewset, basename=basename)
+
+api_urls = api_router.urls
+
+for router in actions_api_routers:
     api_urls += router.urls
 
 api_urlconf = [
