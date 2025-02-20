@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import graphene
 
-from kausal_common.budget.models import (
+from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
     DatasetSchema,
@@ -12,7 +12,7 @@ from kausal_common.budget.models import (
     DimensionCategory,
     DimensionScope,
 )
-from kausal_common.budget.schema import (
+from kausal_common.datasets.schema import (
     DataPointNode as BaseDataPointNode,
     DatasetNode as BaseDatasetNode,
     DatasetSchemaDimensionCategoryNode as BaseDatasetSchemaDimensionCategoryNode,
@@ -39,14 +39,14 @@ from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
 class DimensionNode(BaseDimensionNode, DjangoNode):
     class Meta:
         model = Dimension
-        name = 'BudgetDimension'  # clashes otherwise with type name in indicators.schema
+        name = 'DatasetsDimension'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'name', 'categories', 'scopes')
 
 
 class DimensionCategoryNode(BaseDimensionCategoryNode, DjangoNode):
     class Meta:
         model = DimensionCategory
-        name = 'BudgetDimensionCategory'  # clashes otherwise with type name in indicators.schema
+        name = 'DatasetsDimensionCategory'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'dimension', 'label')
 
 

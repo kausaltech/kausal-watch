@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from budget.tests.factories import (
+from datasets.tests.factories import (
     DataPointFactory,
     DatasetFactory,
     DatasetSchemaDimensionCategoryFactory,
@@ -51,7 +51,7 @@ def test_dimension_node(graphql_client_query_data, plan, category):
                     'dimensionCategories': [{
                         'category': {
                             'dimension': {
-                                '__typename': 'BudgetDimension',
+                                '__typename': 'DatasetsDimension',
                                 'uuid': str(dimension.uuid),
                                 'name': dimension.name,
                             },
@@ -98,10 +98,10 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
                 'schema': {
                     'dimensionCategories': [{
                         'category': {
-                            '__typename': 'BudgetDimensionCategory',
+                            '__typename': 'DatasetsDimensionCategory',
                             'uuid': str(dimension_category.uuid),
                             'dimension': {
-                                '__typename': 'BudgetDimension',
+                                '__typename': 'DatasetsDimension',
                             },
                             'label': dimension_category.label,
                         },
@@ -407,7 +407,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 'value': data_point1.value,
                                 'dimensionCategories': [
                                     {
-                                        '__typename': 'BudgetDimensionCategory',
+                                        '__typename': 'DatasetsDimensionCategory',
                                         'uuid': str(dim_category1.uuid),
                                         'label': dim_category1.label,
                                     },
@@ -420,7 +420,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 'value': data_point2.value,
                                 'dimensionCategories': [
                                     {
-                                        '__typename': 'BudgetDimensionCategory',
+                                        '__typename': 'DatasetsDimensionCategory',
                                         'uuid': str(dim_category2.uuid),
                                         'label': dim_category2.label,
                                     },
@@ -450,12 +450,12 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 'value': data_point3.value,
                                 'dimensionCategories': [
                                     {
-                                        '__typename': 'BudgetDimensionCategory',
+                                        '__typename': 'DatasetsDimensionCategory',
                                         'uuid': str(dim_category1.uuid),
                                         'label': dim_category1.label,
                                     },
                                     {
-                                        '__typename': 'BudgetDimensionCategory',
+                                        '__typename': 'DatasetsDimensionCategory',
                                         'uuid': str(dim_category2.uuid),
                                         'label': dim_category2.label,
                                     },
@@ -550,7 +550,7 @@ def test_integration_for_action(graphql_client_query_data, action):
                             'value': data_point1.value,
                             'dimensionCategories': [
                                 {
-                                    '__typename': 'BudgetDimensionCategory',
+                                    '__typename': 'DatasetsDimensionCategory',
                                     'uuid': str(dim_category1.uuid),
                                     'label': dim_category1.label,
                                 },
@@ -563,7 +563,7 @@ def test_integration_for_action(graphql_client_query_data, action):
                             'value': data_point2.value,
                             'dimensionCategories': [
                                 {
-                                    '__typename': 'BudgetDimensionCategory',
+                                    '__typename': 'DatasetsDimensionCategory',
                                     'uuid': str(dim_category2.uuid),
                                     'label': dim_category2.label,
                                 },
@@ -593,12 +593,12 @@ def test_integration_for_action(graphql_client_query_data, action):
                             'value': data_point3.value,
                             'dimensionCategories': [
                                 {
-                                    '__typename': 'BudgetDimensionCategory',
+                                    '__typename': 'DatasetsDimensionCategory',
                                     'uuid': str(dim_category1.uuid),
                                     'label': dim_category1.label,
                                 },
                                 {
-                                    '__typename': 'BudgetDimensionCategory',
+                                    '__typename': 'DatasetsDimensionCategory',
                                     'uuid': str(dim_category2.uuid),
                                     'label': dim_category2.label,
                                 },

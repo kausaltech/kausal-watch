@@ -19,7 +19,7 @@ from wagtail.models import Page
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
-from kausal_common.budget.api import router as budget_api_root_router, all_routers as budget_api_nested_routers
+from kausal_common.datasets.api import router as datasets_api_root_router, all_routers as datasets_api_nested_routers
 from kausal_common.deployment.health_check_view import health_view
 
 from actions.api import all_routers as actions_api_routers, all_views as actions_api_views
@@ -142,11 +142,11 @@ class PageSearchResultsView(PageSearchFilterByPlanMixin, search.SearchResultsVie
     pass
 
 
-for prefix, viewset, basename in budget_api_root_router.registry:
+for prefix, viewset, basename in datasets_api_root_router.registry:
     api_router.register(prefix, viewset, basename=basename)
 
 api_urls = []
-for router in [api_router] + actions_api_routers + budget_api_nested_routers:
+for router in [api_router] + actions_api_routers + datasets_api_nested_routers:
     api_urls += router.urls
 
 api_urlconf = [

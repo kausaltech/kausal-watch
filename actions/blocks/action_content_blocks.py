@@ -7,7 +7,7 @@ from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 
-from kausal_common.budget.models import DatasetSchema
+from kausal_common.datasets.models import DatasetSchema
 
 from aplans.graphql_interfaces import FieldBlockMetaInterface
 from aplans.utils import StaticBlockToStructBlockWorkaroundMixin

@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from factory import LazyAttribute, LazyFunction, Sequence, SubFactory
 
-from kausal_common.budget.models import (
+from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
     DatasetSchema,

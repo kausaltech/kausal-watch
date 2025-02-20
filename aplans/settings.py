@@ -225,7 +225,7 @@ if env('ENABLE_WAGTAIL_STYLEGUIDE'):
 
 INSTALLED_APPS += [
     'actions',
-    'kausal_common.budget',
+    'kausal_common.datasets',
     'content',
     'copying',
     'documentation',

@@ -6,7 +6,7 @@ from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey
 
-from kausal_common.budget.models import DatasetSchema
+from kausal_common.datasets.models import DatasetSchema
 
 from actions.blocks.action_content_blocks import BaseContactFormBlock, BaseDatasetsBlock
 from actions.blocks.choosers import (

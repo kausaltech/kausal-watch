@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.search.backends import get_search_backend
 
-from kausal_common.budget.models import DatasetSchema
+from kausal_common.datasets.models import DatasetSchema
 
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser, LinkedFieldMixin

@@ -21,7 +21,7 @@ from aplans.utils import public_fields
 
 from actions import schema as actions_schema
 from actions.models.action import Action
-from budget import schema as budget_schema
+from datasets import schema as datasets_schema
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
@@ -65,7 +65,7 @@ class Query(
     orgs_schema.Query,
     pages_schema.Query,
     reports_schema.Query,
-    budget_schema.Query,
+    datasets_schema.Query,
     search_schema.Query,
     graphene.ObjectType,
 ):
