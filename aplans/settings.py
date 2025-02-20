@@ -238,6 +238,7 @@ INSTALLED_APPS += [
     'reports',
     'request_log',
     'users',
+    'budget',
 ]
 
 MIDDLEWARE = [

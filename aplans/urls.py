@@ -19,7 +19,7 @@ from wagtail.models import Page
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
-from kausal_common.datasets.api import router as datasets_api_root_router, all_routers as datasets_api_nested_routers
+from kausal_common.datasets.api import all_routers as datasets_api_nested_routers, router as datasets_api_root_router
 from kausal_common.deployment.health_check_view import health_view
 
 from actions.api import all_routers as actions_api_routers, all_views as actions_api_views
