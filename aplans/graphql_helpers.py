@@ -11,6 +11,7 @@ from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
 from admin_site.permissions import PlanRelatedPermissionPolicy
+from admin_site.utils import admin_req
 from admin_site.wagtail import AplansModelAdmin, PlanRelatedModelAdminPermissionHelper
 
 from .graphql_types import AdminButton, AuthenticatedUserNode, GQLInfo
@@ -163,11 +164,17 @@ class AdminButtonsMixin:
         if isinstance(view_set.permission_policy, PlanRelatedPermissionPolicy):
             view_set.permission_policy.disable_admin_plan_check()
 
-        buttons = view_set.get_index_view_buttons(info.context.user, root, info.context.user.get_active_admin_plan())
+        if not hasattr(view_set, 'get_index_view_buttons'):
+            raise ValueError(f'get_index_view_buttons method not found for view set {view_set.__class__.__name__}')
+        user = admin_req(info.context).user
+        plan = user.get_active_admin_plan()
+        buttons = view_set.get_index_view_buttons(user, root, plan)  # type: ignore[attr-defined]
+
         # TODO: Temporary workaround to support both the new and old attribute
         # name for icon, making the code work for modeladmin code as well. The
         # GraphQL queries should be updated to use the new attribute name once
         # actions have migrated from modeladmin.
         for button in buttons:
             button.icon = button.icon_name
+
         return buttons

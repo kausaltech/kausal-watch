@@ -29,13 +29,13 @@ if TYPE_CHECKING:
 
 class OrganizationViewMixin:
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['parent_choices'] = Organization.objects.editable_by_user(self.request.user)
+        kwargs = super().get_form_kwargs()  # type: ignore[misc]
+        kwargs['parent_choices'] = Organization.objects.editable_by_user(self.request.user)  # type: ignore[attr-defined]
         # If the parent is not editable, the form would display an empty parent,
         # leading to the org becoming a root when saved. Prevent this by adding
         # the parent to the queryset.
-        if getattr(self, 'object', None) and self.object.get_parent():
-            kwargs['parent_choices'] |= Organization.objects.filter(pk=self.object.get_parent().pk)
+        if getattr(self, 'object', None) and self.object.get_parent():  # type: ignore[attr-defined]
+            kwargs['parent_choices'] |= Organization.objects.filter(pk=self.object.get_parent().pk)  # type: ignore[attr-defined]
         return kwargs
 
 

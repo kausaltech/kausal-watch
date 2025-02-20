@@ -7,7 +7,6 @@ from django.forms import ModelChoiceField
 from django.utils.translation import gettext_lazy as _
 
 from admin_site.forms import WatchAdminModelForm
-from users.models import User
 
 if TYPE_CHECKING:
     from .models import Node
@@ -19,7 +18,7 @@ class NodeChoiceField(ModelChoiceField):
         return f'{depth_line} {label}'
 
 
-class NodeForm[N: Node](WatchAdminModelForm[N, User]):
+class NodeForm[N: Node](WatchAdminModelForm[N]):
     parent = NodeChoiceField(required=False, queryset=None)
 
     def __init__(self, *args, **kwargs):

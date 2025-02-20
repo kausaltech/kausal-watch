@@ -103,8 +103,12 @@ class OrganizationPermissionPolicy(ModelPermissionPolicy):
 
 
 class OrganizationForm(NodeForm):
+    user: User
+
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.get('for_user')
+        user = kwargs.pop('for_user')
+        assert isinstance(user, User)
+        self.user = user
         super().__init__(*args, **kwargs)
 
     def clean_parent(self):
@@ -150,9 +154,12 @@ class InvisiblePlanPanel(FieldPanel):
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
+
             self.attrs.update({'hidden': 'true'})
-            user = admin_req(self.request).user
-            self.form.initial['plan'] = user.get_active_admin_plan()
+
+            modified_initial = dict(self.form.initial)
+            modified_initial['plan'] = admin_req(self.request).user.get_active_admin_plan()
+            self.form.initial = modified_initial
 
 
 class OrganizationViewSet(SnippetViewSet):
@@ -236,7 +243,7 @@ class OrganizationViewSet(SnippetViewSet):
     # to delete.
     def get_menu_item(self, order: int | None = None) -> MenuItem:
         menu_item = super().get_menu_item(order)
-        menu_item.is_shown = lambda request: True  # noqa: ARG005
+        menu_item.is_shown = lambda request: True  # type: ignore[method-assign]  # noqa: ARG005
         return menu_item
 
     def get_urlpatterns(self) -> list[URLPattern]:
