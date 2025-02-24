@@ -42,6 +42,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'action_implementation_phases': {},
     'action_schedules': {},
     'action_statuses': {},
+    'features': {},
     'actions': {
         'action_category_through': {},
         'action_monitoring_quality_points_through': {},
@@ -63,7 +64,6 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     },
     'clients': {},
     # 'domains': {},  # deliberately don't copy domains because hostname + base path should be unique
-    'features': {},
     'general_admins_ordered': {},
     'general_content': {},
     'impact_groups': {},

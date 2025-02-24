@@ -1413,7 +1413,8 @@ class ActionRelatedModelTransModelMixin:
                 to_delete.add(field_name)
         for f in to_delete:
             del data[f]
-        del data['action']
+        if 'action' in data:
+            del data['action']
         return model_from_serializable_data(cls, data, check_fks=check_fks, strict_fks=strict_fks)
 
 

@@ -984,6 +984,12 @@ class DraftAttributes:
                     new_id = clone_visitor.get_copy(models.AttributeType.objects.get(id=id)).id
                 except KeyError:
                     new_id = id
+                except models.AttributeType.DoesNotExist:
+                    logger.warning(
+                        f"Could not replace references in attribute '{value}' for AttributeType {id} because no "
+                        "AttributeType with this ID exists. This attribute will be lost in the copy."
+                    )
+                    continue
                 value.replace_references(clone_visitor)
                 new_values[format][new_id] = value
         self._values = new_values
