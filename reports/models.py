@@ -125,6 +125,20 @@ class ReportType(PlanRelatedModel):
     def get_action_list_page(self) -> ActionListPage:
         return self.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific
 
+    def populate_fields_with_all_possible_blocks(self) -> None:
+        all_blocks = action_registry.get_all_blocks('report')
+        self.fields = []
+        for key, block in all_blocks.items():
+            if hasattr(block, 'get_all_available_values_as_defaults'):
+                values = block.get_all_available_values_as_defaults(self.plan)
+            else:
+                values = [block.get_default()]
+            for val in values:
+                try:
+                    self.fields.append((key, val))
+                except KeyError:
+                    pass
+
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
 

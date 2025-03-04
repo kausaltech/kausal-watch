@@ -224,6 +224,16 @@ class ModelFieldRegistry[T: type[Model]]:
         cls_ = self.get_block_class(block_context, field_name)
         return cls_()
 
+    def get_all_blocks(self, block_context: BlockContext) -> dict[str, blocks.Block]:
+        result = {}
+        for key in self._registry.keys():
+            try:
+                value = self.get_block(block_context, key)
+            except TypeError:
+                continue
+            result[key] = value
+        return result
+
 
 def sort_key(p: ModelFieldProperties) -> tuple[Any, Any, Any, Any, Any]:
     return (

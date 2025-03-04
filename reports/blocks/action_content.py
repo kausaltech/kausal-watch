@@ -16,7 +16,11 @@ from reports import report_formatters as formatters
 from reports.report_formatters import ActionReportContentField
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from django.db.models import Model
+
+    from actions.models import Plan
 
 
 class FieldBlockWithHelpPanel(ActionReportContentField):
@@ -49,6 +53,9 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
                 return at.name_i18n
         return None
 
+    def get_all_available_values_as_defaults(self, plan: Plan) -> list[dict[str, Any]]:
+        return [{'attribute_type': attribute_type} for attribute_type in plan.action_attribute_types.all()]
+
     class Meta:
         label = _("Action field")
 
@@ -60,6 +67,20 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
 
     def get_report_value_formatter_class(self):
         return formatters.ActionCategoryReportFieldFormatter
+
+    def get_all_available_values_as_defaults(self, plan: Plan) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        for category_type in plan.category_types.all():
+            if not category_type.levels.exists():
+                result.append({
+                    'category_type': category_type,
+                })
+                continue
+            result.extend([
+                {'category_type': category_type, 'level': level}
+                for level in category_type.levels.all()
+            ])
+        return result
 
     class Meta:
         label = _("Action category")
