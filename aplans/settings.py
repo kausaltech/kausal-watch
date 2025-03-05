@@ -920,6 +920,8 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
 HIJACK_PERMISSION_CHECK = "admin_site.permissions.superusers_only_hijack"
 HIJACK_INSERT_BEFORE: str | None = None
 
+DATASOURCE_DEFAULT_SCOPE_CONTENT_TYPE =  ('actions', 'plan')
+
 register_common_settings(locals())
 # Put type hints for stuff registered in register_common_settings here because mypy doesn't figure it out
 ALLOWED_SENDER_EMAILS: list[str]
