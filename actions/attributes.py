@@ -157,6 +157,10 @@ class AttributeValue(ABC):
     def instantiate_attribute(self, type: AttributeType[T], obj: models.ModelWithAttributes) -> T:
         return type.ATTRIBUTE_MODEL(type=type.instance, content_object=obj, **self.attribute_model_kwargs())
 
+    def update_attribute(self, attribute: models.Attribute):
+        for field_name, value in self.attribute_model_kwargs().items():
+            setattr(attribute, field_name, value)
+
 
 @dataclass
 class OrderedChoiceAttributeValue(AttributeValue):
@@ -220,6 +224,10 @@ class CategoryChoiceAttributeValue(AttributeValue):
         # instance is a ClusterableModel, or at least it probably should be, so we need to call save() if we want to
         # persist the categories we just set.
         return instance
+
+    def update_attribute(self, attribute: models.Attribute):
+        assert isinstance(attribute, models.AttributeCategoryChoice)
+        attribute.categories.set(self.categories)
 
     def should_exist_in_database(self) -> bool:
         return bool(self.categories)
@@ -494,8 +502,7 @@ class AttributeType(ABC, Generic[T]):
             if not attribute_value.should_exist_in_database():
                 attribute.delete()
             else:
-                for field_name, value in attribute_value.attribute_model_kwargs().items():
-                    setattr(attribute, field_name, value)
+                attribute_value.update_attribute(attribute)
                 attribute.save()
 
     def is_editable(self, user: User, plan: Plan, obj: models.ModelWithAttributes | None) -> bool:
