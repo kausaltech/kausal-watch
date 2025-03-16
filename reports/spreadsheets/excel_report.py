@@ -51,6 +51,7 @@ class ExcelReport:
     field_to_column_labels: dict[str, set[str]]
     has_macros: bool
     plan: Plan
+    action_ids: list[int] | None  # if not None, restrict to these actions
     child_plans: list[Plan]
     # Is this report and its type dynamically created
     # (not loaded from database)
@@ -90,7 +91,7 @@ class ExcelReport:
         def _keyed_dict[T: Model](seq: Iterable[T]) -> dict[int, T]:
             return {el.pk: el for el in seq}
 
-    def __init__(self, report: Report, language: str|None = None, is_dynamic: bool = False):
+    def __init__(self, report: Report, language: str|None = None, is_dynamic: bool = False, action_ids: list[int] | None = None):
         # Currently only language None is properly supported, defaulting
         # to the plan's primary language. When implementing support for
         # other languages, make sure the action contents and other
@@ -108,6 +109,7 @@ class ExcelReport:
         )
         self.formats = ExcelFormats(self.workbook)
         self.plan = self.report.type.plan
+        self.action_ids = action_ids
         if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
@@ -250,8 +252,11 @@ class ExcelReport:
         from reports.types import SerializedActionVersion, SerializedVersion
         if self.report.is_complete:
             serialized_actions: list[SerializedActionVersion] = []
+            snapshots = self.report.action_snapshots.all()
+            if self.action_ids is not None:
+                snapshots.filter(action_version__object_id__in=self.action_ids)
             snapshots = (
-                self.report.action_snapshots.all()
+                snapshots
                 .select_related('action_version__revision__user')
                 .prefetch_related('action_version__revision__version_set')
             )
@@ -265,7 +270,7 @@ class ExcelReport:
             return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
-        live_versions = self.report.get_live_versions()
+        live_versions = self.report.get_live_versions(action_ids=self.action_ids)
         serialized_actions = [SerializedActionVersion.from_version(v) for v in live_versions.actions]
         serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in live_versions.related]
         return serialized_actions, serialized_related

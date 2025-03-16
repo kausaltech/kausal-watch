@@ -10,13 +10,18 @@ if TYPE_CHECKING:
     from actions.models import Plan
 
 
-def export_dashboard_report_for_plan(plan: Plan, format: Literal['csv', 'xlsx'], user: UserOrAnon):
+def export_dashboard_report_for_plan(
+    plan: Plan,
+    format: Literal['csv', 'xlsx'],
+    user: UserOrAnon,
+    action_ids: list[int] | None = None,
+):
     report_type = ReportType.generate_for_plan_dashboard(plan, user)
     report = report_type.generate_incomplete_report()
     report.disable_title_sheet = True
     report.disable_summary_sheets = True
     report.disable_macros = True
-    exporter = report.get_xlsx_exporter()
+    exporter = report.get_xlsx_exporter(action_ids=action_ids)
     output: str | bytes
     if format == 'xlsx':
         output = exporter.generate_xlsx()

@@ -182,18 +182,20 @@ class Report(PlanRelatedModel):
     def filter_by_plan(cls, plan, qs):
         return qs.filter(type__plan=plan)
 
-    def get_xlsx_exporter(self) -> ExcelReport:
-        self.xlsx_exporter = ExcelReport(self)
+    def get_xlsx_exporter(self, action_ids: list[int] | None = None) -> ExcelReport:
+        self.xlsx_exporter = ExcelReport(self, action_ids=action_ids)
         return self.xlsx_exporter
 
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))
 
-    def get_live_versions(self) -> LiveVersions:
+    def get_live_versions(self, action_ids: list[int] | None = None) -> LiveVersions:
         """
         Return action versions and related object versions for an incomplete report.
 
         The versions are similar to those that would be saved to the database when completing a report.
+
+        If `action_ids` is not None, the included actions are restricted to those with the given IDs.
         """
         if self.is_complete:
             self._raise_complete()
@@ -221,6 +223,8 @@ class Report(PlanRelatedModel):
                     'action_category_through__category',
                 )
             ).order_by('order')
+        if action_ids is not None:
+            actions_to_snapshot = actions_to_snapshot.filter(id__in=action_ids)
         result = LiveVersions()
 
         incomplete_actions: list[Action] = []

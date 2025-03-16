@@ -18,10 +18,10 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def excel_file_from_report_factory(actions_having_attributes, report_with_all_attributes):
-    def _excel_factory():
+    def _excel_factory(action_ids=None) -> bytes:
         assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True
         assert report_with_all_attributes.fields == report_with_all_attributes.type.fields
-        exporter = report_with_all_attributes.get_xlsx_exporter()
+        exporter = report_with_all_attributes.get_xlsx_exporter(action_ids)
         output_excel = exporter.generate_xlsx()
         return output_excel
     return _excel_factory
@@ -86,3 +86,17 @@ def test_partly_completed_report_excel_export(
     )
     excel = excel_file_from_report_factory()
     assert_report_dimensions(excel, report_with_all_attributes, actions_having_attributes)
+
+
+def test_excel_export_action_filter(
+        actions_having_attributes,
+        report_with_all_attributes,
+        excel_file_from_report_factory,
+        user):
+    actions_having_attributes[0].mark_as_complete_for_report(
+        report_with_all_attributes,
+        user,
+    )
+    included_actions = [actions_having_attributes[0], actions_having_attributes[1]]
+    excel = excel_file_from_report_factory(action_ids=[a.id for a in included_actions])
+    assert_report_dimensions(excel, report_with_all_attributes, included_actions)

@@ -149,7 +149,11 @@ def export_report_view(request, plan_identifier):
     if not plan.is_live():
         # TODO: authorization relative to user once plan visibility is merged
         raise Http404
-    output, filename = export_dashboard_report_for_plan(plan, format, user)
+    # Possibly restrict which actions are included
+    action_ids = request.GET.get('actions')
+    if action_ids is not None:
+        action_ids = [int(id) for id in action_ids.split(',') if id]  # `if id` is there to handle [] correctly
+    output, filename = export_dashboard_report_for_plan(plan, format, user, action_ids)
     content_type = (
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         if format == 'xlsx'
