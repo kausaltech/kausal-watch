@@ -6,6 +6,7 @@ from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
     DatasetSchema,
+    DatasetSchemaDimension,
     DatasetSchemaScope,
     Dimension,
     DimensionCategory,
@@ -14,6 +15,7 @@ from kausal_common.datasets.models import (
 from kausal_common.datasets.schema import (
     DataPointNode as BaseDataPointNode,
     DatasetNode as BaseDatasetNode,
+    DatasetSchemaDimensionNode as BaseDatasetSchemaDimensionNode,
     DatasetSchemaNode as BaseDatasetSchemaNode,
     DatasetSchemaScopeNode as BaseDatasetSchemaScopeNode,
     DatasetSchemaScopeTypeNode as BaseDatasetSchemaScopeTypeNode,
@@ -88,6 +90,12 @@ class DatasetScopeTypeNode(BaseDatasetScopeTypeNode):
         types = (
             ActionNode, CategoryNode,
         )
+
+class DatasetSchemaDimensionNode(BaseDatasetSchemaDimensionNode, DjangoNode):
+    class Meta:
+        model = DatasetSchemaDimension
+        fields = ('order', 'dimension', 'schema')
+
 
 @register_django_node
 class DatasetSchemaNode(BaseDatasetSchemaNode, DjangoNode):

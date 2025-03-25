@@ -5,7 +5,7 @@ import pytest
 from datasets.tests.factories import (
     DataPointFactory,
     DatasetFactory,
-    DatasetSchemaDimensionCategoryFactory,
+    DatasetSchemaDimensionFactory,
     DatasetSchemaFactory,
     DatasetSchemaScopeFactory,
     DimensionCategoryFactory,
@@ -19,70 +19,19 @@ pytestmark = pytest.mark.django_db
 def test_dimension_node(graphql_client_query_data, plan, category):
     dataset = DatasetFactory(scope=category)
     schema = dataset.schema
-    dimension_category = DimensionCategoryFactory()
-    DatasetSchemaDimensionCategoryFactory(schema=schema, category=dimension_category)
-    dimension = dimension_category.dimension
+    dimension = DimensionFactory()
+    DatasetSchemaDimensionFactory(schema=schema, dimension=dimension)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
           planCategories(plan: $plan) {
             datasets {
               schema {
-                dimensionCategories {
-                  category {
-                    dimension {
-                      __typename
-                      uuid
-                      name
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        """,
-        variables={'plan': plan.identifier},
-    )
-    expected = {
-        'planCategories': [{
-            'datasets': [{
-                'schema': {
-                    'dimensionCategories': [{
-                        'category': {
-                            'dimension': {
-                                '__typename': 'DatasetsDimension',
-                                'uuid': str(dimension.uuid),
-                                'name': dimension.name,
-                            },
-                        },
-                    }],
-                },
-            }],
-        }],
-    }
-    assert data == expected
-
-
-def test_dimension_category_node(graphql_client_query_data, plan, category):
-    dataset = DatasetFactory(scope=category)
-    schema = dataset.schema
-    dimension_category = DimensionCategoryFactory()
-    DatasetSchemaDimensionCategoryFactory(schema=schema, category=dimension_category)
-    data = graphql_client_query_data(
-        """
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            datasets {
-              schema {
-                dimensionCategories {
-                  category {
+                dimensions {
+                  dimension {
                     __typename
                     uuid
-                    dimension {
-                       __typename
-                    }
-                    label
+                    name
                   }
                 }
               }
@@ -96,15 +45,12 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
         'planCategories': [{
             'datasets': [{
                 'schema': {
-                    'dimensionCategories': [{
-                        'category': {
-                            '__typename': 'DatasetsDimensionCategory',
-                            'uuid': str(dimension_category.uuid),
-                            'dimension': {
-                                '__typename': 'DatasetsDimension',
-                            },
-                            'label': dimension_category.label,
-                        },
+                    'dimensions': [{
+                        'dimension': {
+                            '__typename': 'DatasetsDimension',
+                            'uuid': str(dimension.uuid),
+                            'name': dimension.name,
+                        }
                     }],
                 },
             }],
@@ -116,23 +62,20 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
 def test_dimension_scope_node(graphql_client_query_data, plan, category):
     scope = DimensionScopeFactory(scope=category.type)
     dimension = scope.dimension
-    dimension_category = DimensionCategoryFactory(dimension=dimension)
     dataset = DatasetFactory(scope=category)
-    DatasetSchemaDimensionCategoryFactory(schema=dataset.schema, category=dimension_category)
+    DatasetSchemaDimensionFactory(schema=dataset.schema, dimension=dimension)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
           planCategories(plan: $plan) {
             datasets {
               schema {
-                dimensionCategories {
-                  category {
-                    dimension {
-                      scopes {
+                dimensions {
+                  dimension {
+                    scopes {
+                      __typename
+                      scope {
                         __typename
-                        scope {
-                          __typename
-                        }
                       }
                     }
                   }
@@ -148,21 +91,19 @@ def test_dimension_scope_node(graphql_client_query_data, plan, category):
         'planCategories': [{
             'datasets': [{
                 'schema': {
-                    'dimensionCategories': [{
-                        'category': {
-                            'dimension': {
-                                'scopes': [{
-                                    '__typename': 'DimensionScope',
-                                    'scope': {
-                                        '__typename': 'CategoryType',
-                                    },
-                                }],
-                            },
-                        },
-                    }],
-                },
-            }],
-        }],
+                    'dimensions': [{
+                        'dimension': {
+                            'scopes': [{
+                                '__typename': 'DimensionScope',
+                                'scope': {
+                                    '__typename': 'CategoryType'
+                                }
+                            }]
+                        }
+                    }]
+                }
+            }]
+        }]
     }
     assert data == expected
 
@@ -261,12 +202,11 @@ def test_dataset_schema_node(graphql_client_query_data, plan, category):
                 __typename
                 uuid
                 timeResolution
-                unit
                 name
                 scopes {
                   __typename
                 }
-                dimensionCategories {
+                dimensions {
                   __typename
                 }
               }
@@ -283,10 +223,9 @@ def test_dataset_schema_node(graphql_client_query_data, plan, category):
                     '__typename': 'DatasetSchema',
                     'uuid': str(schema.uuid),
                     'timeResolution': schema.time_resolution.upper(),
-                    'unit': schema.unit,
                     'name': schema.name,
                     'scopes': [],
-                    'dimensionCategories': [],
+                    'dimensions': [],
                 },
             }],
         }],
@@ -358,7 +297,6 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                 __typename
                 uuid
                 timeResolution
-                unit
                 name
               }
               dataPoints {
@@ -397,7 +335,6 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                             'uuid': str(schema1.uuid),
                             'name': schema1.name,
                             'timeResolution': schema1.time_resolution.upper(),
-                            'unit': schema1.unit,
                         },
                         'dataPoints': [
                             {
@@ -440,7 +377,6 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                             'uuid': str(schema2.uuid),
                             'name': schema2.name,
                             'timeResolution': schema2.time_resolution.upper(),
-                            'unit': schema2.unit,
                         },
                         'dataPoints': [
                             {
@@ -502,7 +438,6 @@ def test_integration_for_action(graphql_client_query_data, action):
                 __typename
                 uuid
                 timeResolution
-                unit
                 name
               }
               dataPoints {
@@ -540,7 +475,6 @@ def test_integration_for_action(graphql_client_query_data, action):
                         'uuid': str(schema1.uuid),
                         'name': schema1.name,
                         'timeResolution': schema1.time_resolution.upper(),
-                        'unit': schema1.unit,
                     },
                     'dataPoints': [
                         {
@@ -583,7 +517,6 @@ def test_integration_for_action(graphql_client_query_data, action):
                         'uuid': str(schema2.uuid),
                         'name': schema2.name,
                         'timeResolution': schema2.time_resolution.upper(),
-                        'unit': schema2.unit,
                     },
                     'dataPoints': [
                         {

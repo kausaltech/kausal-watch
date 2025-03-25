@@ -8,8 +8,9 @@ from factory import LazyAttribute, LazyFunction, Sequence, SubFactory
 from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
+    DatasetMetric,
     DatasetSchema,
-    DatasetSchemaDimensionCategory,
+    DatasetSchemaDimension,
     DatasetSchemaScope,
     Dimension,
     DimensionCategory,
@@ -50,19 +51,18 @@ class DimensionScopeFactory(ModelFactory[DimensionScope]):
 class DatasetSchemaFactory(ModelFactory[DatasetSchema]):
     uuid = LazyFunction(uuid.uuid4)
     time_resolution = DatasetSchema.TimeResolution.YEARLY
-    unit = Sequence(lambda i: f"Unit {i}")
     name = Sequence(lambda i: f"Dataset schema {i}")
 
     class Meta:
         model = DatasetSchema
 
 
-class DatasetSchemaDimensionCategoryFactory(ModelFactory[DatasetSchemaDimensionCategory]):
-    category = SubFactory(DimensionCategoryFactory)
+class DatasetSchemaDimensionFactory(ModelFactory[DatasetSchemaDimension]):
+    dimension = SubFactory(DimensionFactory)
     schema = SubFactory(DatasetSchemaFactory)
 
     class Meta:
-        model = DatasetSchemaDimensionCategory
+        model = DatasetSchemaDimension
 
 
 class DatasetFactory(ModelFactory[Dataset]):
@@ -86,9 +86,19 @@ class DatasetSchemaScopeFactory(ModelFactory[DatasetSchemaScope]):
         model = DatasetSchemaScope
 
 
+class DatasetMetricFactory(ModelFactory[DatasetMetric]):
+    schema = SubFactory(DatasetSchemaFactory)
+    name = Sequence(lambda i: f"Dataset metric {i}")
+    unit = Sequence(lambda i: f"Dataset metric unit {i}")
+
+    class Meta:
+        model = DatasetMetric
+
+
 class DataPointFactory(ModelFactory[DataPoint]):
     uuid = LazyFunction(uuid.uuid4)
     dataset = SubFactory(DatasetFactory)
+    metric = SubFactory(DatasetMetricFactory)
     date = Sequence(lambda i: date(2023, 1, i+1))
     value = Sequence(lambda i: float(i))
 
