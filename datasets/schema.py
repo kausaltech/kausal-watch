@@ -6,7 +6,6 @@ from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
     DatasetSchema,
-    DatasetSchemaDimensionCategory,
     DatasetSchemaScope,
     Dimension,
     DimensionCategory,
@@ -15,7 +14,6 @@ from kausal_common.datasets.models import (
 from kausal_common.datasets.schema import (
     DataPointNode as BaseDataPointNode,
     DatasetNode as BaseDatasetNode,
-    DatasetSchemaDimensionCategoryNode as BaseDatasetSchemaDimensionCategoryNode,
     DatasetSchemaNode as BaseDatasetSchemaNode,
     DatasetSchemaScopeNode as BaseDatasetSchemaScopeNode,
     DatasetSchemaScopeTypeNode as BaseDatasetSchemaScopeTypeNode,
@@ -48,13 +46,6 @@ class DimensionCategoryNode(BaseDimensionCategoryNode, DjangoNode):
         model = DimensionCategory
         name = 'DatasetsDimensionCategory'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'dimension', 'label')
-
-
-class DatasetSchemaDimensionCategoryNode(BaseDatasetSchemaDimensionCategoryNode, DjangoNode):
-    class Meta:
-        model = DatasetSchemaDimensionCategory
-        fields = ('order', 'category', 'schema')
-
 
 
 class DimensionScopeNode(BaseDimensionScopeNode, DjangoNode):
@@ -102,7 +93,7 @@ class DatasetScopeTypeNode(BaseDatasetScopeTypeNode):
 class DatasetSchemaNode(BaseDatasetSchemaNode, DjangoNode):
     class Meta:
         model = DatasetSchema
-        fields = ('uuid', 'time_resolution', 'unit', 'name', 'scopes', 'dimension_categories')
+        fields = ('uuid', 'time_resolution', 'name', 'scopes', 'dimensions')
 
 
 class DatasetNode(BaseDatasetNode, DjangoNode):
