@@ -5,6 +5,7 @@ import graphene
 from kausal_common.datasets.models import (
     DataPoint,
     Dataset,
+    DatasetMetric,
     DatasetSchema,
     DatasetSchemaDimension,
     DatasetSchemaScope,
@@ -14,6 +15,7 @@ from kausal_common.datasets.models import (
 )
 from kausal_common.datasets.schema import (
     DataPointNode as BaseDataPointNode,
+    DatasetMetricNode as BaseDatasetMetricNode,
     DatasetNode as BaseDatasetNode,
     DatasetSchemaDimensionNode as BaseDatasetSchemaDimensionNode,
     DatasetSchemaNode as BaseDatasetSchemaNode,
@@ -97,11 +99,17 @@ class DatasetSchemaDimensionNode(BaseDatasetSchemaDimensionNode, DjangoNode):
         fields = ('order', 'dimension', 'schema')
 
 
+class DatasetMetricNode(BaseDatasetMetricNode):
+    class Meta:
+        model = DatasetMetric
+        fields = '__all__'
+
+
 @register_django_node
 class DatasetSchemaNode(BaseDatasetSchemaNode, DjangoNode):
     class Meta:
         model = DatasetSchema
-        fields = ('uuid', 'time_resolution', 'name', 'scopes', 'dimensions')
+        fields = ('uuid', 'time_resolution', 'name', 'scopes', 'dimensions', 'metrics')
 
 
 class DatasetNode(BaseDatasetNode, DjangoNode):
