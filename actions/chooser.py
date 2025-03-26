@@ -311,7 +311,7 @@ class DatasetSchemaChooserViewSet(ModelChooserViewSet):
     model = DatasetSchema
     page_title = _("Choose a dataset schema")
     per_page = 30
-    fields = ['name', 'unit', 'time_resolution']
+    fields = ['name', 'time_resolution']
 
 
     def get_chooser_mixin_kwargs(self):
