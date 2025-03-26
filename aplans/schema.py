@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import graphene
@@ -14,6 +16,8 @@ from graphql.type import (
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
+
+from kausal_common.users import schema as users_schema
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
@@ -179,6 +183,7 @@ class Mutation(
     indicators_schema.Mutation,
     orgs_schema.Mutation,
     people_schema.Mutation,
+    users_schema.Mutations,  # naming (plural/singular) is inconsistent in KW and KP
     graphene.ObjectType,
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
