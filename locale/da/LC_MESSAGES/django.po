@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-30 11:30+0200\n"
+"POT-Creation-Date: 2025-03-27 13:34+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -78,14 +78,13 @@ msgstr "Sidst opdateret"
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html copying/views.py
-#: orgs/models.py orgs/wagtail_admin.py
+#: kausal_common/datasets/models.py orgs/models.py orgs/wagtail_admin.py
 #: people/templates/people/chooser_results.html
 msgid "Name"
 msgstr "Navn"
 
 #: actions/action_admin.py actions/category_admin.py
-#: admin_site/wagtail_hooks.py budget/wagtail_admin.py
-#: indicators/wagtail_admin.py
+#: admin_site/wagtail_hooks.py indicators/wagtail_admin.py
 msgid "Categories"
 msgstr "Kategorier"
 
@@ -528,7 +527,7 @@ msgstr ""
 msgid "Form Field"
 msgstr "felter"
 
-#: actions/blocks/action_content_blocks.py
+#: actions/blocks/action_content_blocks.py kausal_common/datasets/models.py
 #, fuzzy
 #| msgid "description"
 msgid "Description"
@@ -796,7 +795,7 @@ msgid "Primary organization"
 msgstr "primær organisation"
 
 #: actions/blocks/filters.py actions/templates/actions/chooser_results.html
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py reports/spreadsheets/excel_report.py
 msgid "Plan"
 msgstr "Plan"
 
@@ -977,14 +976,15 @@ msgstr "Planlægning"
 msgid "Implementation"
 msgstr "Implementering"
 
-#: actions/export.py aplans/utils.py notifications/models.py
+#: actions/export.py aplans/utils.py kausal_common/datasets/models.py
+#: kausal_common/models/fields.py notifications/models.py
 msgid "identifier"
 msgstr "identifikator"
 
 #: actions/export.py actions/models/action.py actions/models/action_deps.py
 #: actions/models/attributes.py actions/models/category.py
-#: actions/models/plan.py budget/models.py feedback/models.py
-#: indicators/models.py orgs/models.py reports/models.py
+#: actions/models/plan.py feedback/models.py indicators/models.py
+#: kausal_common/datasets/models.py orgs/models.py reports/models.py
 msgid "name"
 msgstr "navn"
 
@@ -1041,7 +1041,7 @@ msgid "Lead paragraph"
 msgstr "Hovedafsnit"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
-#: orgs/models.py
+#: kausal_common/datasets/models.py orgs/models.py
 msgid "description"
 msgstr "beskrivelse"
 
@@ -1140,7 +1140,7 @@ msgstr "ansvarlige organisationer"
 msgid "updated at"
 msgstr "opdateret kl"
 
-#: actions/models/action.py budget/models.py reports/models.py
+#: actions/models/action.py kausal_common/datasets/models.py reports/models.py
 msgid "start date"
 msgstr "start dato"
 
@@ -1365,7 +1365,7 @@ msgstr "annulleret"
 msgid "state"
 msgstr "stat"
 
-#: actions/models/action.py feedback/models.py
+#: actions/models/action.py feedback/models.py kausal_common/datasets/models.py
 msgid "comment"
 msgstr "kommentar"
 
@@ -1437,7 +1437,8 @@ msgid "action impact classes"
 msgstr "handlingsindvirkningsklasser"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
-#: orgs/models.py pages/blocks.py pages/models.py
+#: kausal_common/datasets/models.py orgs/models.py pages/blocks.py
+#: pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -1453,7 +1454,8 @@ msgstr "handlingslink"
 msgid "action links"
 msgstr "handlingslinks"
 
-#: actions/models/action.py budget/models.py indicators/models.py
+#: actions/models/action.py indicators/models.py
+#: kausal_common/datasets/models.py
 msgid "date"
 msgstr "dato"
 
@@ -2087,6 +2089,16 @@ msgstr "Status for brug"
 #, fuzzy
 msgid "If unsure, use the default value representing customer use. For statistical purposes specify what the plan will be used for in order to differentiate between plans actually in use by customers and those created for some other reason."
 msgstr "Hvis du er usikker, skal du bruge standardværdien, der repræsenterer kundebrug. Til statistiske formål skal du angive, hvad planen skal bruges til for at kunne skelne mellem planer, der faktisk bruges af kunder, og dem, der er oprettet af andre årsager."
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Exclude from plan"
+msgid "exclude from search"
+msgstr "Udeluk fra planen"
+
+#: actions/models/plan.py
+msgid "Should information related to the plan be excluded from search results?"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "site URL"
@@ -2744,7 +2756,7 @@ msgstr "login-metode"
 msgid "Login method that will be used for users that don't have a password set"
 msgstr "Login-metode, der bruges til brugere, som ikke har en adgangskode"
 
-#: admin_site/models.py budget/models.py
+#: admin_site/models.py kausal_common/datasets/models.py
 #, fuzzy
 #| msgid "fields"
 msgid "label"
@@ -3071,78 +3083,6 @@ msgstr "%(color)s er ikke en CSS-farve (f.eks. \"#112233\", \"rød\" eller \"rgb
 #: aplans/utils.py
 msgid "updated by"
 msgstr "opdateret af"
-
-#: budget/models.py indicators/models.py
-msgid "dimension"
-msgstr "dimension"
-
-#: budget/models.py indicators/models.py
-msgid "dimensions"
-msgstr "dimensioner"
-
-#: budget/models.py indicators/models.py
-msgid "dimension category"
-msgstr "dimensionskategori"
-
-#: budget/models.py indicators/models.py
-msgid "dimension categories"
-msgstr "dimensionskategorier"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Year"
-msgid "Yearly"
-msgstr "År"
-
-#: budget/models.py
-msgid "Time resolution of the time stamps of data points in this dataset"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "unit"
-msgstr "enhed"
-
-#: budget/models.py
-msgid "First applicable date for datapoints in these datasets"
-msgstr ""
-
-#: budget/models.py
-msgid "schema"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "dataset"
-msgstr "datasæt"
-
-#: budget/models.py indicators/models.py
-msgid "datasets"
-msgstr "datasæt"
-
-#: budget/models.py
-msgid "Date of this data point in context of the dataset's time resolution"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "value"
-msgstr "værdi"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Last data point"
-msgid "data point"
-msgstr "Sidste datapunkt"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Last data point"
-msgid "data points"
-msgstr "Sidste datapunkt"
-
-#: budget/wagtail_admin.py
-#, fuzzy
-#| msgid "dimensions"
-msgid "Budget dimensions"
-msgstr "dimensioner"
 
 #: content/apps.py
 msgid "According to the action plan"
@@ -3578,6 +3518,10 @@ msgstr "udførligt navn"
 msgid "verbose name plural"
 msgstr "verbose navn flertal"
 
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "unit"
+msgstr "enhed"
+
 #: indicators/models.py
 msgid "units"
 msgstr "enheder"
@@ -3609,6 +3553,14 @@ msgstr "Indstil hvis ejerorganisation ikke er tilgængelig"
 #: indicators/models.py
 msgid "license"
 msgstr "licens"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dataset"
+msgstr "datasæt"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "datasets"
+msgstr "datasæt"
 
 #: indicators/models.py
 msgid "framework"
@@ -3798,6 +3750,22 @@ msgstr "Mængden skal være den samme som i fælles indikator (%s)"
 msgid "Unit must be the same as in common indicator (%s)"
 msgstr "Enheden skal være den samme som i fælles indikator (%s)"
 
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension"
+msgstr "dimension"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimensions"
+msgstr "dimensioner"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension category"
+msgstr "dimensionskategori"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension categories"
+msgstr "dimensionskategorier"
+
 #: indicators/models.py
 msgid "indicator dimension"
 msgstr "indikator dimension"
@@ -3821,6 +3789,10 @@ msgstr "niveau"
 #: indicators/models.py
 msgid "indicator levels"
 msgstr "indikatorniveauer"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "value"
+msgstr "værdi"
 
 #: indicators/models.py
 msgid "indicator value"
@@ -4007,7 +3979,7 @@ msgstr "felter"
 msgid "Visualization settings"
 msgstr "meddelelsesindstillinger"
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py kausal_common/datasets/models.py
 #, fuzzy
 #| msgid "dimensions"
 msgid "Dimensions"
@@ -4066,6 +4038,215 @@ msgstr "Fælles indikatorer"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Denne fælles indikator har indikatorer knyttet til sig, så mængde, enhed og dimensioner kan ikke redigeres. Aktuel mængde: %(quantity)s; enhed: %(unit)s; dimensioner: %(dimensions)s"
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique within the dimension"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique in the scope"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dimension scope"
+msgstr "dimensioner"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimension categories"
+msgid "dimension scopes"
+msgstr "dimensionskategorier"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Year"
+msgid "Yearly"
+msgstr "År"
+
+#: kausal_common/datasets/models.py
+msgid "Time resolution of the time stamps of data points in this dataset"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Choose another attribute"
+msgid "Descriptive name of the dataset schema"
+msgstr "Vælg en anden attribut"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Description to show after the field content"
+msgid "Description of the content and use of the dataset"
+msgstr "Beskrivelse, der skal vises efter feltets indhold"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "time resolution"
+msgid "Time resolution"
+msgstr "tidsopløsning"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "start date"
+msgid "Initial date"
+msgstr "start dato"
+
+#: kausal_common/datasets/models.py
+msgid "Metrics"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Defines the interpretation and units for the values of the dataset"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Used when metrics are tracked for multiple categories"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schema"
+msgstr "datasætlicens"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schemas"
+msgstr "datasætlicens"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dataset schema dimension"
+msgstr "dimensioner"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dataset schema dimensions"
+msgstr "dimensioner"
+
+#: kausal_common/datasets/models.py
+msgid "schema"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique in the dataset's scope"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schema scope"
+msgstr "datasætlicens"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset licenses"
+msgid "dataset schema scopes"
+msgstr "datasætlicenser"
+
+#: kausal_common/datasets/models.py
+msgid "Date of this data point in context of the dataset's time resolution"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "metric"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Last data point"
+msgid "data point"
+msgstr "Sidste datapunkt"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Last data point"
+msgid "data points"
+msgstr "Sidste datapunkt"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Review comment"
+msgstr "kommentar"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Sticky comment"
+msgstr "kommentar"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Comment"
+msgstr "kommentar"
+
+#: kausal_common/datasets/models.py
+msgid "Resolved"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Unresolved"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "created at"
+msgid "resolved at"
+msgstr "oprettet kl"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "comments"
+msgstr "kommentar"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Section"
+msgid "edition"
+msgstr "Afsnit"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "author"
+msgid "authority"
+msgstr "forfatter"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "main organization for the plan"
+msgid "The organization responsible for the data source"
+msgstr "hovedorganisation for planen"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Data source"
+msgstr "datasæt"
+
+#: kausal_common/datasets/models.py kausal_common/datasets/wagtail_hooks.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Data sources"
+msgstr "datasæt"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+msgid "data source reference"
+msgstr "reference"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Notification preferences"
+msgid "data source references"
+msgstr "Notifikationspræferencer"
 
 #: kausal_common/models/modification_tracking.py
 #, fuzzy

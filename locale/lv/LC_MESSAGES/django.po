@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-30 11:30+0200\n"
+"POT-Creation-Date: 2025-03-27 13:34+0200\n"
 "PO-Revision-Date: 2024-12-19 14:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -73,14 +73,13 @@ msgstr "Pēdējo reizi atjaunināts"
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html copying/views.py
-#: orgs/models.py orgs/wagtail_admin.py
+#: kausal_common/datasets/models.py orgs/models.py orgs/wagtail_admin.py
 #: people/templates/people/chooser_results.html
 msgid "Name"
 msgstr "Nosaukums"
 
 #: actions/action_admin.py actions/category_admin.py
-#: admin_site/wagtail_hooks.py budget/wagtail_admin.py
-#: indicators/wagtail_admin.py
+#: admin_site/wagtail_hooks.py indicators/wagtail_admin.py
 msgid "Categories"
 msgstr "Kategorijas"
 
@@ -492,7 +491,7 @@ msgstr ""
 msgid "Form Field"
 msgstr "Laukums"
 
-#: actions/blocks/action_content_blocks.py
+#: actions/blocks/action_content_blocks.py kausal_common/datasets/models.py
 msgid "Description"
 msgstr "Apraksts"
 
@@ -742,7 +741,7 @@ msgid "Primary organization"
 msgstr "Primārā organizācija"
 
 #: actions/blocks/filters.py actions/templates/actions/chooser_results.html
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py reports/spreadsheets/excel_report.py
 msgid "Plan"
 msgstr "Plāns"
 
@@ -913,14 +912,15 @@ msgstr "Plānošana"
 msgid "Implementation"
 msgstr "Īstenošana"
 
-#: actions/export.py aplans/utils.py notifications/models.py
+#: actions/export.py aplans/utils.py kausal_common/datasets/models.py
+#: kausal_common/models/fields.py notifications/models.py
 msgid "identifier"
 msgstr "identifikators"
 
 #: actions/export.py actions/models/action.py actions/models/action_deps.py
 #: actions/models/attributes.py actions/models/category.py
-#: actions/models/plan.py budget/models.py feedback/models.py
-#: indicators/models.py orgs/models.py reports/models.py
+#: actions/models/plan.py feedback/models.py indicators/models.py
+#: kausal_common/datasets/models.py orgs/models.py reports/models.py
 msgid "name"
 msgstr "nosaukums"
 
@@ -977,7 +977,7 @@ msgid "Lead paragraph"
 msgstr "Vadošā rindkopa"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
-#: orgs/models.py
+#: kausal_common/datasets/models.py orgs/models.py
 msgid "description"
 msgstr "apraksts"
 
@@ -1076,7 +1076,7 @@ msgstr "atbildīgās organizācijas"
 msgid "updated at"
 msgstr "atjaunināts vietnē"
 
-#: actions/models/action.py budget/models.py reports/models.py
+#: actions/models/action.py kausal_common/datasets/models.py reports/models.py
 msgid "start date"
 msgstr "sākuma datums"
 
@@ -1296,7 +1296,7 @@ msgstr "atcelts"
 msgid "state"
 msgstr "statuss"
 
-#: actions/models/action.py feedback/models.py
+#: actions/models/action.py feedback/models.py kausal_common/datasets/models.py
 msgid "comment"
 msgstr "komentārs"
 
@@ -1368,7 +1368,8 @@ msgid "action impact classes"
 msgstr "rīcības ietekmes klases"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
-#: orgs/models.py pages/blocks.py pages/models.py
+#: kausal_common/datasets/models.py orgs/models.py pages/blocks.py
+#: pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -1384,7 +1385,8 @@ msgstr "rīcības saite"
 msgid "action links"
 msgstr "rīcības saites"
 
-#: actions/models/action.py budget/models.py indicators/models.py
+#: actions/models/action.py indicators/models.py
+#: kausal_common/datasets/models.py
 msgid "date"
 msgstr "datums"
 
@@ -1967,6 +1969,16 @@ msgstr "statuss"
 
 #: actions/models/plan.py
 msgid "If unsure, use the default value representing customer use. For statistical purposes specify what the plan will be used for in order to differentiate between plans actually in use by customers and those created for some other reason."
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Exclude from plan"
+msgid "exclude from search"
+msgstr "Izslēgt no plāna"
+
+#: actions/models/plan.py
+msgid "Should information related to the plan be excluded from search results?"
 msgstr ""
 
 #: actions/models/plan.py
@@ -2585,7 +2597,7 @@ msgstr "pieteikšanās metode"
 msgid "Login method that will be used for users that don't have a password set"
 msgstr "Pieslēgšanās metode, kas tiks izmantota lietotājiem, kuriem nav iestatīta parole"
 
-#: admin_site/models.py budget/models.py
+#: admin_site/models.py kausal_common/datasets/models.py
 msgid "label"
 msgstr "etiķete"
 
@@ -2890,78 +2902,6 @@ msgstr "%(color)s nav CSS krāsa (piemēram, \"#112233\", \"sarkana\" vai \"rgb(
 #: aplans/utils.py
 msgid "updated by"
 msgstr "atjaunināja"
-
-#: budget/models.py indicators/models.py
-msgid "dimension"
-msgstr "dimensija"
-
-#: budget/models.py indicators/models.py
-msgid "dimensions"
-msgstr "izmēri"
-
-#: budget/models.py indicators/models.py
-msgid "dimension category"
-msgstr "dimensiju kategorija"
-
-#: budget/models.py indicators/models.py
-msgid "dimension categories"
-msgstr "dimensiju kategorijas"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Year"
-msgid "Yearly"
-msgstr "Gads"
-
-#: budget/models.py
-msgid "Time resolution of the time stamps of data points in this dataset"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "unit"
-msgstr "vienība"
-
-#: budget/models.py
-msgid "First applicable date for datapoints in these datasets"
-msgstr ""
-
-#: budget/models.py
-msgid "schema"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "dataset"
-msgstr "datu kopa"
-
-#: budget/models.py indicators/models.py
-msgid "datasets"
-msgstr "datu kopas"
-
-#: budget/models.py
-msgid "Date of this data point in context of the dataset's time resolution"
-msgstr ""
-
-#: budget/models.py indicators/models.py
-msgid "value"
-msgstr "vērtība"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Last data point"
-msgid "data point"
-msgstr "Pēdējais datu punkts"
-
-#: budget/models.py
-#, fuzzy
-#| msgid "Last data point"
-msgid "data points"
-msgstr "Pēdējais datu punkts"
-
-#: budget/wagtail_admin.py
-#, fuzzy
-#| msgid "dimensions"
-msgid "Budget dimensions"
-msgstr "izmēri"
 
 #: content/apps.py
 msgid "According to the action plan"
@@ -3385,6 +3325,10 @@ msgstr "verbose nosaukums"
 msgid "verbose name plural"
 msgstr "daudzskaitļa vārds daudzskaitlī"
 
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "unit"
+msgstr "vienība"
+
 #: indicators/models.py
 msgid "units"
 msgstr "vienības"
@@ -3416,6 +3360,14 @@ msgstr "Iestatīts, ja īpašnieka organizācija nav pieejama"
 #: indicators/models.py
 msgid "license"
 msgstr "licence"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dataset"
+msgstr "datu kopa"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "datasets"
+msgstr "datu kopas"
 
 #: indicators/models.py
 msgid "framework"
@@ -3603,6 +3555,22 @@ msgstr "Daudzumam jābūt tādam pašam kā kopējā rādītājā (%s)"
 msgid "Unit must be the same as in common indicator (%s)"
 msgstr "Vienībai jābūt tādai pašai kā kopīgajā rādītājā (%s)"
 
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension"
+msgstr "dimensija"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimensions"
+msgstr "izmēri"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension category"
+msgstr "dimensiju kategorija"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "dimension categories"
+msgstr "dimensiju kategorijas"
+
 #: indicators/models.py
 msgid "indicator dimension"
 msgstr "indikatora dimensija"
@@ -3626,6 +3594,10 @@ msgstr "līmenis"
 #: indicators/models.py
 msgid "indicator levels"
 msgstr "rādītāju līmeņi"
+
+#: indicators/models.py kausal_common/datasets/models.py
+msgid "value"
+msgstr "vērtība"
 
 #: indicators/models.py
 msgid "indicator value"
@@ -3797,7 +3769,7 @@ msgstr "Vērtību lauks"
 msgid "Visualization settings"
 msgstr "paziņojumu iestatījumi"
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py kausal_common/datasets/models.py
 msgid "Dimensions"
 msgstr "Izmēri"
 
@@ -3855,6 +3827,214 @@ msgstr "Kopējie rādītāji"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Šim kopējam rādītājam ir piesaistīti rādītāji, tāpēc daudzumu, vienību un izmērus nevar rediģēt. Pašreizējais daudzums: %(quantity)s; vienība: %(unit)s; izmēri: %(dimensions)s"
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique within the dimension"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique in the scope"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dimension scope"
+msgstr "izmēri"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimension categories"
+msgid "dimension scopes"
+msgstr "dimensiju kategorijas"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Year"
+msgid "Yearly"
+msgstr "Gads"
+
+#: kausal_common/datasets/models.py
+msgid "Time resolution of the time stamps of data points in this dataset"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "Descriptive name of the dataset schema"
+msgstr "Izvēlieties citu kategorijas veidu"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Description to show after the field content"
+msgid "Description of the content and use of the dataset"
+msgstr "Apraksts, kas jānorāda pēc lauka satura"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "time resolution"
+msgid "Time resolution"
+msgstr "laika izšķirtspēja"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "start date"
+msgid "Initial date"
+msgstr "sākuma datums"
+
+#: kausal_common/datasets/models.py
+msgid "Metrics"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Defines the interpretation and units for the values of the dataset"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Used when metrics are tracked for multiple categories"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schema"
+msgstr "datu kopas licence"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schemas"
+msgstr "datu kopas licence"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dataset schema dimension"
+msgstr "izmēri"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "dataset schema dimensions"
+msgstr "izmēri"
+
+#: kausal_common/datasets/models.py
+msgid "schema"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Optional identifier that, if set, must be unique in the dataset's scope"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "dataset schema scope"
+msgstr "datu kopas licence"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "dataset licenses"
+msgid "dataset schema scopes"
+msgstr "datu kopas licences"
+
+#: kausal_common/datasets/models.py
+msgid "Date of this data point in context of the dataset's time resolution"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "metric"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Last data point"
+msgid "data point"
+msgstr "Pēdējais datu punkts"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Last data point"
+msgid "data points"
+msgstr "Pēdējais datu punkts"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Review comment"
+msgstr "komentārs"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Sticky comment"
+msgstr "komentārs"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "Comment"
+msgstr "komentārs"
+
+#: kausal_common/datasets/models.py
+msgid "Resolved"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+msgid "Unresolved"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "created at"
+msgid "resolved at"
+msgstr "izveidots vietnē"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "comment"
+msgid "comments"
+msgstr "komentārs"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Section"
+msgid "edition"
+msgstr "Sadaļa"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "author"
+msgid "authority"
+msgstr "autors"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "main organization for the plan"
+msgid "The organization responsible for the data source"
+msgstr "plāna galvenā organizācija"
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Data source"
+msgstr "datu kopas"
+
+#: kausal_common/datasets/models.py kausal_common/datasets/wagtail_hooks.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Data sources"
+msgstr "datu kopas"
+
+#: kausal_common/datasets/models.py
+msgid "data source reference"
+msgstr ""
+
+#: kausal_common/datasets/models.py
+#, fuzzy
+#| msgid "Notification preferences"
+msgid "data source references"
+msgstr "Paziņojumu preferences"
 
 #: kausal_common/models/modification_tracking.py
 #, fuzzy
