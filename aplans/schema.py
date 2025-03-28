@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import graphene
+import strawberry as sb
 from django.db.models import Count, Q
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
@@ -13,11 +14,14 @@ from graphql.type import (
     GraphQLString,
     specified_directives,
 )
+from strawberry.tools import merge_types
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
-from kausal_common.users import schema as users_schema
+from kausal_common.deployment import test_mode_enabled
+from kausal_common.graphene.strawberry_schema import CombinedSchema
+from kausal_common.testing.schema import TestModeMutations
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
@@ -39,7 +43,7 @@ from search import schema as search_schema
 
 from . import graphql_gis  # noqa
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context, graphene_registry
+from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context
 
 if TYPE_CHECKING:
     from actions.models import Plan
@@ -183,74 +187,99 @@ class Mutation(
     indicators_schema.Mutation,
     orgs_schema.Mutation,
     people_schema.Mutation,
-    users_schema.Mutations,  # naming (plural/singular) is inconsistent in KW and KP
     graphene.ObjectType,
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
 
-class LocaleDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='locale',
-            description='Select locale in which to return data',
-            args={
-                'lang': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="Language code of the locale to use",
-                ),
-            },
-            locations=[DirectiveLocation.QUERY],
-        )
+LocaleDirective = GraphQLDirective(
+    name='locale',
+    description='Select locale in which to return data',
+    args={
+        'lang': GraphQLArgument(
+            type_=GraphQLNonNull(GraphQLString),
+            description="Language code of the locale to use",
+        ),
+    },
+    locations=[DirectiveLocation.QUERY],
+)
 
 
-class AuthDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='auth',
-            description="Provide authentication data",
-            args={
-                'uuid': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="User UUID",
-                ),
-                'token': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="Authentication token",
-                ),
-            },
-            locations=[DirectiveLocation.MUTATION],
-        )
+AuthDirective = GraphQLDirective(
+    name='auth',
+    description="Provide authentication data",
+    args={
+        'uuid': GraphQLArgument(
+            type_=GraphQLNonNull(GraphQLString),
+            description="User UUID",
+        ),
+        'token': GraphQLArgument(
+            type_=GraphQLNonNull(GraphQLString),
+            description="Authentication token",
+        ),
+    },
+    locations=[DirectiveLocation.MUTATION],
+)
 
 graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
 
 
-class WorkflowStateDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='workflow',
-            description=(
-                'Let the client request retrieving approved/unapproved '
-                'drafts or published versions of plan data (currently individual actions). '
-                'The actual response is dependent on user access rights, for example '
-                'a published version is always returned to unauthenticated users '
-                'or when no draft exists.'
-            ),
-            args={
-                'state':
-                GraphQLArgument(
-                    type_= graphene_enum_type,
-                    description="State of content to show",
-                    default_value=WorkflowStateEnum.PUBLISHED,
-                ),
-            },
-            locations=[DirectiveLocation.QUERY],
-        )
-
-
-schema = graphene.Schema(
-    query=Query,
-    mutation=Mutation,
-    directives=specified_directives + (LocaleDirective(), AuthDirective(), WorkflowStateDirective()),
-    types=graphene_registry + list(grapple_registry.models.values()),
+WorkflowStateDirective = GraphQLDirective(
+    name='workflow',
+    description=(
+        'Let the client request retrieving approved/unapproved '
+        'drafts or published versions of plan data (currently individual actions). '
+        'The actual response is dependent on user access rights, for example '
+        'a published version is always returned to unauthenticated users '
+        'or when no draft exists.'
+    ),
+    args={
+        'state':
+        GraphQLArgument(
+            type_= graphene_enum_type,
+            description="State of content to show",
+            default_value=WorkflowStateEnum.PUBLISHED,
+        ),
+    },
+    locations=[DirectiveLocation.QUERY],
 )
+
+
+@sb.type(name='Query')
+class SBQuery:
+    dummy: None  # Strawberry Queries must have some fields, but we have not yet migrated our queries from Graphene
+
+SB_MUTATION_TYPES: list[type] = []
+if test_mode_enabled():
+    SB_MUTATION_TYPES.append(TestModeMutations)
+
+SBMutation: type | None = None
+if SB_MUTATION_TYPES:
+    SBMutation = merge_types('Mutation', tuple(SB_MUTATION_TYPES))
+
+
+def generate_strawberry_schema() -> sb.Schema:
+    from kausal_common.strawberry.registry import strawberry_types
+
+    sb_schema = sb.Schema(
+        query=SBQuery, mutation=SBMutation, types=strawberry_types, directives=[]
+    )
+    return sb_schema
+
+
+def generate_schema() -> tuple[sb.Schema, CombinedSchema]:
+    # We generate the Strawberry schema just to be able to utilize the
+    # resolved GraphQL types directly in the Graphene schema.
+    sb_schema = generate_strawberry_schema()
+
+    schema = CombinedSchema(
+        sb_schema=sb_schema,
+        query=Query,
+        mutation=Mutation,
+        directives=list(specified_directives) + [LocaleDirective, AuthDirective, WorkflowStateDirective],
+        types=list(grapple_registry.models.values()),
+    )
+    return sb_schema, schema
+
+
+sb_schema, schema = generate_schema()
