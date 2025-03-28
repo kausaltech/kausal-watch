@@ -15,6 +15,7 @@ asgiref==3.8.1
     #   django
     #   django-cors-headers
     #   django-countries
+    #   strawberry-graphql-django
 attrs==23.2.0
     # via
     #   jsonschema
@@ -121,6 +122,7 @@ django==5.0.10
     #   graphene-django
     #   laces
     #   social-auth-app-django
+    #   strawberry-graphql-django
     #   wagtail
     #   wagtail-localize
 django-anymail==10.3
@@ -231,6 +233,7 @@ graphql-core==3.2.3
     #   graphene
     #   graphene-django
     #   graphql-relay
+    #   strawberry-graphql
 graphql-relay==3.2.0
     # via
     #   -r requirements.in
@@ -325,6 +328,7 @@ packaging==23.2
     #   opentelemetry-instrumentation
     #   pytest
     #   pytest-factoryboy
+    #   strawberry-graphql
 pillow==10.3.0
     # via
     #   -r requirements.in
@@ -404,6 +408,7 @@ python-dateutil==2.9.0.post0
     #   elasticsearch-dsl
     #   faker
     #   s3cmd
+    #   strawberry-graphql
 python-jose==3.3.0
     # via
     #   -r requirements.in
@@ -472,6 +477,12 @@ soupsieve==2.5
     # via beautifulsoup4
 sqlparse==0.5.0
     # via django
+strawberry-graphql==0.262.6
+    # via
+    #   -r requirements.in
+    #   strawberry-graphql-django
+strawberry-graphql-django==0.57.1
+    # via -r requirements.in
 structlog==24.4.0
     # via diffsync
 tablib==3.5.0
@@ -495,6 +506,7 @@ typing-extensions==4.11.0
     #   pydantic-core
     #   pygithub
     #   pytest-factoryboy
+    #   strawberry-graphql
     #   wagtail-localize
 tzdata==2024.1
     # via

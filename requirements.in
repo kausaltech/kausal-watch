@@ -92,3 +92,5 @@ treelib
 graphene-pydantic
 diffsync
 django-relations-iterator
+strawberry-graphql
+strawberry-graphql-django
