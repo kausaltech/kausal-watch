@@ -1,6 +1,7 @@
 # Parts adapted from https://posts-by.lb.ee/building-a-configurable-taxonomy-in-wagtail-django-94ca1080fb28
 from __future__ import annotations
 
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.admin.utils import quote
@@ -8,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.urls import URLPattern, path, reverse
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail.snippets.widgets import SnippetListingButton
 
@@ -385,5 +387,6 @@ class OrganizationViewSet(SnippetViewSet):
 
         return buttons
 
-# Extended version is registered in kausal-extensions
-# register_snippet(OrganizationViewSet)
+# If kausal_watch_extensions is installed, an extended version of the view set is registered there
+if not find_spec('kausal_watch_extensions'):
+    register_snippet(OrganizationViewSet)
