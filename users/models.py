@@ -585,6 +585,39 @@ class User(AbstractUser):
         self.deactivated_at = timezone.now()
         self.save()
 
+    def create_corresponding_person(self) -> Person:
+        """
+        Create a Person for this user.
+
+        Figures out things like the person's organization by taking the user's roles (groups) into account.
+        """
+        from actions.models.plan import Plan
+        from people.models import Person
+
+        if self.get_corresponding_person():
+            raise Exception("Person already exists for this user")
+        org = None
+        admin_plans = Plan.objects.filter(admin_group__in=self.groups.all())
+        for plan in admin_plans:
+            if org and org != plan.organization:
+                raise Exception(
+                    "Cannot infer the new person's organization as user is admin for plans from different organizations"
+                )
+            org = plan.organization
+        if not org:
+            raise Exception("Cannot infer the new person's organization as user is not an admin of a plan")
+        person = Person.objects.create(
+            email=self.email,
+            first_name=self.first_name,
+            last_name=self.last_name,
+            organization=org,
+        )
+        person.general_admin_plans.set(admin_plans)
+        return person
+
+    def handle_test_user_created(self):
+        self.create_corresponding_person()
+
     def __getstate__(self) -> dict[str, Any]:
         statedict = super().__getstate__()
         # Do not pickle data that is only used for caching

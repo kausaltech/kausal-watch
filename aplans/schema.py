@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import dataclasses
+from typing import Any
 
 import graphene
 import strawberry as sb
@@ -15,19 +16,22 @@ from graphql.type import (
     specified_directives,
 )
 from strawberry.tools import merge_types
+from strawberry.types.field import StrawberryField
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
 from kausal_common.deployment import test_mode_enabled
 from kausal_common.graphene.strawberry_schema import CombinedSchema
-from kausal_common.testing.schema import TestModeMutations
+from kausal_common.strawberry.registry import register_strawberry_type
+from kausal_common.testing.schema import TestModeMutation, TestModeNotEnabledError
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.utils import public_fields
 
 from actions import schema as actions_schema
+from actions.models import Plan
 from actions.models.action import Action
 from content.models import SiteGeneralContent
 from datasets import schema as datasets_schema
@@ -44,9 +48,6 @@ from search import schema as search_schema
 from . import graphql_gis  # noqa
 from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context
-
-if TYPE_CHECKING:
-    from actions.models import Plan
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -249,9 +250,76 @@ WorkflowStateDirective = GraphQLDirective(
 class SBQuery:
     dummy: None  # Strawberry Queries must have some fields, but we have not yet migrated our queries from Graphene
 
+
+@sb.type
+class BaseModelType:
+    def __init__(self, obj: Any, private_field_name: str):
+        setattr(self, private_field_name, obj)
+        proper_fields = [
+            field.name for field in dataclasses.fields(self)
+            if not isinstance(field, StrawberryField)
+            and field.name != private_field_name
+        ]
+        for field in proper_fields:
+            setattr(self, field, getattr(obj, field))
+
+
+# FIXME: We have two GraphQL types for representing organizations -- this one and OrganizationNode (for Graphene). I'm
+# not sure if or how we can use a Graphene type in a Strawberry query / mutation.
+@register_strawberry_type
+@sb.type
+class OrganizationType(BaseModelType):
+    id: int
+    uuid: str
+    name: str
+
+    _org: sb.Private[Organization]
+
+    def __init__(self, organization: Organization):
+        super().__init__(organization, '_org')
+
+
+# FIXME: We have two GraphQL types for representing plans -- this one and PlanNode (for Graphene). I'm not sure if or
+# how we can use a Graphene type in a Strawberry query / mutation.
+@register_strawberry_type
+@sb.type
+class PlanType(BaseModelType):
+    id: int
+    identifier: str
+
+    _plan: sb.Private[Plan]
+
+    def __init__(self, plan: Plan):
+        super().__init__(plan, '_plan')
+
+
+@sb.type
+class WatchTestModeMutation(TestModeMutation):
+    @sb.mutation
+    def create_organization(self, name: str) -> OrganizationType:
+        org = Organization(name=name)
+        Organization.add_root(instance=org)
+        return OrganizationType(org)
+
+    @sb.mutation
+    def create_plan(self, identifier: str, name: str, organization_uuid: str) -> PlanType:
+        org = Organization.objects.get(uuid=organization_uuid)
+        plan = Plan.objects.create(organization=org, identifier=identifier, name=name)
+        return PlanType(plan)
+
+
+@sb.type
+class WatchTestModeMutations:
+    @sb.field
+    def test_mode(self) -> WatchTestModeMutation:
+        if not test_mode_enabled():
+            raise TestModeNotEnabledError()
+        return WatchTestModeMutation()
+
+
 SB_MUTATION_TYPES: list[type] = []
 if test_mode_enabled():
-    SB_MUTATION_TYPES.append(TestModeMutations)
+    SB_MUTATION_TYPES.append(WatchTestModeMutations)
 
 SBMutation: type | None = None
 if SB_MUTATION_TYPES:
