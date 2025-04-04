@@ -47,7 +47,7 @@ from search import schema as search_schema
 
 from . import graphql_gis  # noqa
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context
+from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context, graphene_registry
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -345,7 +345,7 @@ def generate_schema() -> tuple[sb.Schema, CombinedSchema]:
         query=Query,
         mutation=Mutation,
         directives=list(specified_directives) + [LocaleDirective, AuthDirective, WorkflowStateDirective],
-        types=list(grapple_registry.models.values()),
+        types=list(grapple_registry.models.values()) + graphene_registry,
     )
     return sb_schema, schema
 
