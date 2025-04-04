@@ -40,6 +40,12 @@ class SearchHit(graphene.ObjectType):
         object = root.get('object')
         page = root.get('page')
         plan = root['plan']
+
+        # Check if this is a search result from other plans, we want to use the site_url for these.
+        only_other_plans = getattr(info.context, 'only_other_plans', False)
+        if only_other_plans:
+            client_url = None
+
         if object is not None:
             return object.get_view_url(plan=plan, client_url=client_url)
         elif page is not None:
@@ -161,4 +167,8 @@ class Query:
 
         all_results = list(chain(*results))
         all_results.sort(key=lambda x: x.relevance, reverse=True)
+
+        # Store only_other_plans in the context for use in resolve_url
+        info.context.only_other_plans = only_other_plans
+
         return dict(hits=all_results)
