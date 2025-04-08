@@ -4,8 +4,14 @@ import dataclasses
 from typing import Any
 
 import graphene
+from wagtail.models import Page
+from wagtail.models.i18n import Locale
+from wagtail.models.sites import Site
+from actions.models.category import Category, CategoryType
+from indicators.models import ActionIndicator, Indicator, IndicatorLevel, Unit
 import strawberry as sb
 from django.db.models import Count, Q
+from django.utils.text import slugify
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
 from graphql.type import (
@@ -32,7 +38,7 @@ from aplans.utils import public_fields
 
 from actions import schema as actions_schema
 from actions.models import Plan
-from actions.models.action import Action
+from actions.models.action import Action, ActionCategoryThrough
 from content.models import SiteGeneralContent
 from datasets import schema as datasets_schema
 from feedback import schema as feedback_schema
@@ -40,6 +46,7 @@ from indicators import schema as indicators_schema
 from orgs import schema as orgs_schema
 from orgs.models import Organization
 from pages import schema as pages_schema
+from pages.models import ActionListPage, CategoryPage, CategoryTypePage, EmptyPage, IndicatorListPage, PlanRootPage, StaticPage
 from people import schema as people_schema
 from people.models import Person
 from reports import schema as reports_schema
@@ -293,6 +300,76 @@ class PlanType(BaseModelType):
         super().__init__(plan, '_plan')
 
 
+@register_strawberry_type
+@sb.type
+class ActionType(BaseModelType):
+    id: int
+    uuid: str
+    name: str
+    identifier: str
+    plan_id: int
+
+    _action: sb.Private[Action]
+
+    def __init__(self, action: Action):
+        super().__init__(action, '_action')
+
+
+@register_strawberry_type
+@sb.type
+class CategoryModelType(BaseModelType):
+    id: int
+    name: str
+    identifier: str
+    type_id: int
+
+    _category: sb.Private[Category]
+
+    def __init__(self, category: Category):
+        super().__init__(category, '_category')
+
+
+@register_strawberry_type
+@sb.type
+class IndicatorType(BaseModelType):
+    id: int
+    name: str
+    uuid: str
+    organization_id: int
+
+    _indicator: sb.Private[Indicator]
+
+    def __init__(self, indicator: Indicator):
+        super().__init__(indicator, '_indicator')
+
+
+@register_strawberry_type
+@sb.type
+class PageType(BaseModelType):
+    id: int
+    title: str
+    url_path: str
+
+    _page: sb.Private[Any]
+
+    def __init__(self, page: Any):
+        super().__init__(page, '_page')
+
+
+@register_strawberry_type
+@sb.type
+class CategoryTypeModelType(BaseModelType):
+    id: int
+    name: str
+    identifier: str
+    plan_id: int
+
+    _category_type: sb.Private[CategoryType]
+
+    def __init__(self, category_type: CategoryType):
+        super().__init__(category_type, '_category_type')
+
+
 @sb.type
 class WatchTestModeMutation(TestModeMutation):
     @sb.mutation
@@ -306,6 +383,292 @@ class WatchTestModeMutation(TestModeMutation):
         org = Organization.objects.get(uuid=organization_uuid)
         plan = Plan.objects.create(organization=org, identifier=identifier, name=name)
         return PlanType(plan)
+
+    @sb.mutation
+    def create_action(self, plan_identifier: str, name: str, identifier: str) -> ActionType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        action = Action.objects.create(
+            plan=plan,
+            name=name,
+            identifier=identifier
+        )
+        return ActionType(action)
+
+    @sb.mutation
+    def create_category_type(
+        self, plan_identifier: str, name: str, identifier: str, usable_for_actions: bool = True) -> CategoryTypeModelType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        category_type = CategoryType.objects.create(
+            plan=plan,
+            name=name,
+            identifier=identifier,
+            usable_for_actions=usable_for_actions
+        )
+        return CategoryTypeModelType(category_type)
+
+    @sb.mutation
+    def create_category(
+        self, plan_identifier: str, category_type_identifier: str, name: str, identifier: str) -> CategoryModelType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        category_type = CategoryType.objects.get(plan=plan, identifier=category_type_identifier)
+        category = Category.objects.create(
+            type=category_type,
+            name=name,
+            identifier=identifier
+        )
+        return CategoryModelType(category)
+
+    @sb.mutation
+    def create_indicator(self, plan_identifier: str, name: str, organization_uuid: str | None = None) -> IndicatorType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+
+        if organization_uuid:
+            org = Organization.objects.get(uuid=organization_uuid)
+        else:
+            org = plan.organization
+
+        unit, _ = Unit.objects.get_or_create(name="Count")
+
+        indicator = Indicator.objects.create(
+            name=name,
+            organization=org,
+            unit=unit
+        )
+
+        IndicatorLevel.objects.create(
+            indicator=indicator,
+            plan=plan,
+            level='strategic'
+        )
+
+        return IndicatorType(indicator)
+
+    @sb.mutation
+    def link_action_to_category(self, action_id: int, category_id: int) -> bool:
+        action = Action.objects.get(id=action_id)
+        category = Category.objects.get(id=category_id)
+        ActionCategoryThrough.objects.create(
+            action=action,
+            category=category
+        )
+        return True
+
+    @sb.mutation
+    def link_action_to_indicator(self, action_id: int, indicator_id: int) -> bool:
+        action = Action.objects.get(id=action_id)
+        indicator = Indicator.objects.get(id=indicator_id)
+        ActionIndicator.objects.create(
+            action=action,
+            indicator=indicator,
+            effect_type="increases"
+        )
+        return True
+
+
+    @sb.mutation
+    def create_plan_root_page(self, plan_identifier: str, title: str, locale: str = "en") -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        # Use the plan's primary language if available, otherwise use provided locale
+        language_code = getattr(plan, 'primary_language', locale)
+
+        # Get or create the locale
+        try:
+            locale_obj = Locale.objects.get(language_code__iexact=language_code)
+        except Locale.DoesNotExist:
+            # Fall back to English if the requested locale doesn't exist
+            locale_obj = Locale.objects.get(language_code='en')
+
+        # Create root page with proper locale
+        root_page = PlanRootPage(
+            title=title,
+            show_in_menus=False,
+            locale=locale_obj
+        )
+
+        # Add root page as child of Wagtail root
+        wagtail_root = Page.objects.get(id=1)
+        wagtail_root.add_child(instance=root_page)
+
+        # Create or update the site for this plan
+        hostname = f"{plan.identifier}.example.com"  # Example hostname
+
+        if hasattr(plan, 'site') and plan.site:
+            # Update existing site
+            plan.site.hostname = hostname
+            plan.site.root_page = root_page
+            plan.site.save()
+        else:
+            # Create new site
+            site = Site.objects.create(
+                hostname=hostname,
+                root_page=root_page,
+                is_default_site=False
+            )
+            # Link the site to the plan
+            plan.site = site
+            plan.save()
+
+        return PageType(root_page)
+
+
+    @sb.mutation
+    def create_action_list_page(self, plan_identifier: str, title: str) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Check if an ActionListPage already exists
+        existing_page = Page.objects.descendant_of(plan.root_page).filter(slug='actions').first()
+        if existing_page:
+            return PageType(existing_page.specific)
+
+        # Create a new page
+        page = ActionListPage(
+            title=title,
+            show_in_menus=True
+        )
+
+        # Add as child of plan's root page
+        plan.root_page.add_child(instance=page)
+
+        # Set default content blocks
+        page.set_default_content_blocks()
+
+        return PageType(page)
+
+    @sb.mutation
+    def create_indicator_list_page(self, plan_identifier: str, title: str) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Check if an IndicatorListPage already exists
+        existing_page = Page.objects.descendant_of(plan.root_page).filter(slug='indicators').first()
+        if existing_page:
+            return PageType(existing_page.specific)
+
+        # Create page
+        page = IndicatorListPage(
+            title=title,
+            show_in_menus=True
+        )
+
+        # Add as child of plan's root page
+        plan.root_page.add_child(instance=page)
+
+        return PageType(page)
+
+    @sb.mutation
+    def create_empty_page(self, plan_identifier: str, title: str, parent_id: int | None = None) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Determine parent page
+        if parent_id:
+            parent = Page.objects.get(id=parent_id)
+        else:
+            parent = plan.root_page
+
+        # Create page
+        page = EmptyPage(
+            title=title,
+            show_in_menus=True,
+            slug=slugify(title)
+        )
+
+        parent.add_child(instance=page)
+        return PageType(page)
+
+    @sb.mutation
+    def create_static_page(self, plan_identifier: str, title: str, parent_id: int | None = None) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Determine parent page
+        if parent_id:
+            parent = Page.objects.get(id=parent_id)
+        else:
+            parent = plan.root_page
+
+        # Create page
+        page = StaticPage(
+            title=title,
+            show_in_menus=True,
+            slug=slugify(title)
+        )
+
+        parent.add_child(instance=page)
+        return PageType(page)
+
+    @sb.mutation
+    def create_category_type_page(self, plan_identifier: str, title: str, category_type_id: int) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        category_type = CategoryType.objects.get(id=category_type_id)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Check if a page for this category type already exists
+        existing_page = CategoryTypePage.objects.filter(category_type=category_type).first()
+        if existing_page:
+            return PageType(existing_page)
+
+        # Create page
+        page = CategoryTypePage(
+            title=title,
+            category_type=category_type,
+            show_in_menus=True,
+            slug=slugify(title)
+        )
+
+        # Add to root page
+        plan.root_page.add_child(instance=page)
+
+        return PageType(page)
+
+    @sb.mutation
+    def create_category_page(self, plan_identifier: str, title: str, category_id: int) -> PageType:
+        plan = Plan.objects.get(identifier=plan_identifier)
+        category = Category.objects.get(id=category_id)
+
+        # Check if the plan has a root page
+        if not plan.root_page:
+            raise ValueError("Plan has no root page. Create one first with create_plan_root_page.")
+
+        # Check if a page for this category already exists
+        existing_page = CategoryPage.objects.filter(category=category).first()
+        if existing_page:
+            return PageType(existing_page)
+
+        type_page = CategoryTypePage.objects.filter(
+            category_type=category.type
+        ).first()
+
+        # Determine parent - use type page if available, otherwise root page
+        parent = type_page if type_page else plan.root_page
+
+        # Create page with category
+        page = CategoryPage(
+            title=title,
+            category=category,
+            show_in_menus=True,
+            slug=slugify(title)
+        )
+
+        parent.add_child(instance=page)
+
+        return PageType(page)
 
 
 @sb.type
