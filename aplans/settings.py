@@ -717,7 +717,6 @@ IMAGE_CROPPING_JQUERY_URL: str | None = None
 THUMBNAIL_HIGH_RESOLUTION = True
 
 WAGTAIL_SLIM_SIDEBAR = False
-WAGTAIL_WORKFLOW_ENABLED = False
 WAGTAILADMIN_NOTIFICATION_INCLUDE_SUPERUSERS = False  # prevents adding superusers to workflow notification recipients
 
 GRAPPLE = {
