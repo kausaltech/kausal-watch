@@ -15,7 +15,7 @@ from corsheaders.defaults import default_headers as default_cors_headers
 from environ.environ import ImproperlyConfigured
 
 from kausal_common import ENV_SCHEMA as COMMON_ENV_SCHEMA, register_settings as register_common_settings
-from kausal_common.deployment import set_secret_file_vars
+from kausal_common.deployment import set_secret_file_vars, test_mode_enabled
 from kausal_common.sentry.init import init_sentry
 from kausal_common.storage import storage_settings_from_s3_url
 
@@ -435,8 +435,12 @@ CORS_ALLOW_HEADERS = list(default_cors_headers) + [
 #
 # GraphQL
 #
+if test_mode_enabled():
+    GRAPHENE_SCHEMA = f'{PROJECT_NAME}.schema_test_mode.schema'
+else:
+    GRAPHENE_SCHEMA = f'{PROJECT_NAME}.schema.schema'
 GRAPHENE = {
-    'SCHEMA': f'{PROJECT_NAME}.schema.schema',
+    'SCHEMA': GRAPHENE_SCHEMA,
     'MIDDLEWARE': [
         f'{PROJECT_NAME}.graphene_views.APITokenMiddleware',
     ],
