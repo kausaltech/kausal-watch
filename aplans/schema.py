@@ -251,6 +251,8 @@ def generate_strawberry_schema(query: type, mutation: type | None = None) -> sb.
     from kausal_common.strawberry.registry import strawberry_types
 
     sb_schema = sb.Schema(
+        # TODO: Add DjangoOptimizerExtension?
+        # https://strawberry.rocks/docs/django/guide/optimizer
         query=query, mutation=mutation, types=strawberry_types, directives=[]
     )
     return sb_schema
