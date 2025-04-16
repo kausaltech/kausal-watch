@@ -8,6 +8,7 @@ from typing import Any, Iterable, Unpack, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import URLPattern, path, re_path
 from django.utils import timezone
@@ -43,6 +44,7 @@ from aplans.wagtail_utils import _get_category_fields
 
 from actions.chooser import ActionChooser
 from actions.models.plan import Plan
+from admin_site.models import BuiltInFieldCustomization
 from admin_site.utils import FieldLabelRenderer
 from admin_site.wagtail import (
     AdminOnlyPanel,
@@ -73,6 +75,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
 
     from django.db.models import Model
+    from django.utils.functional import Promise
     from django.utils.safestring import SafeString
     from wagtail.admin.panels.group import PanelGroupInitArgs
 
@@ -1181,26 +1184,77 @@ class ActionAdmin(AplansModelAdmin):
             *snippet_view_urls,
         )
 
-    def get_contact_persons_panels(self, request: WatchAdminRequest, instance: Action):
+    def _get_field_customization_panels(
+        self,
+        request: WatchAdminRequest,
+        instance: Action,
+        field_name: str,
+        relation_name: str,
+        model_cls: type[ModelWithRole],
+        heading: str | Promise,
+        get_editable_roles_method: str,
+    ) -> list[Panel]:
+        """
+        Handle field customization panels for both contact persons and responsible parties.
+
+        This method creates appropriate panels based on user permissions and field customizations.
+        """
         plan = request.user.get_active_admin_plan()
-        if plan.features.has_action_contact_person_roles:
-            editable_contact_person_roles = request.user.get_editable_contact_person_roles(instance)
-            return [
-                RelatedModelWithRolePanel(
-                    action=instance, relation_name='contact_persons', _cls=ActionContactPerson,
-                    editable_roles=editable_contact_person_roles,
-                )]
-        return [RelatedModelWithRolePanel(action=instance, relation_name='contact_persons', _cls=ActionContactPerson)]
+        ct = ContentType.objects.get_for_model(Action)
+
+        try:
+            customization = BuiltInFieldCustomization.objects.get(
+                plan=plan,
+                content_type=ct,
+                field_name=field_name
+            )
+
+            is_visible = customization.is_instance_visible_for(request.user, plan, instance)
+            is_editable = customization.is_instance_editable_by(request.user, plan, instance)
+        except BuiltInFieldCustomization.DoesNotExist:
+            is_visible = True
+            is_editable = True
+
+        if plan.features.has_action_contact_person_roles or is_editable:
+            editable_roles = getattr(request.user, get_editable_roles_method)(instance)
+        else:
+            editable_roles = []
+
+        class VisibilityAwarePanel(RelatedModelWithRolePanel):
+            _is_visible = is_visible
+
+            class BoundPanel(RelatedModelWithRolePanel.BoundPanel):
+                def is_shown(self) -> bool:
+                    original_result = super().is_shown()
+                    return original_result and self.panel._is_visible
+
+        panel = VisibilityAwarePanel(
+            action=instance,
+            relation_name=relation_name,
+            _cls=model_cls,
+            editable_roles=editable_roles,
+        )
+
+        return [panel]
+
+    def get_contact_persons_panels(self, request: WatchAdminRequest, instance: Action):
+        return self._get_field_customization_panels(
+            request=request,
+            instance=instance,
+            field_name='contact_persons',
+            relation_name='contact_persons',
+            model_cls=ActionContactPerson,
+            heading=_('Contact persons'),
+            get_editable_roles_method='get_editable_contact_person_roles'
+        )
 
     def get_responsible_parties_panels(self, request, instance: Action):
-        plan = request.user.get_active_admin_plan()
-        if plan.features.has_action_contact_person_roles:
-            editable_responsible_party_roles = request.user.get_editable_responsible_party_roles(instance)
-            return [
-                RelatedModelWithRolePanel(
-                    action=instance, relation_name='responsible_parties', _cls=ActionResponsibleParty,
-                    editable_roles=editable_responsible_party_roles,
-            )]
-        return [
-            RelatedModelWithRolePanel(action=instance, relation_name='responsible_parties', _cls=ActionResponsibleParty),
-        ]
+        return self._get_field_customization_panels(
+            request=request,
+            instance=instance,
+            field_name='responsible_parties',
+            relation_name='responsible_parties',
+            model_cls=ActionResponsibleParty,
+            heading=_('Responsible parties'),
+            get_editable_roles_method='get_editable_responsible_party_roles'
+        )
