@@ -1489,9 +1489,9 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
         verbose_name_plural = _('action tasks')
         constraints = [
             # Ensure a task is completed if and only if it has completed_at
-            models.CheckConstraint(check=~Q(state='completed') | Q(completed_at__isnull=False),
+            models.CheckConstraint(condition=~Q(state='completed') | Q(completed_at__isnull=False),
                                    name='%(app_label)s_%(class)s_completed_at_if_completed'),
-            models.CheckConstraint(check=Q(completed_at__isnull=True) | Q(state='completed'),
+            models.CheckConstraint(condition=Q(completed_at__isnull=True) | Q(state='completed'),
                                    name='%(app_label)s_%(class)s_completed_if_completed_at'),
         ]
 

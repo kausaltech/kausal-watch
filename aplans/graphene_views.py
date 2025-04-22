@@ -258,7 +258,7 @@ class SentryGraphQLView(GraphQLView):
     def execute_graphql_request(self, request: WatchAPIRequest, data, query, variables, operation_name, *args, **kwargs):
         """Execute GraphQL request, cache results and send exceptions to Sentry"""
         request._referer = self.request.META.get('HTTP_REFERER')
-        transaction: sentry_tracing.Transaction | None = sentry_sdk.Hub.current.scope.transaction
+        transaction: sentry_tracing.Transaction | None = sentry_sdk.get_current_scope().transaction
 
         wildcard_domains = request.headers.get(WILDCARD_DOMAIN_HEADER)
         request.wildcard_domains = [d.lower() for d in wildcard_domains.split(',')] if wildcard_domains else None
@@ -272,7 +272,7 @@ class SentryGraphQLView(GraphQLView):
         if request.wildcard_domains:
             log_context['wildcard_domains'] = request.wildcard_domains
 
-        with sentry_sdk.push_scope() as scope, logger.contextualize(**log_context):
+        with sentry_sdk.isolation_scope() as scope, logger.contextualize(**log_context):
             perform_auth(request)
             self.log_request(request, query, variables, operation_name)
             scope.set_context('graphql_variables', variables)

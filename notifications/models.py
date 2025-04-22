@@ -121,7 +121,7 @@ class SentNotification(models.Model):
         default_manager_name = 'objects'
         constraints = [
             models.CheckConstraint(
-                check=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
+                condition=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
                 name='person_xor_email',
             ),
         ]
@@ -364,7 +364,7 @@ class AutomaticNotificationTemplate(NotificationTemplate):
         unique_together = (('base', 'type'),)
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     (Q(custom_email='') & Q(send_to_custom_email=False))
                     | (~Q(custom_email='') & Q(send_to_custom_email=True))
                 ),
@@ -400,7 +400,7 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
         unique_together = (('base', 'date', 'subject'),)
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     (Q(custom_email='') & Q(send_to_custom_email=False))
                     | (~Q(custom_email='') & Q(send_to_custom_email=True))
                 ),

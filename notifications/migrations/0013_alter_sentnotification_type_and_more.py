@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='manuallyschedulednotificationtemplate',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('custom_email', ''), ('send_to_custom_email', False)), models.Q(models.Q(('custom_email', ''), _negated=True), ('send_to_custom_email', True)), _connector='OR'), name='custom_email_iff_send_to_custom_email_the_sequel'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('custom_email', ''), ('send_to_custom_email', False)), models.Q(models.Q(('custom_email', ''), _negated=True), ('send_to_custom_email', True)), _connector='OR'), name='custom_email_iff_send_to_custom_email_the_sequel'),
         ),
         migrations.AlterUniqueTogether(
             name='manuallyschedulednotificationtemplate',

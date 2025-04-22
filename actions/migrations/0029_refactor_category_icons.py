@@ -64,10 +64,10 @@ class Migration(migrations.Migration):
         ),
         # migrations.AddConstraint(
         #     model_name='categoryicon',
-        #     constraint=models.CheckConstraint(check=models.Q(models.Q(('svg__isnull', True), ('image__isnull', False)), models.Q(('svg__isnull', False), ('image__isnull', True)), _connector='OR'), name='actions_categoryicon_svg_xor_image'),
+        #     constraint=models.CheckConstraint(condition=models.Q(models.Q(('svg__isnull', True), ('image__isnull', False)), models.Q(('svg__isnull', False), ('image__isnull', True)), _connector='OR'), name='actions_categoryicon_svg_xor_image'),
         # ),
         # migrations.AddConstraint(
         #     model_name='commoncategoryicon',
-        #     constraint=models.CheckConstraint(check=models.Q(models.Q(('svg__isnull', True), ('image__isnull', False)), models.Q(('svg__isnull', False), ('image__isnull', True)), _connector='OR'), name='actions_commoncategoryicon_svg_xor_image'),
+        #     constraint=models.CheckConstraint(condition=models.Q(models.Q(('svg__isnull', True), ('image__isnull', False)), models.Q(('svg__isnull', False), ('image__isnull', True)), _connector='OR'), name='actions_commoncategoryicon_svg_xor_image'),
         # ),
     ]

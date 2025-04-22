@@ -355,8 +355,8 @@ class ExcelReport:
         if len(labels) == 1:
             return (action_df
                     .group_by(labels)
-                    .count()
-                    .rename({'count': _('Actions')}))
+                    .len()
+                    .rename({'len': _('Actions')}))
         return action_df.pivot(  # noqa: PD010
             values=_("Identifier"),
             index=labels[0],

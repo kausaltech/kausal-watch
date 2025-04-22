@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='notificationtemplate',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('custom_email', ''), ('send_to_custom_email', False)), models.Q(models.Q(('custom_email', ''), _negated=True), ('send_to_custom_email', True)), _connector='OR'), name='custom_email_iff_send_to_custom_email'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('custom_email', ''), ('send_to_custom_email', False)), models.Q(models.Q(('custom_email', ''), _negated=True), ('send_to_custom_email', True)), _connector='OR'), name='custom_email_iff_send_to_custom_email'),
         ),
         migrations.AddField(
             model_name='sentnotification',
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='sentnotification',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('person__isnull', True), models.Q(('email', ''), _negated=True)), models.Q(('person__isnull', False), ('email', '')), _connector='OR'), name='person_xor_email'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('person__isnull', True), models.Q(('email', ''), _negated=True)), models.Q(('person__isnull', False), ('email', '')), _connector='OR'), name='person_xor_email'),
         ),
         migrations.RunPython(set_default_recipients, reverse_code=migrations.RunPython.noop),
     ]

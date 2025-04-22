@@ -341,11 +341,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='actiontask',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(_negated=True, state='completed'), ('completed_at__isnull', False), _connector='OR'), name='actions_actiontask_completed_at_if_completed'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(_negated=True, state='completed'), ('completed_at__isnull', False), _connector='OR'), name='actions_actiontask_completed_at_if_completed'),
         ),
         migrations.AddConstraint(
             model_name='actiontask',
-            constraint=models.CheckConstraint(check=models.Q(('completed_at__isnull', True), ('state', 'completed'), _connector='OR'), name='actions_actiontask_completed_if_completed_at'),
+            constraint=models.CheckConstraint(condition=models.Q(('completed_at__isnull', True), ('state', 'completed'), _connector='OR'), name='actions_actiontask_completed_if_completed_at'),
         ),
         migrations.AlterUniqueTogether(
             name='actionstatus',
