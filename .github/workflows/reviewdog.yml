@@ -59,6 +59,21 @@ jobs:
             ${{ env.UV_CACHE_DIR }}
           key: ${{ runner.os }}-${{ hashFiles('requirements-lint.txt', 'requirements-kausal.txt', 'requirements.txt') }}
 
+      - name: Get push diff
+        if: github.event_name == 'push' && github.event.before
+        id: push_diff
+        run: |
+          # Check if the "before" hash exists
+          if [ "$(git cat-file -t ${{ github.event.before }})" = "commit" ] ; then
+            echo Diffing ${{ github.event.before }}..${{ github.sha }}
+            git diff --find-renames --submodule=diff ${{ github.event.before }} ${{ github.sha }} > ${{ runner.temp }}/changes.diff
+            echo has_diff=true >> $GITHUB_OUTPUT
+          else
+            echo Commit ${{ github.event.before }} does not exist -- skipping reviewdog
+            echo has_diff=false >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
       - uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
