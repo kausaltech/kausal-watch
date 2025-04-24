@@ -465,6 +465,15 @@ class IndicatorAdmin(AplansModelAdmin):
             CustomizableBuiltInFieldPanel('show_trendline'),
             CustomizableBuiltInFieldPanel('desired_trend'),
             CustomizableBuiltInFieldPanel('show_total_line'),
+            FieldRowPanel(
+                children=[
+                    CustomizableBuiltInFieldPanel('ticks_count'),
+                    CustomizableBuiltInFieldPanel('ticks_rounding'),
+                ],
+                heading=_('Axis ticks'),
+            ),
+            CustomizableBuiltInFieldPanel('value_rounding'),
+            CustomizableBuiltInFieldPanel('data_categories_are_stackable'),
         ]
         panels.append(
             MultiFieldPanel(

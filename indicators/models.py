@@ -463,6 +463,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         default=True, verbose_name=_('show total line'),
     )
 
+    ticks_count = models.PositiveIntegerField(blank=True, null=True, help_text=_("Number of steps on the y-axis"))
+    ticks_rounding = models.PositiveIntegerField(
+        blank=True, null=True, help_text=_("Number of significant digits on y-axis ticks")
+    )
+    value_rounding = models.PositiveIntegerField(
+        blank=True, null=True, help_text=_("Number of significant digits when displaying indicator values")
+    )
+    data_categories_are_stackable = models.BooleanField(
+        default=False,
+        help_text=_("Data categories can be summed to form a total for the indicator (draw a stacked chart as default)"),
+    )
+
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
@@ -480,7 +492,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
         'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline', 'desired_trend',
-        'show_total_line',
+        'show_total_line', 'ticks_count', 'ticks_rounding', 'value_rounding', 'data_categories_are_stackable',
     ]
 
     wagtail_reference_index_ignore = True
