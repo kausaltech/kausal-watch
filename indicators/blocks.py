@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from django.forms import ValidationError
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from wagtail import blocks
 from wagtail.blocks import (
     BooleanBlock,
     CharBlock,
@@ -8,6 +12,7 @@ from wagtail.blocks import (
     ListBlock,
     RichTextBlock,
     StaticBlock,
+    StreamBlock,
     StructBlock,
 )
 
@@ -16,8 +21,8 @@ from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield
 
 from pages.blocks import PageLinkBlock
 
-from .chooser import IndicatorChooser
-from .models import Indicator
+from .chooser import DimensionChooser, IndicatorChooser
+from .models import Dimension, Indicator
 
 
 class IndicatorChooserBlock(ChooserBlock):
@@ -36,11 +41,26 @@ class IndicatorChooserBlock(ChooserBlock):
         label = _('Indicator')
 
 
+class DimensionChooserBlock(ChooserBlock):
+    @cached_property
+    def target_model(self):
+        return Dimension
+
+    @cached_property
+    def widget(self):
+        return DimensionChooser()
+
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
+
+    class Meta:
+        label = _('Categories')
+
+
 @register_streamfield_block
 class IndicatorHighlightsBlock(StaticBlock):
     class Meta:
         label = _('Indicator highlights')
-
 
 
 @register_streamfield_block
@@ -106,6 +126,141 @@ class IndicatorShowcaseBlock(StructBlock):
         GraphQLStreamfield('link_button', is_list=False),
         GraphQLBoolean('indicator_is_normalized'),
     ]
+
+
+class DashboardIndicatorChartBaseBlock(StructBlock):
+    """Base class for dashboard indicator chart blocks with common fields and validation."""
+
+    help_text = CharBlock(
+        required=False,
+        help_text=_('Help text for the field to be shown in the UI')
+    )
+    indicator = IndicatorChooserBlock(
+        help_text=_('Choose indicator for data visualization')
+    )
+    categories = DimensionChooserBlock(
+        help_text=_('Choose the indicator dimension that will be used for categories in the visualization')
+    )
+
+    def clean(self, value):
+        cleaned_value = super().clean(value)
+
+        indicator = cleaned_value.get('indicator')
+        dimension = cleaned_value.get('categories')
+
+        if indicator and dimension:
+            # Check if dimension is valid for this indicator
+            dimension_ids = list(indicator.dimensions.values_list('dimension_id', flat=True))
+            if dimension.id not in dimension_ids:
+                error_msg = _("Dimension '%(dimension)s' is not valid for indicator '%(indicator)s'. "
+                              "Please choose a dimension that belongs to the indicator.") % {
+                    'dimension': dimension.name,
+                    'indicator': indicator.name
+                }
+                errors = {
+                    'categories': ValidationError(error_msg)
+                }
+                raise blocks.StructBlockValidationError(errors)
+
+        return cleaned_value
+
+
+@register_streamfield_block
+class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
+    class Meta:
+        icon = 'fontawesome-chart-simple'
+        label = _('Indicator Bar Chart')
+        help_text = _('Indicator visualization as a bar chart')
+
+    bar_type = ChoiceBlock(
+        choices=[
+            ('stacked', _('Stacked bars')),
+            ('grouped', _('Grouped bars')),
+        ],
+        default='stacked',
+        required=True
+    )
+
+
+@register_streamfield_block
+class DashboardIndicatorLineChartBlock(DashboardIndicatorChartBaseBlock):
+    class Meta:
+        icon = 'fontawesome-chart-line'
+        label = _('Indicator Line Chart')
+        help_text = _('Indicator visualization as a line chart')
+
+    show_total_line = BooleanBlock(
+        default=False,
+        required=False,
+        help_text=_('Show total line')
+    )
+
+
+@register_streamfield_block
+class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
+    class Meta:
+        icon = 'fontawesome-chart-area'
+        label = _('Indicator Area Chart')
+        help_text = _('Indicator visualization as an area chart')
+
+    show_total_line = BooleanBlock(
+        default=False,
+        required=False,
+        help_text=_('Show total line')
+    )
+
+
+@register_streamfield_block
+class DashboardIndicatorPieChartBlock(DashboardIndicatorChartBaseBlock):
+    class Meta:
+        icon = 'fontawesome-chart-pie'
+        label = _('Indicator Pie Chart')
+        help_text = _('Indicator visualization as a pie chart')
+
+
+    show_percentages = BooleanBlock(
+        default=True,
+        required=False,
+        help_text=_('Show percentages')
+    )
+
+
+@register_streamfield_block
+class DashboardIndicatorSummaryBlock(StructBlock):
+    class Meta:
+        icon = 'list-ul'
+        label = _('Indicator Summary')
+        help_text = _('Indicator key figures')
+
+    indicator = IndicatorChooserBlock(
+        help_text=_('Choose indicator for data visualization')
+    )
+
+
+@register_streamfield_block
+class DashboardParagraphBlock(StructBlock):
+    text = RichTextBlock(required=True)
+
+    class Meta:
+        icon = 'doc-full'
+        label = _('Paragraph')
+
+
+@register_streamfield_block
+class DashboardRowBlock(StructBlock):
+    content = StreamBlock([
+        ('bar_chart', DashboardIndicatorBarChartBlock()),
+        ('line_chart', DashboardIndicatorLineChartBlock()),
+        ('area_chart', DashboardIndicatorAreaChartBlock()),
+        ('pie_chart', DashboardIndicatorPieChartBlock()),
+        ('indicator_summary', DashboardIndicatorSummaryBlock()),
+        ('paragraph', DashboardParagraphBlock()),
+    ])
+
+    class Meta:
+        icon = 'fontawesome-bars-progress'
+        label = _('Dashboard Row')
+        help_text = _('Dashboard row with 1-3 content blocks')
 
 
 @register_streamfield_block

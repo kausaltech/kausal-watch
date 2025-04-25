@@ -604,6 +604,18 @@ class IndicatorViewSet(BulkModelViewSet):
 
         return Response({})
 
+    @action(detail=True, methods=['get'])
+    def dimensions(self, request, pk=None):
+        indicator = self.get_object()
+        dimensions = [
+            {
+                'id': dim.dimension.id,
+                'name': dim.dimension.name,
+            }
+            for dim in indicator.dimensions.all()
+        ]
+        return Response(dimensions)
+
 
 plan_router.register('indicators', IndicatorViewSet, basename='indicator')
 

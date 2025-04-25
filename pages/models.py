@@ -61,6 +61,7 @@ from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeC
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
 from indicators.blocks import (
+    DashboardRowBlock,
     IndicatorGroupBlock,
     IndicatorHighlightsBlock,
     IndicatorShowcaseBlock,
@@ -225,6 +226,7 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
         ('indicator_group', IndicatorGroupBlock()),
         ('indicator_highlights', IndicatorHighlightsBlock()),
         ('indicator_showcase', IndicatorShowcaseBlock()),
+        ('dashboard_row', DashboardRowBlock()),
         ('action_highlights', ActionHighlightsBlock()),
         ('related_plans', RelatedPlanListBlock()),
         ('cards', CardListBlock()),

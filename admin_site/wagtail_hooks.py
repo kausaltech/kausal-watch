@@ -346,6 +346,11 @@ def register_icons(icons):
         'fontawesome-bell',
         'fontawesome-link-slash',
         'fontawesome-rotate-left',
+        'fontawesome-chart-line',
+        'fontawesome-chart-area',
+        'fontawesome-chart-simple',
+        'fontawesome-chart-pie',
+        'fontawesome-bars-progress',
     ]
     return icons + [f'wagtailadmin/icons/{basename}.svg' for basename in basenames]
 

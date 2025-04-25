@@ -2,6 +2,8 @@ from typing import Any, Mapping
 
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
+from django.templatetags.static import static
+from django.utils.html import format_html
 
 from aplans.types import WatchAdminRequest
 
@@ -26,3 +28,11 @@ class IndicatorsSummaryItem(SummaryItem):
 @hooks.register('construct_homepage_summary_items', order=1001)
 def add_indicators_summary_item(request, items):
     items.append(IndicatorsSummaryItem(request))
+
+
+@hooks.register('insert_editor_js')
+def editor_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static('indicators/js/dashboard_blocks.js')
+    )
