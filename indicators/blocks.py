@@ -232,7 +232,7 @@ class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
 
 @register_streamfield_block
 class DashboardIndicatorPieChartBlock(DashboardIndicatorChartBaseBlock):
-    year: int = IntegerBlock(
+    year: IntegerBlock = IntegerBlock(
         required=True,
         help_text=_('Enter the year you want to visualize'),
     )
