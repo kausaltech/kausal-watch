@@ -171,7 +171,10 @@ class DimensionAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        InlinePanel('categories', panels=[FieldPanel('name')], heading=_('Categories')),
+        InlinePanel('categories', panels=[
+            FieldPanel('name'),
+            FieldPanel('default_color'),
+        ], heading=_('Categories')),
     ]
 
 

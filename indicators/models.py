@@ -44,6 +44,7 @@ from aplans.utils import (
     RestrictedVisibilityModel,
     TranslatedModelMixin,
     get_available_variants_for_language,
+    validate_css_color,
 )
 
 from actions.models.features import OrderBy
@@ -805,8 +806,13 @@ class DimensionCategory(OrderedModel):
 
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    default_color = models.CharField(
+        max_length=50, blank=True, verbose_name=_('default color'),
+        help_text=_('Default color for this dimension category in charts'),
+        validators=[validate_css_color],
+    )
 
-    public_fields = ['id', 'dimension', 'name', 'order']
+    public_fields = ['id', 'dimension', 'name', 'default_color', 'order']
 
     # type annotations
     values: RevMany[IndicatorValue]
