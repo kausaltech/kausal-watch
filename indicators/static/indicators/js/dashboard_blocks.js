@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    // Modify dimension chooser URLs to include indicator_id
     if (typeof window.ModalWorkflow === 'function') {
         const originalModalWorkflow = window.ModalWorkflow;
         window.ModalWorkflow = function(opts) {
@@ -17,7 +16,5 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return originalModalWorkflow(opts);
         };
-    } else {
-        console.log('ModalWorkflow not found');
     }
 });

@@ -291,6 +291,7 @@ class StaticPage(AplansPage):
         ('category_level_list', CategoryTypeLevelListBlock()),
         ('paths_outcome', PathsOutcomeBlock()),
         ('indicator_group', IndicatorGroupBlock()),
+        ('dashboard_row', DashboardRowBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),

@@ -139,8 +139,15 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
         help_text=_('Choose indicator for data visualization')
     )
     categories = DimensionChooserBlock(
-        help_text=_('Choose the indicator dimension that will be used for categories in the visualization')
+        help_text=_('Choose the indicator dimension that will be used for categories in the visualization'),
+        required=False
     )
+
+    # graphql_fields = [
+    #     GraphQLString('help_text'),
+    #     GraphQLForeignKey('indicator', Indicator),
+    #     GraphQLForeignKey('categories', Dimension),
+    # ]
 
     def clean(self, value):
         cleaned_value = super().clean(value)
@@ -167,11 +174,6 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
 
 @register_streamfield_block
 class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
-    class Meta:
-        icon = 'fontawesome-chart-simple'
-        label = _('Indicator Bar Chart')
-        help_text = _('Indicator visualization as a bar chart')
-
     bar_type = ChoiceBlock(
         choices=[
             ('stacked', _('Stacked bars')),
@@ -181,65 +183,95 @@ class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
         required=True
     )
 
+    # graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
+    #     GraphQLString('bar_type'),
+    # ]
+
+    class Meta:
+        icon = 'fontawesome-chart-simple'
+        label = _('Indicator Bar Chart')
+        help_text = _('Indicator visualization as a bar chart')
+
 
 @register_streamfield_block
 class DashboardIndicatorLineChartBlock(DashboardIndicatorChartBaseBlock):
+    show_total_line = BooleanBlock(
+        default=False,
+        required=False,
+        help_text=_('Show total line')
+    )
+
+    # graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
+    #     GraphQLBoolean('show_total_line'),
+    # ]
+
     class Meta:
         icon = 'fontawesome-chart-line'
         label = _('Indicator Line Chart')
         help_text = _('Indicator visualization as a line chart')
 
+
+@register_streamfield_block
+class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
     show_total_line = BooleanBlock(
         default=False,
         required=False,
         help_text=_('Show total line')
     )
 
+    # graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
+    #     GraphQLBoolean('show_total_line'),
+    # ]
 
-@register_streamfield_block
-class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
     class Meta:
         icon = 'fontawesome-chart-area'
         label = _('Indicator Area Chart')
         help_text = _('Indicator visualization as an area chart')
 
-    show_total_line = BooleanBlock(
-        default=False,
-        required=False,
-        help_text=_('Show total line')
-    )
-
 
 @register_streamfield_block
 class DashboardIndicatorPieChartBlock(DashboardIndicatorChartBaseBlock):
-    class Meta:
-        icon = 'fontawesome-chart-pie'
-        label = _('Indicator Pie Chart')
-        help_text = _('Indicator visualization as a pie chart')
-
-
     show_percentages = BooleanBlock(
         default=True,
         required=False,
         help_text=_('Show percentages')
     )
 
+    # graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
+    #     GraphQLBoolean('show_percentages'),
+    # ]
+
+    class Meta:
+        icon = 'fontawesome-chart-pie'
+        label = _('Indicator Pie Chart')
+        help_text = _('Indicator visualization as a pie chart')
+
 
 @register_streamfield_block
 class DashboardIndicatorSummaryBlock(StructBlock):
+    indicator = IndicatorChooserBlock(
+        help_text=_('Choose indicator for data visualization')
+    )
+
+    # graphql_fields = [
+    #     GraphQLForeignKey('indicator', Indicator),
+    # ]
+
     class Meta:
         icon = 'list-ul'
         label = _('Indicator Summary')
         help_text = _('Indicator key figures')
 
-    indicator = IndicatorChooserBlock(
-        help_text=_('Choose indicator for data visualization')
-    )
-
 
 @register_streamfield_block
 class DashboardParagraphBlock(StructBlock):
-    text = RichTextBlock(required=True)
+    text = RichTextBlock(
+        required=True
+    )
+
+    # graphql_fields = [
+    #     GraphQLString('text'),
+    # ]
 
     class Meta:
         icon = 'doc-full'
@@ -247,21 +279,27 @@ class DashboardParagraphBlock(StructBlock):
 
 
 @register_streamfield_block
-class DashboardRowBlock(StructBlock):
-    content = StreamBlock([
-        ('bar_chart', DashboardIndicatorBarChartBlock()),
-        ('line_chart', DashboardIndicatorLineChartBlock()),
-        ('area_chart', DashboardIndicatorAreaChartBlock()),
-        ('pie_chart', DashboardIndicatorPieChartBlock()),
-        ('indicator_summary', DashboardIndicatorSummaryBlock()),
-        ('paragraph', DashboardParagraphBlock()),
-    ])
+class DashboardRowBlock(StreamBlock):
+    bar_chart = DashboardIndicatorBarChartBlock()
+    line_chart = DashboardIndicatorLineChartBlock()
+    area_chart = DashboardIndicatorAreaChartBlock()
+    pie_chart = DashboardIndicatorPieChartBlock()
+    indicator_summary = DashboardIndicatorSummaryBlock()
+    paragraph = DashboardParagraphBlock()
+
+    # graphql_types = [
+    #     DashboardIndicatorBarChartBlock,
+    #     DashboardIndicatorLineChartBlock,
+    #     DashboardIndicatorAreaChartBlock,
+    #     DashboardIndicatorPieChartBlock,
+    #     DashboardIndicatorSummaryBlock,
+    #     DashboardParagraphBlock,
+    # ]
 
     class Meta:
         icon = 'fontawesome-bars-progress'
         label = _('Dashboard Row')
         help_text = _('Dashboard row with 1-3 content blocks')
-
 
 @register_streamfield_block
 class RelatedIndicatorsBlock(StaticBlock):

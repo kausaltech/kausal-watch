@@ -5,7 +5,8 @@ from wagtail.search.backends import get_search_backend
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 
-from .models import Indicator, Dimension, IndicatorDimension
+from .models import Dimension, Indicator, IndicatorDimension
+
 
 class IndicatorChooserMixin(ModelChooserMixin):
     def get_unfiltered_object_list(self):
