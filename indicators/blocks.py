@@ -9,6 +9,7 @@ from wagtail.blocks import (
     CharBlock,
     ChoiceBlock,
     ChooserBlock,
+    IntegerBlock,
     ListBlock,
     RichTextBlock,
     StaticBlock,
@@ -54,7 +55,7 @@ class DimensionChooserBlock(ChooserBlock):
         return self.widget.get_value_data(value)
 
     class Meta:
-        label = _('Categories')
+        label = _('Dimension')
 
 
 @register_streamfield_block
@@ -136,9 +137,9 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
         help_text=_('Help text for the field to be shown in the UI')
     )
     indicator = IndicatorChooserBlock(
-        help_text=_('Choose indicator for data visualization')
+        help_text=_('Choose the indicator for data visualization')
     )
-    categories = DimensionChooserBlock(
+    dimension = DimensionChooserBlock(
         help_text=_('Choose the indicator dimension that will be used for categories in the visualization'),
         required=False
     )
@@ -146,14 +147,14 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
     # graphql_fields = [
     #     GraphQLString('help_text'),
     #     GraphQLForeignKey('indicator', Indicator),
-    #     GraphQLForeignKey('categories', Dimension),
+    #     GraphQLForeignKey('dimension', Dimension),
     # ]
 
     def clean(self, value):
         cleaned_value = super().clean(value)
 
         indicator = cleaned_value.get('indicator')
-        dimension = cleaned_value.get('categories')
+        dimension = cleaned_value.get('dimension')
 
         if indicator and dimension:
             # Check if dimension is valid for this indicator
@@ -165,7 +166,7 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
                     'indicator': indicator.name
                 }
                 errors = {
-                    'categories': ValidationError(error_msg)
+                    'dimension': ValidationError(error_msg)
                 }
                 raise blocks.StructBlockValidationError(errors)
 
@@ -189,7 +190,7 @@ class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
 
     class Meta:
         icon = 'fontawesome-chart-simple'
-        label = _('Indicator Bar Chart')
+        label = _('Indicator: Bar Chart')
         help_text = _('Indicator visualization as a bar chart')
 
 
@@ -207,7 +208,7 @@ class DashboardIndicatorLineChartBlock(DashboardIndicatorChartBaseBlock):
 
     class Meta:
         icon = 'fontawesome-chart-line'
-        label = _('Indicator Line Chart')
+        label = _('Indicator: Line Chart')
         help_text = _('Indicator visualization as a line chart')
 
 
@@ -225,32 +226,60 @@ class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
 
     class Meta:
         icon = 'fontawesome-chart-area'
-        label = _('Indicator Area Chart')
+        label = _('Indicator: Area Chart')
         help_text = _('Indicator visualization as an area chart')
 
 
 @register_streamfield_block
 class DashboardIndicatorPieChartBlock(DashboardIndicatorChartBaseBlock):
-    show_percentages = BooleanBlock(
-        default=True,
-        required=False,
-        help_text=_('Show percentages')
+    year: int = IntegerBlock(
+        required=True,
+        help_text=_('Enter the year you want to visualize'),
     )
 
     # graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
-    #     GraphQLBoolean('show_percentages'),
+    #     GraphQLInteger('year'),
     # ]
 
     class Meta:
         icon = 'fontawesome-chart-pie'
-        label = _('Indicator Pie Chart')
+        label = _('Indicator: Pie Chart')
         help_text = _('Indicator visualization as a pie chart')
+
+    def clean(self, value):
+        cleaned_value = super().clean(value)
+
+        indicator = cleaned_value.get('indicator')
+        year_value = cleaned_value.get('year')
+
+        if indicator and year_value is not None:
+            selected_year = year_value
+
+            available_years = set()
+            values = indicator.values.all()
+            for val in values:
+                value_date = val.date
+                available_years.add(value_date.year)
+
+            if len(available_years) > 0 and selected_year not in available_years:
+                years_str = ", ".join(str(year) for year in sorted(available_years))
+                error_msg = _("The selected year (%(selected_year)s) has no data for this indicator. "
+                              "Available years are: %(available_years)s") % {
+                    'selected_year': selected_year,
+                    'available_years': years_str
+                }
+                errors = {
+                    'year': ValidationError(error_msg)
+                }
+                raise blocks.StructBlockValidationError(errors)
+
+        return cleaned_value
 
 
 @register_streamfield_block
 class DashboardIndicatorSummaryBlock(StructBlock):
     indicator = IndicatorChooserBlock(
-        help_text=_('Choose indicator for data visualization')
+        help_text=_('Choose the indicator for data visualization')
     )
 
     # graphql_fields = [
@@ -259,7 +288,7 @@ class DashboardIndicatorSummaryBlock(StructBlock):
 
     class Meta:
         icon = 'list-ul'
-        label = _('Indicator Summary')
+        label = _('Indicator: Summary')
         help_text = _('Indicator key figures')
 
 
