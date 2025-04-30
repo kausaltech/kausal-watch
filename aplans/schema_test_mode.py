@@ -38,7 +38,7 @@ class WatchTestModeMutation(TestModeMutation):
     def create_plan(self, identifier: str, name: str, organization_uuid: str) -> ModelStubType:
         org = Organization.objects.get(uuid=organization_uuid)
         plan = Plan.objects.create(organization=org, identifier=identifier, name=name)
-        return cast(ModelStubType, plan)
+        return cast('ModelStubType', plan)
 
 
 @strawberry.type

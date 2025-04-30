@@ -7,7 +7,7 @@ from strawberry.types.field import StrawberryField
 
 from kausal_common.strawberry.registry import register_strawberry_type
 
-from users.models import User  # noqa: TCH001
+from users.models import User  # noqa: TC001
 
 
 @register_strawberry_type
