@@ -440,7 +440,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         self._site_created = False
 
     def __str__(self):
-        return self.name
+        return f'{self.name} ({self.identifier})'
 
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
