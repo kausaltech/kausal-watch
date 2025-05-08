@@ -1026,18 +1026,21 @@ class Action(
 
     def get_dependency_relationships(self, user: UserOrAnon | None, plan: Plan | None) -> ActionDependencyRelationshipQuerySet:
         from .action_deps import ActionDependencyRelationship
-        return ActionDependencyRelationship.objects.qs.all_for_action(self).visible_for_user(user, plan)
+        return ActionDependencyRelationship.objects.qs.all_for_action(self).select_related(
+            'preceding', 'dependent'
+        ).visible_for_user(user, plan)
 
-    def has_contact_person_from_organization(
-        self,
-        organization: Organization,
-        include_suborganizations: bool = True,
-    ) -> bool:
-        if include_suborganizations:
-            filter_kwargs = {'organization__path__startswith': organization.path}
-        else:
-            filter_kwargs = {'organization': organization.path}
-        return self.contact_persons_unordered.filter(**filter_kwargs).exists()
+    def has_contact_person_from_organization(self, organization, include_suborganizations=True):
+        persons = list(self.contact_persons_unordered.all())
+
+        for person in persons:
+            if person.organization:
+                if include_suborganizations:
+                    if person.organization.path.startswith(organization.path):
+                        return True
+                elif person.organization.id == organization.id:
+                    return True
+        return False
 
 
 @reversion.register(follow=['action', 'category'])

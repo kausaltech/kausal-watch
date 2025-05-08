@@ -1293,11 +1293,17 @@ class ActionResponsiblePartyNode(DjangoNode):
     has_contact_person = graphene.Boolean(required=True)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        select_related='organization',
+    )
     def resolve_organization(root: ActionResponsibleParty, info) -> Organization:
         cache = info.context.watch_cache.for_plan_id(root.action.plan_id)
         return cache.get_organization(root.organization_id) or root.organization
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        prefetch_related='action__contact_persons_unordered__organization',
+    )
     def resolve_has_contact_person(root: ActionResponsibleParty, info: GQLInfo) -> bool:
         return root.action.has_contact_person_from_organization(root.organization, include_suborganizations=True)
 
