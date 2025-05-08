@@ -35,6 +35,7 @@ from aplans.utils import generate_identifier, public_fields, register_view_helpe
 from actions.models.action import ActionContactPerson, ActionImplementationPhase
 from actions.models.attributes import AttributeType, ModelWithAttributes
 from orgs.models import Organization
+from pages.apps import post_reorder_categories
 from people.models import Person
 from users.models import User
 
@@ -1337,6 +1338,11 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
             return Category.objects.none()
         category_type_pk = self.kwargs['category_type_pk']
         return Category.objects.filter(type=category_type_pk).select_related("type")
+
+    def bulk_update(self, request, *args, **kwargs):
+        result = super().bulk_update(request, *args, **kwargs)
+        post_reorder_categories(sender=None, queryset=self.get_queryset())
+        return result
 
 
 category_type_router.register('categories', CategoryViewSet, basename='category')

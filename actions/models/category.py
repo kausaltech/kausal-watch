@@ -549,14 +549,17 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 parent.add_child(instance=page)
             else:
                 current_parent = page.get_parent()
-                update_page_parent = current_parent is None or current_parent.specific != parent
+                update_page_parent = current_parent is None or current_parent.specific != parent.specific
                 prev_cat = Category.objects.filter(type=self.type, parent=self.parent, order__lt=self.order).last()
                 if prev_cat is None:
                     prev_cat_page = None
                     update_page_sibling = page.get_prev_sibling() is not None
                 else:
                     prev_cat_page = prev_cat.category_pages.filter(locale=parent.locale).first()
-                    update_page_sibling = page.get_prev_sibling() != prev_cat_page
+                    prev_sibling = page.get_prev_sibling()
+                    if prev_sibling is not None:
+                        prev_sibling = prev_sibling.specific
+                    update_page_sibling = prev_sibling != prev_cat_page
                 if update_page_parent or update_page_sibling:
                     if prev_cat_page:
                         page.move(prev_cat_page, 'right')
@@ -566,11 +569,20 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                     # treebeard
                     refreshed_page: CategoryPage | CategoryTypePage = Page.objects.get(pk=page.pk).specific  # pyright: ignore
                     page = refreshed_page
-                page.title = self.name_i18n
-                page.draft_title = self.name_i18n
-                page.show_in_menus = is_root
-                page.show_in_footer = is_root
-                page.save()
+
+                is_changed = (
+                    page.title != self.name_i18n or
+                    page.draft_title != self.name_i18n or
+                    page.show_in_menus != is_root or
+                    page.show_in_footer != is_root
+                )
+                if is_changed:
+                    page.title = self.name_i18n
+                    page.draft_title = self.name_i18n
+                    page.show_in_menus = is_root
+                    page.show_in_footer = is_root
+                    page.save()
+
         return page
 
     @transaction.atomic()
