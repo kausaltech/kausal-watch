@@ -1030,16 +1030,20 @@ class Action(
             'preceding', 'dependent'
         ).visible_for_user(user, plan)
 
-    def has_contact_person_from_organization(self, organization, include_suborganizations=True):
+    def has_contact_person_from_organization(
+        self,
+        organization: Organization,
+        include_suborganizations: bool = True,
+    ) -> bool:
         persons = list(self.contact_persons_unordered.all())
 
         for person in persons:
-            if person.organization:
-                if include_suborganizations:
-                    if person.organization.path.startswith(organization.path):
-                        return True
-                elif person.organization.id == organization.id:
-                    return True
+            if person.organization is None:
+                continue
+            if include_suborganizations and person.organization.path.startswith(organization.path):
+                return True
+            if person.organization.id == organization.id:
+                return True
         return False
 
 
