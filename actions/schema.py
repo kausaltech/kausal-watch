@@ -1067,6 +1067,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     status_summary = graphene.Field('actions.schema.ActionStatusSummaryNode', required=True)
     timeliness = graphene.Field('actions.schema.ActionTimelinessNode', required=True)
     color = graphene.String(required=False)
+    has_dependency_relationships = graphene.Boolean()
     all_dependency_relationships = graphene.List(
         graphene.NonNull('actions.schema.ActionDependencyRelationshipNode'), required=True,
     )
@@ -1232,6 +1233,21 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         return root.get_timeliness()
 
     @staticmethod
+    def resolve_has_dependency_relationships(root: Action, info: GQLInfo) -> bool:
+        cache = info.context.watch_cache.for_plan_id(root.plan_id)
+        if not cache.plan_has_action_dependency_roles:
+            return False
+        if not hasattr(root, 'has_dependencies'):
+            message = (
+                "[Performance issue] Calling action.resolve_has_dependency_relationships "
+                "on action which has not been annotated in queryset"
+             )
+            logger.warning(message)
+            _ = sentry_sdk.capture_message(message)
+            return root.dependent_relationships.exists() or root.preceding_relationships.exists()
+        return root.has_dependencies
+
+    @staticmethod
     def resolve_all_dependency_relationships(root: Action, info: GQLInfo):
         cache = info.context.watch_cache.for_plan_id(root.plan_id)
         if not cache.plan_has_action_dependency_roles:
@@ -1378,6 +1394,7 @@ def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_p
     qs = order_queryset(qs, ActionNode, order_by)
     if not order_by:
         qs = qs.order_by('plan', 'order')
+    qs = qs.annotate_has_dependency_relationships()
     if first is not None:
         qs = qs[0:first]
     return qs

@@ -15,7 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Count, IntegerField, Max, Q, QuerySet
+from django.db.models import Count, Exists, IntegerField, Max, OuterRef, Q, QuerySet
 from django.db.models.functions import Cast
 from django.db.models.options import Options
 from django.urls import reverse
@@ -55,6 +55,7 @@ from users.models import User
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, SummaryContext
 from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
+from .action_deps import ActionDependencyRelationship
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from .features import PlanFeatures
 
@@ -71,7 +72,6 @@ if typing.TYPE_CHECKING:
     from aplans.types import UserOrAnon
 
     from actions.attributes import DraftAttributes
-    from actions.models.action_deps import ActionDependencyRelationship
     from actions.models.category import Category
     from people.models import Person
 
@@ -149,6 +149,10 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
                     related_indicators__indicator__in=Indicator.objects.qs.available_for_plan(plan).visible_for_public().filter(
                         goals__isnull=False))),
                 )
+
+    def annotate_has_dependency_relationships(self) -> Self:
+        dep_qs = ActionDependencyRelationship.objects.filter(Q(preceding=OuterRef('pk')) | Q(dependent=OuterRef('pk')))
+        return self.annotate(has_dependencies=Exists(dep_qs))
 
 if TYPE_CHECKING:
     class ActionManager(MLModelManager['Action', ActionQuerySet]): ...
