@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable
+import dataclasses
+from collections.abc import Callable, Generator, Iterable
 from contextlib import ExitStack
 from copy import copy as shallow_copy
 from functools import singledispatchmethod
 from itertools import chain
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 from uuid import uuid4
 
+import wagtail.signal_handlers
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
@@ -31,6 +33,9 @@ from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
 from pages.models import PlanRootPage
+
+P = ParamSpec('P')
+R = TypeVar('R')
 
 type CloneStructure = dict[str, CloneStructure]
 
@@ -520,6 +525,31 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
     return new_site_hostname
 
 
+def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
+    """
+    Force immediate update of Wagtail's reference index when saving model instances within a call to `f`.
+
+    When a model instance is saved, Wagtail enqueues a task to update the reference index. By default, this task is
+    executed when the current transaction is committed. This may cause problems if the code within the transaction not
+    only saves some model instances but also relies on the reference index being kept up to date before the transaction
+    ends.
+
+    When this decorator is used on a function `f`, this behavior is changed during the call to `f` in such a way that
+    the reference index is updated immediately when a model instance is saved.
+    """
+    def wrapped(*args, **kwargs) -> R:
+        original_task = wagtail.signal_handlers.update_reference_index_task
+        tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
+        try:
+            wagtail.signal_handlers.update_reference_index_task = tmp_task
+            return f(*args, **kwargs)
+        finally:
+            wagtail.signal_handlers.update_reference_index_task = original_task
+
+    return wrapped
+
+
+@update_reference_index_immediately
 def copy_plan(
     plan: Plan,
     new_plan_identifier: str | None = None,
