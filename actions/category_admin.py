@@ -30,6 +30,8 @@ from aplans.utils import append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.models.plan import Plan
+from admin_site.forms import WatchAdminModelForm
+from admin_site.panels import TranslatedFieldPanel
 from admin_site.utils import admin_req
 from admin_site.wagtail import (
     AplansAdminModelForm,
@@ -586,9 +588,27 @@ class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCrea
             self.instance.instantiate_for_category_type(ct)
         return result
 
+    def get_form_kwargs(self):
+        return {
+            **super().get_form_kwargs(),
+            'plan': admin_req(self.request).user.get_active_admin_plan(),
+        }
+
 
 class CommonCategoryEditView(CommonCategoryTypeQueryParameterMixin, AplansEditView):
-    pass
+
+    def get_form_class(self):
+        # When editing an existing instance, set the identifier field to be read-only.
+        form_class = super().get_form_class()
+        form_class.base_fields['identifier'].required = False
+        form_class.base_fields['identifier'].disabled = True
+        return form_class
+
+    def get_form_kwargs(self):
+        return {
+            **super().get_form_kwargs(),
+            'plan': admin_req(self.request).user.get_active_admin_plan(),
+        }
 
 
 class CommonCategoryDeleteView(CommonCategoryTypeQueryParameterMixin, DeleteView):
@@ -631,16 +651,6 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
-class CommonCategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self):
-        instance = ctx_instance.get()
-        form_class = super().get_form_class()
-        if instance and instance.pk:
-            form_class.base_fields['identifier'].disabled = True
-            form_class.base_fields['identifier'].required = False
-        return form_class
-
-
 @modeladmin_register
 class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Common categories')
@@ -650,12 +660,16 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     model = CommonCategory
 
     panels = [
-        FieldPanel('name'),
+        TranslatedFieldPanel('name'),
         FieldPanel('identifier'),
-        FieldPanel('lead_paragraph'),
+        TranslatedFieldPanel('lead_paragraph'),
         FieldPanel('image'),
         FieldPanel('color'),
-        FieldPanel('help_text'),
+        TranslatedFieldPanel('help_text'),
+        CondensedInlinePanel('icons', heading=_("Icons"), panels=[
+            FieldPanel('language'),
+            FieldPanel('image'),
+        ]),
     ]
 
     create_view_class = CommonCategoryCreateView
@@ -681,22 +695,5 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
         return CommonCategoryAdminMenuItem(self, order or self.get_menu_order())
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get_as_type(CommonCategory)
-        panels = list(self.panels)
-
-        if request.user.is_superuser:
-            # Didn't use CondensedInlinePanel for the following because there is a bug:
-            # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
-            # and only if the inline instance is collapsed.
-            panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
-                FieldPanel('language'),
-                FieldPanel('image'),
-            ]))
-
-        tabs = [ObjectList(panels, heading=_('Basic information'))]
-
-        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
-        tabs += i18n_tabs
-
-        return CommonCategoryEditHandler(tabs)
+        tabs = [ObjectList(self.panels, heading=_('Basic information'))]
+        return AplansTabbedInterface(tabs, base_form_class=WatchAdminModelForm)
