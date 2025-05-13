@@ -426,7 +426,6 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     create_view_class = CategoryCreateView
     edit_view_class = CategoryEditView
-    # Do we need to create a view for inspect_view?
     delete_view_class = CategoryDeleteView
     button_helper_class = CategoryAdminButtonHelper
     permission_helper_class = CategoryPermissionHelper
@@ -674,7 +673,6 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     create_view_class = CommonCategoryCreateView
     edit_view_class = CommonCategoryEditView
-    # Do we need to create a view for inspect_view?
     delete_view_class = CommonCategoryDeleteView
     button_helper_class = CommonCategoryAdminButtonHelper
 
