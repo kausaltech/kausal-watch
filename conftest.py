@@ -55,6 +55,8 @@ class JSONAPIClient(APIClient):
 
 
 register(actions_factories.ActionContactFactory, 'action_contact')
+register(actions_factories.ActionDependencyRoleFactory)
+register(actions_factories.ActionDependencyRelationshipFactory)
 register(actions_factories.ActionFactory)
 register(actions_factories.ActionImpactFactory)
 register(actions_factories.ActionImplementationPhaseFactory)

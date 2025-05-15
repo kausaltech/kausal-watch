@@ -51,6 +51,7 @@ from actions.models import (
     PlanFeatures,
     Scenario,
 )
+from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
@@ -96,6 +97,12 @@ class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
 class PlanDomainFactory(ModelFactory[PlanDomain]):
     plan = SubFactory(PlanFactory, _domain=None)
     hostname = Sequence(lambda i: f'plandomain{i}.example.org')
+
+
+class ActionDependencyRoleFactory(ModelFactory[ActionDependencyRole]):
+    plan = SubFactory(PlanFactory)
+    name = Sequence(lambda i: f"Action dependency role {i}")
+    order = Sequence(lambda i: i)
 
 
 class ActionStatusFactory(ModelFactory[ActionStatus]):
@@ -376,6 +383,11 @@ class ActionContactFactory(ModelFactory[ActionContactPerson]):
     action = SubFactory(ActionFactory)
     person = SubFactory(PersonFactory, organization=SelfAttribute('..action.plan.organization'))
     role = ActionContactPerson.Role.MODERATOR
+
+
+class ActionDependencyRelationshipFactory(ModelFactory[ActionDependencyRelationship]):
+    preceding = SubFactory(ActionFactory)
+    dependent = SubFactory(ActionFactory, plan=SelfAttribute('..preceding.plan'))
 
 
 class ActionListBlockFactory(StructBlockFactory):
