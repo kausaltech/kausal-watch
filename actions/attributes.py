@@ -17,6 +17,8 @@ from wagtail.models import DraftStateMixin, RevisionMixin
 from dal import autocomplete, forward as dal_forward
 from loguru import logger
 
+from kausal_common.i18n.helpers import convert_language_code
+
 from aplans.utils import convert_html_to_text
 
 import actions.models.attributes as models
@@ -718,7 +720,8 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             ))
 
         # Text (one field for each language)
-        for language in ('', *self.instance.other_languages):
+        languages = [convert_language_code(language, 'modeltrans') for language in self.instance.other_languages]
+        for language in ('', *languages):
             initial_text = None
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if draft_attribute:
@@ -752,7 +755,8 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             return None
         choice_val = cleaned_data[self.choice_form_field_name]
         text_vals = {}
-        for language in ('', *self.instance.other_languages):
+        languages = [convert_language_code(language, 'modeltrans') for language in self.instance.other_languages]
+        for language in ('', *languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             text_form_field_name = self.get_text_form_field_name(language)
             text_vals[attribute_text_field_name] = cast('str', cleaned_data.get(text_form_field_name))
@@ -810,7 +814,8 @@ class GenericTextAttributeType(AttributeType[T]):
         editable = self.is_editable(user, plan, obj)
 
         fields: list[FormField] = []
-        for language in ('', *self.instance.other_languages):
+        languages = [convert_language_code(language, 'modeltrans') for language in self.instance.other_languages]
+        for language in ('', *languages):
             initial_text = None
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if draft_attribute:
@@ -839,7 +844,8 @@ class GenericTextAttributeType(AttributeType[T]):
         if self.get_form_field_name('') not in cleaned_data:
             return None
         text_vals = {}
-        for language in ('', *self.instance.other_languages):
+        languages = [convert_language_code(language, 'modeltrans') for language in self.instance.other_languages]
+        for language in ('', *languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             text_form_field_name = self.get_form_field_name(language)
             text_vals[attribute_text_field_name] = cast('str', cleaned_data.get(text_form_field_name))
