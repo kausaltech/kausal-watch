@@ -711,7 +711,9 @@ class AttributesMixin:
     )
     def resolve_attributes(root: Category | Action, info: GQLInfo, id: str | None = None):
         request = info.context
-        plan = get_plan_from_context(info)
+
+        plan_identifier = info.variable_values.get('plan')
+        plan = get_plan_from_context(info, plan_identifier)
 
         def filter_attrs(attributes: Iterable[Attribute]) -> list[Attribute]:
             result = []
