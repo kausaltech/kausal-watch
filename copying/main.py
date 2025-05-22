@@ -13,7 +13,9 @@ import wagtail.signal_handlers
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
-from django.db.models import Field, Model, Q, signals
+from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
+from modelcluster.fields import ParentalKey
+from modelcluster.models import get_all_child_relations
 from wagtail.fields import StreamField
 from wagtail.models import Page, Revision, Site
 from wagtail.models.media import Collection
@@ -148,12 +150,29 @@ class CloneVisitor(AbstractVisitor):
         """Return true if a copy has been created for the given instance."""
         return (type(instance), instance.pk) in self.copies
 
+    def is_copy(self, instance: Model) -> bool:
+        """Return true if the given instance is a copy of something."""
+        return instance in self.copies.values()
+
     def get_copy[M: Model](self, instance: M) -> M:
         """Get the copy that has been created for the given instance."""
         copy = self.copies[(type(instance), instance.pk)]
         assert type(copy) is type(instance)
         assert isinstance(copy, type(instance))  # implied by previous line, but apparently mypy doesn't figure this out
         return copy
+
+    def register_copy[M: Model](self, original: M, copy: M):
+        """
+        Store that `copy` is a copy of `original`.
+
+        This allows us to later get the copy for the original using self.get_copy(). The clone visitor registers all
+        copies it creates itself, but if you create copies outside of the clone visitor, you can register them here.
+        """
+        key = (type(original), original.pk)
+        assert key not in self.copies
+        assert not self.has_copy(original)  # should be the same as the previous line, but you never know
+        assert not self.is_copy(copy)  # `copy` can't be a copy of multiple originals
+        self.copies[key] = copy
 
     def visit(self, node: TreeNode):
         """
@@ -174,9 +193,8 @@ class CloneVisitor(AbstractVisitor):
             )
         self.save_copy(node.instance)
         logger.info(f"Created {type(node.instance).__name__} {node.instance.pk}: {node.instance}")
-        key = (node.model_class, original_instance.pk)
-        assert key not in self.copies
-        self.copies[key] = node.instance
+        assert isinstance(node.instance, node.model_class)
+        self.register_copy(original_instance, node.instance)
         self.post_visit(original_instance, node.instance)
 
     def remove_link(self, instance: Model, field: str):
@@ -330,8 +348,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         self.update_cluster_related_objects(instance)
         update_fields = []
         update_fields += self.update_foreign_keys(instance)
-        if isinstance(instance, Page):
-            update_fields += self.update_streamfield_references(instance)
+        update_fields += self.update_indexed_references(instance)
         # Save changes
         if update_fields and save:
             instance.save(update_fields=update_fields)
@@ -389,6 +406,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     if related_object:
                         # `related_object` should be a copy already
                         assert not self.clone_visitor.has_copy(related_object)
+                        assert self.clone_visitor.is_copy(related_object)
                         # `cro` currently references the ID of the original of the copy `related_object`, so we update it
                         setattr(cro, fk.name, related_object)
                         logger.trace(
@@ -419,27 +437,52 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     update_fields.append(fk.name)
         return update_fields
 
-    def update_streamfield_references(self, page: Page) -> list[str]:
+    def update_indexed_references(self, instance: Model) -> list[str]:
         update_fields = set()
-        for ref in ReferenceIndex.get_references_for_object(page):
+        for ref in ReferenceIndex.get_references_for_object(instance):
             referenced_object = ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)
             try:
                 copy = self.clone_visitor.get_copy(referenced_object)
             except KeyError:
                 continue
-            if not isinstance(ref.source_field, StreamField):
-                continue
-
-            # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
-            # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
-            # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
-            # `ref.content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
-            # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
-            # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
-            # propagate changes to its value to the StreamField's value.
-            field_name, *content_path = ref.content_path.split('.')
-            update_streamfield_block(page, field_name, content_path, copy.pk)
-            update_fields.add(field_name)
+            if isinstance(ref.source_field, StreamField):
+                # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
+                # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
+                # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
+                # `ref.content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
+                # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
+                # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
+                # propagate changes to its value to the StreamField's value.
+                field_name, *content_path = ref.content_path.split('.')
+                update_streamfield_block(instance, field_name, content_path, copy.pk)
+                update_fields.add(field_name)
+            elif isinstance(ref.source_field, ManyToOneRel):
+                if not isinstance(instance, Page):
+                    # In this case, we will update the reference elsewhere using the clone structure. (I hope!) For
+                    # pages owning (and thus referencing) other objects, we can't use the clone structure because
+                    # copying pages uses Wagtail's copy logic.
+                    continue
+                # `instance` is the parent of an object that references
+                # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
+                # The referencing object is of type `ref.source_field.related_model`.
+                field_name, id, *content_path = ref.content_path.split('.')
+                assert field_name == ref.source_field.related_name
+                manager = getattr(instance, field_name)
+                assert isinstance(manager, Manager)
+                # Create `instance._cluster_related_objects`
+                manager.get_object_list()  # type: ignore[attr-defined]
+                referencing_object = manager.get(id=id)
+                child_field_name, *child_content_path = content_path
+                child_field = referencing_object._meta.get_field(child_field_name)
+                if isinstance(child_field, StreamField):
+                    update_streamfield_block(referencing_object, child_field_name, child_content_path, copy.pk)
+                    assert field_name in instance._cluster_related_objects
+                    update_fields.add(field_name)
+                else:
+                    # Not sure if there are other cases, but I haven't accounted for any others...
+                    assert isinstance(child_field, ForeignKey)
+                    setattr(referencing_object, child_field_name, copy)
+                    update_fields.add(field_name)
         return list(update_fields)
 
     def visit(self, node: TreeNode) -> None:
@@ -549,6 +592,38 @@ def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
     return wrapped
 
 
+def get_objects_owned_by_page(page: Page) -> Generator[Model]:
+    """
+    Return objects that have a parental key to the given page.
+
+    This is not recursive. More complex data models would probably need recursion, but for our current model, this
+    should do.
+    """
+    for child_relation in get_all_child_relations(page):
+        assert isinstance(child_relation.remote_field, ParentalKey)
+        manager = getattr(page, child_relation.get_accessor_name())
+        yield from manager.all()
+
+
+def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_copy: Page):
+    """
+    Register the pages in the tree rooted at `root_copy` as copies of those rooted at `original_root`.
+
+    Also registers objects "owned" by the pages, i.e., objects with a parental key to a page.
+
+    The two page trees must be isomorphic.
+    """
+    original_pages = original_root.get_descendants().specific()
+    page_copies = root_copy.get_descendants().specific()
+    for original_page, page_copy in zip(original_pages, page_copies, strict=True):
+        assert type(original_page) is type(page_copy)
+        clone_visitor.register_copy(original_page, page_copy)
+        original_children = get_objects_owned_by_page(original_page)
+        copy_children = get_objects_owned_by_page(page_copy)
+        for original_child, child_copy in zip(original_children, copy_children, strict=True):
+            clone_visitor.register_copy(original_child, child_copy)
+
+
 @update_reference_index_immediately
 def copy_plan(
     plan: Plan,
@@ -604,6 +679,7 @@ def copy_plan(
         root_page=plan.site.root_page.specific,
         title_suffix=root_page_title_suffix,
     )
+    register_page_copies(clone_visitor, plan.site.root_page.specific, root_page_copy)
     plan_copy = Plan.objects.get(pk=plan.pk)
     # Hack to avoid site (and root page) initialization in Plan.save()  # noqa: FIX004
     plan_copy._site_created = True
@@ -628,6 +704,7 @@ def copy_plan(
         assert isinstance(root_page, DocumentationRootPage)
         root_page.plan = plan_copy
         root_page.save(update_fields=['plan'])
+        register_page_copies(clone_visitor, documentation_root_page, root_page)
 
     # Attribute types use generic foreign keys, so we need to copy them ourselves
     plan_ct = ContentType.objects.get_for_model(Plan)
