@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import logging
 import random
 import re
@@ -36,6 +37,8 @@ import humanize
 import libvoikko  # type: ignore
 import sentry_sdk
 from tinycss2.color3 import parse_color
+
+from kausal_common.i18n.helpers import convert_language_code
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -622,6 +625,55 @@ class ModelWithPrimaryLanguage(models.Model):
         self.primary_language_lowercase = self.primary_language.lower()
         super().save(*args, **kwargs)
 
+
+def get_primary_language(instance: Model, plan: Plan | None) -> str:
+    """
+    Get the primary language of the model instance.
+
+    Defaults to the primary language of plan if the model does not have a primary language.
+    """
+    if plan is None:
+        return ''
+
+    primary_language = None
+
+    if isinstance(instance, ModelWithPrimaryLanguage):
+        primary_language = instance.primary_language
+
+    if not primary_language:
+        primary_language = plan.primary_language
+
+    return convert_language_code(primary_language, 'django')
+
+def get_all_languages(instance: Model, plan: Plan | None) -> list[str]:
+    """
+    Get all languages associated with the model instance.
+
+    Defaults to the languages of plan if the model does not have 'plans' attribute.
+    """
+    if plan is None:
+        return []
+
+    plans = {plan}
+    if hasattr(instance, 'plans'):
+        with contextlib.suppress(ValueError):
+            plans |= set(instance.plans.all())  # type: ignore
+
+    languages = set()
+    for p in plans:
+        languages.add(p.primary_language)
+        languages |= set(p.other_languages)
+
+    languages = {convert_language_code(language, 'django') for language in languages}
+    return list(languages)
+
+def get_secondary_languages(instance: Model, plan: Plan | None) -> list[str]:
+    """Get all languages associated with the model instance except the primary language."""
+    if plan is None:
+        return []
+
+    primary_language = get_primary_language(instance, plan)
+    return [language for language in get_all_languages(instance, plan) if language != primary_language]
 
 type AdminSaveOperation = Literal['edit', 'create']
 
