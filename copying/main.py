@@ -342,13 +342,19 @@ class UpdateReferencesVisitor(AbstractVisitor):
         # The object `clone_visitor` will be used for associating instances with their copies.
         self.clone_visitor = clone_visitor
 
-    def update_instance(self, instance: Model, save: bool = True):
-        """Update all references from `instance` to objects that have been copied to point to the copies."""
+    def update_instance(self, instance: Model, save: bool = True, skip_page_draft: bool = False) -> bool:
+        """
+        Update all references from `instance` to objects that have been copied to point to the copies.
+
+        Returns true if and only if the instance was updated, regardless of whether it was saved.
+        """
         logger.trace(f"Update references of {type(instance).__name__} {instance.pk}: {instance}")
         self.update_cluster_related_objects(instance)
         update_fields = []
         update_fields += self.update_foreign_keys(instance)
         update_fields += self.update_indexed_references(instance)
+        if isinstance(instance, Page) and not skip_page_draft:
+            update_fields += self.update_page_draft(instance)
         # Save changes
         if update_fields and save:
             instance.save(update_fields=update_fields)
@@ -356,6 +362,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 f"Updated references in {len(update_fields)} fields of "
                 f"{type(instance).__name__} {instance.pk}: {instance}"
             )
+        return bool(update_fields)
 
     def _get_references(
         self, instance: Model, exclude_fields: Iterable[str] | None = None
@@ -381,38 +388,49 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def _(self, instance: Plan) -> Generator[Field | GenericForeignKey]:
         return self._get_references(instance, exclude_fields=['copy_of'])
 
+    def update_cluster_related_object(self, parent: Model, cro: Model):
+        # If `cro` is owned by a page (via a parental link), it is a copy already because then the copy got
+        # created when we called Wagtail's page copy function. If `cro` is not owned by a page, then we copied
+        # it ourselves but the cluster-related objects still reference the originals, so we need to replace
+        # `cro` with its corresponding copy.
+        assert not isinstance(parent, Page) or self.clone_visitor.is_copy(cro)
+        assert isinstance(parent, Page) or not self.clone_visitor.is_copy(cro)
+        if cro.pk is not None and not isinstance(parent, Page):
+            try:
+                cro_copy = self.clone_visitor.get_copy(cro)
+            except KeyError:
+                # Probably there is no copy because the model instance that `cro` originally corresponded to no
+                # longer exists in the database.
+                cro.pk = None
+                logger.warning(
+                    f"In cluster related objects of {type(parent).__name__} {parent.pk}: Could not find "
+                    f"copy for {type(cro).__name__} {cro.pk}: {cro}"
+                )
+            else:
+                cro.pk = cro_copy.pk
+                logger.trace(
+                    f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set primary key "
+                    f"of {type(cro).__name__} {cro.pk} to: {cro_copy.pk}"
+                )
+
+        for fk in self.get_references(cro):
+            related_object = getattr(cro, fk.name)
+            if related_object:
+                # `related_object` may or may not be a copy already depending on what some other code did before
+                if self.clone_visitor.has_copy(related_object):
+                    related_object = self.clone_visitor.get_copy(related_object)
+                setattr(cro, fk.name, related_object)
+                assert hasattr(cro, f'{fk.name}_id')
+                setattr(cro, f'{fk.name}_id', related_object.id)
+                logger.trace(
+                    f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set foreign key "
+                    f"'{fk.name}' of {type(cro).__name__} {parent.pk} to: {related_object.pk}"
+                )
+
     def update_cluster_related_objects(self, instance: Model):
         for cros in getattr(instance, '_cluster_related_objects', {}).values():
             for cro in cros:
-                if cro.id is not None:
-                    try:
-                        cro_copy = self.clone_visitor.get_copy(cro)
-                    except KeyError:
-                        # Probably there is no copy because the model instance that `cro` originally corresponded to no
-                        # longer exists in the database.
-                        cro.id = None
-                        logger.trace(
-                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Could not find "
-                            f"copy for {type(cro).__name__} {cro.pk}: {cro}"
-                        )
-                    else:
-                        cro.id = cro_copy.id
-                        logger.trace(
-                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Set primary key "
-                            f"of {type(cro).__name__} {cro.pk} to: {cro_copy.id}"
-                        )
-                for fk in self.get_references(cro):
-                    related_object = getattr(cro, fk.name)
-                    if related_object:
-                        # `related_object` should be a copy already
-                        assert not self.clone_visitor.has_copy(related_object)
-                        assert self.clone_visitor.is_copy(related_object)
-                        # `cro` currently references the ID of the original of the copy `related_object`, so we update it
-                        setattr(cro, fk.name, related_object)
-                        logger.trace(
-                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Set foreign key "
-                            f"'{fk.name}' of {type(cro).__name__} {instance.pk} to: {related_object.pk}"
-                        )
+                self.update_cluster_related_object(instance, cro)
 
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
@@ -485,6 +503,21 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     update_fields.add(field_name)
         return list(update_fields)
 
+    def update_page_draft(self, page: Page) -> list[str]:
+        updated_fields = []
+        if page.latest_revision:
+            assert isinstance(page.latest_revision, Revision)
+            rev_obj = page.latest_revision.as_object()
+            # Update but don't save `rev_obj`. (Otherwise we'd overwrite published pages with drafts. We just want to
+            # create a revision out of `rev_obj` and save that.
+            # Skip updating the latest revision of `rev_obj` because that would be an infinite loop.
+            updated = self.update_instance(rev_obj, save=False, skip_page_draft=True)
+            if updated:
+                new_rev = rev_obj.save_revision(changed=False)
+                page.latest_revision = new_rev
+                updated_fields.append('latest_revision')
+        return updated_fields
+
     def visit(self, node: TreeNode) -> None:
         self.update_instance(node.instance)
 
@@ -535,12 +568,14 @@ def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
             # The PK of `rev_obj` is that of the original from which `action` was copied
             rev_obj.pk = action.pk
             rev_obj.uuid = action.uuid
+            assert action.copy_of
+            rev_obj.copy_of = action.copy_of
             # Update but don't save `rev_obj`. (Otherwise we'd overwrite published actions with drafts. We just want to
             # create a revision out of `rev_obj` and save that.
             update_references_visitor.update_instance(rev_obj, save=False)
             if rev_obj.draft_attributes:
                 rev_obj.draft_attributes.replace_references(clone_visitor)
-            new_rev = rev_obj.save_revision()
+            new_rev = rev_obj.save_revision(changed=False)
             action.latest_revision = new_rev
             action.save(update_fields=['latest_revision'])
 
