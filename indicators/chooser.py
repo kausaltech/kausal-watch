@@ -7,6 +7,8 @@ from wagtail.search.backends import get_search_backend
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 
+from admin_site.utils import ChooserListingTabMixinWithEmptyResultsMessage
+
 from .models import Dimension, Indicator, IndicatorDimension
 
 
@@ -89,6 +91,7 @@ class DimensionChooserViewSet(ModelChooserViewSet):
     icon = 'tag'
     chooser_class = DimensionChooser
     url_prefix = 'dimension-chooser'
+    listing_tab_mixin_class = ChooserListingTabMixinWithEmptyResultsMessage
 
 
 @hooks.register('register_admin_viewset')

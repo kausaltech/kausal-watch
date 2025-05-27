@@ -6,6 +6,8 @@ from django.http.request import HttpRequest
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from generic_chooser.views import ChooserListingTabMixin
+
 from aplans.types import WatchAdminRequest
 
 if TYPE_CHECKING:
@@ -37,6 +39,17 @@ class FieldLabelRenderer:
         if self.plan_features.display_field_visibility_restrictions:
             return render_html_label_for_visibility(text_content, public)
         return text_content
+
+
+class ChooserListingTabMixinWithEmptyResultsMessage(ChooserListingTabMixin):
+    """Override chooser result template to display a message when there are no results."""
+
+    def get_results_template(self):
+        # We check whether the object list is empty here rather than in the template because the template only gets a
+        # generator, which does not allow us to check for emptiness without exhausting the generator
+        if not self.object_list:
+            return 'admin_site/chooser_results_empty.html'
+        return super().get_results_template()
 
 
 def admin_req(request: HttpRequest) -> WatchAdminRequest:
