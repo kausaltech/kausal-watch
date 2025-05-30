@@ -3,6 +3,9 @@ import re
 from wagtail.embeds.finders.base import EmbedFinder
 
 
+DEFAULT_PROVIDER_NAME = 'default'
+
+
 def get_thumbnail_url(provider, url):
     if provider == 'Plotly Chart Studio':
         return url.replace('.embed', '.png')
@@ -12,7 +15,7 @@ def get_thumbnail_url(provider, url):
 class GenericFinder(EmbedFinder):
 
     def __init__(self, **options):
-        self.provider = options['provider']
+        self.provider = options.get('provider', DEFAULT_PROVIDER_NAME)
         self.domain_whitelist = options['domain_whitelist']
         self.title = options['title']
         self.acceptable_url_re = re.compile(
