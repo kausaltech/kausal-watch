@@ -11,6 +11,7 @@ from wagtail.models import Task as WagtailTask, Workflow, WorkflowTask
 from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
+from wagtail.test.utils.wagtail_factories.blocks import BlockFactory
 
 import factory
 from factory.declarations import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory
@@ -19,6 +20,8 @@ from factory.helpers import post_generation
 from aplans.factories import ModelFactory
 
 from actions.blocks import ActionListBlock, CategoryListBlock
+from actions.blocks.category_page_layout import CategoryPageAttributeTypeBlock, CategoryPageProgressBlock
+from actions.blocks.choosers import AttributeTypeChooserBlock
 from actions.models import (
     Action,
     ActionContactPerson,
@@ -404,6 +407,27 @@ class CategoryListBlockFactory(StructBlockFactory):
     heading = "Category list heading"
     lead = RichText("<p>Category list lead</p>")
     style = 'cards'
+
+
+class AttributeTypeChooserBlockFactory(BlockFactory):
+    class Meta:
+        model = AttributeTypeChooserBlock
+
+    value = SubFactory('actions.tests.factories.AttributeTypeFactory')
+
+
+class CategoryPageAttributeTypeBlockFactory(StructBlockFactory):
+    class Meta:
+        model = CategoryPageAttributeTypeBlock
+
+    attribute_type = SubFactory(AttributeTypeChooserBlockFactory)
+
+
+class CategoryPageProgressBlockFactory(StructBlockFactory):
+    class Meta:
+        model = CategoryPageProgressBlock
+
+    basis = 'implementation_phase'
 
 
 class WagtailTaskFactory(ModelFactory[WagtailTask]):

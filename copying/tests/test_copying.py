@@ -6,8 +6,15 @@ import pytest
 
 from actions.tests.factories import ActionContactFactory, WorkflowFactory
 from copying.main import copy_plan
+from pages.tests.factories import CategoryTypePageLevelLayoutFactory
 
 pytestmark = pytest.mark.django_db
+
+
+def get_page_copy(page, plan_copy):
+    page_copy = plan_copy.root_page.get_children().get(url_path=page.url_path).specific
+    assert type(page_copy) is type(page)
+    return page_copy
 
 
 def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, action, user):
@@ -23,3 +30,69 @@ def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, a
     assert isinstance(action_copy.latest_revision, Revision)
     action_copy.latest_revision.publish()
     assert action.contact_persons.exists()
+
+
+def test_category_type_copy_references_copied_plan(plan_with_pages, category_type):
+    assert plan_with_pages.category_types.get() == category_type
+    plan_copy = copy_plan(plan_with_pages)
+    category_type_copy = plan_copy.category_types.get()
+    assert category_type_copy.plan == plan_copy
+
+
+def test_copying_does_not_create_action_draft(plan_with_pages, action):
+    assert not action.latest_revision
+    copy_plan(plan_with_pages)
+    action_copy = plan_with_pages.actions.get()
+    assert not action_copy.latest_revision
+
+
+def test_copying_creates_page_draft_without_changes(plan_with_pages, category_type_page):
+    # We use Wagtail's copy_page to copy pages. This creates a new revision for each page. (This is in contrast to,
+    # e.g., actions, where copying the plan does not create a new revision.) The new revision for the pages created by
+    # copying should, however, not contain any changes.
+    assert not category_type_page.latest_revision
+    plan_copy = copy_plan(plan_with_pages)
+    page_copy = get_page_copy(category_type_page, plan_copy)
+    assert page_copy.latest_revision
+    assert not page_copy.has_unpublished_changes
+
+
+@pytest.mark.parametrize('category_type__synchronize_with_pages', [True])
+def test_succeed_when_category_type_pages_are_synchronized(plan_with_pages, category_type, category, category_level):
+    # The specified fixtures are necessary to prevent a regression that would raise a ValidationError when references
+    # are updated in a draft of a category page when page synchronization is active and there are category levels
+    copy_plan(plan_with_pages)
+
+
+def test_update_references_in_page(plan_with_pages, category_type_page, attribute_type):
+    CategoryTypePageLevelLayoutFactory(
+        page=category_type_page,
+        layout_main_top__0__attribute__attribute_type=attribute_type,
+        # TODO: Also test updating of level at some point?
+        level=None,
+    )
+    plan_copy = copy_plan(plan_with_pages)
+    category_type_copy = plan_copy.category_types.get()
+    page_copy = get_page_copy(category_type_page, plan_copy)
+    layout_copy = page_copy.level_layouts.get()
+    block_copy_attribute_type = layout_copy.layout_main_top[0].value['attribute_type']
+    assert block_copy_attribute_type.scope == category_type_copy
+
+
+def test_update_references_in_page_draft(plan_with_pages, category_type_page, attribute_type):
+    # Create CategoryTypePageLevelLayout in draft
+    layout = CategoryTypePageLevelLayoutFactory.build(
+        page=category_type_page,
+        layout_main_top__0__attribute__attribute_type=attribute_type,
+        # TODO: Also test updating of level at some point?
+        level=None,
+    )
+    category_type_page.level_layouts.add(layout)
+    category_type_page.save_revision()
+    plan_copy = copy_plan(plan_with_pages)
+    category_type_copy = plan_copy.category_types.get()
+    page_copy = get_page_copy(category_type_page, plan_copy)
+    draft_copy = page_copy.latest_revision.as_object()
+    layout_copy = draft_copy.level_layouts.get()
+    block_copy_attribute_type = layout_copy.layout_main_top[0].value['attribute_type']
+    assert block_copy_attribute_type.scope == category_type_copy

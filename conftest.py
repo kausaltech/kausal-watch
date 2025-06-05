@@ -125,6 +125,8 @@ register(pages_factories.CardBlockFactory)
 # https://github.com/wagtail/wagtail-factories/issues/40
 # register(pages_factories.CardListBlockFactory)
 register(pages_factories.CategoryPageFactory)
+register(pages_factories.CategoryTypePageFactory, parent=LazyFixture(lambda plan: plan.root_page))
+register(pages_factories.CategoryTypePageLevelLayoutFactory)
 register(pages_factories.FrontPageHeroBlockFactory)
 register(pages_factories.PageChooserBlockFactory, parent=LazyFixture(lambda plan: plan.root_page))
 register(pages_factories.PageLinkBlockFactory)

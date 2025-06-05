@@ -11,9 +11,13 @@ from wagtail.test.utils.wagtail_factories import (
 )
 from wagtail.test.utils.wagtail_factories.blocks import BlockFactory
 
-from factory import Factory, LazyAttribute, SelfAttribute, SubFactory
+from factory import LazyAttribute, SelfAttribute, SubFactory
 
-import pages
+from aplans.factories import ModelFactory
+
+import pages.blocks
+import pages.models
+from actions.tests.factories import CategoryLevelFactory, CategoryPageAttributeTypeBlockFactory, CategoryPageProgressBlockFactory
 from images.tests.factories import AplansImageFactory
 
 
@@ -123,6 +127,25 @@ class CategoryPageFactory(PageFactory):
     ]
     # A category page must have a parent (assumed in CategoryPage.set_url_path)
     parent = SelfAttribute('category.type.plan.root_page')
+
+
+class CategoryTypePageFactory(StaticPageFactory):
+    class Meta:
+        model = pages.models.CategoryTypePage
+
+    category_type = SubFactory('actions.tests.factories.CategoryTypeFactory')
+
+
+class CategoryTypePageLevelLayoutFactory(ModelFactory[pages.models.CategoryTypePageLevelLayout]):
+    page = SubFactory(CategoryTypePageFactory)
+    level = SubFactory(CategoryLevelFactory)
+    layout_main_top = StreamFieldFactory({
+        'attribute': SubFactory(CategoryPageAttributeTypeBlockFactory),
+        'progress': SubFactory(CategoryPageProgressBlockFactory),
+    })
+    # If we wanted this factory to create an example layout:
+    # layout_main_top__0__attribute__attribute_type__name = 'foo'
+    # layout_main_top__1 = 'progress'
 
 
 class CardBlockFactory(StructBlockFactory):
