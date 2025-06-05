@@ -15,7 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
 from modelcluster.fields import ParentalKey
-from modelcluster.models import get_all_child_relations
+from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import StreamField
 from wagtail.models import Page, Revision, Site
 from wagtail.models.media import Collection
@@ -349,15 +349,19 @@ class UpdateReferencesVisitor(AbstractVisitor):
         Returns true if and only if the instance was updated, regardless of whether it was saved.
         """
         logger.trace(f"Update references of {type(instance).__name__} {instance.pk}: {instance}")
-        self.update_cluster_related_objects(instance)
         update_fields = []
+        update_fields += self.update_cluster_related_objects(instance)
         update_fields += self.update_foreign_keys(instance)
         update_fields += self.update_indexed_references(instance)
         if isinstance(instance, Page) and not skip_page_draft:
             update_fields += self.update_page_draft(instance)
         # Save changes
         if update_fields and save:
-            instance.save(update_fields=update_fields)
+            save_kwargs: dict[str, Any] = {'update_fields': update_fields}
+            # Ugly ad-hoc workaround :(
+            if isinstance(instance, (Category, CategoryType)):
+                save_kwargs['skip_page_synchronization'] = True
+            instance.save(**save_kwargs)
             logger.info(
                 f"Updated references in {len(update_fields)} fields of "
                 f"{type(instance).__name__} {instance.pk}: {instance}"
@@ -388,30 +392,49 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def _(self, instance: Plan) -> Generator[Field | GenericForeignKey]:
         return self._get_references(instance, exclude_fields=['copy_of'])
 
-    def update_cluster_related_object(self, parent: Model, cro: Model):
-        # If `cro` is owned by a page (via a parental link), it is a copy already because then the copy got
-        # created when we called Wagtail's page copy function. If `cro` is not owned by a page, then we copied
-        # it ourselves but the cluster-related objects still reference the originals, so we need to replace
-        # `cro` with its corresponding copy.
-        assert not isinstance(parent, Page) or self.clone_visitor.is_copy(cro)
-        assert isinstance(parent, Page) or not self.clone_visitor.is_copy(cro)
-        if cro.pk is not None and not isinstance(parent, Page):
-            try:
-                cro_copy = self.clone_visitor.get_copy(cro)
-            except KeyError:
+    def update_extractable_references(self, instance: Model) -> bool:
+        updated = False
+        for field in instance._meta.get_fields():
+            if isinstance(field, Field) and hasattr(field, 'extract_references'):
+                value = field.value_from_object(instance)
+                for to_model, to_object_id, _, content_path in field.extract_references(value):
+                    to_object = to_model.objects.get(id=to_object_id)
+                    updated_this = self.update_reference(
+                        from_object=instance,
+                        to_object=to_object,
+                        source_field=field,
+                        content_path=f'{field.name}.{content_path}',
+                    )
+                    if updated_this:
+                        updated = True
+        return updated
+
+    def update_cluster_related_object(self, parent: Model, cro: Model) -> bool:
+        updated = False
+        try:
+            cro_copy = self.clone_visitor.get_copy(cro)
+        except KeyError:
+            if cro.pk is not None and not self.clone_visitor.is_copy(cro):
                 # Probably there is no copy because the model instance that `cro` originally corresponded to no
                 # longer exists in the database.
                 cro.pk = None
+                updated = True
                 logger.warning(
                     f"In cluster related objects of {type(parent).__name__} {parent.pk}: Could not find "
                     f"copy for {type(cro).__name__} {cro.pk}: {cro}"
                 )
-            else:
-                cro.pk = cro_copy.pk
-                logger.trace(
-                    f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set primary key "
-                    f"of {type(cro).__name__} {cro.pk} to: {cro_copy.pk}"
-                )
+        else:
+            assert cro.pk != cro_copy.pk
+            cro.pk = cro_copy.pk
+            updated = True
+            logger.trace(
+                f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set primary key "
+                f"of {type(cro).__name__} {cro.pk} to: {cro_copy.pk}"
+            )
+
+        updated_extractable_refs = self.update_extractable_references(cro)
+        if updated_extractable_refs:
+            updated = True
 
         for fk in self.get_references(cro):
             related_object = getattr(cro, fk.name)
@@ -420,17 +443,26 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 if self.clone_visitor.has_copy(related_object):
                     related_object = self.clone_visitor.get_copy(related_object)
                 setattr(cro, fk.name, related_object)
-                assert hasattr(cro, f'{fk.name}_id')
-                setattr(cro, f'{fk.name}_id', related_object.id)
-                logger.trace(
-                    f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set foreign key "
-                    f"'{fk.name}' of {type(cro).__name__} {parent.pk} to: {related_object.pk}"
-                )
+                if hasattr(fk, 'fk_field'):
+                    id_field = fk.fk_field
+                else:
+                    id_field = fk.attname
+                if getattr(cro, id_field) != related_object.id:
+                    setattr(cro, id_field, related_object.id)
+                    updated = True
+                    logger.trace(
+                        f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set foreign key "
+                        f"'{fk.name}' of {type(cro).__name__} {parent.pk} to: {related_object.pk}"
+                    )
+        return updated
 
-    def update_cluster_related_objects(self, instance: Model):
-        for cros in getattr(instance, '_cluster_related_objects', {}).values():
-            for cro in cros:
-                self.update_cluster_related_object(instance, cro)
+    def update_cluster_related_objects(self, instance: Model) -> list[str]:
+        update_fields = set()
+        for field_name, child_object in get_cluster_related_objects(instance):
+            updated = self.update_cluster_related_object(instance, child_object)
+            if updated:
+                update_fields.add(field_name)
+        return list(update_fields)
 
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
@@ -455,52 +487,78 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     update_fields.append(fk.name)
         return update_fields
 
+    def update_reference(self, from_object: Model, to_object: Model, source_field: Field, content_path: str) -> bool:
+        """
+        Update the reference to `to_object` in the field `source_field` of `from_object` at `content_path`.
+
+        Returns true if and only if the instance was updated.
+        """
+
+        try:
+            copy = self.clone_visitor.get_copy(to_object)
+        except KeyError:
+           return False
+
+        if isinstance(source_field, StreamField):
+            # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
+            # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
+            # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
+            # `content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
+            # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
+            # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
+            # propagate changes to its value to the StreamField's value.
+            field_name, *content_path_rest = content_path.split('.')
+            assert field_name == source_field.name
+            update_streamfield_block(from_object, field_name, content_path_rest, copy.pk)
+            return True
+
+        if isinstance(source_field, ManyToOneRel):
+            if not isinstance(from_object, Page):
+                # In this case, we will update the reference elsewhere using the clone structure. (I hope!) For
+                # pages owning (and thus referencing) other objects, we can't use the clone structure because
+                # copying pages uses Wagtail's copy logic.
+                return False
+            # `from_object` is the parent of an object that references
+            # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
+            # The referencing object is of type `source_field.related_model`.
+            field_name, id, *content_path_rest = content_path.split('.')
+            assert field_name == source_field.name
+            assert field_name == source_field.related_name
+            manager = getattr(from_object, field_name)
+            assert isinstance(manager, Manager)
+            # Create `from_object._cluster_related_objects`
+            manager.get_object_list()  # type: ignore[attr-defined]
+            referencing_object = manager.get(id=id)
+            child_field_name, *child_content_path = content_path_rest
+            child_field = referencing_object._meta.get_field(child_field_name)
+            if isinstance(child_field, StreamField):
+                update_streamfield_block(referencing_object, child_field_name, child_content_path, copy.pk)
+                assert field_name in from_object._cluster_related_objects
+            else:
+                # Not sure if there are other cases, but I haven't accounted for any others...
+                assert isinstance(child_field, ForeignKey)
+                setattr(referencing_object, child_field_name, copy)
+            return True
+
+        if isinstance(source_field, ForeignKey):
+            assert source_field.name == content_path
+            # Foreign keys should have been already taken care of in a previous call to `self.update_foreign_keys()`
+            assert getattr(from_object, source_field.name) is copy
+            return False
+
+        raise TypeError("Unexpected source field type")
+
     def update_indexed_references(self, instance: Model) -> list[str]:
         update_fields = set()
         for ref in ReferenceIndex.get_references_for_object(instance):
-            referenced_object = ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)
-            try:
-                copy = self.clone_visitor.get_copy(referenced_object)
-            except KeyError:
-                continue
-            if isinstance(ref.source_field, StreamField):
-                # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
-                # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
-                # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
-                # `ref.content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
-                # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
-                # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
-                # propagate changes to its value to the StreamField's value.
-                field_name, *content_path = ref.content_path.split('.')
-                update_streamfield_block(instance, field_name, content_path, copy.pk)
-                update_fields.add(field_name)
-            elif isinstance(ref.source_field, ManyToOneRel):
-                if not isinstance(instance, Page):
-                    # In this case, we will update the reference elsewhere using the clone structure. (I hope!) For
-                    # pages owning (and thus referencing) other objects, we can't use the clone structure because
-                    # copying pages uses Wagtail's copy logic.
-                    continue
-                # `instance` is the parent of an object that references
-                # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
-                # The referencing object is of type `ref.source_field.related_model`.
-                field_name, id, *content_path = ref.content_path.split('.')
-                assert field_name == ref.source_field.related_name
-                manager = getattr(instance, field_name)
-                assert isinstance(manager, Manager)
-                # Create `instance._cluster_related_objects`
-                manager.get_object_list()  # type: ignore[attr-defined]
-                referencing_object = manager.get(id=id)
-                child_field_name, *child_content_path = content_path
-                child_field = referencing_object._meta.get_field(child_field_name)
-                if isinstance(child_field, StreamField):
-                    update_streamfield_block(referencing_object, child_field_name, child_content_path, copy.pk)
-                    assert field_name in instance._cluster_related_objects
-                    update_fields.add(field_name)
-                else:
-                    # Not sure if there are other cases, but I haven't accounted for any others...
-                    assert isinstance(child_field, ForeignKey)
-                    setattr(referencing_object, child_field_name, copy)
-                    update_fields.add(field_name)
+            updated = self.update_reference(
+                from_object=instance,
+                to_object=ref.to_content_type.get_object_for_this_type(id=ref.to_object_id),
+                source_field=ref.source_field,
+                content_path=ref.content_path,
+            )
+            if updated:
+                update_fields.add(ref.source_field.name)
         return list(update_fields)
 
     def update_page_draft(self, page: Page) -> list[str]:
@@ -508,9 +566,11 @@ class UpdateReferencesVisitor(AbstractVisitor):
         if page.latest_revision:
             assert isinstance(page.latest_revision, Revision)
             rev_obj = page.latest_revision.as_object()
+            assert rev_obj.pk == page.pk
             # Update but don't save `rev_obj`. (Otherwise we'd overwrite published pages with drafts. We just want to
             # create a revision out of `rev_obj` and save that.
-            # Skip updating the latest revision of `rev_obj` because that would be an infinite loop.
+            # We set `skip_page_draft=True` to skip updating the latest revision of `rev_obj` because that would be an
+            # infinite loop.
             updated = self.update_instance(rev_obj, save=False, skip_page_draft=True)
             if updated:
                 new_rev = rev_obj.save_revision(changed=False)
@@ -627,17 +687,20 @@ def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
     return wrapped
 
 
-def get_objects_owned_by_page(page: Page) -> Generator[Model]:
+def get_cluster_related_objects(instance: Model) -> Generator[tuple[str, Model]]:
     """
-    Return objects that have a parental key to the given page.
+    Return objects that have a parental key to the given model instance.
 
     This is not recursive. More complex data models would probably need recursion, but for our current model, this
     should do.
     """
-    for child_relation in get_all_child_relations(page):
-        assert isinstance(child_relation.remote_field, ParentalKey)
-        manager = getattr(page, child_relation.get_accessor_name())
-        yield from manager.all()
+    if isinstance(instance, ClusterableModel):
+        for child_relation in get_all_child_relations(instance):
+            assert isinstance(child_relation.remote_field, ParentalKey)
+            field_name = child_relation.get_accessor_name()
+            manager = getattr(instance, field_name)
+            for x in manager.all():
+                yield field_name, x
 
 
 def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_copy: Page):
@@ -653,8 +716,8 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
     for original_page, page_copy in zip(original_pages, page_copies, strict=True):
         assert type(original_page) is type(page_copy)
         clone_visitor.register_copy(original_page, page_copy)
-        original_children = get_objects_owned_by_page(original_page)
-        copy_children = get_objects_owned_by_page(page_copy)
+        original_children = (obj for _, obj in get_cluster_related_objects(original_page))
+        copy_children = (obj for _, obj in get_cluster_related_objects(page_copy))
         for original_child, child_copy in zip(original_children, copy_children, strict=True):
             clone_visitor.register_copy(original_child, child_copy)
 
