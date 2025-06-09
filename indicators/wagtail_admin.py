@@ -47,7 +47,7 @@ from admin_site.wagtail import (
 )
 from indicators.chooser import DimensionChooser
 from orgs.models import Organization
-from people.chooser import PersonChooser
+from kausal_common.people.chooser import PersonChooser
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 

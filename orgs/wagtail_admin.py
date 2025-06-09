@@ -20,10 +20,10 @@ from kausal_common.models.permission_policy import ModelPermissionPolicy, Object
 from admin_site.panels import TranslatedFieldPanel
 from admin_site.utils import admin_req
 from admin_site.wagtail import CondensedInlinePanel
-from people.chooser import PersonChooser
+from kausal_common.people.chooser import PersonChooser
 from users.models import User
 
-from .forms import NodeForm
+from kausal_common.organizations.forms import NodeForm
 from .models import Organization, OrganizationMetadataAdmin
 from .views import (
     CreateChildNodeView,

@@ -3,32 +3,24 @@ from __future__ import annotations
 import contextlib
 import copy
 import hashlib
-import io
 import logging
 import re
 import uuid
-from datetime import timedelta
-from pathlib import Path
+
 from typing import TYPE_CHECKING, ClassVar
 
 import reversion
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 from wagtail.images.rect import Rect
-from wagtail.search import index
 
 import requests
-import willow  # type: ignore
 from easy_thumbnails.files import get_thumbnailer  # type: ignore
-from image_cropping import ImageRatioField
 from sentry_sdk import capture_exception
 
 from kausal_common.models.types import MLModelManager, RevManyToManyQS
@@ -37,8 +29,10 @@ from aplans.utils import PlanDefaultsModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
+from kausal_common.people.models import BasePerson
 from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from users.models import User
+from pathlib import Path
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK, M2M, OneToOne, RevMany
@@ -55,7 +49,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 #User: type[UserModel] = get_user_model()  # type: ignore
 
-DEFAULT_AVATAR_SIZE = 360
+def image_upload_path(instance: BasePerson, filename: str) -> str:
+    f_path = Path(filename)
+    file_extension = f_path.suffix
+    return 'images/%s/%s%s' % (instance._meta.model_name, instance.pk, file_extension)
 
 
 def determine_image_dim(image_width, image_height, width, height):
@@ -84,12 +81,6 @@ def determine_image_dim(image_width, image_height, width, height):
         width = height * ratio
 
     return (width, height)
-
-
-def image_upload_path(instance: Person, filename: str) -> str:
-    f_path = Path(filename)
-    file_extension = f_path.suffix
-    return 'images/%s/%s%s' % (instance._meta.model_name, instance.pk, file_extension)
 
 
 class PersonQuerySet(MultilingualQuerySet['Person']):
@@ -123,39 +114,11 @@ else:
 
 
 @reversion.register()
-class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    first_name = models.CharField(max_length=100, verbose_name=_('first name'))
-    last_name = models.CharField(max_length=100, verbose_name=_('last name'))
-    email = models.EmailField(verbose_name=_('email address'))
-    title = models.CharField(
-        max_length=100, null=True, blank=True,
-        verbose_name=pgettext_lazy("person's role", 'title'),
-    )
-    postal_address = models.TextField(max_length=100, verbose_name=_('postal address'), null=True, blank=True)
-    organization: FK[Organization] = models.ForeignKey(
-        Organization, related_name='people', on_delete=models.CASCADE, verbose_name=_('organization'),
-        help_text=_("What is this person's organization"),
-    )
-    user: OneToOne[User | None] = models.OneToOneField(
-        User, null=True, blank=True, related_name='person', on_delete=models.SET_NULL,
-        editable=False, verbose_name=_('user'),
-        help_text=_('Set if the person has an user account'),
-    )
-
+class Person(BasePerson, PlanDefaultsModel):
     participated_in_training = models.BooleanField(
         null=True, default=False, verbose_name=_('participated in training'),
         help_text=_('Set to keep track who have attended training sessions'),
     )
-
-    image = models.ImageField(
-        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
-        height_field='image_height', width_field='image_width',
-    )
-    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))  # pyright: ignore
-    image_height = models.PositiveIntegerField(null=True, editable=False)
-    image_width = models.PositiveIntegerField(null=True, editable=False)
-    avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
     contact_for_actions_unordered: M2M[Action, ActionContactPerson] = models.ManyToManyField(
         'actions.Action',
@@ -163,27 +126,11 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
         blank=True,
         verbose_name=_('contact for actions'),
     )
-    created_by: FK[UserModel | None] = models.ForeignKey(
-        User, related_name='created_persons', blank=True, null=True, on_delete=models.SET_NULL,
-        verbose_name=_('created by'),
-    )
-    i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language_lowercase')
 
     objects: ClassVar[PersonManager] = PersonManager()  # pyright: ignore
 
-    search_fields = [
-        index.FilterField('id'),
-        index.AutocompleteField('first_name'),
-        index.AutocompleteField('last_name'),
-        index.AutocompleteField('title'),
-        index.RelatedFields('organization', [
-            index.AutocompleteField('distinct_name'),
-            index.AutocompleteField('abbreviation'),
-        ]),
-    ]
-
-    public_fields = [
-        'id', 'uuid', 'first_name', 'last_name', 'email', 'title', 'organization', 'participated_in_training',
+    public_fields = BasePerson.public_fields + [
+        'participated_in_training',
     ]
 
     # Type annotations for related models etc.
@@ -198,43 +145,8 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
     organization_id: int
     created_by_id: int
 
-    class Meta:
-        verbose_name = _('person')
-        verbose_name_plural = _('people')
-        ordering = ('last_name', 'first_name')
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # FIXME: This is hacky
-        field: ImageRatioField = self._meta.get_field('image_cropping')  # type: ignore
-        field.width = DEFAULT_AVATAR_SIZE
-        field.height = DEFAULT_AVATAR_SIZE
-
     def initialize_plan_defaults(self, plan: Plan):
         self.organization = plan.organization
-
-    def validate_unique(self, exclude=None):
-        super().validate_unique(exclude)
-        qs = Person.objects.all()
-        if self.email:
-            qs = qs.filter(email__iexact=self.email)
-        if self.pk:
-            qs = qs.exclude(pk=self.pk)
-        if qs.exists():
-            raise ValidationError({
-                'email': _('Person with this email already exists'),
-            })
-
-    def set_avatar(self, photo):
-        update_fields = ['avatar_updated_at']
-        try:
-            if not self.image or self.image.read() != photo:
-                self.image.save('avatar.jpg', io.BytesIO(photo))  # type: ignore
-                update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
-        except ValueError:
-            pass
-        self.avatar_updated_at = timezone.now()
-        self.save(update_fields=update_fields)
 
     def download_avatar(self):
         url = None
@@ -268,28 +180,6 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
             return
 
         self.set_avatar(resp.content)
-
-    def should_update_avatar(self):
-        if not self.avatar_updated_at:
-            return True
-        return (timezone.now() - self.avatar_updated_at) > timedelta(minutes=60)
-
-    def update_focal_point(self):
-        if not self.image:
-            return
-        with self.image.open() as f:
-            image = willow.Image.open(f)
-            faces = image.detect_faces()
-
-        if not faces:
-            logger.warning('No faces detected for %s' % self)
-            return
-
-        left = min(face[0] for face in faces)
-        top = min(face[1] for face in faces)
-        right = max(face[2] for face in faces)
-        bottom = max(face[3] for face in faces)
-        self.image_cropping = ','.join([str(x) for x in (left, top, right, bottom)])
 
     def get_avatar_url(self, request: WatchRequest, size: str | None = None) -> str | None:
         if not self.image:
@@ -328,26 +218,6 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
             url = request.build_absolute_uri(url)
         return url
 
-    def save(self, *args, **kwargs):
-        old_cropping = self.image_cropping
-        ret = super().save(*args, **kwargs)
-        if self.image and not old_cropping:
-            self.update_focal_point()
-            if self.image_cropping != old_cropping:
-                super().save(update_fields=['image_cropping'])
-        user = self.create_corresponding_user()
-        if self.user != user:
-            if self.user:
-                # Deactivate `self.user` as we'll replace it with `user`
-                # FIXME: We don't have access to any user to set as the deactivating user. There might not be a
-                # deactivating user at all because we're not in a view. Setting `User.deactivated_by` to None may cause
-                # problems.
-                deactivating_user = None
-                self.user.deactivate(deactivating_user)
-            self.user = user
-            super().save(update_fields=['user'])
-
-        return ret
 
     def get_client_for_email_domain(self):
         # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
@@ -403,12 +273,6 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
         if logo_context:
             context['logo'] = logo_context
         return context
-
-    def get_corresponding_user(self):
-        if self.user:
-            return self.user
-
-        return User.objects.filter(email__iexact=self.email).first()
 
     def create_corresponding_user(self):
         user = self.get_corresponding_user()

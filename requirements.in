@@ -94,4 +94,5 @@ diffsync
 django-relations-iterator
 strawberry-graphql
 strawberry-graphql-django
+channels
 wagtail-color-panel

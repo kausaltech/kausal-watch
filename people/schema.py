@@ -6,9 +6,11 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, register_dja
 
 from .models import Person
 
+from kausal_common.people.schema import PersonNode as BasePersonNode
+
 
 @register_django_node
-class PersonNode(DjangoNode):
+class PersonNode(BasePersonNode):
     avatar_url = graphene.String(size=graphene.String())
 
     class Meta:

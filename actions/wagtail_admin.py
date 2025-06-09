@@ -54,7 +54,7 @@ from notifications.models import NotificationSettings
 from orgs.chooser import OrganizationChooser
 from orgs.models import Organization
 from pages.models import PlanLink
-from people.chooser import PersonChooser
+from kausal_common.people.chooser import PersonChooser
 from users.models import User
 
 from . import (

@@ -39,11 +39,18 @@ class Client(ClusterableModel):
         help_text=_('Name of the customer organization administering the plan'),
     )
     logo = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+        'images.AplansImage',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
     )
     # Login method can be overridden per user: If the user has a usable password, that will be used regardless.
     auth_backend = models.CharField(
-        max_length=30, choices=AuthBackend.choices, blank=True, verbose_name=_("login method"),
+        max_length=30,
+        choices=AuthBackend.choices,
+        blank=True,
+        verbose_name=_('login method'),
         help_text=_("Login method that will be used for users that don't have a password set"),
     )
 
@@ -80,10 +87,18 @@ class Client(ClusterableModel):
 
 class ClientPlan(OrderedModel):
     client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans',
+        Client,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name='plans',
     )
     plan = ParentalKey['Plan'](
-        'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients',
+        'actions.Plan',
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name='clients',
     )
 
     def get_sort_order_max(self):
@@ -100,7 +115,11 @@ class ClientPlan(OrderedModel):
 
 class EmailDomains(OrderedModel, ClusterableModel):
     client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='email_domains',
+        Client,
+        on_delete=models.CASCADE,
+        null=False,
+        blank=False,
+        related_name='email_domains',
     )
     domain = HostnameField(unique=True)
 
@@ -132,10 +151,14 @@ class EmailDomains(OrderedModel, ClusterableModel):
 
 
 class BuiltInFieldCustomization(
-    PlanRelatedModel, InstancesEditableByMixin, InstancesVisibleForMixin,
+    PlanRelatedModel,
+    InstancesEditableByMixin,
+    InstancesVisibleForMixin,
 ):
     plan: FK[Plan] = models.ForeignKey(
-        'actions.Plan', on_delete=models.CASCADE, related_name='built_in_field_customizations',
+        'actions.Plan',
+        on_delete=models.CASCADE,
+        related_name='built_in_field_customizations',
     )
     # Model of the customized field
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
@@ -162,10 +185,15 @@ class BuiltInFieldCustomization(
         try:
             model._meta.get_field(self.field_name)
         except FieldDoesNotExist:
-            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {  # noqa: B904
-                'field': self.field_name,
-                'model': self.content_type.model,
-            }})
+            raise ValidationError(
+                {
+                    'field_name': _("%(field)s is not a valid field in the model '%(model)s'")
+                    % {  # noqa: B904
+                        'field': self.field_name,
+                        'model': self.content_type.model,
+                    }
+                }
+            )
         return self.field_name
 
     def __str__(self):

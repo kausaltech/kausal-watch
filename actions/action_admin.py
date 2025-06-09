@@ -64,7 +64,7 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 from orgs.models import Organization
-from people.chooser import PersonChooser
+from kausal_common.people.chooser import PersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 

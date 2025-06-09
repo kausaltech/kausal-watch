@@ -12,12 +12,21 @@ from aplans.graphql_helpers import (
     DeleteModelInstanceMutation,
     UpdateModelInstanceMutation,
 )
-from aplans.graphql_types import DjangoNode, register_django_node
+from aplans.graphql_types import register_django_node
 from aplans.utils import public_fields
 
 from actions.models import Plan
-from orgs.forms import NodeForm
 from orgs.models import Organization, OrganizationClass, OrganizationQuerySet
+
+from kausal_common.organizations.schema import (
+    OrganizationForm as BaseOrganizationForm,
+    OrganizationNode as BaseOrganizationNode,
+    OrganizationClassNode as BaseOrganizationClassNode,
+    CreateOrganizationMutation as BaseCreateOrganizationMutation,
+    UpdateOrganizationMutation as BaseUpdateOrganizationMutation,
+    DeleteOrganizationMutation as BaseDeleteOrganizationMutation,
+    Mutation as BaseMutation,
+)
 
 if TYPE_CHECKING:
     from aplans.graphql_types import GQLInfo
@@ -28,41 +37,33 @@ if TYPE_CHECKING:
 
 # This form is just used in the GraphQL schema, not in Wagtail. For Wagtail, a different form class is created in
 # OrganizationEditHandler.get_form_class().
-class OrganizationForm(NodeForm):
+class OrganizationForm(BaseOrganizationForm):
     class Meta:
         model = Organization
         fields = ['parent', 'name', 'classification', 'abbreviation', 'founding_date', 'dissolution_date']
 
 
 @register_django_node
-class OrganizationClassNode(DjangoNode):
+class OrganizationClassNode(BaseOrganizationClassNode):
     class Meta:
         model = OrganizationClass
         fields = public_fields(OrganizationClass)
 
 
 @register_django_node
-class OrganizationNode(AdminButtonsMixin, DjangoNode):
-    ancestors = graphene.List(lambda: OrganizationNode)
-    descendants = graphene.List(lambda: OrganizationNode)
+class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode):
+
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization',
         required=True,
     )
-    parent = graphene.Field(lambda: OrganizationNode, required=False)
+
     logo = graphene.Field('images.schema.ImageNode', parent_fallback=graphene.Boolean(default_value=False), required=False)
     plans_with_action_responsibilities = graphene.List(
         graphene.NonNull('actions.schema.PlanNode'), except_plan=graphene.ID(required=False), required=True,
     )
 
-    @staticmethod
-    def resolve_ancestors(root: Organization, info) -> OrganizationQuerySet:
-        return root.get_ancestors()
-
-    @staticmethod
-    def resolve_descendants(parent: Organization, info) -> OrganizationQuerySet:
-        return parent.get_descendants()
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -80,13 +81,6 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
     )
     def resolve_contact_person_count(parent: Organization, info) -> int:
         return getattr(parent, 'contact_person_count', 0)
-
-    @gql_optimizer.resolver_hints(
-        only=('path', 'depth'),
-    )
-    @staticmethod
-    def resolve_parent(parent: Organization, info) -> Organization | None:
-        return parent.get_parent()
 
     @gql_optimizer.resolver_hints(
         only=('logo',),
@@ -132,22 +126,22 @@ class Query:
         return Organization.objects.get(id=id)
 
 
-class CreateOrganizationMutation(CreateModelInstanceMutation):
+class CreateOrganizationMutation(BaseCreateOrganizationMutation):
     class Meta:
         form_class = OrganizationForm
 
 
-class UpdateOrganizationMutation(UpdateModelInstanceMutation):
+class UpdateOrganizationMutation(BaseUpdateOrganizationMutation):
     class Meta:
         form_class = OrganizationForm
 
 
-class DeleteOrganizationMutation(DeleteModelInstanceMutation):
+class DeleteOrganizationMutation(BaseDeleteOrganizationMutation):
     class Meta:
         model = Organization
 
 
-class Mutation(graphene.ObjectType):
+class Mutation(BaseMutation):
     create_organization = CreateOrganizationMutation.Field()
     update_organization = UpdateOrganizationMutation.Field()
     delete_organization = DeleteOrganizationMutation.Field()

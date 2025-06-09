@@ -22,6 +22,15 @@ from wagtail.search import index
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 
 from kausal_common.models.types import MLModelManager, RevManyToMany
+from kausal_common.organizations.models import (
+    BaseOrganization,
+    BaseOrganizationClass,
+    BaseOrganizationIdentifier,
+    BaseOrganizationMetadataAdmin,
+    BaseNamespace,
+    BaseOrganizationQuerySet,
+    Node,
+)
 
 from aplans.utils import ModelWithPrimaryLanguage, PlanDefaultsModel, PlanRelatedModel, get_supported_languages
 
@@ -39,62 +48,10 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 
-# TODO: Generalize and put in some other app's models.py
-class Node[QS: MP_NodeQuerySet](MP_Node[QS], ClusterableModel):
-    class Meta:
-        abstract = True
+class OrganizationClass(BaseOrganizationClass):
+    pass
 
-    name = models.CharField[str, str](max_length=255, verbose_name=_("name"))
-
-    # Disabled `node_order_by` for now. If we used this, then we wouldn't be able to use "left sibling" to specify a
-    # position of a node, e.g., when calling the REST API from the grid editor. Since it would be significant work to
-    # change it (e.g., disable move handles in grid editor, distinguish cases in the backend whether model has
-    # node_order_by, etc.) and some customers might want to order their organizations in some way, I decided to disable
-    # `node_order_by`.
-    # node_order_by = ['name']
-
-    public_fields = ['id', 'name']
-
-    # Duplicate get_parent from super class just to set short_description below
-    @admin.display(
-        description=pgettext_lazy('node', 'Parent'),
-    )
-    def get_parent(self, *args, **kwargs) -> Self | None:
-        return super().get_parent(*args, **kwargs)
-
-    def __str__(self) -> str:
-        return self.name
-
-    def get_parent_path(self, update=False) -> str | None:
-        depth = int(len(self.path) / self.steplen)
-        if depth <= 1:
-            return None
-        parentpath = self._get_basepath(self.path, depth - 1)
-        return parentpath
-
-
-class OrganizationClass(models.Model):
-    identifier = models.CharField(max_length=255, unique=True, editable=False)
-    name = models.CharField(max_length=255)
-
-    created_time = models.DateTimeField(auto_now_add=True,
-                                        help_text=_('The time at which the resource was created'))
-    last_modified_time = models.DateTimeField(auto_now=True,
-                                              help_text=_('The time at which the resource was updated'))
-
-    i18n = TranslationField(fields=('name',))
-
-    public_fields: typing.ClassVar = ['id', 'identifier', 'name', 'created_time', 'last_modified_time']
-
-    class Meta:
-        # FIXME: Probably we can't rely on this with i18n
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-
-class OrganizationQuerySet(MP_NodeQuerySet['Organization'], MultilingualQuerySet['Organization']):
+class OrganizationQuerySet(BaseOrganizationQuerySet):
     def editable_by_user(self, user: User):
         if user.is_superuser:
             return self
@@ -157,9 +114,13 @@ class OrganizationQuerySet(MP_NodeQuerySet['Organization'], MultilingualQuerySet
             annotate_filter = Q(responsible_actions__action__plan=plan)
         else:
             annotate_filter = None
-        qs = self.annotate(action_count=Count(
-            'responsible_actions__action', distinct=True, filter=annotate_filter,
-        ))
+        qs = self.annotate(
+            action_count=Count(
+                'responsible_actions__action',
+                distinct=True,
+                filter=annotate_filter,
+            )
+        )
         return qs
 
     def annotate_contact_person_count(self, plan: Plan | None = None):
@@ -167,113 +128,43 @@ class OrganizationQuerySet(MP_NodeQuerySet['Organization'], MultilingualQuerySet
             annotate_filter = Q(people__contact_for_actions__plan=plan)
         else:
             annotate_filter = None
-        qs = self.annotate(contact_person_count=Count(
-            'people', distinct=True, filter=annotate_filter,
-        ))
+        qs = self.annotate(
+            contact_person_count=Count(
+                'people',
+                distinct=True,
+                filter=annotate_filter,
+            )
+        )
         return qs
 
 
 _OrganizationManager = models.Manager.from_queryset(OrganizationQuerySet)
+
+
 class OrganizationManager(MLModelManager['Organization', OrganizationQuerySet], _OrganizationManager): ...
+
+
 del _OrganizationManager
 
 
 @reversion.register()
-class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet], ModelWithPrimaryLanguage, gis_models.Model):
-    # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
-    class Meta:
-        verbose_name = _("organization")
-        verbose_name_plural = _("organizations")
+class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):
+    VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    classification = models.ForeignKey(
-        OrganizationClass,
-        on_delete=models.PROTECT,
-        blank=True,
-        null=True,
-        verbose_name=_('Classification'),
-        help_text=_('An organization category, e.g. committee'),
-    )
-    # TODO: Check if we can / should remove this since already `Node` specifies `name`
-    name = models.CharField[str, str](max_length=255, help_text=_('A primary name, e.g. a legally recognized name'))
-    abbreviation = models.CharField(
-        max_length=50,
-        blank=True,
-        verbose_name=_('Short name'),
-        help_text=_('A simplified short version of name for the general public'),
-    )
-    internal_abbreviation = models.CharField(
-        max_length=50, blank=True, verbose_name=_('Internal abbreviation'), help_text=_('An internally used abbreviation'),
-    )
-    distinct_name = models.CharField(
-        max_length=400, editable=False, null=True, help_text=_('A distinct name for this organization (generated automatically)'),
-    )
     logo: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name='+',
-        help_text=_("Organization logo. Please provide a square image (min. 250x250px). "
-                    "The logo used for the organization's social media often works best."),
+        help_text=_(
+            'Organization logo. Please provide a square image (min. 250x250px). '
+            "The logo used for the organization's social media often works best."
+        ),
     )
-    description = RichTextField(blank=True, verbose_name=_('description'))
-    url = models.URLField(blank=True, verbose_name=_('URL'))
-    email = models.EmailField(blank=True, verbose_name=_('email address'))
-    founding_date = models.DateField(blank=True, null=True, help_text=_('A date of founding'))
-    dissolution_date = models.DateField(blank=True, null=True, help_text=_('A date of dissolution'))
-    created_time = models.DateTimeField(auto_now_add=True, help_text=_('The time at which the resource was created'))
-    created_by: FK[User | None] = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='created_organizations',
-        null=True,
-        blank=True,
-        editable=False,
-        on_delete=models.SET_NULL,
-    )
-    last_modified_time = models.DateTimeField(auto_now=True, help_text=_('The time at which the resource was updated'))
-    last_modified_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='modified_organizations',
-        null=True,
-        blank=True,
-        editable=False,
-        on_delete=models.SET_NULL,
-    )
-    metadata_admins: M2M[Person, OrganizationMetadataAdmin] = models.ManyToManyField(
-        'people.Person', through='orgs.OrganizationMetadataAdmin', related_name='metadata_adminable_organizations', blank=True,
-    )
-
-    # Intentionally overrides ModelWithPrimaryLanguage.primary_language
-    # leaving out the default keyword argument
-    primary_language = models.CharField(
-        max_length=8, choices=get_supported_languages(), verbose_name=_('primary language'),
-    )
-    location = gis_models.PointField(verbose_name=_('Location'), srid=4326, null=True, blank=True)
-
-    i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language_lowercase')
 
     objects: ClassVar[OrganizationManager] = OrganizationManager()  # type: ignore[assignment]
 
-    public_fields = ['id', 'uuid', 'name', 'abbreviation', 'internal_abbreviation', 'parent']
-
-    search_fields = [
-        index.AutocompleteField('name'),
-        index.AutocompleteField('abbreviation'),
-        index.SearchField('name'),
-        index.SearchField('abbreviation'),
-    ]
-
-    VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
-
-    id: int
-    classification_id: int | None
-    plans: RevManyQS[Plan, PlanQuerySet]
-    responsible_for_actions: RevManyToMany[Action, ActionResponsibleParty]
-
-    @property
-    def parent(self):
-        return self.get_parent()
 
     def initialize_plan_defaults(self, plan):
         assert not self.primary_language
@@ -286,18 +177,19 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
 
         if self.classification is not None and self.classification.identifier.startswith('helsinki:'):
             ROOTS = ['Kaupunki', 'Valtuusto', 'Hallitus', 'Toimiala', 'Lautakunta', 'Toimikunta', 'Jaosto']  # noqa: N806
-            stopper_classes = list(OrganizationClass.objects\
-                .filter(identifier__startswith='helsinki:', name__in=ROOTS).values_list('id', flat=True))
-            stopper_parents = list(Organization.objects\
-                .filter(classification__identifier__startswith='helsinki:', name='Kaupunginkanslia',
-                        dissolution_date=None)\
-                .values_list('id', flat=True))
+            stopper_classes = list(
+                OrganizationClass.objects.filter(identifier__startswith='helsinki:', name__in=ROOTS).values_list('id', flat=True)
+            )
+            stopper_parents = list(
+                Organization.objects.filter(
+                    classification__identifier__startswith='helsinki:', name='Kaupunginkanslia', dissolution_date=None
+                ).values_list('id', flat=True)
+            )
         else:
             stopper_classes = []
             stopper_parents = []
 
-        if (stopper_classes and self.classification_id in stopper_classes) or \
-                (stopper_parents and self.id in stopper_parents):
+        if (stopper_classes and self.classification_id in stopper_classes) or (stopper_parents and self.id in stopper_parents):
             return self.name
 
         name = self.name
@@ -309,7 +201,7 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
                 parent_name = parent.abbreviation
             else:
                 parent_name = parent.name
-            name = "%s / %s" % (parent_name, name)
+            name = '%s / %s' % (parent_name, name)
             if stopper_classes and parent.classification_id in stopper_classes:
                 break
             if stopper_parents and parent.id in stopper_parents:
@@ -364,6 +256,7 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
         if self.internal_abbreviation:
             name = f'{self.internal_abbreviation} - {name}'
         if parents:
+
             def get_org_path_str(org: Organization) -> str:
                 # if org.abbreviation:
                 #     return org.abbreviation
@@ -379,13 +272,17 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
 
         def get_label(org: Organization) -> str:
             return '%s ([green]%d actions; [blue]%d persons)' % (
-                org.name, org.action_count, org.contact_person_count,  # pyright: ignore
+                org.name,
+                org.action_count,
+                org.contact_person_count,  # pyright: ignore
             )
 
         def add_children(org: Organization, tree: Tree) -> None:
             children: list[Organization] = list(
-                org.get_children().annotate_action_count()  # type: ignore
-                .annotate_contact_person_count().order_by('name'),
+                org.get_children()
+                .annotate_action_count()  # type: ignore
+                .annotate_contact_person_count()
+                .order_by('name'),
             )
             if not children:
                 return
@@ -393,8 +290,9 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
                 child_tree = tree.add(get_label(child))
                 add_children(child, child_tree)
 
-        root_org = Organization.objects.get_queryset().filter(id=self.pk)\
-            .annotate_action_count().annotate_contact_person_count().first()
+        root_org = (
+            Organization.objects.get_queryset().filter(id=self.pk).annotate_action_count().annotate_contact_person_count().first()
+        )
         assert root_org is not None
         root_tree = Tree(get_label(root_org))
         add_children(root_org, root_tree)
@@ -409,27 +307,13 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
         return fq_name
 
 
-class Namespace(models.Model):
-    identifier = models.CharField(max_length=255, unique=True, editable=False)
-    name = models.CharField(max_length=255)
-    user_editable = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f'{self.name} ({self.identifier})'
+class Namespace(BaseNamespace):
+    pass
 
 
-class OrganizationIdentifier(models.Model):
-    organization = ParentalKey(Organization, on_delete=models.CASCADE, related_name='identifiers')
-    identifier = models.CharField(max_length=255)
-    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
+class OrganizationIdentifier(BaseOrganizationIdentifier):
+    pass
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['namespace', 'identifier'], name='unique_identifier_in_namespace'),
-        ]
-
-    def __str__(self):
-        return f'{self.identifier} @ {self.namespace.name}'
 
 
 class OrganizationPlanAdmin(PlanRelatedModel):
@@ -439,44 +323,31 @@ class OrganizationPlanAdmin(PlanRelatedModel):
         constraints = [
             models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_plan_admin'),
         ]
-        verbose_name = _("plan admin")
-        verbose_name_plural = _("plan admins")
+        verbose_name = _('plan admin')
+        verbose_name_plural = _('plan admins')
 
     organization: PK = ParentalKey(
-        Organization, on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('organization'),
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='organization_plan_admins',
+        verbose_name=_('organization'),
     )
     plan: FK[Plan] = models.ForeignKey(
-        'actions.Plan', on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('plan'),
+        'actions.Plan',
+        on_delete=models.CASCADE,
+        related_name='organization_plan_admins',
+        verbose_name=_('plan'),
     )
     person: FK[Person] = models.ForeignKey(
-        'people.Person', on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('person'),
+        'people.Person',
+        on_delete=models.CASCADE,
+        related_name='organization_plan_admins',
+        verbose_name=_('person'),
     )
 
     def __str__(self):
         return f'{self.person} ({self.plan})'
 
 
-class OrganizationMetadataAdmin(models.Model):
-    """Person who can administer data of (descendants of) an organization but, in general, no plan-specific content."""
-
-    organization = ParentalKey(
-        Organization,
-        on_delete=models.CASCADE,
-        verbose_name=_('organization'),
-        related_name='organization_metadata_admins',
-    )
-    person = models.ForeignKey(
-        'people.Person',
-        on_delete=models.CASCADE,
-        verbose_name=_('person'),
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['organization', 'person'], name='unique_organization_metadata_admin'),
-        ]
-        verbose_name = _("metadata admin")
-        verbose_name_plural = _("metadata admins")
-
-    def __str__(self):
-        return str(self.person)
+class OrganizationMetadataAdmin(BaseOrganizationMetadataAdmin):
+    pass
