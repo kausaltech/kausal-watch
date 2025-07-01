@@ -20,6 +20,7 @@ from wagtail.admin.panels import (
 from dal import autocomplete, forward as dal_forward
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
+from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 
@@ -173,7 +174,7 @@ class DimensionAdmin(AplansModelAdmin):
         FieldPanel('name'),
         InlinePanel('categories', panels=[
             FieldPanel('name'),
-            FieldPanel('default_color'),
+            NativeColorPanel('default_color'),
         ], heading=_('Categories')),
     ]
 

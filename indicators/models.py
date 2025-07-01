@@ -26,6 +26,7 @@ from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
 from dateutil.relativedelta import relativedelta
+from wagtail_color_panel.fields import ColorField
 
 from kausal_common.models.types import (
     JSONField,
@@ -820,10 +821,9 @@ class DimensionCategory(OrderedModel):
 
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    default_color = models.CharField(
-        max_length=50, blank=True, verbose_name=_('default color'),
+    default_color = ColorField(
+        max_length=50, blank=True, default='', verbose_name=_('default color'),
         help_text=_('Default color for this dimension category in charts'),
-        validators=[validate_css_color],
     )
 
     public_fields = ['id', 'dimension', 'name', 'default_color', 'order']

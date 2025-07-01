@@ -18,6 +18,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.fields import RichTextField
 
+from wagtail_color_panel.fields import ColorField
+
 from kausal_common.models.types import ModelManager
 
 from aplans.utils import PlanRelatedModel
@@ -156,7 +158,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
     from_address = models.EmailField(verbose_name=_('Email From address'), null=True, blank=True)
     reply_to = models.CharField(verbose_name=_('Email Reply-To address'), null=True, blank=True, max_length=200)
 
-    brand_dark_color = models.CharField(verbose_name=_('Brand dark color'), null=True, blank=True, max_length=30)
+    brand_dark_color = ColorField(verbose_name=_('Brand dark color'), blank=True, default='', max_length=30)
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
     )

@@ -25,6 +25,7 @@ from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
 from dal import autocomplete
 from django_filters import filters
+from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
@@ -246,7 +247,9 @@ class PlanAdmin(AplansModelAdmin):
             FieldPanel('is_completed'),
         ]
         if user.is_superuser:
-            result.append(FieldPanel('color', help_text=self.COLOR_HELP_TEXT))
+            # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
+            # from the UI theme's graphColors, such as "red030", instead of hex colors.
+            result.append(NativeColorPanel('color', help_text=self.COLOR_HELP_TEXT))
         return result
 
     def get_action_implementation_phase_panels(self, user: User):
@@ -255,7 +258,9 @@ class PlanAdmin(AplansModelAdmin):
             FieldPanel('name'),
         ]
         if user.is_superuser:
-            result.append(FieldPanel('color', help_text=self.COLOR_HELP_TEXT))
+            # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
+            # from the UI theme's graphColors, such as "red030", instead of hex colors.
+            result.append(NativeColorPanel('color', help_text=self.COLOR_HELP_TEXT))
         return result
 
     def get_edit_handler(self):

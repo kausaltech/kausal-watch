@@ -1338,7 +1338,9 @@ class ActionStatus(PlanRelatedModel):
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
-    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
+    # We deliberately don't use ColorField from wagtail_color_panel here because here we expect color keys from the UI
+    # theme's graphColors, such as "red030", instead of hex colors.
+    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, default='')
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
@@ -1372,7 +1374,9 @@ class ActionImplementationPhase(PlanRelatedOrderedModel):
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
-    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
+    # We deliberately don't use ColorField from wagtail_color_panel here because here we expect color keys from the UI
+    # theme's graphColors, such as "red030", instead of hex colors.
+    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, default='')
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 

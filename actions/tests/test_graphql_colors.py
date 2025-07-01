@@ -9,14 +9,14 @@ OVERRIDE_COLOR = 'beige123'
 @pytest.fixture(params=[True, False], ids=['override_status_color', 'default_status_color'])
 def colorized_statuses(request, plan, action_status_factory):
     should_override_color = request.param
-    color = OVERRIDE_COLOR if should_override_color else None
+    color = OVERRIDE_COLOR if should_override_color else ''
     return [action_status_factory(plan=plan, identifier=f'status{i}', color=color) for i in range(5)]
 
 
 @pytest.fixture(params=[True, False], ids=['override_phase_color', 'default_phase_color'])
 def colorized_implementation_phases(request, plan, action_implementation_phase_factory):
     should_override_color = request.param
-    color = OVERRIDE_COLOR if should_override_color else None
+    color = OVERRIDE_COLOR if should_override_color else ''
     return [action_implementation_phase_factory(plan=plan, identifier=f'phase{i}', color=color) for i in range(5)]
 
 
@@ -89,7 +89,7 @@ def test_plan_phase_colors(
         if corresponding_phase.color:
             assert result_color == OVERRIDE_COLOR
         else:
-            assert result_color is None
+            assert not result_color
 
 
 def test_plan_status_colors(
@@ -116,6 +116,6 @@ def test_plan_status_colors(
         corresponding_status = next(
             p for p in colorized_statuses if p.identifier == status['identifier']
         )
-        assert result_color is not None
+        assert result_color
         if corresponding_status.color:
             assert result_color == OVERRIDE_COLOR

@@ -20,6 +20,8 @@ from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
 from wagtail.models import Collection, Page
 
+from wagtail_color_panel.fields import ColorField
+
 from kausal_common.models.types import RevManyQS, manager_from_mlqs
 
 from aplans.utils import (
@@ -362,10 +364,9 @@ class CategoryBase(OrderedModel):
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
     )
-    color = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name=_('theme color'),
+    color = ColorField(
+        max_length=50, blank=True, default='', verbose_name=_('theme color'),
         help_text=_('Set if the category has a theme color'),
-        validators=[validate_css_color],
     )
     kausal_paths_node_uuid = models.CharField(
         max_length=36, blank=True, null=False, default='', verbose_name=_('Kausal Paths node UUID'),

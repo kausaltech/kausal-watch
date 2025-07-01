@@ -21,6 +21,8 @@ from wagtail.admin.panels import (
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
 from wagtail.snippets.models import register_snippet
 
+from wagtail_color_panel.edit_handlers import NativeColorPanel
+
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.utils import admin_req
 from admin_site.viewsets import WatchEditView, WatchViewSet
@@ -124,7 +126,7 @@ class BaseTemplateViewSet(WatchViewSet[BaseTemplate, BaseTemplateForm]):
             widget=Select(choices=[(email, email) for email in settings.ALLOWED_SENDER_EMAILS]),
             permission='superuser',
         ),
-        FieldPanel('brand_dark_color', permission='superuser'),
+        NativeColorPanel('brand_dark_color', permission='superuser'),
         FieldPanel('logo', permission='superuser'),
         FieldPanel('font_family', permission='superuser'),
         FieldPanel('font_css_url', permission='superuser'),

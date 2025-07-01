@@ -33,6 +33,7 @@ from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 
 from django_countries.fields import CountryField
+from wagtail_color_panel.fields import ColorField
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
 from kausal_common.models.permissions import PermissionedModel
@@ -1258,10 +1259,7 @@ class ImpactGroup(PlanRelatedModel):
         verbose_name=pgettext_lazy('impact group', 'parent'),
     )
     weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
-    color = models.CharField(
-        max_length=16, verbose_name=_('color'), null=True, blank=True,
-        validators=[validate_css_color],
-    )
+    color = ColorField(max_length=16, verbose_name=_('color'), blank=True, default='')
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 

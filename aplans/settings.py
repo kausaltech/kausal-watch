@@ -204,6 +204,7 @@ INSTALLED_APPS = [
     'generic_chooser',
     'wagtailorderable',
     'wagtailgeowidget',
+    'wagtail_color_panel',
 
     'modelcluster',
     'taggit',

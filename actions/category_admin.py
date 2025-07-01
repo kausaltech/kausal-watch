@@ -19,6 +19,7 @@ from wagtail.admin.panels import (
 )
 from wagtail.admin.panels.base import Panel
 
+from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
@@ -418,7 +419,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
         FieldPanel('image'),
-        FieldPanel('color'),
+        NativeColorPanel('color'),
         FieldPanel('help_text'),
     ]
 
@@ -654,7 +655,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
         FieldPanel('image'),
-        FieldPanel('color'),
+        NativeColorPanel('color'),
         FieldPanel('help_text'),
     ]
 
