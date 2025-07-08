@@ -79,7 +79,6 @@ class DimensionChooserMixin(ModelChooserMixin):
 
         dimensions = Dimension.objects.filter(id__in=indicator_dimensions)
         if include_plan_dimensions:
-
             plan_dimension_ids = plan.dimensions.values_list('dimension', flat=True)
             plan_dimensions = Dimension.objects.filter(id__in=plan_dimension_ids)
             dimensions |= plan_dimensions

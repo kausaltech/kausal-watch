@@ -6,8 +6,8 @@ from django import forms
 from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from django.shortcuts import redirect
+from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from wagtail import hooks
 from wagtail.admin.panels import (
     FieldPanel,
