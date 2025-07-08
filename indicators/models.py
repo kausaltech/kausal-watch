@@ -811,6 +811,20 @@ class Dimension(ClusterableModel):
     def __str__(self):
         return self.name
 
+    def delete(self, *args, **kwargs):
+        # Check if dimension is used by multiple plans
+        if self.plans.count() > 1:
+            from django.core.exceptions import ValidationError
+            plan_names = [str(pd.plan) for pd in self.plans.all()]
+            raise ValidationError(
+                _('Cannot delete dimension "%(dimension)s" because it is linked to multiple plans: %(plans)s') % {
+                    'dimension': self.name,
+                    'plans': ', '.join(plan_names)
+                }
+            )
+
+        super().delete(*args, **kwargs)
+
 
 class DimensionCategory(OrderedModel):
     """
@@ -839,6 +853,19 @@ class DimensionCategory(OrderedModel):
     def __str__(self):
         return self.name
 
+class PlanDimension(models.Model):
+    """Mapping of which dimensions a plan is using."""
+
+    dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='plans')
+    plan = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='dimensions')
+
+    class Meta:
+        verbose_name = _('plan dimension')
+        verbose_name_plural = _('plan dimensions')
+        unique_together = (('plan', 'dimension'),)
+
+    def __str__(self):
+        return "%s ∈ %s" % (str(self.dimension), str(self.plan))
 
 class IndicatorDimension(OrderedModel):
     """Mapping of which dimensions an indicator has."""

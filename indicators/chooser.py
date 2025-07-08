@@ -60,6 +60,7 @@ class DimensionChooserMixin(ModelChooserMixin):
             return Dimension.objects.none()
 
         indicator_id = request.GET.get('indicator_id')
+        include_plan_dimensions = request.GET.get('include_plan_dimensions', 'false').lower() == 'true'
         if indicator_id:
             try:
                 indicator = Indicator.objects.get(
@@ -76,7 +77,13 @@ class DimensionChooserMixin(ModelChooserMixin):
             indicator__plans=plan
         ).values_list('dimension_id', flat=True).distinct()
 
-        return Dimension.objects.filter(id__in=indicator_dimensions)
+        dimensions = Dimension.objects.filter(id__in=indicator_dimensions)
+        if include_plan_dimensions:
+
+            plan_dimension_ids = plan.dimensions.values_list('dimension', flat=True)
+            plan_dimensions = Dimension.objects.filter(id__in=plan_dimension_ids)
+            dimensions |= plan_dimensions
+        return dimensions
 
 class DimensionChooser(AdminChooser):
     choose_one_text = _('Choose a dimension')
@@ -84,6 +91,14 @@ class DimensionChooser(AdminChooser):
     model = Dimension
     choose_modal_url_name = 'dimension_chooser:choose'
 
+    def __init__(self, include_plan_dimensions=False, **kwargs):
+        self.include_plan_dimensions = include_plan_dimensions
+        super().__init__(**kwargs)
+
+    def get_choose_modal_url(self):
+        url = super().get_choose_modal_url()
+        url = f"{url}?include_plan_dimensions={self.include_plan_dimensions}"
+        return url
 
 class DimensionChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = DimensionChooserMixin

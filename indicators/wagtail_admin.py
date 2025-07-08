@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
+from django.shortcuts import redirect
 from wagtail import hooks
 from wagtail.admin.panels import (
     FieldPanel,
@@ -23,6 +24,7 @@ from generic_chooser.widgets import AdminChooser
 from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
+from wagtail_modeladmin.views import DeleteView
 
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
@@ -43,6 +45,7 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     get_translation_tabs,
 )
+from indicators.chooser import DimensionChooser
 from orgs.models import Organization
 from people.chooser import PersonChooser
 
@@ -163,12 +166,49 @@ def register_quantity_chooser_viewset():
     return QuantityChooserViewSet('quantity_chooser', url_prefix='quantity-chooser')
 
 
+class DimensionCreateView(AplansCreateView):
+    def form_valid(self, form, *args, **kwargs):
+        response = super().form_valid(form, *args, **kwargs)
+
+        plan = self.request.user.get_active_admin_plan() # type: ignore
+        dimension = form.instance
+
+        if plan:
+            from indicators.models import PlanDimension
+            PlanDimension.objects.get_or_create(
+                plan=plan,
+                dimension=dimension
+            )
+
+        return response
+
+
+class DimensionDeleteView(DeleteView):
+    def post(self, request, *args, **kwargs):
+        dimension = self.instance
+        current_plan = request.user.get_active_admin_plan()
+
+        other_plans = dimension.plans.exclude(plan=current_plan)
+        if other_plans.exists():
+            messages.error(
+                request,
+                _('Cannot delete dimension "%(dimension)s" at this time, please contact support.') % {
+                    'dimension': dimension.name,
+                }
+            )
+            return redirect(self.index_url)
+
+        return super().post(request, *args, **kwargs)
+
+
 class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
     menu_icon = 'kausal-dimension'
     menu_label = _('Indicator dimensions')
     list_display = ('name',)
+    create_view_class = DimensionCreateView
+    delete_view_class = DimensionDeleteView
 
     panels = [
         FieldPanel('name'),
@@ -177,6 +217,10 @@ class DimensionAdmin(AplansModelAdmin):
             NativeColorPanel('default_color'),
         ], heading=_('Categories')),
     ]
+
+    def get_queryset(self, request):
+        plan = request.user.get_active_admin_plan()
+        return super().get_queryset(request).filter(plans__plan=plan)
 
 
 class QuantityForm(AplansAdminModelForm[Quantity]):
@@ -499,7 +543,9 @@ class IndicatorAdmin(AplansModelAdmin):
 
         if not is_linked_to_common_indicator and is_general_admin:
             advanced_panels.append(
-                CondensedInlinePanel('dimensions', panels=[FieldPanel('dimension')], heading=_("Dimensions")),
+                CondensedInlinePanel('dimensions', panels=[
+                    FieldPanel('dimension', widget=DimensionChooser(include_plan_dimensions=True))
+                ], heading=_("Dimensions")),
             )
 
             # If the indicator has values, show a warning that these would be deleted by changing dimensions
