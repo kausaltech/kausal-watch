@@ -315,7 +315,7 @@ class PlanNode(DjangoNode):
     def resolve_indicator_levels(root: Plan, info) -> IndicatorLevelQuerySet:
         if not root.is_visible_for_user(info.context.user):
             return cast('IndicatorLevelQuerySet', root.indicator_levels.none())
-        return cast('IndicatorLevelQuerySet', root.indicator_levels.all())
+        return cast('IndicatorLevelQuerySet', root.indicator_levels.qs.visible_for_user(info.context.user))
 
     @staticmethod
     def resolve_action_status_summaries(root: Plan, info):
