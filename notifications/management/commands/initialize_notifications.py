@@ -31,7 +31,6 @@ def initialize_notification_templates(
         'from_name': plan.name,
         'from_address': settings.DEFAULT_FROM_EMAIL,
         'reply_to': None,
-        'brand_dark_color': None,
         'logo_id': None,
         'font_family': None,
         'font_css_url': None,
