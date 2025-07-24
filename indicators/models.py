@@ -45,7 +45,6 @@ from aplans.utils import (
     RestrictedVisibilityModel,
     TranslatedModelMixin,
     get_available_variants_for_language,
-    validate_css_color,
 )
 
 from actions.models.features import OrderBy
@@ -59,7 +58,7 @@ if typing.TYPE_CHECKING:
 
     from actions.models import Action
     from actions.models.category import Category, CategoryType
-    from actions.models.plan import Plan
+    from actions.models.plan import Plan, PlanQuerySet
     from people.models import Person
 
 
@@ -189,7 +188,7 @@ class Framework(ClusterableModel):
 
     i18n = TranslationField(fields=['name'])
 
-    public_fields = ['id', 'name']
+    public_fields: ClassVar = ['id', 'name']
 
     class Meta:
         verbose_name = _('framework')
@@ -249,7 +248,7 @@ class CommonIndicator(ClusterableModel):
 
     i18n = TranslationField(fields=['name', 'description', 'normalize_by_label'])
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'identifier', 'name', 'description', 'quantity', 'unit',
         'indicators', 'dimensions', 'related_causes', 'related_effects',
         'normalization_indicators', 'normalize_by_label', 'normalizations',
@@ -319,7 +318,7 @@ class FrameworkIndicator(models.Model):
         verbose_name=_('framework'),
     )
 
-    public_fields = ['id', 'identifier', 'common_indicator', 'framework']
+    public_fields: ClassVar = ['id', 'identifier', 'common_indicator', 'framework']
 
     class Meta:
         verbose_name = _('framework indicator')
@@ -493,7 +492,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         index.FilterField('visibility'),
     ]
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
@@ -737,7 +736,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         if (user is None or not user.is_authenticated) and \
             self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC and \
-                not self.plans.all().visible_for_user(user).exists():
+                not cast('PlanQuerySet', self.plans.get_queryset()).visible_for_user(user).exists():
             return False
         return True
 
@@ -799,10 +798,11 @@ class Dimension(ClusterableModel):
 
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
-    public_fields = ['id', 'name', 'categories']
+    public_fields: ClassVar = ['id', 'name', 'categories']
 
     # type annotations
     categories: RevMany[DimensionCategory]
+    plans: RevMany[PlanDimension]
 
     class Meta:
         verbose_name = _('dimension')
@@ -840,7 +840,7 @@ class DimensionCategory(OrderedModel):
         help_text=_('Default color for this dimension category in charts'),
     )
 
-    public_fields = ['id', 'dimension', 'name', 'default_color', 'order']
+    public_fields: ClassVar = ['id', 'dimension', 'name', 'default_color', 'order']
 
     # type annotations
     values: RevMany[IndicatorValue]
@@ -857,7 +857,7 @@ class PlanDimension(models.Model):
     """Mapping of which dimensions a plan is using."""
 
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='plans')
-    plan = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='dimensions')
+    plan: ParentalKey[Plan] = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='dimensions')
 
     class Meta:
         verbose_name = _('plan dimension')
@@ -873,7 +873,7 @@ class IndicatorDimension(OrderedModel):
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
     indicator = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
 
-    public_fields = ['id', 'dimension', 'indicator', 'order']
+    public_fields: ClassVar = ['id', 'dimension', 'indicator', 'order']
 
     class Meta:
         verbose_name = _('indicator dimension')
@@ -894,7 +894,7 @@ class CommonIndicatorDimension(OrderedModel):
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='common_indicators')
     common_indicator = ParentalKey(CommonIndicator, on_delete=models.CASCADE, related_name='dimensions')
 
-    public_fields = ['id', 'dimension', 'common_indicator', 'order']
+    public_fields: ClassVar = ['id', 'dimension', 'common_indicator', 'order']
 
     class Meta:
         verbose_name = _('common indicator dimension')
@@ -922,7 +922,7 @@ class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet['Indicator
                 plan = Plan.objects.get(identifier=plan)
             plans = [plan] if plan.is_visible_for_user(user) else []
         else:
-            plans = list(Plan.objects.visible_for_user(user))
+            plans = list(Plan.objects.qs.visible_for_user(user))
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
                                plan__in=plans)
@@ -971,7 +971,7 @@ class IndicatorGraph(models.Model):
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    public_fields: typing.ClassVar = ['id', 'indicator', 'data', 'created_at']
+    public_fields: ClassVar = ['id', 'indicator', 'data', 'created_at']
 
     class Meta:
         get_latest_by = 'created_at'
@@ -996,7 +996,7 @@ class IndicatorValue(ClusterableModel):
     # Cached here for performance reasons
     normalized_values = JSONField[dict[str, float]](null=True, blank=True)
 
-    public_fields = ['id', 'indicator', 'categories', 'value', 'date']
+    public_fields: ClassVar = ['id', 'indicator', 'categories', 'value', 'date']
 
     class Meta:
         verbose_name = _('indicator value')
@@ -1032,7 +1032,7 @@ class IndicatorGoal(models.Model):
     # Cached here for performance reasons
     normalized_values = JSONField[dict[str, float]](null=True, blank=True)
 
-    public_fields = ['id', 'indicator', 'value', 'date']
+    public_fields: ClassVar = ['id', 'indicator', 'value', 'date']
 
     class Meta:
         verbose_name = _('indicator goal')
@@ -1073,7 +1073,7 @@ class RelatedIndicator(IndicatorRelationship):
         verbose_name=_('confidence level'), help_text=_('How confident we are that the causal effect is present'),
     )
 
-    public_fields: typing.ClassVar = ['id', 'effect_type', 'causal_indicator', 'effect_indicator', 'confidence_level']
+    public_fields: ClassVar = ['id', 'effect_type', 'causal_indicator', 'effect_indicator', 'confidence_level']
 
     class Meta:
         unique_together = (('causal_indicator', 'effect_indicator'),)
@@ -1137,7 +1137,7 @@ class ActionIndicator(models.Model):
         help_text=_('Set if the indicator should be used to determine action progress'),
     )
 
-    public_fields: typing.ClassVar = ['id', 'action', 'indicator', 'effect_type', 'indicates_action_progress']
+    public_fields: ClassVar = ['id', 'action', 'indicator', 'effect_type', 'indicates_action_progress']
 
     objects: ActionIndicatorManager = ActionIndicatorManager()
 

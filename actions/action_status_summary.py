@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from aplans.utils import ConstantMetadata, MetadataEnum
 
 if TYPE_CHECKING:
-    from django.utils.functional import _StrOrPromise
+    from django.utils.functional import StrOrPromise
 
     from aplans.cache import WatchObjectCache
 
@@ -26,15 +26,15 @@ class SummaryContext(TypedDict, total=False):
 
 
 class ActionStatusSummary(ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]):
-    default_label: _StrOrPromise
+    default_label: StrOrPromise
     color: str
     is_completed: bool
     is_active: bool
     sentiment: Sentiment
-    label: _StrOrPromise
+    label: StrOrPromise
 
     def __init__(self,
-                 default_label: _StrOrPromise = '',
+                 default_label: StrOrPromise = '',
                  color: str = '',
                  is_completed: bool = False,
                  is_active: bool = False,
@@ -185,7 +185,7 @@ Comparison = Enum('Comparison', names='LTE GT')
 class ActionTimeliness(ConstantMetadata['ActionTimelinessIdentifier', SummaryContext]):
     color: str | None
     sentiment: Sentiment | None
-    label: _StrOrPromise | None
+    label: StrOrPromise | None
     boundary: Callable[[Plan], int]
     comparison: Comparison | None
     identifier: ActionTimelinessIdentifier
@@ -204,7 +204,7 @@ class ActionTimeliness(ConstantMetadata['ActionTimelinessIdentifier', SummaryCon
         self.comparison = comparison
         self.boundary = boundary
 
-    def _get_label(self, plan: Plan) -> _StrOrPromise:
+    def _get_label(self, plan: Plan) -> StrOrPromise:
         if self.comparison == Comparison.LTE:
             return _('Under %d days') % self._get_days(plan)
         return _('Over %d days') % self._get_days(plan)

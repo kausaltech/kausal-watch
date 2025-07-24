@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import graphene
+from django.db.models.query import Prefetch
 from graphql.error import GraphQLError
 from wagtail.images.models import SourceImageIOError
 
@@ -9,6 +14,9 @@ from aplans.graphql_types import DjangoNode, replace_image_node
 
 from .models import AplansImage, AplansRendition
 
+if TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
+
 
 class ImageRendition(DjangoNode):
     id = graphene.ID(required=True)
@@ -16,9 +24,6 @@ class ImageRendition(DjangoNode):
     width = graphene.Int(required=True)
     height = graphene.Int(required=True)
     alt = graphene.String(required=True)
-
-    def resolve_id(root, info):
-        return root.id
 
     class Meta:
         model = AplansRendition
@@ -43,28 +48,29 @@ class ImageNode(DjangoNode):
         ]
 
     @gql_optimizer.resolver_hints(
-        prefetch_related=('renditions',),
+        prefetch_related=(Prefetch('renditions', to_attr='prefetched_renditions'),),
     )
-    def resolve_rendition(root: AplansImage, info, size=None, crop=True):
+    @staticmethod
+    def resolve_rendition(root: AplansImage, info: GQLInfo, size: str | None = None, crop: bool = True) -> None | ImageRendition:
         if size is not None:
             try:
-                width, height = size.split('x')
+                width_str, height_str = size.split('x')
             except Exception:
-                raise GraphQLError('invalid size (should be <width>x<height>)')
+                raise GraphQLError('invalid size (should be <width>x<height>)', nodes=info.field_nodes) from None
 
             try:
-                width = int(width)
+                width = int(width_str)
                 if width <= 100 or width > 1600:
-                    raise Exception()
+                    raise Exception()  # noqa: TRY301
             except Exception:
-                raise GraphQLError('invalid width: %d' % width)
+                raise GraphQLError('invalid width: %d' % width, nodes=info.field_nodes) from None
 
             try:
-                height = int(height)
+                height = int(height_str)
                 if height <= 100 or height > 1600:
-                    raise Exception()
+                    raise Exception()  # noqa: TRY301
             except Exception:
-                raise GraphQLError('invalid height: %d' % height)
+                raise GraphQLError('invalid height: %d' % height, nodes=info.field_nodes) from None
             size = '%dx%d' % (width, height)
         else:
             size = '800x600'
@@ -81,4 +87,4 @@ class ImageNode(DjangoNode):
             sentry_sdk.capture_exception(e)
             return None
 
-        return ImageRendition(id=rendition.id, **rendition.get_fqdn_attrs(info.context))
+        return ImageRendition(id=rendition.pk, **rendition.get_fqdn_attrs(info.context))

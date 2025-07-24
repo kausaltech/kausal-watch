@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import graphene
 from wagtail.models import Page as WagtailPage
 
@@ -6,7 +10,12 @@ from grapple.types.interfaces import PageInterface
 
 from aplans.graphql_types import get_plan_from_context, register_graphene_node
 
-from pages.models import AplansPage, Page
+from pages.models import AplansPage
+
+if TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
+
+    from actions.models.plan import Plan
 
 
 @register_graphene_node
@@ -15,39 +24,41 @@ class PageMenuItemNode(graphene.ObjectType):
         name = 'PageMenuItem'
 
     id = graphene.ID(required=True)
-    page = graphene.Field(PageInterface, required=True)
+    page: AplansPage = graphene.Field(PageInterface, required=True)  # type: ignore[assignment]
     parent = graphene.Field('pages.schema.PageMenuItemNode')
     children = graphene.List('pages.schema.PageMenuItemNode')
     cross_plan_link = graphene.Boolean()
     view_url = graphene.String(client_url=graphene.String(required=False))
 
-    def resolve_id(item, info):
-        return item.page.id
+    def resolve_id(self, info):
+        return self.page.pk
 
-    def resolve_parent(item, info):
-        if not item.page:
+    def resolve_parent(self, info):
+        if not self.page:
             return None
-        parent = WagtailPage.objects.parent_of(item.page).specific().first()
+        parent = WagtailPage.objects.get_queryset().parent_of(self.page).specific().first()
         if parent is None:
             return None
         return PageMenuItemNode(page=parent)
 
-    def resolve_children(item, info):
-        pages = item.page.get_children().live().public()
+    def resolve_children(self, info: GQLInfo) -> list[PageMenuItemNode]:
+        pages = self.page.get_children().live().public()
         # TODO: Get rid of this terrible hack
         if 'footer' in info.path.as_list():
-            footer_page_ids = [page.id
+            footer_page_ids = [page.pk
                                for Model in AplansPage.get_subclasses()
                                for page in Model.objects.filter(show_in_footer=True)]
             pages = pages.filter(id__in=footer_page_ids)
         pages = pages.specific()
         return [PageMenuItemNode(page=page) for page in pages]
 
-    def resolve_view_url(item, info, client_url=None):
-        page = item.page
-        plan = page.get_site().plan
+    def resolve_view_url(self, info, client_url=None) -> None | str:
+        page = self.page
+        plan = page.plan
+        if plan is None:
+            return None
         if not client_url:
-            client_url = info.variable_values['clientUrl']
+            client_url = info.variable_values.get('clientUrl')
         view_url = plan.get_view_url(client_url=client_url)
         return view_url
 
@@ -68,7 +79,7 @@ class MenuItem(graphene.Union):
 
 class MenuNodeMixin:
     """
-    Mixin for main menu and footer
+    Mixin for main menu and footer.
 
     You need to provide a `resolve_items(parent, info, with_descendants)` method when you use this mixin.
 
@@ -80,7 +91,7 @@ class MenuNodeMixin:
     items = graphene.List(MenuItem, required=True, with_descendants=graphene.Boolean(default_value=False))
 
     @classmethod
-    def resolver_from_plan(cls, plan, info):
+    def resolver_from_plan(cls, plan: Plan, info: GQLInfo) -> None | WagtailPage:
         root_page = plan.get_translated_root_page()
         if not plan.is_visible_for_user(info.context.user):
             return None
@@ -89,7 +100,7 @@ class MenuNodeMixin:
         return root_page.specific
 
     @classmethod
-    def create_plan_menu_field(cls):
+    def create_plan_menu_field(cls) -> graphene.Field:
         return graphene.Field(cls, resolver=cls.resolver_from_plan)
 
 
@@ -97,11 +108,12 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
     class Meta:
         name = 'MainMenu'
 
-    def resolve_items(parent, info, with_descendants):
+    @staticmethod
+    def resolve_items(parent: AplansPage, info, with_descendants) -> list[PageMenuItemNode | ExternalLinkMenuItemNode]:
         if not parent:
             return []
-        plan = parent.plan  # type: ignore
-        if not plan.is_visible_for_user(info.context.user):
+        plan = parent.plan
+        if plan is None or not plan.is_visible_for_user(info.context.user):
             return []
         if with_descendants:
             pages = parent.get_descendants(inclusive=False)
@@ -120,7 +132,8 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
     class Meta:
         name = 'Footer'
 
-    def resolve_items(parent, info, with_descendants):
+    @staticmethod
+    def resolve_items(parent: AplansPage | None, info, with_descendants) -> list[PageMenuItemNode]:
         if not parent:
             return []
         if with_descendants:
@@ -131,7 +144,7 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
         # AplansPage is abstract and thus has no manager, so we need to find footer pages for each subclass of
         # AplansPage individually. Gather IDs first and then make a separate query for footer_pages because the latter
         # gives us the correct order of the pages.
-        footer_page_ids = [page.id
+        footer_page_ids = [page.pk
                            for Model in AplansPage.get_subclasses()
                            for page in Model.objects.filter(show_in_footer=True)]
         pages = pages.filter(id__in=footer_page_ids).specific()
@@ -142,7 +155,8 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
     class Meta:
         name = 'AdditionalLinks'
 
-    def resolve_items(parent, info, with_descendants):
+    @staticmethod
+    def resolve_items(parent: AplansPage | None, info: GQLInfo, with_descendants: bool) -> list[PageMenuItemNode]:
         if not parent:
             return []
         if with_descendants:
@@ -154,23 +168,29 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
         # AplansPage individually. Gather IDs first and then make a separate query for additional_links_pages because
         # the latter gives us the correct order of the pages.
 
-        additional_links_page_ids = [page.id
+        additional_links_page_ids = [page.pk
                                      for Model in AplansPage.get_subclasses()
                                      for page in Model.objects.filter(show_in_additional_links=True)]
         pages = pages.filter(id__in=additional_links_page_ids).specific()
 
         # Add general additional links that should be included in all plan pages
-        parent_plan = parent.get_site().plan.parent
+        plan = parent.plan
+        if plan is None:
+            return []
+        parent_plan = plan.parent
 
-        cross_plan_page_ids = [
-            page.id for Model in AplansPage.get_subclasses()
-            for page in Model.objects.filter(link_in_all_child_plans=True)
-            if page.get_site().plan == parent_plan and parent_plan.is_visible_for_user(info.context.user)
-        ]
+        if parent_plan is not None:
+            cross_plan_page_ids = [
+                page.pk for Model in AplansPage.get_subclasses()
+                for page in Model.objects.filter(link_in_all_child_plans=True)
+                if page.plan == parent_plan and parent_plan.is_visible_for_user(info.context.user)
+            ]
 
-        cross_plan_pages = Page.objects.filter(id__in=cross_plan_page_ids).specific()
-        cross_plan_pages = cross_plan_pages.live().public()
-        cross_plan_pages = [PageMenuItemNode(page=page, cross_plan_link=True) for page in cross_plan_pages]
+            cross_plan_qs = WagtailPage.objects.get_queryset().filter(id__in=cross_plan_page_ids).specific()
+            cross_plan_qs = cross_plan_qs.live().public()
+            cross_plan_pages = [PageMenuItemNode(page=page, cross_plan_link=True) for page in cross_plan_qs]
+        else:
+            cross_plan_pages = []
         pages_nodes = [PageMenuItemNode(page=page) for page in pages]
         return pages_nodes + cross_plan_pages
 
@@ -186,6 +206,8 @@ class Query:
             return None
 
         root = plan_obj.get_translated_root_page()
+        if root is None:
+            return None
         if not path.endswith('/'):
             path = path + '/'
         qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()

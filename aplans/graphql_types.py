@@ -244,8 +244,8 @@ WorkflowStateGrapheneEnum = graphene.Enum.from_enum(WorkflowStateEnum, name='Wor
 
 
 class WorkflowStateDescription(graphene.ObjectType):
-    id = graphene.String()
-    description = graphene.String()
+    id = graphene.String(required=True)
+    description = graphene.String(required=False)
 
 
 if TYPE_CHECKING:

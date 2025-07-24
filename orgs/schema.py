@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.db.models.query import Prefetch
 import graphene
 
 import graphene_django_optimizer as gql_optimizer
@@ -49,7 +50,6 @@ class OrganizationClassNode(BaseOrganizationClassNode, DjangoNode):
 
 @register_django_node
 class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode):
-
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization',
@@ -82,16 +82,17 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode):
     @gql_optimizer.resolver_hints(
         only=('logo',),
         select_related=('logo',),
+        prefetch_related=(Prefetch('logo__renditions', to_attr='prefetched_renditions'),)
     )
     @staticmethod
     def resolve_logo(root: Organization, info: GQLInfo, parent_fallback=False) -> AplansImage | None:
-        if root.logo is not None:
+        if root.logo_id is not None:
             return root.logo
         if parent_fallback:
             # Iterate through parents to find one that might have a logo
             org = root.get_parent()
             while org is not None:
-                if org.logo is not None:
+                if org.logo_id is not None:
                     return org.logo
                 org = org.get_parent()
         return None

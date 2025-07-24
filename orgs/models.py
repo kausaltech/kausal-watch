@@ -159,6 +159,13 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
     )
 
     objects: ClassVar[OrganizationManager] = OrganizationManager()  # type: ignore[assignment]
+    plans: RevManyQS[Plan, PlanQuerySet]
+    responsible_for_actions: RevManyToMany[Action, ActionResponsibleParty]
+    logo_id: int | None
+
+    @property
+    def parent(self):
+        return self.get_parent()
 
     public_fields = BaseOrganization.public_fields + [  # type: ignore[misc]
         'internal_abbreviation',

@@ -364,6 +364,7 @@ class Action(
     description_i18n: str | None
     manual_status_reason_i18n: str | None
     lead_paragraph_i18n: str | None
+    primary_org_id: int | None
 
     # Add reverse GenericRelation to add the ability to prefetch the related workflowstates
     # to optimize the performance of querying actions in GQL.

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.images.models import AbstractImage, AbstractRendition, Image as WagtailImage
+from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Image as WagtailImage
+
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
 
 
 def truncate_filename(directories: list[str], filename: str) -> str:
@@ -39,8 +42,10 @@ def insert_date_directory_to_path(path: str, target_dir: str, date: datetime.dat
 class AplansImage(AbstractImage):
     admin_form_fields = WagtailImage.admin_form_fields + ('image_credit', 'alt_text')
 
-    image_credit = models.CharField(max_length=254, blank=True, verbose_name=_('Image byline or credits'))
-    alt_text = models.CharField(max_length=254, blank=True, verbose_name=_('Alt text'))
+    image_credit: models.CharField[str, str] = models.CharField(
+        max_length=254, blank=True, verbose_name=_('Image byline or credits')
+    )
+    alt_text: models.CharField[str, str] = models.CharField(max_length=254, blank=True, verbose_name=_('Alt text'))
 
     _default_manager: ClassVar[models.Manager[AplansImage]]
 
@@ -52,9 +57,12 @@ class AplansImage(AbstractImage):
         path = super().get_upload_to(filename)
         return insert_date_directory_to_path(path, 'original_images', self.created_at)
 
+    if TYPE_CHECKING:
+        def get_rendition(self, filter: Filter | str) -> AplansRendition: ...  # noqa: A002
+
 
 class AplansRendition(AbstractRendition):
-    image = models.ForeignKey(AplansImage, related_name='renditions', on_delete=models.CASCADE)
+    image: FK[AplansImage] = models.ForeignKey(AplansImage, related_name='renditions', on_delete=models.CASCADE)
 
     def get_fqdn_attrs(self, request):
         ret = self.attrs_dict.copy()
@@ -66,6 +74,4 @@ class AplansRendition(AbstractRendition):
         return insert_date_directory_to_path(path, 'images', self.image.created_at)
 
     class Meta:
-        unique_together = (
-            ('image', 'filter_spec', 'focal_point_key'),
-        )
+        unique_together = (('image', 'filter_spec', 'focal_point_key'),)

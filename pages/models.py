@@ -159,7 +159,8 @@ class AplansPage(Page):
 
 
     @classmethod
-    def get_subclasses(cls) -> list[type[Page]]:
+    @functools.cache
+    def get_subclasses(cls) -> list[type[AplansPage]]:
         """Get implementations of this abstract base class."""
         content_types = ContentType.objects.filter(app_label=cls._meta.app_label)
         models = [ct.model_class() for ct in content_types]
@@ -873,6 +874,9 @@ class PlanLink(OrderedModel):
         fields=['title', 'url'],
         default_language_field='plan__primary_language_lowercase',
     )
+
+    url_i18n: str
+    title_i18n: str
 
     class Meta:
         ordering = ['plan', 'order']

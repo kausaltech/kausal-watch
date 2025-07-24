@@ -76,9 +76,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
 
     from django.db.models import Model
-    from django.utils.functional import Promise
+    from django.utils.functional import Promise, StrOrPromise
     from django.utils.safestring import SafeString
-    from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
 
     from aplans.types import WatchAdminRequest
@@ -238,7 +237,7 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             formsets = {}
             # There is a corresponding formset for a role if and only if we can edit objects of that role.
             for role in _cls.get_roles():
-                formset = self.formsets.pop(f'{relation_name}_{role}', None)
+                formset = cast('dict', self.formsets).pop(f'{relation_name}_{role}', None)
                 if formset:
                     formsets[role] = formset
             manager = getattr(self.instance, relation_name)
@@ -537,7 +536,7 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
             }
         else:
             attribute_fields = {}
-        self.base_form_class = type(
+        self.base_form_class = type(  # pyright: ignore
             'ActionAdminForm',
             (ActionAdminForm,),
             {**cat_fields, **attribute_fields, '_user': user},
@@ -556,6 +555,8 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
 
+        formsets = dict(form_class.formsets)
+
         # TODO: Move this to BuiltInFieldCustomizationAwareEditHandlerMixin or somewhere else so it can be reused?
         if not user.is_general_admin_for_plan(plan):
             for panel in list(self.children):
@@ -565,9 +566,9 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
                     if isinstance(child, FieldPanel):
                         del form_class.base_fields[child.field_name]
                     elif isinstance(child, InlinePanel):
-                        del form_class.formsets[child.relation_name]
+                        del formsets[child.relation_name]
                     else:
-                        raise Exception('Invalid child panel: %s' % child)
+                        raise TypeError('Invalid child panel: %s' % child)
 
         field = form_class.base_fields.get('impact')
         if field is not None:
@@ -580,9 +581,9 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
         # Manually add a formset for each contact person role whose contact persons we may edit.
         # There is a corresponding formset in the form options if and only if we can edit contact persons of a
         # certain role.
-        for role in ActionContactPerson.get_roles():
+        for acp_role in ActionContactPerson.get_roles():
             form_options = self.get_form_options()
-            formset_name = f'contact_persons_{role}'
+            formset_name = f'contact_persons_{acp_role}'
             formset_options = form_options['formsets'].get(formset_name)
             if formset_options:
                 kwargs = {
@@ -592,11 +593,11 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
                     'formfield_callback': formfield_for_dbfield,
                     **form_options['formsets'][formset_name],
                 }
-                form_class.formsets[formset_name] = childformset_factory(Action, ActionContactPerson, **kwargs)
+                formsets[formset_name] = childformset_factory(Action, ActionContactPerson, **kwargs)
 
-        for role in ActionResponsibleParty.get_roles():
+        for arp_role in ActionResponsibleParty.get_roles():
             form_options = self.get_form_options()
-            formset_name = f'responsible_parties_{role}'
+            formset_name = f'responsible_parties_{arp_role}'
             formset_options = form_options['formsets'].get(formset_name)
             if formset_options:
                 kwargs = {
@@ -606,7 +607,8 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
                     'formfield_callback': formfield_for_dbfield,
                     **form_options['formsets'][formset_name],
                 }
-                form_class.formsets[formset_name] = childformset_factory(Action, ActionResponsibleParty, **kwargs)
+                formsets[formset_name] = childformset_factory(Action, ActionResponsibleParty, **kwargs)
+        form_class.formsets = formsets
         return form_class
 
 
@@ -641,9 +643,10 @@ class ActionIndexView(IndexView):
 class ActionMenuItem(ModelAdminMenuItem):
     def render_component(self, request):
         link_menu_item = super().render_component(request)
-        plan = request.user.get_active_admin_plan()
+        request = cast('WatchAdminRequest', request)
+        plan = request.get_active_admin_plan()
         # Change label to the configured term for "Action"
-        link_menu_item.label = plan.general_content.get_action_term_display_plural()
+        link_menu_item.label = str(plan.general_content.get_action_term_display_plural())
         return link_menu_item
 
 
@@ -728,6 +731,7 @@ class ActionEditView(InitializeFormWithInitialPlanMixin, SnippetsEditViewCompati
         # We need to inject this view's instance to be accessible to the edit handler
         # since it needs to know whether we are editing a draft or a live
         # object (there is a difference in how the form panels are constructed)
+        assert self.model_admin is not None
         edit_handler = self.model_admin.get_edit_handler(instance_being_edited=self.object)
         return edit_handler.bind_to_model(self.model_admin.model)
 
@@ -826,13 +830,13 @@ class ActionAdmin(AplansModelAdmin):
         super().register_with_wagtail()
 
         class FakeSnippetViewSet:
-            def __init__(self, modeladmin):
+            def __init__(self, modeladmin: ActionAdmin):
                 self.modeladmin = modeladmin
 
-            def get_url_name(self, view_name):
+            def get_url_name(self, view_name: str) -> str:
                 return self.modeladmin.get_url_name(view_name)
 
-            def get_menu_item_is_registered(self):
+            def get_menu_item_is_registered(self) -> bool:
                 return False
 
             @cached_property
@@ -990,7 +994,7 @@ class ActionAdmin(AplansModelAdmin):
         # manual status toggle.
         if plan.statuses_updated_manually:
             for panel in progress_panels:
-                if panel.field_name == 'manual_status':
+                if isinstance(panel, FieldPanel) and panel.field_name == 'manual_status':
                     progress_panels.remove(panel)
                     break
 

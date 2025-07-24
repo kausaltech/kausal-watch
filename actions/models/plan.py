@@ -39,7 +39,7 @@ from wagtail_localize.operations import TranslationCreator  # type: ignore
 from kausal_common.i18n.helpers import get_default_language, get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.permissions import PermissionedModel
-from kausal_common.models.types import MLModelManager, OneToOne, RevManyToMany
+from kausal_common.models.types import MLModelManager, OneToOne, RevManyQS, RevManyToMany
 
 from aplans.utils import (
     ChoiceArrayField,
@@ -49,12 +49,13 @@ from aplans.utils import (
 )
 
 from actions.permission_policy import PlanPermissionPolicy
-from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
+from indicators.models import Indicator, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
+    from django.utils.functional import _StrOrPromise as StrOrPromise
 
     from kausal_common.models.types import FK, M2M, RevMany, RevOne
 
@@ -70,6 +71,7 @@ if TYPE_CHECKING:
     from feedback.models import UserFeedback
     from notifications.models import NotificationSettings
     from orgs.models import OrganizationPlanAdmin
+    from pages.models import PlanLink
     from reports.models import ReportType
 
     from .action import Action, ActionImplementationPhase, ActionStatus
@@ -424,6 +426,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     user_feedbacks: RevMany[UserFeedback]
     impact_groups: RevMany[ImpactGroup]
     indicators: RevManyToMany[Indicator, IndicatorLevel]
+    indicator_levels: RevManyQS[IndicatorLevel, IndicatorLevelQuerySet]
+    links: RevMany[PlanLink]
 
     organization_id: int
     id: int
@@ -1064,7 +1068,7 @@ class PublicationStatus(models.TextChoices):
     SCHEDULED = 'scheduled', _('Scheduled')
 
     @staticmethod
-    def manual_status_choices() -> list[tuple[str, str]]:
+    def manual_status_choices() -> list[tuple[str, StrOrPromise]]:
         return [(c.value, c.label) for c in PublicationStatus if c != PublicationStatus.SCHEDULED]
 
 

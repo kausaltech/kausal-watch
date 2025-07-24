@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, ClassVar, Sequence, cast
 
 import graphene
 from django.forms import ModelForm
@@ -29,6 +29,7 @@ from indicators.models import (
     IndicatorGoal,
     IndicatorGraph,
     IndicatorLevel,
+    IndicatorLevelQuerySet,
     IndicatorQuerySet,
     IndicatorValue,
     Quantity,
@@ -39,6 +40,10 @@ from indicators.models import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from django.db.models.query import QuerySet
+
+    from aplans.graphql_types import GQLInfo
 
     from actions.models.action import ActionQuerySet
     from actions.models.plan import Plan, PlanQuerySet
@@ -127,9 +132,9 @@ class IndicatorLevelNode(DjangoNode):
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
 
-    @staticmethod
-    def get_queryset(root, info):
-        return root.visible_for_user(info.context.user)
+    @classmethod
+    def get_queryset(cls, queryset: IndicatorLevelQuerySet, info: GQLInfo) -> IndicatorLevelQuerySet:  # type: ignore[override]
+        return queryset.visible_for_user(info.context.user)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -196,12 +201,13 @@ class NormalizedValue(graphene.ObjectType):
 
 # Use for models that have an attribute `normalized_values`
 class NormalizedValuesMixin:
-    normalized_values = graphene.List(NormalizedValue)
+    normalized_values = graphene.List(graphene.NonNull(NormalizedValue), required=True)
 
     @gql_optimizer.resolver_hints(
         model_field='normalized_values',
     )
-    def resolve_normalized_values(root, info):
+    @staticmethod
+    def resolve_normalized_values(root: IndicatorValue | IndicatorGoal, info) -> list[dict[str, float]]:
         if not root.normalized_values:
             return []
         return [dict(normalizer_id=k, value=v) for k, v in root.normalized_values.items()]
@@ -237,7 +243,7 @@ class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode):
 
 @register_django_node
 class IndicatorNode(DjangoNode):
-    ORDERABLE_FIELDS = ['updated_at']
+    ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at']
 
     goals = graphene.List(IndicatorGoalNode, plan=graphene.ID(
         default_value=None,
@@ -256,9 +262,10 @@ class IndicatorNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='goals',
     )
-    def resolve_goals(self, info, plan=None):
+    @staticmethod
+    def resolve_goals(root: Indicator, info, plan=None) -> QuerySet[IndicatorGoal]:
         # The plan parameter has been deprecated
-        return self.goals.all()
+        return root.goals.all()
 
     @gql_optimizer.resolver_hints(
         model_field='actions',
@@ -275,7 +282,7 @@ class IndicatorNode(DjangoNode):
 
     @staticmethod
     def resolve_related_actions(root: Indicator, info, plan=None) -> Iterable[ActionIndicator]:
-        actions = Action.objects.visible_for_user(info.context.user)
+        actions = Action.objects.qs.visible_for_user(info.context.user)
         qs = ActionIndicator.objects.filter(action__in=actions, indicator=root)
         if plan is None:
             return qs
@@ -305,7 +312,7 @@ class IndicatorNode(DjangoNode):
             return None
         if plan is not None:
             plan_obj = get_plan_from_context(info, plan)
-            if plan_obj.is_visible_for_user(info.context.user):
+            if not plan_obj or not plan_obj.is_visible_for_user(info.context.user):
                 return None
         try:
             obj = root.levels.get(plan__identifier=plan)
@@ -357,7 +364,7 @@ class Query:
         plan=graphene.ID(),
         restrict_to_publicly_visible=graphene.Boolean(default_value=True))
     plan_indicators = graphene.List(
-        IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
+        graphene.NonNull(IndicatorNode), plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
     )
     related_plan_indicators = graphene.List(
@@ -366,7 +373,7 @@ class Query:
     )
 
     def resolve_plan_indicators(
-        self, info, plan, first=None, order_by=None, has_data=None,
+        self, info: GQLInfo, plan: str, first=None, order_by=None, has_data=None,
         has_goals=None, **kwargs,
     ):
         plan_obj = get_plan_from_context(info, plan)
@@ -393,7 +400,7 @@ class Query:
 
     @staticmethod
     def resolve_related_plan_indicators(
-        root, info, plan, **kwargs) -> IndicatorQuerySet | None:
+        root, info: GQLInfo, plan: str, **kwargs) -> IndicatorQuerySet | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
@@ -402,7 +409,6 @@ class Query:
         plans = plan_obj.get_all_related_plans().visible_for_user(info.context.user)
         qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
         return gql_optimizer.query(qs, info)
-
 
     def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
         obj_id = kwargs.get('id')
@@ -418,7 +424,7 @@ class Query:
             try:
                 obj_id = int(obj_id)
             except ValueError:
-                raise GraphQLError("Invalid 'id'")
+                raise GraphQLError("Invalid 'id'") from None
             qs = qs.filter(id=obj_id)
 
         if plan:

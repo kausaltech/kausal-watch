@@ -84,6 +84,7 @@ class Query(
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
         include_related_plans=graphene.Boolean(default_value=False),
+        required=True,
     )
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True))
 
