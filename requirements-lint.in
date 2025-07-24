@@ -11,3 +11,4 @@ ondivi
 mypy-baseline
 types-psutil
 types-uwsgi
+types-oauthlib

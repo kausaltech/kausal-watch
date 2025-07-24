@@ -18,18 +18,23 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
 )
 
-from aplans.types import WatchAdminRequest
+from kausal_common.users import UserOrAnon, is_authenticated, user_or_bust, user_or_none
+
+from users.models import User
 
 from .models import UserFeedback
 from .views import SetUserFeedbackProcessedView
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
+    from django.http.request import HttpRequest
     from wagtail.admin.menu import MenuItem
 
 
-class UserFeedbackPermissionPolicy(ModelPermissionPolicy):
-    def user_has_permission(self, user, action):
+class UserFeedbackPermissionPolicy(ModelPermissionPolicy[UserFeedback, User, str]):
+    def user_has_permission(self, user: UserOrAnon, action: str) -> bool:
+        if not is_authenticated(user):
+            return False
         if action in ('add', 'change'):
             return False
         if action == 'view':
@@ -39,7 +44,7 @@ class UserFeedbackPermissionPolicy(ModelPermissionPolicy):
 
         return super().user_has_permission(user, action)
 
-    def user_has_permission_for_instance(self, user, action, instance):
+    def user_has_permission_for_instance(self, user: User, action: str, instance: UserFeedback) -> bool:
         if action == 'delete':
             return user.is_general_admin_for_plan(instance.plan)
         if action == SetUserFeedbackProcessedView.permission_required:
@@ -48,17 +53,20 @@ class UserFeedbackPermissionPolicy(ModelPermissionPolicy):
         return super().user_has_permission_for_instance(user, action, instance)
 
 
-class UserFeedbackDeleteView(DeleteView):
-    permission_policy: UserFeedbackPermissionPolicy
+class UserFeedbackDeleteView(DeleteView[UserFeedback]):
+    permission_policy: UserFeedbackPermissionPolicy  # type: ignore[assignment]
 
-    def user_has_permission(self, permission):
-        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
+    def user_has_permission(self, permission: str) -> bool:
+        user = user_or_none(self.request.user)
+        if user is None:
+            return False
+        return self.permission_policy.user_has_permission_for_instance(user, permission, self.object)
 
 
 class UserFeedbackInspectView(InspectView):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line
     # (and the whole class) can be deleted
-    any_permission_required = ["add", "change", "delete", "view"]
+    any_permission_required = ['add', 'change', 'delete', 'view']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,12 +75,12 @@ class UserFeedbackInspectView(InspectView):
                 field['value'] = 'None'
         return context
 
-class UserFeedbackIndexView(IndexView):
-    request: WatchAdminRequest
+
+class UserFeedbackIndexView(IndexView[UserFeedback]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line
     # can be deleted
-    any_permission_required = ["add", "change", "delete", "view"]
-    permission_policy: UserFeedbackPermissionPolicy
+    any_permission_required = ['add', 'change', 'delete', 'view']
+    permission_policy: UserFeedbackPermissionPolicy  # type: ignore[assignment]
     set_user_feedback_processed_url_name = None
     set_user_feedback_unprocessed_url_name = None
     additional_fields_cache: list[str] | None = None
@@ -100,8 +108,7 @@ class UserFeedbackIndexView(IndexView):
     @property
     def export_filename(self) -> str:
         """Filename given to the exported spreadsheet."""
-        return f'{self.get_page_title()} - {self.request.user.get_active_admin_plan()}'
-
+        return f'{self.get_page_title()} - {user_or_bust(self.request.user).get_active_admin_plan()}'
 
     @export_filename.setter
     def export_filename(self, value) -> None:
@@ -139,9 +146,9 @@ class UserFeedbackIndexView(IndexView):
                     raise
 
                 # The field might still not exist in this particular item's additional_fields. Use N/A as a fallback.
-                value = _("N/A")
+                value = _('N/A')
                 if item.additional_fields is not None:
-                    value = item.additional_fields.get(field, _("N/A"))
+                    value = item.additional_fields.get(field, _('N/A'))
 
             row_dict[field] = value
 
@@ -160,28 +167,30 @@ class UserFeedbackIndexView(IndexView):
     def set_processed_button(self, instance: UserFeedback):
         return wagtailsnippets_widgets.SnippetListingButton(
             url=self.get_user_feedback_processed_url(instance),
-            label=_("Mark as processed"),
+            label=_('Mark as processed'),
             icon_name='check',
-            attrs={'aria-label': _("Mark this user feedback as processed")},
+            attrs={'aria-label': _('Mark this user feedback as processed')},
         )
 
     def set_unprocessed_button(self, instance: UserFeedback):
         return wagtailsnippets_widgets.SnippetListingButton(
             url=self.get_user_feedback_unprocessed_url(instance),
-            label=_("Mark as unprocessed"),
+            label=_('Mark as unprocessed'),
             icon_name='cross',
-            attrs={'aria-label': _("Mark this user feedback as unprocessed")},
+            attrs={'aria-label': _('Mark this user feedback as unprocessed')},
         )
 
     def get_list_more_buttons(self, instance: UserFeedback):
         buttons = super().get_list_more_buttons(instance)
 
         # Hide delete button if user has no delete permission
-        if not self.permission_policy.user_has_permission_for_instance(self.request.user, 'delete', instance):
+        if not self.permission_policy.user_has_permission_for_instance(user_or_bust(self.request.user), 'delete', instance):
             buttons = [button for button in buttons if button.url != self.get_delete_url(instance)]
 
         # Do not add the feedback processing button if user lacks permissions
-        if not self.permission_policy.user_has_permission_for_instance(self.request.user, 'set_is_processed', instance):
+        if not self.permission_policy.user_has_permission_for_instance(
+            user_or_bust(self.request.user), 'set_is_processed', instance
+        ):
             return buttons
 
         # Add feedback processing button
@@ -192,7 +201,8 @@ class UserFeedbackIndexView(IndexView):
 
         return [*buttons, process_button]
 
-class UserFeedbackViewSet(SnippetViewSet[UserFeedback, WatchAdminRequest]):
+
+class UserFeedbackViewSet(SnippetViewSet[UserFeedback]):
     model = UserFeedback
     add_to_admin_menu = True
     icon = 'mail'
@@ -228,7 +238,7 @@ class UserFeedbackViewSet(SnippetViewSet[UserFeedback, WatchAdminRequest]):
     # workaround should be safe to delete.
     def get_menu_item(self, order: int | None = None) -> MenuItem:
         menu_item = super().get_menu_item(order)
-        menu_item.is_shown = lambda request: True  # noqa: ARG005
+        menu_item.is_shown = lambda _request: True  # type: ignore[assignment]
         return menu_item
 
     def get_common_view_kwargs(self, **kwargs):
@@ -238,9 +248,9 @@ class UserFeedbackViewSet(SnippetViewSet[UserFeedback, WatchAdminRequest]):
             **kwargs,
         )
 
-    def get_queryset(self, request: WatchAdminRequest) -> QuerySet[UserFeedback, UserFeedback]:
+    def get_queryset(self, request: HttpRequest) -> QuerySet[UserFeedback, UserFeedback]:
         qs = self.model.objects.get_queryset()
-        user = request.user
+        user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         return qs.filter(plan=plan)
 

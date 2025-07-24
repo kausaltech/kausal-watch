@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from typing import Any
 
 from django.utils import timezone
 
@@ -28,8 +29,8 @@ pytestmark = pytest.mark.django_db
 
 
 def test_unit_node(graphql_client_query_data):
-    unit = UnitFactory()
-    indicator = IndicatorFactory(unit=unit)
+    unit = UnitFactory.create()
+    indicator = IndicatorFactory.create(unit=unit)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -51,7 +52,7 @@ def test_unit_node(graphql_client_query_data):
         'indicator': {
             'unit': {
                 '__typename': 'Unit',
-                'id': str(unit.id),
+                'id': str(unit.pk),
                 'name': unit.name,
                 'shortName': unit.short_name,
                 'verboseName': unit.verbose_name,
@@ -63,8 +64,8 @@ def test_unit_node(graphql_client_query_data):
 
 
 def test_quantity_node(graphql_client_query_data):
-    quantity = QuantityFactory()
-    indicator = IndicatorFactory(quantity=quantity)
+    quantity = QuantityFactory.create()
+    indicator = IndicatorFactory.create(quantity=quantity)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -77,13 +78,13 @@ def test_quantity_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
             'quantity': {
                 '__typename': 'Quantity',
-                'id': str(quantity.id),
+                'id': str(quantity.pk),
                 'name': quantity.name,
             },
         },
@@ -92,7 +93,7 @@ def test_quantity_node(graphql_client_query_data):
 
 
 def test_related_indicator_node(graphql_client_query_data):
-    related_indicator = RelatedIndicatorFactory()
+    related_indicator = RelatedIndicatorFactory.create()
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -118,32 +119,36 @@ def test_related_indicator_node(graphql_client_query_data):
     )
     expected = {
         'indicator': {
-            'relatedEffects': [{
-                '__typename': 'RelatedIndicator',
-                'id': str(related_indicator.id),
-                'causalIndicator': {
-                    '__typename': 'Indicator',
-                    'id': str(related_indicator.causal_indicator.id),
-                },
-                'effectIndicator': {
-                    '__typename': 'Indicator',
-                    'id': str(related_indicator.effect_indicator.id),
-                },
-                'effectType': related_indicator.effect_type.upper(),
-                'confidenceLevel': related_indicator.confidence_level.upper(),
-            }],
+            'relatedEffects': [
+                {
+                    '__typename': 'RelatedIndicator',
+                    'id': str(related_indicator.pk),
+                    'causalIndicator': {
+                        '__typename': 'Indicator',
+                        'id': str(related_indicator.causal_indicator.id),
+                    },
+                    'effectIndicator': {
+                        '__typename': 'Indicator',
+                        'id': str(related_indicator.effect_indicator.id),
+                    },
+                    'effectType': related_indicator.effect_type.upper(),
+                    'confidenceLevel': related_indicator.confidence_level.upper(),
+                }
+            ],
         },
     }
     assert data == expected
 
+
 @pytest.mark.parametrize('published_at', [None, timezone.now() - timedelta(days=1)])
 @pytest.mark.parametrize('expose_to_auth_only', [False, True])
 def test_action_indicator_node(graphql_client_query_data, published_at, expose_to_auth_only):
-    indicator = IndicatorFactory()
-    plan = PlanFactory(published_at=published_at,
-                       features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only)
-    action = ActionFactory(plan=plan)
-    action_indicator = ActionIndicatorFactory(indicator=indicator, action=action)
+    indicator = IndicatorFactory.create()
+    plan = PlanFactory.create(
+        published_at=published_at, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only
+    )
+    action = ActionFactory.create(plan=plan)
+    action_indicator = ActionIndicatorFactory.create(indicator=indicator, action=action)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -169,28 +174,32 @@ def test_action_indicator_node(graphql_client_query_data, published_at, expose_t
     )
     expected = {
         'indicator': {
-            'relatedActions': [{
-                '__typename': 'ActionIndicator',
-                'id': str(action_indicator.id),
-                'action': {
-                    '__typename': 'Action',
-                    'id': str(action_indicator.action.id),
-                },
-                'indicator': {
-                    '__typename': 'Indicator',
-                    'id': str(action_indicator.indicator.id),
-                },
-                'effectType': action_indicator.effect_type.upper(),
-                'indicatesActionProgress': action_indicator.indicates_action_progress,
-            }] if published_at or not expose_to_auth_only else [],
+            'relatedActions': [
+                {
+                    '__typename': 'ActionIndicator',
+                    'id': str(action_indicator.pk),
+                    'action': {
+                        '__typename': 'Action',
+                        'id': str(action_indicator.action.pk),
+                    },
+                    'indicator': {
+                        '__typename': 'Indicator',
+                        'id': str(action_indicator.indicator.id),
+                    },
+                    'effectType': action_indicator.effect_type.upper(),
+                    'indicatesActionProgress': action_indicator.indicates_action_progress,
+                }
+            ]
+            if published_at or not expose_to_auth_only
+            else [],
         },
     }
     assert data == expected
 
 
 def test_indicator_graph_node(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    indicator_graph = IndicatorGraphFactory(indicator=indicator)
+    indicator = IndicatorFactory.create()
+    indicator_graph = IndicatorGraphFactory.create(indicator=indicator)
     indicator.latest_graph = indicator_graph
     indicator.save(update_fields=['latest_graph'])
     data = graphql_client_query_data(
@@ -230,8 +239,8 @@ def test_indicator_graph_node(graphql_client_query_data):
 
 
 def test_indicator_level_node(graphql_client_query_data):
-    plan = PlanFactory()
-    indicator_level = IndicatorLevelFactory(plan=plan)
+    plan = PlanFactory.create()
+    indicator_level = IndicatorLevelFactory.create(plan=plan)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -256,29 +265,31 @@ def test_indicator_level_node(graphql_client_query_data):
     )
     expected = {
         'plan': {
-            'indicatorLevels': [{
-                '__typename': 'IndicatorLevel',
-                'id': str(indicator_level.id),
-                'indicator': {
-                    '__typename': 'Indicator',
-                    'id': str(indicator_level.indicator.id),
-                },
-                'plan': {
-                    '__typename': 'Plan',
-                    'id': str(plan.identifier),
-                },
-                'level': indicator_level.level.upper(),
-            }],
+            'indicatorLevels': [
+                {
+                    '__typename': 'IndicatorLevel',
+                    'id': str(indicator_level.pk),
+                    'indicator': {
+                        '__typename': 'Indicator',
+                        'id': str(indicator_level.indicator.pk),
+                    },
+                    'plan': {
+                        '__typename': 'Plan',
+                        'id': str(plan.identifier),
+                    },
+                    'level': indicator_level.level.upper(),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_dimension_node(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    dimension = DimensionFactory()
-    IndicatorDimensionFactory(indicator=indicator, dimension=dimension)
-    dimension_category = DimensionCategoryFactory(dimension=dimension)
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    dimension_category = DimensionCategoryFactory.create(dimension=dimension)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -297,31 +308,35 @@ def test_dimension_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
-            'dimensions': [{
-                'dimension': {
-                    '__typename': 'Dimension',
-                    'id': str(dimension.id),
-                    'name': dimension.name,
-                    'categories': [{
-                        '__typename': 'DimensionCategory',
-                        'id': str(dimension_category.id),
-                    }],
-                },
-            }],
+            'dimensions': [
+                {
+                    'dimension': {
+                        '__typename': 'Dimension',
+                        'id': str(dimension.pk),
+                        'name': dimension.name,
+                        'categories': [
+                            {
+                                '__typename': 'DimensionCategory',
+                                'id': str(dimension_category.pk),
+                            }
+                        ],
+                    },
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_dimension_category_node(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    dimension = DimensionFactory()
-    IndicatorDimensionFactory(indicator=indicator, dimension=dimension)
-    dimension_category = DimensionCategoryFactory(dimension=dimension)
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    dimension_category = DimensionCategoryFactory.create(dimension=dimension)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -344,25 +359,29 @@ def test_dimension_category_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
-            'dimensions': [{
-                'dimension': {
-                    'id': str(dimension.id),
-                    'categories': [{
-                        '__typename': 'DimensionCategory',
-                        'id': str(dimension_category.id),
-                        'dimension': {
-                            '__typename': 'Dimension',
-                            'id': str(dimension.id),
-                        },
-                        'name': dimension_category.name,
-                        'order': 1,
-                    }],
-                },
-            }],
+            'dimensions': [
+                {
+                    'dimension': {
+                        'id': str(dimension.pk),
+                        'categories': [
+                            {
+                                '__typename': 'DimensionCategory',
+                                'id': str(dimension_category.pk),
+                                'dimension': {
+                                    '__typename': 'Dimension',
+                                    'id': str(dimension.pk),
+                                },
+                                'name': dimension_category.name,
+                                'order': 1,
+                            }
+                        ],
+                    },
+                }
+            ],
         },
     }
     assert data == expected
@@ -374,8 +393,8 @@ def test_framework_node(graphql_client_query_data):
 
 
 def test_common_indicator_node(graphql_client_query_data):
-    common_indicator = CommonIndicatorFactory()
-    indicator = IndicatorFactory(common=common_indicator)
+    common_indicator = CommonIndicatorFactory.create()
+    indicator = IndicatorFactory.create(common=common_indicator)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -398,23 +417,23 @@ def test_common_indicator_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
             'common': {
                 '__typename': 'CommonIndicator',
-                'id': str(common_indicator.id),
+                'id': str(common_indicator.pk),
                 'identifier': common_indicator.identifier,
                 'name': common_indicator.name,
                 'description': str(common_indicator.description),
                 'quantity': {
                     '__typename': 'Quantity',
-                    'id': str(common_indicator.quantity.id),
+                    'id': str(common_indicator.quantity.pk),
                 },
                 'unit': {
                     '__typename': 'Unit',
-                    'id': str(common_indicator.unit.id),
+                    'id': str(common_indicator.unit.pk),
                 },
             },
         },
@@ -428,9 +447,9 @@ def test_framework_indicator_node(graphql_client_query):
 
 
 def test_indicator_value_node(graphql_client_query_data):
-    category = DimensionCategoryFactory()
-    indicator = IndicatorFactory()
-    indicator_value = IndicatorValueFactory(indicator=indicator, categories=[category])
+    category = DimensionCategoryFactory.create()
+    indicator = IndicatorFactory.create()
+    indicator_value = IndicatorValueFactory.create(indicator=indicator, categories=[category])
     indicator.latest_value = indicator_value
     indicator.save(update_fields=['latest_value'])
     data = graphql_client_query_data(
@@ -450,16 +469,16 @@ def test_indicator_value_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
             'latestValue': {
                 '__typename': 'IndicatorValue',
-                'id': str(indicator_value.id),
+                'id': str(indicator_value.pk),
                 'indicator': {
                     '__typename': 'Indicator',
-                    'id': str(indicator.id),
+                    'id': str(indicator.pk),
                 },
                 'value': indicator_value.value,
                 'date': indicator_value.date.isoformat(),
@@ -470,8 +489,8 @@ def test_indicator_value_node(graphql_client_query_data):
 
 
 def test_indicator_goal_node(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    indicator_goal = IndicatorGoalFactory(indicator=indicator)
+    indicator = IndicatorFactory.create()
+    indicator_goal = IndicatorGoalFactory.create(indicator=indicator)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -493,42 +512,46 @@ def test_indicator_goal_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
-            'goals': [{
-                '__typename': 'IndicatorGoal',
-                'id': str(indicator_goal.id),
-                'indicator': {
-                    '__typename': 'Indicator',
-                    'id': str(indicator.id),
-                },
-                'scenario': None,
-                'value': indicator_goal.value,
-                'date': indicator_goal.date.isoformat(),
-            }],
+            'goals': [
+                {
+                    '__typename': 'IndicatorGoal',
+                    'id': str(indicator_goal.pk),
+                    'indicator': {
+                        '__typename': 'Indicator',
+                        'id': str(indicator.pk),
+                    },
+                    'scenario': None,
+                    'value': indicator_goal.value,
+                    'date': indicator_goal.date.isoformat(),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_indicator_node(graphql_client_query_data):
-    plan = PlanFactory()
-    indicator = IndicatorFactory()
-    indicator_goal = IndicatorGoalFactory(indicator=indicator)
-    indicator_value = IndicatorValueFactory(indicator=indicator)
-    indicator_graph = IndicatorGraphFactory(indicator=indicator)
+    plan = PlanFactory.create()
+    indicator = IndicatorFactory.create()
+    indicator_goal = IndicatorGoalFactory.create(indicator=indicator)
+    indicator_value = IndicatorValueFactory.create(indicator=indicator)
+    indicator_graph = IndicatorGraphFactory.create(indicator=indicator)
     indicator.latest_value = indicator_value
     indicator.latest_graph = indicator_graph
     indicator.save(update_fields=['latest_value', 'latest_graph'])
-    action = ActionFactory(plan=plan)
-    action_indicator = ActionIndicatorFactory(action=action, indicator=indicator)
-    category = CategoryFactory()
+    action = ActionFactory.create(plan=plan)
+    action_indicator = ActionIndicatorFactory.create(action=action, indicator=indicator)
+    category = CategoryFactory.create()
     indicator.categories.add(category)
-    indicator_dimension = IndicatorDimensionFactory(indicator=indicator)
+    indicator_dimension = IndicatorDimensionFactory.create(indicator=indicator)
     # Create IndicatorLevel so that `plan` appears in `indicator.plan`
-    IndicatorLevelFactory(indicator=indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert indicator.common is not None
+    assert indicator.quantity is not None
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -611,29 +634,29 @@ def test_indicator_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
             '__typename': 'Indicator',
-            'id': str(indicator.id),
+            'id': str(indicator.pk),
             'common': {
                 '__typename': 'CommonIndicator',
-                'id': str(indicator.common.id),
+                'id': str(indicator.common.pk),
             },
             'organization': {
                 '__typename': 'Organization',
-                'id': str(indicator.organization.id),
+                'id': str(indicator.organization.pk),
             },
             'identifier': indicator.identifier,
             'name': indicator.name,
             'quantity': {
                 '__typename': 'Quantity',
-                'id': str(indicator.quantity.id),
+                'id': str(indicator.quantity.pk),
             },
             'unit': {
                 '__typename': 'Unit',
-                'id': str(indicator.unit.id),
+                'id': str(indicator.unit.pk),
             },
             'description': indicator.description,
             'minValue': indicator.min_value,
@@ -641,55 +664,69 @@ def test_indicator_node(graphql_client_query_data):
             'showTrendline': indicator.show_trendline,
             'desiredTrend': indicator.desired_trend.upper(),
             'showTotalLine': indicator.show_total_line,
-            'categories': [{
-                '__typename': 'Category',
-                'id': str(category.id),
-            }],
+            'categories': [
+                {
+                    '__typename': 'Category',
+                    'id': str(category.pk),
+                }
+            ],
             'timeResolution': indicator.time_resolution.upper(),
             'reference': indicator.reference,
             'latestValue': {
                 '__typename': 'IndicatorValue',
-                'id': str(indicator.latest_value.id),
+                'id': str(indicator.latest_value.pk),
             },
             'latestGraph': {
                 '__typename': 'IndicatorGraph',
-                'id': str(indicator.latest_graph.id),
+                'id': str(indicator.latest_graph.pk),
             },
             'updatedAt': indicator.updated_at.isoformat(),
             'createdAt': indicator.created_at.isoformat(),
-            'values': [{
-                '__typename': 'IndicatorValue',
-                'id': str(indicator.latest_value.id),
-            }],
-            'plans': [{
-                '__typename': 'Plan',
-                'id': str(plan.identifier),
-            }],
-            'goals': [{
-                '__typename': 'IndicatorGoal',
-                'id': str(indicator_goal.id),
-            }],
-            'relatedActions': [{
-                '__typename': 'ActionIndicator',
-                'id': str(action_indicator.id),
-            }],
-            'actions': [{
-                '__typename': 'Action',
-                'id': str(action.id),
-            }],
-            'dimensions': [{
-                '__typename': 'IndicatorDimension',
-                'id': str(indicator_dimension.id),
-            }],
+            'values': [
+                {
+                    '__typename': 'IndicatorValue',
+                    'id': str(indicator.latest_value.pk),
+                }
+            ],
+            'plans': [
+                {
+                    '__typename': 'Plan',
+                    'id': str(plan.identifier),
+                }
+            ],
+            'goals': [
+                {
+                    '__typename': 'IndicatorGoal',
+                    'id': str(indicator_goal.pk),
+                }
+            ],
+            'relatedActions': [
+                {
+                    '__typename': 'ActionIndicator',
+                    'id': str(action_indicator.pk),
+                }
+            ],
+            'actions': [
+                {
+                    '__typename': 'Action',
+                    'id': str(action.pk),
+                }
+            ],
+            'dimensions': [
+                {
+                    '__typename': 'IndicatorDimension',
+                    'id': str(indicator_dimension.pk),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_indicator_node_cause_effect(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    cause = RelatedIndicatorFactory(effect_indicator=indicator)
-    effect = RelatedIndicatorFactory(causal_indicator=indicator)
+    indicator = IndicatorFactory.create()
+    cause = RelatedIndicatorFactory.create(effect_indicator=indicator)
+    effect = RelatedIndicatorFactory.create(causal_indicator=indicator)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -707,29 +744,33 @@ def test_indicator_node_cause_effect(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
             '__typename': 'Indicator',
-            'id': str(indicator.id),
-            'relatedCauses': [{
-                '__typename': 'RelatedIndicator',
-                'id': str(cause.id),
-            }],
-            'relatedEffects': [{
-                '__typename': 'RelatedIndicator',
-                'id': str(effect.id),
-            }],
+            'id': str(indicator.pk),
+            'relatedCauses': [
+                {
+                    '__typename': 'RelatedIndicator',
+                    'id': str(cause.pk),
+                }
+            ],
+            'relatedEffects': [
+                {
+                    '__typename': 'RelatedIndicator',
+                    'id': str(effect.pk),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_indicator_dimension_node(graphql_client_query_data):
-    indicator = IndicatorFactory()
-    dimension = DimensionFactory()
-    indicator_dimension = IndicatorDimensionFactory(indicator=indicator, dimension=dimension)
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    indicator_dimension = IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -750,35 +791,37 @@ def test_indicator_dimension_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(indicator=indicator.id),
+        variables=dict(indicator=indicator.pk),
     )
     expected = {
         'indicator': {
-            'dimensions': [{
-                '__typename': 'IndicatorDimension',
-                'id': str(indicator_dimension.id),
-                'dimension': {
-                    '__typename': 'Dimension',
-                    'id': str(dimension.id),
-                },
-                'indicator': {
-                    '__typename': 'Indicator',
-                    'id': str(indicator.id),
-                },
-                'order': 1,
-            }],
+            'dimensions': [
+                {
+                    '__typename': 'IndicatorDimension',
+                    'id': str(indicator_dimension.pk),
+                    'dimension': {
+                        '__typename': 'Dimension',
+                        'id': str(dimension.pk),
+                    },
+                    'indicator': {
+                        '__typename': 'Indicator',
+                        'id': str(indicator.pk),
+                    },
+                    'order': 1,
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_plan_indicators_has_goals_parameter(graphql_client_query_data):
-    plan = PlanFactory()
+    plan = PlanFactory.create()
     indicators = [
-        (IndicatorFactory(), False),
-        (IndicatorGoalFactory().indicator, True),
+        (IndicatorFactory.create(), False),
+        (IndicatorGoalFactory.create().indicator, True),
     ]
-    for indicator, has_goals in indicators:
+    for indicator, _has_goals in indicators:
         indicator.plans.add(plan)
     for indicator, has_goals in indicators:
         data = graphql_client_query_data(
@@ -800,13 +843,14 @@ def test_plan_indicators_has_goals_parameter(graphql_client_query_data):
         }
         assert data == expected
 
-def test_indicator_visibility(graphql_client_query_data):
-    plan = PlanFactory()
-    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
 
-    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
-    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
+def test_indicator_visibility(graphql_client_query_data):
+    plan = PlanFactory.create()
+    public_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    IndicatorLevelFactory.create(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=internal_indicator, plan=plan)
 
     data = graphql_client_query_data(
         """
@@ -816,27 +860,28 @@ def test_indicator_visibility(graphql_client_query_data):
             name
           }
         }
-        """, variables=dict(plan=plan.identifier),
+        """,
+        variables=dict(plan=plan.identifier),
     )
 
     expected = {
         'planIndicators': [
             {
-                'id': str(public_indicator.id),
+                'id': str(public_indicator.pk),
                 'name': public_indicator.name,
             },
         ],
     }
     assert data == expected
 
+
 def test_indicator_query_visibility(graphql_client_query_data):
-    plan = PlanFactory()
-    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+    plan = PlanFactory.create()
+    public_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
 
-    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
-    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
-
+    IndicatorLevelFactory.create(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=internal_indicator, plan=plan)
 
     data = graphql_client_query_data(
         """
@@ -847,12 +892,13 @@ def test_indicator_query_visibility(graphql_client_query_data):
           }
         }
         """,
-        variables={'id': public_indicator.id},
+        variables={'id': public_indicator.pk},
     )
 
+    expected: dict[str, Any]
     expected = {
         'indicator': {
-            'id': str(public_indicator.id),
+            'id': str(public_indicator.pk),
             'name': public_indicator.name,
         },
     }
@@ -877,17 +923,25 @@ def test_indicator_query_visibility(graphql_client_query_data):
 
 
 def test_related_indicators_visibility(graphql_client_query_data):
-    plan = PlanFactory()
-    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+    plan = PlanFactory.create()
+    public_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
 
-    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
-    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=internal_indicator, plan=plan)
 
-    public_cause = RelatedIndicatorFactory(effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-    public_effect = RelatedIndicatorFactory(causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-    RelatedIndicatorFactory(effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
-    RelatedIndicatorFactory(causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+    public_cause = RelatedIndicatorFactory.create(
+        effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC
+    )
+    public_effect = RelatedIndicatorFactory.create(
+        causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC
+    )
+    RelatedIndicatorFactory.create(
+        effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL
+    )
+    RelatedIndicatorFactory.create(
+        causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL
+    )
 
     data = graphql_client_query_data(
         """
@@ -903,33 +957,34 @@ def test_related_indicators_visibility(graphql_client_query_data):
           }
         }
         """,
-        variables={'id': public_indicator.id},
+        variables={'id': public_indicator.pk},
     )
 
     expected = {
         'indicator': {
-            'id': str(public_indicator.id),
-            'relatedCauses': [{'id': str(public_cause.id)}],
-            'relatedEffects': [{'id': str(public_effect.id)}],
+            'id': str(public_indicator.pk),
+            'relatedCauses': [{'id': str(public_cause.pk)}],
+            'relatedEffects': [{'id': str(public_effect.pk)}],
         },
     }
     assert data == expected
+
 
 @pytest.mark.parametrize(
     'published_at',
     [
         timezone.now() - timedelta(days=1),  # Published
         None,  # Unpublished
-    ]
+    ],
 )
 @pytest.mark.parametrize('expose_to_auth_only', [False, True])
 def test_indicator_plans_visibility(graphql_client_query_data, published_at, expose_to_auth_only):
     """Test plan visibility in indicator's plans field for unauthenticated users."""
-    plan = PlanFactory(published_at=published_at,
-                       features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only)
-    indicator = IndicatorFactory()
+    plan = PlanFactory.create(
+        published_at=published_at, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only
+    )
+    indicator = IndicatorFactory.create()
     indicator.plans.add(plan)
-
 
     response = graphql_client_query_data(
         """
@@ -946,9 +1001,13 @@ def test_indicator_plans_visibility(graphql_client_query_data, published_at, exp
 
     expected = {
         'indicator': {
-            'plans': [{
-                'id': plan.identifier,
-            }] if published_at or not expose_to_auth_only else [],
+            'plans': [
+                {
+                    'id': plan.identifier,
+                }
+            ]
+            if published_at or not expose_to_auth_only
+            else [],
         }
     }
 

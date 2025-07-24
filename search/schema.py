@@ -1,6 +1,8 @@
-import logging
+from __future__ import annotations
+
+from dataclasses import dataclass
 from itertools import chain
-from typing import Optional
+from typing import TYPE_CHECKING, cast
 
 import graphene
 from django.db.models import Q
@@ -8,36 +10,52 @@ from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from wagtail.models import Page
 
+from loguru import logger
+
 from actions.models import Action, Plan
 from actions.schema import ActionNode
-from indicators.models import Indicator
+from indicators.models import Indicator, IndicatorQuerySet
 from indicators.schema import IndicatorNode
 from pages.models import AplansPage, PlanRootPage
 
-from .backends import get_search_backend
+if TYPE_CHECKING:
+    from wagtail.query import PageQuerySet
 
-logger = logging.getLogger(__name__)
+    from actions.models.action import ActionQuerySet
 
 
 class SearchHitObject(graphene.Union):
     class Meta:
         types = (
-            ActionNode, IndicatorNode,
+            ActionNode,
+            IndicatorNode,
         )
 
 
+@dataclass
+class SearchHitObj:
+    id: str
+    title: str
+    plan: Plan
+    object: Action | Indicator | None = None
+    relevance: float = 0.0
+    highlight: str | None = None
+    page: Page | None = None
+
+
 class SearchHit(graphene.ObjectType):
-    id = graphene.ID()
-    title = graphene.String()
+    id = graphene.ID(required=True)
+    title = graphene.String(required=True)
     url = graphene.String(client_url=graphene.String(required=False))
-    relevance = graphene.Float()
-    highlight = graphene.String()
-    plan = graphene.Field('actions.schema.PlanNode')
+    relevance = graphene.Float(required=True)
+    highlight = graphene.String(required=False)
+    plan = graphene.Field('actions.schema.PlanNode', required=True)
     object = graphene.Field(SearchHitObject, required=False)
     page = graphene.Field('grapple.types.interfaces.PageInterface', required=False)
 
-    def resolve_url(root, info, client_url=None):
-        plan = root['plan']
+    @staticmethod
+    def resolve_url(root: SearchHitObj, info, client_url=None) -> None | str:
+        plan = root.plan
         if not plan or not plan.is_visible_for_user(info.context.user):
             return None
 
@@ -46,51 +64,62 @@ class SearchHit(graphene.ObjectType):
         if only_other_plans:
             client_url = None
 
-        search_hit_object = root.get('object')
-        page = root.get('page')
+        search_hit_object = root.object
+        page = root.page
         if search_hit_object is not None:
             return search_hit_object.get_view_url(plan=plan, client_url=client_url)
         if page is not None:
             parts = page.get_url_parts(request=info.context)
+            if parts is None:
+                return None
             return '%s%s' % (plan.get_view_url(client_url=client_url), parts[2])
         return None
 
 
 class SearchResults(graphene.ObjectType):
-    hits = graphene.List(SearchHit)
+    hits = graphene.List(graphene.NonNull(SearchHit), required=True)
 
-    def resolve_hits(root, info):
+    @staticmethod
+    def resolve_hits(root, info) -> list[SearchHitObj]:
         hits = root['hits']
         res = []
         for obj in hits:
             if isinstance(obj, Action):
-                hit = dict(
-                    id='act-%d' % obj.id,
+                hit = SearchHitObj(
+                    id='act-%d' % obj.pk,
                     title=str(obj),
                     plan=obj.plan,
                     object=obj,
                 )
             elif isinstance(obj, Indicator):
-                hit = dict(
-                    id='ind-%d' % obj.id,
+                plan = obj.plans.first()
+                if not plan:
+                    logger.warning('Indicator %d has no plan' % obj.pk)
+                    continue
+                hit = SearchHitObj(
+                    id='ind-%d' % obj.pk,
                     title=str(obj),
-                    plan=obj.plans.first(),
+                    plan=cast('Plan', obj.plans.first()),
                     object=obj,
                 )
             elif isinstance(obj, AplansPage):
-                hit = dict(
-                    id='page-%d' % obj.id,
+                plan = obj.plan
+                if not plan:
+                    logger.warning('AplansPage %d has no plan' % obj.pk)
+                    continue
+                hit = SearchHitObj(
+                    id='page-%d' % obj.pk,
                     title=obj.title,
-                    plan=obj.plan,
+                    plan=plan,
                     page=obj,
                 )
             else:
                 logger.warning('Unknown object type: %s' % type(obj))
                 continue
-            hit['relevance'] = obj.relevance
+            hit.relevance = obj.relevance
             highlights = getattr(obj, '_highlights', None)
             if highlights:
-                hit['highlight'] = highlights[0]
+                hit.highlight = highlights[0]
             res.append(hit)
         return res
 
@@ -105,57 +134,67 @@ class Query:
         page=graphene.Int(default_value=0),
         query=graphene.String(required=False, default_value=None),
         autocomplete=graphene.String(required=False, default_value=None),
+        required=True,
     )
 
+    @staticmethod
     def resolve_search(
-        root, info, plan, include_related_plans=False, only_other_plans=False,
-        max_results=20, page=0, query=None, autocomplete=None,
+        root,
+        info,
+        plan: str,
+        include_related_plans=False,
+        only_other_plans=False,
+        max_results=20,
+        page=0,
+        query: str | None = None,
+        autocomplete: str | None = None,
     ):
-        if ((query is not None and autocomplete is not None) or
-                (query is None and autocomplete is None)):
-            raise GraphQLError("You must supply either query or autocomplete")
+        if (query is not None and autocomplete is not None) or (query is None and autocomplete is None):
+            raise GraphQLError('You must supply either query or autocomplete')
 
         plan_obj: Plan | None = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
-            raise GraphQLError("Plan %s not found" % plan)
+            raise GraphQLError('Plan %s not found' % plan)
         if not plan_obj.is_visible_for_user(info.context.user):
-            raise GraphQLError("Plan %s not found" % plan)
+            raise GraphQLError('Plan %s not found' % plan)
         related_plans = plan_obj.get_all_related_plans().all()
         if plan_obj.is_live():
             # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site
             related_plans = related_plans.live()
         if only_other_plans:
-            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=related_plans) | Q(features__password_protected=True))
+            plans = (
+                Plan.objects.get_queryset()
+                .live()
+                .exclude(Q(id=plan_obj.id) | Q(id__in=related_plans) | Q(features__password_protected=True))
+            )
         else:
-            qs = Q(id=plan_obj.id)
+            q = Q(id=plan_obj.id)
             if include_related_plans:
-                qs |= Q(id__in=related_plans.values_list('id', flat=True))
-            plans = Plan.objects.filter(qs)
+                q |= Q(id__in=related_plans.values_list('id', flat=True))
+            plans = Plan.objects.get_queryset().filter(q)
         plans = plans.exclude(exclude_from_search=True).visible_for_user(info.context.user)
         plan_ids = list(plans.values_list('id', flat=True))
 
-        #backend = get_search_backend()
-        #backend.watch_search(query, included_plans=plan_ids)
+        # backend = get_search_backend()
+        # backend.watch_search(query, included_plans=plan_ids)
 
-        root_page_paths = (
-            PlanRootPage.objects
-                .filter(sites_rooted_here__plan__in=plan_ids)
-                .values_list('path', flat=True)
-        )
+        root_page_paths = PlanRootPage.objects.filter(sites_rooted_here__plan__in=plan_ids).values_list('path', flat=True)
         page_filter = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
         for path in root_page_paths:
             page_filter |= Q(path__startswith=path)
 
-        querysets = [
-            Action.objects.all().visible_for_user( # type: ignore[attr-defined]
-                info.context.user).filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
-            Page.objects.filter(page_filter).live().specific(),
+        querysets: list[ActionQuerySet | PageQuerySet | IndicatorQuerySet] = [
+            (
+                Action.objects.get_queryset()
+                .visible_for_user(info.context.user)
+                .filter(plan__in=plan_ids)
+                .select_related('plan', 'plan__organization')
+            ),
+            Page.objects.get_queryset().filter(page_filter).live().specific(),
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
-            querysets.append(Indicator.objects.visible_for_user(info.context.user).filter(plans__in=plan_ids)) # type: ignore[attr-defined]
-
-
+            querysets.append(Indicator.objects.get_queryset().visible_for_user(info.context.user).filter(plans__in=plan_ids))
 
         lang = get_language()
         # For now just string the region from the language as we don't have separate backends for regions at the moment

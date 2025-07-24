@@ -33,7 +33,6 @@ from aplans.utils import (
     PlanRelatedModel,
     ReferenceIndexedModelMixin,
     generate_identifier,
-    validate_css_color,
 )
 
 from ..attributes import AttributeFieldPanel, AttributeType

@@ -26,7 +26,8 @@ class AuthenticatedWatchRequest(WatchRequest):
 
 class WatchAdminRequest(AuthenticatedWatchRequest):
     admin_cache: PlanSpecificCache
-    def get_active_admin_plan(self) -> Plan: ...  # type: ignore[empty-body]
+    if TYPE_CHECKING:
+        def get_active_admin_plan(self) -> Plan: ...
 
 
 class WatchAPIRequest(WatchRequest):
@@ -35,6 +36,9 @@ class WatchAPIRequest(WatchRequest):
     wildcard_domains: list[str] | None
     organization_action_count_cache: OrganizationActionCountCache
     _plan_hostname: str
+
+    if TYPE_CHECKING:
+        def get_active_admin_plan(self) -> Plan: ...
 
 T = TypeVar('T')
 

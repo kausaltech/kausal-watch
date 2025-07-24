@@ -1,9 +1,15 @@
-from typing import ClassVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar
 
 import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+if TYPE_CHECKING:
+    from wagtail.models import Workflow
+
+    from kausal_common.models.types import FK
 
 class OrderBy(models.TextChoices):
         NONE = 'none', _('No ordering')
@@ -105,7 +111,7 @@ class PlanFeatures(models.Model):
         verbose_name=_("Indicator order"),
         help_text=_("Choose how to order indicators in the action pages"),
     )
-    moderation_workflow = models.ForeignKey(
+    moderation_workflow: FK[Workflow | None] = models.ForeignKey(
         'wagtailcore.WorkFlow', default=None, null=True, blank=True,
         help_text=_("Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"),
         on_delete=models.PROTECT,

@@ -1,8 +1,7 @@
 from __future__ import annotations  # noqa: I001
 
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
@@ -23,7 +22,6 @@ from aplans.utils import PlanRelatedModel
 
 from actions.action_fields import action_registry
 from actions.models.action import Action
-from actions.models.attributes import Attribute
 from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
 
@@ -34,7 +32,6 @@ from .spreadsheets import ExcelReport
 from .types import LiveVersions, SerializedActionVersion
 
 if TYPE_CHECKING:
-    from datetime import datetime
 
     from wagtail.blocks.struct_block import StructValue
 
@@ -45,7 +42,7 @@ if TYPE_CHECKING:
     from users.models import User
 
 
-class NoRevisionSave(Exception):
+class NoRevisionSaveError(Exception):
     pass
 
 
@@ -53,10 +50,10 @@ class NoRevisionSave(Exception):
 class ReportType(PlanRelatedModel):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
+    fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
     only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
         default=False, help_text=_('Only plan admins can mark actions as complete for reports of this type'))
-    public_fields = [
+    public_fields: ClassVar[list[str]] = [
         'id', 'plan', 'name', 'reports',
     ]
 
@@ -67,11 +64,11 @@ class ReportType(PlanRelatedModel):
     @staticmethod
     def generate_for_plan_dashboard(plan: Plan, user: UserOrAnon) -> ReportType:
         report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
-        action_list_page = plan.root_page.get_children().type(ActionListPage).get().specific
+        action_list_page = cast('ActionListPage', plan.root_page.get_children().type(ActionListPage).get().specific)
         dashboard_blocks = [
             (x.block_type, x.value)
             for x in action_list_page.dashboard_columns
-        ]
+        ] if action_list_page.dashboard_columns else []
         dashboard_blocks = [
             # filter out non-public attribute fields
             (bt, val) for bt, val in dashboard_blocks
@@ -96,6 +93,7 @@ class ReportType(PlanRelatedModel):
             if f not in ['identifier', 'name']
         ]
 
+        assert report_type.fields is not None
         report_type.fields = StreamValue(
             stream_block=report_type.fields.stream_block,
             stream_data=stream_data,
@@ -123,7 +121,9 @@ class ReportType(PlanRelatedModel):
         return labels
 
     def get_action_list_page(self) -> ActionListPage:
-        return self.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific
+        page = self.plan.root_page.get_descendants().live().public().type(ActionListPage).first()  # type: ignore[type-abstract]
+        assert page is not None
+        return page.specific
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
@@ -151,9 +151,9 @@ class Report(PlanRelatedModel):
 
     # The fields are copied from the report type at the time of completion of this report. These are not currently used anywhere but we
     # might need them in the future to take care of certain edge cases wrt. schema changes
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
+    fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
 
-    public_fields = [
+    public_fields: ClassVar[list[str]] = [
         'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
     ]
 
@@ -279,8 +279,8 @@ class Report(PlanRelatedModel):
                 for action in incomplete_actions:
                     add_to_revision(action)
                 fake_revision_versions = list(_current_frame().db_versions['default'].values())
-                raise NoRevisionSave()
-        except NoRevisionSave:
+                raise NoRevisionSaveError()  # noqa: TRY301
+        except NoRevisionSaveError:
             pass
 
         def is_action(v):

@@ -27,7 +27,7 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from wagtail.admin.panels.base import Panel
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, Revision, RevisionMixin, Task, TaskState, WorkflowMixin
+from wagtail.models import DraftStateMixin, LockableMixin, Revision, RevisionMixin, Task, TaskState, Workflow, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -129,7 +129,7 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
                 plan = Plan.objects.get(identifier=plan)
             plans = [plan] if plan.is_visible_for_user(user) else []
         else:
-            plans = list(Plan.objects.visible_for_user(user))
+            plans = list(Plan.objects.qs.visible_for_user(user))
 
         qs = self.filter(plan__in=plans)
         if user is None or not user.is_authenticated:
@@ -383,12 +383,12 @@ class Action(
     def save_revision(self, *args, **kwargs):
         # This method has been overridden temporarily.
         #
-        # The reason is that for plans without the moderation workflow enabled, RevisionMixin.save_revision is still called for all
-        # subclasses of RevisionMixin.
+        # The reason is that for plans without the moderation workflow enabled, RevisionMixin.save_revision is still called for
+        # all subclasses of RevisionMixin.
         #
-        # This results in newly created actions to have has_unpublished_changes == True and a revision to be created for them. This in turn
-        # results in the action edit form not showing the actual saved action data but the data of a "draft" revision (which itself cannot
-        # be edited in a plan with workflows disabled currently).
+        # This results in newly created actions to have has_unpublished_changes == True and a revision to be created for them.
+        # This in turn results in the action edit form not showing the actual saved action data but the data of a "draft"
+        # revision (which itself cannot be edited in a plan with workflows disabled currently).
         #
         # In the future we will probably want to have drafting enabled by default for all plans and we can remove this.
         if not self.revision_enabled():
@@ -463,7 +463,7 @@ class Action(
     search_auto_update = True
 
     # Used by GraphQL + REST API code
-    public_fields = [
+    public_fields: ClassVar[list[str]] = [
         'id', 'uuid', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
         'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'date_format', 'tasks',
@@ -536,7 +536,7 @@ class Action(
     def is_active(self):
         return not self.is_merged() and (self.status is None or not self.status.is_completed)
 
-    def get_next_action(self, user: User):
+    def get_next_action(self, user: User | None):
         return (
             Action.objects.get_queryset()
             .visible_for_user(user)
@@ -545,7 +545,7 @@ class Action(
             .first()
         )
 
-    def get_previous_action(self, user: User) -> Action | None:
+    def get_previous_action(self, user: User | None) -> Action | None:
         return (
             Action.objects.get_queryset()
             .visible_for_user(user)
@@ -981,7 +981,7 @@ class Action(
 
 
 
-    def get_workflow(self):
+    def get_workflow(self) -> Workflow | None:
         return self.plan.features.moderation_workflow
 
     def get_workflow_progress(self) -> tuple[int, int]:
@@ -1032,6 +1032,7 @@ class Action(
         in moderation in that specific task t, before the rejection.
         """
         workflow = self.get_workflow()
+        assert workflow is not None
         workflow_tasks = [t.specific for t in workflow.tasks.all()]
         min_progress = 0
         max_progress = len(workflow_tasks) + 1
@@ -1041,6 +1042,7 @@ class Action(
         if workflow_state is None:
             return (min_progress, max_progress)
         task_state = workflow_state.current_task_state
+        assert task_state is not None
         task = task_state.task.specific
         task_index = workflow_tasks.index(task)
         if task_state.status in [TaskState.STATUS_REJECTED, TaskState.STATUS_CANCELLED]:

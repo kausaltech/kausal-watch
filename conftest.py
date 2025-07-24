@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Protocol, Type
+from typing import Protocol
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
@@ -14,7 +14,7 @@ from wagtail.test.utils import wagtail_factories
 
 import factory
 import pytest
-from factory import LazyAttribute, Sequence, SubFactory
+from factory.declarations import LazyAttribute, Sequence, SubFactory
 from pytest_factoryboy import LazyFixture, register
 
 from actions.models.attributes import AttributeType

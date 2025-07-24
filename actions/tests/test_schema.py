@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from datetime import timedelta
+from typing import Any
 
 from django.utils import timezone
 
@@ -36,8 +37,8 @@ pytestmark = pytest.mark.django_db
 
 
 def test_plan_domain_node(graphql_client_query_data):
-    plan = PlanFactory()
-    domain = PlanDomainFactory(plan=plan)
+    plan = PlanFactory.create()
+    domain = PlanDomainFactory.create(plan=plan)
     data = graphql_client_query_data(
         """
         query($plan: ID!, $hostname: String!) {
@@ -56,7 +57,7 @@ def test_plan_domain_node(graphql_client_query_data):
     expected = {
         'plan': {
             'domain': {
-                'id': str(domain.id),
+                'id': str(domain.pk),
                 'hostname': domain.hostname,
                 'googleSiteVerificationTag': domain.google_site_verification_tag,
                 'matomoAnalyticsUrl': domain.matomo_analytics_url,
@@ -64,6 +65,7 @@ def test_plan_domain_node(graphql_client_query_data):
         },
     }
     assert data == expected
+
 
 @pytest.mark.parametrize('published', [False, True])
 @pytest.mark.parametrize('expose_to_auth_only', [False, True])
@@ -74,16 +76,16 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose
         plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_to_auth_only
         plan.features.save()
         plan.save()
-    domain = PlanDomainFactory(plan=plan)
-    action_schedule = ActionScheduleFactory(plan=plan)
-    action = ActionFactory(plan=plan, schedule=[action_schedule])
-    category_type = CategoryTypeFactory(plan=plan)
+    domain = PlanDomainFactory.create(plan=plan)
+    action_schedule = ActionScheduleFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, schedule=[action_schedule])
+    category_type = CategoryTypeFactory.create(plan=plan)
     # Switch off RelatedFactory _action because it would generate an extra action
-    impact_group = ImpactGroupFactory(plan=plan)
-    ImpactGroupActionFactory(group=impact_group, action=action, impact=action.impact)
-    monitoring_quality_point = MonitoringQualityPointFactory(plan=plan)
-    indicator_level = IndicatorLevelFactory(plan=plan)
-    scenario = ScenarioFactory(plan=plan)
+    impact_group = ImpactGroupFactory.create(plan=plan)
+    ImpactGroupActionFactory.create(group=impact_group, action=action, impact=action.impact)
+    monitoring_quality_point = MonitoringQualityPointFactory.create(plan=plan)
+    indicator_level = IndicatorLevelFactory.create(plan=plan)
+    scenario = ScenarioFactory.create(plan=plan)
     data = graphql_client_query_data(
         """
         query($plan: ID!, $hostname: String!) {
@@ -169,6 +171,10 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose
         variables={'plan': plan.identifier, 'hostname': domain.hostname},
     )
 
+    assert action.status is not None
+    assert action.impact is not None
+    assert action.implementation_phase is not None
+
     expected = {
         'plan': {
             '__typename': 'Plan',
@@ -179,53 +185,73 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose
                 '__typename': 'Image',
                 'id': str(plan.image.id),
             },
-            'actionSchedules': [{
-                '__typename': 'ActionSchedule',
-                'id': str(action_schedule.id),
-            }],
-            'actions': [{
-                '__typename': 'Action',
-                'id': str(action.id),
-            }],
-            'categoryTypes': [{
-                '__typename': 'CategoryType',
-                'id': str(category_type.id),
-            }],
-            'actionStatuses': [{
-                '__typename': 'ActionStatus',
-                'id': str(action.status.id),
-            }],
-            'indicatorLevels': [{
-                '__typename': 'IndicatorLevel',
-                'id': str(indicator_level.id),
-            }],
-            'actionImpacts': [{
-                '__typename': 'ActionImpact',
-                'id': str(action.impact.id),
-            }],
+            'actionSchedules': [
+                {
+                    '__typename': 'ActionSchedule',
+                    'id': str(action_schedule.pk),
+                }
+            ],
+            'actions': [
+                {
+                    '__typename': 'Action',
+                    'id': str(action.pk),
+                }
+            ],
+            'categoryTypes': [
+                {
+                    '__typename': 'CategoryType',
+                    'id': str(category_type.pk),
+                }
+            ],
+            'actionStatuses': [
+                {
+                    '__typename': 'ActionStatus',
+                    'id': str(action.status.pk),
+                }
+            ],
+            'indicatorLevels': [
+                {
+                    '__typename': 'IndicatorLevel',
+                    'id': str(indicator_level.pk),
+                }
+            ],
+            'actionImpacts': [
+                {
+                    '__typename': 'ActionImpact',
+                    'id': str(action.impact.pk),
+                }
+            ],
             'generalContent': {
                 '__typename': 'SiteGeneralContent',
-                'id': str(plan.general_content.id),
+                'id': str(plan.general_content.pk),
             },
-            'impactGroups': [{
-                '__typename': 'ImpactGroup',
-                'id': str(impact_group.id),
-            }],
-            'monitoringQualityPoints': [{
-                '__typename': 'MonitoringQualityPoint',
-                'id': str(monitoring_quality_point.id),
-            }],
-            'scenarios': [{
-                '__typename': 'Scenario',
-                'id': str(scenario.id),
-            }],
+            'impactGroups': [
+                {
+                    '__typename': 'ImpactGroup',
+                    'id': str(impact_group.pk),
+                }
+            ],
+            'monitoringQualityPoints': [
+                {
+                    '__typename': 'MonitoringQualityPoint',
+                    'id': str(monitoring_quality_point.pk),
+                }
+            ],
+            'scenarios': [
+                {
+                    '__typename': 'Scenario',
+                    'id': str(scenario.pk),
+                }
+            ],
             'primaryLanguage': plan.primary_language,
             'otherLanguages': plan.other_languages,
             'accessibilityStatementUrl': plan.accessibility_statement_url,
-            'actionImplementationPhases': [{
-                '__typename': 'ActionImplementationPhase',
-                'id': str(action.implementation_phase.id),
-            }],
+            'actionImplementationPhases': [
+                {
+                    '__typename': 'ActionImplementationPhase',
+                    'id': str(action.implementation_phase.pk),
+                }
+            ],
             'lastActionIdentifier': plan.get_last_action_identifier(),
             'serveFileBaseUrl': 'http://testserver',
             'pages': [
@@ -262,20 +288,24 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose
         },
     }
     if not published and expose_to_auth_only:
-      expected = {'plan': None} # type: ignore[dict-item]
+        expected = {'plan': None}  # type: ignore[dict-item]
 
     assert data == expected
+
 
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
 @pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
 def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose_to_authenticated_only):
     published_at1, published_at2 = published_at
     exposed_auth_only1, exposed_auth_only2 = expose_to_authenticated_only
-    plan1 = PlanFactory(published_at=published_at1,
-                        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only1)
-    plan2 = PlanFactory(superseded_by=plan1,
-                        published_at=published_at2,
-                        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only2)
+    plan1 = PlanFactory(
+        published_at=published_at1, features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only1
+    )
+    plan2 = PlanFactory(
+        superseded_by=plan1,
+        published_at=published_at2,
+        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only2,
+    )
 
     data = graphql_client_query_data(
         """
@@ -296,21 +326,22 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose
         """,
         variables={'plan': plan2.identifier},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'plan': {
             '__typename': 'Plan',
             'id': plan2.identifier,
             'supersededBy': {
                 '__typename': 'Plan',
                 'id': plan1.identifier,
-            } if published_at1 or not exposed_auth_only1 else None,
+            }
+            if published_at1 or not exposed_auth_only1
+            else None,
             'supersededPlans': [],
-        } if published_at2 or not exposed_auth_only2 else None,
+        }
+        if published_at2 or not exposed_auth_only2
+        else None,
     }
     assert data == expected
-
-
-
 
 
 @pytest.mark.parametrize('recursive', [False, True])
@@ -319,11 +350,14 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose
 def test_plan_node_superseding_plans(graphql_client_query_data, recursive, published_at, expose_to_authenticated_only):
     published_at1, published_at2 = published_at
     expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
-    plan1 = PlanFactory(published_at=published_at1,
-                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1)
-    plan2 = PlanFactory(superseded_by=plan1,
-                        published_at=published_at2,
-                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2)
+    plan1 = PlanFactory(
+        published_at=published_at1, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1
+    )
+    plan2 = PlanFactory(
+        superseded_by=plan1,
+        published_at=published_at2,
+        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2,
+    )
     plan3 = PlanFactory(superseded_by=plan2)
 
     data = graphql_client_query_data(
@@ -352,10 +386,13 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive, publi
         'plan': {
             '__typename': 'Plan',
             'id': plan3.identifier,
-            'supersedingPlans': [{
-                '__typename': 'Plan',
-                'id': plan.identifier,
-            } for plan in expected_superseding_plans],
+            'supersedingPlans': [
+                {
+                    '__typename': 'Plan',
+                    'id': plan.identifier,
+                }
+                for plan in expected_superseding_plans
+            ],
         },
     }
     assert data == expected
@@ -368,13 +405,16 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive, publis
     published_at1, published_at2 = published_at
     expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
     plan1 = PlanFactory()
-    plan2 = PlanFactory(superseded_by=plan1,
-                        published_at=published_at1,
-                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1)
-    plan3 = PlanFactory(superseded_by=plan2,
-                        published_at=published_at2,
-                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2)
-
+    plan2 = PlanFactory(
+        superseded_by=plan1,
+        published_at=published_at1,
+        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1,
+    )
+    plan3 = PlanFactory(
+        superseded_by=plan2,
+        published_at=published_at2,
+        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2,
+    )
 
     data = graphql_client_query_data(
         """
@@ -397,7 +437,7 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive, publis
     )
     expected_superseded_plans = []
     if published_at1 or not expose_to_auth_only1:
-      expected_superseded_plans = [plan2]
+        expected_superseded_plans = [plan2]
     if recursive and (published_at2 or not expose_to_auth_only2):
         expected_superseded_plans.append(plan3)
     expected = {
@@ -405,20 +445,23 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive, publis
             '__typename': 'Plan',
             'id': plan1.identifier,
             'supersededBy': None,
-            'supersededPlans': [{
-                '__typename': 'Plan',
-                'id': plan.identifier,
-            } for plan in expected_superseded_plans],
+            'supersededPlans': [
+                {
+                    '__typename': 'Plan',
+                    'id': plan.identifier,
+                }
+                for plan in expected_superseded_plans
+            ],
         },
     }
     assert data == expected
 
 
 def test_plan_actions_responsible_organization(graphql_client_query_data):
-    plan = PlanFactory()
-    ActionFactory(plan=plan)  # org is not responsible
-    action = ActionFactory(plan=plan)
-    arp = ActionResponsiblePartyFactory(action=action)
+    plan = PlanFactory.create()
+    ActionFactory.create(plan=plan)  # org is not responsible
+    action = ActionFactory.create(plan=plan)
+    arp = ActionResponsiblePartyFactory.create(action=action)
     org = arp.organization
     data = graphql_client_query_data(
         """
@@ -431,21 +474,26 @@ def test_plan_actions_responsible_organization(graphql_client_query_data):
           }
         }
         """,
-        variables={'plan': plan.identifier, 'org': org.id},
+        variables={'plan': plan.identifier, 'org': org.pk},
     )
     expected = {
         'plan': {
-            'actions': [{
-                '__typename': 'Action',
-                'id': str(action.id),
-            }],
+            'actions': [
+                {
+                    '__typename': 'Action',
+                    'id': str(action.pk),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_attribute_choice_node(
-    graphql_client_query_data, plan, attribute_choice, attribute_type__ordered_choice,
+    graphql_client_query_data,
+    plan,
+    attribute_choice,
+    attribute_type__ordered_choice,
     attribute_type_choice_option,
 ):
     data = graphql_client_query_data(
@@ -472,26 +520,33 @@ def test_attribute_choice_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'attributes': [{
-                'id': 'C' + str(attribute_choice.id),
-                'type': {
-                    '__typename': 'AttributeType',
-                },
-                'choice': {
-                    '__typename': 'AttributeTypeChoiceOption',
-                    'id': str(attribute_type_choice_option.id),
-                    'identifier': attribute_type_choice_option.identifier,
-                    'name': attribute_type_choice_option.name,
-                },
-            }],
-        }],
+        'planCategories': [
+            {
+                'attributes': [
+                    {
+                        'id': 'C' + str(attribute_choice.id),
+                        'type': {
+                            '__typename': 'AttributeType',
+                        },
+                        'choice': {
+                            '__typename': 'AttributeTypeChoiceOption',
+                            'id': str(attribute_type_choice_option.id),
+                            'identifier': attribute_type_choice_option.identifier,
+                            'name': attribute_type_choice_option.name,
+                        },
+                    }
+                ],
+            }
+        ],
     }
     assert data == expected
 
 
 def test_attribute_text_node(
-    graphql_client_query_data, plan, attribute_text, attribute_type__text,
+    graphql_client_query_data,
+    plan,
+    attribute_text,
+    attribute_type__text,
 ):
     data = graphql_client_query_data(
         """
@@ -514,23 +569,30 @@ def test_attribute_text_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'attributes': [{
-                'id': str(attribute_text.id),
-                'type': {
-                    '__typename': 'AttributeType',
-                },
-                'key': attribute_type__text.name,
-                'keyIdentifier': attribute_type__text.identifier,
-                'value': attribute_text.text,
-            }],
-        }],
+        'planCategories': [
+            {
+                'attributes': [
+                    {
+                        'id': str(attribute_text.id),
+                        'type': {
+                            '__typename': 'AttributeType',
+                        },
+                        'key': attribute_type__text.name,
+                        'keyIdentifier': attribute_type__text.identifier,
+                        'value': attribute_text.text,
+                    }
+                ],
+            }
+        ],
     }
     assert data == expected
 
 
 def test_attribute_rich_text_node(
-    graphql_client_query_data, plan, attribute_rich_text, attribute_type__rich_text,
+    graphql_client_query_data,
+    plan,
+    attribute_rich_text,
+    attribute_type__rich_text,
 ):
     data = graphql_client_query_data(
         """
@@ -553,17 +615,21 @@ def test_attribute_rich_text_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'attributes': [{
-                'id': str(attribute_rich_text.id),
-                'type': {
-                    '__typename': 'AttributeType',
-                },
-                'key': attribute_type__rich_text.name,
-                'keyIdentifier': attribute_type__rich_text.identifier,
-                'value': attribute_rich_text.text,
-            }],
-        }],
+        'planCategories': [
+            {
+                'attributes': [
+                    {
+                        'id': str(attribute_rich_text.id),
+                        'type': {
+                            '__typename': 'AttributeType',
+                        },
+                        'key': attribute_type__rich_text.name,
+                        'keyIdentifier': attribute_type__rich_text.identifier,
+                        'value': attribute_rich_text.text,
+                    }
+                ],
+            }
+        ],
     }
     assert data == expected
 
@@ -591,24 +657,30 @@ def test_category_level_node(graphql_client_query_data, plan, category_level, ca
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'level': {
-                'id': str(category_level.id),
-                'order': 1,
-                'type': {
-                    '__typename': 'CategoryType',
+        'planCategories': [
+            {
+                'level': {
+                    'id': str(category_level.id),
+                    'order': 1,
+                    'type': {
+                        '__typename': 'CategoryType',
+                    },
+                    'name': category_level.name,
+                    'namePlural': category_level.name_plural,
                 },
-                'name': category_level.name,
-                'namePlural': category_level.name_plural,
-            },
-        }],
+            }
+        ],
     }
     assert data == expected
 
 
 def test_attribute_type_node(
-    graphql_client_query_data, plan, attribute_rich_text, attribute_choice,
-    attribute_type__rich_text, attribute_type__ordered_choice,
+    graphql_client_query_data,
+    plan,
+    attribute_rich_text,
+    attribute_choice,
+    attribute_type__rich_text,
+    attribute_type__ordered_choice,
 ):
     data = graphql_client_query_data(
         """
@@ -636,37 +708,47 @@ def test_attribute_type_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'type': {
-                'attributeTypes': [{
-                    'identifier': attribute_type__rich_text.identifier,
-                    'name': attribute_type__rich_text.name,
-                    'helpText': attribute_type__rich_text.help_text,
-                    'format': 'RICH_TEXT',
-                    'unit': None,
-                    'showChoiceNames': attribute_type__rich_text.show_choice_names,
-                    'hasZeroOption': attribute_type__rich_text.has_zero_option,
-                    'choiceOptions': [],
-                }, {
-                    'identifier': attribute_type__ordered_choice.identifier,
-                    'name': attribute_type__ordered_choice.name,
-                    'helpText': attribute_type__ordered_choice.help_text,
-                    'format': 'ORDERED_CHOICE',
-                    'unit': attribute_type__ordered_choice.unit,
-                    'showChoiceNames': attribute_type__ordered_choice.show_choice_names,
-                    'hasZeroOption': attribute_type__ordered_choice.has_zero_option,
-                    'choiceOptions': [{
-                        '__typename': 'AttributeTypeChoiceOption',
-                    }],
-                }],
-            },
-        }],
+        'planCategories': [
+            {
+                'type': {
+                    'attributeTypes': [
+                        {
+                            'identifier': attribute_type__rich_text.identifier,
+                            'name': attribute_type__rich_text.name,
+                            'helpText': attribute_type__rich_text.help_text,
+                            'format': 'RICH_TEXT',
+                            'unit': None,
+                            'showChoiceNames': attribute_type__rich_text.show_choice_names,
+                            'hasZeroOption': attribute_type__rich_text.has_zero_option,
+                            'choiceOptions': [],
+                        },
+                        {
+                            'identifier': attribute_type__ordered_choice.identifier,
+                            'name': attribute_type__ordered_choice.name,
+                            'helpText': attribute_type__ordered_choice.help_text,
+                            'format': 'ORDERED_CHOICE',
+                            'unit': attribute_type__ordered_choice.unit,
+                            'showChoiceNames': attribute_type__ordered_choice.show_choice_names,
+                            'hasZeroOption': attribute_type__ordered_choice.has_zero_option,
+                            'choiceOptions': [
+                                {
+                                    '__typename': 'AttributeTypeChoiceOption',
+                                }
+                            ],
+                        },
+                    ],
+                },
+            }
+        ],
     }
     assert data == expected
 
 
 def test_attribute_type_choice_option_node(
-    graphql_client_query_data, plan, attribute_type_choice_option, attribute_choice,
+    graphql_client_query_data,
+    plan,
+    attribute_type_choice_option,
+    attribute_choice,
 ):
     data = graphql_client_query_data(
         """
@@ -686,16 +768,22 @@ def test_attribute_type_choice_option_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'type': {
-                'attributeTypes': [{
-                    'choiceOptions': [{
-                        'identifier': attribute_type_choice_option.identifier,
-                        'name': attribute_type_choice_option.name,
-                    }],
-                }],
-            },
-        }],
+        'planCategories': [
+            {
+                'type': {
+                    'attributeTypes': [
+                        {
+                            'choiceOptions': [
+                                {
+                                    'identifier': attribute_type_choice_option.identifier,
+                                    'name': attribute_type_choice_option.name,
+                                }
+                            ],
+                        }
+                    ],
+                },
+            }
+        ],
     }
     assert data == expected
 
@@ -704,7 +792,12 @@ def test_attribute_type_choice_option_node(
 
 
 def test_category_type_node(
-    graphql_client_query_data, plan, category_type, category, category_level, attribute_type__rich_text,
+    graphql_client_query_data,
+    plan,
+    category_type,
+    category,
+    category_level,
+    attribute_type__rich_text,
 ):
     data = graphql_client_query_data(
         """
@@ -744,35 +837,43 @@ def test_category_type_node(
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planCategories': [{
-            'type': {
-                'id': str(category_type.id),
-                'plan': {
-                    '__typename': 'Plan',
-                    'identifier': plan.identifier,
+        'planCategories': [
+            {
+                'type': {
+                    'id': str(category_type.id),
+                    'plan': {
+                        '__typename': 'Plan',
+                        'identifier': plan.identifier,
+                    },
+                    'name': category_type.name,
+                    'identifier': category_type.identifier,
+                    'leadParagraph': category_type.lead_paragraph,
+                    'helpText': category_type.help_text,
+                    'usableForActions': category_type.usable_for_actions,
+                    'usableForIndicators': category_type.usable_for_indicators,
+                    'editableForActions': category_type.editable_for_actions,
+                    'editableForIndicators': category_type.editable_for_indicators,
+                    'common': {
+                        '__typename': 'CommonCategoryType',
+                    },
+                    'levels': [
+                        {
+                            '__typename': 'CategoryLevel',
+                        }
+                    ],
+                    'categories': [
+                        {
+                            '__typename': 'Category',
+                        }
+                    ],
+                    'attributeTypes': [
+                        {
+                            '__typename': 'AttributeType',
+                        }
+                    ],
                 },
-                'name': category_type.name,
-                'identifier': category_type.identifier,
-                'leadParagraph': category_type.lead_paragraph,
-                'helpText': category_type.help_text,
-                'usableForActions': category_type.usable_for_actions,
-                'usableForIndicators': category_type.usable_for_indicators,
-                'editableForActions': category_type.editable_for_actions,
-                'editableForIndicators': category_type.editable_for_indicators,
-                'common': {
-                    '__typename': 'CommonCategoryType',
-                },
-                'levels': [{
-                    '__typename': 'CategoryLevel',
-                }],
-                'categories': [{
-                    '__typename': 'Category',
-                }],
-                'attributeTypes': [{
-                    '__typename': 'AttributeType',
-                }],
-            },
-        }],
+            }
+        ],
     }
     assert data == expected
 
@@ -783,8 +884,15 @@ def test_category_type_node(
 @pytest.mark.parametrize('published', [False, True])
 @pytest.mark.parametrize('expose_to_authenticated_only', [False, True])
 def test_category_node(
-    graphql_client_query_data, plan_with_pages, category_type, category, category_level,
-    attribute_rich_text, attribute_choice, published, expose_to_authenticated_only
+    graphql_client_query_data,
+    plan_with_pages,
+    category_type,
+    category,
+    category_level,
+    attribute_rich_text,
+    attribute_choice,
+    published,
+    expose_to_authenticated_only,
 ):
     plan = plan_with_pages
     plan.published_at = timezone.now() - timedelta(days=1) if published else None
@@ -792,8 +900,8 @@ def test_category_node(
     plan.features.save()
     plan.save()
 
-    child_category = CategoryFactory(parent=category)
-    CategoryPageFactory(category=category)
+    child_category = CategoryFactory.create(parent=category)
+    CategoryPageFactory.create(category=category)
 
     data = graphql_client_query_data(
         """
@@ -844,48 +952,55 @@ def test_category_node(
         return
 
     expected = {
-        'planCategories': [{
-            'id': str(category.id),
-            'type': {
-              '__typename': 'CategoryType',
-            },
-            'order': 1,
-            'identifier': category.identifier,
-            'name': category.name,
-            'parent': None,
-            'leadParagraph': category.lead_paragraph,
-            'helpText': category.help_text,
-            'color': category.color,
-            'children': [{
-                '__typename': 'Category',
-                'id': str(child_category.id),
-                'parent': {
-                  '__typename': 'Category',
-                  'id': str(category.id),
+        'planCategories': [
+            {
+                'id': str(category.id),
+                'type': {
+                    '__typename': 'CategoryType',
                 },
-            }],
-            'categoryPage': {
-                '__typename': 'CategoryPage',
-            },
-            'image': {
-                '__typename': 'Image',
-            },
-            'attributes': [{
-                '__typename': 'AttributeRichText',
-            }, {
-                '__typename': 'AttributeChoice',
-            }],
-            'level': {
-                '__typename': 'CategoryLevel',
-            },
-            'kausalPathsNodeUuid': category.kausal_paths_node_uuid,
-        }],
+                'order': 1,
+                'identifier': category.identifier,
+                'name': category.name,
+                'parent': None,
+                'leadParagraph': category.lead_paragraph,
+                'helpText': category.help_text,
+                'color': category.color,
+                'children': [
+                    {
+                        '__typename': 'Category',
+                        'id': str(child_category.id),
+                        'parent': {
+                            '__typename': 'Category',
+                            'id': str(category.id),
+                        },
+                    }
+                ],
+                'categoryPage': {
+                    '__typename': 'CategoryPage',
+                },
+                'image': {
+                    '__typename': 'Image',
+                },
+                'attributes': [
+                    {
+                        '__typename': 'AttributeRichText',
+                    },
+                    {
+                        '__typename': 'AttributeChoice',
+                    },
+                ],
+                'level': {
+                    '__typename': 'CategoryLevel',
+                },
+                'kausalPathsNodeUuid': category.kausal_paths_node_uuid,
+            }
+        ],
     }
     assert data == expected
 
 
 def test_scenario_node(graphql_client_query_data):
-    scenario = ScenarioFactory()
+    scenario = ScenarioFactory.create()
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -906,25 +1021,27 @@ def test_scenario_node(graphql_client_query_data):
     )
     expected = {
         'plan': {
-            'scenarios': [{
-                'id': str(scenario.id),
-                'plan': {
-                    '__typename': 'Plan',
-                },
-                'name': scenario.name,
-                'identifier': scenario.identifier,
-                'description': scenario.description,
-            }],
+            'scenarios': [
+                {
+                    'id': str(scenario.pk),
+                    'plan': {
+                        '__typename': 'Plan',
+                    },
+                    'name': scenario.name,
+                    'identifier': scenario.identifier,
+                    'description': scenario.description,
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_impact_group_node(graphql_client_query_data):
-    impact_group = ImpactGroupFactory()
-    impact_group_action = ImpactGroupActionFactory(group=impact_group)
-    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group)
-    impact_group_action_child = ImpactGroupActionFactory(group=impact_group_child)
+    impact_group = ImpactGroupFactory.create()
+    impact_group_action = ImpactGroupActionFactory.create(group=impact_group)
+    impact_group_child = ImpactGroupFactory.create(plan=impact_group.plan, parent=impact_group)
+    impact_group_action_child = ImpactGroupActionFactory.create(group=impact_group_child)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -955,47 +1072,54 @@ def test_impact_group_node(graphql_client_query_data):
     )
     expected = {
         'plan': {
-            'impactGroups': [{
-                'id': str(impact_group.id),
-                'plan': {
-                    '__typename': 'Plan',
-                    'id': impact_group.plan.identifier,
+            'impactGroups': [
+                {
+                    'id': str(impact_group.pk),
+                    'plan': {
+                        '__typename': 'Plan',
+                        'id': impact_group.plan.identifier,
+                    },
+                    'identifier': impact_group.identifier,
+                    'parent': None,
+                    'weight': impact_group.weight,
+                    'color': impact_group.color,
+                    'actions': [
+                        {
+                            '__typename': 'ImpactGroupAction',
+                            'id': str(impact_group_action.pk),
+                        }
+                    ],
+                    'name': impact_group.name,
                 },
-                'identifier': impact_group.identifier,
-                'parent': None,
-                'weight': impact_group.weight,
-                'color': impact_group.color,
-                'actions': [{
-                    '__typename': 'ImpactGroupAction',
-                    'id': str(impact_group_action.id),
-                }],
-                'name': impact_group.name,
-            }, {
-                'id': str(impact_group_child.id),
-                'plan': {
-                    '__typename': 'Plan',
-                    'id': impact_group_child.plan.identifier,
+                {
+                    'id': str(impact_group_child.pk),
+                    'plan': {
+                        '__typename': 'Plan',
+                        'id': impact_group_child.plan.identifier,
+                    },
+                    'identifier': impact_group_child.identifier,
+                    'parent': {
+                        '__typename': 'ImpactGroup',
+                        'id': str(impact_group.pk),
+                    },
+                    'weight': impact_group_child.weight,
+                    'color': impact_group_child.color,
+                    'actions': [
+                        {
+                            '__typename': 'ImpactGroupAction',
+                            'id': str(impact_group_action_child.pk),
+                        }
+                    ],
+                    'name': impact_group_child.name,
                 },
-                'identifier': impact_group_child.identifier,
-                'parent': {
-                    '__typename': 'ImpactGroup',
-                    'id': str(impact_group.id),
-                },
-                'weight': impact_group_child.weight,
-                'color': impact_group_child.color,
-                'actions': [{
-                    '__typename': 'ImpactGroupAction',
-                    'id': str(impact_group_action_child.id),
-                }],
-                'name': impact_group_child.name,
-            }],
+            ],
         },
     }
     assert data == expected
 
 
 def test_impact_group_action_node(graphql_client_query_data):
-    impact_group_action = ImpactGroupActionFactory()
+    impact_group_action = ImpactGroupActionFactory.create()
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -1024,30 +1148,34 @@ def test_impact_group_action_node(graphql_client_query_data):
     )
     expected = {
         'plan': {
-            'impactGroups': [{
-                'actions': [{
-                    'id': str(impact_group_action.id),
-                    'group': {
-                        '__typename': 'ImpactGroup',
-                        'id': str(impact_group_action.group.id),
-                    },
-                    'action': {
-                        '__typename': 'Action',
-                        'id': str(impact_group_action.action.id),
-                    },
-                    'impact': {
-                        '__typename': 'ActionImpact',
-                        'id': str(impact_group_action.impact.id),
-                    },
-                }],
-            }],
+            'impactGroups': [
+                {
+                    'actions': [
+                        {
+                            'id': str(impact_group_action.pk),
+                            'group': {
+                                '__typename': 'ImpactGroup',
+                                'id': str(impact_group_action.group.pk),
+                            },
+                            'action': {
+                                '__typename': 'Action',
+                                'id': str(impact_group_action.action.pk),
+                            },
+                            'impact': {
+                                '__typename': 'ActionImpact',
+                                'id': str(impact_group_action.impact.pk),
+                            },
+                        }
+                    ],
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_monitoring_quality_point_node(graphql_client_query_data):
-    monitoring_quality_point = MonitoringQualityPointFactory()
+    monitoring_quality_point = MonitoringQualityPointFactory.create()
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -1070,24 +1198,26 @@ def test_monitoring_quality_point_node(graphql_client_query_data):
     )
     expected = {
         'plan': {
-            'monitoringQualityPoints': [{
-                'id': str(monitoring_quality_point.id),
-                'name': monitoring_quality_point.name,
-                'descriptionYes': monitoring_quality_point.description_yes,
-                'descriptionNo': monitoring_quality_point.description_no,
-                'plan': {
-                  '__typename': 'Plan',
-                  'id': str(monitoring_quality_point.plan.identifier),
-                },
-                'identifier': monitoring_quality_point.identifier,
-            }],
+            'monitoringQualityPoints': [
+                {
+                    'id': str(monitoring_quality_point.pk),
+                    'name': monitoring_quality_point.name,
+                    'descriptionYes': monitoring_quality_point.description_yes,
+                    'descriptionNo': monitoring_quality_point.description_no,
+                    'plan': {
+                        '__typename': 'Plan',
+                        'id': str(monitoring_quality_point.plan.identifier),
+                    },
+                    'identifier': monitoring_quality_point.identifier,
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_action_task_node(graphql_client_query_data):
-    action_task = ActionTaskFactory()
+    action_task = ActionTaskFactory.create()
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -1112,44 +1242,47 @@ def test_action_task_node(graphql_client_query_data):
         variables={'plan': action_task.action.plan.identifier},
     )
     expected = {
-        'planActions': [{
-            'tasks': [{
-                'id': str(action_task.id),
-                'action': {
-                    '__typename': 'Action',
-                    'id': str(action_task.action.id),
-                },
-                'name': action_task.name,
-                # graphene_django puts choices into upper case in converter.convert_choice_name()
-                'state': action_task.state.upper(),
-                'comment': action_task.comment,
-                'dueAt': action_task.due_at.isoformat(),
-                'completedAt': None,
-                # 'completedBy': action_task.completed_by,
-                'createdAt': action_task.created_at.isoformat(),
-                'modifiedAt': action_task.modified_at.isoformat(),
-            }],
-        }],
+        'planActions': [
+            {
+                'tasks': [
+                    {
+                        'id': str(action_task.pk),
+                        'action': {
+                            '__typename': 'Action',
+                            'id': str(action_task.action.pk),
+                        },
+                        'name': action_task.name,
+                        # graphene_django puts choices into upper case in converter.convert_choice_name()
+                        'state': action_task.state.upper(),
+                        'comment': action_task.comment,
+                        'dueAt': action_task.due_at.isoformat(),
+                        'completedAt': None,
+                        # 'completedBy': action_task.completed_by,
+                        'createdAt': action_task.created_at.isoformat(),
+                        'modifiedAt': action_task.modified_at.isoformat(),
+                    }
+                ],
+            }
+        ],
     }
     assert data == expected
 
 
 def test_action_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action_schedule = ActionScheduleFactory(plan=plan)
-    category = CategoryFactory()
-    monitoring_quality_point = MonitoringQualityPointFactory()
-    action = ActionFactory(plan=plan,
-                           categories=[category],
-                           monitoring_quality_points=[monitoring_quality_point],
-                           schedule=[action_schedule])
-    indicator = IndicatorFactory(organization=plan.organization)
-    action_indicator = ActionIndicatorFactory(action=action, indicator=indicator)
-    action_responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
-    action_status_update = ActionStatusUpdateFactory(action=action)
-    action_task = ActionTaskFactory(action=action)
-    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
-    impact_group_action = ImpactGroupActionFactory(action=action, group__plan=action.plan, impact=action.impact)
+    plan = PlanFactory.create()
+    action_schedule = ActionScheduleFactory.create(plan=plan)
+    category = CategoryFactory.create()
+    monitoring_quality_point = MonitoringQualityPointFactory.create()
+    action = ActionFactory.create(
+        plan=plan, categories=[category], monitoring_quality_points=[monitoring_quality_point], schedule=[action_schedule]
+    )
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    action_indicator = ActionIndicatorFactory.create(action=action, indicator=indicator)
+    action_responsible_party = ActionResponsiblePartyFactory.create(action=action, organization=plan.organization)
+    action_status_update = ActionStatusUpdateFactory.create(action=action)
+    action_task = ActionTaskFactory.create(action=action)
+    action_contact = ActionContactFactory.create(action=action, person__organization=plan.organization)
+    impact_group_action = ImpactGroupActionFactory.create(action=action, group__plan=action.plan, impact=action.impact)
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1244,12 +1377,16 @@ def test_action_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    assert action.status is not None
+    assert action.impact is not None
+    assert action.implementation_phase is not None
+    assert action.image is not None
+    expected: dict[str, Any] = {
         'action': {
             '__typename': 'Action',
-            'id': str(action.id),
+            'id': str(action.pk),
             'plan': {
                 '__typename': 'Plan',
                 'id': str(plan.identifier),
@@ -1260,62 +1397,82 @@ def test_action_node(graphql_client_query_data):
             'description': action.description,
             'status': {
                 '__typename': 'ActionStatus',
-                'id': str(action.status.id),
+                'id': str(action.status.pk),
             },
             'completion': action.completion,
-            'schedule': [{
-                '__typename': 'ActionSchedule',
-                'id': str(action_schedule.id),
-            }],
-            'responsibleParties': [{
-                '__typename': 'ActionResponsibleParty',
-                'id': str(action_responsible_party.id),
-            }],
-            'categories': [{
-                '__typename': 'Category',
-                'id': str(category.id),
-            }],
-            'indicators': [{
-                '__typename': 'Indicator',
-                'id': str(indicator.id),
-            }],
-            'contactPersons': [{
-                '__typename': 'ActionContactPerson',
-                'id': str(action_contact.id),
-            }],
+            'schedule': [
+                {
+                    '__typename': 'ActionSchedule',
+                    'id': str(action_schedule.pk),
+                }
+            ],
+            'responsibleParties': [
+                {
+                    '__typename': 'ActionResponsibleParty',
+                    'id': str(action_responsible_party.pk),
+                }
+            ],
+            'categories': [
+                {
+                    '__typename': 'Category',
+                    'id': str(category.pk),
+                }
+            ],
+            'indicators': [
+                {
+                    '__typename': 'Indicator',
+                    'id': str(indicator.pk),
+                }
+            ],
+            'contactPersons': [
+                {
+                    '__typename': 'ActionContactPerson',
+                    'id': str(action_contact.pk),
+                }
+            ],
             'updatedAt': action.updated_at.isoformat(),
-            'tasks': [{
-                '__typename': 'ActionTask',
-                'id': str(action_task.id),
-            }],
-            'relatedIndicators': [{
-                '__typename': 'ActionIndicator',
-                'id': str(action_indicator.id),
-            }],
+            'tasks': [
+                {
+                    '__typename': 'ActionTask',
+                    'id': str(action_task.pk),
+                }
+            ],
+            'relatedIndicators': [
+                {
+                    '__typename': 'ActionIndicator',
+                    'id': str(action_indicator.pk),
+                }
+            ],
             'impact': {
                 '__typename': 'ActionImpact',
-                'id': str(action.impact.id),
+                'id': str(action.impact.pk),
             },
-            'statusUpdates': [{
-                '__typename': 'ActionStatusUpdate',
-                'id': str(action_status_update.id),
-            }],
-            'impactGroups': [{
-                '__typename': 'ImpactGroupAction',
-                'id': str(impact_group_action.id),
-            }],
-            'monitoringQualityPoints': [{
-                '__typename': 'MonitoringQualityPoint',
-                'id': str(monitoring_quality_point.id),
-            }],
+            'statusUpdates': [
+                {
+                    '__typename': 'ActionStatusUpdate',
+                    'id': str(action_status_update.pk),
+                }
+            ],
+            'impactGroups': [
+                {
+                    '__typename': 'ImpactGroupAction',
+                    'id': str(impact_group_action.pk),
+                }
+            ],
+            'monitoringQualityPoints': [
+                {
+                    '__typename': 'MonitoringQualityPoint',
+                    'id': str(monitoring_quality_point.pk),
+                }
+            ],
             'implementationPhase': {
                 '__typename': 'ActionImplementationPhase',
-                'id': str(action.implementation_phase.id),
+                'id': str(action.implementation_phase.pk),
             },
             'manualStatusReason': action.manual_status_reason,
             'image': {
                 '__typename': 'Image',
-                'id': str(action.image.id),
+                'id': str(action.image.pk),
             },
         },
     }
@@ -1323,9 +1480,9 @@ def test_action_node(graphql_client_query_data):
 
 
 def test_action_node_merged(graphql_client_query_data):
-    plan = PlanFactory()
-    action1 = ActionFactory(plan=plan)
-    action2 = ActionFactory(plan=plan, merged_with=action1)
+    plan = PlanFactory.create()
+    action1 = ActionFactory.create(plan=plan)
+    action2 = ActionFactory.create(plan=plan, merged_with=action1)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -1345,32 +1502,37 @@ def test_action_node_merged(graphql_client_query_data):
         """,
         variables={'plan': plan.identifier},
     )
-    expected = {
-        'planActions': [{
-            '__typename': 'Action',
-            'id': str(action1.id),
-            'mergedWith': None,
-            'mergedActions': [{
+    expected: dict[str, Any] = {
+        'planActions': [
+            {
                 '__typename': 'Action',
-                'id': str(action2.id),
-            }],
-        }, {
-            '__typename': 'Action',
-            'id': str(action2.id),
-            'mergedWith': {
-                '__typename': 'Action',
-                'id': str(action1.id),
+                'id': str(action1.pk),
+                'mergedWith': None,
+                'mergedActions': [
+                    {
+                        '__typename': 'Action',
+                        'id': str(action2.pk),
+                    }
+                ],
             },
-            'mergedActions': [],
-        }],
+            {
+                '__typename': 'Action',
+                'id': str(action2.pk),
+                'mergedWith': {
+                    '__typename': 'Action',
+                    'id': str(action1.pk),
+                },
+                'mergedActions': [],
+            },
+        ],
     }
     assert data == expected
 
 
 def test_action_node_superseded(graphql_client_query_data):
-    plan = PlanFactory()
-    action1 = ActionFactory(plan=plan)
-    action2 = ActionFactory(plan=plan, superseded_by=action1)
+    plan = PlanFactory.create()
+    action1 = ActionFactory.create(plan=plan)
+    action2 = ActionFactory.create(plan=plan, superseded_by=action1)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -1390,32 +1552,37 @@ def test_action_node_superseded(graphql_client_query_data):
         """,
         variables={'plan': plan.identifier},
     )
-    expected = {
-        'planActions': [{
-            '__typename': 'Action',
-            'id': str(action1.id),
-            'supersededBy': None,
-            'supersededActions': [{
+    expected: dict[str, Any] = {
+        'planActions': [
+            {
                 '__typename': 'Action',
-                'id': str(action2.id),
-            }],
-        }, {
-            '__typename': 'Action',
-            'id': str(action2.id),
-            'supersededBy': {
-                '__typename': 'Action',
-                'id': str(action1.id),
+                'id': str(action1.pk),
+                'supersededBy': None,
+                'supersededActions': [
+                    {
+                        '__typename': 'Action',
+                        'id': str(action2.pk),
+                    }
+                ],
             },
-            'supersededActions': [],
-        }],
+            {
+                '__typename': 'Action',
+                'id': str(action2.pk),
+                'supersededBy': {
+                    '__typename': 'Action',
+                    'id': str(action1.pk),
+                },
+                'supersededActions': [],
+            },
+        ],
     }
     assert data == expected
 
 
 def test_action_node_next_previous(graphql_client_query_data):
-    plan = PlanFactory()
-    action1 = ActionFactory(plan=plan)
-    action2 = ActionFactory(plan=plan)
+    plan = PlanFactory.create()
+    action1 = ActionFactory.create(plan=plan)
+    action2 = ActionFactory.create(plan=plan)
     assert action1.get_next_action(None) == action2
     assert action2.get_next_action(None) is None
     assert action1.get_previous_action(None) is None
@@ -1440,40 +1607,46 @@ def test_action_node_next_previous(graphql_client_query_data):
         variables={'plan': plan.identifier},
     )
     expected = {
-        'planActions': [{
-            '__typename': 'Action',
-            'id': str(action1.id),
-            'nextAction': {
-                '__typename': 'Action',
-                'id': str(action2.id),
-            },
-            'previousAction': None,
-        }, {
-            '__typename': 'Action',
-            'id': str(action2.id),
-            'nextAction': None,
-            'previousAction': {
+        'planActions': [
+            {
                 '__typename': 'Action',
                 'id': str(action1.id),
+                'nextAction': {
+                    '__typename': 'Action',
+                    'id': str(action2.id),
+                },
+                'previousAction': None,
             },
-        }],
+            {
+                '__typename': 'Action',
+                'id': str(action2.id),
+                'nextAction': None,
+                'previousAction': {
+                    '__typename': 'Action',
+                    'id': str(action1.id),
+                },
+            },
+        ],
     }
     assert data == expected
 
-@pytest.mark.parametrize('ordering',
-  [
-    OrderBy.NONE,
-    OrderBy.NAME,
-  ])
+
+@pytest.mark.parametrize(
+    'ordering',
+    [
+        OrderBy.NONE,
+        OrderBy.NAME,
+    ],
+)
 def test_action_node_related_indicators_ordering(graphql_client_query_data, ordering):
-    plan = PlanFactory()
-    action = ActionFactory(plan=plan)
-    indicator1 = IndicatorFactory(name="c", organization=plan.organization)
-    indicator2 = IndicatorFactory(name="a", organization=plan.organization)
-    indicator3 = IndicatorFactory(name="b", organization=plan.organization)
-    action_indicator1 = ActionIndicatorFactory(action=action, indicator=indicator1)
-    action_indicator2 = ActionIndicatorFactory(action=action, indicator=indicator2)
-    action_indicator3 = ActionIndicatorFactory(action=action, indicator=indicator3)
+    plan = PlanFactory.create()
+    action = ActionFactory.create(plan=plan)
+    indicator1 = IndicatorFactory.create(name='c', organization=plan.organization)
+    indicator2 = IndicatorFactory.create(name='a', organization=plan.organization)
+    indicator3 = IndicatorFactory.create(name='b', organization=plan.organization)
+    action_indicator1 = ActionIndicatorFactory.create(action=action, indicator=indicator1)
+    action_indicator2 = ActionIndicatorFactory.create(action=action, indicator=indicator2)
+    action_indicator3 = ActionIndicatorFactory.create(action=action, indicator=indicator3)
     plan.features.indicator_ordering = ordering
     plan.features.save()
     data = graphql_client_query_data(
@@ -1491,46 +1664,50 @@ def test_action_node_related_indicators_ordering(graphql_client_query_data, orde
         """,
         variables={'action': action.id},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
-              '__typename': 'Action',
-              'id': str(action.id),
+            '__typename': 'Action',
+            'id': str(action.id),
         },
     }
     if ordering == OrderBy.NONE:
-      expected["action"]["relatedIndicators"] = [{
-                  '__typename': 'ActionIndicator',
-                  'id': str(action_indicator3.id),
-                },
-                {
-                  '__typename': 'ActionIndicator',
-                  'id': str(action_indicator2.id),
-                },
-                {
-                    '__typename': 'ActionIndicator',
-                    'id': str(action_indicator1.id),
-                }]
+        expected['action']['relatedIndicators'] = [
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator3.pk),
+            },
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator2.pk),
+            },
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator1.pk),
+            },
+        ]
     elif ordering == OrderBy.NAME:
-        expected["action"]["relatedIndicators"] = [{
-                  '__typename': 'ActionIndicator',
-                  'id': str(action_indicator2.id),
-                },
-                {
-                  '__typename': 'ActionIndicator',
-                  'id': str(action_indicator3.id),
-                },
-                {
-                    '__typename': 'ActionIndicator',
-                    'id': str(action_indicator1.id),
-                }]
+        expected['action']['relatedIndicators'] = [
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator2.pk),
+            },
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator3.pk),
+            },
+            {
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator1.pk),
+            },
+        ]
 
     assert data == expected
 
 
 def test_action_schedule_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action_schedule = ActionScheduleFactory(plan=plan)
-    action = ActionFactory(plan=plan, schedule=[action_schedule])
+    plan = PlanFactory.create()
+    action_schedule = ActionScheduleFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, schedule=[action_schedule])
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1548,29 +1725,32 @@ def test_action_schedule_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    assert action_schedule.ends_at is not None
+    expected: dict[str, Any] = {
         'action': {
-            'schedule': [{
-                '__typename': 'ActionSchedule',
-                'id': str(action_schedule.id),
-                'plan': {
-                   '__typename': 'Plan',
-                   'id': plan.identifier,
-                },
-                'beginsAt': action_schedule.begins_at.isoformat(),
-                'endsAt': action_schedule.ends_at.isoformat(),
-            }],
+            'schedule': [
+                {
+                    '__typename': 'ActionSchedule',
+                    'id': str(action_schedule.pk),
+                    'plan': {
+                        '__typename': 'Plan',
+                        'id': plan.identifier,
+                    },
+                    'beginsAt': action_schedule.begins_at.isoformat(),
+                    'endsAt': action_schedule.ends_at.isoformat(),
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_action_status_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action_status = ActionStatusFactory(plan=plan)
-    action = ActionFactory(plan=plan, status=action_status)
+    plan = PlanFactory.create()
+    action_status = ActionStatusFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, status=action_status)
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1589,16 +1769,16 @@ def test_action_status_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
             'status': {
                 '__typename': 'ActionStatus',
-                'id': str(action_status.id),
+                'id': str(action_status.pk),
                 'plan': {
-                   '__typename': 'Plan',
-                   'id': plan.identifier,
+                    '__typename': 'Plan',
+                    'id': plan.identifier,
                 },
                 'name': action_status.name,
                 'identifier': action_status.identifier,
@@ -1610,9 +1790,9 @@ def test_action_status_node(graphql_client_query_data):
 
 
 def test_action_implementation_phase_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action_implementation_phase = ActionImplementationPhaseFactory(plan=plan)
-    action = ActionFactory(plan=plan, implementation_phase=action_implementation_phase)
+    plan = PlanFactory.create()
+    action_implementation_phase = ActionImplementationPhaseFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, implementation_phase=action_implementation_phase)
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1631,16 +1811,16 @@ def test_action_implementation_phase_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
             'implementationPhase': {
                 '__typename': 'ActionImplementationPhase',
-                'id': str(action_implementation_phase.id),
+                'id': str(action_implementation_phase.pk),
                 'plan': {
-                   '__typename': 'Plan',
-                   'id': plan.identifier,
+                    '__typename': 'Plan',
+                    'id': plan.identifier,
                 },
                 'order': action_implementation_phase.order,
                 'name': action_implementation_phase.name,
@@ -1652,9 +1832,10 @@ def test_action_implementation_phase_node(graphql_client_query_data):
 
 
 def test_action_responsible_party_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action = ActionFactory(plan=plan)
-    action_responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
+    plan = PlanFactory.create()
+    action = ActionFactory.create(plan=plan)
+    action_responsible_party = ActionResponsiblePartyFactory.create(action=action, organization=plan.organization)
+    assert action_responsible_party.role is not None
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1677,34 +1858,36 @@ def test_action_responsible_party_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
-            'responsibleParties': [{
-                '__typename': 'ActionResponsibleParty',
-                'id': str(action_responsible_party.id),
-                'action': {
-                   '__typename': 'Action',
-                   'id': str(action.id),
-                },
-                'organization': {
-                   '__typename': 'Organization',
-                   'id': str(plan.organization.id),
-                },
-                'role': action_responsible_party.role.upper(),
-                'specifier': action_responsible_party.specifier,
-                'order': action_responsible_party.order,
-            }],
+            'responsibleParties': [
+                {
+                    '__typename': 'ActionResponsibleParty',
+                    'id': str(action_responsible_party.pk),
+                    'action': {
+                        '__typename': 'Action',
+                        'id': str(action.pk),
+                    },
+                    'organization': {
+                        '__typename': 'Organization',
+                        'id': str(plan.organization.pk),
+                    },
+                    'role': action_responsible_party.role.upper(),
+                    'specifier': action_responsible_party.specifier,
+                    'order': action_responsible_party.order,
+                }
+            ],
         },
     }
     assert data == expected
 
 
 def test_action_contact_person_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action = ActionFactory(plan=plan)
-    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
+    plan = PlanFactory.create()
+    action = ActionFactory.create(plan=plan)
+    action_contact = ActionContactFactory.create(action=action, person__organization=plan.organization)
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1726,38 +1909,43 @@ def test_action_contact_person_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
-            'contactPersons': [{
-                '__typename': 'ActionContactPerson',
-                'id': str(action_contact.id),
-                'action': {
-                   '__typename': 'Action',
-                   'id': str(action.id),
-                },
-                'person': {
-                   '__typename': 'Person',
-                   'id': str(action_contact.person.id),
-                },
-                'order': action_contact.order,
-                'primaryContact': action_contact.primary_contact,
-            }],
+            'contactPersons': [
+                {
+                    '__typename': 'ActionContactPerson',
+                    'id': str(action_contact.pk),
+                    'action': {
+                        '__typename': 'Action',
+                        'id': str(action.pk),
+                    },
+                    'person': {
+                        '__typename': 'Person',
+                        'id': str(action_contact.person.id),
+                    },
+                    'order': action_contact.order,
+                    'primaryContact': action_contact.primary_contact,
+                }
+            ],
         },
     }
     assert data == expected
 
 
-@pytest.mark.parametrize('public_data', [
-    PlanFeatures.ContactPersonsPublicData.ALL,
-    PlanFeatures.ContactPersonsPublicData.NAME,
-    PlanFeatures.ContactPersonsPublicData.NONE,
-])
+@pytest.mark.parametrize(
+    'public_data',
+    [
+        PlanFeatures.ContactPersonsPublicData.ALL,
+        PlanFeatures.ContactPersonsPublicData.NAME,
+        PlanFeatures.ContactPersonsPublicData.NONE,
+    ],
+)
 def test_action_contact_persons_redacted(graphql_client_query_data, public_data):
-    plan = PlanFactory(features__contact_persons_public_data=public_data)
-    action = ActionFactory(plan=plan)
-    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
+    plan = PlanFactory.create(features__contact_persons_public_data=public_data)
+    action = ActionFactory.create(plan=plan)
+    action_contact = ActionContactFactory.create(action=action, person__organization=plan.organization)
     person = action_contact.person
     assert person.email
     data = graphql_client_query_data(
@@ -1778,7 +1966,7 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
     if public_data == PlanFeatures.ContactPersonsPublicData.NONE:
         expected_contact_persons = []
@@ -1788,18 +1976,20 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
         elif public_data == PlanFeatures.ContactPersonsPublicData.ALL:
             expected_email = person.email
         else:
-            pytest.fail("invalid ContactPersonsPublicData value")
-        expected_contact_persons = [{
-            'person': {
-                'firstName': person.first_name,
-                'lastName': person.last_name,
-                'title': person.title,
-                'organization': {
-                    'id': str(person.organization.id),
+            pytest.fail('invalid ContactPersonsPublicData value')
+        expected_contact_persons = [
+            {
+                'person': {
+                    'firstName': person.first_name,
+                    'lastName': person.last_name,
+                    'title': person.title,
+                    'organization': {
+                        'id': str(person.organization.id),
+                    },
+                    'email': expected_email,
                 },
-                'email': expected_email,
-            },
-        }]
+            }
+        ]
     expected = {
         'action': {
             'contactPersons': expected_contact_persons,
@@ -1809,9 +1999,9 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
 
 
 def test_action_impact_node(graphql_client_query_data):
-    plan = PlanFactory()
-    action_impact = ActionImpactFactory(plan=plan)
-    action = ActionFactory(plan=plan, impact=action_impact)
+    plan = PlanFactory.create()
+    action_impact = ActionImpactFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, impact=action_impact)
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1830,16 +2020,16 @@ def test_action_impact_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
             'impact': {
                 '__typename': 'ActionImpact',
-                'id': str(action_impact.id),
+                'id': str(action_impact.pk),
                 'plan': {
-                   '__typename': 'Plan',
-                   'id': plan.identifier,
+                    '__typename': 'Plan',
+                    'id': plan.identifier,
                 },
                 'name': action_impact.name,
                 'identifier': action_impact.identifier,
@@ -1851,8 +2041,9 @@ def test_action_impact_node(graphql_client_query_data):
 
 
 def test_action_status_update_node(graphql_client_query_data):
-    action = ActionFactory()
-    action_status_update = ActionStatusUpdateFactory(action=action)
+    action = ActionFactory.create()
+    action_status_update = ActionStatusUpdateFactory.create(action=action)
+    assert action_status_update.author is not None
     data = graphql_client_query_data(
         """
         query($action: ID!) {
@@ -1875,25 +2066,27 @@ def test_action_status_update_node(graphql_client_query_data):
           }
         }
         """,
-        variables={'action': action.id},
+        variables={'action': action.pk},
     )
-    expected = {
+    expected: dict[str, Any] = {
         'action': {
-            'statusUpdates': [{
-                '__typename': 'ActionStatusUpdate',
-                'id': str(action_status_update.id),
-                'action': {
-                   '__typename': 'Action',
-                   'id': str(action.id),
-                },
-                'title': action_status_update.title,
-                'date': action_status_update.date.isoformat(),
-                'author': {
-                    '__typename': 'Person',
-                    'id': str(action_status_update.author.id),
-                },
-                'content': action_status_update.content,
-            }],
+            'statusUpdates': [
+                {
+                    '__typename': 'ActionStatusUpdate',
+                    'id': str(action_status_update.pk),
+                    'action': {
+                        '__typename': 'Action',
+                        'id': str(action.pk),
+                    },
+                    'title': action_status_update.title,
+                    'date': action_status_update.date.isoformat(),
+                    'author': {
+                        '__typename': 'Person',
+                        'id': str(action_status_update.author.pk),
+                    },
+                    'content': action_status_update.content,
+                }
+            ],
         },
     }
     assert data == expected

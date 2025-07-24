@@ -1,4 +1,3 @@
-# ruff: noqa: N805
 from __future__ import annotations
 
 import datetime
@@ -61,11 +60,17 @@ from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from django.dispatch.dispatcher import Signal
+
     from indicators.models import Unit
     from people.models import Person
+    def mute_signals[X](signal: Signal) -> Callable[[X], X]: ...
+else:
+    mute_signals = factory.django.mute_signals
 
-
-@factory.django.mute_signals(post_save)
+@mute_signals(post_save)
 class PlanFactory(ModelFactory[Plan]):
     organization = SubFactory(OrganizationFactory)
     name = Sequence(lambda i: f"Plan {i}")
@@ -90,13 +95,17 @@ class PlanFactory(ModelFactory[Plan]):
             Locale.objects.get_or_create(language_code=language)
         return super()._create(model_class, *args, **kwargs)
 
+    if TYPE_CHECKING:
+        @classmethod
+        def create(cls, *args, **kwargs) -> Plan: ...
 
-@factory.django.mute_signals(post_save)
+
+@mute_signals(post_save)
 class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
     plan = SubFactory(PlanFactory, features=None)
 
 
-@factory.django.mute_signals(post_save)
+@mute_signals(post_save)
 class PlanDomainFactory(ModelFactory[PlanDomain]):
     plan = SubFactory(PlanFactory, _domain=None)
     hostname = Sequence(lambda i: f'plandomain{i}.example.org')

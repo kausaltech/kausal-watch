@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from django import forms
-from django.core import validators
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.db import models
@@ -11,10 +12,9 @@ from django.utils.translation import gettext_lazy as _
 class HostnameValidator(EmailValidator):
     message = _('Enter a valid hostname.')
 
-    def __call__(self, value):
-        if self.validate_domain_part(value):
-            return
-        raise ValidationError(self.message, code=self.code)
+    def __call__(self, value: str | None):
+        if not value or not self.validate_domain_part(value):
+            raise ValidationError(self.message, code=self.code)
 
 
 hostname_validator = HostnameValidator()
@@ -23,10 +23,10 @@ hostname_validator = HostnameValidator()
 class HostnameFormField(forms.CharField):
     default_validators = [hostname_validator]
 
-    def to_python(self, value):
+    def to_python(self, value: str | None):
         # Always convert to lower case
         ret = super().to_python(value)
-        return ret.lower()
+        return ret.lower() if ret is not None else None
 
     def __init__(self, **kwargs):
         super().__init__(strip=True, **kwargs)
@@ -47,9 +47,10 @@ class HostnameField(models.CharField):
         # the default in future.
         return name, path, args, kwargs
 
-    def formfield(self, **kwargs):
+    def formfield(self, **kwargs) -> forms.Field | None:  # type: ignore[override]
         # As with CharField, this will cause email validation to be performed
         # twice.
+        kwargs.pop('form_class', None)
         return super().formfield(**{
             'form_class': HostnameFormField,
             **kwargs,

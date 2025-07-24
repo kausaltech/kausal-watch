@@ -90,7 +90,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
     # There should be a field to configure which role(s) should
     # be exported and that should affect the label(s)
 
-    target_ancestor_depth = blocks.IntegerBlock(
+    target_ancestor_depth: blocks.IntegerBlock = blocks.IntegerBlock(
         label=_('Level of containing organization'),
         required=False,
         max_value=10,

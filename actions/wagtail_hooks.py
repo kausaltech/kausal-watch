@@ -24,7 +24,7 @@ class ActionsSummaryItem(SummaryItem):
         ctx = super().get_context_data(parent_context)
         assert ctx is not None
         plan = self.request.get_active_admin_plan()
-        ctx['active_actions'] = plan.actions.active().count()
+        ctx['active_actions'] = plan.actions.get_queryset().active().count()
         ctx['plan'] = plan
         return ctx
 

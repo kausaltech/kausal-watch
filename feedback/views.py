@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -14,6 +14,8 @@ from wagtail.admin.views.generic.base import (
 )
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 
+from kausal_common.users import user_or_bust
+
 from feedback.models import UserFeedback
 
 if TYPE_CHECKING:
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class SetUserFeedbackProcessedView(
-    BaseObjectMixin,
+    BaseObjectMixin[UserFeedback],
     PermissionCheckedMixin,
     WagtailAdminTemplateMixin,
     TemplateView,
@@ -31,10 +33,10 @@ class SetUserFeedbackProcessedView(
     permission_required = 'set_is_processed'
     set_processed = True
     template_name = 'aplans/confirmation.html'
-    index_url_name = None
+    index_url_name: ClassVar[str | None] = None
 
-    def user_has_permission(self, permission):
-        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
+    def user_has_permission(self, permission: str) -> bool:
+        return self.permission_policy.user_has_permission_for_instance(user_or_bust(self.request.user), permission, self.object)
 
     def get_page_title(self):
         if self.set_processed:

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import copy
-import typing
-from typing import Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
 from uuid import UUID
 
 import rest_framework.fields
@@ -12,10 +11,13 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, permissions, serializers, viewsets
+from rest_framework.routers import SimpleRouter
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
+
+from kausal_common.users import user_or_none
 
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
@@ -36,8 +38,7 @@ from actions.models.action import ActionContactPerson, ActionImplementationPhase
 from actions.models.attributes import AttributeType, ModelWithAttributes
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
-from people.models import Person
-from users.models import User
+from people.models import Person, PersonQuerySet
 
 from .deferred_ops import DeferredDatabaseOperationsMixin
 from .models import (
@@ -56,30 +57,35 @@ from .models import (
     Scenario,
 )
 
-if typing.TYPE_CHECKING:
-    from django.db.models import (
-        Model,
-        QuerySet,  # noqa
-    )
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-    from aplans.types import AuthenticatedWatchRequest, WatchAdminRequest, WatchAPIRequest
+    from django.db.models import Model, QuerySet
+    from rest_framework.request import Request
+    from rest_framework.routers import BaseRouter
+    from rest_framework.views import APIView
+
+    from aplans.types import WatchAdminRequest
 
     from actions.models.plan import PlanQuerySet
+    from users.models import User
 
-all_views = []
-all_routers = []
+all_views: list[type[APIView]] = []
+all_routers: list[BaseRouter] = []
 
 
 def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
-class BulkRouter(routers.SimpleRouter):
-    routes = copy.deepcopy(routers.SimpleRouter.routes)
-    routes[0].mapping.update({
-        'put': 'bulk_update',
-        'patch': 'partial_bulk_update',
-    })
+class BulkRouter(SimpleRouter):
+    routes = copy.deepcopy(SimpleRouter.routes)
+    routes[0].mapping.update(  # type: ignore[union-attr]
+        {
+            'put': 'bulk_update',
+            'patch': 'partial_bulk_update',
+        }
+    )
 
 
 class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
@@ -117,8 +123,13 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer)
             Plan,
             add_fields=['url'],
             remove_fields=[
-                'static_pages', 'general_content', 'blog_posts', 'indicator_levels',
-                'monitoring_quality_points', 'action_impacts', 'superseded_plans',
+                'static_pages',
+                'general_content',
+                'blog_posts',
+                'indicator_levels',
+                'monitoring_quality_points',
+                'action_impacts',
+                'superseded_plans',
             ],
         )
         filterset_fields = {
@@ -127,27 +138,22 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer)
 
 
 class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
-    queryset = Plan.objects.all()
+    queryset = Plan.objects.get_queryset()
     serializer_class = PlanSerializer
     filterset_fields = {
         'identifier': ('exact',),
     }
 
-    request: WatchAPIRequest
-
     @classmethod
     def get_available_plans(
-        cls, queryset: PlanQuerySet | None = None, request: WatchAPIRequest | None = None,
+        cls,
+        queryset: PlanQuerySet | None = None,
+        request: Request | None = None,
     ) -> PlanQuerySet:
-        user: User | None
-        if not request or not request.user or not request.user.is_authenticated:
-            user = None
-        else:
-            assert isinstance(request.user, User)
-            user = request.user
+        user = user_or_none(request.user) if request else None
 
         if queryset is None:
-            queryset = Plan.objects.all()  # type: ignore
+            queryset = Plan.objects.get_queryset()
             assert queryset is not None
 
         if user is not None:
@@ -156,14 +162,15 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
 
     @classmethod
     def get_default_plan(
-        cls, queryset: PlanQuerySet | None = None, request: WatchAPIRequest | None = None,
+        cls,
+        queryset: PlanQuerySet | None = None,
+        request: Request | None = None,
     ) -> Plan:
         plans = cls.get_available_plans(queryset=queryset, request=request)
         plan = None
-        if request is not None:
-            if hasattr(request, 'get_active_admin_plan'):
-                admin_plan = request.get_active_admin_plan()
-                plan = plans.filter(id=admin_plan.id).first()
+        if request is not None and hasattr(request, 'get_active_admin_plan'):
+            admin_plan = request.get_active_admin_plan()
+            plan = plans.filter(id=admin_plan.id).first()
 
         if plan is None:
             plan = plans.first()
@@ -171,7 +178,7 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
         return plan
 
     def get_queryset(self) -> PlanQuerySet:
-        qs = super().get_queryset()
+        qs = cast('PlanQuerySet', super().get_queryset())
         return self.get_available_plans(qs, self.request)
 
 
@@ -191,7 +198,9 @@ class ActionScheduleViewSet(viewsets.ModelViewSet):
 
 
 plan_router.register(
-    'action_schedules', ActionScheduleViewSet, basename='action_schedule',
+    'action_schedules',
+    ActionScheduleViewSet,
+    basename='action_schedule',
 )
 
 
@@ -206,7 +215,9 @@ class ActionImplementationPhaseViewSet(viewsets.ModelViewSet):
 
 
 plan_router.register(
-    'action_implementation_phases', ActionImplementationPhaseViewSet, basename='action_implementation_phase',
+    'action_implementation_phases',
+    ActionImplementationPhaseViewSet,
+    basename='action_implementation_phase',
 )
 
 
@@ -229,7 +240,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
             return False
         return True
 
-    def has_permission(self, request: AuthenticatedWatchRequest, view):
+    def has_permission(self, request: Request, view):
         plan_pk = view.kwargs.get('plan_pk')
         if plan_pk:
             plan = Plan.objects.filter(id=plan_pk).first()
@@ -237,30 +248,37 @@ class ActionPermission(permissions.DjangoObjectPermissions):
                 raise exceptions.NotFound(detail='Plan not found')
         else:
             plan = Plan.objects.get_queryset().live().first()
+            assert plan is not None
+        if request.method is None:
+            return False
         perms = self.get_required_permissions(request.method, Action)
-        for perm in perms:
-            if not self.check_permission(request.user, perm, plan):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, plan) for perm in perms)
 
     def has_object_permission(self, request, view, obj):
+        if request.method is None:
+            return False
         perms = self.get_required_object_permissions(request.method, Action)
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
-        for perm in perms:
-            if not self.check_permission(request.user, perm, obj.plan, obj):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, obj.plan, obj) for perm in perms)
 
 
-@extend_schema_field(dict(
-    type='object',
-    additionalProperties=dict(
-        type='array',
-        title='categories',
-        items=dict(type='integer'),
-    ),
-))
+@extend_schema_field(
+    dict(
+        type='object',
+        additionalProperties=dict(
+            type='array',
+            title='categories',
+            items=dict(type='integer'),
+        ),
+    )
+)
 class ActionCategoriesSerializer(serializers.Serializer):
     parent: ActionSerializer
 
@@ -275,7 +293,7 @@ class ActionCategoriesSerializer(serializers.Serializer):
                 continue
             ct_cats = [cat.id for cat in cats if cat.type_id == ct.pk]
             if ct.select_widget == ct.SelectWidget.SINGLE:
-                val = ct_cats[0] if len(ct_cats) else None
+                val = ct_cats[0] if len(ct_cats) > 0 else None
             else:
                 val = ct_cats
             out[ct.identifier] = val
@@ -353,10 +371,13 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
     def to_representation(self, value):
         key = self.get_type_label()
         fk_id_label = f'{key}_id'
-        return [{
-            key: getattr(v, fk_id_label),
-            'role': v.role,
-        } for v in value.all()]
+        return [
+            {
+                key: getattr(v, fk_id_label),
+                'role': v.role,
+            }
+            for v in value.all()
+        ]
 
     def to_internal_value(self, data):
         s = self.parent
@@ -370,16 +391,14 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
         for val in data:
             instance_id = val.get(key, None)
             role = val.get('role', None)
-            if not (isinstance(val, dict)
-                    and isinstance(instance_id, int)
-                    and (role is None or isinstance(role, str))):
+            if not (isinstance(val, dict) and isinstance(instance_id, int) and (role is None or isinstance(role, str))):
                 raise exceptions.ValidationError(
                     'expecting a list of dicts mapping "organization" to int and "role" to str or None',
                 )
             if val[key] not in available_instances:
                 raise exceptions.ValidationError('%d not available for plan' % val[key])
             if val['role'] not in self.get_allowed_roles():
-                raise exceptions.ValidationError(f"{val['role']} is not a valid role")
+                raise exceptions.ValidationError(f'{val["role"]} is not a valid role')
             if instance_id in seen_instances:
                 raise exceptions.ValidationError(self.get_multiple_error())
             seen_instances.add(instance_id)
@@ -392,10 +411,12 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
         self.set_instance_values(instance, validated_data)
 
 
-@extend_schema_field(dict(
-    type='object',
-    title=_('Responsible parties'),
-))
+@extend_schema_field(
+    dict(
+        type='object',
+        title=_('Responsible parties'),
+    )
+)
 class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'organization'
@@ -419,13 +440,15 @@ class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
         instance.set_responsible_parties(data)
 
     def get_multiple_error(self):
-        return _("Organization occurs multiple times as responsible party")
+        return _('Organization occurs multiple times as responsible party')
 
 
-@extend_schema_field(dict(
-    type='object',
-    title=_('Contact persons'),
-))
+@extend_schema_field(
+    dict(
+        type='object',
+        title=_('Contact persons'),
+    )
+)
 class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'person'
@@ -449,7 +472,7 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
         instance.set_contact_persons(data)
 
     def get_multiple_error(self):
-        return _("Person occurs multiple times as contact person")
+        return _('Person occurs multiple times as contact person')
 
 
 class AttributesSerializerMixin:
@@ -529,7 +552,7 @@ class AttributesSerializerMixin:
             )
         return attribute_operations
 
-    def to_attribute_value_input(self, item: Any) ->  Any:
+    def to_attribute_value_input(self, item: Any) -> Any:
         """
         Format the incoming REST API data to conform
         to the format expected by each actions.attributes.AttributeValue
@@ -572,7 +595,7 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
 
 
 class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_formats = (AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT, )
+    attribute_formats = (AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -596,7 +619,7 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
 
 
 class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_formats = (AttributeType.AttributeFormat.NUMERIC, )
+    attribute_formats = (AttributeType.AttributeFormat.NUMERIC,)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -616,7 +639,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
 
 
 class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_formats = (AttributeType.AttributeFormat.TEXT, )
+    attribute_formats = (AttributeType.AttributeFormat.TEXT,)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -633,7 +656,7 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
 
 
 class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_formats = (AttributeType.AttributeFormat.RICH_TEXT, )
+    attribute_formats = (AttributeType.AttributeFormat.RICH_TEXT,)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -650,7 +673,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
 
 
 class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_formats = (AttributeType.AttributeFormat.CATEGORY_CHOICE, )
+    attribute_formats = (AttributeType.AttributeFormat.CATEGORY_CHOICE,)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -662,7 +685,9 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
 
     def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
         return instance.set_category_choice_attribute(
-            attribute_type, existing_attribute, item,
+            attribute_type,
+            existing_attribute,
+            item,
         )
 
 
@@ -676,8 +701,12 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
     category_choice_attributes = CategoryChoiceAttributesSerializer(required=False)
 
     _attribute_fields = [
-        'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'text_attributes',
-        'rich_text_attributes', 'category_choice_attributes',
+        'choice_attributes',
+        'choice_with_text_attributes',
+        'numeric_value_attributes',
+        'text_attributes',
+        'rich_text_attributes',
+        'category_choice_attributes',
     ]
 
     context: dict[str, Any]
@@ -692,9 +721,7 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
             return
         Model = self.Meta.model
         attribute_types = Model.get_attribute_types_for_plan(plan)
-        attribute_types_by_identifier = {
-            at.instance.identifier: at for at in attribute_types
-        }
+        attribute_types_by_identifier = {at.instance.identifier: at for at in attribute_types}
         prepopulated_attributes: dict[str, dict] = {}
         content_type = ContentType.objects.get_for_model(Model)
         for at in attribute_types:
@@ -702,8 +729,10 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
             for a in at.attributes.filter(content_type=content_type):
                 prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
 
-        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
-        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
+        available_organization_ids = set(Organization.objects.qs.available_for_plan(plan).values_list('id', flat=True))
+        available_person_ids = set(
+            Person.objects.qs.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True)
+        )
         persons_by_id = {p.pk: p for p in Person.objects.all()}
         organizations_by_id = {o.pk: o for o in Organization.objects.all()}
 
@@ -712,7 +741,7 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
                 'attribute_values': prepopulated_attributes,
                 'attribute_types': attribute_types_by_identifier,
                 'available_organization_ids': available_organization_ids,
-                'available_person_ids':  available_person_ids,
+                'available_person_ids': available_person_ids,
                 'persons_by_id': persons_by_id,
                 'organizations_by_id': organizations_by_id,
             }
@@ -745,9 +774,18 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
 
 
 
+class HasUUIDAndOrder(Protocol):
+    uuid: UUID
+    order: int
+
+
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
-class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
+class NonTreebeardModelWithTreePositionSerializerMixin[M: HasUUIDAndOrder](
+    DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass
+):
     left_sibling = PrevSiblingField(allow_null=True, required=False)
+    _cached_instances: dict[UUID, M]
+    instance: M | None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -772,6 +810,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
                 parent = getattr(instance, 'parent', None)
                 if parent:
                     self._cached_instances[parent.uuid] = parent
+
         try:
             init_cache()
         except KeyError:
@@ -835,7 +874,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
     #     instance.order = new_order
     #     instance.save()
 
-    def _reorder_descendants(self, node, next_order, instance_to_move, predecessor):
+    def _reorder_descendants(self, node, next_order: int, instance_to_move: M, predecessor) -> int:
         """
         Order descendants of `node` (including `node`) consecutively starting at `next_order` and put
         `instance_to_move` (followed by its descendants) after `predecessor` in the ordering.
@@ -864,7 +903,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
             # We can't use `node.children` because the children might be different due to changes that are only in
             # `self._cached_instances` at this point
             children = [
-                n for uuid, n in self._cached_instances.items()
+                n
+                for uuid, n in self._cached_instances.items()
                 if getattr(n, 'parent', None) == node and uuid != instance_to_move_uuid
             ]
             children = sorted(children, key=lambda child: child.order)  # FIXME: Could be optimized (keep cache sorted)
@@ -895,8 +935,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
             order = self._reorder_descendants(instance, order, instance, predecessor)
 
         siblings = [
-            node for node in self._cached_instances.values()
-            if node != instance and getattr(node, 'parent', None) == parent
+            node for node in self._cached_instances.values() if node != instance and getattr(node, 'parent', None) == parent
         ]
         siblings = sorted(siblings, key=lambda node: node.order)  # FIXME: Could be optimized (keep cache sorted)
         for node in siblings:
@@ -939,10 +978,10 @@ class ActionSerializer(
 
     def get_fields(self):
         fields = super().get_fields()
-        request: AuthenticatedWatchRequest = self.context.get('request')
+        request: Request | None = self.context.get('request')
         user = None
-        if request is not None and request.user and request.user.is_authenticated:
-            user = request.user
+        if request is not None:
+            user = user_or_none(request.user)
 
         if user is None or (not user.is_superuser and not user.is_general_admin_for_plan(self.plan)):
             # Remove fields that are only for admins
@@ -961,7 +1000,7 @@ class ActionSerializer(
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
                 field_kwargs['allow_null'] = False
-                field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
+                field_kwargs['queryset'] = Organization.objects.qs.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
 
@@ -1028,12 +1067,25 @@ class ActionSerializer(
         fields = public_fields(
             Action,
             add_fields=[
-                'internal_notes', 'internal_admin_notes', 'visibility', 'visibility_display',
+                'internal_notes',
+                'internal_admin_notes',
+                'visibility',
+                'visibility_display',
             ],
             remove_fields=[
-                'impact', 'status_updates', 'monitoring_quality_points', 'image', 'tasks', 'links',
-                'related_indicators', 'indicators', 'impact_groups', 'merged_actions', 'superseded_actions',
-                'dependent_relationships', 'copies',
+                'impact',
+                'status_updates',
+                'monitoring_quality_points',
+                'image',
+                'tasks',
+                'links',
+                'related_indicators',
+                'indicators',
+                'impact_groups',
+                'merged_actions',
+                'superseded_actions',
+                'dependent_relationships',
+                'copies',
             ],
         )
         read_only_fields = ['plan']
@@ -1042,6 +1094,7 @@ class ActionSerializer(
 class PlanRelatedSerializer(Protocol):
     kwargs: dict[str, Any]
     get_serializer_context: Callable
+
     def get_plan(self) -> Plan: ...
 
 
@@ -1053,7 +1106,7 @@ class ViewSetWithPlanContext:
         try:
             return Plan.objects.get(pk=plan_pk)
         except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
+            raise exceptions.NotFound(detail='Plan not found') from None
 
     def get_serializer_context(self: PlanRelatedSerializer):
         context = super().get_serializer_context()
@@ -1071,6 +1124,7 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
     serializer_class = ActionSerializer
 
     def get_permissions(self):
+        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
             permission_classes = [AnonReadOnly]
         else:
@@ -1084,17 +1138,23 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
         plan_pk = self.kwargs['plan_pk']
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
-            raise exceptions.NotFound(detail="Plan not found")
+            raise exceptions.NotFound(detail='Plan not found')
         self.plan = plan
         # For caching reasons, we must query the actions through the
         # plan so all of the actions share the same Plan instance
         return plan.actions.all().prefetch_related(
-            'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions',
+            'schedule',
+            'categories',
+            'contact_persons',
+            'responsible_parties',
+            'related_actions',
         )
 
 
 plan_router.register(
-    'actions', ActionViewSet, basename='action',
+    'actions',
+    ActionViewSet,
+    basename='action',
 )
 
 
@@ -1149,28 +1209,33 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
             return False
         return True
 
-    def has_permission(self, request: AuthenticatedWatchRequest, view):
+    def has_permission(self, request: Request, view):
         category_type_pk = view.kwargs.get('category_type_pk')
         if category_type_pk:
             category_type = CategoryType.objects.filter(id=category_type_pk).first()
             if category_type is None:
                 raise exceptions.NotFound(detail='Category type not found')
         else:
-            category_type = CategoryType.objects.live().first()
+            category_type = CategoryType.objects.first()
+            assert category_type is not None
+        if request.method is None:
+            return False
         perms = self.get_required_permissions(request.method, Category)
-        for perm in perms:
-            if not self.check_permission(request.user, perm, category_type):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, category_type) for perm in perms)
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Request, view, obj):
+        if request.method is None:
+            return False
         perms = self.get_required_object_permissions(request.method, Category)
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
-        for perm in perms:
-            if not self.check_permission(request.user, perm, obj.type, obj):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, obj.type, obj) for perm in perms)
 
 
 class CategoryTypeViewSet(viewsets.ModelViewSet):
@@ -1184,13 +1249,14 @@ class CategoryTypeViewSet(viewsets.ModelViewSet):
         plan_pk = self.kwargs['plan_pk']
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
-            raise exceptions.NotFound(detail="Plan not found")
-        return CategoryType.objects.filter(plan=plan_pk)\
-            .prefetch_related('categories')
+            raise exceptions.NotFound(detail='Plan not found')
+        return CategoryType.objects.filter(plan=plan_pk).prefetch_related('categories')
 
 
 plan_router.register(
-    'category-types', CategoryTypeViewSet, basename='category-type',
+    'category-types',
+    CategoryTypeViewSet,
+    basename='category-type',
 )
 category_type_router = NestedBulkRouter(plan_router, 'category-types', lookup='category_type')
 all_routers.append(category_type_router)
@@ -1215,7 +1281,7 @@ class CategorySerializer(
     BulkSerializerValidationInstanceMixin,
     serializers.ModelSerializer,
 ):
-    parent = NonTreebeardParentUUIDField(allow_null=True, required=False)
+    parent = NonTreebeardParentUUIDField(allow_null=True, required=False)  # type: ignore[assignment]
     uuid = serializers.UUIDField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -1257,13 +1323,13 @@ class CategorySerializer(
 
     def validate_identifier(self, value):
         if not value:
-            raise serializers.ValidationError(_("Identifier must be set"))
+            raise serializers.ValidationError(_('Identifier must be set'))
 
         qs = Category.objects.filter(type=self.category_type, identifier=value)
         if self._instance is not None:
             qs = qs.exclude(pk=self._instance.pk)
         if qs.exists():
-            raise serializers.ValidationError(_("Identifier already exists"))
+            raise serializers.ValidationError(_('Identifier already exists'))
 
         return value
 
@@ -1288,6 +1354,7 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
     serializer_class = CategorySerializer
 
     def get_permissions(self):
+        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
             permission_classes = [AnonReadOnly]
         else:
@@ -1299,7 +1366,7 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
             # Called during schema generation
             return Category.objects.none()
         category_type_pk = self.kwargs['category_type_pk']
-        return Category.objects.filter(type=category_type_pk).select_related("type")
+        return Category.objects.filter(type=category_type_pk).select_related('type')
 
     def bulk_update(self, request, *args, **kwargs):
         result = super().bulk_update(request, *args, **kwargs)
@@ -1312,7 +1379,7 @@ category_type_router.register('categories', CategoryViewSet, basename='category'
 
 class OrganizationPermission(permissions.DjangoObjectPermissions):
     # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, organization: Organization = None):
+    def check_permission(self, user: User, perm: str, organization: Organization | None = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -1329,7 +1396,7 @@ class OrganizationPermission(permissions.DjangoObjectPermissions):
             return False
         return True
 
-    def has_permission(self, request: AuthenticatedWatchRequest, view):
+    def has_permission(self, request: Request, view):
         # plan_pk = view.kwargs.get('plan_pk')
         # if plan_pk:
         #     plan = Plan.objects.filter(id=plan_pk).first()
@@ -1337,20 +1404,24 @@ class OrganizationPermission(permissions.DjangoObjectPermissions):
         #         raise exceptions.NotFound(detail='Plan not found')
         # else:
         #     plan = Plan.objects.live().first()
+        if request.method is None:
+            return False
         perms = self.get_required_permissions(request.method, Organization)
-        for perm in perms:
-            if not self.check_permission(request.user, perm):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm) for perm in perms)
 
     def has_object_permission(self, request, view, obj):
+        if request.method is None:
+            return False
         perms = self.get_required_object_permissions(request.method, Organization)
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
-        for perm in perms:
-            if not self.check_permission(request.user, perm, obj):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, obj) for perm in perms)
 
 class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
@@ -1363,7 +1434,7 @@ class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSer
     def create(self, validated_data):
         instance = super().create(validated_data)
         # Add instance to active plan's related organizations
-        request: WatchAdminRequest = self.context.get('request')
+        request = cast('WatchAdminRequest', self.context.get('request'))
         plan = request.get_active_admin_plan()
         plan.related_organizations.add(instance)
         return instance
@@ -1386,6 +1457,7 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return self.bulk_update(request, *args, **kwargs)
 
     def get_permissions(self):
+        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
             permission_classes = [AnonReadOnly]
         else:
@@ -1400,8 +1472,9 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         try:
             plan = Plan.objects.get(identifier=plan_identifier)
         except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
-        return Organization.objects.available_for_plan(plan)
+            raise exceptions.NotFound(detail='Plan not found') from None
+        return Organization.objects.qs.available_for_plan(plan)
+
 
 
 class PersonPermission(permissions.DjangoObjectPermissions):
@@ -1428,23 +1501,27 @@ class PersonPermission(permissions.DjangoObjectPermissions):
             return False
         return True
 
-    def has_permission(self, request: AuthenticatedWatchRequest, view):
+    def has_permission(self, request: Request, view):
+        if request.method is None:
+            return False
         perms = self.get_required_permissions(request.method, Person)
         plan = request.get_active_admin_plan()
-        for perm in perms:
-            if not self.check_permission(request.user, perm, plan=plan):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, plan=plan) for perm in perms)
 
     def has_object_permission(self, request, view, obj):
+        if request.method is None:
+            return False
         perms = self.get_required_object_permissions(request.method, Person)
         plan = request.get_active_admin_plan()
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
-        for perm in perms:
-            if not self.check_permission(request.user, perm, person=obj, plan=plan):
-                return False
-        return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, person=obj, plan=plan) for perm in perms)
 
 class PersonSerializer(BasePersonSerializer):
     def __init__(self, *args, **kwargs):
@@ -1453,8 +1530,8 @@ class PersonSerializer(BasePersonSerializer):
             self.fields.pop('email')
 
 @register_view
-class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
-    queryset = Person.objects.all()
+class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
+    queryset = Person.objects.get_queryset()
     serializer_class = PersonSerializer
 
     def __init__(self, *args, **kwargs):
@@ -1474,6 +1551,7 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
         instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
     def get_permissions(self):
+        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
             permission_classes = [AnonReadOnly]
         else:
@@ -1487,14 +1565,13 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
         try:
             return Plan.objects.get(identifier=plan_identifier)
         except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
+            raise exceptions.NotFound(detail='Plan not found') from None
 
-    def user_is_authorized_for_plan(self, plan):
-        user = self.request.user
+    def user_is_authorized_for_plan(self, plan: Plan):
+        user = user_or_none(self.request.user)
         return (
             user is not None
             and user.is_authenticated
-            and hasattr(user, 'is_general_admin_for_plan')
             and user.is_general_admin_for_plan(plan)
         )
 
@@ -1508,12 +1585,12 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
         return context
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = cast('PersonQuerySet', super().get_queryset())
         plan = self.get_plan()
         if plan is None:
             return queryset
         if not self.user_is_authorized_for_plan(plan):
-            raise exceptions.PermissionDenied(detail="Not authorized")
+            raise exceptions.PermissionDenied(detail='Not authorized')
         return queryset.available_for_plan(plan, include_contact_persons=True)
 
 

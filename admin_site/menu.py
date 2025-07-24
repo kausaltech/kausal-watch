@@ -1,9 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.urls import reverse
 from wagtail.admin.menu import MenuItem
 
-from aplans.types import WatchAdminRequest
+from kausal_common.users import user_or_bust
 
-from actions.models.plan import Plan
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
+
+    from actions.models.plan import Plan
 
 
 class PlanSpecificSingletonModelMenuItem(MenuItem):
@@ -28,16 +35,16 @@ class PlanSpecificSingletonModelMenuItem(MenuItem):
         # Implement in subclass
         raise NotImplementedError()
 
-    def render_component(self, request: WatchAdminRequest):
+    def render_component(self, request: HttpRequest):
         # When clicking the menu item, use the edit view instead of the index view.
         link_menu_item = super().render_component(request)
-        plan = request.user.get_active_admin_plan()
+        plan = user_or_bust(request.user).get_active_admin_plan()
         field = self.get_one_to_one_field(plan)
         link_menu_item.url = reverse(self.view_set.get_url_name('edit'), kwargs={'pk': field.pk})
         return link_menu_item
 
-    def is_shown(self, request: WatchAdminRequest):
-        user = request.user
+    def is_shown(self, request: HttpRequest):
+        user = user_or_bust(request.user)
         if user.is_superuser:
             return True
         plan = user.get_active_admin_plan(required=False)

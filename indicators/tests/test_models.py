@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_indicator_updated_values_due_at_too_early():
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory.create()
     assert indicator.updated_values_due_at is None
     value = IndicatorValueFactory(indicator=indicator, date=date(2020, 12, 31))
     indicator.handle_values_update()
@@ -28,7 +28,7 @@ def test_indicator_updated_values_due_at_too_early():
     ('day', True),
 ])
 def test_indicator_updated_values_due_at_resolution(time_resolution, should_raise):
-    indicator = IndicatorFactory(time_resolution=time_resolution, updated_values_due_at=date(2020, 1, 1))
+    indicator = IndicatorFactory.create(time_resolution=time_resolution, updated_values_due_at=date(2020, 1, 1))
     if should_raise:
         with pytest.raises(ValidationError):
             indicator.full_clean()
@@ -37,13 +37,13 @@ def test_indicator_updated_values_due_at_resolution(time_resolution, should_rais
 
 
 def test_indicator_plans_with_access_include_plans_with_same_organization(plan):
-    indicator = IndicatorFactory(organization=plan.organization)
+    indicator = IndicatorFactory.create(organization=plan.organization)
     assert plan in indicator.get_plans_with_access()
     assert plan not in indicator.plans.all()
 
 
 def test_indicator_plans_with_access_dont_include_other_plans(plan):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory.create()
     assert plan not in indicator.get_plans_with_access()
     assert plan not in indicator.plans.all()
 

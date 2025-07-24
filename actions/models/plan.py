@@ -62,6 +62,7 @@ if TYPE_CHECKING:
     from aplans.graphql_types import WorkflowStateEnum
     from aplans.types import UserOrAnon, WatchAPIRequest, WatchRequest
 
+    from actions.models.action import ActionQuerySet
     from actions.models.action_deps import ActionDependencyRole
     from actions.models.attributes import AttributeType
     from actions.models.category import CommonCategoryType
@@ -410,7 +411,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     # Type annotations for related models
     action_implementation_phases: RevMany[ActionImplementationPhase]
     action_statuses: RevMany[ActionStatus]
-    actions: RevMany[Action]
+    actions: RevManyQS[Action, ActionQuerySet]
     category_types: RevMany[CategoryType]
     children: RevMany[Plan]
     clients: RevMany[ClientPlan]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import Model, ProtectedError
 from django.forms.models import ModelForm
@@ -17,7 +17,6 @@ from admin_site.mixins import (
     ActivatePermissionHelperPlanContextMixin,
     ContinueEditingMixin,
     PlanRelatedViewMixin,
-    SetInstanceMixin,
 )
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
@@ -61,7 +60,7 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
 
     def get_error_message(self):
         if hasattr(self.object, 'verbose_name_partitive'):
-            model_name = self.object.verbose_name_partitive
+            model_name = self.object.verbose_name_partitive  # type: ignore[attr-defined]
         else:
             model_name = self.object._meta.verbose_name
 
@@ -116,15 +115,15 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm](
 
 class WatchIndexView[ModelT: Model, FormT: ModelForm](
     ActivatePermissionHelperPlanContextMixin,
-    IndexView,
+    IndexView[ModelT],
 ):
     pass
 
 
-class WatchViewSet[ModelT: Model, FormT: ModelForm](SnippetViewSet[ModelT, FormT]):
+class WatchViewSet[ModelT: Model, FormT: ModelForm = WagtailAdminModelForm[Any]](SnippetViewSet[ModelT, FormT]):
     index_view_class = WatchIndexView
-    add_view_class = WatchCreateView
-    edit_view_class = WatchEditView
+    add_view_class = WatchCreateView  # type: ignore[assignment]
+    edit_view_class = WatchEditView  # type: ignore[assignment]
 
     @property
     def permission_policy(self):
@@ -134,5 +133,5 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm](SnippetViewSet[ModelT, FormT
 
     def get_form_class(self, for_update: bool = False):
         if self._edit_handler and not self._edit_handler.base_form_class:
-            self._edit_handler.base_form_class = WatchAdminModelForm[ModelT]
+            self._edit_handler.base_form_class = WatchAdminModelForm[ModelT]  # type: ignore[assignment]
         return super().get_form_class(for_update)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from django.conf import settings
 from django.contrib.admin.utils import quote, unquote
@@ -27,6 +29,17 @@ from wagtail.models import (
 )
 from wagtail.permissions import ModelPermissionPolicy
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from django.db.models.base import Model
+    from django.http.request import HttpRequest
+    from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+
+    from wagtail_modeladmin.helpers.url import AdminURLHelper
+else:
+    PermissionCheckedMixin = object
+
 # The mixins in this file have been copied from Wagtail to avoid unexpected upstream changes. We use them in ActionAdmin
 # for our MVP workflow functionality. They should be phased out ASAP by moving ActionAdmin to snippets.
 
@@ -43,6 +56,7 @@ class CreateEditViewOptionalFeaturesMixin:
     revisions_unschedule_url_name = None
     workflow_history_url_name = None
     confirm_workflow_cancellation_url_name = None
+    model: ClassVar[type[Model]]
 
     def setup(self, request, *args, **kwargs):
         # Need to set these here as they are used in get_object()
@@ -62,7 +76,7 @@ class CreateEditViewOptionalFeaturesMixin:
         self.object = self.get_object()
         self.lock = self.get_lock()
         self.locked_for_user = self.lock and self.lock.for_user(request.user)
-        super().setup(request, *args, **kwargs)
+        super().setup(request, *args, **kwargs)  # type: ignore[misc]
 
     @cached_property
     def workflow(self):
@@ -80,6 +94,7 @@ class CreateEditViewOptionalFeaturesMixin:
     def workflow_state(self):
         if not self.workflow_enabled or not self.object:
             return None
+        assert isinstance(self.object, WorkflowMixin)
         return (
             self.object.current_workflow_state
             or self.object.workflow_states.order_by("created_at").last()
@@ -423,6 +438,8 @@ class CreateEditViewOptionalFeaturesMixin:
         if self.view_name == "create":
             return None
 
+        assert self.object is not None
+
         # DraftStateMixin is applied but object is not live
         if self.draftstate_enabled and not self.object.live:
             return None
@@ -649,12 +666,6 @@ class GenericModelEditViewMixin(BeforeAfterHookMixin):
         return reverse(self.edit_url_name, args=(quote(self.object.pk),))
 
 
-if TYPE_CHECKING:
-    from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
-else:
-    PermissionCheckedMixin = object
-
-
 class WatchPermissionCheckedMixin(PermissionCheckedMixin):
     # Source: wagtail.admin.views.generic.permissions.PermissionCheckedMixin
     """
@@ -669,8 +680,8 @@ class WatchPermissionCheckedMixin(PermissionCheckedMixin):
       one or more of those permissions)
     """
 
-    permission_policy = None
-    permission_required = None
+    request: HttpRequest
+    permission_required: str | None = None
     any_permission_required = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -686,12 +697,14 @@ class WatchPermissionCheckedMixin(PermissionCheckedMixin):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def user_has_permission(self, permission):
+    def user_has_permission(self, permission) -> bool:
+        assert self.permission_policy is not None
         return self.permission_policy.user_has_permission(self.request.user, permission)
 
-    def user_has_any_permission(self, permissions):
+    def user_has_any_permission(self, permissions: Iterable[str]) -> bool:
+        assert self.permission_policy is not None
         return self.permission_policy.user_has_any_permission(
-            self.request.user, permissions,
+            self.request.user, list(permissions),
         )
 
 
@@ -704,6 +717,8 @@ class SnippetsEditViewCompatibilityMixin(
     view_name = "edit"
     pk_url_kwarg = 'instance_pk'
     permission_required = 'change'
+    instance_pk: int
+    url_helper: AdminURLHelper
 
     def __init__(self, *args, **kwargs):
         # Our own hack
@@ -715,6 +730,7 @@ class SnippetsEditViewCompatibilityMixin(
         # Our own hack
         super().setup(request, *args, **kwargs)
         self.instance = self.object
+        assert self.instance is not None
         # Only use some of the hacks if the plan uses workflows
         if not self.instance.plan.features.enable_moderation_workflow:
             # FIXME: Some code in super().setup() already ran with other values for this. Hopefully nothing breaks.

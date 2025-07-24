@@ -103,3 +103,7 @@ opentelemetry-instrumentation-psycopg
 opentelemetry-instrumentation-redis
 opentelemetry-instrumentation-threading
 opentelemetry-sdk
+uvicorn
+channels
+channels-redis
+asgi-cors

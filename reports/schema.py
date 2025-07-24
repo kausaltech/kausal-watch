@@ -18,7 +18,10 @@ from reports.graphene_types import ReportValueInterface
 from reports.models import ActionSnapshot, Report, ReportType
 
 if TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
+
     from actions.models.plan import Plan
+
 
 @register_django_node
 class ReportNode(DjangoNode):
@@ -35,9 +38,12 @@ class ReportNode(DjangoNode):
         model = Report
         fields = public_fields(Report)
 
-    def resolve_values_for_action(root, info, action_id=None, action_identifier=None):
+    @staticmethod
+    def resolve_values_for_action(
+        root: Report, info: GQLInfo, action_id: str | None = None, action_identifier: str | None = None
+    ) -> list[ReportValueInterface] | None:
         if (action_id and action_identifier) or not (action_id or action_identifier):
-            raise GraphQLError("You must specify either actionId or actionIdentifier")
+            raise GraphQLError('You must specify either actionId or actionIdentifier')
         if not root.type.plan.is_visible_for_user(info.context.user):
             return None
         plan_actions = Action.objects.filter(plan=root.type.plan)
@@ -62,6 +68,7 @@ class ReportNode(DjangoNode):
                 values.append(value)
         return values
 
+
 @register_django_node
 class ReportTypeNode(DjangoNode):
     class Meta:
@@ -74,6 +81,7 @@ class ReportTypeNode(DjangoNode):
     )
     def resolve_plan(root: ReportType, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
+
 
 class Query:
     pass

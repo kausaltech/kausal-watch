@@ -3,30 +3,44 @@ import datetime
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import ListBlockFactory, StructBlockFactory
 
-from factory import SelfAttribute, Sequence, SubFactory, post_generation
+from factory.declarations import SelfAttribute, Sequence, SubFactory
 from factory.django import DjangoModelFactory
+from factory.helpers import post_generation
 
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
+from indicators.models import (
+    ActionIndicator,
+    CommonIndicator,
+    Indicator,
+    IndicatorContactPerson,
+    IndicatorDimension,
+    IndicatorGoal,
+    IndicatorLevel,
+    IndicatorValue,
+    Quantity,
+    RelatedIndicator,
+    Unit,
+)
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
 
 
-class UnitFactory(DjangoModelFactory):
+class UnitFactory(DjangoModelFactory[Unit]):
     class Meta:
         model = 'indicators.Unit'
 
     name = Sequence(lambda i: f"Unit {i}")
 
 
-class QuantityFactory(DjangoModelFactory):
+class QuantityFactory(DjangoModelFactory[Quantity]):
     class Meta:
         model = 'indicators.Quantity'
 
     name = Sequence(lambda i: f"Quantity {i}")
 
 
-class CommonIndicatorFactory(DjangoModelFactory):
+class CommonIndicatorFactory(DjangoModelFactory[CommonIndicator]):
     class Meta:
         model = 'indicators.CommonIndicator'
 
@@ -47,7 +61,7 @@ class CommonIndicatorNormalizatorFactory(DjangoModelFactory):
     unit_multiplier = 1000.0
 
 
-class IndicatorFactory(DjangoModelFactory):
+class IndicatorFactory(DjangoModelFactory[Indicator]):
     class Meta:
         model = 'indicators.Indicator'
 
@@ -63,8 +77,8 @@ class IndicatorFactory(DjangoModelFactory):
     show_trendline = False
     desired_trend = 'decreasing'
     show_total_line = False
-    time_resolution = indicators.models.Indicator.TIME_RESOLUTIONS[0][0]
-    updated_values_due_at = None
+    time_resolution = Indicator.TIME_RESOLUTIONS[0][0]
+    updated_values_due_at: datetime.datetime | None = None
     internal_notes = "Indicator internal note"
     reference = "Indicator reference"
     visibility = "public"
@@ -73,7 +87,7 @@ class IndicatorFactory(DjangoModelFactory):
     # updated_at = None  # Should be set automatically
 
 
-class IndicatorLevelFactory(DjangoModelFactory):
+class IndicatorLevelFactory(DjangoModelFactory[IndicatorLevel]):
     class Meta:
         model = 'indicators.IndicatorLevel'
 
@@ -82,7 +96,7 @@ class IndicatorLevelFactory(DjangoModelFactory):
     level = 'strategic'
 
 
-class ActionIndicatorFactory(DjangoModelFactory):
+class ActionIndicatorFactory(DjangoModelFactory[ActionIndicator]):
     class Meta:
         model = 'indicators.ActionIndicator'
 
@@ -126,14 +140,14 @@ class IndicatorShowcaseBlockFactory(StructBlockFactory):
     link_button = SubFactory(PageLinkBlockFactory)
 
 
-class RelatedIndicatorFactory(DjangoModelFactory):
+class RelatedIndicatorFactory(DjangoModelFactory[RelatedIndicator]):
     class Meta:
         model = 'indicators.RelatedIndicator'
 
     causal_indicator = SubFactory(IndicatorFactory)
     effect_indicator = SubFactory(IndicatorFactory)
-    effect_type = indicators.models.RelatedIndicator.EFFECT_TYPES[0][0]
-    confidence_level = indicators.models.RelatedIndicator.CONFIDENCE_LEVELS[0][0]
+    effect_type = RelatedIndicator.EFFECT_TYPES[0][0]
+    confidence_level = RelatedIndicator.CONFIDENCE_LEVELS[0][0]
 
 
 class DimensionFactory(DjangoModelFactory):
@@ -151,7 +165,7 @@ class DimensionCategoryFactory(DjangoModelFactory):
     name = "Dimension category"
 
 
-class IndicatorDimensionFactory(DjangoModelFactory):
+class IndicatorDimensionFactory(DjangoModelFactory[IndicatorDimension]):
     class Meta:
         model = 'indicators.IndicatorDimension'
 
@@ -159,7 +173,7 @@ class IndicatorDimensionFactory(DjangoModelFactory):
     indicator = SubFactory(IndicatorFactory)
 
 
-class IndicatorValueFactory(DjangoModelFactory):
+class IndicatorValueFactory(DjangoModelFactory[IndicatorValue]):
     class Meta:
         model = 'indicators.IndicatorValue'
 
@@ -168,13 +182,14 @@ class IndicatorValueFactory(DjangoModelFactory):
     date = datetime.date(2020, 12, 31)
 
     @post_generation
-    def categories(obj, create, extracted, **kwargs):
+    @staticmethod
+    def categories(obj: IndicatorValue, create, extracted, **kwargs) -> None:
         if create and extracted:
             for category in extracted:
                 obj.categories.add(category)
 
 
-class IndicatorGoalFactory(DjangoModelFactory):
+class IndicatorGoalFactory(DjangoModelFactory[IndicatorGoal]):
     class Meta:
         model = 'indicators.IndicatorGoal'
 
@@ -185,7 +200,7 @@ class IndicatorGoalFactory(DjangoModelFactory):
 
 # FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
 # object. We might want to consider renaming the model IndicatorContactPerson to IndicatorContact or similar.
-class IndicatorContactFactory(DjangoModelFactory):
+class IndicatorContactFactory(DjangoModelFactory[IndicatorContactPerson]):
     class Meta:
         model = 'indicators.IndicatorContactPerson'
 

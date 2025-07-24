@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 
+from actions.models.action import Action
 from datasets.tests.factories import (
     DataPointFactory,
     DatasetFactory,
@@ -411,7 +412,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
     assert data == expected
 
 
-def test_integration_for_action(graphql_client_query_data, action):
+def test_integration_for_action(graphql_client_query_data, action: Action):
     dimension = DimensionFactory.create()
     dim_category1 = DimensionCategoryFactory.create(dimension=dimension)
     dim_category2 = DimensionCategoryFactory.create(dimension=dimension)
@@ -425,7 +426,7 @@ def test_integration_for_action(graphql_client_query_data, action):
     data_point2.dimension_categories.set([dim_category2])
     data_point1 = DataPointFactory.create(dataset=dataset1, date=date(2024, 1, 1), value=10.51)
     data_point1.dimension_categories.set([dim_category1])
-    data_point3 = DataPointFactory.create(dataset=dataset2, date=date(2024, 3, 1), value=8)
+    data_point3 = DataPointFactory.create(dataset=dataset2, date=date(2024, 3, 1), value=8.0)
     data_point3.dimension_categories.set([dim_category1, dim_category2])
 
     data = graphql_client_query_data(

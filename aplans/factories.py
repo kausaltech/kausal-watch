@@ -1,10 +1,12 @@
 # https://github.com/FactoryBoy/factory_boy/issues/468#issuecomment-1536373442
-from typing import Generic, Type, TypeVar, get_args
+from __future__ import annotations
+
+from typing import get_args
+
+from django.db.models.base import Model
 
 from factory.base import FactoryMetaClass
 from factory.django import DjangoModelFactory
-
-T = TypeVar("T")
 
 
 class BaseFactoryMeta(FactoryMetaClass):
@@ -21,6 +23,6 @@ class BaseFactoryMeta(FactoryMetaClass):
         return super().__new__(mcs, class_name, bases, attrs)
 
 
-class ModelFactory(DjangoModelFactory[T], metaclass=BaseFactoryMeta):
+class ModelFactory[T: Model](DjangoModelFactory[T], metaclass=BaseFactoryMeta):
     class Meta:
         abstract = True

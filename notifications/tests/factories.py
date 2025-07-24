@@ -3,21 +3,27 @@ import datetime
 from django.db.models.signals import post_save
 
 import factory
-from factory import SubFactory
+from factory.declarations import SubFactory
 from factory.django import DjangoModelFactory
 
 from actions.tests.factories import PlanFactory
-from notifications.models import AutomaticNotificationTemplate, NotificationType
+from notifications.models import (
+    AutomaticNotificationTemplate,
+    BaseTemplate,
+    ManuallyScheduledNotificationTemplate,
+    NotificationSettings,
+    NotificationType,
+)
 
 
-class BaseTemplateFactory(DjangoModelFactory):
+class BaseTemplateFactory(DjangoModelFactory[BaseTemplate]):
     class Meta:
         model = 'notifications.BaseTemplate'
 
     plan = SubFactory(PlanFactory)
 
 
-class AutomaticNotificationTemplateFactory(DjangoModelFactory):
+class AutomaticNotificationTemplateFactory(DjangoModelFactory[AutomaticNotificationTemplate]):
     class Meta:
         model = 'notifications.AutomaticNotificationTemplate'
 
@@ -31,7 +37,7 @@ class AutomaticNotificationTemplateFactory(DjangoModelFactory):
     send_to_contact_persons = AutomaticNotificationTemplate.ContactPersonFallbackChain.DO_NOT_SEND
 
 
-class ManuallyScheduledNotificationTemplateFactory(DjangoModelFactory):
+class ManuallyScheduledNotificationTemplateFactory(DjangoModelFactory[ManuallyScheduledNotificationTemplate]):
     class Meta:
         model = 'notifications.ManuallyScheduledNotificationTemplate'
 
@@ -47,7 +53,7 @@ class ManuallyScheduledNotificationTemplateFactory(DjangoModelFactory):
 
 
 @factory.django.mute_signals(post_save)
-class NotificationSettingsFactory(DjangoModelFactory):
+class NotificationSettingsFactory(DjangoModelFactory[NotificationSettings]):
     class Meta:
         model = 'notifications.NotificationSettings'
 

@@ -30,8 +30,6 @@ class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[m
     subpage_types = ['DocumentationPage']
     is_creatable = False  # Only let this be created programmatically
 
-    _default_manager: ClassVar[PageManager[DocumentationRootPage]]
-
     # Disable Wagtail's previews because our hacks make them break
     @property
     def preview_modes(self):

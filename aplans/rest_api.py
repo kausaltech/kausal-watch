@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from django.db import models
+from django.db.models.base import Model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, response, serializers, status, viewsets
 from rest_framework.exceptions import ValidationError
@@ -11,12 +12,11 @@ from actions.models import Plan
 
 if typing.TYPE_CHECKING:
     from django.db.models import QuerySet
-
-    from aplans.types import WatchAPIRequest
+    from rest_framework.request import Request
 
 
 def get_default_plan() -> Plan:
-    return Plan.objects.live().first()
+    return Plan.objects.get_queryset().live()[0]
 
 
 class PlanRelatedModelSerializer(serializers.ModelSerializer):

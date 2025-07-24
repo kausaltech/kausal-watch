@@ -44,6 +44,8 @@ from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, WorkflowStateEnum, get_plan_from_context, graphene_registry
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from aplans.graphql_types import GQLInfo
 
     from actions.models import Plan
@@ -84,19 +86,17 @@ class Query(
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
         include_related_plans=graphene.Boolean(default_value=False),
-        required=True,
+        required=False,
     )
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True))
 
     def resolve_plan_organizations(
         self, info: GQLInfo, plan: str | None, with_ancestors: bool, for_responsible_parties: bool, for_contact_persons: bool,
         include_related_plans: bool, **kwargs,
-    ):
+    ) -> Iterable[Organization]:
         plan_obj: Plan | None = get_plan_from_context(info, plan)
-        if plan_obj is None:
-            return None
-        if not plan_obj.is_visible_for_user(info.context.user):
-            return None
+        if plan_obj is None or not plan_obj.is_visible_for_user(info.context.user):
+            return []
 
         if include_related_plans:
             plans = list(plan_obj.get_all_related_plans(inclusive=True).visible_for_user(info.context.user))

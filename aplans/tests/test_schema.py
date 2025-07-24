@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_person_node(graphql_client_query_data):
-    person = PersonFactory()
+    person = PersonFactory.create()
     data = graphql_client_query_data(
         """
         query($person: ID!) {
@@ -31,12 +31,12 @@ def test_person_node(graphql_client_query_data):
           }
         }
         """,
-        variables=dict(person=person.id),
+        variables=dict(person=person.pk),
     )
     expected = {
         'person': {
             '__typename': 'Person',
-            'id': str(person.id),
+            'id': str(person.pk),
             'firstName': person.first_name,
             'lastName': person.last_name,
             'title': person.title,
@@ -53,16 +53,16 @@ def test_person_node(graphql_client_query_data):
 @pytest.mark.parametrize('published', [False, True])
 @pytest.mark.parametrize('expose_to_auth_only', [False, True])
 def test_organization_class_node(graphql_client_query_data, published, expose_to_auth_only):
-    org_class = OrganizationClassFactory()
-    organization = OrganizationFactory(classification=org_class)
+    org_class = OrganizationClassFactory.create()
+    organization = OrganizationFactory.create(classification=org_class)
 
-    plan = PlanFactory(
+    plan = PlanFactory.create(
         organization=organization,
         published_at=timezone.now() - timedelta(days=1) if published else None,
         features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only,
     )
-    action = ActionFactory(plan=plan)
-    ActionResponsiblePartyFactory(action=action, organization=organization)
+    action = ActionFactory.create(plan=plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=organization)
 
     data = graphql_client_query_data(
         """
@@ -83,10 +83,10 @@ def test_organization_class_node(graphql_client_query_data, published, expose_to
         'planOrganizations': [{
             'classification': {
                 '__typename': 'OrganizationClass',
-                'id': str(org_class.id),
+                'id': str(org_class.pk),
                 'name': org_class.name,
             },
-        }] if published or not expose_to_auth_only else None,
+        }] if published or not expose_to_auth_only else [],
     }
 
     assert data == expected
@@ -102,20 +102,20 @@ def test_organization_node(
     graphql_client_query_data,
     main_plan_published, arp_plan_published,
     main_plan_exposed_only_to_auth, arp_plan_exposed_only_to_auth):
-    organization = OrganizationFactory()
+    organization = OrganizationFactory.create()
 
-    plan = PlanFactory(
+    plan = PlanFactory.create(
         organization=organization,
         published_at=timezone.now() - timedelta(days=1) if main_plan_published else None,
         features__expose_unpublished_plan_only_to_authenticated_user=main_plan_exposed_only_to_auth,
     )
 
-    action = ActionFactory(plan=plan)
-    ActionResponsiblePartyFactory(action=action, organization=plan.organization)
-    ActionContactFactory(action=action)
+    action = ActionFactory.create(plan=plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=plan.organization)
+    ActionContactFactory.create(action=action)
 
     # Implicitly create another plan not owned by `organization` for testing plansWithActionResponsibilities
-    arp = ActionResponsiblePartyFactory(
+    arp = ActionResponsiblePartyFactory.create(
         organization=organization,
         action__plan__published_at=timezone.now() - timedelta(days=1) if arp_plan_published else None,
         action__plan__features__expose_unpublished_plan_only_to_authenticated_user=arp_plan_exposed_only_to_auth,
@@ -152,7 +152,7 @@ def test_organization_node(
     expected_plans = []
 
     if not main_plan_published and main_plan_exposed_only_to_auth:
-        assert data['planOrganizations'] is None
+        assert data['planOrganizations'] == []
         return
     # FIXME?: Not sure if this is the correct behavior, but it is what we have now.
     # Plans dont show up in the plansWithActionResponsibilities field if they are not published,
@@ -185,12 +185,12 @@ def test_organization_node(
 
 
 def test_organization_node_ancestors(graphql_client_query_data):
-    superorganization = OrganizationFactory()
-    organization = OrganizationFactory(parent=superorganization)
-    OrganizationFactory(parent=organization)  # Add suborganization to check that it doesn't appear
-    plan = PlanFactory(organization=organization)
-    action = ActionFactory(plan=plan)
-    ActionResponsiblePartyFactory(action=action, organization=plan.organization)
+    superorganization = OrganizationFactory.create()
+    organization = OrganizationFactory.create(parent=superorganization)
+    OrganizationFactory.create(parent=organization)  # Add suborganization to check that it doesn't appear
+    plan = PlanFactory.create(organization=organization)
+    action = ActionFactory.create(plan=plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=plan.organization)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -209,10 +209,10 @@ def test_organization_node_ancestors(graphql_client_query_data):
     expected = {
         'planOrganizations': [{
             '__typename': 'Organization',
-            'id': str(organization.id),
+            'id': str(organization.pk),
             'ancestors': [{
                 '__typename': 'Organization',
-                'id': str(superorganization.id),
+                'id': str(superorganization.pk),
             }],
         }],
     }
@@ -220,12 +220,12 @@ def test_organization_node_ancestors(graphql_client_query_data):
 
 
 def test_organization_node_ancestors_deep(graphql_client_query_data):
-    supersuperorganization = OrganizationFactory()
-    superorganization = OrganizationFactory(parent=supersuperorganization)
-    organization = OrganizationFactory(parent=superorganization)
-    plan = PlanFactory(organization=organization)
-    action = ActionFactory(plan=plan)
-    ActionResponsiblePartyFactory(action=action, organization=plan.organization)
+    supersuperorganization = OrganizationFactory.create()
+    superorganization = OrganizationFactory.create(parent=supersuperorganization)
+    organization = OrganizationFactory.create(parent=superorganization)
+    plan = PlanFactory.create(organization=organization)
+    action = ActionFactory.create(plan=plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=plan.organization)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -244,13 +244,13 @@ def test_organization_node_ancestors_deep(graphql_client_query_data):
     expected = {
         'planOrganizations': [{
             '__typename': 'Organization',
-            'id': str(organization.id),
+            'id': str(organization.pk),
             'ancestors': [{
                 '__typename': 'Organization',
-                'id': str(supersuperorganization.id),
+                'id': str(supersuperorganization.pk),
             }, {
                 '__typename': 'Organization',
-                'id': str(superorganization.id),
+                'id': str(superorganization.pk),
             }],
         }],
     }

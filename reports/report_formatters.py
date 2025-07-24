@@ -716,7 +716,7 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
 
 
 if typing.TYPE_CHECKING:
-    class BlockMetaWithFieldName(BlockMeta):
+    class BlockMetaWithFieldName(BlockMeta):  # pyright: ignore
         field_name: str
 else:
     class BlockMetaWithFieldName:

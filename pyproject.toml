@@ -54,6 +54,7 @@ always_false = ['IS_PATHS']
 module = [
   "anymail.*",
   "colored.*",
+  "channels.*",
   "dal_admin_filters.*",
   "dal.*",
   "debug_toolbar.*",
@@ -92,6 +93,7 @@ module = [
   "tinycss2.*",
   "traitlets.*",
   "uwsgidecorators.*",
+  "viztracer.*",
   "wagtail_localize.*",
   "wagtail_modeladmin.*",
   "wagtail.*",

@@ -1,6 +1,6 @@
 from wagtail.rich_text import RichText
 
-from factory import Sequence, SubFactory
+from factory.declarations import Sequence, SubFactory
 from factory.django import DjangoModelFactory
 
 from aplans.factories import ModelFactory
@@ -9,7 +9,7 @@ from orgs.models import Namespace, Organization, OrganizationClass, Organization
 from people.tests.factories import PersonFactory
 
 
-class NamespaceFactory(DjangoModelFactory):
+class NamespaceFactory(DjangoModelFactory['Namespace']):
     class Meta:
         model = Namespace
 
@@ -17,7 +17,7 @@ class NamespaceFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Namespace {i}")
 
 
-class OrganizationClassFactory(DjangoModelFactory):
+class OrganizationClassFactory(DjangoModelFactory['OrganizationClass']):
     class Meta:
         model = OrganizationClass
 
@@ -36,15 +36,15 @@ class OrganizationFactory(ModelFactory[Organization]):
     url = 'https://example.org'
 
     @classmethod
-    def _create(cls, model_class, *args, **kwargs):
+    def _create(cls, model_class, *args, **kwargs) -> Organization:  # noqa: ARG003
         parent = kwargs.pop('parent', None)
-        node = Organization(*args, **kwargs)
+        node = Organization(*args, **kwargs)  # type: ignore[misc]
         if parent:
             return parent.add_child(instance=node)
         return Organization.add_root(instance=node)
 
 
-class OrganizationIdentifierFactory(DjangoModelFactory):
+class OrganizationIdentifierFactory(DjangoModelFactory['OrganizationIdentifier']):
     class Meta:
         model = OrganizationIdentifier
 
@@ -53,7 +53,7 @@ class OrganizationIdentifierFactory(DjangoModelFactory):
     namespace = SubFactory(NamespaceFactory)
 
 
-class OrganizationPlanAdminFactory(DjangoModelFactory):
+class OrganizationPlanAdminFactory(DjangoModelFactory['OrganizationPlanAdmin']):
     class Meta:
         model = OrganizationPlanAdmin
 
