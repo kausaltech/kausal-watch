@@ -16,8 +16,10 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from graphene_django.views import GraphQLView
+from graphql import ExecutionContext
 from graphql.error import GraphQLError
 from graphql.language.ast import StringValueNode, VariableNode
+from graphql.type import GraphQLResolveInfo
 from rest_framework.authentication import TokenAuthentication
 
 import sentry_sdk
@@ -38,7 +40,7 @@ from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import WorkflowStateEnum
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable
+    from collections.abc import Awaitable, Callable, Generator, Iterable
 
     from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
     from rest_framework.authentication import TokenAuthentication
@@ -113,7 +115,8 @@ class APITokenMiddleware:
         gt = getattr(rt, 'graphene_type', None)
         if gt and issubclass(gt, AuthenticatedUserNode) and not getattr(context, 'user', None):
             raise GraphQLAuthRequiredError("Authentication required")
-        return next(root, info, **kwargs)
+        ret = next(root, info, **kwargs)
+        return ret
 
 
 class WorkflowStateMiddleware:
@@ -191,10 +194,22 @@ def perform_auth(request):
         request.user = user
 
 
+class WatchExecutionContext(ExecutionContext):
+    def complete_value(self, return_type, field_nodes, info, path, result: Any) -> Awaitable[Any] | Any:
+        if env_bool('TRACE_GRAPHQL_REQUESTS', default=False):
+            import viztracer
+            tracer = viztracer.get_tracer()
+            if tracer is not None:
+                with tracer.log_event('complete_value: %s' % ','.join(str(x) for x in path.as_list())):
+                    return super().complete_value(return_type, field_nodes, info, path, result)
+        return super().complete_value(return_type, field_nodes, info, path, result)
+
+
 class SentryGraphQLView(GraphQLView):
     graphiql_version = "2.0.7"
     graphiql_sri = "sha256-qQ6pw7LwTLC+GfzN+cJsYXfVWRKH9O5o7+5H96gTJhQ="
     graphiql_css_sri = "sha256-gQryfbGYeYFxnJYnfPStPYFt0+uv8RP8Dm++eh00G9c="
+    execution_context_class = WatchExecutionContext
 
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
@@ -206,6 +221,7 @@ class SentryGraphQLView(GraphQLView):
         plan_identifier = request.headers.get(PLAN_IDENTIFIER_HEADER)
         plan_domain = request.headers.get(PLAN_DOMAIN_HEADER)
         if not plan_identifier and not plan_domain:
+            logger.info('Skipping cache; required HTTP headers missing')
             return None
 
         qs: PlanQuerySet = Plan.objects.get_queryset()
@@ -215,6 +231,7 @@ class SentryGraphQLView(GraphQLView):
             qs = qs.for_hostname(plan_domain, request=request)
         plan = qs.first()
         if plan is None:
+            logger.info('Skipping cache; no plan found')
             return None
 
         m = hashlib.sha1(usedforsecurity=False)
@@ -328,7 +345,8 @@ class SentryGraphQLView(GraphQLView):
                 request.wildcard_domains = [d.lower() for d in wildcard_domains.split(',')] if wildcard_domains else None
                 if request.user and request.user.is_authenticated:
                     # Uncached execution for authenticated requests
-                    result = super().execute_graphql_request(request, data, query, variables, operation_name, *args, **kwargs)
+                    with self.measure_operation(operation_name):
+                        result = super().execute_graphql_request(request, data, query, variables, operation_name, *args, **kwargs)
                 else:
                     result = self.caching_execute_graphql_request(
                         span, request, data, query, variables, operation_name, *args, **kwargs,
