@@ -4,10 +4,12 @@ import importlib
 import re
 import textwrap
 import typing
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from django.db.models import Model
+from django.core.exceptions import FieldDoesNotExist
+from django.db.models import Field, Model
 
 from aplans.utils import underscore_to_camelcase
 
@@ -114,10 +116,15 @@ class ModelFieldProperties:
             return _import(cfg.block_class)
         return None
 
-    def get_block_class_kwargs(self, block_context: BlockContext) -> dict[str, Any]:
+    def get_block_class_kwargs(self, block_context: BlockContext, model: type[Model]) -> dict[str, Any]:
         result: dict[str, Any] = {'params': {}}
         if self.custom_label:
             result['params']['label'] = self.custom_label
+        else:
+            with suppress(FieldDoesNotExist):
+                field = model._meta.get_field(self.field_name)
+                if isinstance(field, Field):
+                    result['params']['label'] = field.verbose_name
 
         if block_context == 'dashboard':
             class_name = self.dashboard_column_block_class_name
@@ -204,7 +211,7 @@ class ModelFieldRegistry[T: type[Model]]:
         if cls_ is not None:
             return cls_
 
-        kwargs = props.get_block_class_kwargs(block_context)
+        kwargs = props.get_block_class_kwargs(block_context, self.model)
         value = None
         if block_context != 'dashboard':
             value = self._common_block_class_cache.get(field_name)
