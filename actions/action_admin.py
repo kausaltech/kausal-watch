@@ -76,8 +76,9 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
 
     from django.db.models import Model
-    from django.utils.functional import Promise, StrOrPromise
+    from django.utils.functional import Promise
     from django.utils.safestring import SafeString
+    from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
 
     from aplans.types import WatchAdminRequest

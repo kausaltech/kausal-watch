@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from aplans.utils import ConstantMetadata, MetadataEnum
 
 if TYPE_CHECKING:
-    from django.utils.functional import StrOrPromise
+    from django_stubs_ext import StrOrPromise
 
     from aplans.cache import WatchObjectCache
 

@@ -5,7 +5,7 @@ import re
 import zoneinfo
 from datetime import datetime, timedelta
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Self, Sequence, cast
+from typing import TYPE_CHECKING, ClassVar, Self, cast
 from urllib.parse import urlparse
 
 import reversion
@@ -54,6 +54,8 @@ from orgs.models import Organization
 from people.models import Person
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.http.request import HttpRequest
     from django.utils.functional import _StrOrPromise as StrOrPromise
 

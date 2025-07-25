@@ -93,7 +93,7 @@ from search.backends import get_search_backend
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-    from django.utils.functional import StrOrPromise
+    from django_stubs_ext import StrOrPromise
 
     from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
