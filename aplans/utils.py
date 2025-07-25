@@ -56,6 +56,7 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 try:
+    libvoikko.VoikkoLibrary.open()
     voikko_fi = libvoikko.Voikko(language='fi')
     voikko_fi.setNoUglyHyphenation(True)
     voikko_fi.setMinHyphenatedWordLength(16)
