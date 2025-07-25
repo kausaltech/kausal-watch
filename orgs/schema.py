@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.db.models.query import Prefetch
 import graphene
+from django.db.models.query import Prefetch
 
 import graphene_django_optimizer as gql_optimizer
 
