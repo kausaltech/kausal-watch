@@ -112,6 +112,7 @@ if TYPE_CHECKING:
 else:
     PersonManager = MLModelManager.from_queryset(PersonQuerySet)
 
+DEFAULT_AVATAR_SIZE = 360
 
 @reversion.register()
 class Person(BasePerson, PlanDefaultsModel):

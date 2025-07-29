@@ -125,7 +125,7 @@ def smart_truncate(content, length=100, suffix='...'):
 
 
 class AvatarWidget(AdminFileWidget):
-    template_name = 'people/avatar_widget.html'
+    template_name = 'kausal_common/people/avatar_widget.html'
 
 
 class PersonForm(AplansAdminModelForm):
