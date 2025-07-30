@@ -26,7 +26,13 @@ class CreateChildNodeView(BaseCreateChildNodeView):
 
 
 class OrganizationCreateView(BaseOrganizationCreateView):
-    pass
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        # Add the new organization to the related organizations of the user's active plan
+        org = form.instance
+        plan = self.request.user.get_active_admin_plan()
+        plan.related_organizations.add(org)
+        return result
 
 
 class OrganizationEditView(BaseOrganizationEditView):
@@ -37,7 +43,12 @@ class OrganizationDeleteView(BaseOrganizationDeleteView):
     pass
 
 class OrganizationIndexView(BaseOrganizationIndexView):
-    pass
+
+    def get_list_more_buttons(self, instance: Organization):
+        assert self.view_set is not None
+        user = admin_req(self.request).user
+        active_plan = user.get_active_admin_plan()
+        return self.view_set.get_index_view_buttons(user, instance, active_plan)
 
 
 class SetOrganizationRelatedToActivePlanView(
