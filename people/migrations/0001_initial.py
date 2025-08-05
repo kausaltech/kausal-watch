@@ -3,7 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import image_cropping.fields
-import people.models
+from kausal_common.people.models import image_upload_path
 import wagtail.search.index
 
 
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(blank=True, max_length=100, null=True, verbose_name='title')),
                 ('postal_address', models.TextField(blank=True, max_length=100, null=True, verbose_name='postal address')),
                 ('participated_in_training', models.BooleanField(default=False, help_text='Set to keep track who have attended training sessions', null=True, verbose_name='participated in training')),
-                ('image', models.ImageField(blank=True, height_field='image_height', upload_to=people.models.image_upload_path, verbose_name='image', width_field='image_width')),
+                ('image', models.ImageField(blank=True, height_field='image_height', upload_to=image_upload_path, verbose_name='image', width_field='image_width')),
                 ('image_cropping', image_cropping.fields.ImageRatioField('image', '1280x720', adapt_rotation=False, allow_fullsize=False, free_crop=False, help_text=None, hide_image_field=False, size_warning=False, verbose_name='image cropping')),
                 ('image_height', models.PositiveIntegerField(editable=False, null=True)),
                 ('image_width', models.PositiveIntegerField(editable=False, null=True)),

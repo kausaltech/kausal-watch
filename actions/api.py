@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import typing
-from collections import Counter
 from typing import Any, Callable, Protocol
 from uuid import UUID
 
@@ -17,6 +16,8 @@ from rest_framework import exceptions, permissions, serializers, viewsets
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
+
+from kausal_common.people.api import PersonSerializer
 
 from aplans.api_router import router
 from aplans.model_images import (
@@ -1580,47 +1581,6 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         except Plan.DoesNotExist:
             raise exceptions.NotFound(detail="Plan not found")
         return Organization.objects.available_for_plan(plan)
-
-
-class PersonSerializer(
-    BulkSerializerValidationInstanceMixin,
-    serializers.ModelSerializer,
-    ModelWithImageSerializerMixin,
-):
-    uuid = serializers.UUIDField(required=False)
-    avatar_url = serializers.SerializerMethodField()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.context.get('authorized_for_plan') is None:
-            self.fields.pop('email')
-
-    def get_avatar_url(self, obj: Person) -> str | None:
-        return obj.get_avatar_url(self.context['request'])
-
-    def validate_email(self, value):
-        qs = Person.objects.filter(email__iexact=value)
-        if self._instance is not None:
-            qs = qs.exclude(pk=self._instance.pk)
-        if qs.exists():
-            raise serializers.ValidationError(_('Person with this email already exists'))
-        return value
-
-    def validate(self, data):
-        for d in self.initial_data:
-            if 'email' not in d:
-                raise exceptions.ValidationError(_("Not all objects have an email address"))
-        emails = Counter(data['email'] for data in self.initial_data)
-        duplicates = [email for email, n in emails.most_common() if n > 1]
-        if duplicates:
-            # TODO: This should better be in validate_email to highlight the faulty table cells
-            raise exceptions.ValidationError(_("Duplicate email addresses: %s") % ', '.join(duplicates))
-        return data
-
-    class Meta:
-        model = Person
-        list_serializer_class = BulkListSerializer
-        fields = public_fields(Person, add_fields=['avatar_url'])
 
 
 class PersonPermission(permissions.DjangoObjectPermissions):

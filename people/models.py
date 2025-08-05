@@ -49,12 +49,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 #User: type[UserModel] = get_user_model()  # type: ignore
 
-def image_upload_path(instance: BasePerson, filename: str) -> str:
-    f_path = Path(filename)
-    file_extension = f_path.suffix
-    return 'images/%s/%s%s' % (instance._meta.model_name, instance.pk, file_extension)
-
-
 def determine_image_dim(image_width, image_height, width, height):
     for name in ('width', 'height'):
         x = locals()[name]
