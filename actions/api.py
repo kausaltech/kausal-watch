@@ -17,6 +17,8 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
 
+from kausal_common.api.bulk import BulkListSerializer, BulkSerializerValidationInstanceMixin
+from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.people.api import PersonSerializer
 
 from aplans.api_router import router
@@ -26,9 +28,7 @@ from aplans.model_images import (
 )
 from aplans.permissions import AnonReadOnly
 from aplans.rest_api import (
-    BulkListSerializer,
     BulkModelViewSet,
-    HandleProtectedErrorMixin,
     PlanRelatedModelSerializer,
 )
 from aplans.utils import generate_identifier, public_fields, register_view_helper
@@ -85,16 +85,6 @@ class BulkRouter(routers.SimpleRouter):
 
 class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
     pass
-
-
-class BulkSerializerValidationInstanceMixin:
-    def run_validation(self, data: dict):
-        if self.parent and self.instance is not None:
-            assert isinstance(self.instance, models.query.QuerySet)
-            self._instance = self.parent.objs_by_id.get(data['id'])
-        else:
-            self._instance = self.instance
-        return super().run_validation(data)
 
 
 class ActionImpactSerializer(serializers.ModelSerializer):
