@@ -6,7 +6,6 @@ import hashlib
 import logging
 import re
 import uuid
-
 from typing import TYPE_CHECKING, ClassVar
 
 import reversion
@@ -14,7 +13,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _, pgettext_lazy
+from django.utils.translation import gettext_lazy as _
 from modeltrans.manager import MultilingualQuerySet
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 from wagtail.images.rect import Rect
@@ -24,18 +23,17 @@ from easy_thumbnails.files import get_thumbnailer  # type: ignore
 from sentry_sdk import capture_exception
 
 from kausal_common.models.types import MLModelManager, RevManyToManyQS
+from kausal_common.people.models import BasePerson
 
 from aplans.utils import PlanDefaultsModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
-from kausal_common.people.models import BasePerson
 from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from users.models import User
-from pathlib import Path
 
 if TYPE_CHECKING:
-    from kausal_common.models.types import FK, M2M, OneToOne, RevMany
+    from kausal_common.models.types import M2M, RevMany
 
     from aplans.types import UserOrAnon, WatchRequest
 

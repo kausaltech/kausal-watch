@@ -26,6 +26,8 @@ from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 from wagtail_modeladmin.views import DeleteView
 
+from kausal_common.people.chooser import PersonChooser
+
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields
@@ -47,7 +49,6 @@ from admin_site.wagtail import (
 )
 from indicators.chooser import DimensionChooser
 from orgs.models import Organization
-from kausal_common.people.chooser import PersonChooser
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 

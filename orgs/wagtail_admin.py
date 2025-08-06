@@ -16,14 +16,14 @@ from wagtail.snippets.widgets import SnippetListingButton
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
 from kausal_common.models.permission_policy import ModelPermissionPolicy, ObjectSpecificAction
+from kausal_common.organizations.forms import NodeForm
+from kausal_common.people.chooser import PersonChooser
 
 from admin_site.panels import TranslatedFieldPanel
 from admin_site.utils import admin_req
 from admin_site.wagtail import CondensedInlinePanel
-from kausal_common.people.chooser import PersonChooser
 from users.models import User
 
-from kausal_common.organizations.forms import NodeForm
 from .models import Organization, OrganizationMetadataAdmin
 from .views import (
     CreateChildNodeView,

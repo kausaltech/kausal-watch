@@ -13,10 +13,10 @@ import django_filters as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 
+from kausal_common.api.bulk import BulkListSerializer
+
 from aplans.rest_api import BulkModelViewSet
 from aplans.utils import register_view_helper
-
-from kausal_common.api.bulk import BulkListSerializer
 
 from actions.api import plan_router
 from actions.models import Plan

@@ -29,6 +29,8 @@ from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
+from kausal_common.people.chooser import PersonChooser
+
 from aplans.context_vars import ctx_instance, ctx_request
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
@@ -54,7 +56,6 @@ from notifications.models import NotificationSettings
 from orgs.chooser import OrganizationChooser
 from orgs.models import Organization
 from pages.models import PlanLink
-from kausal_common.people.chooser import PersonChooser
 from users.models import User
 
 from . import (

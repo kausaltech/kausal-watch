@@ -184,16 +184,16 @@ class BuiltInFieldCustomization(
         assert model is not None
         try:
             model._meta.get_field(self.field_name)
-        except FieldDoesNotExist:
+        except FieldDoesNotExist as err:
             raise ValidationError(
                 {
                     'field_name': _("%(field)s is not a valid field in the model '%(model)s'")
-                    % {  # noqa: B904
+                    % {
                         'field': self.field_name,
                         'model': self.content_type.model,
                     }
                 }
-            )
+            ) from err
         return self.field_name
 
     def __str__(self):

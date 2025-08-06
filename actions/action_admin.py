@@ -37,6 +37,8 @@ from dal import autocomplete, forward as dal_forward
 from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
+from kausal_common.people.chooser import PersonChooser
+
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.utils import naturaltime
@@ -64,7 +66,6 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 from orgs.models import Organization
-from kausal_common.people.chooser import PersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 

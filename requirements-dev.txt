@@ -2,11 +2,6 @@
 #    uv pip compile --refresh -o requirements-dev.txt requirements-dev.in
 anyio==4.9.0
     # via watchfiles
-asgiref==3.8.1
-    # via
-    #   -c requirements-lint.txt
-    #   -c requirements.txt
-    #   django
 asttokens==3.0.0
     # via stack-data
 cfgv==3.4.0
