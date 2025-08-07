@@ -36,17 +36,16 @@ from django_countries.fields import CountryField
 from wagtail_color_panel.fields import ColorField
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
+from kausal_common.i18n.helpers import get_default_language, get_supported_languages
+from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.permissions import PermissionedModel
 from kausal_common.models.types import MLModelManager, OneToOne, RevManyToMany
 
 from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
-    ModelWithPrimaryLanguage,
     OrderedModel,
     PlanRelatedModel,
-    get_default_language,
-    get_supported_languages,
     validate_css_color,
 )
 

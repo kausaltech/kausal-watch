@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from aplans.utils import register_view_helper
+from kausal_common.api.utils import register_view_helper
 
 from actions.models import Action, Plan
 from indicators.models import Indicator

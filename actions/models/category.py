@@ -22,17 +22,17 @@ from wagtail.models import Collection, Page
 
 from wagtail_color_panel.fields import ColorField
 
+from kausal_common.i18n.helpers import get_supported_languages
+from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.types import RevManyQS, manager_from_mlqs
 
 from aplans.utils import (
     IdentifierField,
     InstancesEditableByMixin,
-    ModelWithPrimaryLanguage,
     OrderedModel,
     PlanRelatedModel,
     ReferenceIndexedModelMixin,
     generate_identifier,
-    get_supported_languages,
     validate_css_color,
 )
 

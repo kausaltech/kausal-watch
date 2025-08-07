@@ -19,16 +19,16 @@ from wagtail.fields import RichTextField
 
 from autoslug.fields import AutoSlugField
 
+from kausal_common.i18n.helpers import get_supported_languages
+from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.types import MLModelManager
 
 from aplans.utils import (
     ChoiceArrayField,
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
-    ModelWithPrimaryLanguage,
     OrderedModel,
     ReferenceIndexedModelMixin,
-    get_supported_languages,
 )
 
 from indicators.models import Unit

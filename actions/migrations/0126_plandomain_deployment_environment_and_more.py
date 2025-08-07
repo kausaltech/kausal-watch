@@ -2,6 +2,7 @@
 
 import aplans.utils
 from django.db import migrations, models
+import kausal_common.i18n.helpers
 
 
 class Migration(migrations.Migration):
@@ -175,7 +176,7 @@ class Migration(migrations.Migration):
                         ("sv", "Swedish"),
                         ("sv-FI", "Swedish (Finland)"),
                     ],
-                    default=aplans.utils.get_default_language,
+                    default=kausal_common.i18n.helpers.get_default_language,
                     max_length=8,
                 ),
                 blank=True,
@@ -205,7 +206,7 @@ class Migration(migrations.Migration):
                     ("sv", "Swedish"),
                     ("sv-FI", "Swedish (Finland)"),
                 ],
-                default=aplans.utils.get_default_language,
+                default=kausal_common.i18n.helpers.get_default_language,
                 max_length=8,
             ),
         ),

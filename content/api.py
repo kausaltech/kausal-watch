@@ -1,7 +1,7 @@
 from rest_framework import renderers, viewsets
 
-from aplans.model_images import ModelWithImageViewMixin
-from aplans.utils import register_view_helper
+from kausal_common.api.utils import register_view_helper
+from kausal_common.model_images import ModelWithImageViewMixin
 
 from .models import (
     BlogPost,

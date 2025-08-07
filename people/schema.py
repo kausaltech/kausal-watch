@@ -1,9 +1,9 @@
 import graphene
 from django.forms import ModelForm
 
+from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from kausal_common.people.schema import PersonNode as BasePersonNode
 
-from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import get_plan_from_context, register_django_node
 
 from .models import Person

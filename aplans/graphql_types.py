@@ -204,10 +204,6 @@ def replace_image_node(cls):
     return cls
 
 
-class AuthenticatedUserNode(graphene.ObjectType):
-    pass
-
-
 class AdminButton(graphene.ObjectType):
     url = graphene.String(required=True)
     label = graphene.String(required=True)

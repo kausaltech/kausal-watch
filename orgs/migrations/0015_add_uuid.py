@@ -2,8 +2,7 @@
 
 from django.db import migrations, models
 import uuid
-
-import aplans.utils
+import kausal_common.i18n.helpers
 
 
 class Migration(migrations.Migration):
@@ -21,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='organization',
             name='primary_language',
-            field=models.CharField(choices=[('da', 'Danish'), ('de', 'German'), ('de-CH', 'German (Switzerland)'), ('en', 'English (United States)'), ('en-GB', 'English (United Kingdom)'), ('en-AU', 'English (Australia)'), ('fi', 'Finnish'), ('sv', 'Swedish')], default=aplans.utils.get_default_language, max_length=8),
+            field=models.CharField(choices=[('da', 'Danish'), ('de', 'German'), ('de-CH', 'German (Switzerland)'), ('en', 'English (United States)'), ('en-GB', 'English (United Kingdom)'), ('en-AU', 'English (Australia)'), ('fi', 'Finnish'), ('sv', 'Swedish')], default=kausal_common.i18n.helpers.get_default_language, max_length=8),
         ),
     ]

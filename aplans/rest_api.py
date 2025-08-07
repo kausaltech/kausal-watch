@@ -15,40 +15,6 @@ if typing.TYPE_CHECKING:
     from aplans.types import WatchAPIRequest
 
 
-class BulkModelViewSet(viewsets.ModelViewSet):
-    request: WatchAPIRequest
-
-    def bulk_create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return response.Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers,
-        )
-
-    def bulk_update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer(
-            self.filter_queryset(self.get_queryset()),
-            data=request.data,
-            many=True,
-            partial=partial,
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return response.Response(serializer.data)
-
-    def partial_bulk_update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return self.bulk_update(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        if isinstance(request.data, list):
-            return self.bulk_create(request, *args, **kwargs)
-        return super().create(request, *args, **kwargs)
-
-
 def get_default_plan() -> Plan:
     return Plan.objects.live().first()
 

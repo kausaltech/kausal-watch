@@ -9,7 +9,8 @@ from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
 
-from aplans.graphql_helpers import UpdateModelInstanceMutation
+from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
+
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import RestrictedVisibilityModel, public_fields
 

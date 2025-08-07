@@ -3,6 +3,7 @@
 import actions.models.plan
 import aplans.utils
 from django.db import migrations, models
+import kausal_common.i18n.helpers
 
 
 class Migration(migrations.Migration):
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='plan',
             name='other_languages',
-            field=aplans.utils.ChoiceArrayField(base_field=models.CharField(choices=[('da', 'Danish'), ('de', 'German'), ('de-CH', 'German (Switzerland)'), ('el', 'Greek'), ('en', 'English (United States)'), ('en-AU', 'English (Australia)'), ('en-GB', 'English (United Kingdom)'), ('es', 'Spanish'), ('es-US', 'Spanish (United States)'), ('fi', 'Finnish'), ('lv', 'Latvian'), ('pt', 'Portuguese'), ('pt-BR', 'Portuguese (Brazil)'), ('sv', 'Swedish'), ('sv-FI', 'Swedish (Finland)')], default=aplans.utils.get_default_language, max_length=8), blank=True, default=list, size=None),
+            field=aplans.utils.ChoiceArrayField(base_field=models.CharField(choices=[('da', 'Danish'), ('de', 'German'), ('de-CH', 'German (Switzerland)'), ('el', 'Greek'), ('en', 'English (United States)'), ('en-AU', 'English (Australia)'), ('en-GB', 'English (United Kingdom)'), ('es', 'Spanish'), ('es-US', 'Spanish (United States)'), ('fi', 'Finnish'), ('lv', 'Latvian'), ('pt', 'Portuguese'), ('pt-BR', 'Portuguese (Brazil)'), ('sv', 'Swedish'), ('sv-FI', 'Swedish (Finland)')], default=kausal_common.i18n.helpers.get_default_language, max_length=8), blank=True, default=list, size=None),
         ),
         migrations.AlterField(
             model_name='plan',

@@ -24,7 +24,7 @@ from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.utils import public_fields
 
 if True:
-    from . import graphql_gis  # noqa: F401
+    from kausal_common import graphql_gis  # noqa: F401
 
 from actions import schema as actions_schema
 from actions.models.action import Action

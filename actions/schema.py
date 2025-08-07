@@ -26,10 +26,11 @@ from grapple.registry import registry as grapple_registry
 from grapple.types.interfaces import PageInterface
 
 from kausal_common.datasets.models import Dataset
+from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from kausal_common.users import is_authenticated
 
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_helpers import ModelAdminAdminButtonsMixin, UpdateModelInstanceMutation
+from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
     DjangoNode,
     WorkflowStateDescription,

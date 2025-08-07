@@ -27,6 +27,7 @@ from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
 
 from kausal_common.deployment import env_bool
+from kausal_common.graphene.graphql_helpers import AuthenticatedUserNode
 
 from aplans.types import WatchAPIRequest
 
@@ -34,7 +35,7 @@ from actions.models import Plan
 from users.models import User
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
-from .graphql_types import AuthenticatedUserNode, WorkflowStateEnum
+from .graphql_types import WorkflowStateEnum
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
