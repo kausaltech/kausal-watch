@@ -19,7 +19,7 @@ from kausal_common.organizations.schema import (
 from aplans.graphql_helpers import (
     AdminButtonsMixin,
 )
-from aplans.graphql_types import register_django_node
+from aplans.graphql_types import DjangoNode, register_django_node
 from aplans.utils import public_fields
 
 from actions.models import Plan
@@ -41,14 +41,14 @@ class OrganizationForm(BaseOrganizationForm):
 
 
 @register_django_node
-class OrganizationClassNode(BaseOrganizationClassNode):
+class OrganizationClassNode(BaseOrganizationClassNode, DjangoNode):
     class Meta:
         model = OrganizationClass
         fields = public_fields(OrganizationClass)
 
 
 @register_django_node
-class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode):
+class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode):
 
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(

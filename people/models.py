@@ -33,9 +33,11 @@ from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQue
 from users.models import User
 
 if TYPE_CHECKING:
+    from django.http import HttpRequest
+
     from kausal_common.models.types import M2M, RevMany
 
-    from aplans.types import UserOrAnon, WatchRequest
+    from aplans.types import UserOrAnon
 
     from actions.models.action import Action
     from actions.models.plan import Plan, PlanPublicSiteViewer
@@ -174,7 +176,7 @@ class Person(BasePerson, PlanDefaultsModel):
 
         self.set_avatar(resp.content)
 
-    def get_avatar_url(self, request: WatchRequest, size: str | None = None) -> str | None:
+    def get_avatar_url(self, request: HttpRequest, size: str | None = None) -> str | None:
         if not self.image:
             return None
 
@@ -314,8 +316,9 @@ class Person(BasePerson, PlanDefaultsModel):
             target_user.deactivate(acting_admin_user)
         self.delete()
 
-    def visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
-        if not plan.features.public_contact_persons:
+    def visible_for_user(self, user: UserOrAnon, **kwargs) -> bool:
+        plan = kwargs.get('plan')
+        if not plan or not plan.features.public_contact_persons:
             if isinstance(user, AnonymousUser):
                 return False
             if user is None or not user.is_authenticated or not user.can_access_public_site(plan):

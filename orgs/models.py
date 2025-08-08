@@ -165,8 +165,8 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
         # If the parent is not editable, the form would display an empty parent,
         # leading to the org becoming a root when saved. Prevent this by adding
         # the parent to the queryset.
-        if obj and obj.get_parent():  # type: ignore[attr-defined]
-            parent_choices |= Organization.objects.filter(pk=obj.get_parent().pk)  # type: ignore[attr-defined]
+        if obj and (parent := obj.get_parent()):  # type: ignore[attr-defined]
+            parent_choices |= Organization.objects.filter(pk=parent.pk)  # type: ignore[attr-defined]
         return parent_choices
 
     def generate_distinct_name(self, levels=1):

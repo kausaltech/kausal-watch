@@ -4,13 +4,13 @@ from django.forms import ModelForm
 from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from kausal_common.people.schema import PersonNode as BasePersonNode
 
-from aplans.graphql_types import get_plan_from_context, register_django_node
+from aplans.graphql_types import DjangoNode, get_plan_from_context, register_django_node
 
 from .models import Person
 
 
 @register_django_node
-class PersonNode(BasePersonNode):
+class PersonNode(BasePersonNode, DjangoNode):
     avatar_url = graphene.String(size=graphene.String())
 
     class Meta:
