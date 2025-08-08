@@ -25,7 +25,7 @@ from kausal_common.model_images import (
     ModelWithImageSerializerMixin,
     ModelWithImageViewMixin,
 )
-from kausal_common.people.api import PersonSerializer
+from kausal_common.people.api import PersonSerializer as BasePersonSerializer
 
 from aplans.api_router import router
 from aplans.permissions import AnonReadOnly
@@ -1446,6 +1446,11 @@ class PersonPermission(permissions.DjangoObjectPermissions):
                 return False
         return True
 
+class PersonSerializer(BasePersonSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context.get('authorized_for_plan') is None:
+            self.fields.pop('email')
 
 @register_view
 class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
