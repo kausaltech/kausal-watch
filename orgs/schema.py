@@ -66,8 +66,8 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode):
     @gql_optimizer.resolver_hints(
         only=tuple(),
     )
-    def resolve_action_count(parent: Organization, info) -> int:
-        cache = getattr(info.context, 'organization_action_count_cache', None)
+    def resolve_action_count(parent: Organization, info: GQLInfo) -> int:
+        cache = info.context.cache.organization_action_count_cache
         if cache is None:
             return getattr(parent, 'action_count', 0)
         return cache.get_action_count_for_organization(parent.id)

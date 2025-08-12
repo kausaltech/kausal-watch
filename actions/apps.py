@@ -1,22 +1,29 @@
 from __future__ import annotations
 
-import collections
 from functools import cache
+from typing import TYPE_CHECKING
 
 from django.apps import AppConfig
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 
-# FIXME: Monkey patch due to wagtail-admin-list-controls using a deprecated alias in collections package
-# Wagtail uses the deprecated alias -- remove after updating to 2.16
-collections.Iterable = collections.abc.Iterable
-collections.Mapping = collections.abc.Mapping
+from kausal_common.users import user_or_bust
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from django.http.request import HttpRequest
+    from wagtail.models import Collection
+
+    from wagtail_modeladmin.options import ModelAdmin
+
+    from users.models import User
 
 _wagtail_image_chooser_viewset_permission_policy = None
 _wagtail_get_base_snippet_action_menu_items = None
 
 
-def _get_collections(user):
+def _get_collections(user: User) -> Iterable[Collection]:
     plan = user.get_active_admin_plan()
     if plan.root_collection is None:
         return []
@@ -27,9 +34,10 @@ class CollectionFilter(SimpleListFilter):
     title = _('collection')
     parameter_name = 'collection'
 
-    def lookups(self, request, model_admin):
-        collections = _get_collections(request.user)
-        return [(collection.id, str(collection)) for collection in collections]
+    def lookups(self, request: HttpRequest, model_admin: ModelAdmin) -> list[tuple[str, str]]:
+        user = user_or_bust(request.user)
+        collections = _get_collections(user)
+        return [(str(collection.pk), str(collection)) for collection in collections]
 
     def queryset(self, request, queryset):
         if self.value():
@@ -46,7 +54,7 @@ def monkeypatch_image_chooser_viewset():
     from wagtail.images.views.chooser import ImageChooserViewSet
 
     from images.permissions import permission_policy
-    global _wagtail_image_chooser_viewset_permission_policy
+    global _wagtail_image_chooser_viewset_permission_policy  # noqa: PLW0603
 
     if _wagtail_image_chooser_viewset_permission_policy is None:
         _wagtail_image_chooser_viewset_permission_policy  = ImageChooserViewSet.permission_policy
@@ -76,8 +84,8 @@ def get_base_snippet_action_menu_items(model):
             label = _("Cancel moderation")
 
         class PublishMenuItem(WagtailPublishMenuItem):
-            def is_shown(self, context):
-                user = context['request'].user
+            def is_shown(self, context) -> bool:
+                user = user_or_bust(context['request'].user)
                 instance = context['instance']
                 return (super().is_shown(context)
                         and user.can_publish_action(instance)
@@ -85,7 +93,7 @@ def get_base_snippet_action_menu_items(model):
 
 
         class SubmitForModerationMenuItem(WagtailSubmitForModerationMenuItem):
-            def is_shown(self, context):
+            def is_shown(self, context) -> bool:
                 if not super().is_shown(context):
                     return False
 
@@ -155,8 +163,7 @@ def get_base_snippet_action_menu_items(model):
             menu_items.append(LockedMenuItem(order=10000))
 
         return menu_items
-    else:
-        return _wagtail_get_base_snippet_action_menu_items(model)
+    return _wagtail_get_base_snippet_action_menu_items(model)
 
 
 def monkeypatch_snippet_action_menu():

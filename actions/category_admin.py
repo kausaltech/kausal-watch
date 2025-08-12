@@ -6,7 +6,6 @@ from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.forms import ModelChoiceField
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms.models import WagtailAdminModelForm
@@ -50,6 +49,7 @@ from admin_site.wagtail import (
 from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
 
 if TYPE_CHECKING:
+    from django.forms import ModelChoiceField
     from django.http.request import HttpRequest
 
 
@@ -203,7 +203,7 @@ class CategoryAdminForm(WagtailAdminModelForm[Category]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # For the parent field, only show categories of the same type
-        parent_field = cast(ModelChoiceField[Category], self.fields['parent'])
+        parent_field = cast('ModelChoiceField[Category]', self.fields['parent'])
         assert parent_field.queryset is not None
         parent_field.queryset = parent_field.queryset.filter(type=self.instance.type)
 
@@ -353,6 +353,8 @@ class CategoryDeleteView(CategoryTypeQueryParameterMixin, DeleteView):
 
 
 class CategoryAdminButtonHelper(DatasetButtonMixin, ButtonHelper):
+    request: HttpRequest
+
     # TODO: duplicated as AttributeTypeAdminButtonHelper
     def add_button(self, *args, **kwargs):
         """
@@ -381,7 +383,7 @@ class CategoryAdminButtonHelper(DatasetButtonMixin, ButtonHelper):
         data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
-    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+    def get_buttons_for_obj(self, obj: Category, exclude=None, classnames_add=None, classnames_exclude=None):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
         dataset_buttons = self.dataset_buttons(obj, classnames_add or [], classnames_exclude)
         buttons.extend(dataset_buttons)

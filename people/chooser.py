@@ -8,12 +8,13 @@ from kausal_common.people.chooser import (
     PersonChooserViewSet as BasePersonChooserViewSet,
     PersonModelChooserCreateTabMixin as BasePersonModelChooserCreateTabMixin,
 )
+from kausal_common.users import user_or_bust
 
 
 class PersonChooserMixin(BasePersonChooserMixin):
-
     def get_object_list(self, search_term=None, **kwargs):
-        plan = self.request.user.get_active_admin_plan()  # type: ignore[attr-defined]
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         object_list = self.get_unfiltered_object_list().available_for_plan(plan)
 
         # Workaround to prevent Wagtail from looking for `path` (from Organization) in the search fields for Person
@@ -28,7 +29,8 @@ class PersonChooserMixin(BasePersonChooserMixin):
 
 class PersonModelChooserCreateTabMixin(BasePersonModelChooserCreateTabMixin):
     def get_initial(self):
-        plan = self.request.user.get_active_admin_plan()  # type: ignore[attr-defined]
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         return {'organization': plan.organization}
 
 

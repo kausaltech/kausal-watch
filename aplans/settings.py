@@ -259,6 +259,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'kausal_common.deployment.middleware.RequestStartMiddleware',
     f'{PROJECT_NAME}.middleware.SocialAuthExceptionMiddleware',
     f'{PROJECT_NAME}.middleware.RequestMiddleware',
     f'{PROJECT_NAME}.middleware.AdminMiddleware',
@@ -316,6 +317,7 @@ STATICFILES_FINDERS = [
 ]
 
 WSGI_APPLICATION = f'{PROJECT_NAME}.wsgi.application'
+ASGI_APPLICATION = f'{PROJECT_NAME}.asgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -715,7 +717,7 @@ if ELASTICSEARCH_URL:
             },
         },
     }
-    for lang in ANALYSIS_CONFIG.keys():
+    for lang, conf in ANALYSIS_CONFIG.items():
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
             'BACKEND': 'search.backends',
             'URLS': [ELASTICSEARCH_URL],
@@ -728,7 +730,7 @@ if ELASTICSEARCH_URL:
                         'number_of_shards': 1,
                     },
                     'analysis': {
-                        **ANALYSIS_CONFIG[lang],
+                        **conf,
                     },
                 },
             },
@@ -871,6 +873,10 @@ REQUEST_LOG_MAX_BODY_SIZE = 100 * 1024
 if True:
     from kausal_common.sentry.init import init_sentry
     init_sentry(SENTRY_DSN, DEPLOYMENT_TYPE)
+
+
+if importlib.util.find_spec('daphne') is not None:
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('django.contrib.staticfiles'), 'daphne')
 
 
 if DEBUG and ENABLE_DEBUG_TOOLBAR:

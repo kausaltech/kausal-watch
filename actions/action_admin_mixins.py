@@ -43,20 +43,22 @@ else:
 # The mixins in this file have been copied from Wagtail to avoid unexpected upstream changes. We use them in ActionAdmin
 # for our MVP workflow functionality. They should be phased out ASAP by moving ActionAdmin to snippets.
 
-class CreateEditViewOptionalFeaturesMixin:
+class CreateEditViewOptionalFeaturesMixin[M: Model]:
     # Source: wagtail.admin.views.generic.CreateEditViewOptionalFeaturesMixin
     """
-    A mixin for generic CreateView/EditView to support optional features that
-    are applied to the model as mixins (e.g. DraftStateMixin, RevisionMixin).
+    A mixin for generic CreateView/EditView.
+
+    For supporting optional features that are applied to the model as mixins (e.g. DraftStateMixin, RevisionMixin).
     """
 
     view_name = "create"
-    lock_url_name = None
-    unlock_url_name = None
-    revisions_unschedule_url_name = None
-    workflow_history_url_name = None
-    confirm_workflow_cancellation_url_name = None
-    model: ClassVar[type[Model]]
+    lock_url_name: str | None = None
+    unlock_url_name: str | None = None
+    revisions_unschedule_url_name: str | None = None
+    workflow_history_url_name: str | None = None
+    confirm_workflow_cancellation_url_name: str | None = None
+    model: type[M]
+    action: str
 
     def setup(self, request, *args, **kwargs):
         # Need to set these here as they are used in get_object()

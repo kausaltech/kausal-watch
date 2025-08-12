@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import LogoutView
-from django.contrib.contenttypes.models import ContentType
 from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
@@ -21,6 +20,8 @@ from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_url
 
 from kausal_common.datasets.api import all_routers as datasets_api_nested_routers, router as datasets_api_root_router
 from kausal_common.deployment.health_check_view import health_view
+
+from aplans.graphql_views import WatchGraphQLView
 
 from actions.api import all_routers as actions_api_routers, all_views as actions_api_views
 from actions.autocomplete import (
@@ -41,11 +42,11 @@ from reports.views import export_report_view
 from users.views import change_admin_plan
 
 from .api_router import router as api_router
-from .graphene_views import SentryGraphQLView
 
 if typing.TYPE_CHECKING:
     from types import ModuleType
 
+    from django.contrib.contenttypes.models import ContentType
     from wagtail.query import PageQuerySet
 
 extensions_api_views = []
@@ -124,7 +125,7 @@ urlpatterns = [
     # Optional UI:
     path('v1/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('v1/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True)), name='graphql'),
+    path('v1/graphql/', csrf_exempt(WatchGraphQLView.as_view()), name='graphql'),
     path('v1/graphql/docs/', TemplateView.as_view(
         template_name='graphql-voyager.html',
     ), name='graphql-voyager'),

@@ -6,8 +6,6 @@ from uuid import UUID
 
 import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import FieldDoesNotExist
-from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, permissions, serializers, viewsets
@@ -17,17 +15,16 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
 
-from kausal_common.users import user_or_none
-
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
-from kausal_common.api.utils import register_view_helper
+from kausal_common.api.utils import RegisteredAPIView, register_view_helper
 from kausal_common.model_images import (
     ModelWithImageSerializerMixin,
     ModelWithImageViewMixin,
 )
 from kausal_common.people.api import PersonSerializer as BasePersonSerializer
+from kausal_common.users import user_or_none
 
 from aplans.api_router import router
 from aplans.permissions import AnonReadOnly
@@ -63,18 +60,17 @@ if TYPE_CHECKING:
     from django.db.models import Model, QuerySet
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
-    from rest_framework.views import APIView
 
     from aplans.types import WatchAdminRequest
 
     from actions.models.plan import PlanQuerySet
     from users.models import User
 
-all_views: list[type[APIView]] = []
+all_views: list[RegisteredAPIView] = []
 all_routers: list[BaseRouter] = []
 
 
-def register_view(klass, *args, **kwargs):
+def register_view(klass: type[viewsets.GenericViewSet[Any]], *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
@@ -92,31 +88,31 @@ class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
     pass
 
 
-class ActionImpactSerializer(serializers.ModelSerializer):
+class ActionImpactSerializer(serializers.ModelSerializer[ActionImpact]):
     class Meta:
         model = ActionImpact
         fields = public_fields(ActionImpact)
 
 
-class ActionScheduleSerializer(serializers.ModelSerializer):
+class ActionScheduleSerializer(serializers.ModelSerializer[ActionSchedule]):
     class Meta:
         model = ActionSchedule
         fields = public_fields(ActionSchedule)
 
 
-class ActionStatusSerializer(serializers.ModelSerializer):
+class ActionStatusSerializer(serializers.ModelSerializer[ActionStatus]):
     class Meta:
         model = ActionStatus
         fields = public_fields(ActionStatus)
 
 
-class ActionImplementationPhaseSerializer(serializers.ModelSerializer):
+class ActionImplementationPhaseSerializer(serializers.ModelSerializer[ActionImplementationPhase]):
     class Meta:
         model = ActionImplementationPhase
         fields = public_fields(ActionImplementationPhase)
 
 
-class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer):
+class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer[Plan]):
     class Meta:
         model = Plan
         fields = public_fields(
@@ -137,7 +133,7 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer)
         }
 
 
-class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
+class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet[Plan]):
     queryset = Plan.objects.get_queryset()
     serializer_class = PlanSerializer
     filterset_fields = {
@@ -187,7 +183,7 @@ plan_router = NestedBulkRouter(router, 'plan', lookup='plan')
 all_routers.append(plan_router)
 
 
-class ActionScheduleViewSet(viewsets.ModelViewSet):
+class ActionScheduleViewSet(viewsets.ModelViewSet[ActionSchedule]):
     serializer_class = ActionScheduleSerializer
 
     def get_queryset(self):
@@ -204,7 +200,7 @@ plan_router.register(
 )
 
 
-class ActionImplementationPhaseViewSet(viewsets.ModelViewSet):
+class ActionImplementationPhaseViewSet(viewsets.ModelViewSet[ActionImplementationPhase]):
     serializer_class = ActionImplementationPhaseSerializer
 
     def get_queryset(self):
@@ -954,7 +950,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: HasUUIDAndOrder](
 
 class ActionSerializer(
     ModelWithAttributesSerializerMixin,
-    NonTreebeardModelWithTreePositionSerializerMixin,
+    NonTreebeardModelWithTreePositionSerializerMixin[Action],
     BulkSerializerValidationInstanceMixin,
     PlanRelatedModelSerializer,
 ):
@@ -1120,7 +1116,7 @@ class ViewSetWithPlanContext:
 @extend_schema(
     tags=['action'],
 )
-class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
+class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet[Action]):
     serializer_class = ActionSerializer
 
     def get_permissions(self):
@@ -1159,7 +1155,7 @@ plan_router.register(
 
 
 @register_view
-class ActionStatusViewSet(viewsets.ModelViewSet):
+class ActionStatusViewSet(viewsets.ModelViewSet[ActionStatus]):
     queryset = ActionStatus.objects.all()
     serializer_class = ActionStatusSerializer
     filterset_fields = {
@@ -1168,14 +1164,14 @@ class ActionStatusViewSet(viewsets.ModelViewSet):
     }
 
 
-class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
+class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer[ActionDecisionLevel]):
     class Meta:
         model = ActionDecisionLevel
         fields = '__all__'
 
 
 @register_view
-class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
+class ActionDecisionLevelViewSet(viewsets.ModelViewSet[ActionDecisionLevel]):
     queryset = ActionDecisionLevel.objects.all()
     serializer_class = ActionDecisionLevelSerializer
     filterset_fields = {
@@ -1184,7 +1180,7 @@ class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
     }
 
 
-class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
+class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer[CategoryType]):
     class Meta:
         model = CategoryType
         fields = '__all__'
@@ -1192,7 +1188,7 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
 
 class CategoryPermission(permissions.DjangoObjectPermissions):
     # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, category_type: CategoryType, category: Category = None):
+    def check_permission(self, user: User, perm: str, category_type: CategoryType, category: Category | None = None) -> bool:
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -1209,7 +1205,7 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
             return False
         return True
 
-    def has_permission(self, request: Request, view):
+    def has_permission(self, request: Request, view) -> bool:
         category_type_pk = view.kwargs.get('category_type_pk')
         if category_type_pk:
             category_type = CategoryType.objects.filter(id=category_type_pk).first()
@@ -1238,7 +1234,7 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
         return all(self.check_permission(user, perm, obj.type, obj) for perm in perms)
 
 
-class CategoryTypeViewSet(viewsets.ModelViewSet):
+class CategoryTypeViewSet(viewsets.ModelViewSet[CategoryType]):
     queryset = CategoryType.objects.all()
     serializer_class = CategoryTypeSerializer
 
@@ -1275,11 +1271,11 @@ class NonTreebeardParentUUIDField(serializers.Field):
         return UUID(data)
 
 
-class CategorySerializer(
+class CategorySerializer(  # type: ignore[misc]
     ModelWithAttributesSerializerMixin,
-    NonTreebeardModelWithTreePositionSerializerMixin,
+    NonTreebeardModelWithTreePositionSerializerMixin[Category],
     BulkSerializerValidationInstanceMixin,
-    serializers.ModelSerializer,
+    serializers.ModelSerializer[Category],
 ):
     parent = NonTreebeardParentUUIDField(allow_null=True, required=False)  # type: ignore[assignment]
     uuid = serializers.UUIDField(required=False)
@@ -1423,7 +1419,7 @@ class OrganizationPermission(permissions.DjangoObjectPermissions):
             return False
         return all(self.check_permission(user, perm, obj) for perm in perms)
 
-class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSerializer):
+class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
     uuid = serializers.UUIDField(required=False)
 
     class Meta:

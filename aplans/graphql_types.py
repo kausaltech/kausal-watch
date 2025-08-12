@@ -8,6 +8,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar, cast
 
 import graphene
+import strawberry as sb
 from django.db.models import Model, QuerySet
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.translation import gettext_lazy as _
@@ -31,7 +32,7 @@ if typing.TYPE_CHECKING:
 
     from kausal_common.graphene import GQLInfo as CommonGQLInfo
 
-    from aplans.types import WatchAPIRequest
+    from aplans.schema_context import WatchGraphQLContext
 
     from users.models import User
 
@@ -117,8 +118,8 @@ class DjangoNode[M: Model = Model](DjangoObjectType[M]):
         abstract = True
 
 
-def set_active_plan(info, plan):
-    info.context._graphql_active_plan = plan
+def set_active_plan(info: GQLInfo, plan: Plan):
+    info.context.active_plan = plan
 
 
 @typing.overload
@@ -131,19 +132,13 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str) -> Plan | None: .
 
 def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> Plan | None:
     if plan_identifier is None:
-        plan = getattr(info.context, '_graphql_active_plan', None)
+        plan = info.context.active_plan
         if not plan:
             raise Exception('No plan in context')
         return plan
 
-    cache = getattr(info.context, '_plan_cache', None)
-    if cache is None:
-        cache = info.context._plan_cache = {}  # type: ignore
-
-    if plan_identifier in cache:
-        return cache[plan_identifier]
-    plan = Plan.objects.filter(identifier=plan_identifier).first()
-    cache[plan_identifier] = plan
+    plan_cache = info.context.cache.for_plan_identifier(plan_identifier=plan_identifier)
+    plan = plan_cache.plan
     set_active_plan(info, plan)
     return plan
 
@@ -154,7 +149,7 @@ class SupportsOrderable(Protocol):
 
 Q = TypeVar('Q', bound=QuerySet)
 
-def order_queryset(qs: Q, node_class: type[SupportsOrderable], order_by: str | None) -> Q:
+def order_queryset[QS: QuerySet[Any]](qs: QS, node_class: type[SupportsOrderable], order_by: str | None) -> QS:
     if order_by is None:
         return qs
 
@@ -174,24 +169,17 @@ def order_queryset(qs: Q, node_class: type[SupportsOrderable], order_by: str | N
     return qs
 
 
-OT = TypeVar('OT', bound=graphene.ObjectType)
-
-def register_graphene_node(cls: type[OT]) -> type[OT]:
+def register_graphene_node[OT: graphene.ObjectType](cls: type[OT]) -> type[OT]:
     graphene_registry.append(cls)
     return cls
 
 
-IT = TypeVar('IT', bound=graphene.Interface)
-
-
-def register_graphene_interface(cls: type[IT]) -> type[IT]:
+def register_graphene_interface[IT: graphene.Interface](cls: type[IT]) -> type[IT]:
     graphene_registry.append(cls)
     return cls
 
 
-DN = TypeVar('DN', bound=DjangoNode)
-
-def register_django_node(cls: type[DN]) -> type[DN]:
+def register_django_node[DN: DjangoNode](cls: type[DN]) -> type[DN]:
     meta = cast('DjangoObjectTypeOptions', cls._meta)
     model = meta.model
     grapple_registry.django_models[model] = cls
@@ -213,6 +201,7 @@ class AdminButton(graphene.ObjectType):
     icon = graphene.String(required=False)
 
 
+@sb.enum(name='WorkflowState')
 class WorkflowStateEnum(Enum):
     PUBLISHED = 'PUBLISHED'
     APPROVED = 'APPROVED'
@@ -251,4 +240,7 @@ class WorkflowStateDescription(graphene.ObjectType):
 if TYPE_CHECKING:
     @type_check_only
     class GQLInfo(CommonGQLInfo):  # pyright: ignore
-        context: WatchAPIRequest  # type: ignore[assignment]
+        context: WatchGraphQLContext  # type: ignore[assignment]
+
+
+type SBInfo = sb.Info['WatchGraphQLContext']

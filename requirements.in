@@ -107,3 +107,13 @@ uvicorn
 channels
 channels-redis
 asgi-cors
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-prometheus
+opentelemetry-instrumentation-django
+opentelemetry-instrumentation-psycopg
+opentelemetry-instrumentation-redis
+opentelemetry-instrumentation-threading
+opentelemetry-sdk
+starlette
+setuptools<80
+orjson

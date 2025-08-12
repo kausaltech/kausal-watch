@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 import graphene
 from django.forms import ModelForm
@@ -163,12 +163,12 @@ class FrameworkNode(DjangoNode):
 
 
 class CommonIndicatorNormalization(graphene.ObjectType):
-    normalizer = graphene.Field('indicators.schema.CommonIndicatorNode')
-    unit = graphene.Field(UnitNode)
+    normalizer = graphene.Field(lambda: CommonIndicatorNode, required=True)
+    unit = graphene.Field(UnitNode, required=True)
 
 
 class CommonIndicatorNode(DjangoNode):
-    normalizations = graphene.List(CommonIndicatorNormalization)
+    normalizations = graphene.List(lambda: graphene.NonNull(CommonIndicatorNormalization), required=True)
 
     class Meta:
         model = CommonIndicator
@@ -251,9 +251,9 @@ class IndicatorNode(DjangoNode):
                      'The same indicator cannot have different goals '
                      'for the same organization for different plans.'),
     ))
-    values = graphene.List(IndicatorValueNode, include_dimensions=graphene.Boolean())
+    values = graphene.List(graphene.NonNull(IndicatorValueNode), include_dimensions=graphene.Boolean(), required=True)
     level = graphene.String(plan=graphene.ID())
-    actions = graphene.List('actions.schema.ActionNode', plan=graphene.ID())
+    actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'), plan=graphene.ID(), required=True)
 
     class Meta:
         fields = public_fields(Indicator)
@@ -475,14 +475,14 @@ def plans_indicators_queryset(plans, user, **kwargs):
     return qs
 
 
-class IndicatorForm(ModelForm):
+class IndicatorForm(ModelForm[Indicator]):
     # TODO: Eventually we will want to allow updating things other than organization
     class Meta:
         model = Indicator
         fields = ['organization']
 
 
-class DashboardIndicatorChartSeries(graphene.types.ObjectType):
+class DashboardIndicatorChartSeries(graphene.ObjectType[Any]):
     class Meta:
         description = 'A series of values to be displayed in a dashboard indicator chart'
 
@@ -495,5 +495,5 @@ class UpdateIndicatorMutation(UpdateModelInstanceMutation):
         form_class = IndicatorForm
 
 
-class Mutation(graphene.ObjectType):
+class Mutation(graphene.ObjectType[Any]):
     update_indicator = UpdateIndicatorMutation.Field()

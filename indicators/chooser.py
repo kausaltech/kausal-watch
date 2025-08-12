@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.search.backends import get_search_backend
@@ -7,14 +8,17 @@ from wagtail.search.backends import get_search_backend
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 
+from kausal_common.users import user_or_bust
+
 from admin_site.utils import ChooserListingTabMixinWithEmptyResultsMessage
 
-from .models import Dimension, Indicator, IndicatorDimension
+from .models import Dimension, Indicator, IndicatorDimension, IndicatorQuerySet
 
 
-class IndicatorChooserMixin(ModelChooserMixin):
+class IndicatorChooserMixin(ModelChooserMixin[Indicator, IndicatorQuerySet]):
     def get_unfiltered_object_list(self):
-        plan = self.request.user.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         objs = Indicator.objects.filter(plans=plan).distinct()
         return objs
 
@@ -28,7 +32,7 @@ class IndicatorChooserMixin(ModelChooserMixin):
         return objs
 
 
-class IndicatorChooserViewSet(ModelChooserViewSet):
+class IndicatorChooserViewSet(ModelChooserViewSet[Indicator]):
     chooser_mixin_class = IndicatorChooserMixin
 
     icon = 'kausal-indicator'
@@ -50,10 +54,10 @@ def register_indicator_chooser_viewset():
     return IndicatorChooserViewSet('indicator_chooser', url_prefix='indicator-chooser')
 
 
-class DimensionChooserMixin(ModelChooserMixin):
+class DimensionChooserMixin(ModelChooserMixin[Dimension, QuerySet[Dimension]]):
     def get_unfiltered_object_list(self):
         request = self.request
-        user = request.user
+        user = user_or_bust(request.user)
 
         plan = user.get_active_admin_plan()
         if not plan:
@@ -99,7 +103,7 @@ class DimensionChooser(AdminChooser):
         url = f"{url}?include_plan_dimensions={self.include_plan_dimensions}"
         return url
 
-class DimensionChooserViewSet(ModelChooserViewSet):
+class DimensionChooserViewSet(ModelChooserViewSet[Dimension]):
     chooser_mixin_class = DimensionChooserMixin
     model = Dimension
     icon = 'tag'

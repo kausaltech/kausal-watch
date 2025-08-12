@@ -45,4 +45,4 @@ class AplansDocument(AbstractDocument):
 
     @property
     def url(self):
-        return reverse('wagtaildocs_serve', args=[self.id, self.filename])
+        return reverse('wagtaildocs_serve', args=[self.pk, self.filename])

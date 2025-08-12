@@ -45,7 +45,7 @@ idna==3.10
     #   requests
 isort==6.0.1
     # via -r requirements-lint.in
-mypy==1.17.0
+mypy==1.17.1
     # via
     #   -r requirements-lint.in
     #   celery-stubs
@@ -56,8 +56,10 @@ mypy-extensions==1.1.0
     # via mypy
 ondivi==0.7.2
     # via -r requirements-lint.in
-orjson==3.11.0
-    # via mypy
+orjson==3.11.2
+    # via
+    #   -c requirements.txt
+    #   mypy
 parse==1.20.2
     # via ondivi
 pathspec==0.12.1
@@ -66,7 +68,7 @@ requests==2.32.3
     # via
     #   -c requirements.txt
     #   djangorestframework-stubs
-ruff==0.12.5
+ruff==0.12.8
     # via -r requirements-lint.in
 smmap==5.0.2
     # via gitdb
@@ -74,13 +76,13 @@ sqlparse==0.5.3
     # via
     #   -c requirements.txt
     #   django
-types-oauthlib==3.3.0.20250708
+types-oauthlib==3.3.0.20250809
     # via -r requirements-lint.in
-types-psutil==7.0.0.20250601
+types-psutil==7.0.0.20250801
     # via -r requirements-lint.in
-types-python-dateutil==2.9.0.20250708
+types-python-dateutil==2.9.0.20250809
     # via -r requirements-lint.in
-types-pyyaml==6.0.12.20250516
+types-pyyaml==6.0.12.20250809
     # via
     #   django-stubs
     #   djangorestframework-stubs
@@ -88,7 +90,7 @@ types-requests==2.31.0.6
     # via djangorestframework-stubs
 types-urllib3==1.26.25.14
     # via types-requests
-types-uwsgi==2.0.0.20240516
+types-uwsgi==2.0.0.20250809
     # via -r requirements-lint.in
 typing-extensions==4.13.2
     # via

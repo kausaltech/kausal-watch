@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import importlib
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Protocol, Sequence, cast
+from importlib.util import find_spec
+from typing import TYPE_CHECKING, Any, Protocol, cast
 from urllib.parse import urljoin
 
 import reversion
@@ -36,8 +36,8 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
-from kausal_common.datasets.models import DatasetSchema
 from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
+from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel
@@ -47,18 +47,28 @@ from actions.models.plan import Plan
 from .utils import FieldLabelRenderer, admin_req
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from django.db.models import Model
     from django.http import HttpRequest
     from modeltrans.fields import TranslatedVirtualField
     from wagtail.admin.panels.base import Panel
 
+    from wagtail_modeladmin.helpers.url import AdminURLHelper
+
+    from kausal_common.datasets.models import DatasetScopeType
+
+    from aplans.cache import PlanSpecificCache
     from aplans.types import WatchAdminRequest
 
     from users.models import User
 
 
 def insert_model_translation_panels[M: Model](
-    model: type[M], panels: Sequence[Panel[M]], request: WatchAdminRequest, plan: Plan | None = None,
+    model: type[M],
+    panels: Sequence[Panel[M]],
+    request: WatchAdminRequest,
+    plan: Plan | None = None,
 ) -> Sequence[Panel[M]]:
     """Return a list of panels containing all of `panels` and language-specific panels for fields with i18n."""
     i18n_field = get_i18n_field(model)
@@ -82,14 +92,14 @@ def insert_model_translation_panels[M: Model](
             continue
 
         for lang_code in plan.other_languages:
-            tf = t_fields.get(convert_language_code(lang_code, "django"))
+            tf = t_fields.get(convert_language_code(lang_code, 'django'))
             if not tf:
                 continue
             out.append(type(p)(tf.name))
     return out
 
 
-def get_translation_tabs[M: Model](instance: M, request, include_all_languages: bool = False, extra_panels=None):
+def get_translation_tabs(instance: Model, request: HttpRequest, include_all_languages: bool = False, extra_panels=None):
     """
     Get tabs for entering translated strings.
 
@@ -109,7 +119,7 @@ def get_translation_tabs[M: Model](instance: M, request, include_all_languages: 
         return []
     tabs = []
 
-    user = request.user
+    user = user_or_bust(request.user)
     plan = user.get_active_admin_plan()
 
     languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
@@ -128,7 +138,7 @@ def get_translation_tabs[M: Model](instance: M, request, include_all_languages: 
         for field in i18n_field.get_translated_fields():
             if field.language != lang_code:
                 continue
-            panels.append(FieldPanel[M](field.name))
+            panels.append(FieldPanel(field.name))
         panels += extra_panels.get(lang_code, [])
         tabs.append(ObjectList(panels, heading=languages_by_code[lang_code]))
     return tabs
@@ -146,31 +156,27 @@ class PlanRelatedModelAdminPermissionHelper(PermissionHelper):
     def get_plans(self, obj):
         if isinstance(obj, PlanRelatedModel):
             return obj.get_plans()
-        else:
-            raise NotImplementedError('implement in subclass')
+        raise NotImplementedError('implement in subclass')
 
-    def _obj_matches_active_plan(self, user, obj):
+    def _obj_matches_active_plan(self, user: User, obj: PlanRelatedModel) -> bool:
         if not self.check_admin_plan:
             return True
 
         obj_plans = self.get_plans(obj)
         active_plan = user.get_active_admin_plan()
-        for obj_plan in obj_plans:
-            if obj_plan == active_plan:
-                return True
-        return False
+        return any(obj_plan == active_plan for obj_plan in obj_plans)
 
-    def user_can_inspect_obj(self, user, obj):
+    def user_can_inspect_obj(self, user: User, obj: PlanRelatedModel) -> bool:
         if not super().user_can_inspect_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
 
-    def user_can_edit_obj(self, user, obj):
+    def user_can_edit_obj(self, user: User, obj: PlanRelatedModel) -> bool:
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
 
-    def user_can_delete_obj(self, user, obj):
+    def user_can_delete_obj(self, user: User, obj: PlanRelatedModel) -> bool:
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
@@ -211,10 +217,12 @@ class AdminOnlyPanel(ObjectList):
 class AplansAdminModelForm[M: Model](WagtailAdminModelForm[M, 'User']):
     plan: Plan
 
+
 if TYPE_CHECKING:
     BoundFieldPanelMixinBase = FieldPanel.BoundPanel
 else:
     BoundFieldPanelMixinBase = object
+
 
 class BoundPlanFilteredFieldPanelMixin(BoundFieldPanelMixinBase):
     """Mixin for bound panels to filter the related model queryset based on the active plan."""
@@ -223,7 +231,7 @@ class BoundPlanFilteredFieldPanelMixin(BoundFieldPanelMixinBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        field = cast(ModelChoiceField, self.bound_field.field)
+        field = cast('ModelChoiceField', self.bound_field.field)
         queryset = field.queryset
         assert queryset is not None
         plan = self.request.get_active_admin_plan()
@@ -323,30 +331,35 @@ class BuiltInFieldCustomizationAwareEditHandlerMixin(FieldPanelMixinBase):
 
 
 class ButtonHelperProtocol(Protocol):
-    finalise_classname: Callable
+    finalise_classname: Callable[..., Any]
     model: Model
-    request: WatchAdminRequest
+    request: HttpRequest
 
 
 class DatasetButtonMixin:
     def dataset_buttons(
         self: ButtonHelperProtocol,
-        obj: Model,
+        obj: DatasetScopeType | None,
         classnames_add: list[str] | None = None,
         classnames_exclude: list[str] | None = None,
-    ) -> list[dict]:
-        buttons: list[dict] = []
+        cache: PlanSpecificCache | None = None,
+    ) -> list[dict[str, Any]]:
+        buttons: list[dict[str, Any]] = []
         if classnames_add is None:
             classnames_add = []
-        if importlib.util.find_spec('kausal_watch_extensions') is not None:
+        if find_spec('kausal_watch_extensions') is not None:
             from kausal_watch_extensions.dataset_editor import DatasetViewSet
         else:
             return buttons
 
         if obj is None:
             return buttons
-        for schema in DatasetSchema.get_for_model(obj):
-            dataset_cache = self.request.admin_cache.datasets_by_scope_by_schema
+
+        cache = cache or getattr(self.request, 'admin_cache')  # noqa: B009
+        assert cache is not None
+        schemas = cache.get_dataset_schemas_for_object(obj)
+        for schema in schemas:
+            dataset_cache = cache.datasets_by_scope_by_schema
             matching_dataset = (
                 dataset_cache.get(
                     self.model._meta.label,
@@ -389,7 +402,7 @@ class DatasetButtonMixin:
 
 
 class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
-    request: WatchAdminRequest
+    request: HttpRequest
     edit_button_classnames = ['button-primary']
 
     def edit_button(self, pk, classnames_add=None, classnames_exclude=None):
@@ -405,7 +418,8 @@ class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
         if isinstance(obj, Plan):
             url = obj.get_view_url()
         else:
-            url = obj.get_view_url(plan=self.request.user.get_active_admin_plan())
+            user = user_or_bust(self.request.user)
+            url = obj.get_view_url(plan=user.get_active_admin_plan())
         if not url:
             return None
 
@@ -422,7 +436,9 @@ class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
             'target': '_blank',
         }
 
-    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+    def get_buttons_for_obj(
+        self, obj, exclude=None, classnames_add=None, classnames_exclude=None
+    ):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
         view_live_button = self.view_live_button(
             obj,
@@ -436,14 +452,16 @@ class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
         return buttons
 
 
-
-
-class AplansTabbedInterface[M: Model, F: ModelForm](TabbedInterface[M, F]):
+class AplansTabbedInterface[M: Model, F: ModelForm[Any]](TabbedInterface[M, F]):
     class BoundPanel(TabbedInterface.BoundPanel[Any, Any, Any]):
         pass
 
     def get_bound_panel(
-        self, instance: M | None = None, request: HttpRequest | None = None, form=None, prefix='panel',
+        self,
+        instance: M | None = None,
+        request: HttpRequest | None = None,
+        form=None,
+        prefix='panel',
     ):
         if request is not None:
             req = admin_req(request)
@@ -455,12 +473,13 @@ class AplansTabbedInterface[M: Model, F: ModelForm](TabbedInterface[M, F]):
         if not is_admin:
             for child in list(self.children):
                 if isinstance(child, AdminOnlyPanel):
-                    cast(list, self.children).remove(child)
+                    cast('list', self.children).remove(child)
 
         return super().get_bound_panel(instance, request, form, prefix)
 
 
 if TYPE_CHECKING:
+
     class PersistFiltersBase(Protocol):
         continue_editing_active: Callable[[], bool]
         get_success_url: Callable[[], str | None]
@@ -468,6 +487,7 @@ if TYPE_CHECKING:
         request: HttpRequest
 else:
     PersistFiltersBase = object
+
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
@@ -486,13 +506,19 @@ class PersistFiltersEditingModelAdminMixin(PersistFiltersBase):
         # Notice that urljoin will just overwrite any existing query
         # strings in the url.  The query strings would have to be
         # parsed, merged, and serialized if url contains query strings
+        assert url is not None
         return urljoin(url, filter_qs)
 
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class ContinueEditingModelAdminMixin:
+class ContinueEditingModelAdminMixin[M: Model]:
+    pk_quoted: str | None
+    instance: M
+    request: HttpRequest
+    url_helper: AdminURLHelper
+
     def continue_editing_active(self):
         return '_continue' in self.request.POST
 
@@ -504,8 +530,7 @@ class ContinueEditingModelAdminMixin:
             else:
                 pk = self.pk_quoted
             return self.url_helper.get_action_url('edit', pk)
-        else:
-            return super().get_success_url()
+        return super().get_success_url()
 
     def get_success_message_buttons(self, instance):
         if self.continue_editing_active():
@@ -575,8 +600,7 @@ class ActivatePermissionHelperPlanContextModelAdminMixin:
                 if hasattr(ret, 'render'):
                     ret = ret.render()
             return ret
-        else:
-            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
@@ -584,6 +608,7 @@ class ActivatePermissionHelperPlanContextModelAdminMixin:
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class SetInstanceModelAdminMixin[M: Model]:
     instance: M
+
     def setup(self, *args, **kwargs):
         with ctx_instance.activate(self.instance):
             super().setup(*args, **kwargs)  # type: ignore
@@ -619,10 +644,10 @@ def execute_admin_post_save_tasks(instance: Model, user: User):
 # when ModelAdmin migration is finished.
 class AplansEditView[M: Model](
     PersistFiltersEditingModelAdminMixin,
-    ContinueEditingModelAdminMixin,
+    ContinueEditingModelAdminMixin[M],
     PlanRelatedViewModelAdminMixin,
     ActivatePermissionHelperPlanContextModelAdminMixin,
-    SetInstanceModelAdminMixin,
+    SetInstanceModelAdminMixin[M],
     EditView,
 ):
     def form_valid(self, form, *args, **kwargs):
@@ -768,8 +793,8 @@ class InitializeFormWithPlanMixin:
 
 class InitializeFormWithInitialPlanMixin:
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs() # type: ignore
-        kwargs.update({'initial_plan_id': self.request.session.get('initial_plan_id')}) # type: ignore
+        kwargs = super().get_form_kwargs()  # type: ignore
+        kwargs.update({'initial_plan_id': self.request.session.get('initial_plan_id')})  # type: ignore
         return kwargs
 
     def dispatch(self, request, *args, **kwargs):
@@ -779,7 +804,7 @@ class InitializeFormWithInitialPlanMixin:
             request.session['initial_plan_id'] = str(active_plan.id)
 
         # Proceed with the normal dispatch process
-        return super().dispatch(request, *args, **kwargs) # type: ignore
+        return super().dispatch(request, *args, **kwargs)  # type: ignore
 
 
 class InitializeFormWithUserMixin:
@@ -788,7 +813,8 @@ class InitializeFormWithUserMixin:
         kwargs.update({'user': self.request.user})
         return kwargs
 
-class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
+
+class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()

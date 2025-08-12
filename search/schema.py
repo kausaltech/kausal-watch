@@ -116,7 +116,7 @@ class SearchResults(graphene.ObjectType):
             else:
                 logger.warning('Unknown object type: %s' % type(obj))
                 continue
-            hit.relevance = obj.relevance
+            hit.relevance = obj.relevance  # pyright: ignore
             highlights = getattr(obj, '_highlights', None)
             if highlights:
                 hit.highlight = highlights[0]
@@ -138,7 +138,7 @@ class Query:
     )
 
     @staticmethod
-    def resolve_search(
+    def resolve_search(  # noqa: ANN205, C901
         root,
         info,
         plan: str,
@@ -159,7 +159,8 @@ class Query:
             raise GraphQLError('Plan %s not found' % plan)
         related_plans = plan_obj.get_all_related_plans().all()
         if plan_obj.is_live():
-            # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site
+            # For live plans, restrict the related plans to be live also, preventing unreleased
+            # plans from showing up in the production site
             related_plans = related_plans.live()
         if only_other_plans:
             plans = (

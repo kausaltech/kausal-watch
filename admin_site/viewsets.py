@@ -21,9 +21,10 @@ from admin_site.mixins import (
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
 from admin_site.wagtail import execute_admin_post_save_tasks
+from kausal_common.users import user_or_bust
 
 if TYPE_CHECKING:
-    from aplans.types import WatchAdminRequest
+    from django.http import HttpRequest
 
 
 class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
@@ -67,16 +68,16 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class WatchCreateView[ModelT: Model, FormT: ModelForm](
+class WatchCreateView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm](
     # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
     ContinueEditingMixin,
     PlanRelatedViewMixin,
     CreateView[ModelT, FormT],
     # SetInstanceMixin,  # TODO: Is this needed? Causes linting errors right now.
 ):
-    request: WatchAdminRequest
+    request: HttpRequest
 
-    def initialize_instance(self, request: WatchAdminRequest, instance: ModelT) -> None:
+    def initialize_instance(self, request: HttpRequest, instance: ModelT) -> None:
         """
         Initialize the instance with plan defaults.
 
@@ -110,17 +111,17 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm](
     def get_form_kwargs(self):
         return {
             **super().get_form_kwargs(),
-            'plan': self.request.user.get_active_admin_plan(),
+            'plan': user_or_bust(self.request.user).get_active_admin_plan(),
         }
 
-class WatchIndexView[ModelT: Model, FormT: ModelForm](
+class WatchIndexView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
     ActivatePermissionHelperPlanContextMixin,
     IndexView[ModelT],
 ):
     pass
 
 
-class WatchViewSet[ModelT: Model, FormT: ModelForm = WagtailAdminModelForm[Any]](SnippetViewSet[ModelT, FormT]):
+class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](SnippetViewSet[ModelT, FormT]):
     index_view_class = WatchIndexView
     add_view_class = WatchCreateView  # type: ignore[assignment]
     edit_view_class = WatchEditView  # type: ignore[assignment]

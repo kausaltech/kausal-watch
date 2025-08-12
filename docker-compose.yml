@@ -95,7 +95,7 @@ services:
     depends_on:
       - db
       - redis
-    command: uwsgi
+    command: gunicorn
 
   celery-worker:
     build: *django-build

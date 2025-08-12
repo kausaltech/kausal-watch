@@ -51,8 +51,8 @@ class CategoryTreeMapBlock(blocks.StructBlock):
         label = _('Category tree map')
 
     graphql_fields = [
-        GraphQLForeignKey('category_type', CategoryType),
-        GraphQLForeignKey('value_attribute', AttributeType),
+        GraphQLForeignKey('category_type', CategoryType, required=True),
+        GraphQLForeignKey('value_attribute', AttributeType, required=True),
         GraphQLString('heading'),
         GraphQLString('lead'),
     ]

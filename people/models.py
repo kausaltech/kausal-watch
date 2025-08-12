@@ -6,7 +6,7 @@ import hashlib
 import logging
 import re
 import uuid
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import reversion
 from django.contrib.auth.models import AnonymousUser
@@ -36,8 +36,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
     from kausal_common.models.types import M2M, RevMany
-
-    from aplans.types import UserOrAnon
+    from kausal_common.users import UserOrAnon
 
     from actions.models.action import Action
     from actions.models.plan import Plan, PlanPublicSiteViewer
@@ -47,9 +46,12 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-#User: type[UserModel] = get_user_model()  # type: ignore
+# User: type[UserModel] = get_user_model()  # type: ignore
 
-def determine_image_dim(image_width, image_height, width, height):
+
+def determine_image_dim(
+    image_width: int, image_height: int, width: str | int | None, height: str | int | None
+) -> tuple[int, int]:
     for name in ('width', 'height'):
         x = locals()[name]
         if x is None:
@@ -61,7 +63,7 @@ def determine_image_dim(image_width, image_height, width, height):
             if x > 4000:
                 raise ValueError()  # noqa: TRY301
         except (ValueError, TypeError):
-            raise ValueError("invalid %s dimension: %s" % (name, x)) from None
+            raise ValueError('invalid %s dimension: %s' % (name, x)) from None
 
     if width is not None:
         width = int(width)
@@ -70,9 +72,11 @@ def determine_image_dim(image_width, image_height, width, height):
 
     ratio = image_width / image_height
     if not height:
-        height = width / ratio
+        assert width is not None
+        height = int(width / ratio)
     elif not width:
-        width = height * ratio
+        assert height is not None
+        width = int(height * ratio)
 
     return (width, height)
 
@@ -101,17 +105,22 @@ class PersonQuerySet(MultilingualQuerySet['Person']):
 
 if TYPE_CHECKING:
     _PersonManager = models.Manager.from_queryset(PersonQuerySet)
+
     class PersonManager(MLModelManager['Person', PersonQuerySet], _PersonManager): ...  # pyright: ignore
+
     del _PersonManager
 else:
     PersonManager = MLModelManager.from_queryset(PersonQuerySet)
 
 DEFAULT_AVATAR_SIZE = 360
 
+
 @reversion.register()
 class Person(BasePerson, PlanDefaultsModel):
     participated_in_training = models.BooleanField(
-        null=True, default=False, verbose_name=_('participated in training'),
+        null=True,
+        default=False,
+        verbose_name=_('participated in training'),
         help_text=_('Set to keep track who have attended training sessions'),
     )
 
@@ -129,7 +138,6 @@ class Person(BasePerson, PlanDefaultsModel):
     ]
 
     # Type annotations for related models etc.
-    id: int
     contact_for_actions: RevMany[Action]
     contact_for_indicators: RevMany[Indicator]
     organization_plan_admins: RevMany[OrganizationPlanAdmin]
@@ -195,9 +203,11 @@ class Person(BasePerson, PlanDefaultsModel):
                 raise ValueError('Invalid size argument (should be "<width>x<height>")')
             width, _, height = m.groups()
 
+            assert self.image_width is not None
+            assert self.image_height is not None
             dim = determine_image_dim(self.image_width, self.image_height, width, height)
 
-            tn_args: dict = {
+            tn_args: dict[str, Any] = {
                 'size': dim,
             }
             if self.image_cropping:
@@ -212,7 +222,6 @@ class Person(BasePerson, PlanDefaultsModel):
         if request:
             url = request.build_absolute_uri(url)
         return url
-
 
     def get_client_for_email_domain(self):
         # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
@@ -246,9 +255,14 @@ class Person(BasePerson, PlanDefaultsModel):
             if len(clients) == 1:
                 client = clients[0]
             elif user is not None and not user.is_superuser:
-                logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
-                    self.email, self.id, len(clients),  # pyright: ignore
-                ))
+                logger.warning(
+                    'Invalid number of clients found for %s [Person-%d]: %d'
+                    % (
+                        self.email,
+                        self.id,
+                        len(clients),  # pyright: ignore
+                    )
+                )
         if not client:
             client = self.get_client_for_email_domain()
         return client
@@ -351,10 +365,10 @@ class Person(BasePerson, PlanDefaultsModel):
             )
         if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
             return Person(id=self.pk)
-        raise AssertionError("Unexpected value for PlanFeatures.contact_persons_public_data")
+        raise AssertionError('Unexpected value for PlanFeatures.contact_persons_public_data')
 
     def __str__(self):
-        return "%s %s" % (self.first_name, self.last_name)
+        return '%s %s' % (self.first_name, self.last_name)
 
 
 # Override wagtail default avatar_url templatetag (registered in people/apps.py)

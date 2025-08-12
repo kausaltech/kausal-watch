@@ -32,11 +32,6 @@ from aplans.graphql_types import DjangoNode, register_django_node
 
 from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
 
-# if typing.TYPE_CHECKING:
-#     from actions.models.action import Action
-#     from actions.models.category import Category, CategoryType
-#     from actions.models.plan import Plan
-
 
 class DimensionNode(BaseDimensionNode, DjangoNode):
     class Meta:

@@ -1,29 +1,34 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import graphene
+import strawberry as sb
 from django.db.models import Count, Q
-from django.db.models.query import QuerySet
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
 from graphql.type import (
     GraphQLArgument,
     GraphQLDirective,
-    GraphQLNonNull,
-    GraphQLString,
-    specified_directives,
 )
+from strawberry.schema import Schema as StrawberrySchema
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
-from treebeard.mp_tree import MP_Node
+from treebeard.mp_tree import MP_NodeQuerySet
+
+from kausal_common.models.types import copy_signature
+from kausal_common.strawberry.extensions import LoggingTracingExtension
+from kausal_common.strawberry.schema import Schema as UnifiedSchema
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
+from aplans.schema_context import WatchGraphQLContext
 from aplans.utils import public_fields
 
 if True:
+    from images import schema as images_schema  # noqa: F401
+
     from kausal_common import graphql_gis  # noqa: F401
 
 from actions import schema as actions_schema
@@ -41,7 +46,7 @@ from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, WorkflowStateEnum, get_plan_from_context, graphene_registry
+from .graphql_types import DjangoNode, SBInfo, WorkflowStateEnum, get_plan_from_context, graphene_registry
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -51,7 +56,7 @@ if TYPE_CHECKING:
     from actions.models import Plan
 
 
-def mp_node_get_ancestors[QS: QuerySet[MP_Node]](qs: QS, include_self: bool = False) -> QS:
+def mp_node_get_ancestors[QS: MP_NodeQuerySet[Any]](qs: QS, include_self: bool = False) -> QS:
     # https://github.com/django-treebeard/django-treebeard/issues/98
     paths: set[str] = set()
     for node in qs:
@@ -69,6 +74,7 @@ class SiteGeneralContentNode(DjangoNode):
         fields = public_fields(SiteGeneralContent)
 
 
+@sb.type
 class Query(
     actions_schema.Query,
     indicators_schema.Query,
@@ -114,8 +120,8 @@ class Query(
         )
         cache = None
         if consider_responsible_parties_within_action_revisions:
-            info.context.organization_action_count_cache = OrganizationActionCountCache(visible_actions)
-            cache = info.context.organization_action_count_cache
+            info.context.cache.organization_action_count_cache = OrganizationActionCountCache(visible_actions)
+            cache = info.context.cache.organization_action_count_cache
 
         qs = Organization.objects.qs.available_for_plans(plans)
         if plan is not None:
@@ -124,6 +130,7 @@ class Query(
             query = Q()
             if for_responsible_parties:
                 if consider_responsible_parties_within_action_revisions:
+                    assert cache is not None
                     responsible_actions_filter = cache.organization_responsible_party_queryset_filter
                 else:
                     responsible_actions_filter = Q(responsible_actions__action__in=visible_actions)
@@ -141,12 +148,11 @@ class Query(
             qs = mp_node_get_ancestors(qs, include_self=True)
 
         selections = get_fields(info)
-        if 'actionCount' in selections:
-            if not consider_responsible_parties_within_action_revisions:
-                annotate_filter = Q(responsible_actions__action__in=visible_actions)
-                qs = qs.annotate(action_count=Count(
-                    'responsible_actions__action', distinct=True, filter=annotate_filter,
-                ))
+        if 'actionCount' in selections and not consider_responsible_parties_within_action_revisions:
+            annotate_filter = Q(responsible_actions__action__in=visible_actions)
+            qs = qs.annotate(action_count=Count(
+                'responsible_actions__action', distinct=True, filter=annotate_filter,
+            ))
 
         if 'contactPersonCount' in selections and plan_obj.features.public_contact_persons:
             # FIXME: Check visibility of related plans, too
@@ -185,6 +191,7 @@ class Query(
         return obj
 
 
+@sb.type
 class Mutation(
     actions_schema.Mutation,
     indicators_schema.Mutation,
@@ -195,38 +202,13 @@ class Mutation(
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
 
-class LocaleDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='locale',
-            description='Select locale in which to return data',
-            args={
-                'lang': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="Language code of the locale to use",
-                ),
-            },
-            locations=[DirectiveLocation.QUERY],
-        )
-
-
-class AuthDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='auth',
-            description="Provide authentication data",
-            args={
-                'uuid': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="User UUID",
-                ),
-                'token': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description="Authentication token",
-                ),
-            },
-            locations=[DirectiveLocation.MUTATION],
-        )
+@sb.directive(
+    locations=[DirectiveLocation.MUTATION],
+    name='auth',
+    description='Provide authentication data',
+)
+def auth_directive(info: SBInfo, uuid: str, token: str):
+    return
 
 graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
 
@@ -254,9 +236,80 @@ class WorkflowStateDirective(GraphQLDirective):
         )
 
 
-schema = graphene.Schema(
-    query=Query,
-    mutation=Mutation,
-    directives=specified_directives + (LocaleDirective(), AuthDirective(), WorkflowStateDirective()),
-    types=graphene_registry + list(grapple_registry.models.values()),
+@sb.input(name='InstanceContext')
+class InstanceContextInput:
+    hostname: str | None
+    identifier: sb.ID | None
+    locale: str | None
+
+
+@sb.directive(
+    locations=[DirectiveLocation.QUERY, DirectiveLocation.MUTATION],
+    name='context',
+    description='Paths instance context, including the selected locale',
 )
+def context_directive(info: SBInfo, input: InstanceContextInput):
+    return
+
+
+@sb.directive(
+    locations=[DirectiveLocation.QUERY],
+    name='workflow',
+    description=(
+        'Let the client request retrieving approved/unapproved '
+        'drafts or published versions of plan data (currently individual actions). '
+        'The actual response is dependent on user access rights, for example '
+        'a published version is always returned to unauthenticated users '
+        'or when no draft exists.'
+    ),
+)
+def workflow_directive(
+    info: SBInfo,
+    state: Annotated[
+        WorkflowStateEnum,
+        sb.argument(
+            description='State of content to show',
+        )
+    ] = WorkflowStateEnum.PUBLISHED
+):
+    return
+
+
+class WatchSchema(UnifiedSchema):
+    @copy_signature(StrawberrySchema.__init__)
+    def __init__(self, *args, **kwargs):
+        from .schema_context import (
+            ActivatePlanContextExtension,
+            DeterminePlanContextExtension,
+            WatchAuthenticationExtension,
+            WatchExecutionCacheExtension,
+        )
+
+        extensions = kwargs.pop('extensions', [])
+        extensions.extend([
+            LoggingTracingExtension(context_class=WatchGraphQLContext),
+            DeterminePlanContextExtension,
+            WatchExecutionCacheExtension,
+            ActivatePlanContextExtension,
+            WatchAuthenticationExtension,
+        ])
+        kwargs['extensions'] = extensions
+        super().__init__(*args, **kwargs)
+
+
+def generate_strawberry_schema() -> sb.Schema:
+    from kausal_common.strawberry.registry import strawberry_types
+
+    all_types = set(strawberry_types)
+    all_types.update(list(grapple_registry.models.values()))
+    all_types.update(graphene_registry)
+    schema = WatchSchema(
+        query=Query,
+        mutation=Mutation,
+        types=all_types,
+        directives=[context_directive, workflow_directive, auth_directive],
+    )
+    return schema
+
+
+schema = generate_strawberry_schema()

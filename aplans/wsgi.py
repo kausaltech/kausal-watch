@@ -6,18 +6,14 @@ It exposes the WSGI callable as a module-level variable named ``application``.
 For more information on this file, see
 https://docs.djangoproject.com/en/2.1/howto/deployment/wsgi/
 """
+from __future__ import annotations
 
 import os
-import typing
 from datetime import UTC, datetime
 
 from django.core.wsgi import get_wsgi_application
 
 from loguru import logger
-
-if typing.TYPE_CHECKING:
-    from django.http.response import HttpResponseBase
-
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
 
@@ -25,7 +21,7 @@ django_application = get_wsgi_application()
 
 
 def run_deployment_checks():
-    from django.core import checks  # noqa
+    from django.core import checks
     from django.db import connections
 
     msgs: list[checks.CheckMessage] = checks.run_checks(include_deployment_checks=True)
@@ -53,7 +49,7 @@ def run_deployment_checks():
 #   - load more of the code to save memory after uWSGI forks workers
 #   - keep the state of the system closer to how it is under runserver
 try:
-    import uwsgi  # type: ignore  # noqa
+    import uwsgi  # type: ignore
     run_deployment_checks()
     HAS_UWSGI = True
 except ImportError:

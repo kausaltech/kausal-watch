@@ -1,6 +1,9 @@
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.base import Model
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.search.backends import get_search_backend
@@ -9,16 +12,20 @@ from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
 
 from kausal_common.datasets.models import DatasetSchema
-
-from aplans.types import WatchAdminRequest
+from kausal_common.users import user_or_bust
 
 from .models.action import Action
 from .models.attributes import AttributeType
 from .models.category import Category, CategoryLevel, CategoryType
 from .models.plan import Plan
 
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
-class WatchModelChooserBase(ModelChooserMixin):
+    from aplans.types import WatchAdminRequest
+
+
+class WatchModelChooserBase[M: Model](ModelChooserMixin[M]):
     def get_object_list(self, search_term=None, **kwargs):
         objs = self.get_unfiltered_object_list()
 
@@ -29,16 +36,17 @@ class WatchModelChooserBase(ModelChooserMixin):
         return objs
 
 
-class CategoryChooserMixin(WatchModelChooserBase):
-    request: WatchAdminRequest
+class CategoryChooserMixin(WatchModelChooserBase[Category]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
-        plan = self.request.user.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         objects = Category.objects.filter(type__plan=plan).distinct()
         return objects
 
 
-class CategoryChooserViewSet(ModelChooserViewSet):
+class CategoryChooserViewSet(ModelChooserViewSet[Category]):
     chooser_mixin_class = CategoryChooserMixin
 
     icon = 'kausal-category'
@@ -60,11 +68,12 @@ def register_category_chooser_viewset():
     return CategoryChooserViewSet('category_chooser', url_prefix='category-chooser')
 
 
-class CategoryTypeChooserMixin(WatchModelChooserBase):
-    request: WatchAdminRequest
+class CategoryTypeChooserMixin(WatchModelChooserBase[CategoryType]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
-        plan = self.request.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         return CategoryType.objects.filter(plan=plan)
 
     def user_can_create(self, user):
@@ -72,7 +81,7 @@ class CategoryTypeChooserMixin(WatchModelChooserBase):
         return False
 
 
-class CategoryTypeChooserViewSet(ModelChooserViewSet):
+class CategoryTypeChooserViewSet(ModelChooserViewSet[CategoryType]):
     chooser_mixin_class = CategoryTypeChooserMixin
 
     icon = 'kausal-category'
@@ -94,11 +103,12 @@ def register_category_type_chooser_viewset():
     return CategoryTypeChooserViewSet('category_type_chooser', url_prefix='category-type-chooser')
 
 
-class CategoryLevelChooserMixin(ModelChooserMixin):
-    request: WatchAdminRequest
+class CategoryLevelChooserMixin(ModelChooserMixin[CategoryLevel]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
-        plan = self.request.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         objects = CategoryLevel.objects.filter(type__plan=plan)
 
         type_str = self.request.GET.get('type')
@@ -110,7 +120,7 @@ class CategoryLevelChooserMixin(ModelChooserMixin):
         return False
 
 
-class CategoryLevelChooserViewSet(ModelChooserViewSet):
+class CategoryLevelChooserViewSet(ModelChooserViewSet[CategoryLevel]):
     chooser_mixin_class = CategoryLevelChooserMixin
 
     icon = 'kausal-category'
@@ -130,11 +140,12 @@ def register_category_level_chooser_viewset():
     return CategoryLevelChooserViewSet('category_level_chooser', url_prefix='category-level-chooser')
 
 
-class ActionChooserMixin(WatchModelChooserBase):
-    request: WatchAdminRequest
+class ActionChooserMixin(WatchModelChooserBase[Action]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
-        plan = self.request.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         related_plans = Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
         objects = Action.objects.filter(plan__in=related_plans)
         return objects
@@ -154,7 +165,7 @@ class ActionChooserMixin(WatchModelChooserBase):
         return False
 
 
-class ActionChooserViewSet(ModelChooserViewSet):
+class ActionChooserViewSet(ModelChooserViewSet[Action]):
     chooser_mixin_class = ActionChooserMixin
 
     icon = 'kausal-action'
@@ -176,7 +187,7 @@ def register_action_chooser_viewset():
     return ActionChooserViewSet('action_chooser', url_prefix='action-chooser')
 
 
-class PlanChooserMixin(WatchModelChooserBase):
+class PlanChooserMixin(WatchModelChooserBase[Plan]):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
@@ -197,7 +208,7 @@ class PlanChooserMixin(WatchModelChooserBase):
         return False
 
 
-class PlanChooserViewSet(ModelChooserViewSet):
+class PlanChooserViewSet(ModelChooserViewSet[Plan]):
     chooser_mixin_class = PlanChooserMixin
 
     icon = 'kausal-plan'
@@ -219,12 +230,13 @@ def register_plan_chooser_viewset():
     return PlanChooserViewSet('plan_chooser', url_prefix='plan-chooser')
 
 
-class AttributeTypeChooserMixin(WatchModelChooserBase):
-    request: WatchAdminRequest
+class AttributeTypeChooserMixin(WatchModelChooserBase[AttributeType]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
         scope = self.request.GET.get('scope', None)
-        plan = self.request.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         cat_qs = AttributeType.objects.get_queryset().for_categories(plan)
         act_qs = AttributeType.objects.get_queryset().for_actions(plan)
         if scope:
@@ -242,7 +254,7 @@ class AttributeTypeChooserMixin(WatchModelChooserBase):
         return False
 
 
-class AttributeTypeChooserViewSet(ModelChooserViewSet):
+class AttributeTypeChooserViewSet(ModelChooserViewSet[AttributeType]):
     chooser_mixin_class = AttributeTypeChooserMixin
 
     icon = 'kausal-attribute'
@@ -277,11 +289,12 @@ def register_attribute_type_chooser_viewset():
 
 
 
-class DatasetSchemaChooserMixin(WatchModelChooserBase):
-    request: WatchAdminRequest
+class DatasetSchemaChooserMixin(WatchModelChooserBase[DatasetSchema]):
+    request: HttpRequest
 
     def get_unfiltered_object_list(self):
-        plan = self.request.get_active_admin_plan()
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
         scope = self.request.GET.get('scope')
 
         if scope == 'plan':
@@ -305,7 +318,7 @@ class DatasetSchemaChooserMixin(WatchModelChooserBase):
     def get_object_string(self, obj):
         return obj.name_i18n
 
-class DatasetSchemaChooserViewSet(ModelChooserViewSet):
+class DatasetSchemaChooserViewSet(ModelChooserViewSet[DatasetSchema]):
     chooser_mixin_class = DatasetSchemaChooserMixin
     icon = 'table'
     model = DatasetSchema
@@ -313,11 +326,11 @@ class DatasetSchemaChooserViewSet(ModelChooserViewSet):
     per_page = 30
     fields = ['name', 'time_resolution']
 
-
     def get_chooser_mixin_kwargs(self):
-        kwargs = super().get_chooser_mixin_kwargs()
+        kwargs = super().get_chooser_mixin_kwargs()  # type: ignore
         kwargs['scope'] = self.request.GET.get('scope', 'plan')
         return kwargs
+
 
 class DatasetSchemaChooser(AdminChooser):
     choose_one_text = _('Choose a dataset schema')

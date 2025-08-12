@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import typing
-from typing import ClassVar, Iterable, Sequence
+from typing import ClassVar, Self, override
 
 import reversion
 from django.db import models
@@ -10,7 +10,7 @@ from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 
-from kausal_common.models.types import MLModelManager
+from kausal_common.models.types import MLModelManager, RevManyToMany
 from kausal_common.organizations.models import (
     BaseNamespace,
     BaseOrganization,
@@ -23,10 +23,12 @@ from kausal_common.organizations.models import (
 from aplans.utils import PlanDefaultsModel, PlanRelatedModel
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
     from django.db.models import QuerySet
     from modelcluster.fields import PK
 
-    from kausal_common.models.types import FK, M2M, RevManyQS
+    from kausal_common.models.types import FK, RevManyQS
 
     from actions.models import Action, Plan
     from actions.models.action import ActionResponsibleParty
@@ -39,8 +41,9 @@ if typing.TYPE_CHECKING:
 class OrganizationClass(BaseOrganizationClass):
     pass
 
-class OrganizationQuerySet(BaseOrganizationQuerySet):
-    def editable_by_user(self, user: User):
+class OrganizationQuerySet(BaseOrganizationQuerySet['Organization']):  # type: ignore[override]
+    @override
+    def editable_by_user(self, user: User) -> Self:
         if user.is_superuser:
             return self
         # person = user.get_corresponding_person()
@@ -127,16 +130,12 @@ class OrganizationQuerySet(BaseOrganizationQuerySet):
 
 
 _OrganizationManager = models.Manager.from_queryset(OrganizationQuerySet)
-
-
-class OrganizationManager(MLModelManager['Organization', OrganizationQuerySet], _OrganizationManager): ...
-
-
+class OrganizationManager(MLModelManager['Organization', OrganizationQuerySet], _OrganizationManager): ...  # pyright: ignore
 del _OrganizationManager
 
 
 @reversion.register()
-class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):
+class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):  # pyright: ignore[reportIncompatibleVariableOverride]
     VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
     logo: FK[AplansImage | None] = models.ForeignKey(
@@ -162,6 +161,8 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
     plans: RevManyQS[Plan, PlanQuerySet]
     responsible_for_actions: RevManyToMany[Action, ActionResponsibleParty]
     logo_id: int | None
+
+    _cached_parent_obj: Organization | None
 
     @property
     def parent(self):
@@ -192,7 +193,7 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
         stopper_parents: list[int]
 
         if self.classification is not None and self.classification.identifier.startswith('helsinki:'):
-            ROOTS = ['Kaupunki', 'Valtuusto', 'Hallitus', 'Toimiala', 'Lautakunta', 'Toimikunta', 'Jaosto']  # noqa: N806
+            ROOTS = ['Kaupunki', 'Valtuusto', 'Hallitus', 'Toimiala', 'Lautakunta', 'Toimikunta', 'Jaosto']
             stopper_classes = list(
                 OrganizationClass.objects.filter(identifier__startswith='helsinki:', name__in=ROOTS).values_list('id', flat=True)
             )
@@ -335,14 +336,14 @@ class OrganizationIdentifier(BaseOrganizationIdentifier):
 class OrganizationPlanAdmin(PlanRelatedModel):
     """Person who can administer plan-specific content that is related to the organization."""
 
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         constraints = [
             models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_plan_admin'),
         ]
         verbose_name = _('plan admin')
         verbose_name_plural = _('plan admins')
 
-    organization: PK = ParentalKey(
+    organization: PK[Organization] = ParentalKey(
         Organization,
         on_delete=models.CASCADE,
         related_name='organization_plan_admins',

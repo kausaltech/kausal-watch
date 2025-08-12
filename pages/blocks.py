@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any, cast
 from uuid import UUID
 
 import graphene
@@ -16,24 +17,26 @@ from grapple.models import (
     GraphQLForeignKey,
     GraphQLImage,
     GraphQLPage,
-    GraphQLStreamfield,
     GraphQLString,
 )
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
+
+from kausal_common.graphene.grapple import make_grapple_field
 
 from actions.blocks import CategoryChooserBlock
 from actions.models.category import Category
 
 
 class ListBlockWithIncrementingChildIds(GrappleListBlock):
-    def resolve_items(self, info, **kwargs):
+    @staticmethod
+    def resolve_items(root: blocks.StreamValue.StreamChild, info, **kwargs) -> list[StructBlockItem]:
         # Grapple's ListBlock uses self.id also as IDs for the child blocks. We override this to make them unique.
         # FIXME: This causes problems if we rely on the IDs for anything else except uniqueness.
-        block_type = self.block.child_block
-        id = UUID(self.id).int
-        result = []
-        for item in self.value:
+        block_type = cast('blocks.ListBlock', root.block).child_block
+        id = UUID(root.id).int
+        result: list[StructBlockItem] = []
+        for item in root.value:
             id += 1
             result.append(StructBlockItem(str(UUID(int=id)), block_type, item))
         return result
@@ -55,8 +58,8 @@ class QuestionBlock(blocks.StructBlock):
         label = _('Question')
 
     graphql_fields = [
-        GraphQLString('question'),
-        GraphQLString('answer'),
+        GraphQLString('question', required=True),
+        GraphQLString('answer', required=True),
     ]
 
 
@@ -83,10 +86,11 @@ def sanitize_iframe(embed_contents: str) -> str:
 class EmbedHTMLValue(graphene.ObjectType):
     html = graphene.String()
 
-    def resolve_html(parent, info):
+    @staticmethod
+    def resolve_html(parent: dict[str, Any], info) -> str:
         height_key = parent['height']
         url = parent['url']
-        css_class = RESPONSIVE_STYLES.get(height_key, list(RESPONSIVE_STYLES.values())[0])
+        css_class = RESPONSIVE_STYLES.get(height_key, next(iter(RESPONSIVE_STYLES.values())))
         embed = get_embed(url)
         return f"<div data-embed-provider='{embed.provider_name}' class='responsive-object {css_class}'>{embed.html}</div>"
 
@@ -99,7 +103,8 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
     # resolve_html method
     embed = blocks.StructBlock(
         [('url', blocks.CharBlock(label=_('URL'))),
-         # The height value is actually used as a generic size parameter whose interpretation dependends on the type of embed (the provider)
+         # The height value is actually used as a generic size parameter whose interpretation dependends on
+         # the type of embed (the provider)
          ('height', blocks.ChoiceBlock(
              choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))],
              label=_('Size'),
@@ -107,7 +112,7 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
     )
     full_width = blocks.BooleanBlock(required=False)
 
-    def clean(self, value: dict):
+    def clean(self, value: dict[str, Any]):
         result = super().clean(value)
         url = result.get('embed', {}).get('url')
         if url and len(url):
@@ -133,7 +138,7 @@ class QuestionAnswerBlock(blocks.StructBlock):
 
     graphql_fields = [
         GraphQLString('heading'),
-        GraphQLStreamfield('questions'),
+        make_grapple_field('questions', QuestionBlock, is_list=True, required=True),
     ]
 
 
@@ -151,7 +156,7 @@ class FrontPageHeroBlock(blocks.StructBlock):
         label = _('Front page hero block')
 
     graphql_fields = [
-        GraphQLString('layout'),
+        GraphQLString('layout', required=True),
         GraphQLImage('image'),
         GraphQLString('heading'),
         GraphQLString('lead'),
@@ -206,7 +211,7 @@ class CardListBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('lead'),
-        GraphQLStreamfield('cards'),
+        make_grapple_field('cards', CardBlock, is_list=True, required=True),
     ]
 
 
@@ -236,7 +241,7 @@ class ActionCategoryFilterCardsBlock(blocks.StructBlock):
         label = _('Action category filter cards')
 
     graphql_fields = [
-        GraphQLStreamfield('cards'),
+        make_grapple_field('cards', ActionCategoryFilterCardBlock, is_list=True, required=True),
     ]
 
 

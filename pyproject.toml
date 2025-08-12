@@ -32,7 +32,10 @@ env = [
 ]
 
 [tool.mypy]
-plugins = ["mypy_django_plugin.main"]
+plugins = [
+  "mypy_django_plugin.main",
+  "pydantic.mypy",
+]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings"
 exclude = [
   "/migrations/",
@@ -121,7 +124,29 @@ exclude = [
 ]
 stubPath = "kausal_common/typings"
 deprecateTypingAliases = true
+reportMissingTypeStubs = "information"
+reportUnusedCallResult = false
 reportAttributeAccessIssue = "error"
+reportUnknownParameterType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportMissingParameterType = false
+reportImportCycles = false
+reportUnannotatedClassAttribute = false
+reportUnknownVariableType = false
+reportImplicitOverride = false
+reportUnsafeMultipleInheritance = "information"
+reportUnnecessaryIsInstance = false
+reportUnnecessaryComparison = "information"
+reportIgnoreCommentWithoutRule = false
+reportUninitializedInstanceVariable = false
+reportIncompatibleMethodOverride = false
+reportIncompatibleVariableOverride = false
+reportExplicitAny = false
+reportPrivateImportUsage = false
+reportPrivateUsage = false
+reportUnreachable = false
+reportAny = false
 defineConstant = { 'IS_PATHS' = false, 'IS_WATCH' = true }
 
 

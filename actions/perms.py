@@ -77,30 +77,39 @@ def _get_perm_objs(model, perms):
 @lru_cache
 def get_wagtail_contact_person_perms():
     perms = []
-    perms += list(Permission.objects.filter(
-        content_type__app_label='wagtaildocs',
-        codename__in=('add_document', 'change_document', 'delete_document'),
-    ))
-    perms += list(Permission.objects.filter(
-        content_type__app_label='wagtailimages',
-        codename__in=('add_image', 'change_image', 'delete_image'),
-    ))
-    perms += list(Permission.objects.filter(
-        content_type__app_label='wagtailcore',
-        codename__in=['add_collection', 'view_collection'],
-    ))
+    perms += list(
+        Permission.objects.filter(
+            content_type__app_label='wagtaildocs',
+            codename__in=('add_document', 'change_document', 'delete_document'),
+        )
+    )
+    perms += list(
+        Permission.objects.filter(
+            content_type__app_label='wagtailimages',
+            codename__in=('add_image', 'change_image', 'delete_image'),
+        )
+    )
+    perms += list(
+        Permission.objects.filter(
+            content_type__app_label='wagtailcore',
+            codename__in=['add_collection', 'view_collection'],
+        )
+    )
     return perms
 
 
 @lru_cache
 def get_wagtail_plan_admin_perms():
     perms = []
-    perms += list(Permission.objects.filter(
-        content_type__app_label='wagtailcore',
-        codename__in=[
-            'change_collection', 'delete_collection',
-        ],
-    ))
+    perms += list(
+        Permission.objects.filter(
+            content_type__app_label='wagtailcore',
+            codename__in=[
+                'change_collection',
+                'delete_collection',
+            ],
+        )
+    )
     return perms
 
 
@@ -123,9 +132,7 @@ def get_action_contact_person_perms():
     new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
     new_perms += get_wagtail_contact_person_perms()
 
-    for model in (
-        ActionResponsibleParty,
-    ):
+    for model in (ActionResponsibleParty,):
         new_perms += _get_perm_objs(model, ALL_PERMS)
     new_perms += _get_perm_objs(Organization, ('view',))
 
@@ -266,7 +273,6 @@ PLAN_ADMIN_PERMS = (
     (ImpactGroup, ALL_PERMS),
     (ImpactGroupAction, ALL_PERMS),
     (MonitoringQualityPoint, ALL_PERMS),
-
     (IndicatorLevel, ALL_PERMS),
     (ActionIndicator, ALL_PERMS),
     (Indicator, ALL_PERMS),
@@ -283,18 +289,13 @@ PLAN_ADMIN_PERMS = (
     (DimensionCategory, ALL_PERMS),
     (IndicatorDimension, ALL_PERMS),
     (Organization, ALL_PERMS),
-
     (Person, ALL_PERMS),  # also delete perm for plan admin
-
     (ReportType, ALL_PERMS),
     (Report, ALL_PERMS),
-
     (SiteGeneralContent, ('add', 'view', 'change')),
-
     (BaseTemplate, ('add', 'view', 'change')),
     (AutomaticNotificationTemplate, ALL_PERMS),
     (ContentBlock, ALL_PERMS),
-
     (User, ('view',)),
 )
 
@@ -411,7 +412,7 @@ def get_people_with_login_rights():
     )
 
 
-def calculate_people_with_login_rights(  # noqa: PLR0913
+def calculate_people_with_login_rights(
     *,
     superusers: set[int],
     general_plan_admins: set[int],
@@ -430,17 +431,8 @@ def calculate_people_with_login_rights(  # noqa: PLR0913
     if a person has some edit rights anywhere in the system to determine this.
 
     """
-    persons_with_permissions_pks = (
-        superusers |
-        general_plan_admins |
-        action_contact_persons |
-        indicator_contact_persons
-    )
-    used_org_ids = (
-        responsible_orgs |
-        primary_orgs |
-        indicator_orgs
-    )
+    persons_with_permissions_pks = superusers | general_plan_admins | action_contact_persons | indicator_contact_persons
+    used_org_ids = responsible_orgs | primary_orgs | indicator_orgs
     for org_id, person_id in organization_plan_admins:
         org_and_descendants = set(all_orgs.expand_tree(org_id))
         if org_and_descendants.intersection(used_org_ids):
@@ -450,7 +442,7 @@ def calculate_people_with_login_rights(  # noqa: PLR0913
 
 
 def _make_organization_tree(all_orgs: QuerySet[Organization]) -> Tree:
-    orgs_by_path = { org.path: org for org in all_orgs }
+    orgs_by_path = {org.path: org for org in all_orgs}
     tree = Tree()
     root_id = -1
     tree.create_node(

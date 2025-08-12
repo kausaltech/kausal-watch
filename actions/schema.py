@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
 from urllib.parse import urlparse
 
 import graphene
@@ -91,7 +91,7 @@ from people.models import Person
 from search.backends import get_search_backend
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
     from django_stubs_ext import StrOrPromise
 
@@ -152,7 +152,7 @@ def get_action_list_page_node():
 T = TypeVar('T', bound=Plan)
 
 
-class PlanInterface(graphene.Interface, Generic[T]):
+class PlanInterface(graphene.Interface[T], Generic[T]):
     primary_language = graphene.String(required=True)
     published_at = graphene.DateTime()
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
@@ -232,16 +232,15 @@ class PlanInterface(graphene.Interface, Generic[T]):
             return gettext('The site is not public at this time.')
 
 
-
 @register_graphene_node
-class RestrictedPlanNode(DjangoObjectType):
+class RestrictedPlanNode(DjangoObjectType[Plan]):
     class Meta:
         interfaces = (PlanInterface,)
         model = Plan
         fields = ('primary_language', 'published_at', 'domain', 'domains')
 
 
-class PlanNode(DjangoNode):
+class PlanNode(DjangoNode[Plan]):
     id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String(required=True)
@@ -314,17 +313,18 @@ class PlanNode(DjangoNode):
         model_field='indicator_levels',
     )
     def resolve_indicator_levels(root: Plan, info) -> IndicatorLevelQuerySet:
+        qs = root.indicator_levels.get_queryset()
         if not root.is_visible_for_user(info.context.user):
-            return cast('IndicatorLevelQuerySet', root.indicator_levels.none())
-        return cast('IndicatorLevelQuerySet', root.indicator_levels.get_queryset().visible_for_user(info.context.user))
+            return qs.none()
+        return qs.visible_for_user(info.context.user)
 
     @staticmethod
     def resolve_action_status_summaries(root: Plan, info):
-        return list(a.get_data({'plan': root}) for a in ActionStatusSummaryIdentifier)
+        return [a.get_data({'plan': root}) for a in ActionStatusSummaryIdentifier]
 
     @staticmethod
     def resolve_action_timeliness_classes(root: Plan, info):
-        return list(a.get_data({'plan': root}) for a in ActionTimelinessIdentifier)
+        return [a.get_data({'plan': root}) for a in ActionTimelinessIdentifier]
 
     @staticmethod
     def resolve_last_action_identifier(root: Plan, info):
@@ -422,7 +422,7 @@ class PlanNode(DjangoNode):
             first: int | None = None,
     ):
         user = info.context.user
-        qs = cast('ActionQuerySet', root.actions.get_queryset())
+        qs = root.actions.get_queryset()
         qs = qs.visible_for_user(user).filter(plan=root)
         if identifier:
             qs = qs.filter(identifier=identifier)
@@ -540,7 +540,7 @@ type AttributeObject = (
 )
 
 
-class AttributeInterface(graphene.Interface):
+class AttributeInterface(graphene.Interface[AttributeObject]):
     id = graphene.ID(required=True)
     type_ = graphene.Field('actions.schema.AttributeTypeNode', name='type', required=True)
     key = graphene.String(required=True)
@@ -563,7 +563,7 @@ class AttributeInterface(graphene.Interface):
         return root.type
 
     @classmethod
-    def resolve_type(cls, instance, info):
+    def resolve_type(cls, instance, _info) -> type[graphene.ObjectType[Any]] | None:
         if isinstance(instance, AttributeText):
             return AttributeTextNode
         if isinstance(instance, AttributeRichText):
@@ -578,7 +578,7 @@ class AttributeInterface(graphene.Interface):
 
 
 @register_graphene_node
-class AttributeChoice(graphene.ObjectType):
+class AttributeChoice(graphene.ObjectType[AttributeChoiceModel | AttributeChoiceWithText]):
     id = graphene.ID(required=True)
     choice = graphene.Field(
         'actions.schema.AttributeTypeChoiceOptionNode', required=False,
@@ -600,7 +600,7 @@ class AttributeChoice(graphene.ObjectType):
 
 
 @register_django_node
-class AttributeTextNode(DjangoNode):
+class AttributeTextNode(DjangoNode[AttributeText]):
     value = graphene.String(required=True)
 
     @staticmethod
@@ -615,7 +615,7 @@ class AttributeTextNode(DjangoNode):
 
 
 @register_django_node
-class AttributeRichTextNode(DjangoNode):
+class AttributeRichTextNode(DjangoNode[AttributeRichText]):
     value = graphene.String(required=True)
 
     @staticmethod
@@ -630,7 +630,7 @@ class AttributeRichTextNode(DjangoNode):
 
 
 @register_django_node
-class AttributeCategoryChoiceNode(DjangoNode):
+class AttributeCategoryChoiceNode(DjangoNode[AttributeCategoryChoice]):
     class Meta:
         model = AttributeCategoryChoice
         interfaces = (AttributeInterface,)
@@ -638,7 +638,7 @@ class AttributeCategoryChoiceNode(DjangoNode):
 
 
 @register_django_node
-class AttributeNumericValueNode(DjangoNode):
+class AttributeNumericValueNode(DjangoNode[AttributeNumericValue]):
     class Meta:
         model = AttributeNumericValue
         interfaces = (AttributeInterface,)
@@ -646,7 +646,7 @@ class AttributeNumericValueNode(DjangoNode):
 
 
 @register_django_node
-class CategoryLevelNode(DjangoNode):
+class CategoryLevelNode(DjangoNode[CategoryLevel]):
     class Meta:
         model = CategoryLevel
         fields = public_fields(CategoryLevel)
@@ -660,7 +660,7 @@ class AttributeTypeNode(DjangoNode):
 
 
 @register_django_node
-class AttributeTypeChoiceOptionNode(DjangoNode):
+class AttributeTypeChoiceOptionNode(DjangoNode[AttributeTypeChoiceOption]):
     class Meta:
         model = AttributeTypeChoiceOption
         fields = public_fields(AttributeTypeChoiceOption)
@@ -680,7 +680,7 @@ class ResolveShortDescriptionFromLeadParagraphShim:
 
 
 @register_django_node
-class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
+class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[CategoryType]):
     attribute_types = graphene.List(graphene.NonNull(AttributeTypeNode), required=True)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
     categories = graphene.List(
@@ -738,7 +738,7 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
 
 
 @register_django_node
-class CommonCategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
+class CommonCategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[CommonCategoryType]):
     class Meta:
         model = CommonCategoryType
         fields = public_fields(CommonCategoryType)
@@ -808,15 +808,14 @@ class AttributesMixin:
 
 
 @register_django_node
-class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin, DjangoNode):
+class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin, DjangoNode[Category]):
     image = graphene.Field('images.schema.ImageNode')
-    attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'))
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
-    datasets = graphene.List('datasets.schema.DatasetNode')
+    datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
 
     @staticmethod
     def _resolve_field_with_fallback_to_common(root: Category, field_name: str):
@@ -1047,7 +1046,7 @@ class ActionDependencyRoleNode(DjangoNode):
 
 
 @register_django_node
-class ActionDependencyRelationshipNode(DjangoNode):
+class ActionDependencyRelationshipNode(DjangoNode[ActionDependencyRelationship]):
     class Meta:
         model = ActionDependencyRelationship
         fields = ActionDependencyRelationship.public_fields
@@ -1068,13 +1067,13 @@ def _get_visible_actions(root, field_name, user: User | None) -> QuerySet[Action
     return actions.visible_for_user(user)
 
 
-class RevisionNode(DjangoNode):
+class RevisionNode(DjangoNode[Revision]):
     class Meta:
         model = Revision
         fields = ('created_at',)
 
 
-class WorkflowStateInfoNode(DjangoNode):
+class WorkflowStateInfoNode(DjangoNode[WorkflowState]):
     status_message = graphene.String(required=True)
     class Meta:
         model = WorkflowState
@@ -1089,7 +1088,7 @@ class WorkflowStateInfoNode(DjangoNode):
         return str(msg)
 
 
-class WorkflowInfoNode(graphene.ObjectType):
+class WorkflowInfoNode(graphene.ObjectType[Any]):
     has_unpublished_changes = graphene.Boolean(default_value=False, required=True)
     latest_revision = graphene.Field('actions.schema.RevisionNode', required=False)
     current_workflow_state = graphene.Field(
@@ -1160,7 +1159,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     indicators_count = graphene.Int()
     has_indicators_with_goals = graphene.Boolean()
 
-    datasets = graphene.List('datasets.schema.DatasetNode')
+    datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
 
     class Meta:
         model = Action
@@ -1424,7 +1423,7 @@ class ActionStatusNode(DjangoNode):
         return root.plan.get_if_visible(info.context.user)
 
 
-class ActionImplementationPhaseNode(DjangoNode):
+class ActionImplementationPhaseNode(DjangoNode[ActionImplementationPhase]):
     class Meta:
         model = ActionImplementationPhase
         fields = public_fields(ActionImplementationPhase)
@@ -1604,7 +1603,7 @@ class Query:
         category=graphene.ID(), order_by=graphene.String(),
     )
     plan_categories = graphene.List(
-        CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID(),
+        graphene.NonNull(CategoryNode), plan=graphene.ID(required=True), category_type=graphene.ID(),
     )
 
     category = graphene.Field(
@@ -1701,7 +1700,7 @@ class Query:
             action_pks = [str(pk) for pk in action_queryset.values_list('pk', flat=True)]
             if desired_workflow_task is not None:
                 workflowstates = (
-                    cast('WorkflowStateQuerySet', WorkflowState.objects.get_queryset()).active()\
+                    WorkflowState._default_manager.get_queryset().active()\
                     .filter(content_type=ct)\
                     .filter(current_task_state__task=desired_workflow_task)\
                     .filter(object_id__in=action_pks)
@@ -1853,7 +1852,7 @@ class Query:
         )
 
 
-class ActionResponsiblePartyForm(ModelForm):
+class ActionResponsiblePartyForm(ModelForm[ActionResponsibleParty]):
     # TODO: Eventually we will want to allow updating things other than organization
     class Meta:
         model = ActionResponsibleParty
@@ -1865,7 +1864,7 @@ class UpdateActionResponsiblePartyMutation(UpdateModelInstanceMutation):
         form_class = ActionResponsiblePartyForm
 
 
-class PlanForm(ModelForm):
+class PlanForm(ModelForm[Plan]):
     # TODO: Eventually we will want to allow updating things other than organization
     class Meta:
         model = Plan
@@ -1877,6 +1876,6 @@ class UpdatePlanMutation(UpdateModelInstanceMutation):
         form_class = PlanForm
 
 
-class Mutation(graphene.ObjectType):
+class Mutation(graphene.ObjectType[Any]):
     update_plan = UpdatePlanMutation.Field()
     update_action_responsible_party = UpdateActionResponsiblePartyMutation.Field()

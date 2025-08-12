@@ -28,9 +28,10 @@ from grapple.models import (
     GraphQLForeignKey,
     GraphQLImage,
     GraphQLInt,
-    GraphQLStreamfield,
     GraphQLString,
 )
+
+from kausal_common.graphene.grapple import make_grapple_streamfield
 
 from aplans.extensions import get_body_blocks
 from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
@@ -250,7 +251,7 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
     parent_page_types: Sequence[type[Page] | str] = []
 
     graphql_fields = AplansPage.graphql_fields + [
-        GraphQLStreamfield('body'),
+        make_grapple_streamfield(lambda: PlanRootPage, 'body'),
     ]
 
     search_fields: Sequence[index.BaseField] = [
@@ -318,7 +319,7 @@ class StaticPage(AplansPage):
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLImage('header_image'),
         GraphQLString('lead_paragraph'),
-        GraphQLStreamfield('body'),
+        make_grapple_streamfield(lambda: StaticPage, 'body'),
     ]
 
     search_fields: Sequence[index.BaseField] = [
@@ -500,7 +501,7 @@ class CategoryPage(AplansPage):
 
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLForeignKey('category', Category),
-        GraphQLStreamfield('body'),
+        make_grapple_streamfield(lambda: CategoryPage, 'body'),
         GraphQLForeignKey('layout', CategoryTypePageLevelLayout),
     ]
 
@@ -849,7 +850,7 @@ class AccessibilityStatementPage(FixedSlugPage):
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
-        GraphQLStreamfield('body'),
+        make_grapple_streamfield(lambda: AccessibilityStatementPage, 'body'),
     ]
 
     _default_manager: ClassVar[PageManager[Self]]

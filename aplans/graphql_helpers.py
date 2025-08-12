@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any
 
 import graphene
 from django.utils.module_loading import import_string
-from graphene_django.forms.mutation import DjangoModelFormMutation
 from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
+from kausal_common.users import user_or_bust
+
 from admin_site.permissions import PlanRelatedPermissionPolicy
-from admin_site.utils import admin_req
 from admin_site.wagtail import AplansModelAdmin, PlanRelatedModelAdminPermissionHelper
 
 from .graphql_types import AdminButton
@@ -17,6 +17,7 @@ from .graphql_types import AdminButton
 if TYPE_CHECKING:
     from django.db.models import Model
     from graphql import GraphQLResolveInfo
+    from wagtail.admin.widgets.button import Button
 
     from kausal_common.graphene import GQLInfo
 
@@ -98,8 +99,8 @@ class ModelAdminAdminButtonsMixin:
     admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
 
     @staticmethod
-    def resolve_admin_buttons(root: Model, info: GQLInfo):
-        ModelAdmin: type[AplansModelAdmin] = import_string(root.MODEL_ADMIN_CLASS)  # type: ignore  # noqa: N806
+    def resolve_admin_buttons(root: Model, info: GQLInfo) -> list[Button]:
+        ModelAdmin: type[AplansModelAdmin[Any]] = import_string(root.MODEL_ADMIN_CLASS)  # type: ignore
 
         if not info.context.user.is_staff:
             return []
@@ -120,7 +121,7 @@ class AdminButtonsMixin:
         if not info.context.user.is_staff:
             return []
 
-        view_set_class: type[WatchViewSet] = import_string(root.VIEWSET_CLASS)  # type: ignore
+        view_set_class: type[WatchViewSet[Any]] = import_string(root.VIEWSET_CLASS)  # type: ignore
         view_set = view_set_class()
 
         if isinstance(view_set.permission_policy, PlanRelatedPermissionPolicy):
@@ -128,7 +129,7 @@ class AdminButtonsMixin:
 
         if not hasattr(view_set, 'get_index_view_buttons'):
             raise ValueError(f'get_index_view_buttons method not found for view set {view_set.__class__.__name__}')
-        user = admin_req(info.context).user
+        user = user_or_bust(info.context.user)
         plan = user.get_active_admin_plan()
         buttons = view_set.get_index_view_buttons(user, root, plan)  # type: ignore[attr-defined]
 

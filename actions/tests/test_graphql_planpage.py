@@ -43,9 +43,11 @@ def assert_body_block(graphql_client_query_data, plan, block_fields, expected, e
           planPage(plan: $plan, path: $path) {
             ... on %(page_type)s {
               body {
-                id
-                blockType
-                field
+                ... on StreamFieldInterface {
+                  id
+                  blockType
+                  field
+                }
                 ...Block
               }
             }
@@ -449,11 +451,10 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
           planPage(plan: $plan, path: $path) {
             ... on StaticPage {
               body {
-                id
-                blockType
-                field
-                ... on CharBlock {
-                  value
+                ... on StreamFieldInterface {
+                  id
+                  blockType
+                  field
                 }
                 ... on RichTextBlock {
                   value

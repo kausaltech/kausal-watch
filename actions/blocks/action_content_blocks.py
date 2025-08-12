@@ -5,9 +5,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLString
 
 from kausal_common.datasets.models import DatasetSchema
+from kausal_common.graphene.grapple import make_grapple_streamfield
 
 from aplans.graphql_interfaces import FieldBlockMetaInterface
 from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
@@ -117,7 +118,7 @@ class FormFieldBlock(blocks.StructBlock):  # child
         GraphQLString('field_label'),
         GraphQLString('field_type'),
         GraphQLBoolean('field_required'),
-        GraphQLStreamfield('choices'),
+        make_grapple_streamfield(lambda: FormFieldBlock, 'choices'),
     ]
 
 
@@ -161,7 +162,7 @@ class BaseContactFormBlock(blocks.StructBlock):  # block.details custom
         GraphQLBoolean('feedback_required'),
         GraphQLBoolean('email_visible'),
         GraphQLBoolean('email_required'),
-        GraphQLStreamfield('fields'),
+        make_grapple_streamfield(lambda: BaseContactFormBlock, 'fields'),
     ]
 
     def clean(self, value):

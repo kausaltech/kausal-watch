@@ -9,9 +9,12 @@ class ImagesConfig(AppConfig):
         from .chooser import monkeypatch_chooser
         monkeypatch_chooser()
 
-        # monkeypatch new permission policy
         from wagtail.images import permissions
 
+        # Register graphql types overrides for grapple
+        from . import schema  # noqa: F401
+
+        # monkeypatch new permission policy
         from .permissions import permission_policy
         permissions.permission_policy = permission_policy
 

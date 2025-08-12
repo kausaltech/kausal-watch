@@ -24,7 +24,7 @@ from wagtail_color_panel.fields import ColorField
 
 from kausal_common.i18n.helpers import get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
-from kausal_common.models.types import RevManyQS, manager_from_mlqs
+from kausal_common.models.types import FK, RevManyQS, RevManyToManyQS, manager_from_mlqs
 
 from aplans.utils import (
     IdentifierField,
@@ -45,14 +45,13 @@ if TYPE_CHECKING:
     from django.db.models.manager import Manager
 
     from kausal_common.models.types import MLMM, RevMany
-
-    from aplans.utils import UserOrAnon
+    from kausal_common.users import UserOrAnon
 
     from actions.models.plan import Plan
     from indicators.models import Indicator
     from pages.models import CategoryPage, CategoryTypePage, CategoryTypePageLevelLayout
 
-    from .action import ActionManager
+    from .action import Action, ActionCategoryThrough, ActionQuerySet
 
 
 class CategoryTypeBase(models.Model):
@@ -354,7 +353,7 @@ class CategoryLevel(OrderedModel):
 
 
 class CategoryBase(OrderedModel):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    uuid = models.UUIDField[str | uuid.UUID, uuid.UUID](default=uuid.uuid4, editable=False, unique=True)
     identifier = IdentifierField(max_length=70)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     lead_paragraph = models.TextField(
@@ -459,17 +458,17 @@ class CommonCategory(CategoryBase, ClusterableModel):
 class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
-    type = models.ForeignKey(
+    type: FK[CategoryType] = models.ForeignKey(
         CategoryType, on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type'),
     )
     type_id: int
-    common = models.ForeignKey(
+    common: FK[CommonCategory | None] = models.ForeignKey(
         CommonCategory, on_delete=models.PROTECT, related_name='category_instances',
         null=True, blank=True, verbose_name=_('common category'),
     )
-    external_identifier = models.CharField(max_length=50, blank=True, null=True, editable=False)
-    parent: Category | None = models.ForeignKey(  # type: ignore[assignment]
+    external_identifier = models.CharField[str | None, str | None](max_length=50, blank=True, null=True, editable=False)
+    parent: FK[Category | None] = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category'),
     )
@@ -480,7 +479,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     )
 
     # type annotations
-    actions: ActionManager  # pyright: ignore
+    actions: RevManyToManyQS[Action, ActionCategoryThrough, ActionQuerySet]
     indicators: RevMany[Indicator]
     category_pages: RevMany[CategoryPage]
     parent_id: int | None
@@ -639,7 +638,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             return self.common.get_icon(language)
         return None
 
-    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType]:
+    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
         at_qs = AttributeTypeModel.objects.filter(
@@ -651,7 +650,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
-    def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeType]:
+    def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
         at_qs = AttributeTypeModel.objects.filter(
@@ -668,7 +667,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # tab, and `i18n_panels` is a dict mapping a non-primary language to a list of panels to be put on the tab for
         # that language.
         main_panels = []
-        i18n_panels: dict[str, list[AttributeFieldPanel]] = {}
+        i18n_panels: dict[str, list[AttributeFieldPanel[Any]]] = {}
         attribute_types = self.get_visible_attribute_types(user)
         plan = user.get_active_admin_plan()  # not sure if this is reasonable...
         for attribute_type in attribute_types:
@@ -703,7 +702,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     @classmethod
     def get_attribute_types_for_plan(
         cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False
-    ) -> list[AttributeType]:
+    ) -> list[AttributeType[Any]]:
         category_ct = ContentType.objects.get_for_model(cls)
         category_type_content_type = ContentType.objects.get_for_model(CategoryType)
         category_types = plan.category_types.values_list('pk', flat=True)

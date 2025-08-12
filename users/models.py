@@ -394,6 +394,9 @@ class User(AbstractUser):
     def can_access_admin(self, plan: Plan | None = None) -> bool:
         """Can the user access the admin interface in general or for a given plan."""
 
+        if self.is_superuser:
+            return True
+
         adminable_plans = {p.pk for p in self.get_adminable_plans()}
         if plan is None:
             if len(adminable_plans) == 0:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.forms import ValidationError
 from django.utils.functional import cached_property
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from .schema import DashboardIndicatorChartSeries
 
 
-class IndicatorChooserBlock(ChooserBlock):
+class IndicatorChooserBlock(ChooserBlock[Indicator]):
     @cached_property
     def target_model(self):
         return Indicator
@@ -49,7 +49,7 @@ class IndicatorChooserBlock(ChooserBlock):
         label = _('Indicator')
 
 
-class DimensionChooserBlock(ChooserBlock):
+class DimensionChooserBlock(ChooserBlock[Dimension]):
     @cached_property
     def target_model(self):
         return Dimension
@@ -136,7 +136,7 @@ class IndicatorShowcaseBlock(StructBlock):
     ]
 
 
-def _get_dashboard_indicator_chart_series_class() -> type:
+def _get_dashboard_indicator_chart_series_class() -> type[DashboardIndicatorChartSeries]:
     from .schema import DashboardIndicatorChartSeries
     return DashboardIndicatorChartSeries
 
@@ -162,12 +162,12 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
         GraphQLForeignKey('dimension', Dimension),
         GraphQLField(
             'chart_series',
-            _get_dashboard_indicator_chart_series_class,  # pyright: ignore
+            _get_dashboard_indicator_chart_series_class,
             is_list=True,
         ),
     ]
 
-    def chart_series(self, info: GQLInfo, values: dict) -> list[DashboardIndicatorChartSeries]:
+    def chart_series(self, info: GQLInfo, values: dict[str, Any]) -> list[DashboardIndicatorChartSeries]:
         from .schema import DashboardIndicatorChartSeries
         indicator = values['indicator']
         assert isinstance(indicator, Indicator)

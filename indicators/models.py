@@ -29,7 +29,6 @@ from dateutil.relativedelta import relativedelta
 from wagtail_color_panel.fields import ColorField
 
 from kausal_common.models.types import (
-    JSONField,
     MLModelManager,
     ModelManager,
     manager_from_mlqs,
@@ -52,9 +51,10 @@ from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 
 if typing.TYPE_CHECKING:
-    from kausal_common.models.types import FK, M2M, MLMM, RevMany
+    from modelcluster.fields import PK
 
-    from aplans.types import UserOrAnon
+    from kausal_common.models.types import FK, M2M, MLMM, RevMany
+    from kausal_common.users import UserOrAnon
 
     from actions.models import Action
     from actions.models.category import Category, CategoryType
@@ -66,7 +66,7 @@ User = get_user_model()
 
 
 def latest_plan():
-    PlanModel = cast('Plan', apps.get_model('actions', 'Plan'))  # noqa: N806
+    PlanModel = cast('Plan', apps.get_model('actions', 'Plan'))
     if PlanModel.objects.exists():
         return PlanModel.objects.latest()
     return None
@@ -216,6 +216,9 @@ class IndicatorRelationship(models.Model):
 
     class Meta:
         abstract = True
+
+    causal_indicator: Any
+    effect_indicator: Any
 
     def __str__(self):
         return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)  # type: ignore
@@ -502,7 +505,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     wagtail_reference_index_ignore = True
 
-    objects: ClassVar[IndicatorManager] = IndicatorManager()  # pyright: ignore
+    objects: ClassVar[IndicatorManager] = IndicatorManager()
 
     # type annotations
     id: int
@@ -527,9 +530,6 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     def handle_admin_save(self, context: AdminSaveContext):
         for rel_action in self.related_actions.get_queryset().all():
             rel_action.action.recalculate_status()
-
-    def get_latest_graph(self):
-        return self.graphs.latest()  # type: ignore
 
     def get_plans_with_access(self):
         from actions.models import Plan
@@ -606,10 +606,6 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     def has_data(self):
         return self.latest_value_id is not None
 
-    @display(boolean=True, description=_('Has a graph'))
-    def has_graph(self):
-        return self.latest_graph_id is not None  # type: ignore
-
     def get_notification_context(self, plan):
         edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
         return {
@@ -665,7 +661,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
-    def set_contact_persons(self, data: list):
+    def set_contact_persons(self, data: list[dict[str, Any]]):
         existing_persons = {p.person for p in self.contact_persons.all()}
         new_persons = {d['person'] for d in data}
         IndicatorContactPerson.objects.filter(
@@ -870,8 +866,8 @@ class PlanDimension(models.Model):
 class IndicatorDimension(OrderedModel):
     """Mapping of which dimensions an indicator has."""
 
-    dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
-    indicator = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
+    dimension: PK[Dimension] = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
+    indicator: PK[Indicator] = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
 
     public_fields: ClassVar = ['id', 'dimension', 'indicator', 'order']
 
@@ -994,7 +990,7 @@ class IndicatorValue(ClusterableModel):
     date = models.DateField(verbose_name=_('date'))
 
     # Cached here for performance reasons
-    normalized_values = JSONField[dict[str, float]](null=True, blank=True)
+    normalized_values: models.JSONField[dict[str, float]] = models.JSONField(null=True, blank=True)
 
     public_fields: ClassVar = ['id', 'indicator', 'categories', 'value', 'date']
 
@@ -1030,7 +1026,7 @@ class IndicatorGoal(models.Model):
     date = models.DateField(verbose_name=_('date'))
 
     # Cached here for performance reasons
-    normalized_values = JSONField[dict[str, float]](null=True, blank=True)
+    normalized_values: models.JSONField[dict[str, float] | None] = models.JSONField(null=True, blank=True)
 
     public_fields: ClassVar = ['id', 'indicator', 'value', 'date']
 
@@ -1083,7 +1079,7 @@ class RelatedIndicator(IndicatorRelationship):
     def __str__(self):
         return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
 
-class ActionIndicatorQuerySet(models.QuerySet):
+class ActionIndicatorQuerySet(models.QuerySet['ActionIndicator']):
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """
         Filter by visibility for a specific user.

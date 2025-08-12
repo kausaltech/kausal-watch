@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Any, ClassVar, Never, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
 
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -211,9 +211,9 @@ class AttributeType(
         )
 
 
-class Attribute[ATType: ParentalKey[AttributeType, AttributeType]](models.Model):
+class Attribute(models.Model):
     # Must define a ParentalKey `type` in subclasses
-    type: ATType
+    type: PK[AttributeType]
     # `content_object` must fit `type`
     # TODO: Enforce this
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
@@ -316,7 +316,7 @@ class AttributeChoiceWithText(Attribute):
         AttributeTypeChoiceOption, blank=True, null=True, on_delete=models.CASCADE,
         related_name='choice_with_text_attributes',
     )
-    text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
+    text: RichTextField[str | None, str | None] = RichTextField(verbose_name=_('Text'), blank=True, null=True)
     text_i18n: str
 
     i18n = TranslationField(
@@ -328,7 +328,7 @@ class AttributeChoiceWithText(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        text_field = typing.cast(RichTextField, self._meta.get_field('text'))
+        text_field = typing.cast('RichTextField', self._meta.get_field('text'))
         text = " ".join(text_field.get_searchable_content(str(self.text_i18n))).strip()
         if len(text):
             text = f'; {text}'
@@ -380,7 +380,7 @@ class AttributeRichText(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        text_field = typing.cast(RichTextField, self._meta.get_field('text'))
+        text_field = typing.cast('RichTextField', self._meta.get_field('text'))
         return " ".join(text_field.get_searchable_content(str(self.text_i18n)))
 
 
@@ -448,7 +448,7 @@ class ModelWithAttributes(ClusterableModel):
 
     @classmethod
     def from_serializable_data(cls, data, check_fks=True, strict_fks=False) -> Self:
-        """Called by Wagtail when editing a draft, and by the GraphQL implementation when resolving attributes."""
+        """Called by Wagtail when editing a draft, and by the GraphQL implementation when resolving attributes."""  # noqa: D401
         from actions.attributes import DraftAttributes
         serialized_attributes = data.pop('attributes', {})
         result = super().from_serializable_data(data, check_fks=check_fks, strict_fks=strict_fks)
@@ -461,9 +461,9 @@ class ModelWithAttributes(ClusterableModel):
     def set_attribute(
         self,
         attribute_type: AttributeTypeWrapper,
-        existing_attribute: Attribute,
+        existing_attribute: Attribute | None,
         value_parameters: dict[str, Any],
-        attribute_value_input: Any,  # noqa: ANN401
+        attribute_value_input: Any,
     ):
         if existing_attribute is None:
             if self._value_is_empty(value_parameters):

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import typing
-from typing import Tuple
 
 if typing.TYPE_CHECKING:
     from wagtail.blocks import Block
@@ -17,8 +18,7 @@ def should_register_modeladmin(cls):
     fq_name = '%s.%s' % (cls.__module__, cls.__name__)
     if fq_name in disabled_modeladmins:
         return False
-    else:
-        return True
+    return True
 
 
 def modeladmin_register(cls):
@@ -37,13 +37,10 @@ blocks_callback_funcs = set()
 
 
 def register_blocks_callback(func):
-    global blocks_callback_funcs
     blocks_callback_funcs.add(func)
 
 
-def register_body_block(key: str, block: 'Block', for_page: str | None = None):
-    global body_block_registry
-
+def register_body_block(key: str, block: Block, for_page: str | None = None):
     if for_page not in body_block_registry:
         body_block_registry[for_page] = []
 
@@ -56,7 +53,8 @@ def register_body_block(key: str, block: 'Block', for_page: str | None = None):
 
 
 def get_body_blocks(for_page: str | None = None) -> list[BlockDef]:
-    global blocks_callback_funcs
+    global blocks_callback_funcs  # noqa: PLW0603
+
     if blocks_callback_funcs:
         for func in blocks_callback_funcs:
             func()

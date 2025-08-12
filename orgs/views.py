@@ -16,6 +16,7 @@ from kausal_common.organizations.views import (
     OrganizationEditView as BaseOrganizationEditView,
     OrganizationIndexView as BaseOrganizationIndexView,
 )
+from kausal_common.users import user_or_bust
 
 from admin_site.utils import admin_req
 from orgs.models import Organization
@@ -30,7 +31,7 @@ class OrganizationCreateView(BaseOrganizationCreateView):
         result = super().form_valid(form)
         # Add the new organization to the related organizations of the user's active plan
         org = form.instance
-        plan = self.request.user.get_active_admin_plan()
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
         plan.related_organizations.add(org)
         return result
 

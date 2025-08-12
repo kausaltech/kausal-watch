@@ -51,8 +51,9 @@ def get_active_admin_plan(self):
 
 
 class AdminMiddleware(MiddlewareMixin):
-    def process_view(self, request: WatchAdminRequest, *args, **kwargs):
-        request.watch_cache = WatchObjectCache()
+    def process_view(self, request: WatchAdminRequest, *args, **kwargs) -> None:
+        with sentry_sdk.start_span(name='AdminMiddleware.process_view 1'):
+            request.watch_cache = WatchObjectCache()
 
         user = request.user
         if not user or not user.is_authenticated or not user.is_staff:

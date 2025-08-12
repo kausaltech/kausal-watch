@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.utils.translation import get_language
 import graphene
+from loguru import logger
 from wagtail.models import Page as WagtailPage
 
 import graphene_django_optimizer as gql_optimizer
@@ -25,10 +27,10 @@ class PageMenuItemNode(graphene.ObjectType):
 
     id = graphene.ID(required=True)
     page: AplansPage = graphene.Field(PageInterface, required=True)  # type: ignore[assignment]
-    parent = graphene.Field('pages.schema.PageMenuItemNode')
-    children = graphene.List('pages.schema.PageMenuItemNode')
-    cross_plan_link = graphene.Boolean()
-    view_url = graphene.String(client_url=graphene.String(required=False))
+    parent = graphene.Field('pages.schema.PageMenuItemNode', required=False)
+    children = graphene.List(graphene.NonNull('pages.schema.PageMenuItemNode'), required=False)
+    cross_plan_link = graphene.Boolean(default_value=False)
+    view_url = graphene.String(client_url=graphene.String(required=False), required=False)
 
     def resolve_id(self, info):
         return self.page.pk
@@ -68,6 +70,7 @@ class ExternalLinkMenuItemNode(graphene.ObjectType):
     class Meta:
         name = 'ExternalLinkMenuItem'
 
+    id = graphene.ID(required=True)
     url = graphene.String(required=True)
     link_text = graphene.String(required=True)
 
@@ -88,7 +91,7 @@ class MenuNodeMixin:
     https://docs.graphene-python.org/en/latest/types/objecttypes/#resolverimplicitstaticmethod
     """
 
-    items = graphene.List(MenuItem, required=True, with_descendants=graphene.Boolean(default_value=False))
+    items = graphene.List(graphene.NonNull(MenuItem), required=True, with_descendants=graphene.Boolean(default_value=False))
 
     @classmethod
     def resolver_from_plan(cls, plan: Plan, info: GQLInfo) -> None | WagtailPage:
@@ -123,7 +126,7 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
         page_items = [PageMenuItemNode(page=page) for page in pages]
         links = plan.links
         external_link_items = [
-            ExternalLinkMenuItemNode(url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
+            ExternalLinkMenuItemNode(id=str(link.pk), url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
         ]
         return page_items + external_link_items
 
@@ -198,17 +201,23 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
 class Query:
     plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
-    def resolve_plan_page(self, info, plan, path, **kwargs):
+    def resolve_plan_page(self, info: GQLInfo, plan: str, path: str, **kwargs) -> None | WagtailPage:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
+            logger.warning('Plan not found', plan=plan, path=path)
             return None
         if not plan_obj.is_visible_for_user(info.context.user):
+            logger.warning('Plan not visible for user', plan=plan, path=path)
             return None
 
         root = plan_obj.get_translated_root_page()
         if root is None:
+            logger.warning('Translated root page not found', plan=plan, locale=get_language())
             return None
         if not path.endswith('/'):
             path = path + '/'
         qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()
-        return gql_optimizer.query(qs, info).first()
+        page = gql_optimizer.query(qs, info).first()
+        if page is None:
+            logger.warning('Page not found', plan=plan, url_path=path, root_page_name=str(root), root_page_id=root.pk)
+        return page

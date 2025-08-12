@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from aplans.graphql_types import GQLInfo
 
 
+@replace_image_node
 class ImageRendition(DjangoNode):
     id = graphene.ID(required=True)
     src = graphene.String(required=True)
@@ -30,6 +31,11 @@ class ImageRendition(DjangoNode):
         fields = [
             'id', 'src', 'width', 'height', 'alt',
         ]
+
+    # needed for grapple
+    @classmethod
+    def type(cls) -> dict:
+        return dict(lazy=False)
 
 
 @replace_image_node
@@ -46,6 +52,11 @@ class ImageNode(DjangoNode):
             'id', 'title', 'focal_point_x', 'focal_point_y', 'focal_point_width',
             'focal_point_height', 'height', 'width', 'image_credit', 'alt_text',
         ]
+
+    # needed for grapple
+    @classmethod
+    def type(cls) -> dict:
+        return dict(lazy=False)
 
     @gql_optimizer.resolver_hints(
         prefetch_related=(Prefetch('renditions', to_attr='prefetched_renditions'),),

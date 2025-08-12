@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import typing
+from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from wagtail.models import Revision
 
-from kausal_common.datasets.models import Dataset
+import sentry_sdk
+
+from kausal_common.datasets.models import Dataset, DatasetSchema, DatasetSchemaQuerySet
 
 from aplans.graphql_types import WorkflowStateEnum
 
@@ -21,23 +23,26 @@ from actions.models import (
     CategoryType,
     Plan,
 )
+from actions.models.category import Category
 from reports.models import Report
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
+    from django.db.models.base import Model
+
+    from kausal_common.datasets.models import DatasetScopeType
+
     from actions.models.action import ActionQuerySet
     from orgs.models import Organization, OrganizationQuerySet
     from people.models import Person, PersonQuerySet
+    from users.models import User
 
-
+@dataclass
 class PlanSpecificCache:
     plan: Plan
-    organizations: dict[int, Organization]
-    persons: dict[int, Person]
-
-    def __init__(self, plan: Plan):
-        self.plan = plan
-        self.organizations = {}
-        self.persons = {}
+    organizations: dict[int, Organization] = field(default_factory=dict)
+    persons: dict[int, Person] = field(default_factory=dict)
+    organization_action_count_cache: OrganizationActionCountCache | None = None
+    schemas_by_model: dict[type[Model], DatasetSchemaQuerySet] = field(default_factory=dict)
 
     @cached_property
     def action_statuses(self) -> list[ActionStatus]:
@@ -50,6 +55,18 @@ class PlanSpecificCache:
     @cached_property
     def implementation_phases(self) -> list[ActionImplementationPhase]:
         return list(self.plan.action_implementation_phases.all())
+
+    @cached_property
+    def action_dataset_schemas(self) -> DatasetSchemaQuerySet:
+        return DatasetSchema.objects.get_queryset().for_scope(self.plan)
+
+    def get_dataset_schemas_for_object(self, instance: DatasetScopeType) -> DatasetSchemaQuerySet:
+        if isinstance(instance, Action):
+            assert instance.plan_id == self.plan.id
+            return self.action_dataset_schemas
+
+        assert isinstance(instance, Category)
+        return DatasetSchema.get_for_model(instance)
 
     @cached_property
     def datasets_by_scope_by_schema(self) -> dict[str, dict[int, dict[str, Dataset]]]:
@@ -160,19 +177,40 @@ class PlanSpecificCache:
 
 class WatchObjectCache:
     plan_caches: dict[int, PlanSpecificCache]
+    plan_caches_by_identifier: dict[str, PlanSpecificCache]
     admin_plan_cache: PlanSpecificCache | None
     query_workflow_state: WorkflowStateEnum
-    def __init__(self) -> None:
+    organization_action_count_cache: OrganizationActionCountCache | None
+    user: User | None
+
+    def __init__(self, user: User | None = None) -> None:
         self.plan_caches = {}
+        self.plan_caches_by_identifier = {}
         self.admin_plan_cache = None
         self.query_workflow_state = WorkflowStateEnum.PUBLISHED
+        self.user = user
+        self.organization_action_count_cache = None
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)
         if plan_cache is None:
-            plan = PlanSpecificCache.fetch(plan_id)
-            plan_cache = PlanSpecificCache(plan)
+            with sentry_sdk.start_span(op='cache.fetch', name='init plan cache'):
+                plan = PlanSpecificCache.fetch(plan_id)
+                plan_cache = PlanSpecificCache(plan)
             self.plan_caches[plan_id] = plan_cache
+        return plan_cache
+
+    def for_plan_identifier(self, plan_identifier: str) -> PlanSpecificCache:
+        plan_cache = self.plan_caches_by_identifier.get(plan_identifier)
+        if plan_cache is None:
+            plan = Plan.objects.get(identifier=plan_identifier)
+            if plan.id in self.plan_caches:
+                plan_cache = self.plan_caches[plan.id]
+            else:
+                plan_cache = PlanSpecificCache(plan)
+            self.plan_caches_by_identifier[plan_identifier] = plan_cache
+            if plan.id not in self.plan_caches:
+                self.plan_caches[plan.id] = plan_cache
         return plan_cache
 
     def for_plan(self, plan: Plan) -> PlanSpecificCache:
@@ -199,7 +237,7 @@ class OrganizationActionCountCache:
         actions_with_revisions = self.action_qs.filter(latest_revision__isnull=False)
         organization_pks_from_revisions = set()
         revisions = Revision.objects.filter(pk__in=actions_with_revisions.values_list('latest_revision_id', flat=True))
-        result = {}
+        result: dict[int, int] = {}
         for revision in revisions:
             for arp in revision.content.get('responsible_parties', []):
                 org_id = arp.get('organization')

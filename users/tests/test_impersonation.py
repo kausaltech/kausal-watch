@@ -7,8 +7,8 @@ from users.tests.factories import UserFactory
 pytestmark = pytest.mark.django_db
 
 def test_superuser_can_impersonate_and_release(client):
-    superuser = UserFactory(username='superuser', is_superuser=True)
-    regular_user = UserFactory(username='regular_user')
+    superuser = UserFactory.create(username='superuser', is_superuser=True)
+    regular_user = UserFactory.create(username='regular_user')
     client.force_login(superuser)
     url = reverse('hijack:acquire')
     response = client.post(url, {'user_pk': regular_user.pk})
@@ -21,8 +21,8 @@ def test_superuser_can_impersonate_and_release(client):
     assert response.wsgi_request.user == superuser  # User is back to own user
 
 def test_regular_user_cannot_impersonate(client):
-    regular_user = UserFactory(username='regular_user')
-    another_user = UserFactory(username='another')
+    regular_user = UserFactory.create(username='regular_user')
+    another_user = UserFactory.create(username='another')
     client.force_login(regular_user)
 
     url = reverse('hijack:acquire')
@@ -32,7 +32,7 @@ def test_regular_user_cannot_impersonate(client):
 
 
 def test_superuser_cannot_impersonate_themselves(client):
-    superuser = UserFactory(username='superuser', is_superuser=True)
+    superuser = UserFactory.create(username='superuser', is_superuser=True)
     client.force_login(superuser)
 
     url = reverse('hijack:acquire')
@@ -40,9 +40,9 @@ def test_superuser_cannot_impersonate_themselves(client):
     assert response.status_code == 403  # Forbidden
 
 def test_impersonated_cannot_impersonate(client):
-    superuser = UserFactory(username='superuser', is_superuser=True)
-    another_superuser = UserFactory(username='another_superuser', is_superuser=True)
-    regular_user = UserFactory(username='regular_user')
+    superuser = UserFactory.create(username='superuser', is_superuser=True)
+    another_superuser = UserFactory.create(username='another_superuser', is_superuser=True)
+    regular_user = UserFactory.create(username='regular_user')
     client.force_login(superuser)
 
     url = reverse('hijack:acquire')

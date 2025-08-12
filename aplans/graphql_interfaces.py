@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import graphene
 
 from aplans.graphql_types import register_graphene_interface
+
+if TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
 
 
 class FieldBlockMetaData(graphene.ObjectType):
@@ -27,10 +32,10 @@ class FieldBlockMetaInterface(graphene.Interface):
     meta = graphene.Field(FieldBlockMetaData)
 
     @staticmethod
-    def resolve_meta(root, info, *args, **kwargs) -> dict[str, bool]:
+    def resolve_meta(root, info: GQLInfo, *args, **kwargs) -> dict[str, bool]:
         attribute_type = root.value.get('attribute_type') if root.value else None
         user = info.context.user
-        plan = info.context._graphql_active_plan
+        plan = info.context.active_plan
         restricted = hidden = False
         if attribute_type:
             # TODO: implement for builtin fields as well
