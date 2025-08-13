@@ -88,6 +88,7 @@ env = environ.FileAwareEnv(
     MOUNTED_SECRET_PATHS=(list, []),
     ENABLE_DEBUG_TOOLBAR=(bool, False),
     KAUSAL_PATHS_URL=(str, ''),
+    DISABLE_WAGTAIL_EDITING_SESSION_PING=(bool, False),
     **COMMON_ENV_SCHEMA,
 )
 
@@ -868,6 +869,11 @@ if DEBUG:
     MIDDLEWARE.insert(
         0, f'{PROJECT_NAME}.middleware.PrintQueryCountMiddleware',
     )
+
+
+if env('DISABLE_WAGTAIL_EDITING_SESSION_PING'):
+    WAGTAIL_EDITING_SESSION_PING_INTERVAL = 0
+
 
 if REDIS_URL:
     CELERY_BROKER_URL = REDIS_URL
