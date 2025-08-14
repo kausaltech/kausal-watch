@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 from django.conf import settings
 from modeltrans.utils import build_localized_fieldname

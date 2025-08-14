@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from aplans.utils import get_language_from_default_language_field
 from typing import TYPE_CHECKING
 
 from django import forms
@@ -12,6 +11,8 @@ from modeltrans.utils import build_localized_fieldname
 from wagtail.admin.forms import WagtailAdminModelForm
 
 from kausal_common.i18n.helpers import convert_language_code
+
+from aplans.utils import get_language_from_default_language_field
 
 if TYPE_CHECKING:
     from django.db.models import Model
