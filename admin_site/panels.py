@@ -1,15 +1,25 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from django.conf import settings
 from modeltrans.utils import build_localized_fieldname
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 
-from kausal_common.i18n.helpers import convert_language_code
+from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
 
 if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
+
+
+
+class PrimaryLanguagePanel(FieldPanel):
+    @override
+    def get_bound_panel(self, instance=None, request=None, form=None, prefix="panel"):
+        bound_panel = super().get_bound_panel(instance, request, form, prefix)
+        language = get_language_from_default_language_field(bound_panel.instance)
+        bound_panel.heading = f'{bound_panel.heading} ({language.upper()})'
+        return bound_panel
 
 
 class TranslatedLanguagePanel(FieldPanel):
@@ -44,7 +54,7 @@ class TranslatedFieldMixin:
     def __init__(self, field_name: str, widget: Any = None, **kwargs):
         self.field_name = field_name
         self.widget = widget
-        primary_panel = FieldPanel(field_name, widget=widget, **kwargs)
+        primary_panel = PrimaryLanguagePanel(field_name, widget=widget, **kwargs)
         lang_panels = [TranslatedLanguagePanel(
             field_name=field_name,
             language=lang[0],
