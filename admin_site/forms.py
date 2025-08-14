@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from aplans.utils import get_language_from_default_language_field
 from typing import TYPE_CHECKING
 
 from django import forms
@@ -14,6 +15,7 @@ from kausal_common.i18n.helpers import convert_language_code
 
 if TYPE_CHECKING:
     from django.db.models import Model
+    from modeltrans.fields import TranslationField
 
     from actions.models.plan import Plan
 
@@ -43,18 +45,53 @@ class LoginForm(AuthenticationForm):
 class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
     plan: Plan | None = None
 
-    def prune_i18n_fields(self):
-        model: type[ModelT] = self._meta.model
-        i18n_field = get_i18n_field(model)
+    def get_languages_to_show(self, i18n_field: TranslationField, plan: Plan) -> set[str]:
+        """
+        Return a list of languages we want to display translation fields for.
+
+        This includes other languages of the plan, but also the
+        primary language of the plan, if it's different from the
+        primary language of the current model being edited.
+
+        It does not include the original language field without
+        the language suffix, since that field is added to the
+        form separately.
+
+        Please note: it is not enough nor necessary to hide the
+        language variant panels with is_shown since we have to
+        remove the form fields here anyway in order for the
+        form to be validated correctly.
+        """
+
+        if i18n_field.default_language_field:
+            original_field_language = get_language_from_default_language_field(self.instance, i18n_field)
+        else:
+            original_field_language = plan.primary_language
+
+        original_field_language = convert_language_code(original_field_language, 'django')
+
+        languages_to_show: set[str] = set(plan.other_languages).union({ plan.primary_language })
+        languages_to_show = {convert_language_code(lang, 'django') for lang in languages_to_show}
+
+        # In the end, we make sure the modeltrans original field -- ie. the field
+        # without the language suffix which is saved directly to the original db
+        # field and not in the i18n field -- is never shown twice (once here and once as the
+        # PrimaryLanguagePanel which was added as a separate panel.
+        languages_to_show.remove(original_field_language)
+        return languages_to_show
+
+    def prune_i18n_fields(self, plan: Plan):
+        i18n_field: TranslationField | None = get_i18n_field(self._meta.model)
         if not i18n_field:
             return
-        other_langs = self.plan.other_languages if self.plan is not None else []
-        other_langs = [convert_language_code(lang, 'django') for lang in other_langs]
+        languages_to_show = self.get_languages_to_show(i18n_field, plan)
+        if not languages_to_show:
+            return
         for base_field_name in i18n_field.fields:
             langs = list(get_available_languages(include_default=True))
             for lang in langs:
                 fn = build_localized_fieldname(base_field_name, lang)
-                if fn in self.fields and lang not in other_langs:
+                if lang not in languages_to_show and fn in self.fields:
                     del self.fields[fn]
 
     def save(self, commit=True):
@@ -64,4 +101,5 @@ class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop("plan", None)
         super().__init__(*args, **kwargs)
-        self.prune_i18n_fields()
+        if self.plan:
+            self.prune_i18n_fields(self.plan)

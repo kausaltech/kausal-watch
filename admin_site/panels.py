@@ -8,10 +8,6 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 
 from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
 
-if TYPE_CHECKING:
-    from aplans.types import WatchAdminRequest
-
-
 
 class PrimaryLanguagePanel(FieldPanel):
     @override
@@ -37,17 +33,6 @@ class TranslatedLanguagePanel(FieldPanel):
         ret['field_name'] = self.main_field_name
         ret['language'] = self.language
         return ret
-
-    class BoundPanel(FieldPanel.BoundPanel):
-        panel: TranslatedLanguagePanel
-        request: WatchAdminRequest
-
-        def is_shown(self):
-            plan = self.request.get_active_admin_plan()
-            ret = super().is_shown()
-            if not ret:
-                return False
-            return self.panel.language in plan.other_languages
 
 
 class TranslatedFieldMixin:
