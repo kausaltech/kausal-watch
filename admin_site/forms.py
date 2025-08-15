@@ -57,10 +57,6 @@ class WatchAdminModelForm[ModelT: Model](LanguageAwareAdminModelForm[ModelT]):
         result = set(self.plan.other_languages).union({ self.plan.primary_language })
         return {convert_language_code(lang, 'django') for lang in result}
 
-    def save(self, commit=True):
-        obj = super().save(commit)
-        return obj
-
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop("plan", None)
         self.realm_initialized = (self.plan is not None)
