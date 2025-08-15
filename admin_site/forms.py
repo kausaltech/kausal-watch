@@ -43,8 +43,9 @@ class LoginForm(AuthenticationForm):
 
 class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
     plan: Plan | None = None
+    realm_initialized: bool
 
-    def get_languages_to_show(self, i18n_field: TranslationField, plan: Plan) -> set[str]:
+    def get_languages_to_show(self, i18n_field: TranslationField) -> set[str]:
         """
         Return a list of languages we want to display translation fields for.
 
@@ -62,15 +63,12 @@ class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
         form to be validated correctly.
         """
 
+        original_field_language = self.get_primary_realm_language()
+        languages_to_show: set[str] = self.get_all_realm_languages()
+
         if i18n_field.default_language_field:
             original_field_language = get_language_from_default_language_field(self.instance, i18n_field)
-        else:
-            original_field_language = plan.primary_language
-
-        original_field_language = convert_language_code(original_field_language, 'django')
-
-        languages_to_show: set[str] = set(plan.other_languages).union({ plan.primary_language })
-        languages_to_show = {convert_language_code(lang, 'django') for lang in languages_to_show}
+            original_field_language = convert_language_code(original_field_language, 'django')
 
         # In the end, we make sure the modeltrans original field -- ie. the field
         # without the language suffix which is saved directly to the original db
@@ -79,11 +77,22 @@ class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
         languages_to_show.remove(original_field_language)
         return languages_to_show
 
-    def prune_i18n_fields(self, plan: Plan):
+    def get_primary_realm_language(self) -> str:
+        if self.plan is None:
+            raise ValueError('Cannot get plan languages without plan.')
+        return convert_language_code(self.plan.primary_language, 'django')
+
+    def get_all_realm_languages(self) -> set[str]:
+        if self.plan is None:
+            raise ValueError('Cannot get plan languages without plan.')
+        result = set(self.plan.other_languages).union({ self.plan.primary_language })
+        return {convert_language_code(lang, 'django') for lang in result}
+
+    def prune_i18n_fields(self):
         i18n_field: TranslationField | None = get_i18n_field(self._meta.model)
         if not i18n_field:
             return
-        languages_to_show = self.get_languages_to_show(i18n_field, plan)
+        languages_to_show = self.get_languages_to_show(i18n_field)
         if not languages_to_show:
             return
         for base_field_name in i18n_field.fields:
@@ -99,6 +108,7 @@ class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop("plan", None)
+        self.realm_initialized = (self.plan is not None)
         super().__init__(*args, **kwargs)
         if self.plan:
-            self.prune_i18n_fields(self.plan)
+            self.prune_i18n_fields()
