@@ -19,7 +19,7 @@ from modeltrans.translator import get_i18n_field
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
-from aplans.utils import get_language_from_default_language_field
+from kausal_common.i18n.helpers import get_language_from_default_language_field
 
 from actions.models.plan import Plan
 

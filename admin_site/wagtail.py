@@ -37,10 +37,10 @@ from wagtail_modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
 from kausal_common.datasets.models import DatasetSchema
-from kausal_common.i18n.helpers import convert_language_code
+from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel, get_language_from_default_language_field
+from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel
 
 from actions.models.plan import Plan
 

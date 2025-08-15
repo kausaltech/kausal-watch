@@ -571,27 +571,6 @@ class TranslatedModelMixin:
         return getattr(self, field_name)
 
 
-
-def get_language_from_default_language_field(
-    instance: models.Model,
-    i18n_field: TranslationField | None = None,
-):
-    """Return the primary language from the default language field."""
-
-    i18n_field = i18n_field or get_i18n_field(instance._meta.model)  # pyright: ignore
-    if i18n_field is None:
-        raise ValueError('No i18n field found for', instance)
-    if i18n_field.default_language_field:
-        default_language = get_instance_field_value(instance, i18n_field.default_language_field)
-    else:
-        default_language = settings.LANGUAGE_CODE
-    if isinstance(default_language, str):
-        default_language = default_language.lower()
-    else:
-        raise ValueError('Invalid default_language for', instance, default_language)  # noqa: TRY004
-    return default_language
-
-
 type AdminSaveOperation = Literal['edit', 'create']
 
 class AdminSaveContext(TypedDict):
