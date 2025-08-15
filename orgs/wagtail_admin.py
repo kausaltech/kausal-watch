@@ -19,7 +19,7 @@ from kausal_common.models.permission_policy import ModelPermissionPolicy, Object
 from kausal_common.organizations.forms import NodeForm
 from kausal_common.people.chooser import PersonChooser
 
-from admin_site.panels import TranslatedFieldPanel
+from kausal_common.i18n.panels import TranslatedFieldPanel
 from admin_site.utils import admin_req
 from admin_site.wagtail import CondensedInlinePanel
 from users.models import User
