@@ -7,9 +7,10 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 
+from kausal_common.i18n.panels import TranslatedFieldPanel
+
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
-from kausal_common.i18n.panels import TranslatedFieldPanel
 from admin_site.viewsets import WatchEditView, WatchViewSet
 
 from .models import SiteGeneralContent

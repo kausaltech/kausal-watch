@@ -5,16 +5,12 @@ from typing import TYPE_CHECKING, override
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy
-from modeltrans.conf import get_available_languages
-from modeltrans.translator import get_i18n_field
-from modeltrans.utils import build_localized_fieldname
 
-from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
 from kausal_common.i18n.forms import LanguageAwareAdminModelForm
+from kausal_common.i18n.helpers import convert_language_code
 
 if TYPE_CHECKING:
     from django.db.models import Model
-    from modeltrans.fields import TranslationField
 
     from actions.models.plan import Plan
 
