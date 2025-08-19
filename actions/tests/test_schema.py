@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.utils import timezone
 
@@ -32,6 +32,9 @@ from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory,
 from pages.tests.factories import CategoryPageFactory
 
 from .fixtures import *  # noqa: F403
+
+if TYPE_CHECKING:
+    from actions.models.plan import Plan
 
 pytestmark = pytest.mark.django_db
 
@@ -885,7 +888,7 @@ def test_category_type_node(
 @pytest.mark.parametrize('expose_to_authenticated_only', [False, True])
 def test_category_node(
     graphql_client_query_data,
-    plan_with_pages,
+    plan_with_pages: Plan,
     category_type,
     category,
     category_level,
@@ -905,7 +908,7 @@ def test_category_node(
 
     data = graphql_client_query_data(
         """
-        query($plan: ID!) {
+        query($plan: ID!, $lang: String!) @locale(lang: $lang) {
           planCategories(plan: $plan) {
             id
             type {
@@ -944,7 +947,7 @@ def test_category_node(
           }
         }
         """,
-        variables={'plan': plan.identifier},
+        variables={'plan': plan.identifier, 'lang': plan.primary_language},
     )
 
     if not published and expose_to_authenticated_only:

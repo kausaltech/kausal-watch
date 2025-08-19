@@ -124,29 +124,30 @@ exclude = [
 ]
 stubPath = "kausal_common/typings"
 deprecateTypingAliases = true
-reportMissingTypeStubs = "information"
-reportUnusedCallResult = false
+reportAny = false
 reportAttributeAccessIssue = "error"
-reportUnknownParameterType = false
-reportUnknownMemberType = false
-reportUnknownArgumentType = false
-reportMissingParameterType = false
-reportImportCycles = false
-reportUnannotatedClassAttribute = false
-reportUnknownVariableType = false
-reportImplicitOverride = false
-reportUnsafeMultipleInheritance = "information"
-reportUnnecessaryIsInstance = false
-reportUnnecessaryComparison = "information"
+reportConstantRedefinition = false
+reportExplicitAny = false
 reportIgnoreCommentWithoutRule = false
-reportUninitializedInstanceVariable = false
+reportImplicitOverride = false
+reportImportCycles = false
 reportIncompatibleMethodOverride = false
 reportIncompatibleVariableOverride = false
-reportExplicitAny = false
+reportMissingParameterType = false
+reportMissingTypeStubs = "information"
 reportPrivateImportUsage = false
 reportPrivateUsage = false
+reportUnannotatedClassAttribute = false
+reportUninitializedInstanceVariable = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryComparison = "information"
+reportUnnecessaryIsInstance = false
 reportUnreachable = false
-reportAny = false
+reportUnsafeMultipleInheritance = "information"
+reportUnusedCallResult = false
 defineConstant = { 'IS_PATHS' = false, 'IS_WATCH' = true }
 
 
