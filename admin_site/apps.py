@@ -1,4 +1,6 @@
-import importlib
+from __future__ import annotations
+
+from importlib.util import find_spec
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -21,13 +23,12 @@ def collection_index_get_queryset(self):
     plan = self.request.user.get_active_admin_plan()
     if plan.root_collection is None:
         return self.model.objects.none()
-    else:
-        return plan.root_collection.get_descendants(inclusive=False)
+    return plan.root_collection.get_descendants(inclusive=False)
 
 
 def _get_language_choices():
     language_choices = []
-    for lang_code, lang_name in get_available_admin_languages():
+    for lang_code, _lang_name in get_available_admin_languages():
         lang_info = get_language_info(lang_code.lower())
         if lang_info['code'] == lang_code.lower():
             lang_name_local = lang_info['name_local']
@@ -44,7 +45,7 @@ def _get_language_choices():
 class AdminSiteConfig(AdminConfig):
     def ready(self):
         super().ready()
-        import admin_site.signals # noqa
+        import admin_site.signals  # noqa: F401
 
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
@@ -83,11 +84,14 @@ class AdminSiteConfig(AdminConfig):
             # This is never called
             _("History")
 
+        from kausal_common.mail import register_signal_handlers
+        register_signal_handlers()
+
 
 class AdminSiteStatic(AppConfig):
     name = 'admin_site'
 
 
-if importlib.util.find_spec('kausal_watch_extensions') is not None:
+if find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions import perform_early_init
     perform_early_init()
