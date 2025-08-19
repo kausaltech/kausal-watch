@@ -16,6 +16,7 @@ from loguru import logger
 
 from kausal_common.debugging.perf import ModelCreationCounter
 from kausal_common.deployment import env_bool
+from kausal_common.i18n.helpers import get_default_language
 from kausal_common.strawberry.context import GraphQLContext
 from kausal_common.strawberry.extensions import AuthenticationExtension, ExecutionCacheExtension, SchemaExtension
 from kausal_common.users import user_or_none
@@ -181,7 +182,7 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
             return self.get_plan_by_hostname(qs, hostname)
         return None
 
-    def determine_plan_and_locale(self, operation: OperationDefinitionNode) -> tuple[Plan, str] | None:
+    def determine_plan_and_locale(self, operation: OperationDefinitionNode) -> tuple[Plan | None, str | None]:
         plan: Plan | None = None
         locale: str | None = None
 
@@ -197,9 +198,6 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
         else:
             plan = self.process_instance_headers()
 
-        if plan is None:
-            return None
-
         if locale is None:
             for directive in operation.directives or []:
                 directive_name = directive.name.value
@@ -208,7 +206,11 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
                 locale = self.process_locale_directive(directive)
                 break
             else:
-                locale = plan.primary_language
+                if plan is not None:
+                    locale = plan.primary_language
+
+        if locale is None:
+            locale = get_default_language()
 
         ctx = self.get_context()
         ctx.graphql_query_language = locale
@@ -232,7 +234,7 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
 
 class ActivatePlanContextExtension(WatchSchemaExtension):
     def activate_language(self, lang: str):
-        return cast('AbstractContextManager', translation.override(lang))
+        return cast('AbstractContextManager[Any]', translation.override(lang))
 
     def set_instance_scope(self) -> None:
         scope = sentry_sdk.get_current_scope()
@@ -257,9 +259,8 @@ class ActivatePlanContextExtension(WatchSchemaExtension):
             op = get_first_operation(doc)
         else:
             op = None
-        exec_ctx = self.get_context()
 
-        if not op or self.execution_context.result or exec_ctx.request_plan is None:
+        if not op or self.execution_context.result:
             yield
             return
 

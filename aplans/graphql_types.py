@@ -5,7 +5,7 @@ import re
 import typing
 import uuid
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
 
 import graphene
 import strawberry as sb
@@ -22,21 +22,18 @@ from grapple.registry import registry as grapple_registry
 
 from kausal_common.i18n.helpers import get_language_from_default_language_field
 
-from actions.models.plan import Plan
-
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import type_check_only
-
-    from graphene_django.types import DjangoObjectTypeOptions
 
     from kausal_common.graphene import GQLInfo as CommonGQLInfo
 
     from aplans.schema_context import WatchGraphQLContext
 
+    from actions.models.plan import Plan
     from users.models import User
 
-graphene_registry: list[type[graphene.ObjectType | graphene.Interface]] = []
+graphene_registry: list[type[graphene.ObjectType[Any] | graphene.Interface[Any]]] = []
 
 
 def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
@@ -46,7 +43,7 @@ def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
     fallback_lang = get_language_from_default_language_field(obj, i18n_field)
     fallback = (fallback_value, fallback_lang)
 
-    active_language = getattr(info.context, '_graphql_query_language', None)
+    active_language = info.context.graphql_query_language
     if not active_language:
         return fallback
 
@@ -65,8 +62,8 @@ def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
     return trans_value, active_language
 
 
-def resolve_i18n_field(field_name, obj, info):
-    value, lang = get_i18n_field_with_fallback(field_name, obj, info)
+def resolve_i18n_field(field_name: str, obj: Model, info: GQLInfo):
+    value, _lang = get_i18n_field_with_fallback(field_name, obj, info)
     return value
 
 
@@ -147,7 +144,7 @@ class SupportsOrderable(Protocol):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]]
 
 
-Q = TypeVar('Q', bound=QuerySet)
+Q = TypeVar('Q', bound=QuerySet[Any])
 
 def order_queryset[QS: QuerySet[Any]](qs: QS, node_class: type[SupportsOrderable], order_by: str | None) -> QS:
     if order_by is None:
@@ -169,18 +166,18 @@ def order_queryset[QS: QuerySet[Any]](qs: QS, node_class: type[SupportsOrderable
     return qs
 
 
-def register_graphene_node[OT: graphene.ObjectType](cls: type[OT]) -> type[OT]:
+def register_graphene_node[OT: graphene.ObjectType[Any]](cls: type[OT]) -> type[OT]:
     graphene_registry.append(cls)
     return cls
 
 
-def register_graphene_interface[IT: graphene.Interface](cls: type[IT]) -> type[IT]:
+def register_graphene_interface[IT: graphene.Interface[Any]](cls: type[IT]) -> type[IT]:
     graphene_registry.append(cls)
     return cls
 
 
-def register_django_node[DN: DjangoNode](cls: type[DN]) -> type[DN]:
-    meta = cast('DjangoObjectTypeOptions', cls._meta)
+def register_django_node[DN: DjangoNode[Any]](cls: type[DN]) -> type[DN]:
+    meta = cls._meta
     model = meta.model
     grapple_registry.django_models[model] = cls
     return cls
@@ -192,7 +189,7 @@ def replace_image_node(cls):
     return cls
 
 
-class AdminButton(graphene.ObjectType):
+class AdminButton(graphene.ObjectType[Any]):
     url = graphene.String(required=True)
     label = graphene.String(required=True)
     classname = graphene.String(required=True)
@@ -232,7 +229,7 @@ class WorkflowStateEnum(Enum):
 WorkflowStateGrapheneEnum = graphene.Enum.from_enum(WorkflowStateEnum, name='WorkflowState')  # type: ignore
 
 
-class WorkflowStateDescription(graphene.ObjectType):
+class WorkflowStateDescription(graphene.ObjectType[Any]):
     id = graphene.String(required=True)
     description = graphene.String(required=False)
 

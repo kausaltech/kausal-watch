@@ -155,13 +155,13 @@ class LocaleMiddleware:
                     lang = arg.value.value
                 if lang.lower() not in SUPPORTED_LANGUAGES:
                     raise GraphQLError("unsupported language: %s" % lang)
-                info.context._graphql_query_language = lang
+                info.context.graphql_query_language = lang
                 return lang
         return None
 
     def resolve(self, next, root, info, **kwargs):
         if root is None:
-            info.context._graphql_query_language = None
+            info.context.graphql_query_language = None
             operation = info.operation
             lang = translation.get_language()
             for directive in operation.directives:
