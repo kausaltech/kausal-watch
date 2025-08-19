@@ -49,17 +49,16 @@ def run_deployment_checks():
 #   - load more of the code to save memory after uWSGI forks workers
 #   - keep the state of the system closer to how it is under runserver
 try:
-    import uwsgi  # type: ignore
+    import uwsgi  # type: ignore  # pyright: ignore
     run_deployment_checks()
-    HAS_UWSGI = True
 except ImportError:
-    HAS_UWSGI = False
+    uwsgi = None
 
 
 def set_log_vars(resp):
     from .log_handler import ISO_FORMAT
     now = datetime.now(UTC)
-    uwsgi.set_logvar('isotime', now.strftime(ISO_FORMAT).replace('+00:00', 'Z'))
+    uwsgi.set_logvar('isotime', now.strftime(ISO_FORMAT).replace('+00:00', 'Z'))  # type: ignore  # pyright: ignore
     if hasattr(resp, '_response'):
         # Sentry injects a ScopedResponse class
         resp = resp._response
@@ -70,11 +69,11 @@ def set_log_vars(resp):
             level = 'WARNING'
         elif status >= 500:
             level = 'ERROR'
-    uwsgi.set_logvar('level', level)
+    uwsgi.set_logvar('level', level)  # type: ignore  # pyright: ignore
 
 
 def application(env, start_response):
     ret = django_application(env, start_response)
-    if HAS_UWSGI:
+    if uwsgi is not None:
         set_log_vars(ret)
     return ret

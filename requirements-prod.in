@@ -1,4 +1,4 @@
 -c requirements.txt
-uwsgi
+gunicorn
 uvicorn-worker
 uvicorn[standard]

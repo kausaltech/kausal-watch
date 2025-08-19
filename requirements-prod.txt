@@ -9,7 +9,9 @@ click==8.1.8
     #   -c requirements.txt
     #   uvicorn
 gunicorn==23.0.0
-    # via uvicorn-worker
+    # via
+    #   -r requirements-prod.in
+    #   uvicorn-worker
 h11==0.16.0
     # via
     #   -c requirements.txt
@@ -43,8 +45,6 @@ uvicorn-worker==0.3.0
     # via -r requirements-prod.in
 uvloop==0.21.0
     # via uvicorn
-uwsgi==2.0.30
-    # via -r requirements-prod.in
 watchfiles==1.1.0
     # via uvicorn
 websockets==15.0.1
