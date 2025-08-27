@@ -27,7 +27,7 @@ class PlanFeatures(models.Model):
         help_text=_('Should the public website contain a link to the admin login?'),
     )
     allow_public_site_login = models.BooleanField(
-        default=False, verbose_name=_('Allow logging in to the public website'),
+        default=True, verbose_name=_('Allow logging in to the public website'),
         help_text=_('Should users be able to have authenticated sessions in the public UI?'),
     )
 
