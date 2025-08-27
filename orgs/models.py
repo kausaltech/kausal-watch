@@ -16,7 +16,6 @@ from kausal_common.organizations.models import (
     BaseOrganization,
     BaseOrganizationClass,
     BaseOrganizationIdentifier,
-    BaseOrganizationMetadataAdmin,
     BaseOrganizationQuerySet,
     Node,
 )
@@ -150,6 +149,10 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
             'Organization logo. Please provide a square image (min. 250x250px). '
             "The logo used for the organization's social media often works best."
         ),
+    )
+
+    metadata_admins: M2M[Person, OrganizationMetadataAdmin] = models.ManyToManyField(
+        'people.Person', through='orgs.OrganizationMetadataAdmin', related_name='metadata_adminable_organizations', blank=True,
     )
 
     objects: ClassVar[OrganizationManager] = OrganizationManager()  # type: ignore[assignment]
@@ -348,5 +351,27 @@ class OrganizationPlanAdmin(PlanRelatedModel):
         return f'{self.person} ({self.plan})'
 
 
-class OrganizationMetadataAdmin(BaseOrganizationMetadataAdmin):
-    pass
+class OrganizationMetadataAdmin(models.Model):
+    """Person who can administer data of (descendants of) an organization but, in general, no plan-specific content."""
+
+    organization = ParentalKey(
+        'orgs.Organization',
+        on_delete=models.CASCADE,
+        verbose_name=_('organization'),
+        related_name='organization_metadata_admins',
+    )
+    person = models.ForeignKey(
+        'people.Person',
+        on_delete=models.CASCADE,
+        verbose_name=_('person'),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'person'], name='unique_organization_metadata_admin'),
+        ]
+        verbose_name = _("metadata admin")
+        verbose_name_plural = _("metadata admins")
+
+    def __str__(self):
+        return str(self.person)
