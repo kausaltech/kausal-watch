@@ -701,6 +701,13 @@ if ELASTICSEARCH_URL:
                 },
             },
         },
+        'el': {
+            'analyzer': {
+                'default': {
+                    'type': 'greek',
+                },
+            },
+        },
     }
     for lang in ANALYSIS_CONFIG.keys():
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
