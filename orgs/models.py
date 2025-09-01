@@ -150,12 +150,19 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
             "The logo used for the organization's social media often works best."
         ),
     )
+    internal_abbreviation = models.CharField(
+        max_length=50, blank=True, verbose_name=_('Internal abbreviation'), help_text=_('An internally used abbreviation'),
+    )
 
     metadata_admins: M2M[Person, OrganizationMetadataAdmin] = models.ManyToManyField(
         'people.Person', through='orgs.OrganizationMetadataAdmin', related_name='metadata_adminable_organizations', blank=True,
     )
 
     objects: ClassVar[OrganizationManager] = OrganizationManager()  # type: ignore[assignment]
+
+    public_fields = BaseOrganization.public_fields + [
+        'internal_abbreviation',
+    ]
 
     def initialize_plan_defaults(self, plan):
         assert not self.primary_language
