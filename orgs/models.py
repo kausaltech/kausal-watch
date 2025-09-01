@@ -160,7 +160,7 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
 
     objects: ClassVar[OrganizationManager] = OrganizationManager()  # type: ignore[assignment]
 
-    public_fields = BaseOrganization.public_fields + [
+    public_fields = BaseOrganization.public_fields + [  # type: ignore[misc]
         'internal_abbreviation',
     ]
 
