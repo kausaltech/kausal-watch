@@ -46,7 +46,6 @@ from aplans.utils import (
     IdentifierField,
     OrderedModel,
     PlanRelatedModel,
-    validate_css_color,
 )
 
 from actions.permission_policy import PlanPermissionPolicy
