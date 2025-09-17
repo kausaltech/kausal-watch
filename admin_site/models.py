@@ -32,6 +32,10 @@ class Client(ClusterableModel):
         TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
         OKTA = 'okta-openidconnect', _('OKTA')
         ADFS = 'adfs-openidconnect', _('ADFS OpenID Connect')
+        CUSTOM_ENTRA_ID = (
+            settings.SINGLE_TENANT_SPECIFIC_ENTRA_BACKEND_NAME,
+            settings.SINGLE_TENANT_SPECIFIC_ENTRA_BACKEND_LABEL,
+        )
 
     name = models.CharField(
         max_length=100,

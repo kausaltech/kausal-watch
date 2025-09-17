@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import override
+
 from django.conf import settings
 
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
@@ -46,6 +50,23 @@ class AzureADAuth(AzureADTenantOAuth2):
             extra_arguments['login_hint'] = email
         return extra_arguments
 
+
+class SingleTenantSpecificEntraAuth(AzureADAuth):
+    #  If more tenants are needed, add another subclass like this with something appended to the name
+    #  and the configuration variable names
+    name = settings.SINGLE_TENANT_SPECIFIC_ENTRA_BACKEND_NAME
+
+    @property
+    @override
+    def tenant_id(self):
+        return settings.SINGLE_TENANT_SPECIFIC_ENTRA_TENANT_ID
+
+    @override
+    def get_key_and_secret(self):
+        return (
+            settings.SINGLE_TENANT_SPECIFIC_ENTRA_KEY,
+            settings.SINGLE_TENANT_SPECIFIC_ENTRA_SECRET
+        )
 
 class ADFSOpenIDConnectAuth(OpenIdConnectAuth):
     """Integrate with an on-premises Microsoft ADFS implementation."""
