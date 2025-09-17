@@ -90,7 +90,13 @@ class User(AbstractUser):
         result = super().save(*args, **kwargs)
         # Create Wagtail user profile in order to force the light color theme
         # FIXME: Remove this and fix dark mode support
-        UserProfile.objects.get_or_create(user=self, defaults={'theme': UserProfile.AdminColorThemes.LIGHT})
+        UserProfile.objects.get_or_create(
+            user=self,
+            defaults={
+                'theme': UserProfile.AdminColorThemes.LIGHT,
+                'preferred_language': 'en',
+            }
+        )
         return result
 
     def get_cache(self) -> UserRelatedModelsCache:
