@@ -24,8 +24,7 @@ class AzureADAuth(AzureADTenantOAuth2):
     def get_user_id(self, details, response):
         """Use oid claim as unique id."""
         oid = response['oid']
-        # Replace the pairwise 'sub' field with the oid to better play along
-        # with helusers.
+        # Replace the pairwise 'sub' field with the oid
         response['sub'] = oid
         return oid
 

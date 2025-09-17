@@ -31,8 +31,6 @@ botocore==1.37.34
     # via
     #   boto3
     #   s3transfer
-cachetools==5.5.2
-    # via django-helusers
 celery==5.5.1
     # via -r requirements.in
 certifi==2025.1.31
@@ -84,8 +82,6 @@ defusedxml==0.7.1
     #   willow
 deprecated==1.2.18
     # via pygithub
-deprecation==2.1.0
-    # via django-helusers
 diff-match-patch==20241021
     # via django-import-export
 diffsync==2.0.1
@@ -100,7 +96,6 @@ django==5.2
     #   django-cors-headers
     #   django-extensions
     #   django-filter
-    #   django-helusers
     #   django-hijack
     #   django-import-export
     #   django-modelcluster
@@ -147,8 +142,6 @@ django-filter==25.1
     # via
     #   -r requirements.in
     #   wagtail
-django-helusers==0.13.3
-    # via -r requirements.in
 django-hijack==3.7.1
     # via -r requirements.in
 django-image-cropping==1.7
@@ -201,8 +194,6 @@ drf-spectacular==0.28.0
     # via -r requirements.in
 easy-thumbnails==2.10
     # via -r requirements.in
-ecdsa==0.19.1
-    # via python-jose
 elasticsearch==7.17.12
     # via
     #   -r requirements.in
@@ -376,7 +367,6 @@ opentelemetry-util-http==0.57b0
     #   opentelemetry-instrumentation-wsgi
 packaging==23.2
     # via
-    #   deprecation
     #   diffsync
     #   opentelemetry-instrumentation
     #   pytest
@@ -412,10 +402,6 @@ psycopg==3.2.6
     # via -r requirements.in
 psycopg-pool==3.2.6
     # via psycopg
-pyasn1==0.4.8
-    # via
-    #   python-jose
-    #   rsa
 pycparser==2.22
     # via cffi
 pycryptodome==3.22.0
@@ -468,10 +454,6 @@ python-dateutil==2.9.0.post0
     #   graphene
     #   s3cmd
     #   strawberry-graphql
-python-jose==3.4.0
-    # via
-    #   -r requirements.in
-    #   django-helusers
 python-magic==0.4.27
     # via s3cmd
 python3-openid==3.2.0
@@ -491,7 +473,6 @@ requests==2.32.3
     #   -r requirements.in
     #   coreapi
     #   django-anymail
-    #   django-helusers
     #   django-oauth-toolkit
     #   opentelemetry-exporter-otlp-proto-http
     #   pygithub
@@ -507,8 +488,6 @@ rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
-rsa==4.9
-    # via python-jose
 rustface==0.1.0
     # via -r requirements.in
 s3cmd==2.4.0
@@ -519,7 +498,6 @@ sentry-sdk==2.34.1
     # via -r requirements.in
 six==1.17.0
     # via
-    #   ecdsa
     #   elasticsearch-dsl
     #   promise
     #   python-dateutil

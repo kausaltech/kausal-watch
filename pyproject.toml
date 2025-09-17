@@ -69,7 +69,6 @@ module = [
   "graphene_django.*",
   "grapple.*",
   "gunicorn.*",
-  "helusers.*",
   "import_export.*",
   "laces.*",
   "modelcluster.*",

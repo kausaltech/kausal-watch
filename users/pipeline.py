@@ -141,11 +141,11 @@ def update_avatar(backend, details, user, *args, **kwargs):
 
 def get_username(details, backend, response, *args, **kwargs):
     """
-    Sets the `username` argument.
+    Set the `username` argument.
 
     If the user exists already, use the existing username. Otherwise
     generate username from the `new_uuid` using the
-    `helusers.utils.uuid_to_username` function.
+    `uuid_to_username` function.
     """
 
     if backend.name != 'azure_ad':
