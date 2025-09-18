@@ -24,7 +24,9 @@ E.g. Link to asana, sentry, slack thread etc.
 - [ ] **New strings are translatable** (all user-facing text uses i18n)
 - [ ] **Accessibility** standards met (WCAG compliance, screen reader support)
 
-### Integrations (if needed)
+### Integrations (if applicable)
+If there are model changes to models which use any of the features below, verify the new models work together with the features.
+For example, when adding a new model, verify the new model instances are copied when copying a plan.
 - [ ] **Moderation** integration implemented
 - [ ] **Reporting** integration implemented  
 - [ ] **Copy plan feature** integration implemented
