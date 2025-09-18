@@ -10,6 +10,11 @@ Brief description of the changes made in this PR.
 ## Related issue
 E.g. Link to asana, sentry, slack thread etc.
 
+## Requirements, dependencies and related PRs
+Describe or link possible requirements, dependencies and related PRs here
+
+------
+
 ## ✅ Pre-Merge Checklist
 
 ### Testing
@@ -31,8 +36,10 @@ For example, when adding a new model, verify the new model instances are copied 
 - [ ] **Reporting** integration implemented  
 - [ ] **Copy plan feature** integration implemented
 
-### Requirements, dependencies and related PRs
-Describe or link possible requirements, dependencies and related PRs here
+### Dependencies
+- [ ] **Dependencies are merged**
+
+-----
 
 ## Screenshots/Videos (if applicable)
 Add screenshots or videos demonstrating the changes if applicable.
