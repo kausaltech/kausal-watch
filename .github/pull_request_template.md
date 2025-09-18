@@ -37,7 +37,7 @@ For example, when adding a new model, verify the new model instances are copied 
 - [ ] **Copy plan feature** integration implemented
 
 ### Dependencies
-- [ ] **Dependencies are merged**
+- [ ] **Dependencies are merged** (if applicable. If the change depends on other PR's e.g. kausal_common)
 
 -----
 
