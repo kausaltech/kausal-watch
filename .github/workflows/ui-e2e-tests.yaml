@@ -1,0 +1,251 @@
+name: End-to-end tests against an UI image
+on:
+  workflow_call:
+    inputs:
+      product_id:
+        description: 'Product ID (watch/paths)'
+        required: true
+        type: string
+      plan_identifiers:
+        description: 'Comma separated list of plan identifiers'
+        required: false
+        type: string
+        default: 'sunnydale'
+      ui_repo:
+        description: 'UI GitHub repo'
+        required: true
+        type: string
+      ui_repo_ref:
+        description: 'UI source revision'
+        required: true
+        type: string
+      ui_image:
+        description: 'UI image to test (full path including registry, repo and tag)'
+        required: true
+        type: string
+      ui_npm_registry_server:
+        description: 'npm registry URL for the UI image'
+        required: false
+        type: string
+        default: https://npm.kausal.tech
+      backend_image:
+        description: 'Backend image tag to test (full path including registry, repo and tag)'
+        required: true
+        type: string
+      build_id:
+        description: 'Unique ID for the backend build'
+        required: true
+        type: string
+      s3_endpoint:
+        description: 'S3 endpoint URL where to upload test artifacts'
+        required: false
+        type: string
+      s3_bucket:
+        description: 'S3 bucket'
+        required: false
+        type: string
+
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      NPM_TOKEN:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+
+    outputs:
+      test_report_url:
+        description: 'URL to e2e test report'
+        value: ${{ jobs.e2e_test.outputs.test_report_url }}
+
+env:
+  POSTGRES_PASSWORD: abcd
+  POSTGRES_USER: app
+  POSTGRES_DATABASE: app
+
+jobs:
+  e2e_test:
+    name: Run UI end-to-end tests
+    runs-on: runner-prod
+    services:
+      ui:
+        image: ${{ inputs.ui_image }}
+        env:
+          WILDCARD_DOMAINS: localhost
+          DEPLOYMENT_TYPE: ci
+          WATCH_BACKEND_URL: http://localhost:8000
+          TEST_PLAN_IDENTIFIERS: ${{ inputs.plan_identifiers }}
+          TEST_PAGE_BASE_URL: 'http://{planId}.localhost:3001'
+          AUTH_SECRET: abcd
+          AUTH_TRUST_HOST: true
+          HOSTNAME: 0.0.0.0
+          SENTRY_DSN: ${{ vars.UI_SENTRY_DSN }}
+
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_DATABASE: ${{ env.POSTGRES_DATABASE }}
+
+      redis:
+        image: redis:7-alpine
+
+      backend:
+        image: ${{ inputs.backend_image }}
+        env:
+          DATABASE_URL: postgresql://${{env.POSTGRES_USER}}:${{env.POSTGRES_PASSWORD}}@localhost:5432/${{env.POSTGRES_DATABASE}}
+          DEPLOYMENT_TYPE: ci
+          REDIS_URL: redis://localhost
+          DB_ENDPOINT: localhost:5432
+          DB_USER: ${{ env.POSTGRES_USER }}
+          DB_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          DB_NAME: ${{ env.POSTGRES_DATABASE }}
+          ALLOWED_HOSTS: localhost
+          KUBERNETES_LOGGING: 1
+          TEST_MODE: 1
+          CI: 1
+          SECRET_KEY: abcd
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          SENTRY_ENVIRONMENT: ci
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TEST_DB_S3_ENDPOINT: ${{ inputs.s3_endpoint }}
+          TEST_DB_S3_BUCKET: ${{ inputs.s3_bucket }}
+          TEST_DB_FILE: e2e-tests-db.sql.gz
+
+    outputs:
+      test_report_url: ${{ steps.upload.outputs.test_report_url }}
+      coverage_uploaded: ${{ steps.upload-coverage.outcome == 'success' }}
+
+    container:
+      image: harbor.kausal.tech/library/playwright:v1.54.1
+    env:
+      CI: 1
+      WATCH_BACKEND_URL: http://localhost:8000
+      TEST_PLAN_IDENTIFIERS: ${{ inputs.plan_identifiers }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.ui_repo }}
+          ref: ${{ inputs.ui_repo_ref }}
+          submodules: recursive
+
+      - name: Install dependencies
+        env:
+          NPM_REGISTRY_SERVER: ${{ inputs.ui_npm_registry_server }}
+          NPM_TOKEN: ${{  secrets.NPM_TOKEN }}
+        run: corepack enable pnpm && pnpm install --frozen-lockfile
+        working-directory: ./e2e-tests
+
+      - name: Wait for backend to get ready
+        run: wait-for-it.sh -t 360 localhost:8000
+
+      - name: Set up environment
+        run: |
+          # Install jq for JSON processing
+          apt-get update && apt-get install -y jq bc
+        shell: bash
+
+      - name: Start coverage tracking
+        continue-on-error: true
+        id: start-coverage
+        run: |
+          set -x
+          START_COVERAGE_QUERY='mutation { testMode { startCoverageTracking } }'
+          mkdir -p ${{ runner.temp }}
+          start_coverage_fn=${{ runner.temp }}/start-coverage-result.json
+          curl -s -X POST -H "Content-Type: application/json" \
+            -d "{\"query\": \"$START_COVERAGE_QUERY\"}" \
+            http://localhost:8000/v1/graphql/ > $start_coverage_fn
+          START_RESULT=$(jq -r '.data.testMode.startCoverageTracking' $start_coverage_fn)
+          if [ "$START_RESULT" = "true" ]; then
+            echo "Coverage tracking started successfully"
+          else
+            echo "Failed to start coverage tracking"
+            exit 1
+          fi
+        working-directory: ./e2e-tests
+        shell: bash
+
+      - name: Running Playwright e2e tests
+        run: node_modules/.bin/playwright test
+        id: playwright_test
+        working-directory: ./e2e-tests
+
+      - name: Stop coverage tracking and collect data
+        if: always() && !cancelled() && steps.start-coverage.outcome == 'success'
+        run: |
+          mkdir -p coverage-data
+          STOP_COVERAGE_QUERY='mutation { testMode { stopCoverageTracking { xml } } }'
+          curl -s -X POST -H "Content-Type: application/json" \
+            -d "{\"query\": \"$STOP_COVERAGE_QUERY\"}" \
+            http://localhost:8000/v1/graphql/ > ${{ runner.temp }}/stop-coverage-result.json
+          jq -r '.data.testMode.stopCoverageTracking.xml' ${{ runner.temp }}/stop-coverage-result.json > coverage-data/coverage.xml
+        working-directory: ./e2e-tests
+        shell: bash
+
+      - name: Upload test report to S3
+        id: upload
+        if: always()
+        run: |
+          s3cmd --host ${{ inputs.s3_endpoint }} --host-bucket ${{ inputs.s3_endpoint }} \
+            put --no-mime-magic --guess-mime-type --recursive playwright-report \
+              s3://${{ inputs.s3_bucket }}/${{ inputs.build_id }}/
+          export TEST_REPORT_URL="https://${{ inputs.s3_endpoint }}/${{ inputs.s3_bucket }}/${{ inputs.build_id }}/playwright-report/index.html"
+          echo "test_report_url=${TEST_REPORT_URL}" >> $GITHUB_OUTPUT
+          test_report="🔗 [Test report](${TEST_REPORT_URL})"
+          if [ "${{ steps.playwright_test.outcome == 'success' }}" = "true" ] ; then
+            echo "✅ End-to-end tests succeeded. $test_report" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ End-to-end tests failed. $test_report" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        working-directory: ./e2e-tests
+        shell: bash
+
+      - uses: daun/playwright-report-summary@v3
+        if: always()
+        with:
+          report-file: ./e2e-tests/test-results.json
+          report-url: ${{steps.upload.outputs.test_report_url}}
+
+      - name: Upload coverage report as artifact
+        if: always() && !cancelled()
+        id: upload-coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: ./e2e-tests/coverage-data/coverage.xml
+          retention-days: 1
+
+  upload-coverage:
+    name: Upload coverage report to Codecov
+    needs: e2e_test
+    runs-on: ubuntu-latest
+    if: always() && !cancelled() && needs.e2e_test.outputs.coverage_uploaded == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Download coverage report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: ./coverage-data
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage-data/coverage.xml
+          url: https://codecoverage.kausal.dev
+          flags: e2e-tests
+          recurse_submodules: true

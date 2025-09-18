@@ -24,6 +24,24 @@ jobs:
       docker_image_tag: ${{ needs.build.outputs.image_tag }}
       build_id: ${{ needs.build.outputs.build_id }}
 
+  ui-e2e-test:
+    needs: [build]
+    uses: ./.github/workflows/ui-e2e-tests.yaml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    with:
+      product_id: watch
+      plan_identifiers: sunnydale
+      ui_repo: kausaltech/kausal-watch-ui
+      ui_repo_ref: main
+      ui_image: "${{ vars.DOCKER_REGISTRY }}/watch-ui/watch-ui:latest"
+      backend_image: "${{ needs.build.outputs.image }}:${{ needs.build.outputs.image_tag }}"
+      build_id: "${{ needs.build.outputs.build_id }}"
+      s3_endpoint: ${{ vars.BUILD_S3_ENDPOINT }}
+      s3_bucket: ${{ vars.BUILD_S3_BUCKET }}
+
   deploy:
     needs: [build, test]
     uses: kausaltech/github-actions/.github/workflows/deploy.yaml@main
