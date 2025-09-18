@@ -73,8 +73,13 @@ class Command(SuperUserCommand):
             name=organization_name,
             defaults={'auth_backend': auth_backend},
         )
-        if client.auth_backend != auth_backend:
-            raise CommandError(f'Client {organization_name} exists but has auth_backend {client.auth_backend}.')
+        if auth_backend:
+            if client.auth_backend != auth_backend:
+                raise CommandError(f'Client {organization_name} exists but has auth_backend {client.auth_backend}.')
+        elif client.auth_backend not in ('', None):
+            raise CommandError(
+                f'Client {organization_name} exists but has auth_backend {client.auth_backend} (password auth was requested).'
+            )
 
         try:
             existing_email_domain = EmailDomains.objects.get(domain=email_domain)
