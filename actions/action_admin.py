@@ -630,23 +630,6 @@ class ActionCreateView(InitializeFormWithInitialPlanMixin, AplansCreateView):
                 self.instance.primary_org = default_org
 
 
-class ActionIndexView(IndexView):
-    request: WatchAdminRequest
-
-    def get_page_title(self):
-        plan = self.request.user.get_active_admin_plan()
-        return plan.general_content.get_action_term_display_plural()
-
-
-class ActionMenuItem(ModelAdminMenuItem):
-    def render_component(self, request):
-        link_menu_item = super().render_component(request)
-        plan = request.user.get_active_admin_plan()
-        # Change label to the configured term for "Action"
-        link_menu_item.label = plan.general_content.get_action_term_display_plural()
-        return link_menu_item
-
-
 class ActionButtonHelper(AplansButtonHelper):
     mark_as_complete_button_classnames: list[str] = []
 
@@ -736,7 +719,6 @@ class ActionEditView(InitializeFormWithInitialPlanMixin, SnippetsEditViewCompati
 class ActionAdmin(AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
-    index_view_class = ActionIndexView
     edit_view_class = ActionEditView
     menu_icon = 'kausal-action'
     menu_order = 10
@@ -1080,9 +1062,6 @@ class ActionAdmin(AplansModelAdmin):
         qs = qs.filter(plan=plan)
         qs = qs.select_related('plan').prefetch_related('categories')
         return qs
-
-    def get_menu_item(self, order=None):
-        return ActionMenuItem(self, order or self.get_menu_order())
 
     def mark_action_as_complete_view(self, request, action_pk, report_pk):
         return MarkActionAsCompleteView.as_view(
