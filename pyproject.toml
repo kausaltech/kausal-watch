@@ -148,6 +148,7 @@ reportUnnecessaryIsInstance = false
 reportUnreachable = false
 reportUnsafeMultipleInheritance = "information"
 reportUnusedCallResult = false
+reportUnusedImport = false
 defineConstant = { 'IS_PATHS' = false, 'IS_WATCH' = true }
 
 

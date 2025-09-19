@@ -10,7 +10,7 @@ from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 
-from kausal_common.models.types import MLModelManager, RevManyToMany
+from kausal_common.models.types import MLModelManager
 from kausal_common.organizations.models import (
     BaseNamespace,
     BaseOrganization,
@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
     from django.db.models import QuerySet
     from modelcluster.fields import PK
 
-    from kausal_common.models.types import FK, RevManyQS
+    from kausal_common.models.types import FK, M2M, RevManyQS, RevManyToMany
 
     from actions.models import Action, Plan
     from actions.models.action import ActionResponsibleParty
@@ -135,7 +135,7 @@ del _OrganizationManager
 
 
 @reversion.register()
-class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):  # pyright: ignore[reportIncompatibleVariableOverride]
+class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):
     VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
     logo: FK[AplansImage | None] = models.ForeignKey(
@@ -145,8 +145,10 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
         on_delete=models.SET_NULL,
         related_name='+',
         help_text=_(
-            'Organization logo. Please provide a square image (min. 250x250px). '
-            "The logo used for the organization's social media often works best."
+            (  # noqa: UP034
+                "Organization logo. Please provide a square image (min. 250x250px). "
+                "The logo used for the organization's social media often works best."
+            )
         ),
     )
     internal_abbreviation = models.CharField(
@@ -232,7 +234,7 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
             return True
         person = user.get_corresponding_person()
         if person:
-            ancestors = self.get_ancestors() | Organization.objects.get_queryset().filter(pk=self.pk)  # pyright: ignore
+            ancestors = self.get_ancestors() | Organization.objects.get_queryset().filter(pk=self.pk)
             intersection = ancestors & person.metadata_adminable_organizations.all()
             if intersection.exists():
                 return True
@@ -336,7 +338,7 @@ class OrganizationIdentifier(BaseOrganizationIdentifier):
 class OrganizationPlanAdmin(PlanRelatedModel):
     """Person who can administer plan-specific content that is related to the organization."""
 
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         constraints = [
             models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_plan_admin'),
         ]

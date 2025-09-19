@@ -50,7 +50,7 @@ from aplans.utils import (
 )
 
 from actions.permission_policy import PlanPermissionPolicy
-from indicators.models import IndicatorDimension, Indicator, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
+from indicators.models import Indicator, IndicatorDimension, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
 
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from django.http.request import HttpRequest
-    from django.utils.functional import _StrOrPromise as StrOrPromise
+    from django_stubs_ext import StrOrPromise
 
     from kausal_common.models.types import FK, M2M, RevMany, RevOne
     from kausal_common.users import UserOrAnon

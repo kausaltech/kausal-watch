@@ -52,7 +52,7 @@ try:
     import uwsgi  # type: ignore  # pyright: ignore
     run_deployment_checks()
 except ImportError:
-    uwsgi = None
+    uwsgi = None  # type: ignore[assignment]
 
 
 def set_log_vars(resp):

@@ -30,7 +30,6 @@ from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
 from kausal_common.people.chooser import PersonChooser
-
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
@@ -68,15 +67,16 @@ from . import (
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
 
     from aplans.types import WatchAdminRequest
 
+    from actions.models.plan import PlanQuerySet
 
-class PlanForm(AplansAdminModelForm):
+
+class PlanForm(AplansAdminModelForm[Plan]):
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
         if self.instance and self.instance.pk and primary_language != self.instance.primary_language:
@@ -132,12 +132,12 @@ class PlanForm(AplansAdminModelForm):
         return instance
 
 
-class PlanCreateView(AplansCreateView):
+class PlanCreateView(AplansCreateView[Plan]):
     def get_success_url(self):
         return reverse('change-admin-plan', kwargs=dict(plan_id=self.instance.id))
 
 
-class PlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
+class PlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()
@@ -180,7 +180,7 @@ class PlanModelAdminPermissionHelper(PermissionHelper):
         return user.is_general_admin_for_plan(obj)
 
 
-class PlanAdmin(AplansModelAdmin):
+class PlanAdmin(AplansModelAdmin[Plan]):
     model = Plan
     add_to_admin_menu = False  # We only have PlanViewSet in the menu and use the views of PlanAdmin in that viewset
     list_display = ('name',)
@@ -419,7 +419,7 @@ class PlanAdmin(AplansModelAdmin):
 modeladmin_register(PlanAdmin)
 
 
-class PlanFeaturesViewSet(WatchViewSet):
+class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
     model = PlanFeatures
     icon = 'tasks'
     menu_label = _('Plan features')
@@ -472,7 +472,7 @@ class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
         return plan.features
 
 
-class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView):
+class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView[PlanFeatures]):
     def user_has_permission(self, permission):
         return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
 
@@ -522,7 +522,7 @@ class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem)
         return plan.notification_settings
 
 
-class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, WatchEditView):
+class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, WatchEditView[NotificationSettings]):
     pass
 
 
@@ -646,9 +646,9 @@ class PlanViewSet(SnippetViewSet[Plan]):
             return 'actions_plan_modeladmin_edit'
         return super().get_url_name(view_name)
 
-    def get_queryset(self, request: HttpRequest) -> QuerySet | None:
+    def get_queryset(self, request: HttpRequest) -> PlanQuerySet | None:
         if request.user.is_anonymous:
-            return Plan.objects.none()
+            return Plan.objects.qs.none()
         assert isinstance(request.user, User)
         return request.user.get_adminable_plans()
 

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
-class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
+class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm = WagtailAdminModelForm[Any]](
     # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
     ContinueEditingMixin,
     PlanRelatedViewMixin,

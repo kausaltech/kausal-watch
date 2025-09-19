@@ -8,20 +8,25 @@ from factory.django import DjangoModelFactory
 from factory.helpers import post_generation
 
 import indicators
-from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
+from actions.tests.factories import ActionFactory, PlanFactory
 from indicators.models import (
     ActionIndicator,
     CommonIndicator,
+    CommonIndicatorNormalizator,
+    Dimension,
+    DimensionCategory,
     Indicator,
     IndicatorContactPerson,
     IndicatorDimension,
     IndicatorGoal,
+    IndicatorGraph,
     IndicatorLevel,
     IndicatorValue,
     Quantity,
     RelatedIndicator,
     Unit,
 )
+from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
 
@@ -51,7 +56,7 @@ class CommonIndicatorFactory(DjangoModelFactory[CommonIndicator]):
     unit = SubFactory(UnitFactory)
 
 
-class CommonIndicatorNormalizatorFactory(DjangoModelFactory):
+class CommonIndicatorNormalizatorFactory(DjangoModelFactory[CommonIndicatorNormalizator]):
     class Meta:
         model = 'indicators.CommonIndicatorNormalizator'
 
@@ -106,7 +111,7 @@ class ActionIndicatorFactory(DjangoModelFactory[ActionIndicator]):
     indicates_action_progress = True
 
 
-class IndicatorGraphFactory(DjangoModelFactory):
+class IndicatorGraphFactory(DjangoModelFactory[IndicatorGraph]):
     class Meta:
         model = 'indicators.IndicatorGraph'
 
@@ -150,14 +155,14 @@ class RelatedIndicatorFactory(DjangoModelFactory[RelatedIndicator]):
     confidence_level = RelatedIndicator.CONFIDENCE_LEVELS[0][0]
 
 
-class DimensionFactory(DjangoModelFactory):
+class DimensionFactory(DjangoModelFactory[Dimension]):
     class Meta:
         model = 'indicators.Dimension'
 
     name = "Dimension"
 
 
-class DimensionCategoryFactory(DjangoModelFactory):
+class DimensionCategoryFactory(DjangoModelFactory[DimensionCategory]):
     class Meta:
         model = 'indicators.DimensionCategory'
 

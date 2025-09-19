@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from actions.models import Action, ActionContactPerson, ActionResponsibleParty, ModelWithRole, Plan
     from actions.models.action import ActionQuerySet
+    from actions.models.plan import PlanQuerySet
     from indicators.models import Indicator, IndicatorQuerySet
     from people.models import Person
 
@@ -38,7 +39,7 @@ class ModerationAction(StrEnum):
 class UserRelatedModelsCache:
     _corresponding_person: Person | None
     _active_admin_plan: Plan
-    _adminable_plans: models.QuerySet[Plan]
+    _adminable_plans: PlanQuerySet
     _org_admin_for_actions: ActionQuerySet
     _org_admin_for_indicators: IndicatorQuerySet
     _contact_for_actions: set[int]
@@ -67,7 +68,7 @@ class User(AbstractUser):
         null=True,
     )
 
-    objects = UserManager()  # type: ignore
+    objects: ClassVar[UserManager] = UserManager()  # type: ignore[assignment]
 
     auth_token: Token
     person: Person
@@ -357,7 +358,7 @@ class User(AbstractUser):
         cache._active_admin_plan = plan
         return plan
 
-    def get_adminable_plans(self) -> models.QuerySet[Plan]:
+    def get_adminable_plans(self) -> PlanQuerySet:
         from actions.models import Plan
 
         # Cache adminable plans for each request
@@ -372,18 +373,18 @@ class User(AbstractUser):
         is_indicator_org_admin = self.is_organization_admin_for_indicator()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
                 and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
-            cache._adminable_plans = Plan.objects.none()
+            cache._adminable_plans = Plan.objects.qs.none()
             return cache._adminable_plans
 
         if self.is_superuser:
-            plans = Plan.objects.all()
+            plans = Plan.objects.qs
         else:
             q = Q(actions__in=cache._contact_for_actions)
             q |= Q(indicators__in=cache._contact_for_indicators)
             q |= Q(id__in=cache._general_admin_for_plans)
             q |= Q(actions__in=cache._org_admin_for_actions)
             q |= Q(indicators__in=cache._org_admin_for_indicators)
-            plans = Plan.objects.filter(q).distinct()
+            plans = Plan.objects.qs.filter(q).distinct()
         cache._adminable_plans = plans
         return plans
 

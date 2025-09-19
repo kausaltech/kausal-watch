@@ -684,11 +684,11 @@ class SuccessUrlEditPageModelAdminMixin:
         return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
-class AplansCreateView(
+class AplansCreateView[M: Model](
     PersistFiltersEditingModelAdminMixin,
-    ContinueEditingModelAdminMixin,
+    ContinueEditingModelAdminMixin[M],
     PlanRelatedViewModelAdminMixin,
-    SetInstanceModelAdminMixin,
+    SetInstanceModelAdminMixin[M],
     CreateView,
 ):
     request: HttpRequest
