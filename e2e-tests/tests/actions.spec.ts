@@ -14,3 +14,20 @@ test.describe('Test admin', () => {
     await expect(page.getByLabel('Filter actions')).toBeVisible();
   });
 })
+
+
+test.describe('Test admin after customizing Action term', () => {
+  const baseUrl = 'http://localhost:8000';
+
+  test.beforeAll(async () => {
+  })
+  test('list actions', async ({ page }) => {
+    await page.goto(`${baseUrl}/admin/`);
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('link', { name: 'Site settings', exact: true }).click();
+    await page.locator('#id_action_term').selectOption('strategy');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('link', { name: 'Actions', exact: true }).click();
+    await expect(page.getByLabel('Filter actions')).toBeVisible();
+  });
+})
