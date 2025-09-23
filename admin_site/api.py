@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
+from django.conf import settings
 from django.urls import resolve
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt
@@ -16,11 +17,58 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
+import requests
+
 from users.models import User
 
 
 class LoginMethodThrottle(UserRateThrottle):
     rate = '60/m'
+
+
+
+def check_user_in_other_clusters(email, request):
+    """Check if user exists in other regional clusters."""
+    current_host = request.get_host()
+    cluster_endpoints = getattr(settings, 'WATCH_BACKEND_REGION_URLS', [])
+
+    # Check that the current host is not a regional endpoint
+    if any(current_host == urlparse(endpoint).hostname for endpoint in cluster_endpoints):
+        return None
+
+    for endpoint in cluster_endpoints:
+        try:
+            session = requests.Session()
+            csrf_response = session.get(f"{endpoint}/admin/login/")
+            csrf_token = session.cookies.get('csrftoken')
+
+            if not csrf_token:
+                import re
+                csrf_match = re.search(r'name=["\']csrfmiddlewaretoken["\'] value=["\']([^"\']+)["\']', csrf_response.text)
+                if csrf_match:
+                    csrf_token = csrf_match.group(1)
+
+            response = session.post(
+                f"{endpoint}/login/check/",
+                json={'email': email},
+                timeout=5,
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf_token,
+                    'Referer': endpoint
+                }
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                result['cluster_url'] = endpoint
+                return result
+
+        except requests.exceptions.RequestException as e:
+            continue
+
+    return None
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -43,6 +91,18 @@ def check_login_method(request):
     person = user.get_corresponding_person() if user else None
 
     if user is None or person is None:
+        cluster_result = check_user_in_other_clusters(email, request)
+        if cluster_result:
+            msg = _("User found in another cluster. Please go to the following URL to login: <a href='%s/admin/' target='_blank'>%s/admin/</a>") % (
+                cluster_result.get('cluster_url'),
+                cluster_result.get('cluster_url')
+            )
+            return Response({
+                'method': cluster_result.get('method'),
+                'cluster_redirect': True,
+                'cluster_url': cluster_result.get('cluster_url')
+            })
+
         msg = _("No user found with this email address. Ask your administrator to create an account for you.")
         raise ValidationError({'detail': msg, 'code': 'no_user'})
 

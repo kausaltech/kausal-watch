@@ -50,6 +50,7 @@ x-django-environment: &django-environment
   - DEPLOY_ALLOWED_CNAMES_PREVIEW
   - DEPLOY_ALLOWED_CNAMES_DEVELOPMENT
   - DEPLOY_TASK_GITOPS_REPO
+  - WATCH_BACKEND_REGION_URLS
 
 x-django-build: &django-build
   context: .
