@@ -12,14 +12,17 @@ from graphql.type import (
     GraphQLDirective,
 )
 from strawberry.schema import Schema as StrawberrySchema
+from strawberry.tools import merge_types
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 from treebeard.mp_tree import MP_NodeQuerySet
 
+from kausal_common.deployment import test_mode_enabled
 from kausal_common.models.types import copy_signature
 from kausal_common.strawberry.extensions import LoggingTracingExtension
 from kausal_common.strawberry.schema import Schema as UnifiedSchema
+from kausal_common.testing.schema import TestModeMutations
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
@@ -191,8 +194,7 @@ class Query(
         return obj
 
 
-@sb.type
-class Mutation(
+class GrapheneMutations(
     actions_schema.Mutation,
     indicators_schema.Mutation,
     orgs_schema.Mutation,
@@ -200,6 +202,26 @@ class Mutation(
     graphene.ObjectType,
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
+
+
+# Once we have Strawberry mutations (most likely in some of our Django apps), remove this mutation and put the actual
+# mutations below in SB_MUTATION_TYPES
+@sb.type
+class DummyMutation:
+    pass
+
+
+SB_MUTATION_TYPES: list[type] = [
+    DummyMutation,  # Once we have Strawberry mutations, replace by an actual mutation, most likely from some Django app
+]
+if test_mode_enabled():
+    SB_MUTATION_TYPES.append(TestModeMutations)
+
+SBMutation = merge_types('Mutation', tuple(SB_MUTATION_TYPES))
+
+@sb.type
+class Mutation(GrapheneMutations, SBMutation):  # type: ignore[valid-type, misc]
+    pass
 
 
 @sb.directive(
