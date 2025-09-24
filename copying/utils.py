@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import re
 import typing
 from typing import Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from wagtail.blocks import StreamValue
+
+from documents.models import AplansDocument
+from images.models import AplansImage
 
 if typing.TYPE_CHECKING:
     from collections.abc import Generator
@@ -94,3 +98,30 @@ def update_streamfield_block(
     # once the BoundBlock representation has been accessed, any changes to fields within raw data will not
     # propagate back to the BoundBlock
     setattr(instance, field_name, StreamValue(stream_value.stream_block, stream_value.raw_data, is_lazy=True))
+
+
+def update_rich_text_reference(
+    instance: Model,
+    field_name: str,
+    old_referenced_object: Model,
+    new_referenced_object: Model,
+) -> None:
+    """Update a reference to an image or document in a given rich text field."""
+    assert type(old_referenced_object) is type(new_referenced_object)
+    if isinstance(old_referenced_object, AplansDocument):
+        pattern = r'<a\s+[^>]*linktype="document"[^>]*>'
+    elif isinstance(old_referenced_object, AplansImage):
+        pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
+    else:
+        raise TypeError(f"old_referenced_object has unexpected type {type(old_referenced_object)}")
+
+    old_id = old_referenced_object.pk
+    new_id = new_referenced_object.pk
+
+    def replace_id_in_html_tag(match: re.Match) -> str:
+        return re.sub(rf'\bid="{old_id}"', f'id="{new_id}"', match.group(0))
+
+    old_value: str = getattr(instance, field_name)
+    new_value = re.sub(pattern, replace_id_in_html_tag, old_value)
+    assert new_value != old_value
+    setattr(instance, field_name, new_value)

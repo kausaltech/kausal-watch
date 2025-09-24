@@ -16,7 +16,7 @@ from django.core.files.base import ContentFile
 from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
-from wagtail.fields import StreamField
+from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Revision, Site
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
@@ -30,7 +30,13 @@ from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
 from actions.signals import create_notification_settings, create_plan_features
 from content.apps import create_site_general_content
-from copying.utils import get_foreign_keys, get_generic_foreign_keys, temp_disconnect_signal, update_streamfield_block
+from copying.utils import (
+    get_foreign_keys,
+    get_generic_foreign_keys,
+    temp_disconnect_signal,
+    update_rich_text_reference,
+    update_streamfield_block,
+)
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
@@ -545,6 +551,18 @@ class UpdateReferencesVisitor(AbstractVisitor):
             # Foreign keys should have been already taken care of in a previous call to `self.update_foreign_keys()`
             assert getattr(from_object, source_field.name) is copy
             return False
+
+        if isinstance(source_field, RichTextField):
+            field_name, *content_path_rest = content_path.split('.')
+            assert field_name == source_field.name
+            assert content_path_rest == ['']
+            update_rich_text_reference(
+                instance=from_object,
+                field_name=field_name,
+                old_referenced_object=to_object,
+                new_referenced_object=self.clone_visitor.get_copy(to_object),
+            )
+            return True
 
         raise TypeError("Unexpected source field type")
 
