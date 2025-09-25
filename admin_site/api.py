@@ -38,25 +38,11 @@ def check_user_in_other_clusters(email, request):
 
     for endpoint in cluster_endpoints:
         try:
-            session = requests.Session()
-            csrf_response = session.get(f"{endpoint}/admin/login/")
-            csrf_token = session.cookies.get('csrftoken')
-
-            if not csrf_token:
-                import re
-                csrf_match = re.search(r'name=["\']csrfmiddlewaretoken["\'] value=["\']([^"\']+)["\']', csrf_response.text)
-                if csrf_match:
-                    csrf_token = csrf_match.group(1)
-
-            response = session.post(
+            response = requests.post(
                 f"{endpoint}/login/check/",
                 json={'email': email},
                 timeout=5,
-                headers={
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf_token,
-                    'Referer': endpoint
-                }
+                headers={'Content-Type': 'application/json'}
             )
 
             if response.status_code == 200:
@@ -64,7 +50,7 @@ def check_user_in_other_clusters(email, request):
                 result['cluster_url'] = endpoint
                 return result
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             continue
 
     return None
@@ -93,10 +79,6 @@ def check_login_method(request):
     if user is None or person is None:
         cluster_result = check_user_in_other_clusters(email, request)
         if cluster_result:
-            msg = _("User found in another cluster. Please go to the following URL to login: <a href='%s/admin/' target='_blank'>%s/admin/</a>") % (
-                cluster_result.get('cluster_url'),
-                cluster_result.get('cluster_url')
-            )
             return Response({
                 'method': cluster_result.get('method'),
                 'cluster_redirect': True,
