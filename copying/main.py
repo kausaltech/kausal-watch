@@ -717,7 +717,7 @@ def get_cluster_related_objects(instance: Model) -> Generator[tuple[str, Model]]
             assert isinstance(child_relation.remote_field, ParentalKey)
             field_name = child_relation.get_accessor_name()
             manager = getattr(instance, field_name)
-            for x in manager.all():
+            for x in manager.get_object_list():
                 yield field_name, x
 
 
