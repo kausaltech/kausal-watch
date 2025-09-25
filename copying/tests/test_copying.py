@@ -6,6 +6,10 @@ import pytest
 
 from actions.tests.factories import ActionContactFactory, WorkflowFactory
 from copying.main import copy_plan
+from documents.models import AplansDocument
+from documents.tests.factories import AplansDocumentFactory
+from images.models import AplansImage
+from images.tests.factories import AplansImageFactory
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory
 
 pytestmark = pytest.mark.django_db
@@ -15,6 +19,18 @@ def get_page_copy(page, plan_copy):
     page_copy = plan_copy.root_page.get_children().get(url_path=page.url_path).specific
     assert type(page_copy) is type(page)
     return page_copy
+
+
+def html_with_references(doc1, doc2, image1, image2):
+    """Return HTML with references as Wagtail would produce it in a rich-text field."""
+    return f"""
+<p data-block-key="foo">
+<a linktype="document" id="{doc1.pk}">doc1</a>
+<a linktype="document" id="{doc2.pk}">doc2</a>
+<embed embedtype="image" format="fullwidth-zoomable" id="{image1.pk}" alt="image1"/>
+<embed embedtype="image" format="fullwidth-zoomable" id="{image2.pk}" alt="image2"/>
+</p>'
+""".replace('\n', '')
 
 
 def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, action, user):
@@ -96,3 +112,19 @@ def test_update_references_in_page_draft(plan_with_pages, category_type_page, at
     layout_copy = draft_copy.level_layouts.get()
     block_copy_attribute_type = layout_copy.layout_main_top[0].value['attribute_type']
     assert block_copy_attribute_type.scope == category_type_copy
+
+
+def test_rich_text_field_references(plan_with_pages, action):
+    doc1 = AplansDocumentFactory(collection=plan_with_pages.root_collection, title='doc1')
+    doc2 = AplansDocumentFactory(collection=plan_with_pages.root_collection, title='doc2')
+    image1 = AplansImageFactory(collection=plan_with_pages.root_collection, title='image1')
+    image2 = AplansImageFactory(collection=plan_with_pages.root_collection, title='image2')
+    action.description = html_with_references(doc1, doc2, image1, image2)
+    action.save(update_fields=['description'])
+    plan_copy = copy_plan(plan_with_pages)
+    doc1_copy = AplansDocument.objects.get(collection=plan_copy.root_collection, title=doc1.title)
+    doc2_copy = AplansDocument.objects.get(collection=plan_copy.root_collection, title=doc2.title)
+    image1_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title=image1.title)
+    image2_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title=image2.title)
+    action_copy = plan_copy.actions.get()
+    assert action_copy.description == html_with_references(doc1_copy, doc2_copy, image1_copy, image2_copy)

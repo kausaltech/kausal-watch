@@ -21,6 +21,7 @@ from actions.models.attributes import AttributeType
 from actions.tests import factories as actions_factories
 from admin_site.tests import factories as admin_site_factories
 from content.tests import factories as content_factories
+from documents.tests import factories as documents_factories
 from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
 from notifications.tests import factories as notifications_factories
@@ -101,6 +102,7 @@ register(actions_factories.PlanDomainFactory)
 # register(admin_site_factories.ClientPlanFactory)
 register(admin_site_factories.BuiltInFieldCustomizationFactory)
 register(content_factories.SiteGeneralContentFactory)
+register(documents_factories.AplansDocumentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.CommonIndicatorNormalizatorFactory)
