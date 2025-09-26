@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from urllib.parse import urlparse
 
 from django.urls import resolve
 from django.utils.translation import gettext as _
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -14,13 +17,12 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
 from users.models import User
-from users.perms import create_permissions
 
 
 class LoginMethodThrottle(UserRateThrottle):
     rate = '60/m'
 
-
+@csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([])
