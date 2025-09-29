@@ -10,6 +10,7 @@ from wagtail.models import ModelLogEntry, PageLogEntry, Revision as WagtailRevis
 from actions.models.plan import Plan
 from admin_site.models import Client
 from orgs.models import Organization
+from pages.models import PlanRootPage
 from request_log.models import LoggedRequest
 from users.models import User
 
@@ -28,6 +29,16 @@ class Command(BaseCommand):
             '--no-confirm',
             action='store_true',
             help="Do not ask for confirmation but delete right away",
+        )
+        parser.add_argument(
+            '--keep-page-log',
+            action='store_true',
+            help="Do not clear Wagtail's page log",
+        )
+        parser.add_argument(
+            '--keep-model-log',
+            action='store_true',
+            help="Do not clear Wagtail's model log",
         )
 
     def handle(self, *args, **options):
@@ -72,15 +83,32 @@ class Command(BaseCommand):
         self.stdout.write("- all Wagtail Revision instances that don't have a corresponding User anymore")
         self.stdout.write("- all Wagtail ModelLogEntry instances that don't have a corresponding User anymore")
         self.stdout.write("- all logged requests")
+        if not options['keep_page_log']:
+            self.stdout.write("- all entries of Wagtail's page log")
+        if not options['keep_model_log']:
+            self.stdout.write("- all entries of Wagtail's model log")
         if not options['no_confirm']:
             confirmation = input("Do you want to proceed? [y/N] ").lower()
             if confirmation != 'y':
                 self.stdout.write(self.style.WARNING("Aborted by user."))
                 return
-        self.delete_data(plans_to_delete, orgs_to_delete)
+        self.delete_data(plans_to_delete, orgs_to_delete, options['keep_page_log'], options['keep_model_log'])
+        self.stdout.write(
+            "You may also want to run the management command `wagtail_update_image_renditions --purge-only` to remove "
+            "all renditions in the database."
+        )
 
     @transaction.atomic
-    def delete_data(self, plans_to_delete, orgs_to_delete):
+    def delete_data(self, plans_to_delete, orgs_to_delete, keep_page_log: bool = False, keep_model_log: bool = False):
+        # Delete root pages -- deleting the plan does not cascade to these
+        root_pages = PlanRootPage.objects.filter(id__in=plans_to_delete.values_list('site__root_page_id'))
+        num_root_pages = root_pages.count()
+        root_pages.delete()
+        # Treebeard won't tell us the deleted numbers -_-
+        self.stdout.write(
+            f"Deleted {num_root_pages} root pages and an unknown number of descendants; information on deleted related "
+            "rows not available."
+        )
         # Delete plans
         _, by_type = plans_to_delete.delete()
         self.print_deleted_instances_by_model(by_type)
@@ -109,6 +137,14 @@ class Command(BaseCommand):
         self.print_deleted_instances_by_model(by_type)
         # Delete all logged requests
         _, by_type = LoggedRequest.objects.all().delete()
+        if not keep_model_log:
+            # Delete all Wagtail page log entries
+            _, by_type = PageLogEntry.objects.all().delete()
+            self.print_deleted_instances_by_model(by_type)
+        if not keep_page_log:
+            # Delete all Wagtail model log entries
+            _, by_type = ModelLogEntry.objects.all().delete()
+            self.print_deleted_instances_by_model(by_type)
         self.print_deleted_instances_by_model(by_type)
 
     def print_deleted_instances_by_model(self, by_type):
