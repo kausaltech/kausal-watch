@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
-from rest_framework import permissions, serializers, status, viewsets
+from rest_framework import exceptions, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -20,6 +20,7 @@ from kausal_common.users import user_or_none
 from actions.api import plan_router
 from actions.models import Plan
 from people.models import Person
+from users.models import User
 
 from .models import (
     ActionIndicator,
@@ -518,18 +519,39 @@ class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMix
 
 
 class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
+    def check_permission(self, user: User, perm: str, indicator: Indicator | None = None):
+        # Check for object permissions first
+        if not user.has_perms([perm]):
+            return False
+        if perm in (
+            'indicators.change_indicatorvalue',
+            'indicators.add_indicatorvalue',
+            'indicators.delete_indicatorvalue',
+        ):
+            if not user.can_modify_indicator(indicator=indicator):
+                return False
+        else:
+            return False
+        return True
+
     def has_permission(self, request, view):
+        indicator_pk = view.kwargs.get('pk')
+        try:
+            indicator = Indicator.objects.get(id=indicator_pk)
+        except Indicator.DoesNotExist as e:
+            raise exceptions.NotFound(detail='Indicator not found') from e
+        if not request.method or not request.user.is_authenticated or not isinstance(request.user, User):
+            return False  # linter bitches below otherwise
         perms = self.get_required_permissions(request.method, IndicatorValue)
-        return request.user.has_perms(perms)
+        return all(self.check_permission(request.user, perm, indicator) for perm in perms)
 
     def has_object_permission(self, request, view, obj):
+        if not request.method or not request.user.is_authenticated or not isinstance(request.user, User):
+            return False  # linter bitches below otherwise
         perms = self.get_required_object_permissions(request.method, IndicatorValue)
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
-        user = request.user
-        if not user.has_perms(perms):
-            return False
-        return user.can_modify_indicator(obj)
+        return all(self.check_permission(request.user, perm, obj) for perm in perms)
 
 
 @extend_schema(
