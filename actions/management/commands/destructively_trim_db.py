@@ -26,6 +26,12 @@ class Command(BaseCommand):
             help="Exclude the plan with the specified identifier from deletion",
         )
         parser.add_argument(
+            '--exclude-organization',
+            metavar='UUID',
+            action='append',
+            help="Exclude the organization with the specified UUID from deletion",
+        )
+        parser.add_argument(
             '--no-confirm',
             action='store_true',
             help="Do not ask for confirmation but delete right away",
@@ -57,6 +63,8 @@ class Command(BaseCommand):
         plans_to_keep = Plan.objects.qs.exclude(id__in=plans_to_delete)
         delete_identifiers = plans_to_delete.values_list('identifier', flat=True)
         orgs_to_keep = Organization.objects.qs.available_for_plans(plans_to_keep)
+        if options['exclude_organization']:
+            orgs_to_keep |= Organization.objects.filter(uuid__in=options['exclude_organization'])
         orgs_to_delete = Organization.objects.qs.exclude(id__in=orgs_to_keep)
         num_delete_suborgs = {}
         for org in orgs_to_delete.filter(depth=1):
