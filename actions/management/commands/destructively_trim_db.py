@@ -100,18 +100,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def delete_data(self, plans_to_delete, orgs_to_delete, keep_page_log: bool = False, keep_model_log: bool = False):
-        # Delete root pages -- deleting the plan does not cascade to these
-        root_pages = PlanRootPage.objects.filter(id__in=plans_to_delete.values_list('site__root_page_id'))
-        num_root_pages = root_pages.count()
-        root_pages.delete()
-        # Treebeard won't tell us the deleted numbers -_-
-        self.stdout.write(
-            f"Deleted {num_root_pages} root pages and an unknown number of descendants; information on deleted related "
-            "rows not available."
-        )
         # Delete plans
-        _, by_type = plans_to_delete.delete()
-        self.print_deleted_instances_by_model(by_type)
+        # Iterate over plans and call `delete()` individually because bulk deletion would not call `delete()` and leave
+        # related objects in place.
+        for plan in plans_to_delete:
+            plan.delete()
+            self.stdout.write(f"Deleted plan {plan.identifier}; information on deleted related rows not available.")
         # Delete organizations
         num_orgs = orgs_to_delete.count()
         orgs_to_delete.delete()
