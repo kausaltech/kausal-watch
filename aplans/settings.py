@@ -628,6 +628,12 @@ WAGTAILEMBEDS_FINDERS = [
         # If we leave the provider out, the "default" provider will be used
         'domain_whitelist': ('klimadashboard.de', ),
         'title': 'Chart',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        # If we leave the provider out, the "default" provider will be used
+        'domain_whitelist': ('gis.fairfield-city.org', ),
+        'title': 'Map',
     }
 
 ]
