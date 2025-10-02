@@ -8,6 +8,7 @@ from factory.django import DjangoModelFactory
 
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
+from indicators.models import Indicator
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
 
@@ -71,6 +72,15 @@ class IndicatorFactory(DjangoModelFactory):
 
     # created_at = None  # Should be set automatically
     # updated_at = None  # Should be set automatically
+
+    @post_generation
+    @staticmethod
+    def plans(obj: Indicator, create, extracted, **kwargs) -> None:
+        if not create:
+            return
+        if extracted:
+            for plan in extracted:
+                obj.plans.add(plan)
 
 
 class IndicatorLevelFactory(DjangoModelFactory):

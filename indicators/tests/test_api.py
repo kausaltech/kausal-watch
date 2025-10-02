@@ -81,7 +81,7 @@ def assert_goals_match(indicator, goals):
 
 
 def test_all_values_get_replaced(client, plan, plan_admin_user):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory(plans=[plan])
     assert not indicator.values.exists()
     for values in [[VALUE_2019, VALUE_2020], [VALUE_2021, VALUE_2022]]:
         # post_values(indicator, values)
@@ -90,7 +90,7 @@ def test_all_values_get_replaced(client, plan, plan_admin_user):
 
 
 def test_all_goals_get_replaced(client, plan, plan_admin_user):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory(plans=[plan])
     assert not indicator.goals.exists()
     for values in [[GOAL_2030, GOAL_2045], [GOAL_2035, GOAL_2040]]:
         post(client, plan, plan_admin_user, 'indicator-goals', indicator, values)
@@ -101,8 +101,8 @@ def test_all_goals_get_replaced(client, plan, plan_admin_user):
 @pytest.mark.parametrize("test_goals_instead", [False, True])
 def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_order, test_goals_instead):
     # Normalize emissions by population
-    emissions = IndicatorFactory()
-    population = IndicatorFactory(organization=emissions.organization)
+    emissions = IndicatorFactory(plans=[plan])
+    population = IndicatorFactory(plans=[plan], organization=emissions.organization)
     normalizator = CommonIndicatorNormalizatorFactory(
         normalizable=emissions.common,
         normalizer=population.common,
@@ -140,7 +140,7 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
 # TODO: these authorization test turned out difficult to implement
 #       without flakiness.
 # def test_contact_person_unauthorized(client, plan, action_contact_person_user):
-#     indicator = IndicatorFactory()
+#     indicator = IndicatorFactory(plans=[plan])
 #     assert not indicator.values.exists()
 #     values = [VALUE_2019, VALUE_2020]
 #     post(client, plan, action_contact_person_user, 'indicator-values', indicator, values, expected_status_code=403)
@@ -148,7 +148,7 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
 
 
 # def test_unauthorized_without_login(client, plan):
-#     indicator = IndicatorFactory()
+#     indicator = IndicatorFactory(plans=[plan])
 #     assert not indicator.values.exists()
 #     values = [VALUE_2019, VALUE_2020]
 #     post(client, plan, None, 'indicator-values', indicator, values, expected_status_code=401)
@@ -156,7 +156,7 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
 
 
 # def test_contact_person_goals_unauthorized(client, plan, action_contact_person_user):
-#     indicator = IndicatorFactory()
+#     indicator = IndicatorFactory(plans=[plan])
 #     assert not indicator.goals.exists()
 #     values = [GOAL_2030, GOAL_2045]
 #     post(client, plan, action_contact_person_user, 'indicator-goals', indicator, values, expected_status_code=403)
@@ -164,7 +164,7 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
 
 
 # def test_goals_unauthorized_without_login(client, plan, post_goals_no_user):
-#     indicator = IndicatorFactory()
+#     indicator = IndicatorFactory(plans=[plan])
 #     assert not indicator.goals.exists()
 #     values = [GOAL_2030, GOAL_2045]
 #     post(client, plan, None, 'indicator-goals', indicator, values, expected_status_code=401)
@@ -172,7 +172,7 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
 
 
 def test_add_first_value_updates_indicator_latest_value(client, plan, plan_admin_user):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory(plans=[plan])
     assert not indicator.values.exists()
     assert indicator.latest_value is None
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
@@ -182,7 +182,7 @@ def test_add_first_value_updates_indicator_latest_value(client, plan, plan_admin
 
 
 def test_add_value_updates_indicator_latest_value(client, plan, plan_admin_user):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory(plans=[plan])
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2020])
     assert not indicator.latest_value.categories.exists()
@@ -191,13 +191,13 @@ def test_add_value_updates_indicator_latest_value(client, plan, plan_admin_user)
 
 
 def test_add_value_keeps_null_due_date(client, plan, plan_admin_user):
-    indicator = IndicatorFactory()
+    indicator = IndicatorFactory(plans=[plan])
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
     assert indicator.updated_values_due_at is None
 
 
 def test_add_value_updates_due_date(client, plan, plan_admin_user):
-    indicator = IndicatorFactory(updated_values_due_at=date(2020, 3, 1))
+    indicator = IndicatorFactory(plans=[plan], updated_values_due_at=date(2020, 3, 1))
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
     assert indicator.updated_values_due_at == date(2021, 3, 1)
 
