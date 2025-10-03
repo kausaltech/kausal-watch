@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.contrib.sessions.models import Session
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from reversion.models import Revision as ReversionRevision
 from wagtail.models import ModelLogEntry, PageLogEntry, Revision as WagtailRevision
+
+from easy_thumbnails.models import Thumbnail
 
 from actions.models.plan import Plan
 from admin_site.models import Client
@@ -109,6 +112,8 @@ class Command(BaseCommand):
             self.stdout.write("- all entries of Wagtail's page log")
         if not options['keep_model_log']:
             self.stdout.write("- all entries of Wagtail's model log")
+        self.stdout.write("- all thumbnails")
+        self.stdout.write("- all sessions")
         if not options['no_confirm']:
             confirmation = input("Do you want to proceed? [y/N] ").lower()
             if confirmation != 'y':
@@ -171,6 +176,10 @@ class Command(BaseCommand):
             _, by_type = ModelLogEntry.objects.all().delete()
             self.print_deleted_instances_by_model(by_type)
         self.print_deleted_instances_by_model(by_type)
+        # Delete thumbnails
+        Thumbnail.objects.all().delete()
+        # Delete sessions
+        Session.objects.all().delete()
 
     def print_deleted_instances_by_model(self, by_type):
         for model_name, n in by_type.items():
