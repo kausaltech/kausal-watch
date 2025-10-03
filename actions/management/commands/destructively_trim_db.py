@@ -123,10 +123,9 @@ class Command(BaseCommand):
             plans_to_delete, orgs_to_delete, options['exclude_client'], options['keep_page_log'],
             options['keep_model_log'],
         )
-        self.stdout.write(
-            "You may also want to run the management command `wagtail_update_image_renditions --purge-only` to remove "
-            "all renditions in the database."
-        )
+        self.stdout.write("You may also want to run the following management commands now:")
+        self.stdout.write("- `wagtail_update_image_renditions --purge-only` to remove all renditions")
+        self.stdout.write("- `wagtail_update_references_index` to get rid of broken references")
 
     @transaction.atomic
     def delete_data(
