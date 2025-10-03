@@ -29,7 +29,6 @@ class Client(ClusterableModel):
         # Values are social auth backend names
         AZURE_AD = 'azure_ad', _('Microsoft Azure AD')
         GOOGLE = 'google-openidconnect', _('Google')
-        TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
         OKTA = 'okta-openidconnect', _('OKTA')
         ADFS = 'adfs-openidconnect', _('ADFS OpenID Connect')
         CUSTOM_ENTRA_ID = (
