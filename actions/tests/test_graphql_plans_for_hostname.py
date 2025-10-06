@@ -18,6 +18,7 @@ GET_PLANS_BY_HOSTNAME_QUERY = """
       }
       domains {
         hostname
+        redirectToHostname
         basePath
         status
       }
@@ -40,13 +41,14 @@ GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = """
 
 
 @pytest.mark.parametrize(
-    "publication_status_override,delta_minutes,expected_publication_status",
-    [(None, -5, PublicationStatus.PUBLISHED),
-     (None, 5, PublicationStatus.SCHEDULED),
-     (None, None, PublicationStatus.UNPUBLISHED),
-     (PublicationStatus.UNPUBLISHED, -5, PublicationStatus.UNPUBLISHED),
-     (PublicationStatus.PUBLISHED, 5, PublicationStatus.PUBLISHED),
-     (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED)],
+    ("publication_status_override" ,"delta_minutes", "expected_publication_status", "redirect_to"),
+    [(None, -5, PublicationStatus.PUBLISHED, ''),
+     (None, 5, PublicationStatus.SCHEDULED, ''),
+     (None, None, PublicationStatus.UNPUBLISHED, ''),
+     (PublicationStatus.UNPUBLISHED, -5, PublicationStatus.UNPUBLISHED, ''),
+     (PublicationStatus.PUBLISHED, 5, PublicationStatus.PUBLISHED, ''),
+     (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED, ''),
+     (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED, 'test_redirect.com')],
 )
 @pytest.mark.parametrize(
     argnames="expose_flag",
@@ -58,6 +60,7 @@ def test_get_plans_by_hostname(graphql_client_query_data,
                                publication_status_override,
                                delta_minutes,
                                expected_publication_status,
+                               redirect_to,
                                expose_flag):
     """
     Test getPlansByHostname query with excplicit PlanDomains and without authentication.
@@ -72,7 +75,11 @@ def test_get_plans_by_hostname(graphql_client_query_data,
     plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_flag
     plan.features.save()
 
-    domain = plan_domain_factory(plan=plan, publication_status_override=publication_status_override)
+    domain = plan_domain_factory(
+        plan=plan,
+        publication_status_override=publication_status_override,
+        redirect_to_hostname=redirect_to
+    )
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
         variables={'hostname': domain.hostname},
@@ -84,6 +91,7 @@ def test_get_plans_by_hostname(graphql_client_query_data,
                 'basePath': domain.base_path,
                 'hostname': domain.hostname,
                 'status': expected_publication_status.name,
+                'redirectToHostname': domain.redirect_to_hostname,
             }],
             'primaryLanguage': plan.primary_language,
             'publishedAt': published_at.isoformat() if published_at else None,

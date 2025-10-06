@@ -100,6 +100,7 @@ class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
 class PlanDomainFactory(ModelFactory[PlanDomain]):
     plan = SubFactory(PlanFactory, _domain=None)
     hostname = Sequence(lambda i: f'plandomain{i}.example.org')
+    redirect_to_hostname = ''
 
 
 class ActionDependencyRoleFactory(ModelFactory[ActionDependencyRole]):

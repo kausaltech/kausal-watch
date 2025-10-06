@@ -117,6 +117,7 @@ class PlanDomainNode(DjangoNode):
         fields = (
             'id',
             'hostname',
+            'redirect_to_hostname',
             'base_path',
             'google_site_verification_tag',
             'matomo_analytics_url',

@@ -318,6 +318,7 @@ class PlanAdmin(AplansModelAdmin):
             panels.append(InlinePanel('domains', panels=[
                 FieldPanel('hostname'),
                 FieldPanel('base_path'),
+                FieldPanel('redirect_to_hostname'),
                 FieldPanel('deployment_environment'),
                 FieldPanel('redirect_aliases'),
                 FieldPanel('google_site_verification_tag'),

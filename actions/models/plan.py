@@ -1135,6 +1135,13 @@ class PlanDomain(models.Model):
         validators=[is_valid_hostname],
         help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known.'),
     )
+    redirect_to_hostname = models.CharField(  # pyright: ignore
+        max_length=200, verbose_name=_('redirect to host name'),
+        validators=[is_valid_hostname],
+        null=True,
+        blank=True,
+        help_text=_('The UI will redirect to this hostname if set.'),
+    )
     base_path = models.CharField(
         max_length=200, verbose_name=_('base path'), null=True, blank=True,
         help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain.'),
