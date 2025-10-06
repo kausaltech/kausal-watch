@@ -125,7 +125,7 @@ class Command(BaseCommand):
         )
         self.stdout.write("You may also want to run the following management commands now:")
         self.stdout.write("- `wagtail_update_image_renditions --purge-only` to remove all renditions")
-        self.stdout.write("- `wagtail_update_references_index` to get rid of broken references")
+        self.stdout.write("- `rebuild_references_index` to get rid of broken references")
 
     @transaction.atomic
     def delete_data(
