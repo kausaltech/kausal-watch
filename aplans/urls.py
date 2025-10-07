@@ -29,6 +29,7 @@ from actions.autocomplete import (
     CommonCategoryTypeAutocomplete,
 )
 from actions.models import PlanDomain
+from admin_site.views import WadminRedirectView
 from admin_site.wagtail_hooks import restrict_chooser_pages_to_plan
 from indicators.api import all_views as indicators_api_views
 from indicators.autocomplete import CommonIndicatorAutocomplete, IndicatorAutocomplete, QuantityAutocomplete, UnitAutocomplete
@@ -132,6 +133,7 @@ urlpatterns = [
     # FIXME: This overrides the URLs in Wagtail's admin/urls/pages.py to allow filtering the queryset
     path("admin/pages/search/", PageSearchView.as_view(), name="search"),
     re_path(r'^admin/', include(wagtailadmin_urls)),
+    re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     # re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
