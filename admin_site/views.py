@@ -7,18 +7,6 @@ from django.urls import reverse
 from django.views.generic.base import RedirectView
 
 
-class RootRedirectView(RedirectView):
-    permanent = False
-
-    def get_redirect_url(self, *args, **kwargs):
-        request = self.request
-        if request.user.is_authenticated:
-            url = reverse('wagtailadmin_home')
-        else:
-            url = reverse('graphql')
-        return url
-
-
 class WadminRedirectView(RedirectView):
     permanent = True
 
