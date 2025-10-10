@@ -243,6 +243,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                     formsets[role] = formset
             manager = getattr(self.instance, relation_name)
             original_objects = manager.get_object_list().copy()
+            # FIXME: 281d32c15 moved the call to `super().save()` into this `for` loop. Linters rightly complain after
+            # this loop that `obj` may be unbound. In any case, it's weird that we call `super().save()` multiple times.
             obj: Action = super().save(commit)
             self.save_related_objects_with_role(manager, formsets, original_objects, commit)
 
@@ -254,6 +256,9 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                 continue
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data)
+
+        related_actions = self.cleaned_data.get('related_actions', [])
+        obj.related_actions.set(related_actions)
 
         user = self._user
         # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
