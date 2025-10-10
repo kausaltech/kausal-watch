@@ -1,11 +1,8 @@
 ## Description
 Brief description of the changes made in this PR.
 
-## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
+## Screenshots/Videos (if applicable)
+Add screenshots or videos demonstrating the changes if applicable.
 
 ## Related issue
 E.g. Link to asana, sentry, slack thread etc.
@@ -13,9 +10,15 @@ E.g. Link to asana, sentry, slack thread etc.
 ## Requirements, dependencies and related PRs
 Describe or link possible requirements, dependencies and related PRs here
 
+## Additional Notes
+Any additional information that reviewers should know about this PR.
+
 ------
 
 ## ✅ Pre-Merge Checklist
+
+### Type of Change
+- [ ] Set the PR's label to match the nature of this change
 
 ### Testing
 - [ ] **Built Unit tests** (unit tests added/updated)
@@ -33,16 +36,8 @@ Describe or link possible requirements, dependencies and related PRs here
 If there are model changes to models which use any of the features below, verify the new models work together with the features.
 For example, when adding a new model, verify the new model instances are copied when copying a plan.
 - [ ] **Moderation** integration implemented
-- [ ] **Reporting** integration implemented  
+- [ ] **Reporting** integration implemented
 - [ ] **Copy plan feature** integration implemented
 
 ### Dependencies
-- [ ] **Dependencies are merged** (if applicable. If the change depends on other PR's e.g. kausal_common)
-
------
-
-## Screenshots/Videos (if applicable)
-Add screenshots or videos demonstrating the changes if applicable.
-
-## Additional Notes
-Any additional information that reviewers should know about this PR.
+- [ ] **Dependencies are merged** (if applicable. If the change depends on other PRs e.g. kausal_common)
