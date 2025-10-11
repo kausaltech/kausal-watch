@@ -1098,7 +1098,7 @@ class ActionScheduleThrough(models.Model):
 
 
 class RelatedActionsThrough(models.Model):
-    from_action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='related_actions_through')
+    from_action = ParentalKey(Action, on_delete=models.CASCADE, related_name='related_actions_through')
     to_action = models.ForeignKey(Action, on_delete=models.CASCADE)
 
     class Meta:

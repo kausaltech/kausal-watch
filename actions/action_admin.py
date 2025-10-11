@@ -20,6 +20,7 @@ from wagtail.admin.panels import (
     FieldPanel,
     InlinePanel,
     MultiFieldPanel,
+    MultipleChooserPanel,
     ObjectList,
 )
 from wagtail.admin.panels.base import Panel
@@ -749,14 +750,15 @@ class ActionAdmin(AplansModelAdmin):
         CustomizableBuiltInFieldPanel('image'),
     )
     basic_related_panels_general_admin: list[Panel[Any]] = [
-        CustomizableBuiltInFieldPanel(
-            'related_actions',
-            widget=autocomplete.ModelSelect2Multiple(
-                url='action-autocomplete',
-                forward=(
-                    dal_forward.Const(True, 'related_plans'),
-                ),
-            ),
+        # TODO: Allow customizability like in CustomizableBuiltInFieldPanel
+        MultipleChooserPanel(
+            'related_actions_through',
+            chooser_field_name='to_action',
+            heading=_("Related actions"),
+            label=_("Related action"),
+            panels=[
+                FieldPanel('to_action', widget=ActionChooser, heading=_("Action")),
+            ],
         ),
         CustomizableBuiltInFieldPanel('merged_with', widget=ActionChooser),
         CustomizableBuiltInFieldPanel('visibility'),
