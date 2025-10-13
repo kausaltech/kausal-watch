@@ -108,10 +108,10 @@ class MenuNodeMixin:
         assert root_page is not None
         if not page.path.startswith(root_page.path):
             apage = AplansPage.objects.get(path=page.path)
-            plan = apage.plan
-            if plan is None:
+            plan_or_none = apage.plan
+            if plan_or_none is None:
                 raise ValueError('Page has no plan')
-            cache = info.context.cache.for_plan(plan)
+            cache = info.context.cache.for_plan(plan_or_none)
         return cache
 
     @classmethod

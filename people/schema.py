@@ -19,17 +19,18 @@ class PersonNode(BasePersonNode, DjangoNode):
             'id', 'first_name', 'last_name', 'title', 'email', 'organization',
         ]
 
-    def resolve_avatar_url(self, info, size=None):
+    @staticmethod
+    def resolve_avatar_url(root: Person, info, size: str | None = None) -> str | None:
         request = info.context
         if not request:
             return None
         plan = get_plan_from_context(info)
         if plan.features.contact_persons_show_picture:
-            return self.get_avatar_url(request, size)
+            return root.get_avatar_url(request, size)
         return None
 
 
-class PersonForm(ModelForm):
+class PersonForm(ModelForm[Person]):
     # TODO: Eventually we will want to allow updating things other than organization
     class Meta:
         model = Person

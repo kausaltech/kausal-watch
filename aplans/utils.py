@@ -7,6 +7,7 @@ import re
 import typing
 from enum import Enum
 from typing import (
+    Any,
     Generic,
     Literal,
     Protocol,
@@ -635,10 +636,10 @@ class ConstantMetadata(Generic[E, C]):
         return self
 
 
-CM = TypeVar('CM', bound=ConstantMetadata)
+CM = TypeVar('CM', bound=ConstantMetadata[Any, Any])
 
 class MetadataEnum(Enum):
-    value: ConstantMetadata
+    value: ConstantMetadata[Any, Any]
 
     def get_data(self, context=None):
         return self.value.with_identifier(self).with_context(context)

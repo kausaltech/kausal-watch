@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from __future__ import annotations
+
+from django.core.management.base import BaseCommand, CommandParser
 
 from actions.models import Plan
 from orgs.models import Organization
 from people.models import Person
-from users.models import User
 
 
 class Command(BaseCommand):
@@ -25,7 +26,7 @@ class Command(BaseCommand):
                     self.style.ERROR('Person with that email does not exist'),
                 )
                 exit(1)
-            out = existing.delete()
+            _ = existing.delete()
             self.stdout.write(
                 self.style.SUCCESS('User deleted'),
             )
@@ -37,9 +38,7 @@ class Command(BaseCommand):
             )
             exit(1)
 
-        admin_plans = []
-        for plan_id in options['admin_plan']:
-            admin_plans.append(Plan.objects.get(identifier=plan_id))
+        admin_plans = [Plan.objects.get(identifier=plan_id) for plan_id in options['admin_plan']]
 
         if options['org']:
             org_name = options['org']
@@ -48,7 +47,9 @@ class Command(BaseCommand):
                 orgs = Organization.objects.filter(name__icontains=org_name)
             if orgs.count() != 1:
                 self.stderr.write(
-                    self.style.ERROR('Invalid number of organizations matched "%s": %s' % (org_name, ', '.join([o.name for o in orgs]))),
+                    self.style.ERROR(
+                        'Invalid number of organizations matched "%s": %s' % (org_name, ', '.join([o.name for o in orgs]))
+                    ),
                 )
                 exit(1)
             org = orgs[0]
@@ -66,6 +67,11 @@ class Command(BaseCommand):
             p.general_admin_plans.add(*admin_plans)
 
         if options['password']:
+            if p.user is None:
+                self.stderr.write(
+                    self.style.ERROR('User for person %s does not exist' % p.email),
+                )
+                exit(1)
             u = p.user
             u.set_password(options['password'])
             u.save()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from people.models import Person
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import graphene
@@ -25,6 +26,7 @@ from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.schema_context import WatchGraphQLContext
 from aplans.utils import public_fields
+from kausal_common.users import user_or_none
 
 if True:
     from images import schema as images_schema  # noqa: F401
@@ -179,16 +181,10 @@ class Query(
 
         return qs
 
-    def resolve_person(self, info, **kwargs):
-        qs = Person.objects.all()
-        obj_id = kwargs.get('id')
-        qs = qs.filter(id=obj_id)
-        try:
-            obj = qs.get()
-        except Person.DoesNotExist:
-            return None
-
-        return obj
+    def resolve_person(self, info: GQLInfo, id: str) -> Person | None:
+        user = user_or_none(info.context.user)
+        qs = Person.objects.get_queryset().visible_for_user(user, plan=get_plan_from_context(info))
+        return qs.filter(id=id).first()
 
 
 @sb.type

@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
-from typing import Optional
 
 from django.utils import translation
-from modeltrans.fields import TranslatedVirtualField
 from wagtail.search import index
 from wagtail.search.backends.elasticsearch7 import (
     Elasticsearch7AutocompleteQueryCompiler,

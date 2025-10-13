@@ -617,6 +617,8 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
             for arp in related_versions if arp.content_type.model_class() == ActionResponsibleParty
         )
         org_id = self._find_organization_id(action_responsible_parties, snapshot.action_version.field_dict['id'])
+        if org_id is None:
+            return None
         try:
             return Organization.objects.get(pk=org_id)
         except Organization.DoesNotExist:

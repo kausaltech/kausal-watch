@@ -73,6 +73,7 @@ class SingleTenantSpecificEntraAuth(AzureADAuth):
     @override
     def user_data(self, access_token, *args, **kwargs):
         response = kwargs.get("response")
+        assert response is not None
         id_token = response.get("id_token")
 
         # get key id and algorithm

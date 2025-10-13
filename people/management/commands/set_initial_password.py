@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import secrets
 import string
-from typing import List
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -56,6 +57,11 @@ class Command(BaseCommand):
             person = Person.objects.get(email__iexact=email)
         except Person.DoesNotExist:
             message = f"User does not exist: {email}"
+            self.stdout.write(self.style.WARNING(message))
+            return
+
+        if person.user is None:
+            message = f"Not setting password for {email} because they have no user."
             self.stdout.write(self.style.WARNING(message))
             return
 

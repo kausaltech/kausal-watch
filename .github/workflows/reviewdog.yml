@@ -72,7 +72,7 @@ jobs:
 
       - uses: reviewdog/action-setup@v1
         with:
-          reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
+          reviewdog_version: v0.20.3 # Optional. [latest,nightly,v.X.Y.Z]
 
       - name: Run reviewdog for push
         if: github.event_name == 'push' && steps.push_diff.outputs.has_diff == 'true'
