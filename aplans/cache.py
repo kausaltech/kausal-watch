@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from wagtail.models import Revision
+from wagtail.models import Page, Revision
 
 import sentry_sdk
 
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
     from actions.models.action import ActionQuerySet
     from orgs.models import Organization, OrganizationQuerySet
+    from pages.models import AplansPage
     from people.models import Person, PersonQuerySet
     from users.models import User
 
@@ -55,6 +56,21 @@ class PlanSpecificCache:
     @cached_property
     def implementation_phases(self) -> list[ActionImplementationPhase]:
         return list(self.plan.action_implementation_phases.all())
+
+    @cached_property
+    def translated_root_page(self) -> Page | None:
+        root = self.plan.get_translated_root_page()
+        if root is None:
+            return None
+        return root.specific
+
+    @cached_property
+    def visible_pages(self) -> list[AplansPage]:
+        if self.translated_root_page is None:
+            return []
+        return cast(
+            'list[AplansPage]', list(self.translated_root_page.get_descendants(inclusive=True).live().public().specific())
+        )
 
     @cached_property
     def action_dataset_schemas(self) -> DatasetSchemaQuerySet:
@@ -95,7 +111,7 @@ class PlanSpecificCache:
 
     def populate_persons(self, persons: PersonQuerySet) -> None:
         """Add the persons from a queryset to the cache, keeping any persons that might already be in the cache."""
-        for person in persons:
+        for person in list(persons):
             self.persons[person.pk] = person
 
     def get_organization(self, pk: int) -> Organization | None:
@@ -165,7 +181,9 @@ class PlanSpecificCache:
 
     @classmethod
     def fetch(cls, plan_id: int) -> Plan:
-        return Plan.objects.get(id=plan_id)
+        plan = Plan.objects.filter(id=plan_id).select_related('features').first()
+        assert plan is not None, "Invalid plan id"
+        return plan
 
     def enrich_action(self, action: Action) -> None:
         action.plan = self.plan
@@ -203,14 +221,13 @@ class WatchObjectCache:
     def for_plan_identifier(self, plan_identifier: str) -> PlanSpecificCache:
         plan_cache = self.plan_caches_by_identifier.get(plan_identifier)
         if plan_cache is None:
-            plan = Plan.objects.get(identifier=plan_identifier)
-            if plan.id in self.plan_caches:
-                plan_cache = self.plan_caches[plan.id]
+            plan_id = Plan.objects.filter(identifier=plan_identifier).values_list('id', flat=True).first()
+            assert plan_id is not None, "Invalid plan identifier"
+            if plan_id in self.plan_caches:
+                plan_cache = self.plan_caches[plan_id]
             else:
-                plan_cache = PlanSpecificCache(plan)
+                plan_cache = self.for_plan_id(plan_id)
             self.plan_caches_by_identifier[plan_identifier] = plan_cache
-            if plan.id not in self.plan_caches:
-                self.plan_caches[plan.id] = plan_cache
         return plan_cache
 
     def for_plan(self, plan: Plan) -> PlanSpecificCache:

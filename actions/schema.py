@@ -320,12 +320,12 @@ class PlanNode(DjangoNode[Plan]):
         return qs.visible_for_user(info.context.user)
 
     @staticmethod
-    def resolve_action_status_summaries(root: Plan, info):
-        return [a.get_data({'plan': root}) for a in ActionStatusSummaryIdentifier]
+    def resolve_action_status_summaries(root: Plan, info: GQLInfo):
+        return [a.get_data({'plan': root, 'cache': info.context.cache}) for a in ActionStatusSummaryIdentifier]
 
     @staticmethod
     def resolve_action_timeliness_classes(root: Plan, info):
-        return [a.get_data({'plan': root}) for a in ActionTimelinessIdentifier]
+        return [a.get_data({'plan': root, 'cache': info.context.cache}) for a in ActionTimelinessIdentifier]
 
     @staticmethod
     def resolve_last_action_identifier(root: Plan, info):
@@ -376,13 +376,11 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_action_list_page(root: Plan, info: GQLInfo):
-        root_page: Page | None = root.get_translated_root_page()
-        if not root_page:
-            return None
-        action_list_page = root_page.get_descendants().live().public().type(ActionListPage).first()
-        if action_list_page is None:
-            return None
-        return action_list_page.specific
+        cache = info.context.cache.for_plan(root)
+        for page in cache.visible_pages:
+            if type(page) is ActionListPage:
+                return page
+        return None
 
     @staticmethod
     def resolve_view_url(root: Plan, info, client_url: str | None = None):
@@ -1304,7 +1302,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         user = info.context.user
         if not plan.is_visible_for_user(user):
             return []
-        cache = info.context.watch_cache.for_plan(plan)
+        cache = info.context.cache.for_plan(plan)
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
 
     @staticmethod
@@ -1538,7 +1536,7 @@ def _resolve_published_action(
         obj_id: int | None,
         identifier: str | None,
         plan_identifier: str | None,
-        info,
+        info: GQLInfo,
 ) -> Action | None:
     qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
     if obj_id:
@@ -1548,12 +1546,16 @@ def _resolve_published_action(
         if not plan_obj:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
         qs = qs.filter(identifier=identifier, plan=plan_obj)
+
     qs = gql_optimizer.query(qs, info)
 
     try:
-        return qs.get()
+        action = qs.get()
     except Action.DoesNotExist:
         return None
+    plan = info.context.cache.for_plan_id(action.plan_id)
+    action.plan = plan.plan
+    return action
 
 
 def _resolve_action_revision(action: Action, desired_workflow_state: WorkflowStateEnum) -> Action:

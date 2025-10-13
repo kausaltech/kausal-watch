@@ -2,19 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.utils.translation import get_language
 import graphene
-from loguru import logger
-from wagtail.models import Page as WagtailPage
+from django.utils.translation import get_language
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.types.interfaces import PageInterface
+from loguru import logger
 
 from aplans.graphql_types import get_plan_from_context, register_graphene_node
 
 from pages.models import AplansPage
 
 if TYPE_CHECKING:
+    from wagtail.models import Page as WagtailPage
+
+    from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
 
     from actions.models.plan import Plan
@@ -35,23 +37,27 @@ class PageMenuItemNode(graphene.ObjectType):
     def resolve_id(self, info):
         return self.page.pk
 
-    def resolve_parent(self, info):
+    def get_plan_cache(self, info: GQLInfo) -> PlanSpecificCache:
+        plan = get_plan_from_context(info)
+        cache = info.context.cache.for_plan(plan)
+        return cache
+
+    def resolve_parent(self, info: GQLInfo):
         if not self.page:
             return None
-        parent = WagtailPage.objects.get_queryset().parent_of(self.page).specific().first()
+        cache = self.get_plan_cache(info)
+        parent = self.page.get_visible_parent(cache)
         if parent is None:
             return None
         return PageMenuItemNode(page=parent)
 
     def resolve_children(self, info: GQLInfo) -> list[PageMenuItemNode]:
-        pages = self.page.get_children().live().public()
+        cache = self.get_plan_cache(info)
+        pages = self.page.get_visible_children(cache)
+
         # TODO: Get rid of this terrible hack
         if 'footer' in info.path.as_list():
-            footer_page_ids = [page.pk
-                               for Model in AplansPage.get_subclasses()
-                               for page in Model.objects.filter(show_in_footer=True)]
-            pages = pages.filter(id__in=footer_page_ids)
-        pages = pages.specific()
+            pages = [page for page in pages if page.show_in_footer]
         return [PageMenuItemNode(page=page) for page in pages]
 
     def resolve_view_url(self, info, client_url=None) -> None | str:
@@ -93,14 +99,27 @@ class MenuNodeMixin:
 
     items = graphene.List(graphene.NonNull(MenuItem), required=True, with_descendants=graphene.Boolean(default_value=False))
 
+    @staticmethod
+    def get_plan_cache_for_page(info: GQLInfo, page: AplansPage) -> PlanSpecificCache:
+        plan = get_plan_from_context(info)
+        cache = info.context.cache.for_plan(plan)
+
+        root_page = cache.translated_root_page
+        assert root_page is not None
+        if not page.path.startswith(root_page.path):
+            apage = AplansPage.objects.get(path=page.path)
+            plan = apage.plan
+            if plan is None:
+                raise ValueError('Page has no plan')
+            cache = info.context.cache.for_plan(plan)
+        return cache
+
     @classmethod
     def resolver_from_plan(cls, plan: Plan, info: GQLInfo) -> None | WagtailPage:
-        root_page = plan.get_translated_root_page()
         if not plan.is_visible_for_user(info.context.user):
             return None
-        if root_page is None:
-            return None
-        return root_page.specific
+        cache = info.context.cache.for_plan(plan)
+        return cache.translated_root_page
 
     @classmethod
     def create_plan_menu_field(cls) -> graphene.Field:
@@ -112,19 +131,19 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
         name = 'MainMenu'
 
     @staticmethod
-    def resolve_items(parent: AplansPage, info, with_descendants) -> list[PageMenuItemNode | ExternalLinkMenuItemNode]:
+    def resolve_items(
+        parent: AplansPage | None, info: GQLInfo, with_descendants: bool
+    ) -> list[PageMenuItemNode | ExternalLinkMenuItemNode]:
         if not parent:
             return []
-        plan = parent.plan
-        if plan is None or not plan.is_visible_for_user(info.context.user):
-            return []
+
+        cache = MenuNodeMixin.get_plan_cache_for_page(info, parent)
         if with_descendants:
-            pages = parent.get_descendants(inclusive=False)
+            pages = parent.get_visible_descendants(cache, in_menu=True)
         else:
-            pages = parent.get_children()
-        pages = pages.live().public().in_menu().specific()
+            pages = parent.get_visible_children(cache, in_menu=True)
         page_items = [PageMenuItemNode(page=page) for page in pages]
-        links = plan.links
+        links = cache.plan.links
         external_link_items = [
             ExternalLinkMenuItemNode(id=str(link.pk), url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
         ]
@@ -136,21 +155,16 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
         name = 'Footer'
 
     @staticmethod
-    def resolve_items(parent: AplansPage | None, info, with_descendants) -> list[PageMenuItemNode]:
+    def resolve_items(parent: AplansPage | None, info: GQLInfo, with_descendants: bool) -> list[PageMenuItemNode]:
         if not parent:
             return []
+
+        cache = MenuNodeMixin.get_plan_cache_for_page(info, parent)
         if with_descendants:
-            pages = parent.get_descendants(inclusive=False)
+            pages = parent.get_visible_descendants(cache)
         else:
-            pages = parent.get_children()
-        pages = pages.live().public()
-        # AplansPage is abstract and thus has no manager, so we need to find footer pages for each subclass of
-        # AplansPage individually. Gather IDs first and then make a separate query for footer_pages because the latter
-        # gives us the correct order of the pages.
-        footer_page_ids = [page.pk
-                           for Model in AplansPage.get_subclasses()
-                           for page in Model.objects.filter(show_in_footer=True)]
-        pages = pages.filter(id__in=footer_page_ids).specific()
+            pages = parent.get_visible_children(cache)
+        pages = [page for page in pages if page.show_in_footer]
         return [PageMenuItemNode(page=page) for page in pages]
 
 
@@ -162,40 +176,26 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
     def resolve_items(parent: AplansPage | None, info: GQLInfo, with_descendants: bool) -> list[PageMenuItemNode]:
         if not parent:
             return []
+        cache = MenuNodeMixin.get_plan_cache_for_page(info, parent)
         if with_descendants:
-            pages = parent.get_descendants(inclusive=False)
+            pages = parent.get_visible_descendants(cache)
         else:
-            pages = parent.get_children()
-        pages = pages.live().public()
-        # AplansPage is abstract and thus has no manager, so we need to find additional links pages for each subclass of
-        # AplansPage individually. Gather IDs first and then make a separate query for additional_links_pages because
-        # the latter gives us the correct order of the pages.
+            pages = parent.get_visible_children(cache)
 
-        additional_links_page_ids = [page.pk
-                                     for Model in AplansPage.get_subclasses()
-                                     for page in Model.objects.filter(show_in_additional_links=True)]
-        pages = pages.filter(id__in=additional_links_page_ids).specific()
+        pages = [page for page in pages if page.show_in_additional_links]
 
         # Add general additional links that should be included in all plan pages
-        plan = parent.plan
-        if plan is None:
-            return []
+        plan = cache.plan
         parent_plan = plan.parent
-
-        if parent_plan is not None:
-            cross_plan_page_ids = [
-                page.pk for Model in AplansPage.get_subclasses()
-                for page in Model.objects.filter(link_in_all_child_plans=True)
-                if page.plan == parent_plan and parent_plan.is_visible_for_user(info.context.user)
-            ]
-
-            cross_plan_qs = WagtailPage.objects.get_queryset().filter(id__in=cross_plan_page_ids).specific()
-            cross_plan_qs = cross_plan_qs.live().public()
-            cross_plan_pages = [PageMenuItemNode(page=page, cross_plan_link=True) for page in cross_plan_qs]
+        if parent_plan is not None and parent_plan.is_visible_for_user(info.context.user):
+            parent_plan_cache = info.context.cache.for_plan(parent_plan)
+            parent_plan_pages = parent_plan_cache.visible_pages
+            cross_plan_pages = [page for page in parent_plan_pages if page.link_in_all_child_plans]
+            cross_plan_nodes = [PageMenuItemNode(page=page, cross_plan_link=True) for page in cross_plan_pages]
         else:
-            cross_plan_pages = []
+            cross_plan_nodes = []
         pages_nodes = [PageMenuItemNode(page=page) for page in pages]
-        return pages_nodes + cross_plan_pages
+        return pages_nodes + cross_plan_nodes
 
 
 class Query:

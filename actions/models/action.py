@@ -631,7 +631,7 @@ class Action(
             models.Index(fields=['plan', 'order']),
         ]
         unique_together = (('plan', 'identifier'),)
-        permissions = (('admin_action', _('Can administrate all actions')),)
+        permissions = (('admin_action', _('Can administrate all actions')),)  # type: ignore[assignment]
 
     MODEL_ADMIN_CLASS = 'actions.action_admin.ActionAdmin'  # for AdminButtonsMixin
 
@@ -1120,23 +1120,23 @@ class Action(
                 person = acp.person
             else:
                 person = cache.get_person(acp.person_id) or acp.person
-            if not person.visible_for_user(user=user, plan=self.plan):
+            if not person.visible_for_user(user=user, plan=plan):
                 continue
             visible_contact_persons.append(acp)
-        if self.plan.features.contact_persons_hide_moderators and (
-            not show_all_contact_persons or not auth_user or not auth_user.can_access_admin(self.plan)
+        if plan.features.contact_persons_hide_moderators and (
+            not show_all_contact_persons or not auth_user or not auth_user.can_access_admin(plan)
         ):
             visible_contact_persons = [acp for acp in visible_contact_persons if not acp.is_moderator()]
 
-        if self.plan.features.contact_persons_public_data in (
+        if plan.features.contact_persons_public_data in (
             PlanFeatures.ContactPersonsPublicData.ALL,
             PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
-        ) or (show_all_contact_persons and auth_user and auth_user.can_access_admin(self.plan)):
+        ) or (show_all_contact_persons and auth_user and auth_user.can_access_admin(plan)):
             return visible_contact_persons
 
         # Need to redact due to setting of self.plan.features.contact_persons_public_data
         for cp in visible_contact_persons:
-            cp.person = cp.person.get_redacted_copy(self.plan)
+            cp.person = cp.person.get_redacted_copy(plan)
         return visible_contact_persons
 
     def get_workflow(self) -> Workflow | None:

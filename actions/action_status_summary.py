@@ -60,7 +60,7 @@ class ActionStatusSummary(ConstantMetadata['ActionStatusSummaryIdentifier', Summ
             if plan_id is None and plan is not None:
                 plan_id = plan.id
             assert plan_id is not None
-            status = context['cache'].for_plan_id(plan_id).get_action_status(identifier=identifier)
+            status = cache.for_plan_id(plan_id).get_action_status(identifier=identifier)
         else:
             assert plan is not None
             status = plan.action_statuses.filter(plan=plan, identifier=identifier).first()

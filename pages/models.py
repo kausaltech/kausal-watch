@@ -94,6 +94,8 @@ if TYPE_CHECKING:
 
     from kausal_common.models.types import FK, RevMany
 
+    from aplans.cache import PlanSpecificCache
+
     from images.models import AplansImage
 
 
@@ -158,6 +160,35 @@ class AplansPage(Page):
     class Meta:
         abstract = True
 
+    def get_visible_parent(self, cache: PlanSpecificCache) -> AplansPage | None:
+        depth = int(len(self.path) / self.steplen)
+        if cache.translated_root_page is None:
+            return None
+        if depth <= cache.translated_root_page.depth:
+            return None
+
+        parent_path = self._get_basepath(self.path, depth=depth - 1)
+        for page in cache.visible_pages:
+            if page.path == parent_path:
+                return page
+        return None
+
+    def get_visible_descendants(self, cache: PlanSpecificCache, in_menu: bool = False, max_depth: int | None = None):
+        descendants = []
+        for page in cache.visible_pages:
+            if page.depth <= self.depth:
+                continue
+            if not page.path.startswith(self.path):
+                continue
+            if in_menu and not page.show_in_menus:
+                continue
+            if max_depth is not None and page.depth > self.depth + max_depth:
+                continue
+            descendants.append(page)
+        return descendants
+
+    def get_visible_children(self, cache: PlanSpecificCache, in_menu: bool = False):
+        return self.get_visible_descendants(cache, in_menu, max_depth=1)
 
     @classmethod
     @functools.cache

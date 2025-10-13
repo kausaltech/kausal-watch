@@ -304,6 +304,8 @@ class User(AbstractUser):
     def is_organization_admin_for_indicator(self, indicator: Indicator | None = None) -> bool:
         indicators = None
         cache = self.get_cache()
+        if self.is_superuser:
+            return True
         if hasattr(cache, '_org_admin_for_indicators'):
             indicators = cache._org_admin_for_indicators
         else:
@@ -538,7 +540,7 @@ class User(AbstractUser):
         # FIXME: Make sure we don't allow plan admins to delete organizations unrelated to them
         return self.is_general_admin_for_plan()
 
-    def can_modify_person(self, person=None):
+    def can_modify_person(self, person: Person | None = None) -> bool:
         if self.is_superuser:
             return True
         self_person = self.get_corresponding_person()
