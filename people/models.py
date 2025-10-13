@@ -29,6 +29,7 @@ from aplans.utils import PlanDefaultsModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
+from kausal_common.users import user_or_none
 from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from users.models import User
 
@@ -131,7 +132,7 @@ class Person(BasePerson, PlanDefaultsModel):
         verbose_name=_('contact for actions'),
     )
 
-    objects: ClassVar[PersonManager] = PersonManager()  # pyright: ignore
+    objects: ClassVar[PersonManager] = PersonManager()
 
     public_fields = BasePerson.public_fields + [
         'participated_in_training',
@@ -188,13 +189,6 @@ class Person(BasePerson, PlanDefaultsModel):
         if not self.image:
             return None
 
-        try:
-            with self.image.open():
-                pass
-        except FileNotFoundError:
-            logger.info('Avatar file for %s not found' % self)
-            return None
-
         if size is None:
             url = self.image.url
         else:
@@ -214,7 +208,13 @@ class Person(BasePerson, PlanDefaultsModel):
                 tn_args['focal_point'] = Rect(*[int(x) for x in self.image_cropping.split(',')])
                 tn_args['crop'] = 30
 
-            out_image = get_thumbnailer(self.image).get_thumbnail(tn_args)
+            try:
+                out_image = get_thumbnailer(self.image).get_thumbnail(tn_args)
+            except Exception as e:
+                logger.exception('Error getting thumbnail for %s' % self, exc_info=e)
+                capture_exception(e)
+                return None
+
             if out_image is None:
                 return None
             url = out_image.url
@@ -330,12 +330,12 @@ class Person(BasePerson, PlanDefaultsModel):
             target_user.deactivate(acting_admin_user)
         self.delete()
 
-    def visible_for_user(self, user: UserOrAnon, **kwargs) -> bool:
-        plan = kwargs.get('plan')
+    def visible_for_user(self, user: UserOrAnon | None, *, plan: Plan | None = None, **kwargs) -> bool:
+        user = user_or_none(user)
         if not plan or not plan.features.public_contact_persons:
-            if isinstance(user, AnonymousUser):
+            if user is None:
                 return False
-            if user is None or not user.is_authenticated or not user.can_access_public_site(plan):
+            if not user.can_access_public_site(plan):
                 return False
         return True
 
