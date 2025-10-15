@@ -18,24 +18,20 @@ jobs:
           fetch-depth: 0
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: |
-            requirements-lint.txt
-            requirements-kausal.txt
-            requirements.txt
-            pyproject.toml
+          activate-environment: true
+          prune-cache: false
 
       - name: Setup cache
         uses: actions/cache@v4
         with:
           path: |
             .mypy_cache
-          key: ${{ runner.os }}-${{ hashFiles('requirements-lint.txt', 'requirements-kausal.txt', 'requirements.txt', 'pyproject.toml') }}
-
-      - name: Set up Python
-        run: uv python install
+          key: ${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
 
       # - uses: awalsh128/cache-apt-pkgs-action@latest
       #   with:
@@ -51,9 +47,7 @@ jobs:
         env:
           EXTRA_PYPI_INDEX: ${{ secrets.EXTRA_PYPI_INDEX }}
         run: |
-          uv venv
-          . .venv/bin/activate
-          uv pip install -r requirements-lint.txt -r requirements.txt -r requirements-kausal.txt --extra-index-url "$EXTRA_PYPI_INDEX"
+          uv sync --index ${EXTRA_PYPI_INDEX} --group lint --extra kausal
 
       - name: Get push diff
         if: github.event_name == 'push' && github.event.before
@@ -74,14 +68,16 @@ jobs:
         with:
           reviewdog_version: v0.20.3 # Optional. [latest,nightly,v.X.Y.Z]
 
-      - name: Run reviewdog for push
-        if: github.event_name == 'push' && steps.push_diff.outputs.has_diff == 'true'
+      - name: Run reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          . .venv/bin/activate
-          REVIEWDOG_ARGS="-reporter=github-check -fail-level=error -diff 'cat ${{ runner.temp }}/changes.diff'"
-          echo running reviewdog
+          REVIEWDOG_ARGS="-reporter=${{ steps.reviewdog_context.outputs.reviewdog_reporter }} -fail-level=error"
+          diff_file=${{ steps.reviewdog_context.outputs.reviewdog_diff_file }}
+          if [ -n "$diff_file" ] ; then
+            REVIEWDOG_ARGS="$REVIEWDOG_ARGS -diff 'cat $diff_file'"
+          fi
+          echo running ruff
           reviewdog -runners=ruff -filter-mode=added $REVIEWDOG_ARGS
           echo running mypy
           mypy . > ${{ runner.temp }}/mypy-output.txt || mypy_exit=$?
@@ -90,26 +86,7 @@ jobs:
             cat ${{ runner.temp }}/mypy-output.txt
             exit $mypy_exit
           fi
-          cat ${{ runner.temp }}/mypy-output.txt | mypy-baseline filter --hide-stats > ${{ runner.temp }}/mypy-baselined-output.txt || baseline_exit=$?
-          echo running reviewdog again for mypy
-          reviewdog -f=mypy -name=mypy -filter-mode=nofilter $REVIEWDOG_ARGS < ${{ runner.temp }}/mypy-baselined-output.txt
-
-      - name: Run reviewdog for PR
-        if: github.event_name == 'pull_request'
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          REVIEWDOG_ARGS="-reporter=github-pr-check -fail-level=error"
-          echo running reviewdog
-          reviewdog -runners=ruff -filter-mode=added $REVIEWDOG_ARGS
-          echo running mypy
-          mypy . > ${{ runner.temp }}/mypy-output.txt || mypy_exit=$?
-          if [[ $mypy_exit -ne 0 && $mypy_exit -ne 1 ]]; then
-            echo "mypy failed with exit code $mypy_exit"
-            cat ${{ runner.temp }}/mypy-output.txt
-            exit $mypy_exit
-          fi
-          echo filtering suppressed errors
+          echo filtering suppressed mypy errors
           cat ${{ runner.temp }}/mypy-output.txt | mypy-baseline filter --hide-stats > ${{ runner.temp }}/mypy-baselined-output.txt || baseline_exit=$?
           echo running reviewdog again for mypy reporting
           reviewdog -f=mypy -name=mypy -filter-mode=nofilter $REVIEWDOG_ARGS < ${{ runner.temp }}/mypy-baselined-output.txt
