@@ -9,7 +9,6 @@ import uuid
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import reversion
-from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -24,12 +23,12 @@ from sentry_sdk import capture_exception
 
 from kausal_common.models.types import MLModelManager, RevManyToManyQS
 from kausal_common.people.models import BasePerson
+from kausal_common.users import user_or_none
 
 from aplans.utils import PlanDefaultsModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
-from kausal_common.users import user_or_none
 from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from users.models import User
 
@@ -99,7 +98,8 @@ class PersonQuerySet(MultilingualQuerySet['Person']):
     def visible_for_user(self, user: UserModel | None, plan: Plan):
         if plan.features.public_contact_persons:
             return self
-        if user is None or not user.is_authenticated or not user.can_access_public_site(plan):
+        user = user_or_none(user)
+        if user is None or not user.can_access_public_site(plan):
             return self.none()
         return self
 
@@ -153,12 +153,8 @@ class Person(BasePerson, PlanDefaultsModel):
         self.organization = plan.organization
 
     def download_avatar(self):
-        url = None
-        if self.email.endswith('@hel.fi'):
-            url = f'https://api.hel.fi/avatar/{self.email}?s={DEFAULT_AVATAR_SIZE}&d=404'
-        else:
-            md5_hash = hashlib.md5(self.email.encode('utf8'), usedforsecurity=False).hexdigest()
-            url = f'https://www.gravatar.com/avatar/{md5_hash}?f=y&s={DEFAULT_AVATAR_SIZE}&d=404'
+        email_hash = hashlib.md5(self.email.encode('utf8'), usedforsecurity=False).hexdigest()
+        url = f'https://www.gravatar.com/avatar/{email_hash}?f=y&s={DEFAULT_AVATAR_SIZE}&d=404'
 
         try:
             resp = requests.get(url, timeout=5)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import StrEnum, auto
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 from django.core.exceptions import PermissionDenied
@@ -34,6 +36,59 @@ if TYPE_CHECKING:
 class ModerationAction(StrEnum):
     PUBLISH = auto()
     APPROVE = auto()
+
+
+@dataclass
+class UserPermissionCache:
+    user: User
+
+    @cached_property
+    def corresponding_person(self) -> Person | None:
+        from people.models import Person
+
+        try:
+            person = self.user.person
+        except Person.DoesNotExist:
+            person = None
+
+        if person is None:
+            person = Person.objects.filter(email__iexact=self.user.email).first()
+        return person
+
+    @cached_property
+    def active_admin_plan(self) -> Plan:
+        return self.user.get_active_admin_plan()
+
+    @cached_property
+    def contact_for_actions_by_role(self) -> dict[ActionContactPerson.Role, set[int]]:
+        from actions.models import ActionContactPerson
+
+        if not self.corresponding_person:
+            return {}
+        acps = ActionContactPerson.objects.filter(person=self.corresponding_person)
+        by_role: dict[ActionContactPerson.Role, set[int]] = {role: set() for role in ActionContactPerson.Role}
+        for acp in acps:
+            role = ActionContactPerson.Role(acp.role)
+            by_role[role].add(acp.action_id)
+        return by_role
+
+    @cached_property
+    def contact_for_actions(self) -> set[int]:
+        person = self.corresponding_person
+        if not person:
+            return set()
+
+        actions = set()
+        for role_actions in self.contact_for_actions_by_role.values():
+            actions.update(role_actions)
+        return actions
+
+    @cached_property
+    def contact_for_indicators(self) -> set[int]:
+        person = self.corresponding_person
+        if not person:
+            return set()
+        return {ind.id for ind in person.contact_for_indicators.all()}
 
 
 class UserRelatedModelsCache:
@@ -105,91 +160,32 @@ class User(AbstractUser):
             self._cache = UserRelatedModelsCache()
         return self._cache
 
+    @cached_property
+    def perms(self) -> UserPermissionCache:
+        return UserPermissionCache(user=self)
+
     def autocomplete_label(self):
         return self.email
 
     def get_corresponding_person(self) -> Person | None:
-        cache = self.get_cache()
-        if hasattr(cache, '_corresponding_person'):
-            return cache._corresponding_person
+        return self.perms.corresponding_person
 
-        from people.models import Person
-
-        try:
-            person = self.person
-        except Person.DoesNotExist:
-            person = None
-
-        if person is None:
-            person = Person.objects.filter(email__iexact=self.email).first()
-        cache._corresponding_person = person
-        return person
-
-    def is_contact_person_for_action(self, action=None):
-        # Cache the contact person status
-        cache = self.get_cache()
-        if hasattr(cache, '_contact_for_actions'):
-            actions = cache._contact_for_actions
-            if action is None:
-                return bool(actions)
-            return action.pk in actions
-
-        actions = set()
-        cache._contact_for_actions = actions
-        person = self.get_corresponding_person()
-        if not person:
-            return False
-
-        actions.update({act.id for act in person.contact_for_actions.all()})
+    def is_contact_person_for_action(self, action: Action | None = None) -> bool:
         if action is None:
-            return bool(actions)
-        return action.pk in actions
+            return bool(self.perms.contact_for_actions)
+        return action.pk in self.perms.contact_for_actions
 
-    def has_contact_person_role_for_action(self, role: ActionContactPerson.Role, action=None):
-        from actions.models import ActionContactPerson
-
-        actions: dict[ActionContactPerson.Role, set[int]]
-
-        # Cache the contact person role status
-        cache = self.get_cache()
-        if hasattr(cache, '_contact_for_actions_by_role'):
-            actions = cache._contact_for_actions_by_role
-            if action is None:
-                return bool(actions)
-            return action.pk in actions[role]
-
-        actions = {r: set() for r in ActionContactPerson.Role}
-        cache._contact_for_actions_by_role = actions
-        person = self.get_corresponding_person()
-        if not person:
-            return False
-
-        for r in ActionContactPerson.Role:
-            actions[r].update(person.actioncontactperson_set.filter(role=r).values_list('action', flat=True))
+    def has_contact_person_role_for_action(self, role: ActionContactPerson.Role, action: Action | None = None) -> bool:
         if action is None:
-            return bool(actions[role])
-        return action.pk in actions[role]
+            return bool(self.perms.contact_for_actions_by_role.get(role, set()))
+        return action.pk in self.perms.contact_for_actions_by_role[role]
 
-    def is_contact_person_for_indicator(self, indicator=None):
-        cache = self.get_cache()
-        if hasattr(cache, '_contact_for_indicators'):
-            indicators = cache._contact_for_indicators
-            if indicator is None:
-                return bool(indicators)
-            return indicator.pk in indicators
-
-        indicators = set()
-        cache._contact_for_indicators = indicators
-        person = self.get_corresponding_person()
-        if not person:
-            return False
-
-        indicators.update({ind.id for ind in person.contact_for_indicators.all()})
+    def is_contact_person_for_indicator(self, indicator: Indicator | None = None) -> bool:
         if indicator is None:
-            return bool(indicators)
-        return indicator.pk in indicators
+            return bool(self.perms.contact_for_indicators)
+        return indicator.pk in self.perms.contact_for_indicators
 
-    def is_contact_person_for_action_in_plan(self, plan, action=None):
+    def is_contact_person_for_action_in_plan(self, plan: Plan, action: Action | None = None) -> bool:
         cache = self.get_cache()
         if not hasattr(cache, '_contact_for_plan_actions'):
             cache._contact_for_plan_actions = {}
@@ -211,7 +207,7 @@ class User(AbstractUser):
             return bool(plan_actions)
         return action.id in plan_actions
 
-    def is_contact_person_for_indicator_in_plan(self, plan, indicator=None):
+    def is_contact_person_for_indicator_in_plan(self, plan: Plan, indicator: Indicator | None = None) -> bool:
         cache = self.get_cache()
         if not hasattr(cache, '_contact_for_plan_indicators'):
             cache._contact_for_plan_indicators = {}
@@ -233,10 +229,10 @@ class User(AbstractUser):
             return bool(plan_indicators)
         return indicator.id in plan_indicators
 
-    def is_contact_person_in_plan(self, plan):
+    def is_contact_person_in_plan(self, plan: Plan) -> bool:
         return self.is_contact_person_for_action_in_plan(plan) or self.is_contact_person_for_indicator_in_plan(plan)
 
-    def is_general_admin_for_plan(self, plan=None):
+    def is_general_admin_for_plan(self, plan: Plan | None = None):
         if self.is_superuser:
             return True
 
@@ -381,8 +377,8 @@ class User(AbstractUser):
         if self.is_superuser:
             plans = Plan.objects.qs
         else:
-            q = Q(actions__in=cache._contact_for_actions)
-            q |= Q(indicators__in=cache._contact_for_indicators)
+            q = Q(actions__in=self.perms.contact_for_actions)
+            q |= Q(indicators__in=self.perms.contact_for_indicators)
             q |= Q(id__in=cache._general_admin_for_plans)
             q |= Q(actions__in=cache._org_admin_for_actions)
             q |= Q(indicators__in=cache._org_admin_for_indicators)

@@ -35,3 +35,4 @@ requirements-local.txt
 /perf-traces/**
 /.dmypy.json
 .secrets/**
+*.egg-info/

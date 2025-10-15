@@ -150,7 +150,7 @@ class AplansPage(Page):
     promote_panels: list[Panel] = []
 
     graphql_fields = [
-        GraphQLField('plan', 'actions.schema.PlanNode', required=False), # type: ignore
+        GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
         GraphQLBoolean('show_in_additional_links'),
         GraphQLBoolean('link_in_all_child_plans'),
