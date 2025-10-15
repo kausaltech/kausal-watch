@@ -13,16 +13,31 @@ The service was first used to implement monitoring for the [Carbon-neutral Helsi
 
 #### Installation
 
+In the project root directory, create and activate a Python virtual environment:
+
+```shell
+uv venv
+source .venv/bin/activate
+```
+
 Install the required Python packages:
 
 ```shell
-pip install -r requirements.txt
+uv sync
 ```
 
-> _Notes for macOS users:_
->
-> - _The optional rustface package hasn't been built for latest macOS versions and breaks installation. Comment out all references to rustface in the requirements._
-> - _Install these additional dependencies with homebrew:_ `brew install libvoikko gdal postgis`
+If you have access to the Kausal private extensions, you should configure the PyPI index URL in your `.envrc` file:
+
+```shell
+export UV_INDEX_KAUSAL_USERNAME=...
+export UV_INDEX_KAUSAL_PASSWORD=...
+```
+
+Then install the dependencies like this:
+
+```shell
+uv sync --extra kausal
+```
 
 #### Setup
 
@@ -115,29 +130,9 @@ DATABASE_URL=postgis://watch:change_me@db/watch
 
 ### Python requirements
 
-This project uses two files for requirements. The workflow is as follows.
+We use `uv` to manage dependencies. Invoke `uv sync -P <PACKAGE>` to upgrade one package,
+and `uv sync -U` to upgrade all of them.
 
-`requirements.txt` is not edited manually, but is generated
-with `pip-compile`.
-
-`requirements.txt` always contains fully tested, pinned versions
-of the requirements. `requirements.in` contains the primary, unpinned
-requirements of the project without their dependencies.
-
-In production, deployments should always use `requirements.txt`
-and the versions pinned therein. In development, new virtualenvs
-and development environments should also be initialised using
-`requirements.txt`. `pip-sync` will synchronize the active
-virtualenv to match exactly the packages in `requirements.txt`.
-
-In development and testing, to update to the latest versions
-of requirements, use the command `pip-compile`. You can
-use [requires.io](https://requires.io) to monitor the
-pinned versions for updates.
-
-To remove a dependency, remove it from `requirements.in`,
-run `pip-compile` and then `pip-sync`. If everything works
-as expected, commit the changes.
 
 ### Updating translations
 

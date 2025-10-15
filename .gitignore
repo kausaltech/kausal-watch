@@ -34,3 +34,4 @@ requirements-local.in
 requirements-local.txt
 /perf-traces/**
 /.dmypy.json
+.secrets/**

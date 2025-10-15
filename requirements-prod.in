@@ -1,4 +1,0 @@
--c requirements.txt
-gunicorn
-uvicorn-worker
-uvicorn[standard]
