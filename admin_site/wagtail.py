@@ -147,18 +147,18 @@ def get_translation_tabs(instance: Model, request: HttpRequest, include_all_lang
 # TODO: Reimplemented in admin_site/permissions.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanRelatedModelAdminPermissionHelper(PermissionHelper):
+class PlanRelatedModelAdminPermissionHelper[M: PlanRelatedModel](PermissionHelper):
     check_admin_plan = True
 
     def disable_admin_plan_check(self):
         self.check_admin_plan = False
 
-    def get_plans(self, obj):
+    def get_plans(self, obj: M) -> list[Plan]:
         if isinstance(obj, PlanRelatedModel):
             return obj.get_plans()
         raise NotImplementedError('implement in subclass')
 
-    def _obj_matches_active_plan(self, user: User, obj: PlanRelatedModel) -> bool:
+    def _obj_matches_active_plan(self, user: User, obj: M) -> bool:
         if not self.check_admin_plan:
             return True
 
@@ -166,17 +166,17 @@ class PlanRelatedModelAdminPermissionHelper(PermissionHelper):
         active_plan = user.get_active_admin_plan()
         return any(obj_plan == active_plan for obj_plan in obj_plans)
 
-    def user_can_inspect_obj(self, user: User, obj: PlanRelatedModel) -> bool:
+    def user_can_inspect_obj(self, user: User, obj: M) -> bool:
         if not super().user_can_inspect_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
 
-    def user_can_edit_obj(self, user: User, obj: PlanRelatedModel) -> bool:
+    def user_can_edit_obj(self, user: User, obj: M) -> bool:
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
 
-    def user_can_delete_obj(self, user: User, obj: PlanRelatedModel) -> bool:
+    def user_can_delete_obj(self, user: User, obj: M) -> bool:
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)

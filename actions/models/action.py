@@ -1412,7 +1412,7 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
         EDITOR = 'editor', _('Editor')
         MODERATOR = 'moderator', _('Moderator')
 
-    role = models.CharField(
+    role: models.CharField[str, str] = models.CharField(
         max_length=40, choices=Role.choices, default='moderator', blank=False, null=False, verbose_name=_('role')
     )
 
@@ -1422,6 +1422,8 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
         verbose_name=_('action'),
         related_name='contact_persons',
     )
+    action_id: int
+
     person: models.ForeignKey[Person | Combinable, Person] = models.ForeignKey(
         'people.Person',
         on_delete=models.CASCADE,

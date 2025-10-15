@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_migrate, post_save
 from django.dispatch import receiver
 from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
@@ -97,6 +97,14 @@ for model in MODELS_WHICH_AFFECT_LOGIN_RIGHTS:
     post_delete.connect(clear_login_rights_cache, sender=model)
 
 
+def sync_permissions(sender, **kwargs):
+    from actions.perms import sync_group_permissions
+    if sender.label != 'actions':
+        return
+    print('Syncing permissions')
+    sync_group_permissions()
+
+
 def register_signal_handlers():
     task_submitted.connect(
         action_moderator_approval_task_submission_email_notifier,
@@ -110,3 +118,4 @@ def register_signal_handlers():
         workflow_approval_email_notifier,
         dispatch_uid="workflow_state_approved_email_notification",
     )
+    post_migrate.connect(sync_permissions, dispatch_uid='sync_app_permissions')

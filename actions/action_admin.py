@@ -4,7 +4,7 @@ import json
 import logging
 import typing
 from functools import cached_property
-from typing import Any, Iterable, Unpack, cast
+from typing import Any, Unpack, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
@@ -34,10 +34,9 @@ from wagtail.snippets.views.snippets import (
 )
 
 from dal import autocomplete, forward as dal_forward
-from wagtail_modeladmin.options import ModelAdminMenuItem
-from wagtail_modeladmin.views import IndexView
 
 from kausal_common.people.chooser import PersonChooser
+from kausal_common.users import user_or_none
 
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
@@ -65,7 +64,6 @@ from admin_site.wagtail import (
     get_translation_tabs,
     insert_model_translation_panels,
 )
-from kausal_common.users import user_or_none
 from orgs.models import Organization
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
@@ -74,7 +72,7 @@ from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask, ModelWithRole
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from django.db.models import Model
     from django.utils.functional import Promise
@@ -106,7 +104,7 @@ class ReadOnlyInlinePanel(Panel):
         result['relation_name'] = self.relation_name
         return result
 
-    class BoundPanel(Panel.BoundPanel):
+    class BoundPanel(Panel.BoundPanel[Any, Any, Any]):
         panel: ReadOnlyInlinePanel
 
         template_name = "aplans/panels/read_only_inline_panel.html"
@@ -124,16 +122,16 @@ class ReadOnlyInlinePanel(Panel):
             return context
 
 
-class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper):
-    def get_plans(self, obj):
+class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper[Action]):
+    def get_plans(self, obj: Action) -> list[Plan]:
         return [obj.plan]
 
-    def user_can_edit_obj(self, user, obj):
+    def user_can_edit_obj(self, user: User, obj: Action) -> bool:
         if not super().user_can_edit_obj(user, obj):
             return False
         return user.can_modify_action(obj)
 
-    def user_can_delete_obj(self, user, obj):
+    def user_can_delete_obj(self, user: User, obj: Action) -> bool:
         if not super().user_can_delete_obj(user, obj):
             return False
 
@@ -146,7 +144,7 @@ class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper):
 
         return user.is_general_admin_for_plan(plan)
 
-    def user_can_create(self, user: User):
+    def user_can_create(self, user: User) -> bool:
         if not super().user_can_create(user):
             return False
 
@@ -154,7 +152,7 @@ class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper):
         return user.can_create_action(plan)
 
 
-MODELS_WITH_ROLES: list[tuple[type[ModelWithRole], str, type[Model], str]] = [
+MODELS_WITH_ROLES: list[tuple[type[ModelWithRole[Any]], str, type[Model], str]] = [
     (ActionContactPerson, 'contact_persons',
      Person, 'person'),
     (ActionResponsibleParty, 'responsible_parties',
@@ -185,9 +183,9 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         return identifier
 
     def get_related_objects_with_role(
-            self, _cls: type[ModelWithRole], role: str,
+            self, _cls: type[ModelWithRole[Any]], role: str,
             relation_name: str, wrapped_cls: type[Model], wrapped_object_attr: str,
-    ) -> typing.Iterable[Model]:
+    ) -> Iterable[Model]:
         formset = self.formsets.get(f'{relation_name}_{role}')
         # There is a corresponding formset for a role if and only if we can edit the relations of that role.
         if formset:
@@ -198,12 +196,12 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         return wrapped_cls._default_manager.filter(id__in=obj_ids)
 
     def _validate_unique_relations_with_roles(
-            self, _cls: type[ModelWithRole], relation_name: str, wrapped_object_cls: type[Model], wrapped_object_attr: str,
+            self, _cls: type[ModelWithRole[Any]], relation_name: str, wrapped_object_cls: type[Model], wrapped_object_attr: str,
     ) -> None:
         seen_related_objects = set()
         for role in _cls.get_roles():
             if role is None:
-                role = 'None'
+                role = 'None'  # noqa: PLW2901
             for obj in self.get_related_objects_with_role(
                 _cls, role, relation_name, wrapped_object_cls, wrapped_object_attr,
             ):

@@ -1,4 +1,8 @@
-import logging
+from __future__ import annotations
+
+from django.db import transaction
+
+from loguru import logger
 
 from actions.models import Action
 from actions.perms import (
@@ -11,9 +15,9 @@ from indicators.models import Indicator
 
 from .models import User
 
-logger = logging.getLogger('users.perms')
+logger = logger.bind(name='users.perms')
 
-
+@transaction.atomic
 def create_permissions(user, **kwargs):
     assert isinstance(user, User)
 
@@ -30,19 +34,19 @@ def create_permissions(user, **kwargs):
         logger.info('No corresponding person found (uuid=%s, email=%s)' % (user.uuid, user.email))
 
     if user.is_contact_person_for_action() or user.is_organization_admin_for_action():
-        add_contact_person_perms(user, Action)
         logger.info('Adding action contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
+        add_contact_person_perms(user, Action)
     else:
         remove_contact_person_perms(user, Action)
 
     if user.is_contact_person_for_indicator():
-        add_contact_person_perms(user, Indicator)
         logger.info('Adding indicator contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
+        add_contact_person_perms(user, Indicator)
     else:
         remove_contact_person_perms(user, Indicator)
 
     if user.is_general_admin_for_plan():
-        add_plan_admin_perms(user)
         logger.info('Adding general admin perms (uuid=%s, email=%s)' % (user.uuid, user.email))
+        add_plan_admin_perms(user)
     else:
         remove_plan_admin_perms(user)

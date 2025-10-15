@@ -75,13 +75,13 @@ def test_is_contact_person_for_indicator_in_plan():
     user = contact.person.user
     assert user is not None
     indicator = contact.indicator
-    plan = IndicatorLevelFactory(indicator=indicator).plan
+    plan = IndicatorLevelFactory(indicator=indicator).create().plan
     assert user.is_contact_person_for_indicator_in_plan(plan)
     assert user.is_contact_person_for_indicator_in_plan(plan, indicator)
 
 
 def test_is_contact_person_for_indicator_in_plan_false(user: User, indicator: Indicator):
-    plan = IndicatorLevelFactory(indicator=indicator).plan
+    plan = IndicatorLevelFactory(indicator=indicator).create().plan
     assert not user.is_contact_person_for_indicator_in_plan(plan)
     assert not user.is_contact_person_for_indicator_in_plan(plan, indicator)
 

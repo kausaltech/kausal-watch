@@ -6,8 +6,10 @@ from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
+from django.db.models.query_utils import Q
+from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission, Page
 
+from loguru import logger
 from treelib import Tree
 
 from kausal_common.datasets import models as dataset_models
@@ -58,112 +60,110 @@ from .models import (
 )
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from django.db.models.base import Model
     from django.db.models.query import QuerySet
+    from wagtail.models.media import Collection
 
+    from users.models import User as UserModel
 
-User = get_user_model()
+User: UserModel = typing.cast('UserModel', get_user_model())
 
 ACTIONS_APP = 'actions'
 ALL_PERMS = ('view', 'change', 'publish', 'delete', 'add')
 
 
-def _get_perm_objs(model, perms):
+logger = logger.bind(name='actions.perms')
+
+def _get_perm_obj_q(model: type[Model], perms: Iterable[str]) -> Q:
     content_type = ContentType.objects.get_for_model(model)
-    perms = ['%s_%s' % (x, model._meta.model_name) for x in perms]
-    perm_objs = Permission.objects.filter(content_type=content_type, codename__in=perms)
-    return list(perm_objs)
+    full_perms = ['%s_%s' % (x, model._meta.model_name) for x in perms]
+    return Q(content_type=content_type, codename__in=full_perms)
 
 
 @lru_cache
-def get_wagtail_contact_person_perms():
-    perms = []
-    perms += list(
-        Permission.objects.filter(
-            content_type__app_label='wagtaildocs',
-            codename__in=('add_document', 'change_document', 'delete_document'),
+def get_wagtail_contact_person_q() -> Q:
+    q = Q(
+        content_type__app_label='wagtaildocs',
+        codename__in=('add_document', 'change_document', 'delete_document'),
         )
+    q |= Q(
+        content_type__app_label='wagtailimages',
+        codename__in=('add_image', 'change_image', 'delete_image'),
     )
-    perms += list(
-        Permission.objects.filter(
-            content_type__app_label='wagtailimages',
-            codename__in=('add_image', 'change_image', 'delete_image'),
-        )
+    q |= Q(
+        content_type__app_label='wagtailcore',
+        codename__in=['add_collection', 'view_collection'],
     )
-    perms += list(
-        Permission.objects.filter(
-            content_type__app_label='wagtailcore',
-            codename__in=['add_collection', 'view_collection'],
-        )
+    q |= Q(
+        content_type__app_label='wagtailadmin',
+        codename__in=('access_admin',),
     )
-    return perms
+    return q
 
 
 @lru_cache
 def get_wagtail_plan_admin_perms():
-    perms = []
-    perms += list(
-        Permission.objects.filter(
-            content_type__app_label='wagtailcore',
-            codename__in=[
-                'change_collection',
-                'delete_collection',
-            ],
-        )
+    return Permission.objects.filter(
+        content_type__app_label='wagtailcore',
+        codename__in=[
+            'change_collection',
+            'delete_collection',
+        ],
     )
-    return perms
 
 
 @lru_cache
 def get_action_contact_person_perms():
-    new_perms = []
-
     # Add general permissions
-    new_perms += _get_perm_objs(Action, ('view', 'change', 'publish'))
-    new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
-    new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
-    new_perms += _get_perm_objs(Plan, ('view',))
-    new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)
-    new_perms += _get_perm_objs(ActionStatusUpdate, ALL_PERMS)
-    new_perms += _get_perm_objs(ActionIndicator, ('view',))
-    new_perms += _get_perm_objs(Indicator, ('view',))
-    new_perms += _get_perm_objs(model=dataset_models.DataPoint, perms=ALL_PERMS)
-    new_perms += _get_perm_objs(model=dataset_models.Dataset, perms=ALL_PERMS)
+    perm_q = _get_perm_obj_q(Action, ('view', 'change', 'publish'))
+    perm_q |= _get_perm_obj_q(ActionTask, ('view', 'change', 'delete', 'add'))
+    perm_q |= _get_perm_obj_q(Person, ('view', 'change', 'add'))
+    perm_q |= _get_perm_obj_q(Plan, ('view',))
+    perm_q |= _get_perm_obj_q(ActionContactPerson, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(ActionStatusUpdate, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(ActionIndicator, ('view',))
+    perm_q |= _get_perm_obj_q(Indicator, ('view',))
+    perm_q |= _get_perm_obj_q(dataset_models.DataPoint, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(dataset_models.Dataset, ALL_PERMS)
 
-    new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
-    new_perms += get_wagtail_contact_person_perms()
+    perm_q |= Q(content_type__app_label='wagtailadmin', codename='access_admin')
+
+    perm_q |= get_wagtail_contact_person_q()
 
     for model in (ActionResponsibleParty,):
-        new_perms += _get_perm_objs(model, ALL_PERMS)
-    new_perms += _get_perm_objs(Organization, ('view',))
+        perm_q |= _get_perm_obj_q(model, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(Organization, ('view',))
 
-    return new_perms
+    return Permission.objects.filter(perm_q)
 
 
 @lru_cache
 def get_indicator_contact_person_perms():
-    new_perms = []
+    perm_q = _get_perm_obj_q(Action, ('view',))
+    perm_q |= _get_perm_obj_q(Person, ('view', 'change', 'add'))
+    perm_q |= _get_perm_obj_q(ActionIndicator, ('view',))
+    perm_q |= _get_perm_obj_q(Indicator, ('view', 'change'))
+    perm_q |= _get_perm_obj_q(IndicatorGoal, ('view', 'change'))
+    perm_q |= _get_perm_obj_q(IndicatorValue, ('view', 'change', 'add'))
+    perm_q |= _get_perm_obj_q(IndicatorContactPerson, ALL_PERMS)
 
-    new_perms += _get_perm_objs(Action, ('view',))
-    new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
-    new_perms += _get_perm_objs(ActionIndicator, ('view',))
-    new_perms += _get_perm_objs(Indicator, ('view', 'change'))
-    new_perms += _get_perm_objs(IndicatorGoal, ('view', 'change'))
-    new_perms += _get_perm_objs(IndicatorValue, ('view', 'change', 'add'))
-    new_perms += _get_perm_objs(IndicatorContactPerson, ALL_PERMS)
+    perm_q |= Q(content_type__app_label='wagtailadmin', codename='access_admin')
+    perm_q |= get_wagtail_contact_person_q()
 
-    new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
-    new_perms += get_wagtail_contact_person_perms()
-
-    return new_perms
+    return Permission.objects.filter(perm_q)
 
 
-def _get_or_create_group(name, perms=None):
-    group, _ = Group.objects.get_or_create(name=name)
+def _get_or_create_group(name: str, perms: Iterable[Permission] | None = None, force_perm_sync: bool = False) -> Group:
+    group, created = Group.objects.get_or_create(name=name)
 
     if perms is None:
         return group
+    if not created and not force_perm_sync:
+        return group
 
-    existing_perms = set(list(group.permissions.all()))
+    existing_perms = set(group.permissions.all())
     new_perms = set(perms)
     if existing_perms != new_perms:
         group.permissions.clear()
@@ -171,31 +171,31 @@ def _get_or_create_group(name, perms=None):
 
     return group
 
-
-def get_or_create_action_contact_person_group():
+def get_or_create_action_contact_person_group(force_perm_sync: bool = False) -> Group:
     perms = get_action_contact_person_perms()
-    group = _get_or_create_group('Action contact persons', perms)
+    group = _get_or_create_group('Action contact persons', perms, force_perm_sync=force_perm_sync)
     return group
 
 
-@lru_cache
-def get_or_create_indicator_contact_person_group():
+def get_or_create_indicator_contact_person_group(force_perm_sync: bool = False) -> Group:
     perms = get_indicator_contact_person_perms()
-    group = _get_or_create_group('Indicator contact persons', perms)
+    group = _get_or_create_group('Indicator contact persons', perms, force_perm_sync=force_perm_sync)
     return group
 
 
-def _sync_group_collection_perms(root_collection, group, perms):
-    current_perms = set([obj.permission for obj in group.collection_permissions.filter(collection=root_collection)])
+def _sync_group_collection_perms(root_collection: Collection, group: Group, perms: Iterable[Permission]) -> None:
+    from wagtail.models.media import GroupCollectionPermission as GCP  # noqa: N817
+
+    current_perms = {obj.permission for obj in GCP.objects.filter(collection=root_collection, group=group)}
     for perm in perms:
         if perm not in current_perms:
-            group.collection_permissions.create(collection=root_collection, permission=perm)
+            GCP.objects.create(collection=root_collection, group=group, permission=perm)
     for perm in current_perms:
         if perm not in perms:
-            group.collection_permissions.get(collection=root_collection, permission=perm).delete()
+            GCP.objects.get(collection=root_collection, group=group, permission=perm).delete()
 
 
-def _sync_group_page_perms(root_pages, group):
+def _sync_group_page_perms(root_pages: Iterable[Page], group: Group) -> None:
     # Delete all page permissions connected to another root page. (Root pages can be either plan root pages or
     # documentation root pages, and their respective translations are also root pages.)
     qs = GroupPagePermission.objects.filter(group=group)
@@ -203,7 +203,7 @@ def _sync_group_page_perms(root_pages, group):
         qs = qs.exclude(page=page)
     qs.delete()
 
-    current_perms = GroupPagePermission.objects.filter(group=group)
+    current_perms = GroupPagePermission.objects.filter(group=group).select_related('permission')
     perm_set = {gpp.permission.codename for gpp in current_perms}
     new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
     page_set = {gpp.page for gpp in current_perms}
@@ -216,23 +216,22 @@ def _sync_group_page_perms(root_pages, group):
                 GroupPagePermission.objects.create(page=page, group=group, permission=permission)
 
 
-def _sync_contact_person_groups(user):
+def _user_log(user: UserModel, message: str) -> None:
+    logger.bind(**{'user.uuid': user.uuid, 'user.email': user.email}).info(message)
+
+
+def _sync_contact_person_groups(user: UserModel) -> None:
     plans = user.get_adminable_plans()
     groups = user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans)
 
-    for group in groups:
-        user.groups.remove(group)
-
-    wagtail_perms = get_wagtail_contact_person_perms()
-
-    for plan in plans:
-        if plan.contact_person_group is None:
-            continue
-        group = plan.contact_person_group
-        user.groups.add(group)
-        if plan.root_collection is None:
-            continue
-        _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+    _user_log(user, 'Removing %d contact person groups' % len(groups))
+    user.groups.remove(*groups)
+    contact_person_groups = (
+        plans.exclude(contact_person_group__isnull=True).values_list('contact_person_group', flat=True).distinct()
+    )
+    groups_to_add = Group.objects.filter(id__in=contact_person_groups).exclude(user=user)
+    _user_log(user, 'Adding %d contact person groups' % len(groups_to_add))
+    user.groups.add(*groups_to_add)
 
 
 def add_contact_person_perms(user, model):
@@ -249,7 +248,7 @@ def add_contact_person_perms(user, model):
     _sync_contact_person_groups(user)
 
 
-def remove_contact_person_perms(user, model):
+def remove_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
     if model == Action:
         group = get_or_create_action_contact_person_group()
     else:
@@ -258,7 +257,7 @@ def remove_contact_person_perms(user, model):
     _sync_contact_person_groups(user)
 
 
-PLAN_ADMIN_PERMS = (
+PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
     (Plan, ('view', 'change', 'publish', 'add')),
     (Action, ALL_PERMS),
     (ActionStatus, ALL_PERMS),
@@ -296,40 +295,36 @@ PLAN_ADMIN_PERMS = (
     (BaseTemplate, ('add', 'view', 'change')),
     (AutomaticNotificationTemplate, ALL_PERMS),
     (ContentBlock, ALL_PERMS),
-    (User, ('view',)),
+    (User, ('view',)),  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
 )
 
 
+@lru_cache
 def get_plan_admin_perms():
-    all_perms = list(get_action_contact_person_perms())
-    all_perms += get_indicator_contact_person_perms()
+    all_perms = get_action_contact_person_perms()
+    all_perms |= get_indicator_contact_person_perms()
+
+    perm_q = Q()
     for model, perms in PLAN_ADMIN_PERMS:
-        all_perms += _get_perm_objs(model, perms)
+        perm_q |= _get_perm_obj_q(model, perms)
 
-    all_perms += get_wagtail_plan_admin_perms()
+    all_perms |= Permission.objects.filter(perm_q)
+    all_perms |= get_wagtail_plan_admin_perms()
 
-    return all_perms
+    return all_perms.distinct()
 
 
-def get_or_create_plan_admin_group():
+def get_or_create_plan_admin_group(force_perm_sync: bool = False) -> Group:
     perms = get_plan_admin_perms()
-    group = _get_or_create_group('Plan admins', perms)
+    group = _get_or_create_group('Plan admins', perms, force_perm_sync=force_perm_sync)
     return group
 
 
-def _sync_plan_admin_groups(user):
-    plans = user.get_adminable_plans()
-    groups_to_remove = user.groups.filter(admin_for_plan__isnull=False).exclude(admin_for_plan__in=plans)
-    for group in groups_to_remove:
-        user.groups.remove(group)
+def _sync_plan_admin_group_permissions() -> None:
     wagtail_perms = get_wagtail_plan_admin_perms()
-
-    for plan in plans:
+    for plan in Plan.objects.exclude(admin_group__isnull=True):
         group = plan.admin_group
-        if group is None:
-            continue
-
-        user.groups.add(group)
+        assert group is not None
         if plan.root_collection is not None:
             _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
         root_pages = set()
@@ -339,12 +334,48 @@ def _sync_plan_admin_groups(user):
         _sync_group_page_perms(root_pages, group)
 
 
-def remove_plan_admin_perms(user):
+def _sync_contact_person_group_permissions() -> None:
+    wagtail_perms = Permission.objects.filter(get_wagtail_contact_person_q())
+
+    for plan in Plan.objects.all():
+        if plan.contact_person_group is None:
+            continue
+        group = plan.contact_person_group
+        if plan.root_collection is None:
+            continue
+        _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+
+
+def sync_group_permissions() -> None:
+    get_or_create_action_contact_person_group(force_perm_sync=True)
+    get_or_create_indicator_contact_person_group(force_perm_sync=True)
+    get_or_create_plan_admin_group(force_perm_sync=True)
+    _sync_plan_admin_group_permissions()
+    _sync_contact_person_group_permissions()
+
+
+def _sync_plan_admin_groups(user: UserModel) -> None:
+    person = user.get_corresponding_person()
+    if person is None:
+        return
+
+    admin_plans = person.general_admin_plans.all()
+    groups_to_remove = user.groups.exclude(admin_for_plan__isnull=True).exclude(admin_for_plan__in=admin_plans).distinct()
+    _user_log(user, 'Removing %d plan admin groups' % len(groups_to_remove))
+    user.groups.remove(*groups_to_remove)
+
+    plan_admin_groups = admin_plans.exclude(admin_group__isnull=True).values_list('admin_group', flat=True).distinct()
+    groups_to_add = Group.objects.filter(id__in=plan_admin_groups).exclude(id__in=user.groups.all())
+    _user_log(user, 'Adding %d plan admin groups' % len(groups_to_add))
+    user.groups.add(*groups_to_add)
+
+
+def remove_plan_admin_perms(user: UserModel) -> None:
     group = get_or_create_plan_admin_group()
     user.groups.remove(group)
 
 
-def add_plan_admin_perms(user):
+def add_plan_admin_perms(user: UserModel):
     group = get_or_create_plan_admin_group()
     user.groups.add(group)
 
@@ -353,29 +384,6 @@ def add_plan_admin_perms(user):
         user.save(update_fields=['is_staff'])
 
     _sync_plan_admin_groups(user)
-
-
-class ActionRelatedAdminPermMixin:
-    def has_change_permission(self, request, obj=None):
-        if not super().has_change_permission(request, obj):
-            return False
-        if not isinstance(obj, Action):
-            obj = None
-        return request.user.can_modify_action(obj)
-
-    def has_add_permission(self, request, obj=None):
-        if not super().has_add_permission(request, obj):
-            return False
-        if not isinstance(obj, Action):
-            obj = None
-        return request.user.can_modify_action(obj)
-
-    def has_delete_permission(self, request, obj=None):
-        if not super().has_delete_permission(request, obj):
-            return False
-        if not isinstance(obj, Action):
-            obj = None
-        return request.user.can_modify_action(obj)
 
 
 @lru_cache

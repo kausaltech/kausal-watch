@@ -238,6 +238,7 @@ reportConstantRedefinition = false
 reportExplicitAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitOverride = false
+reportImplicitStringConcatenation = false
 reportImportCycles = false
 reportIncompatibleMethodOverride = false
 reportIncompatibleVariableOverride = false

@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from django.utils.translation import gettext_lazy as _
 
@@ -839,8 +839,8 @@ if DEBUG:  # noqa: SIM102
             pass
 
 
-LOG_SQL_QUERIES = env('LOG_SQL_QUERIES') and DEBUG
-LOG_GRAPHQL_QUERIES = env('LOG_GRAPHQL_QUERIES') and DEBUG
+LOG_SQL_QUERIES = cast('bool', env('LOG_SQL_QUERIES') and DEBUG)
+LOG_GRAPHQL_QUERIES = cast('bool', env('LOG_GRAPHQL_QUERIES') and DEBUG)
 
 
 # Logging
