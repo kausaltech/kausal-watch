@@ -20,7 +20,7 @@ from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel, model_from_serializable_data
 from modeltrans.fields import TranslatedVirtualField, TranslationField
 from modeltrans.manager import MultilingualQuerySet
@@ -350,7 +350,7 @@ class Action(
         on_delete=models.SET_NULL,
         verbose_name=_('decision-making level'),
     )
-    categories: models.ManyToManyField[Category, Category] = models.ManyToManyField(
+    categories: ParentalManyToManyField[Category, Category] = ParentalManyToManyField(
         'actions.Category',
         blank=True,
         verbose_name=_('categories'),
@@ -364,7 +364,7 @@ class Action(
         through='indicators.ActionIndicator',
         related_name='actions',
     )
-    related_actions: M2M[Self, Any] = models.ManyToManyField(
+    related_actions: ParentalManyToManyField[Self, Self] = ParentalManyToManyField(
         'self',
         blank=True,
         verbose_name=_('related actions'),
