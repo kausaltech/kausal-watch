@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 _wagtail_image_chooser_viewset_permission_policy = None
 _wagtail_get_base_snippet_action_menu_items = None
+_create_deferring_forward_many_to_many_manager  = None  # type: ignore[var-annotated]
 
 
 def _get_collections(user: User) -> Iterable[Collection]:
@@ -175,6 +176,30 @@ def monkeypatch_snippet_action_menu():
         action_menu.get_base_snippet_action_menu_items = get_base_snippet_action_menu_items
 
 
+def monkeypatch_deferring_forward_many_to_many_manager():
+    # This should be removed once https://github.com/wagtail/django-modelcluster/pull/203 is merged and taken into use
+    import modelcluster.fields
+    assert hasattr(modelcluster.fields, 'create_deferring_forward_many_to_many_manager')
+    global _create_deferring_forward_many_to_many_manager  # noqa: PLW0603
+
+    if _create_deferring_forward_many_to_many_manager is None:
+        _create_deferring_forward_many_to_many_manager = (
+            modelcluster.fields.create_deferring_forward_many_to_many_manager  # pyright:ignore[reportAttributeAccessIssue]
+        )
+
+    def patched_function(rel, original_manager_cls):  # noqa: ANN202
+        assert _create_deferring_forward_many_to_many_manager is not None
+        manager = _create_deferring_forward_many_to_many_manager(rel, original_manager_cls)
+
+        def patched_method(self, queryset):  # noqa: ANN202
+            return queryset._next_is_sticky().all()
+
+        manager._apply_rel_filters = patched_method
+        return manager
+
+    modelcluster.fields.create_deferring_forward_many_to_many_manager = patched_function  # pyright:ignore[reportAttributeAccessIssue]
+
+
 class ActionsConfig(AppConfig):
     name = 'actions'
     verbose_name = _('Actions')
@@ -185,3 +210,4 @@ class ActionsConfig(AppConfig):
         monkeypatch_snippet_action_menu()
         import actions.signals
         actions.signals.register_signal_handlers()
+        monkeypatch_deferring_forward_many_to_many_manager()
