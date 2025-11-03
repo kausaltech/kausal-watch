@@ -234,6 +234,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
+        obj: Action = super().save(commit)
+
         for _cls, relation_name, __, ___ in MODELS_WITH_ROLES:
             formsets = {}
             # There is a corresponding formset for a role if and only if we can edit objects of that role.
@@ -241,9 +243,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                 formset = cast('dict', self.formsets).pop(f'{relation_name}_{role}', None)
                 if formset:
                     formsets[role] = formset
-            manager = getattr(self.instance, relation_name)
+            manager = getattr(obj, relation_name)
             original_objects = manager.get_object_list().copy()
-            obj: Action = super().save(commit)
             self.save_related_objects_with_role(manager, formsets, original_objects, commit)
 
         # Update categories
@@ -254,6 +255,11 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                 continue
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data)
+
+        if commit:
+            # The instance was saved already when we called `super().save()`, but things like the categories may have
+            # changed afterwards without being committed.
+            obj.save()
 
         user = self._user
         # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
