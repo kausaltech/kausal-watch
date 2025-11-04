@@ -295,7 +295,7 @@ dev = [
     "ipdb",
     "ipython",
     "pdbpp",
-    "pre-commit",
+    "prek>=0.2.12",
     "uv",
     "virtualenvwrapper>=6.1.1",
     "viztracer",
