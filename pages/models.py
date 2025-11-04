@@ -18,6 +18,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
+from wagtail.blocks.stream_block import StreamValue
 from wagtail.fields import StreamField
 from wagtail.models import Page, PageManager, PagePermissionTester, Site
 from wagtail.search import index
@@ -30,6 +31,7 @@ from grapple.models import (
     GraphQLInt,
     GraphQLString,
 )
+from loguru import logger
 
 from kausal_common.graphene.grapple import make_grapple_streamfield
 
@@ -37,11 +39,6 @@ from aplans.extensions import get_body_blocks
 from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
 
 from actions.blocks import (
-    ActionHighlightsBlock,
-    ActionListBlock,
-    ActionListFilterBlock,
-    CategoryListBlock,
-    CategoryTreeMapBlock,
     RelatedPlanListBlock,
     get_default_action_content_blocks,
     get_default_action_filter_blocks,
@@ -51,12 +48,14 @@ from actions.blocks.action_content import (
     ActionMainContentBlock,
 )
 from actions.blocks.action_dashboard import ActionDashboardColumnBlock
-from actions.blocks.category_list import CategoryTypeLevelListBlock
+from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
+from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock
 from actions.blocks.category_page_layout import (
     CategoryPageAsideBlock,
     CategoryPageMainBottomBlock,
     CategoryPageMainTopBlock,
 )
+from actions.blocks.filters import ActionListFilterBlock, CategoryTypeFilterBlock
 from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
 from actions.models.category import Category, CategoryType
@@ -67,6 +66,12 @@ from indicators.blocks import (
     IndicatorHighlightsBlock,
     IndicatorShowcaseBlock,
     RelatedIndicatorsBlock,
+)
+from indicators.blocks.layout import (
+    IndicatorAsideContentStream,
+    IndicatorListColumnsStream,
+    IndicatorListFilterStream,
+    IndicatorMainContentStream,
 )
 
 from .blocks import (
@@ -86,10 +91,11 @@ from .blocks import (
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
 
+logger = logger.bind(name=__name__)
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from wagtail.blocks.stream_block import StreamValue
     from wagtail.query import PageQuerySet
 
     from kausal_common.models.types import FK, RevMany
@@ -101,21 +107,21 @@ if TYPE_CHECKING:
 
 class AplansPage(Page):
     i18n = models.JSONField(blank=True, null=True)
-    show_in_footer: models.BooleanField = models.BooleanField(
+    show_in_footer = models.BooleanField[bool, bool](
         default=False, verbose_name=_('show in footer'), help_text=_('Should the page be shown in the footer?'),
     )
-    show_in_additional_links: models.BooleanField = models.BooleanField(
+    show_in_additional_links = models.BooleanField[bool, bool](
         default=False,
         verbose_name=_('show in additional links'),
         help_text=_('Should the page be shown in the additional links?'),
     )
-    link_in_all_child_plans: models.BooleanField = models.BooleanField(
+    link_in_all_child_plans = models.BooleanField[bool, bool](
         default=False,
         verbose_name=_('show link in child plans'),
         help_text=_('Should this additional link be displayed in child plans?'),
     )
 
-    children_use_secondary_navigation: models.BooleanField = models.BooleanField(
+    children_use_secondary_navigation = models.BooleanField[bool, bool](
         default=False, verbose_name=_('children use secondary navigation'),
         help_text=_('Should subpages of this page use secondary navigation?'),
     )
@@ -174,7 +180,7 @@ class AplansPage(Page):
         return None
 
     def get_visible_descendants(self, cache: PlanSpecificCache, in_menu: bool = False, max_depth: int | None = None):
-        descendants = []
+        descendants: list[AplansPage] = []
         for page in cache.visible_pages:
             if page.depth <= self.depth:
                 continue
@@ -189,6 +195,16 @@ class AplansPage(Page):
 
     def get_visible_children(self, cache: PlanSpecificCache, in_menu: bool = False):
         return self.get_visible_descendants(cache, in_menu, max_depth=1)
+
+    def get_visible_ancestors(self, cache: PlanSpecificCache):
+        ancestors: list[AplansPage] = []
+        for page in cache.visible_pages:
+            if page.depth >= self.depth:
+                continue
+            if self.path.startswith(page.path):
+                continue
+            ancestors.append(page)
+        return ancestors
 
     @classmethod
     @functools.cache
@@ -232,7 +248,7 @@ class AplansPage(Page):
 
 
 class PageProtocol(Protocol):
-    slug: models.SlugField
+    slug: models.SlugField[str, str]
     def get_siblings(self) -> PageQuerySet[Page]: ...
 
 
@@ -313,18 +329,18 @@ class EmptyPage(AplansPage):
 
 
 class StaticPage(AplansPage):
-    header_image: FK[AplansImage | None] = models.ForeignKey(  # pyright: ignore
+    header_image: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
         verbose_name=_('Header image'), help_text=_('Image to use in the header for this page'),
     )
-    lead_paragraph = models.TextField[str | None, str | None](  # pyright: ignore
+    lead_paragraph = models.TextField[str | None, str | None](
         null=True,
         blank=True,
         verbose_name=_('Lead paragraph'),
         help_text=_('Lead paragraph right under the heading'),
     )
 
-    body: StreamField[StreamValue | None] = StreamField([
+    body = StreamField[StreamValue | None]([
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('category_list', CategoryListBlock()),
@@ -411,7 +427,7 @@ class CategoryPagePermissionTester(CategoryTypeRelatedPagePermissionTester):
 
 
 class CategoryTypePage(StaticPage):
-    category_type: FK[CategoryType] = models.ForeignKey(  # pyright: ignore
+    category_type: FK[CategoryType] = models.ForeignKey(
         CategoryType, on_delete=models.CASCADE, null=False, verbose_name=_('Category type'),
         related_name='category_type_pages',
     )
@@ -475,13 +491,14 @@ class CategoryTypePageLevelLayout(ClusterableModel):
         'actions.CategoryLevel', on_delete=models.CASCADE, related_name='level_layouts',
         null=True, blank=True, verbose_name=_('level'),
     )
-    layout_main_top: StreamField[StreamValue | None] = StreamField(
+    layout_main_top = StreamField['StreamValue | None'](
         block_types=CategoryPageMainTopBlock(), null=True, blank=True, verbose_name=_('layout main top'),
     )
-    layout_main_bottom: StreamField[StreamValue | None] = StreamField(
+    layout_main_bottom = StreamField['StreamValue | None'](
         block_types=CategoryPageMainBottomBlock(), null=True, blank=True, verbose_name=_('layout main bottom'),
     )
-    layout_aside: StreamField[StreamValue | None] = StreamField(
+    # FIXME: Remove this when UI is updated
+    layout_aside = StreamField['StreamValue | None'](
         block_types=CategoryPageAsideBlock(), null=True, blank=True, verbose_name=_('layout aside'),
     )
     icon_size = models.CharField(
@@ -507,11 +524,11 @@ class CategoryTypePageLevelLayout(ClusterableModel):
 
 
 class CategoryPage(AplansPage):
-    category = models.ForeignKey(
+    category: FK[Category] = models.ForeignKey(
         Category, on_delete=models.CASCADE, null=False, verbose_name=_('Category'),
         related_name='category_pages',
     )
-    body: StreamField[StreamValue | None] = StreamField([
+    body = StreamField['StreamValue | None']([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('indicator_group', IndicatorGroupBlock()),
@@ -616,7 +633,7 @@ class FixedSlugPage(AplansPage):
     restrict_more_button_permissions_very_much = True
     remove_page_action_menu_items_except_publish = True
 
-    lead_content = models.TextField(  # pyright: ignore
+    lead_content = models.TextField[str, str](
         blank=True, verbose_name=_('lead content'),
     )
 
@@ -636,22 +653,9 @@ class FixedSlugPage(AplansPage):
     ]
 
 
-def action_list_page_streamfield_node_getter(field_name):
-    def get_node() -> GraphQLField:
-        from grapple.registry import registry
-
-        field = ActionListPage._meta.get_field(field_name)
-        assert isinstance(field, StreamField)
-        node = registry.streamfield_blocks[type(field.stream_block)]
-        field_type = graphene.List(graphene.NonNull(node))
-        return GraphQLField(field_name, field_type, required=False)  # type: ignore
-
-    return get_node
-
-
 # Adapted from graphene.types.enum.EnumMeta.from_enum() because the original doesn't let us change the name. So the type
 # created for ActionListPage.View would be called "View" instead of the more reasonable "ActionListPageView".
-def graphql_type_from_enum(enum, name=None):
+def graphql_type_from_enum(enum: type[models.Choices], name=None):
     meta_dict = {
         "enum": enum,
         "name": name,
@@ -659,7 +663,11 @@ def graphql_type_from_enum(enum, name=None):
         "deprecation_reason": None,
     }
     meta_class = type("Meta", (object,), meta_dict)
-    return type(meta_class.enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})  # type: ignore[attr-defined]
+    return type(enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})
+
+
+def action_list_streamfield(field_name: str):
+    return make_grapple_streamfield(lambda: ActionListPage, field_name)
 
 
 class ActionListPage(FixedSlugPage):
@@ -667,19 +675,19 @@ class ActionListPage(FixedSlugPage):
         CARDS = 'cards', _('Cards')
         DASHBOARD = 'dashboard', _('Dashboard')
 
-    primary_filters: StreamField[StreamValue | None] = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
-    main_filters: StreamField[StreamValue | None] = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
-    advanced_filters: StreamField[StreamValue | None] = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
+    primary_filters = StreamField['StreamValue | None'](block_types=ActionListFilterBlock(), null=True, blank=True)
+    main_filters = StreamField['StreamValue | None'](block_types=ActionListFilterBlock(), null=True, blank=True)
+    advanced_filters = StreamField['StreamValue | None'](block_types=ActionListFilterBlock(), null=True, blank=True)
 
-    dashboard_columns: StreamField[StreamValue | None] = StreamField(
+    dashboard_columns = StreamField['StreamValue | None'](
         block_types=ActionDashboardColumnBlock(), null=True, blank=True
     )
 
-    details_main_top: StreamField[StreamValue | None] = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True)
-    details_main_bottom: StreamField[StreamValue | None] = StreamField(
+    details_main_top = StreamField['StreamValue | None'](block_types=ActionMainContentBlock(), null=True, blank=True)
+    details_main_bottom = StreamField['StreamValue | None'](
         block_types=ActionMainContentBlock(), null=True, blank=True
     )
-    details_aside: StreamField[StreamValue | None] = StreamField(block_types=ActionAsideContentBlock(), null=True, blank=True)
+    details_aside = StreamField['StreamValue | None'](block_types=ActionAsideContentBlock(), null=True, blank=True)
 
     card_icon_category_type = models.ForeignKey(
         CategoryType, on_delete=models.SET_NULL, null=True, blank=True,
@@ -744,13 +752,13 @@ class ActionListPage(FixedSlugPage):
         GraphQLBoolean('include_related_plans'),
         GraphQLString('action_date_format'),
         GraphQLString('task_date_format'),
-        action_list_page_streamfield_node_getter('primary_filters'),
-        action_list_page_streamfield_node_getter('main_filters'),
-        action_list_page_streamfield_node_getter('advanced_filters'),
-        action_list_page_streamfield_node_getter('details_main_top'),
-        action_list_page_streamfield_node_getter('details_main_bottom'),
-        action_list_page_streamfield_node_getter('details_aside'),
-        action_list_page_streamfield_node_getter('dashboard_columns'),
+        action_list_streamfield('primary_filters'),
+        action_list_streamfield('main_filters'),
+        action_list_streamfield('advanced_filters'),
+        action_list_streamfield('details_main_top'),
+        action_list_streamfield('details_main_bottom'),
+        action_list_streamfield('details_aside'),
+        action_list_streamfield('dashboard_columns'),
     ]
 
     _default_manager: ClassVar[PageManager[Self]]
@@ -790,6 +798,10 @@ class ActionListPage(FixedSlugPage):
         verbose_name_plural = _('Action list pages')
 
 
+def indicator_list_streamfield(field_name: str):
+    return make_grapple_streamfield(lambda: IndicatorListPage, field_name)
+
+
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
     is_creatable = False  # Only let this be created programmatically
@@ -813,17 +825,49 @@ class IndicatorListPage(FixedSlugPage):
         default=False,
     )
 
+    list_columns = StreamField['StreamValue | None'](
+        block_types=IndicatorListColumnsStream(), null=True, blank=True
+    )
+
+    primary_filters = StreamField['StreamValue | None'](block_types=IndicatorListFilterStream(), null=True, blank=True)
+    main_filters = StreamField['StreamValue | None'](block_types=IndicatorListFilterStream(), null=True, blank=True)
+    advanced_filters = StreamField['StreamValue | None'](block_types=IndicatorListFilterStream(), null=True, blank=True)
+
+    details_main_top = StreamField['StreamValue | None'](block_types=IndicatorMainContentStream(), null=True, blank=True)
+    details_main_bottom = StreamField['StreamValue | None'](
+        block_types=IndicatorMainContentStream(), null=True, blank=True
+    )
+    details_aside = StreamField['StreamValue | None'](block_types=IndicatorAsideContentStream(), null=True, blank=True)
+
     content_panels: Sequence[Panel[Any]] = [
         *FixedSlugPage.content_panels,
         FieldPanel('display_insights'),
         FieldPanel('display_level'),
         FieldPanel('include_related_plans'),
+        MultiFieldPanel([
+            FieldPanel('primary_filters', heading=_("Primary filters")),
+            FieldPanel('main_filters', heading=_("Main filters")),
+            FieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
+        ], heading=_("Indicator list filters"), classname="collapsible collapsed"),
+        FieldPanel('list_columns', heading=_("Indicator list columns"), classname="collapsible collapsed"),
+        MultiFieldPanel([
+            FieldPanel('details_main_top', heading=_("Main column (top part on mobile)")),
+            FieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
+            FieldPanel('details_aside', heading=_("Side column")),
+        ], heading=_("Indicator details view"), classname="collapsible collapsed"),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLBoolean('display_insights'),
         GraphQLBoolean('display_level'),
         GraphQLBoolean('include_related_plans'),
+        indicator_list_streamfield('primary_filters'),
+        indicator_list_streamfield('main_filters'),
+        indicator_list_streamfield('advanced_filters'),
+        indicator_list_streamfield('list_columns'),
+        indicator_list_streamfield('details_main_top'),
+        indicator_list_streamfield('details_main_bottom'),
+        indicator_list_streamfield('details_aside'),
     ]
 
     _default_manager: ClassVar[PageManager[Self]]
@@ -832,6 +876,24 @@ class IndicatorListPage(FixedSlugPage):
         verbose_name = _('Indicator list page')
         verbose_name_plural = _('Indicator list pages')
 
+    def get_category_types_for_filters(self) -> list[CategoryType]:
+        cts = set()
+        for stream in (self.primary_filters, self.main_filters, self.advanced_filters):
+            if stream is None:
+                continue
+            for child in stream.blocks_by_name('category'):
+                if not isinstance(child.block, CategoryTypeFilterBlock):
+                    msg = f"Block {child.block} on IndicatorListPage {self.pk} is not a CategoryTypeFilterBlock"
+                    logger.error(msg, **{'page.id': self.pk})
+                    raise TypeError(msg)
+                ct = cast('CategoryType | None', child.value.get('category_type'))
+                if ct is None:
+                    msg = f"Block {child.block} on IndicatorListPage {self.pk} has no category type"
+                    logger.error(msg, **{'page.id': self.pk})
+                    raise TypeError(msg)
+                cts.add(ct)
+
+        return list(cts)
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
@@ -850,7 +912,7 @@ class PrivacyPolicyPage(FixedSlugPage):
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
 
-    body: StreamField[StreamValue | None] = StreamField([
+    body = StreamField['StreamValue | None']([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
     ], null=True, blank=True)
@@ -867,7 +929,7 @@ class AccessibilityStatementPage(FixedSlugPage):
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
 
-    body: StreamField[StreamValue | None] = StreamField([
+    body = StreamField['StreamValue | None']([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('compliance_status', AccessibilityStatementComplianceStatusBlock()),
         ('preparation', AccessibilityStatementPreparationInformationBlock()),

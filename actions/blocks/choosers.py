@@ -4,11 +4,12 @@ from wagtail import blocks
 
 from kausal_common.datasets.models import DatasetSchema
 
+from actions.chooser import CategoryTypeChooser
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryLevel, CategoryType
 
 
-class CategoryChooserBlock(blocks.ChooserBlock):
+class CategoryChooserBlock(blocks.ChooserBlock[Category]):
     class Meta:
         label = _('Category')
 
@@ -25,16 +26,16 @@ class CategoryChooserBlock(blocks.ChooserBlock):
         return self.widget.get_value_data(value)
 
 
-class CategoryTypeChooserBlock(blocks.ChooserBlock):
+class CategoryTypeChooserBlock(blocks.ChooserBlock[CategoryType]):
     class Meta:
         label = _('Category type')
 
     @cached_property
-    def target_model(self):
+    def target_model(self) -> type[CategoryType]:
         return CategoryType
 
     @cached_property
-    def widget(self):
+    def widget(self) -> CategoryTypeChooser:
         from actions.chooser import CategoryTypeChooser
         return CategoryTypeChooser()
 
@@ -42,7 +43,7 @@ class CategoryTypeChooserBlock(blocks.ChooserBlock):
         return self.widget.get_value_data(value)
 
 
-class CategoryLevelChooserBlock(blocks.ChooserBlock):
+class CategoryLevelChooserBlock(blocks.ChooserBlock[CategoryLevel]):
     class Meta:
         label = CategoryLevel._meta.verbose_name
 
@@ -65,7 +66,7 @@ class CategoryLevelChooserBlock(blocks.ChooserBlock):
         return self.widget.get_value_data(value)
 
 
-class AttributeTypeChooserBlock(blocks.ChooserBlock):
+class AttributeTypeChooserBlock(blocks.ChooserBlock[AttributeType]):
     class Meta:
         label = _('Field')
 
@@ -96,7 +97,7 @@ class CategoryAttributeTypeChooserBlock(AttributeTypeChooserBlock):
         from actions.chooser import AttributeTypeChooser
         return AttributeTypeChooser(scope='category')
 
-class DatasetSchemaChooserBlock(blocks.ChooserBlock):
+class DatasetSchemaChooserBlock(blocks.ChooserBlock[DatasetSchema]):
     class Meta:
         label = _('Dataset Schema')
 

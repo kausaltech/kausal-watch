@@ -28,7 +28,16 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from wagtail.admin.panels.base import Panel
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, Revision, RevisionMixin, Task, TaskState, Workflow, WorkflowMixin
+from wagtail.models import (
+    DraftStateMixin,
+    LockableMixin,
+    Revision,
+    RevisionMixin,
+    Task,
+    TaskState,
+    Workflow,
+    WorkflowMixin,
+)
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -65,6 +74,7 @@ if typing.TYPE_CHECKING:
     from django.db.models.expressions import Combinable
     from django.db.models.options import Options
     from modelcluster.fields import PK
+    from wagtail.models import SerializableData
 
     from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany
     from kausal_common.users import UserOrAnon
@@ -152,7 +162,7 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
         )
         return self.filter(id__in=action_ids)
 
-    def annotate_related_indicator_counts(self, plan, user):
+    def annotate_related_indicator_counts(self, plan: Plan, user: User | None):
         return self.annotate(
             indicator_count=Count(
                 'related_indicators',
@@ -201,7 +211,7 @@ class ResponsiblePartyDict(TypedDict):
     organization: Organization
     # Allowed roles in ActionResponsibleParty.Role.values
     # https://stackoverflow.com/a/67292548/14595546
-    role: Literal['primary', 'collaborator', None]
+    role: Literal['primary', 'collaborator'] | None
 
 
 ACTION_FIELDS_TO_ADD_TO_REVERSION = ModelWithAttributes.REVERSION_FOLLOW + [
@@ -234,7 +244,7 @@ class Action(
         related_name='actions',
         verbose_name=_('plan'),
     )
-    primary_org: models.ForeignKey[Organization | None, Organization | None] = models.ForeignKey(  # pyright: ignore
+    primary_org: FK[Organization | None] = models.ForeignKey(
         'orgs.Organization',
         verbose_name=_('primary organization'),
         blank=True,
@@ -440,7 +450,7 @@ class Action(
         related_name='copies',
         help_text=_('Set if this action has been created by copying another action'),
     )
-    dependency_role: FK[ActionDependencyRole | None] = models.ForeignKey(  # pyright: ignore
+    dependency_role: FK[ActionDependencyRole | None] = models.ForeignKey(
         'actions.ActionDependencyRole',
         on_delete=models.SET_NULL,
         null=True,
@@ -1660,12 +1670,12 @@ else:
 
 class ActionRelatedModelTransModelMixin:
     @classmethod
-    def from_serializable_data(cls, data: dict, check_fks: bool = True, strict_fks: bool = True) -> Self:
+    def from_serializable_data(cls, data: SerializableData, check_fks: bool = True, strict_fks: bool = False) -> Self | None:
         data.pop('i18n', None)
         kwargs = {}
         to_delete = set()
         assert hasattr(cls, '_meta')
-        meta = cast('Options', cast('models.Model', cls)._meta)
+        meta = cast('Options[Any]', cast('models.Model', cls)._meta)  # pyright: ignore[reportInvalidCast]
         for field_name, value in data.items():
             field = None
             try:
@@ -1747,7 +1757,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
     name_i18n: str
     comment_i18n: str | None
 
-    objects = ActionTaskManager()  # pyright: ignore
+    objects = ActionTaskManager()
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action task')
 

@@ -22,7 +22,7 @@ from .stream_block import generate_stream_block
 
 ActionContentSectionElementBlock = generate_stream_block(
     'ActionMainContentSectionElementBlock',
-    fields = (
+    fields=(
         ('attribute', ActionContentAttributeTypeBlock()),
         ('categories', ActionContentCategoryTypeBlock()),
     ),
@@ -31,10 +31,12 @@ ActionContentSectionElementBlock = generate_stream_block(
 
 @register_streamfield_block
 class ActionContentSectionBlock(blocks.StructBlock):
-    layout = blocks.ChoiceBlock(choices=[
-        ('full-width', _('Full width')),
-        ('grid', _('Grid')),
-    ])
+    layout = blocks.ChoiceBlock(
+        choices=[
+            ('full-width', _('Full width')),
+            ('grid', _('Grid')),
+        ]
+    )
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     help_text = blocks.CharBlock(label=_('Help text'), required=False)
     blocks = ActionContentSectionElementBlock(label=_('Blocks'))

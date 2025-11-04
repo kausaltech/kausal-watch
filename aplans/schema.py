@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from people.models import Person
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import graphene
@@ -13,25 +12,30 @@ from graphql.type import (
     GraphQLDirective,
 )
 from strawberry.schema import Schema as StrawberrySchema
+from strawberry.tools.merge_types import merge_types
+from strawberry.types import has_object_definition
 
 import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 from treebeard.mp_tree import MP_NodeQuerySet
 
+from kausal_common.graphene.utils import get_graphene_meta
 from kausal_common.models.types import copy_signature
 from kausal_common.strawberry.extensions import LoggingTracingExtension
 from kausal_common.strawberry.schema import Schema as UnifiedSchema
+from kausal_common.users import user_or_none
 
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.schema_context import WatchGraphQLContext
 from aplans.utils import public_fields
-from kausal_common.users import user_or_none
+
+from people.models import Person
 
 if True:
-    from images import schema as images_schema  # noqa: F401
-
     from kausal_common import graphql_gis  # noqa: F401
+
+    from images import schema as images_schema  # noqa: F401
 
 from actions import schema as actions_schema
 from actions.models.action import Action
@@ -43,12 +47,11 @@ from orgs import schema as orgs_schema
 from orgs.models import Organization
 from pages import schema as pages_schema
 from people import schema as people_schema
-from people.models import Person
 from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, SBInfo, WorkflowStateEnum, get_plan_from_context, graphene_registry
+from .graphql_types import DjangoNode, SBInfo, WorkflowStateEnum, get_plan_from_context
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -70,7 +73,7 @@ def mp_node_get_ancestors[QS: MP_NodeQuerySet[Any]](qs: QS, include_self: bool =
     return cast('QS', qs.model.objects.filter(path__in=paths))
 
 
-class SiteGeneralContentNode(DjangoNode):
+class SiteGeneralContentNode(DjangoNode[SiteGeneralContent]):
     class Meta:
         model = SiteGeneralContent
         fields = public_fields(SiteGeneralContent)
@@ -85,7 +88,7 @@ class Query(
     reports_schema.Query,
     datasets_schema.Query,
     search_schema.Query,
-    graphene.ObjectType,
+    graphene.ObjectType[Any],
 ):
     plan_organizations = graphene.List(
         graphene.NonNull(orgs_schema.OrganizationNode),
@@ -100,7 +103,7 @@ class Query(
 
     def resolve_plan_organizations(
         self, info: GQLInfo, plan: str | None, with_ancestors: bool, for_responsible_parties: bool, for_contact_persons: bool,
-        include_related_plans: bool, **kwargs,
+        include_related_plans: bool
     ) -> Iterable[Organization]:
         plan_obj: Plan | None = get_plan_from_context(info, plan)
         if plan_obj is None or not plan_obj.is_visible_for_user(info.context.user):
@@ -113,7 +116,7 @@ class Query(
 
         visible_actions = Action.objects.qs.visible_for_user(info.context.user).filter(plan__in=plans)
 
-        workflow_state = getattr(info.context.watch_cache, 'query_workflow_state', None)
+        workflow_state = getattr(info.context.cache, 'query_workflow_state', None)
         some_plan_has_a_workflow = any(p.features.moderation_workflow is not None for p in plans)
         consider_responsible_parties_within_action_revisions = (
             workflow_state is not None and
@@ -196,7 +199,7 @@ class Mutation(
     indicators_schema.Mutation,
     orgs_schema.Mutation,
     people_schema.Mutation,
-    graphene.ObjectType,
+    graphene.ObjectType[Any],
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
@@ -296,12 +299,31 @@ class WatchSchema(UnifiedSchema):
         super().__init__(*args, **kwargs)
 
 
+def _validate_type_registry(types: set[type]) -> None:
+    registered_names = set()
+    for type_ in types:
+        if has_object_definition(type_):
+            name = type_.__strawberry_definition__.name
+        else:
+            meta = get_graphene_meta(type_)
+            if meta is None:
+                raise TypeError(f"Type {type_} is not a valid Strawberry nor a Graphene type")
+            name = meta.name
+        if name in registered_names:
+            raise ValueError(f"Type {type_} has name {name} which is already registered")
+        registered_names.add(name)
+
+
 def generate_strawberry_schema() -> sb.Schema:
+    from kausal_common.graphene.registry import registry as graphene_registry
     from kausal_common.strawberry.registry import strawberry_types
 
     all_types = set(strawberry_types)
     all_types.update(list(grapple_registry.models.values()))
-    all_types.update(graphene_registry)
+    all_types.update(graphene_registry.get_list())
+
+    _validate_type_registry(all_types)
+
     schema = WatchSchema(
         query=Query,
         mutation=Mutation,

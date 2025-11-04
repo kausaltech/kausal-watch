@@ -220,21 +220,23 @@ def _user_log(user: UserModel, message: str) -> None:
     logger.bind(**{'user.uuid': user.uuid, 'user.email': user.email}).info(message)
 
 
-def _sync_contact_person_groups(user: UserModel) -> None:
+def _sync_contact_person_groups(user: UserModel, model: type[Action | Indicator]) -> None:
     plans = user.get_adminable_plans()
     groups = user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans)
 
-    _user_log(user, 'Removing %d contact person groups' % len(groups))
-    user.groups.remove(*groups)
+    if len(groups):
+        _user_log(user, f'Removing {len(groups)} contact person groups for {model.__name__}')
+        user.groups.remove(*groups)
     contact_person_groups = (
         plans.exclude(contact_person_group__isnull=True).values_list('contact_person_group', flat=True).distinct()
     )
     groups_to_add = Group.objects.filter(id__in=contact_person_groups).exclude(user=user)
-    _user_log(user, 'Adding %d contact person groups' % len(groups_to_add))
-    user.groups.add(*groups_to_add)
+    if len(groups_to_add):
+        _user_log(user, f'Adding {len(groups_to_add)} contact person groups for {model.__name__}')
+        user.groups.add(*groups_to_add)
 
 
-def add_contact_person_perms(user, model):
+def add_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
     if model == Action:
         group = get_or_create_action_contact_person_group()
     else:
@@ -245,7 +247,7 @@ def add_contact_person_perms(user, model):
     if not user.is_staff:
         user.is_staff = True
         user.save(update_fields=['is_staff'])
-    _sync_contact_person_groups(user)
+    _sync_contact_person_groups(user, model)
 
 
 def remove_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
@@ -254,7 +256,7 @@ def remove_contact_person_perms(user: UserModel, model: type[Action | Indicator]
     else:
         group = get_or_create_indicator_contact_person_group()
     user.groups.remove(group)
-    _sync_contact_person_groups(user)
+    _sync_contact_person_groups(user, model)
 
 
 PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
@@ -359,13 +361,15 @@ def _sync_plan_admin_groups(user: UserModel) -> None:
 
     admin_plans = person.general_admin_plans.all()
     groups_to_remove = user.groups.exclude(admin_for_plan__isnull=True).exclude(admin_for_plan__in=admin_plans).distinct()
-    _user_log(user, 'Removing %d plan admin groups' % len(groups_to_remove))
-    user.groups.remove(*groups_to_remove)
+    if len(groups_to_remove):
+        _user_log(user, 'Removing %d plan admin groups' % len(groups_to_remove))
+        user.groups.remove(*groups_to_remove)
 
     plan_admin_groups = admin_plans.exclude(admin_group__isnull=True).values_list('admin_group', flat=True).distinct()
     groups_to_add = Group.objects.filter(id__in=plan_admin_groups).exclude(id__in=user.groups.all())
-    _user_log(user, 'Adding %d plan admin groups' % len(groups_to_add))
-    user.groups.add(*groups_to_add)
+    if len(groups_to_add):
+        _user_log(user, 'Adding %d plan admin groups' % len(groups_to_add))
+        user.groups.add(*groups_to_add)
 
 
 def remove_plan_admin_perms(user: UserModel) -> None:

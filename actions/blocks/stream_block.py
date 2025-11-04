@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import typing
 
-from wagtail import blocks
-
-from grapple.helpers import register_streamfield_block
+from kausal_common.blocks.registry import FieldBlockContext
+from kausal_common.blocks.stream_block import generate_stream_block as generate_stream_block_common
 
 from actions.action_fields import action_registry
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
@@ -12,18 +11,22 @@ from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 
 if typing.TYPE_CHECKING:
-    from aplans.field_registry import BlockContext, ModelFieldRegistry
+    from collections.abc import Iterable
+
+    from wagtail import blocks
+
+    from kausal_common.blocks.registry import ModelFieldRegistry
 
     from actions.models import Action
 
 
 def generate_stream_block(
     name: str,
-    fields: typing.Iterable[str | tuple[str, blocks.Block]],
+    fields: Iterable[str | tuple[str, blocks.Block[typing.Any]]],
     support_editing_from_other_form: bool = False,
-    block_context: BlockContext = 'details',
-    action_registry: ModelFieldRegistry[type[Action]] = action_registry,
-):
+    block_context: FieldBlockContext = FieldBlockContext.DETAILS,
+    action_registry: ModelFieldRegistry[Action] = action_registry,
+) -> type[blocks.StreamBlock]:
     """
     Dynamically generates a stream block based on desired action fields.
 
@@ -52,31 +55,11 @@ def generate_stream_block(
             },
         }
 
-    field_blocks = {}
-    graphql_types = list()
-    for field in fields:
-        target_field_name = None
-        block = None
-        if isinstance(field, tuple):
-            field_name, block = field
-            target_field_name = field_name
-        else:
-            field_name = field
-            target_field_name = field_name
-        if not block:
-            block = action_registry.get_block(block_context, field_name)
-
-        block_cls = type(block)
-        if block_cls not in graphql_types:
-            graphql_types.append(block_cls)
-        field_blocks[target_field_name] = block
-
-    block_class = type(name, (*mixins, blocks.StreamBlock), {
-        '__module__': __name__,
-        **field_blocks,
-        **extra_args,
-        'graphql_types': graphql_types,
-    })
-
-    register_streamfield_block(block_class)
-    return block_class
+    return generate_stream_block_common(
+        name,
+        fields,
+        block_context,
+        field_registry=action_registry,
+        mixins=mixins,
+        extra_classvars=extra_args,
+    )

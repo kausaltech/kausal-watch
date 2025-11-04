@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @replace_image_node
-class ImageRendition(DjangoNode):
+class ImageRendition(DjangoNode[AplansRendition]):
     id = graphene.ID(required=True)
     src = graphene.String(required=True)
     width = graphene.Int(required=True)
@@ -39,7 +39,7 @@ class ImageRendition(DjangoNode):
 
 
 @replace_image_node
-class ImageNode(DjangoNode):
+class ImageNode(DjangoNode[AplansImage]):
     rendition = graphene.Field(
         ImageRendition,
         size=graphene.String(),

@@ -289,6 +289,7 @@ kausal-paths-extensions = { index = "kausal"}
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.32.1",
     "daphne",
     "django-debug-toolbar",
     "ipdb",

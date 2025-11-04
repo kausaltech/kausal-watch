@@ -7,21 +7,21 @@ from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLString
 
+from kausal_common.blocks.fields import FieldBlockMetaInterface
 from kausal_common.datasets.models import DatasetSchema
 from kausal_common.graphene.grapple import make_grapple_streamfield
 
-from aplans.graphql_interfaces import FieldBlockMetaInterface
 from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
 
+from actions.blocks.base import ActionContentBlockBase
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 
 
 @register_streamfield_block
-class ActionContentAttributeTypeBlock(blocks.StructBlock):  # block.details
+class ActionContentAttributeTypeBlock(ActionContentBlockBase):  # block.details
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
-    graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
         label = _('Field')
@@ -36,9 +36,8 @@ class ActionContentAttributeTypeBlock(blocks.StructBlock):  # block.details
 
 
 @register_streamfield_block
-class ActionContentCategoryTypeBlock(blocks.StructBlock):  # block.details
+class ActionContentCategoryTypeBlock(ActionContentBlockBase):  # block.details
     category_type = CategoryTypeChooserBlock(required=True)
-    graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
         label = _('Category')
@@ -53,9 +52,7 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):  # block.details
 
 
 @register_streamfield_block
-class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):  # block.details
-    graphql_interfaces = (FieldBlockMetaInterface, )
-
+class ActionResponsiblePartiesBlock(ActionContentBlockBase):  # block.details
     class Meta:
         label = _('Responsible parties')
 
@@ -227,9 +224,7 @@ class PlanDatasetsBlock(BaseDatasetsBlock):  # block.details.custom
     ]
 
 @register_streamfield_block
-class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock): # block.details.custom
-    graphql_interfaces = (FieldBlockMetaInterface, )
-
+class ActionOfficialNameBlock(ActionContentBlockBase): # block.details.custom
     field_label = blocks.CharBlock(
         required=False,
         help_text=_("What label should be used in the public UI for the official name?"),

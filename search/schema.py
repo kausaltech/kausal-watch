@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import graphene
 from django.db.models import Q
@@ -10,6 +10,7 @@ from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from wagtail.models import Page
 
+from grapple.types.interfaces import get_page_interface
 from loguru import logger
 
 from actions.models import Action, Plan
@@ -20,6 +21,8 @@ from pages.models import AplansPage, PlanRootPage
 
 if TYPE_CHECKING:
     from wagtail.query import PageQuerySet
+
+    from aplans.graphql_types import GQLInfo
 
     from actions.models.action import ActionQuerySet
 
@@ -43,7 +46,7 @@ class SearchHitObj:
     page: Page | None = None
 
 
-class SearchHit(graphene.ObjectType):
+class SearchHit(graphene.ObjectType[SearchHitObj]):
     id = graphene.ID(required=True)
     title = graphene.String(required=True)
     url = graphene.String(client_url=graphene.String(required=False))
@@ -51,7 +54,7 @@ class SearchHit(graphene.ObjectType):
     highlight = graphene.String(required=False)
     plan = graphene.Field('actions.schema.PlanNode', required=True)
     object = graphene.Field(SearchHitObject, required=False)
-    page = graphene.Field('grapple.types.interfaces.PageInterface', required=False)
+    page = graphene.Field(get_page_interface, required=False)
 
     @staticmethod
     def resolve_url(root: SearchHitObj, info, client_url=None) -> None | str:
@@ -76,11 +79,11 @@ class SearchHit(graphene.ObjectType):
         return None
 
 
-class SearchResults(graphene.ObjectType):
+class SearchResults(graphene.ObjectType[Any]):
     hits = graphene.List(graphene.NonNull(SearchHit), required=True)
 
     @staticmethod
-    def resolve_hits(root, info) -> list[SearchHitObj]:
+    def resolve_hits(root, _info: GQLInfo) -> list[SearchHitObj]:
         hits = root['hits']
         res = []
         for obj in hits:

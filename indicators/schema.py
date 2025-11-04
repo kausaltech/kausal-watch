@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan, PlanQuerySet
 
 
-class UnitNode(DjangoNode):
+class UnitNode(DjangoNode[Unit]):
     class Meta:
         model = Unit
         fields = [
@@ -101,7 +101,7 @@ class UnitNode(DjangoNode):
         return verbose_name_plural
 
 
-class QuantityNode(DjangoNode):
+class QuantityNode(DjangoNode[Quantity]):
     class Meta:
         model = Quantity
         fields = [
@@ -109,25 +109,25 @@ class QuantityNode(DjangoNode):
         ]
 
 
-class RelatedIndicatorNode(DjangoNode):
+class RelatedIndicatorNode(DjangoNode[RelatedIndicator]):
     class Meta:
         model = RelatedIndicator
         fields = public_fields(RelatedIndicator)
 
 
-class ActionIndicatorNode(DjangoNode):
+class ActionIndicatorNode(DjangoNode[ActionIndicator]):
     class Meta:
         model = ActionIndicator
         fields = public_fields(ActionIndicator)
 
 
-class IndicatorGraphNode(DjangoNode):
+class IndicatorGraphNode(DjangoNode[IndicatorGraph]):
     class Meta:
         model = IndicatorGraph
         fields = public_fields(IndicatorGraph)
 
 
-class IndicatorLevelNode(DjangoNode):
+class IndicatorLevelNode(DjangoNode[IndicatorLevel]):
     class Meta:
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
@@ -144,19 +144,19 @@ class IndicatorLevelNode(DjangoNode):
         return root.plan.get_if_visible(info.context.user)
 
 @register_django_node
-class DimensionNode(DjangoNode):
+class DimensionNode(DjangoNode[Dimension]):
     class Meta:
         model = Dimension
         fields = public_fields(Dimension)
 
 
-class DimensionCategoryNode(DjangoNode):
+class DimensionCategoryNode(DjangoNode[DimensionCategory]):
     class Meta:
         model = DimensionCategory
         fields = public_fields(DimensionCategory)
 
 
-class FrameworkNode(DjangoNode):
+class FrameworkNode(DjangoNode[Framework]):
     class Meta:
         model = Framework
         fields = public_fields(Framework)
@@ -167,7 +167,7 @@ class CommonIndicatorNormalization(graphene.ObjectType):
     unit = graphene.Field(UnitNode, required=True)
 
 
-class CommonIndicatorNode(DjangoNode):
+class CommonIndicatorNode(DjangoNode[CommonIndicator]):
     normalizations = graphene.List(lambda: graphene.NonNull(CommonIndicatorNormalization), required=True)
 
     class Meta:
@@ -182,13 +182,13 @@ class CommonIndicatorNode(DjangoNode):
         return root.normalizations.all()
 
 
-class RelatedCommonIndicatorNode(DjangoNode):
+class RelatedCommonIndicatorNode(DjangoNode[RelatedCommonIndicator]):
     class Meta:
         model = RelatedCommonIndicator
         fields = public_fields(RelatedCommonIndicator)
 
 
-class FrameworkIndicatorNode(DjangoNode):
+class FrameworkIndicatorNode(DjangoNode[FrameworkIndicator]):
     class Meta:
         model = FrameworkIndicator
         fields = public_fields(FrameworkIndicator)
@@ -213,7 +213,7 @@ class NormalizedValuesMixin:
         return [dict(normalizer_id=k, value=v) for k, v in root.normalized_values.items()]
 
 
-class IndicatorValueNode(NormalizedValuesMixin, DjangoNode):
+class IndicatorValueNode(NormalizedValuesMixin, DjangoNode[IndicatorValue]):
     date = graphene.String()
 
     class Meta:
@@ -226,7 +226,7 @@ class IndicatorValueNode(NormalizedValuesMixin, DjangoNode):
         return date
 
 
-class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode):
+class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode[IndicatorGoal]):
     date = graphene.String()
     scenario = graphene.Field(ScenarioNode)
 
@@ -242,7 +242,7 @@ class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode):
 
 
 @register_django_node
-class IndicatorNode(DjangoNode):
+class IndicatorNode(DjangoNode[Indicator]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at']
 
     goals = graphene.List(IndicatorGoalNode, plan=graphene.ID(
@@ -350,7 +350,8 @@ class IndicatorNode(DjangoNode):
         plans = cast('PlanQuerySet', root.plans.all())
         return plans.visible_for_user(info.context.user)
 
-class IndicatorDimensionNode(DjangoNode):
+
+class IndicatorDimensionNode(DjangoNode[IndicatorDimension]):
     class Meta:
         model = IndicatorDimension
         fields = public_fields(IndicatorDimension)

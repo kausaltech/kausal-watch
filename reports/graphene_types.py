@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import typing
 from dataclasses import dataclass
 from functools import cache
+from typing import TYPE_CHECKING, Any
 
 import graphene
 
 from grapple.registry import registry as grapple_registry
 
-from aplans.graphql_types import register_graphene_node
+from kausal_common.graphene.registry import register_graphene_node
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from grapple.types.streamfield import StreamFieldBlock
 
 
@@ -20,11 +20,11 @@ def get_report_field_block() -> StreamFieldBlock | None:
     return grapple_registry.streamfield_blocks.get(ReportFieldBlock)
 
 
-class ReportValueInterface(graphene.Interface):
+class ReportValueInterface(graphene.Interface[Any]):
     field = graphene.NonNull(get_report_field_block)
 
 
-class ActionReportValue(graphene.ObjectType):
+class ActionReportValue(graphene.ObjectType[Any]):
     pass
 
 
@@ -37,7 +37,7 @@ class GrapheneValueClassProperties:
 
 @cache
 def generate_graphene_report_value_node_class(
-        properties: GrapheneValueClassProperties,
+    properties: GrapheneValueClassProperties,
 ) -> type[ActionReportValue]:
     """
     Generate a class representing a report value, and registers it as graphene node.

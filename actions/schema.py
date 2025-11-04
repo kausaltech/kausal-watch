@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import uuid
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar
 from urllib.parse import urlparse
 
 import graphene
@@ -16,17 +16,18 @@ from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
-from wagtail.models import Revision, WorkflowState, WorkflowStateQuerySet
+from wagtail.models import Page, Revision, WorkflowState
 from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
 import sentry_sdk
 from grapple.registry import registry as grapple_registry
-from grapple.types.interfaces import PageInterface
+from grapple.types.interfaces import get_page_interface
 
 from kausal_common.datasets.models import Dataset
 from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
-from kausal_common.users import is_authenticated
+from kausal_common.graphene.registry import register_graphene_node
+from kausal_common.users import is_authenticated, user_or_none
 
 from aplans.cache import SerializedDictWithRelatedObjectCache
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
@@ -37,7 +38,6 @@ from aplans.graphql_types import (
     get_plan_from_context,
     order_queryset,
     register_django_node,
-    register_graphene_node,
     set_active_plan,
 )
 from aplans.utils import hyphenate_fi, public_fields
@@ -82,11 +82,12 @@ from actions.models import (
     PublicationStatus,
     Scenario,
 )
+from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
 from orgs.models import Organization, OrganizationQuerySet
 from pages import schema as pages_schema
-from pages.models import ActionListPage, AplansPage, CategoryPage, Page
+from pages.models import ActionListPage, AplansPage, CategoryPage
 from people.models import Person
 from search.backends import get_search_backend
 
@@ -109,7 +110,7 @@ logger = logging.getLogger(__name__)
 PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
 
 
-class PlanDomainNode(DjangoNode):
+class PlanDomainNode(DjangoNode[PlanDomain]):
     status = PublicationStatusNode(source='status')
     status_message = graphene.String(required=False, source='status_message')
     class Meta:
@@ -125,7 +126,7 @@ class PlanDomainNode(DjangoNode):
             'status_message',
         )
 
-class PlanFeaturesNode(DjangoNode):
+class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     public_contact_persons = graphene.Boolean(required=True)
     enable_moderation_workflow = graphene.Boolean(required=True)
 
@@ -134,11 +135,11 @@ class PlanFeaturesNode(DjangoNode):
         fields = public_fields(PlanFeatures)
 
     @staticmethod
-    def resolve_public_contact_persons(root: PlanFeatures, info: GQLInfo) -> bool:
+    def resolve_public_contact_persons(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.public_contact_persons
 
     @staticmethod
-    def resolve_enable_moderation_workflow(root: PlanFeatures, info: GQLInfo) -> bool:
+    def resolve_enable_moderation_workflow(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.enable_moderation_workflow
 
 
@@ -178,7 +179,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         select_related=('features',),
         only=('features__expose_unpublished_plan_only_to_authenticated_user',),
     )
-    def resolve_login_enabled(root: Plan, info: GQLInfo) -> bool:
+    def resolve_login_enabled(root: Plan, _info: GQLInfo) -> bool:
         return root.features.expose_unpublished_plan_only_to_authenticated_user
 
     @staticmethod
@@ -245,7 +246,7 @@ class PlanNode(DjangoNode[Plan]):
     id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String(required=True)
-    pages = graphene.List(graphene.NonNull(PageInterface))
+    pages = graphene.List(graphene.NonNull(get_page_interface))
     action_list_page = graphene.Field(get_action_list_page_node)
     category_type = graphene.Field('actions.schema.CategoryTypeNode', id=graphene.ID(required=True))
     category_types = graphene.List(
@@ -313,7 +314,7 @@ class PlanNode(DjangoNode[Plan]):
     @gql_optimizer.resolver_hints(
         model_field='indicator_levels',
     )
-    def resolve_indicator_levels(root: Plan, info) -> IndicatorLevelQuerySet:
+    def resolve_indicator_levels(root: Plan, info: GQLInfo) -> IndicatorLevelQuerySet:
         qs = root.indicator_levels.get_queryset()
         if not root.is_visible_for_user(info.context.user):
             return qs.none()
@@ -324,15 +325,15 @@ class PlanNode(DjangoNode[Plan]):
         return [a.get_data({'plan': root, 'cache': info.context.cache}) for a in ActionStatusSummaryIdentifier]
 
     @staticmethod
-    def resolve_action_timeliness_classes(root: Plan, info):
+    def resolve_action_timeliness_classes(root: Plan, info: GQLInfo):
         return [a.get_data({'plan': root, 'cache': info.context.cache}) for a in ActionTimelinessIdentifier]
 
     @staticmethod
-    def resolve_last_action_identifier(root: Plan, info):
+    def resolve_last_action_identifier(root: Plan, _info: GQLInfo):
         return root.get_last_action_identifier()
 
     @staticmethod
-    def resolve_category_type(root: Plan, info, id):
+    def resolve_category_type(root: Plan, info: GQLInfo, id: str):
         if not root.is_visible_for_user(info.context.user):
             return None
         return root.category_types.get(id=id)
@@ -341,7 +342,9 @@ class PlanNode(DjangoNode[Plan]):
     @gql_optimizer.resolver_hints(
         model_field='category_types',
     )
-    def resolve_category_types(root: Plan, info, usable_for_indicators=None, usable_for_actions=None):
+    def resolve_category_types(
+        root: Plan, info: GQLInfo, usable_for_indicators: bool | None = None, usable_for_actions: bool | None = None
+    ):
         if not root.is_visible_for_user(info.context.user):
             return root.category_types.none()
         qs = root.category_types.all()
@@ -356,19 +359,19 @@ class PlanNode(DjangoNode[Plan]):
     @gql_optimizer.resolver_hints(
         model_field='impact_groups',
     )
-    def resolve_impact_groups(root: Plan, info, first=None):
+    def resolve_impact_groups(root: Plan, _info: GQLInfo, first: int | None = None):
         qs = root.impact_groups.all()
         if first is not None:
             qs = qs[0:first]
         return qs.order_by('pk')
 
     @staticmethod
-    def resolve_serve_file_base_url(root: Plan, info):
+    def resolve_serve_file_base_url(_root: Plan, info: GQLInfo):
         request = info.context
         return request.build_absolute_uri('/').rstrip('/')
 
     @staticmethod
-    def resolve_pages(root: Plan, info: GQLInfo):
+    def resolve_pages(root: Plan, _info: GQLInfo):
         root_page: Page | None = root.root_page
         if not root_page:
             return None
@@ -383,7 +386,7 @@ class PlanNode(DjangoNode[Plan]):
         return None
 
     @staticmethod
-    def resolve_view_url(root: Plan, info, client_url: str | None = None):
+    def resolve_view_url(root: Plan, _info: GQLInfo, client_url: str | None = None):
         if client_url:
             try:
                 urlparse(client_url)
@@ -392,7 +395,7 @@ class PlanNode(DjangoNode[Plan]):
         return root.get_view_url(client_url=client_url, active_locale=get_language())
 
     @staticmethod
-    def resolve_admin_url(root: Plan, info):
+    def resolve_admin_url(root: Plan, info: GQLInfo):
         if not root.features.show_admin_link or not root.is_visible_for_user(info.context.user):
             return None
         client_plan = root.clients.first()
@@ -401,7 +404,7 @@ class PlanNode(DjangoNode[Plan]):
         return client_plan.client.get_admin_url()
 
     @staticmethod
-    def resolve_action_report_export_view_url(root: Plan, info) -> str:
+    def resolve_action_report_export_view_url(root: Plan, info: GQLInfo) -> str:
         return info.context.build_absolute_uri(reverse('action-report-export', kwargs={
             'plan_identifier': root.identifier
         }))
@@ -441,11 +444,11 @@ class PlanNode(DjangoNode[Plan]):
         return qs
 
     @staticmethod
-    def resolve_action_attribute_types(root: Plan, info):
+    def resolve_action_attribute_types(root: Plan, _info: GQLInfo):
         return root.action_attribute_types.order_by('pk')
 
     @staticmethod
-    def resolve_primary_orgs(root: Plan, info) -> OrganizationQuerySet:
+    def resolve_primary_orgs(root: Plan, _info: GQLInfo) -> OrganizationQuerySet:
         qs = Action.objects.filter(plan=root).values_list('primary_org').distinct()
         return Organization.objects.qs.filter(id__in=qs)
 
@@ -453,28 +456,28 @@ class PlanNode(DjangoNode[Plan]):
     @gql_optimizer.resolver_hints(
         select_related=('features',),
     )
-    def resolve_hide_action_identifiers(root: Plan, info):
+    def resolve_hide_action_identifiers(root: Plan, _info: GQLInfo):
         return not root.features.show_action_identifiers
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('features',),
     )
-    def resolve_hide_action_lead_paragraph(root: Plan, info):
+    def resolve_hide_action_lead_paragraph(root: Plan, _info: GQLInfo):
         return not root.features.has_action_lead_paragraph
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('features',),
     )
-    def resolve_hide_action_official_name(root: Plan, info):
+    def resolve_hide_action_official_name(root: Plan, _info: GQLInfo):
         return not root.features.has_action_official_name
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('parent',),
     )
-    def resolve_all_related_plans(root: Plan, info) -> PlanQuerySet:
+    def resolve_all_related_plans(root: Plan, info: GQLInfo) -> PlanQuerySet:
         return root.get_all_related_plans().visible_for_user(info.context.user)
 
     @staticmethod
@@ -482,7 +485,7 @@ class PlanNode(DjangoNode[Plan]):
         select_related=('image',),
         only=('image',),
     )
-    def resolve_image(root: Plan, info):
+    def resolve_image(root: Plan, _info: GQLInfo):
         return root.image
 
     @staticmethod
@@ -490,7 +493,7 @@ class PlanNode(DjangoNode[Plan]):
         select_related=('primary_action_classification',),
         only=('primary_action_classification',),
     )
-    def resolve_primary_action_classification(root: Plan, info):
+    def resolve_primary_action_classification(root: Plan, _info: GQLInfo):
         return root.primary_action_classification
 
     @staticmethod
@@ -498,32 +501,32 @@ class PlanNode(DjangoNode[Plan]):
         select_related=('secondary_action_classification',),
         only=('secondary_action_classification',),
     )
-    def resolve_secondary_action_classification(root: Plan, info):
+    def resolve_secondary_action_classification(root: Plan, _info: GQLInfo):
         return root.secondary_action_classification
 
     @staticmethod
-    def resolve_action_update_target_interval(root: Plan, info):
+    def resolve_action_update_target_interval(root: Plan, _info: GQLInfo):
         return root.action_update_target_interval
 
     @staticmethod
-    def resolve_action_update_acceptable_interval(root: Plan, info):
+    def resolve_action_update_acceptable_interval(root: Plan, _info: GQLInfo):
         return root.action_update_acceptable_interval
 
     @staticmethod
-    def resolve_superseding_plans(root: Plan, info, recursive=False):
+    def resolve_superseding_plans(root: Plan, info: GQLInfo, recursive: bool = False):
         return root.get_superseding_plans(recursive, info.context.user)
 
     @staticmethod
-    def resolve_superseded_plans(root: Plan, info, recursive=False):
+    def resolve_superseded_plans(root: Plan, info: GQLInfo, recursive: bool = False):
         return root.get_superseded_plans(recursive).visible_for_user(info.context.user)
 
     @staticmethod
-    def resolve_superseded_by(root: Plan, info) -> Plan | None:
+    def resolve_superseded_by(root: Plan, info: GQLInfo) -> Plan | None:
         superseded_by = root.superseded_by
         return superseded_by.get_if_visible(info.context.user) if superseded_by else None
 
     @staticmethod
-    def resolve_has_indicator_relationships(root: Plan, info):
+    def resolve_has_indicator_relationships(root: Plan, info: GQLInfo):
         return root.has_indicator_relationships(info.context.user)
 
 
@@ -546,23 +549,23 @@ class AttributeInterface(graphene.Interface[AttributeObject]):
     key_identifier = graphene.String(required=True)
 
     @staticmethod
-    def resolve_key(root: AttributeObject, info):
+    def resolve_key(root: AttributeObject, _info: GQLInfo):
         return root.type.name
 
     @staticmethod
-    def resolve_key_identifier(root: AttributeObject, info):
+    def resolve_key_identifier(root: AttributeObject, _info: GQLInfo):
         return root.type.identifier
 
     @staticmethod
-    def resolve_id(root, info):
+    def resolve_id(root: AttributeObject, _info: GQLInfo):
         return getattr(root, 'pk', None) or f'unpublished-{uuid.uuid4()}'
 
     @staticmethod
-    def resolve_type_(root: AttributeObject, info) -> AttributeType:
+    def resolve_type_(root: AttributeObject, _info: GQLInfo) -> AttributeType:
         return root.type
 
     @classmethod
-    def resolve_type(cls, instance, _info) -> type[graphene.ObjectType[Any]] | None:
+    def resolve_type(cls, instance: AttributeObject, _info: GQLInfo) -> type[graphene.ObjectType[Any]] | None:
         if isinstance(instance, AttributeText):
             return AttributeTextNode
         if isinstance(instance, AttributeRichText):
@@ -584,14 +587,15 @@ class AttributeChoice(graphene.ObjectType[AttributeChoiceModel | AttributeChoice
     )
     text = graphene.String(required=False)
 
-    def resolve_id(self, info):
-        if isinstance(self, AttributeChoiceModel):
+    @staticmethod
+    def resolve_id(root: AttributeChoiceModel | AttributeChoiceWithText, _info: GQLInfo):
+        if isinstance(root, AttributeChoiceModel):
             prefix = 'C'
         else:
             prefix = 'CT'
-        return f'{prefix}{self.id}'
+        return f'{prefix}{root.pk}'
 
-    def resolve_text(self, info):
+    def resolve_text(self, _info: GQLInfo):
         return getattr(self, 'text_i18n', None)
 
     class Meta:
@@ -603,7 +607,7 @@ class AttributeTextNode(DjangoNode[AttributeText]):
     value = graphene.String(required=True)
 
     @staticmethod
-    def resolve_value(root: AttributeText, info):
+    def resolve_value(root: AttributeText, _info: GQLInfo):
         return root.text_i18n
 
     class Meta:
@@ -618,7 +622,7 @@ class AttributeRichTextNode(DjangoNode[AttributeRichText]):
     value = graphene.String(required=True)
 
     @staticmethod
-    def resolve_value(root: AttributeRichText, info):
+    def resolve_value(root: AttributeRichText, _info: GQLInfo):
         return RichText(root.text_i18n)
 
     class Meta:
@@ -652,7 +656,7 @@ class CategoryLevelNode(DjangoNode[CategoryLevel]):
 
 
 @register_django_node
-class AttributeTypeNode(DjangoNode):
+class AttributeTypeNode(DjangoNode[AttributeType]):
     class Meta:
         model = AttributeType
         fields = public_fields(AttributeType)
@@ -674,7 +678,7 @@ class ResolveShortDescriptionFromLeadParagraphShim:
     short_description = graphene.String()
 
     @staticmethod
-    def resolve_short_description(root: HasLeadParagraph, info) -> str | None:
+    def resolve_short_description(root: HasLeadParagraph, _info: GQLInfo) -> str | None:
         return root.lead_paragraph
 
 
@@ -693,21 +697,21 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[
         fields = public_fields(CategoryType, remove_fields=['select_widget'])
 
     @staticmethod
-    def resolve_attribute_types(root: CategoryType, info):
+    def resolve_attribute_types(root: CategoryType, _info: GQLInfo):
         return root.attribute_types.order_by('pk')
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='select_widget',
     )
-    def resolve_selection_type(root: CategoryType, info):
+    def resolve_selection_type(root: CategoryType, _info: GQLInfo):
         return root.select_widget
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(root: CategoryType, info, only_root: bool, only_with_actions: bool):
+    def resolve_categories(root: CategoryType, _info: GQLInfo, only_root: bool, only_with_actions: bool):
         qs = root.categories.all()
         if only_with_actions:
             with_actions = set()
@@ -732,7 +736,7 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[
     @gql_optimizer.resolver_hints(
         model_field=('plan',),
     )
-    def resolve_plan(root: CategoryType, info) -> Plan | None:
+    def resolve_plan(root: CategoryType, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
 
@@ -743,13 +747,13 @@ class CommonCategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, Djang
         fields = public_fields(CommonCategoryType)
 
 
-def get_translated_category_page(info, **kwargs) -> Prefetch:
+def get_translated_category_page(_info, **_kwargs) -> Prefetch:  # pyright: ignore[reportMissingTypeArgument]
     qs = CategoryPage.objects.filter(locale__language_code__iexact=get_language())
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
 
 
-def prefetch_workflow_states(info, **_kwargs) -> Prefetch:
-    workflow_states = cast('WorkflowStateQuerySet', WorkflowState.objects.get_queryset()).active().select_related(
+def prefetch_workflow_states(_info, **_kwargs) -> Prefetch:  # pyright: ignore[reportMissingTypeArgument]
+    workflow_states = WorkflowState._default_manager.get_queryset().active().select_related(  # pyright: ignore[reportAttributeAccessIssue]
         "current_task_state__task",
     )
     return Prefetch(
@@ -785,7 +789,6 @@ class AttributesMixin:
 
         attributes: list[Attribute] = []
         if root.draft_attributes:
-            cache = info.context.watch_cache.for_plan(plan)
             attribute_types = root.get_visible_attribute_types(request.user)
             for attribute_type in attribute_types:
                 try:
@@ -824,11 +827,11 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return getattr(root.common, field_name)
 
     @staticmethod
-    def resolve_image(root: Category, info):
+    def resolve_image(root: Category, _info: GQLInfo):
         return CategoryNode._resolve_field_with_fallback_to_common(root, 'image')
 
     @staticmethod
-    def resolve_level(root: Category, info):
+    def resolve_level(root: Category, _info: GQLInfo):
         depth = 0
         obj = root
         # Uh oh, Category is not a tree model yet
@@ -844,14 +847,14 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return levels[depth]
 
     @staticmethod
-    def resolve_actions(root: Category, info) -> ActionQuerySet:
+    def resolve_actions(root: Category, info: GQLInfo) -> ActionQuerySet:
         return root.actions.get_queryset().visible_for_user(info.context.user)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         prefetch_related=get_translated_category_page,
     )
-    def resolve_category_page(root: Category, info):
+    def resolve_category_page(root: Category, _info: GQLInfo):
         # If we have prefetched the page in the right locale, use that
         if hasattr(root, 'category_pages_locale'):
             pages = root.category_pages_locale  # pyright: ignore
@@ -870,7 +873,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         select_related=('common',),
         only=('common',),
     )
-    def resolve_icon_image(root: Category, info):
+    def resolve_icon_image(root: Category, _info: GQLInfo):
         icon = root.get_icon(get_language())
         if icon:
             return icon.image
@@ -882,14 +885,14 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         select_related=('common',),
         only=('common',),
     )
-    def resolve_icon_svg_url(root: Category, info):
+    def resolve_icon_svg_url(root: Category, info: GQLInfo):
         icon = root.get_icon(get_language())
         if icon and icon.image.filename.endswith('.svg'):
             return info.context.build_absolute_uri(icon.image.file.url)
         return None
 
     @staticmethod
-    def resolve_help_text(root: Category, info):
+    def resolve_help_text(root: Category, _info: GQLInfo):
         return CategoryNode._resolve_field_with_fallback_to_common(root, 'help_text_i18n')
 
     @staticmethod
@@ -899,11 +902,11 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         only=('lead_paragraph', 'i18n', 'type__plan__primary_language',
               'type__plan__primary_language_lowercase'),
     )
-    def resolve_lead_paragraph(root: Category, info):
+    def resolve_lead_paragraph(root: Category, _info: GQLInfo):
         return CategoryNode._resolve_field_with_fallback_to_common(root, 'lead_paragraph_i18n')
 
     @staticmethod
-    def resolve_datasets(root: Category, info):
+    def resolve_datasets(root: Category, _info: GQLInfo):
         category_content_type = ContentType.objects.get_for_model(Category)
         return Dataset.objects.filter(
             scope_content_type=category_content_type,
@@ -916,20 +919,20 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
 
 
 @register_django_node
-class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
+class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[CommonCategory]):
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
     category_instances = graphene.List(graphene.NonNull(CategoryNode), required=True)
 
     @staticmethod
-    def resolve_icon_image(root, info):
+    def resolve_icon_image(root: CommonCategory, _info: GQLInfo):
         icon = root.get_icon(get_language())
         if icon:
             return icon.image
         return None
 
     @staticmethod
-    def resolve_icon_svg_url(root, info):
+    def resolve_icon_svg_url(root, info: GQLInfo):
         icon = root.get_icon(get_language())
         if icon and icon.image.filename.endswith('.svg'):
             return info.context.build_absolute_uri(icon.image.file.url)
@@ -945,13 +948,13 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
         fields = public_fields(CommonCategory)
 
 
-class ScenarioNode(DjangoNode):
+class ScenarioNode(DjangoNode[Scenario]):
     class Meta:
         model = Scenario
         fields = public_fields(Scenario)
 
 
-class ImpactGroupNode(DjangoNode):
+class ImpactGroupNode(DjangoNode[ImpactGroup]):
     class Meta:
         model = ImpactGroup
         fields = public_fields(ImpactGroup)
@@ -960,16 +963,17 @@ class ImpactGroupNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: ImpactGroup, info) -> Plan | None:
+    def resolve_plan(root: ImpactGroup, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
-class ImpactGroupActionNode(DjangoNode):
+
+class ImpactGroupActionNode(DjangoNode[ImpactGroupAction]):
     class Meta:
         model = ImpactGroupAction
         fields = public_fields(ImpactGroupAction)
 
 
-class MonitoringQualityPointNode(DjangoNode):
+class MonitoringQualityPointNode(DjangoNode[MonitoringQualityPoint]):
     name = graphene.String()
     description_yes = graphene.String()
     description_no = graphene.String()
@@ -982,10 +986,10 @@ class MonitoringQualityPointNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: MonitoringQualityPoint, info) -> Plan | None:
+    def resolve_plan(root: MonitoringQualityPoint, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
-class ActionTaskNode(DjangoNode):
+class ActionTaskNode(DjangoNode[ActionTask]):
     class Meta:
         model = ActionTask
         fields = public_fields(ActionTask)
@@ -994,7 +998,7 @@ class ActionTaskNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='comment',
     )
-    def resolve_comment(root: ActionTask, info):
+    def resolve_comment(root: ActionTask, _info: GQLInfo):
         root.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer  # noqa: B018
         comment = root.comment_i18n
         if comment is None:
@@ -1009,7 +1013,7 @@ Sentiment = graphene.Enum.from_enum(SentimentEnum)
 
 
 @register_graphene_node
-class ActionStatusSummaryNode(graphene.ObjectType):
+class ActionStatusSummaryNode(graphene.ObjectType[Any]):
     identifier = ActionStatusSummaryIdentifierNode(required=True)
     label = graphene.String(required=True)
     color = graphene.String(
@@ -1025,7 +1029,7 @@ class ActionStatusSummaryNode(graphene.ObjectType):
 
 
 @register_graphene_node
-class ActionTimelinessNode(graphene.ObjectType):
+class ActionTimelinessNode(graphene.ObjectType[Any]):
     identifier = ActionTimelinessIdentifierNode(required=True)
     label = graphene.String(required=True, deprecation_reason='Generate human-friendly labels in the UI.')
     color = graphene.String(required=True)
@@ -1038,7 +1042,7 @@ class ActionTimelinessNode(graphene.ObjectType):
 
 
 @register_django_node
-class ActionDependencyRoleNode(DjangoNode):
+class ActionDependencyRoleNode(DjangoNode[ActionDependencyRole]):
     class Meta:
         model = ActionDependencyRole
         fields = ActionDependencyRole.public_fields
@@ -1051,7 +1055,7 @@ class ActionDependencyRelationshipNode(DjangoNode[ActionDependencyRelationship])
         fields = ActionDependencyRelationship.public_fields
 
 
-def _get_visible_action(root, field_name, user: User | None) -> Action | None:
+def _get_visible_action(root, field_name: str, user: User | None) -> Action | None:
     action_id = getattr(root, f'{field_name}_id')
     if action_id is None:
         return None
@@ -1061,12 +1065,12 @@ def _get_visible_action(root, field_name, user: User | None) -> Action | None:
         return None
 
 
-def _get_visible_actions(root, field_name, user: User | None) -> QuerySet[Action]:
+def _get_visible_actions(root, field_name: str, user: User | None) -> QuerySet[Action]:
     actions = getattr(root, field_name)
     return actions.visible_for_user(user)
 
 
-class RevisionNode(DjangoNode[Revision]):
+class RevisionNode(DjangoNode[Revision[Any]]):
     class Meta:
         model = Revision
         fields = ('created_at',)
@@ -1079,7 +1083,7 @@ class WorkflowStateInfoNode(DjangoNode[WorkflowState]):
         fields = ('status',)
 
     @staticmethod
-    def resolve_status_message(root: WorkflowState, info: GQLInfo) -> str | None:
+    def resolve_status_message(root: WorkflowState, _info: GQLInfo) -> str | None:
         status_choices = dict(WorkflowState.STATUS_CHOICES)
         msg = status_choices.get(root.status)
         if msg is None:
@@ -1109,19 +1113,19 @@ class WorkflowInfoNode(graphene.ObjectType[Any]):
     )
 
     @staticmethod
-    def resolve_has_unpublished_changes(root: Action, info: GQLInfo) -> bool:
+    def resolve_has_unpublished_changes(root: Action, _info: GQLInfo) -> bool:
         return root.has_unpublished_changes
 
     @staticmethod
-    def resolve_latest_revision(root: Action, info: GQLInfo) -> Revision[Action] | None:
+    def resolve_latest_revision(root: Action, _info: GQLInfo) -> Revision[Action] | None:
         return root.get_latest_revision()
 
     @staticmethod
-    def resolve_current_workflow_state(root: Action, info: GQLInfo) -> WorkflowState | None:
+    def resolve_current_workflow_state(root: Action, _info: GQLInfo) -> WorkflowState | None:
         return root.current_workflow_state
 
     @staticmethod
-    def resolve_matching_version(root: Action, info: GQLInfo) -> Mapping[str, StrOrPromise | None]:
+    def resolve_matching_version(root: Action, _info: GQLInfo) -> Mapping[str, StrOrPromise | None]:
         def make_result(match: WorkflowStateEnum) -> Mapping[str, StrOrPromise | None]:
             return dict(
                 id=match.name,
@@ -1131,7 +1135,7 @@ class WorkflowInfoNode(graphene.ObjectType[Any]):
 
 
 @register_django_node
-class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
+class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
@@ -1165,55 +1169,55 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         fields = Action.public_fields
 
     @staticmethod
-    def resolve_merged_with(root: Action, info):
-        return _get_visible_action(root, 'merged_with', info.context.user)
+    def resolve_merged_with(root: Action, info: GQLInfo):
+        return _get_visible_action(root, 'merged_with', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_superseded_by(root: Action, info):
-        return _get_visible_action(root, 'superseded_by', info.context.user)
+    def resolve_superseded_by(root: Action, info: GQLInfo):
+        return _get_visible_action(root, 'superseded_by', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_copy_of(root: Action, info) -> Action | None:
-        return _get_visible_action(root, 'copy_of', info.context.user)
+    def resolve_copy_of(root: Action, info: GQLInfo) -> Action | None:
+        return _get_visible_action(root, 'copy_of', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_merged_actions(root: Action, info):
-        return _get_visible_actions(root, 'merged_actions', info.context.user)
+    def resolve_merged_actions(root: Action, info: GQLInfo):
+        return _get_visible_actions(root, 'merged_actions', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_superseded_actions(root: Action, info):
-        return _get_visible_actions(root, 'superseded_actions', info.context.user)
+    def resolve_superseded_actions(root: Action, info: GQLInfo):
+        return _get_visible_actions(root, 'superseded_actions', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_copies(root: Action, info) -> QuerySet[Action]:
-        return _get_visible_actions(root, 'copies', info.context.user)
+    def resolve_copies(root: Action, info: GQLInfo) -> QuerySet[Action]:
+        return _get_visible_actions(root, 'copies', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_related_actions(root: Action, info):
-        return _get_visible_actions(root, 'related_actions', info.context.user)
+    def resolve_related_actions(root: Action, info: GQLInfo):
+        return _get_visible_actions(root, 'related_actions', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_next_action(root: Action, info):
-        return root.get_next_action(info.context.user)
+    def resolve_next_action(root: Action, info: GQLInfo):
+        return root.get_next_action(user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_previous_action(root: Action, info):
-        return root.get_previous_action(info.context.user)
+    def resolve_previous_action(root: Action, info: GQLInfo):
+        return root.get_previous_action(user_or_none(info.context.user))
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: Action, info) -> Plan | None:
-        return root.plan.get_if_visible(info.context.user)
+    def resolve_plan(root: Action, info: GQLInfo) -> Plan | None:
+        return root.plan.get_if_visible(user_or_none(info.context.user))
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='related_indicators',
     )
-    def resolve_related_indicators(root: Action, info) -> Iterable[ActionIndicator]:
+    def resolve_related_indicators(root: Action, info: GQLInfo) -> Iterable[ActionIndicator]:
         plan = root.plan
-        indicators = root.get_visible_related_indicators(info.context.user)
+        indicators = root.get_visible_related_indicators(user_or_none(info.context.user))
         #  When accessing as Action draft revision, indicators are a FakeQuerySet without the
         #  features of ActionIndicatorQuerySet
         if hasattr(indicators, 'order_by_setting'):
@@ -1226,7 +1230,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         select_related=('plan'),
         only=('name', 'i18n', 'plan__primary_language', 'plan__primary_language_lowercase'),
     )
-    def resolve_name(root: Action, info, hyphenated=False):
+    def resolve_name(root: Action, _info: GQLInfo, hyphenated: bool = False):
         name = root.name_i18n
         if name is None:
             return None
@@ -1241,7 +1245,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('description', 'i18n'),
     )
-    def resolve_description(root: Action, info):
+    def resolve_description(root: Action, _info: GQLInfo):
         description = root.description_i18n
         if description is None:
             return None
@@ -1251,14 +1255,14 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('lead_paragraph', 'i18n', 'plan__primary_language', 'plan__primary_language_lowercase'),
     )
-    def resolve_lead_paragraph(root: Action, info):
+    def resolve_lead_paragraph(root: Action, _info: GQLInfo):
         return root.lead_paragraph_i18n
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field=('plan', 'identifier'),
     )
-    def resolve_view_url(root: Action, info, client_url: str | None = None):
+    def resolve_view_url(root: Action, _info: GQLInfo, client_url: str | None = None):
         return root.get_view_url(client_url=client_url)
 
     @staticmethod
@@ -1268,10 +1272,10 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
               'status__identifier', 'implementation_phase__color', 'implementation_phase__identifier'),
     )
     def resolve_color(root: Action, info: GQLInfo):
-        return root.get_color(cache=info.context.watch_cache)
+        return root.get_color(cache=info.context.cache)
 
     @staticmethod
-    def resolve_edit_url(root: Action, info):
+    def resolve_edit_url(root: Action, info: GQLInfo):
         if not root.plan.is_visible_for_user(info.context.user):
             return None
         client_plan = root.plan.clients.first()
@@ -1286,7 +1290,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(root: Action, info: GQLInfo, category_type=None):
+    def resolve_categories(root: Action, _info: GQLInfo, category_type: str | None = None):
         qs = root.categories.all()
         if category_type is not None:
             # Filter the materialized queryset instead of `qs.filter()` because a bug in modelcluster would load to
@@ -1301,7 +1305,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         model_field='contact_persons',
         prefetch_related='contact_persons__person',
     )
-    def resolve_contact_persons(root: Action, info: GQLInfo, show_all_contact_persons: bool):
+    def resolve_contact_persons(root: Action, info: GQLInfo, show_all_contact_persons: bool = False):
         plan: Plan = get_plan_from_context(info)
         user = info.context.user
         if not plan.is_visible_for_user(user):
@@ -1310,7 +1314,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
 
     @staticmethod
-    def resolve_similar_actions(root: Action, info):
+    def resolve_similar_actions(root: Action, _info: GQLInfo):
         backend = get_search_backend()
         if backend is None:
             return []
@@ -1323,15 +1327,15 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         select_related=('status', 'implementation_phase'),
     )
     def resolve_status_summary(root: Action, info: GQLInfo):
-        return root.get_status_summary(cache=info.context.watch_cache)
+        return root.get_status_summary(cache=info.context.cache)
 
     @staticmethod
-    def resolve_timeliness(root: Action, info):
+    def resolve_timeliness(root: Action, _info: GQLInfo):
         return root.get_timeliness()
 
     @staticmethod
     def resolve_has_dependency_relationships(root: Action, info: GQLInfo) -> bool:
-        cache = info.context.watch_cache.for_plan_id(root.plan_id)
+        cache = info.context.cache.for_plan_id(root.plan_id)
         if not cache.plan_has_action_dependency_roles:
             return False
         if not hasattr(root, 'has_dependencies'):
@@ -1346,7 +1350,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
 
     @staticmethod
     def resolve_all_dependency_relationships(root: Action, info: GQLInfo):
-        cache = info.context.watch_cache.for_plan_id(root.plan_id)
+        cache = info.context.cache.for_plan_id(root.plan_id)
         if not cache.plan_has_action_dependency_roles:
             return []
         return root.get_dependency_relationships(info.context.user, root.plan)
@@ -1365,17 +1369,17 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         return root
 
     @staticmethod
-    def resolve_indicators_count(root: Action, info):
+    def resolve_indicators_count(root: Action, _info: GQLInfo):
         inds_count = getattr(root, 'indicator_count', 0)
         return inds_count
 
     @staticmethod
-    def resolve_has_indicators_with_goals(root: Action, info):
+    def resolve_has_indicators_with_goals(root: Action, _info: GQLInfo):
         goals_count = getattr(root, 'indicators_with_goals_count', 0)
         return goals_count > 0
 
     @staticmethod
-    def resolve_datasets(root: Action, info):
+    def resolve_datasets(root: Action, _info: GQLInfo):
         action_content_type = ContentType.objects.get_for_model(Action)
         return Dataset.objects.filter(
             scope_content_type=action_content_type,
@@ -1390,14 +1394,14 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_primary_org(root: Action, info: GQLInfo) -> Organization | None:
         if not root.primary_org_id:
             return None
-        cache = info.context.watch_cache.for_plan_id(root.plan_id)
+        cache = info.context.cache.for_plan_id(root.plan_id)
         org = cache.get_organization(root.primary_org_id)
         if org:
             return org
         return root.primary_org
 
 
-class ActionScheduleNode(DjangoNode):
+class ActionScheduleNode(DjangoNode[ActionSchedule]):
     class Meta:
         model = ActionSchedule
         fields = public_fields(ActionSchedule)
@@ -1406,23 +1410,23 @@ class ActionScheduleNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: ActionSchedule, info) -> Plan | None:
+    def resolve_plan(root: ActionSchedule, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
-class ActionStatusNode(DjangoNode):
+class ActionStatusNode(DjangoNode[ActionStatus]):
     class Meta:
         model = ActionStatus
         fields = public_fields(ActionStatus, add_fields=['color'])
 
     @staticmethod
     def resolve_color(root: ActionStatus, info: GQLInfo):
-        return root.get_color(cache=info.context.watch_cache)
+        return root.get_color(cache=info.context.cache)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: ActionStatus, info) -> Plan | None:
+    def resolve_plan(root: ActionStatus, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
 
@@ -1435,25 +1439,25 @@ class ActionImplementationPhaseNode(DjangoNode[ActionImplementationPhase]):
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: ActionImplementationPhase, info) -> Plan | None:
+    def resolve_plan(root: ActionImplementationPhase, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
-class ActionResponsiblePartyNode(DjangoNode):
+class ActionResponsiblePartyNode(DjangoNode[ActionResponsibleParty]):
     has_contact_person = graphene.Boolean(required=True)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='organization',
     )
-    def resolve_organization(root: ActionResponsibleParty, info) -> Organization:
-        cache = info.context.watch_cache.for_plan_id(root.action.plan_id)
+    def resolve_organization(root: ActionResponsibleParty, info: GQLInfo) -> Organization:
+        cache = info.context.cache.for_plan_id(root.action.plan_id)
         return cache.get_organization(root.organization_id) or root.organization
 
     @staticmethod
     @gql_optimizer.resolver_hints(
         prefetch_related='action__contact_persons_unordered__organization',
     )
-    def resolve_has_contact_person(root: ActionResponsibleParty, info: GQLInfo) -> bool:
+    def resolve_has_contact_person(root: ActionResponsibleParty, _info: GQLInfo) -> bool:
         return root.action.has_contact_person_from_organization(root.organization, include_suborganizations=True)
 
     class Meta:
@@ -1461,10 +1465,10 @@ class ActionResponsiblePartyNode(DjangoNode):
         fields = public_fields(ActionResponsibleParty)
 
 
-class ActionContactPersonNode(DjangoNode):
+class ActionContactPersonNode(DjangoNode[ActionContactPerson]):
     @staticmethod
-    def resolve_person(root: ActionContactPerson, info) -> Person:
-        cache = info.context.watch_cache.for_plan_id(root.action.plan_id)
+    def resolve_person(root: ActionContactPerson, info: GQLInfo) -> Person:
+        cache = info.context.cache.for_plan_id(root.action.plan_id)
         person = cache.get_person(root.person_id) or root.person
         person_organization = cache.get_organization(person.organization_id)
         if person_organization is not None:
@@ -1476,7 +1480,7 @@ class ActionContactPersonNode(DjangoNode):
         fields = public_fields(ActionContactPerson)
 
 
-class ActionImpactNode(DjangoNode):
+class ActionImpactNode(DjangoNode[ActionImpact]):
     class Meta:
         model = ActionImpact
         fields = public_fields(ActionImpact)
@@ -1485,10 +1489,10 @@ class ActionImpactNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field=('plan'),
     )
-    def resolve_plan(root: ActionImpact, info) -> Plan | None:
+    def resolve_plan(root: ActionImpact, info: GQLInfo) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
-class ActionStatusUpdateNode(DjangoNode):
+class ActionStatusUpdateNode(DjangoNode[ActionStatusUpdate]):
     class Meta:
         model = ActionStatusUpdate
         fields = [
@@ -1496,21 +1500,23 @@ class ActionStatusUpdateNode(DjangoNode):
         ]
 
 
-class ActionLinkNode(DjangoNode):
+class ActionLinkNode(DjangoNode[ActionLink]):
     class Meta:
         model = ActionLink
         fields = public_fields(ActionLink)
 
     @staticmethod
-    def resolve_url(root: ActionLink, info):
+    def resolve_url(root: ActionLink, _info: GQLInfo):
         return root.url_i18n
 
     @staticmethod
-    def resolve_title(root: ActionLink, info):
+    def resolve_title(root: ActionLink, _info: GQLInfo):
         return root.title_i18n
 
 
-def plans_actions_queryset(plans, category, first, order_by, user):
+def plans_actions_queryset(
+    plans: Iterable[Plan], category: str | None, first: int | None, order_by: str | None, user: User | None
+) -> ActionQuerySet:
     qs = Action.objects.get_queryset()
     qs = qs.visible_for_user(user).filter(plan__in=plans)
     if category is not None:
@@ -1557,8 +1563,8 @@ def _resolve_published_action(
         action = qs.get()
     except Action.DoesNotExist:
         return None
-    plan = info.context.cache.for_plan_id(action.plan_id)
-    action.plan = plan.plan
+    cache = info.context.cache.for_plan_id(action.plan_id)
+    action.plan = cache.plan
     return action
 
 
@@ -1596,7 +1602,7 @@ def _resolve_action_revision(action: Action, desired_workflow_state: WorkflowSta
 
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
-    plans_for_hostname = graphene.List(PlanInterface, hostname=graphene.String())
+    plans_for_hostname = graphene.List(graphene.NonNull(PlanInterface), hostname=graphene.String())
     my_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
@@ -1623,23 +1629,23 @@ class Query:
     )
 
     @staticmethod
-    def resolve_workflow_states(root, info, plan):
+    def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None):
         if plan is None:
             return []
-        user = info.context.user
+        user = user_or_none(info.context.user)
         result = []
-        plan = Plan.objects.get(identifier=plan)
-        if plan.features.moderation_workflow is None:
+        plan_obj = Plan.objects.get(identifier=plan)
+        if plan_obj.features.moderation_workflow is None:
             return []
-        tasks = plan.get_workflow_tasks()
-        if not user.is_authenticated or not user.can_access_public_site(plan):
+        tasks = plan_obj.get_workflow_tasks()
+        if user is None or not user.can_access_public_site(plan_obj):
             result = [WorkflowStateEnum.PUBLISHED]
-        elif user.can_access_admin(plan):
+        elif user.can_access_admin(plan_obj):
             if tasks.count() > 1:
                 result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED, WorkflowStateEnum.DRAFT]
             else:
                 result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.DRAFT]
-        elif user.can_access_public_site(plan):
+        elif user.can_access_public_site(plan_obj):
             if tasks.count() > 1:
                 result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.DRAFT]
             else:
@@ -1651,7 +1657,7 @@ class Query:
 
 
     @staticmethod
-    def resolve_plan(root, info: GQLInfo, id: str | None = None, domain: str | None = None, **kwargs):
+    def resolve_plan(_root: Query, info: GQLInfo, id: str | None = None, domain: str | None = None, **_kwargs) -> Plan | None:
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
 
@@ -1670,7 +1676,7 @@ class Query:
         return plan
 
     @staticmethod
-    def resolve_plans_for_hostname(root, info: GQLInfo, hostname: str):
+    def resolve_plans_for_hostname(_root: Query, info: GQLInfo, hostname: str) -> list[Plan]:
         info.context._plan_hostname = hostname.lower() # type: ignore
         plans = Plan.objects.get_queryset().for_hostname(
             info.context._plan_hostname, request=info.context, #type: ignore
@@ -1682,11 +1688,11 @@ class Query:
         return ret
 
     @staticmethod
-    def resolve_my_plans(root, info: GQLInfo):
-        user = info.context.user
+    def resolve_my_plans(_root, info: GQLInfo):
+        user = user_or_none(info.context.user)
         if user is None:
             return []
-        plans = Plan.objects.get_queryset().user_has_staff_role_for(info.context.user)
+        plans = Plan.objects.get_queryset().user_has_staff_role_for(user)
         return gql_optimizer.query(plans, info)
 
     @staticmethod
@@ -1736,20 +1742,20 @@ class Query:
 
     @staticmethod
     def resolve_plan_actions(
-        root,
+        _root,
         info: GQLInfo,
         plan: str,
         first: int | None = None,
         category: str | None = None,
         order_by: str | None = None,
         restrict_to_publicly_visible: bool = True,
-        **kwargs,
+        **_kwargs,
     ) -> Iterable[Action] | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
-        user = info.context.user
+        user = user_or_none(info.context.user)
         if not plan_obj.is_visible_for_user(user):
             return None
 
@@ -1760,7 +1766,7 @@ class Query:
                 category,
                 first,
                 order_by,
-                info.context.user,
+                user,
             ),
             info,
         )
@@ -1788,7 +1794,7 @@ class Query:
         return ret
 
     @staticmethod
-    def resolve_related_plan_actions(root, info, plan, first=None, category=None, order_by=None, **kwargs):
+    def resolve_related_plan_actions(_root, info, plan, first=None, category=None, order_by=None, **_kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
@@ -1802,7 +1808,7 @@ class Query:
         return gql_optimizer.query(qs, info)
 
     @staticmethod
-    def resolve_plan_categories(root, info, plan, **kwargs):
+    def resolve_plan_categories(_root, info, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
@@ -1820,14 +1826,13 @@ class Query:
 
     @staticmethod
     def resolve_action(
-            root,
+            _root,
             info: GQLInfo,
             id: int | None = None,
             identifier: str | None = None,
             plan: str | None = None,
     ) -> Action | None:
-
-        workflow_state = info.context.watch_cache.query_workflow_state
+        workflow_state = info.context.cache.query_workflow_state
         action = _resolve_published_action(id, identifier, plan, info)
 
         if action and not identifier:
@@ -1853,7 +1858,7 @@ class Query:
         return action
 
     @staticmethod
-    def resolve_category(root, info, plan, category_type, external_identifier):
+    def resolve_category(_root, info: GQLInfo, plan: str, category_type: str, external_identifier: str) -> Category | None:
         plan_obj = get_plan_from_context(info, plan)
         if not plan_obj:
             return None

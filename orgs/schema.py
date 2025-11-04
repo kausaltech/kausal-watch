@@ -42,14 +42,14 @@ class OrganizationForm(BaseOrganizationForm):
 
 
 @register_django_node
-class OrganizationClassNode(BaseOrganizationClassNode, DjangoNode):
+class OrganizationClassNode(BaseOrganizationClassNode, DjangoNode[OrganizationClass]):
     class Meta:
         model = OrganizationClass
         fields = public_fields(OrganizationClass)
 
 
 @register_django_node
-class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode):
+class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organization]):
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization',

@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLInt, GraphQLString
+
+from actions.blocks.base import ActionFilterBlock
+from kausal_common.blocks.base import FilterBlockBase
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
@@ -58,50 +63,43 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
         label = _("Category")
 
 
-class FilterBlock(blocks.StaticBlock):
-    graphql_fields = []
-
-    def get_admin_text(self):
-        return _("Filter: %(filter_label)s") % dict(filter_label=self.meta.label)
-
-
 @register_streamfield_block
-class ResponsiblePartyFilterBlock(FilterBlock):
+class ResponsiblePartyFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Responsible party")
 
 
 @register_streamfield_block
-class PrimaryOrganizationFilterBlock(FilterBlock):
+class PrimaryOrganizationFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Primary organization")
 
 
 @register_streamfield_block
-class ActionImplementationPhaseFilterBlock(FilterBlock):
+class ActionImplementationPhaseFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Implementation phase")
 
 
 @register_streamfield_block
-class ActionStatusFilterBlock(FilterBlock):
+class ActionStatusFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Status")
 
 
 @register_streamfield_block
-class PlanFilterBlock(FilterBlock):
+class PlanFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Plan")
 
 
 @register_streamfield_block
-class ActionScheduleFilterBlock(FilterBlock):
+class ActionScheduleFilterBlock(ActionFilterBlock):
     class Meta:
         label = _("Schedule")
 
 @register_streamfield_block
-class ContinuousActionFilterBlock(FilterBlock):
+class ContinuousActionFilterBlock(ActionFilterBlock):
 
     class Meta:
         label = _("Continuous Action")

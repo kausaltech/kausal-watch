@@ -22,14 +22,17 @@ from aplans.utils import PlanRelatedModel
 
 from actions.action_fields import action_registry
 from actions.models.action import Action
+from kausal_common.blocks.registry import FieldBlockContext
 from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
 
 # The following model is for very specialized use and is only imported here so that Django finds it
+from actions.blocks.base import ActionReportContentField
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
 
 from .spreadsheets import ExcelReport
 from .types import LiveVersions, SerializedActionVersion
+from actions.models import AttributeType
 
 if TYPE_CHECKING:
 
@@ -38,7 +41,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK
     from kausal_common.users import UserOrAnon
 
-    from actions.models import AttributeType, Plan
+    from actions.models import Plan
     from users.models import User
 
 
@@ -78,8 +81,10 @@ class ReportType(PlanRelatedModel):
             if field_id == 'attribute':
                 # Once the report block and the dashboard column block share the implementation,
                 # special cases like these can be removed
-                return {'attribute_type': value['attribute_type'].pk}
-            return action_registry.get_block('report' , field_id).get_default()
+                attribute_type = value['attribute_type']
+                assert isinstance(attribute_type, AttributeType)
+                return {'attribute_type': attribute_type.pk}
+            return action_registry.get_block(FieldBlockContext.REPORT, field_id).get_default()
 
         stream_data = [
             {
@@ -117,13 +122,19 @@ class ReportType(PlanRelatedModel):
 
     def get_field_labels_for_type(self, block_type: str) -> list[list[str]]:
         fields = self.get_fields_for_type(block_type)
-        labels = [field.block.xlsx_column_labels(field.value) for field in fields]
+        labels: list[list[str]] = []
+        for field in fields:
+            block = field.block
+            assert isinstance(block, ActionReportContentField)
+            labels.append(block.xlsx_column_labels(field.value))
         return labels
 
     def get_action_list_page(self) -> ActionListPage:
-        page = self.plan.root_page.get_descendants().live().public().type(ActionListPage).first()  # type: ignore[type-abstract]
+        page = self.plan.root_page.get_descendants().live().public().type(ActionListPage).first()
         assert page is not None
-        return page.specific
+        al_page = page.specific
+        assert isinstance(al_page, ActionListPage)
+        return al_page
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'

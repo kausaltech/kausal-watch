@@ -951,7 +951,7 @@ class IndicatorLevel(ClusterableModel):
 
     public_fields: typing.ClassVar = ['id', 'indicator', 'plan', 'level']
 
-    objects: ClassVar[IndicatorLevelManager] = IndicatorLevelManager()  # pyright: ignore
+    objects: ClassVar[IndicatorLevelManager] = IndicatorLevelManager()
 
     class Meta:
         unique_together = (('indicator', 'plan'),)

@@ -5,10 +5,12 @@ from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey
 
+from kausal_common.blocks.base import ColumnBlockBase
+from kausal_common.blocks.registry import FieldBlockContext
+
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from actions.models.attributes import AttributeType
 
-from .column_block_base import ColumnBlockBase
 from .stream_block import generate_stream_block
 
 
@@ -41,5 +43,5 @@ ActionDashboardColumnBlock = generate_stream_block(
         'primary_org',
     ),
     support_editing_from_other_form=False,
-    block_context='dashboard',
+    block_context=FieldBlockContext.DASHBOARD,
 )

@@ -196,7 +196,7 @@ class CategoryType(
     category types.
     """
 
-    plan: models.ForeignKey[Plan, Plan] = models.ForeignKey(  # pyright: ignore
+    plan: FK[Plan] = models.ForeignKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='category_types',
     )
     common = models.ForeignKey(
@@ -211,7 +211,7 @@ class CategoryType(
         fields=('name', 'lead_paragraph', 'help_text'), default_language_field='plan__primary_language_lowercase'
     )
 
-    attribute_types: RevManyQS[AttributeTypeModel, AttributeTypeQuerySet] = GenericRelation(  # type: ignore[assignment]
+    attribute_types: RevManyQS[AttributeTypeModel, AttributeTypeQuerySet] = GenericRelation(  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
         to='actions.AttributeType',
         related_query_name='category_type',
         content_type_field='scope_content_type',
@@ -319,7 +319,7 @@ class CategoryLevel(OrderedModel):
     Root level has order=0, first child level order=1 and so on.
     """
 
-    type: ParentalKey[CategoryType] = ParentalKey(  # pyright: ignore
+    type: ParentalKey[CategoryType] = ParentalKey(
         CategoryType, on_delete=models.CASCADE, related_name='levels',
         verbose_name=_('type'),
     )
@@ -524,7 +524,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def filter_siblings(self, qs: models.QuerySet[Self, Self]) -> models.QuerySet[Self, Self]:
         return qs.filter(type=self.type)
 
-    def set_plan(self, plan):
+    def set_plan(self, plan):  # pyright: ignore[reportUnusedParameter]
         # The right plan should be set through CategoryType relation, so
         # we do nothing here.
         pass
@@ -677,7 +677,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 i18n_panels.setdefault(lang, []).extend(lang_panels)
         return (main_panels, i18n_panels)
 
-    def get_siblings(self, force_refresh=False):
+    def get_siblings(self, force_refresh: bool = False):  # pyright: ignore[reportUnusedParameter]
         return Category.objects.filter(type=self.type, parent=self.parent)
 
     def get_prev_sibling(self):

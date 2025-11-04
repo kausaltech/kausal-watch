@@ -7,8 +7,7 @@ from wagtail.blocks import Block, StreamBlock, StructBlock
 
 import pytest
 
-from aplans.dynamic_blocks import ActionListContentBlock
-from aplans.field_registry import ModelFieldProperties, ModelFieldRegistry
+from kausal_common.blocks.registry import FieldBlockContext, FieldContextConfig, ModelFieldProperties, ModelFieldRegistry
 
 from actions.blocks.action_content import (
     ActionContactFormBlock,
@@ -22,15 +21,20 @@ from actions.blocks.action_content import (
     ReportComparisonBlock,
 )
 from actions.blocks.action_dashboard import (
-    ColumnBlockBase,
     FieldColumnBlock,
+)
+from actions.blocks.base import (
+    ActionColumnBlock,
+    ActionContentBlockBase,
+    ActionFilterBlock,
+    ActionListContentBlock,
+    ActionReportContentField,
 )
 from actions.blocks.mixins import (
     ActionListPageBlockPresenceMixin,
 )
 from actions.blocks.stream_block import generate_stream_block
 from actions.models import Action
-from reports import report_formatters
 from reports.blocks.action_content import (
     ActionAttributeTypeReportFieldBlock,
     ActionCategoryReportFieldBlock,
@@ -39,7 +43,7 @@ from reports.blocks.action_content import (
     ActionStatusReportFieldBlock,
 )
 
-from .fixtures_stream_block import *  # noqa: F403
+from .fixtures_stream_block import *
 
 pytest.mark.django_db  # noqa: B018
 
@@ -61,22 +65,22 @@ EXPECTED_SUBBLOCK_BASES = {
     'action_content_section_element_block': (),
     'action_dashboard_column_block': (
         StructBlock,
-        ColumnBlockBase,
+        ActionColumnBlock,
     ),
     'report_field_block': (
         StructBlock,
         ActionListContentBlock,
-        report_formatters.ActionReportContentField,
+        ActionReportContentField,
     ),
     'action_main_content_block': (
         StructBlock,
         ActionListContentBlock,
-        report_formatters.ActionReportContentField,
+        ActionReportContentField,
     ),
     'action_aside_content_block': (
         StructBlock,
         ActionListContentBlock,
-        report_formatters.ActionReportContentField,
+        ActionReportContentField,
     ),
 }
 
@@ -159,8 +163,25 @@ def test_expected_subblocks(fixturename, expected_subblocks, request, generated_
 @pytest.fixture
 def action_registry_factory():
     generated = importlib.import_module('actions.blocks.generated')
-    def make_action_registry(*default_fields):  # noqa: ANN202
-        mfr = ModelFieldRegistry(Action, generated)
+    def make_action_registry(*default_fields):
+        mfr = ModelFieldRegistry(Action, generated, contexts=[
+            FieldContextConfig(
+                context=FieldBlockContext.DASHBOARD,
+                block_base_class=ActionColumnBlock,
+            ),
+            FieldContextConfig(
+                context=FieldBlockContext.REPORT,
+                block_base_class=ActionContentBlockBase,
+            ),
+            FieldContextConfig(
+                context=FieldBlockContext.DETAILS,
+                block_base_class=ActionContentBlockBase,
+            ),
+            FieldContextConfig(
+                context=FieldBlockContext.LIST_FILTERS,
+                block_base_class=ActionFilterBlock,
+            ),
+        ])
         for f in default_fields:
             mfr.register(ModelFieldProperties(field_name=f))
         return mfr

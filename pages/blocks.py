@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import graphene
@@ -24,8 +24,11 @@ from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlock
 
 from kausal_common.graphene.grapple import make_grapple_field
 
-from actions.blocks import CategoryChooserBlock
+from actions.blocks.choosers import CategoryChooserBlock
 from actions.models.category import Category
+
+if TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
 
 
 class ListBlockWithIncrementingChildIds(GrappleListBlock):
@@ -34,7 +37,7 @@ class ListBlockWithIncrementingChildIds(GrappleListBlock):
         # Grapple's ListBlock uses self.id also as IDs for the child blocks. We override this to make them unique.
         # FIXME: This causes problems if we rely on the IDs for anything else except uniqueness.
         block_type = cast('blocks.ListBlock', root.block).child_block
-        id = UUID(root.id).int
+        id = cast('int', UUID(root.id).int)  # pyright: ignore[reportInvalidCast]
         result: list[StructBlockItem] = []
         for item in root.value:
             id += 1
@@ -83,11 +86,11 @@ def sanitize_iframe(embed_contents: str) -> str:
     return match.group(1)
 
 
-class EmbedHTMLValue(graphene.ObjectType):
+class EmbedHTMLValue(graphene.ObjectType[Any]):
     html = graphene.String()
 
     @staticmethod
-    def resolve_html(parent: dict[str, Any], info) -> str:
+    def resolve_html(parent: dict[str, Any], _info: GQLInfo) -> str:
         height_key = parent['height']
         url = parent['url']
         css_class = RESPONSIVE_STYLES.get(height_key, next(iter(RESPONSIVE_STYLES.values())))
@@ -228,7 +231,7 @@ class ActionCategoryFilterCardBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('lead'),
-        GraphQLForeignKey('category', Category),
+        GraphQLForeignKey('category', Category, required=True),
     ]
 
 
@@ -265,6 +268,12 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
         help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]".'),
     )
     email = blocks.CharBlock(label=_('Email address'))
+
+    graphql_fields = [
+        GraphQLString('publisher_name', required=True),
+        GraphQLString('maintenance_responsibility_paragraph', required=False),
+        GraphQLString('email', required=True),
+    ]
 
     class Meta:
         label = _('Accessibility statement contact information')

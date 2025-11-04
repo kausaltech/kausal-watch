@@ -29,7 +29,7 @@ class ReportComparisonBlock(blocks.StructBlock):
         # For some reason GraphQLForeignKey strips the is_list argument, so we need to use GraphQLField directly here
         GraphQLField(
             'reports_to_compare',
-            lambda: grapple_registry.models.get(apps.get_model('reports', 'Report')),
+            lambda: grapple_registry.models[apps.get_model('reports', 'Report')],  # pyright: ignore[reportUnknownLambdaType]
             is_list=True,
         ),
     ]

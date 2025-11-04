@@ -6,6 +6,8 @@ from django.db.models.fields import Field
 
 import pytest
 
+from kausal_common.blocks.registry import FieldBlockContext
+
 from actions.action_fields import action_registry
 from actions.models import Action
 
@@ -47,7 +49,6 @@ def test_action_field_registry_validity(field):
         with pytest.raises(KeyError):
             action_registry[field.name]
         return
-
     try:
         field_props = action_registry[field.name]
     except KeyError:
@@ -65,8 +66,8 @@ def test_action_field_registry_validity(field):
 
     config = field_props.config
     assert config
-    if config['dashboard'].has_block:
+    if config[FieldBlockContext.DASHBOARD].has_block:
         msg = (f'No report block configured for public field "{field.name}" of Action '
                'even though a dashboard block exists for it.')
-        assert config['report'].has_block, msg
+        assert config[FieldBlockContext.REPORT].has_block, msg
     return

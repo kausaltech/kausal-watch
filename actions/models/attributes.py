@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import typing
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -34,11 +33,13 @@ from aplans.utils import (
 from indicators.models import Unit
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from modelcluster.fields import PK
+    from wagtail.models import SerializableData
 
     from kausal_common.models.types import FK, RevMany
-
-    from aplans.types import UserOrAnon
+    from kausal_common.users import UserOrAnon
 
     from actions.attributes import AttributeType as AttributeTypeWrapper, DraftAttributes
 
@@ -262,7 +263,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
             models.UniqueConstraint(
                 fields=['type', 'order'],
                 name='unique_order_per_type',
-                deferrable=Deferrable.DEFERRED,  # pyright: ignore
+                deferrable=Deferrable.DEFERRED,
             ),
         ]
         ordering = ('type', 'order')
@@ -328,7 +329,7 @@ class AttributeChoiceWithText(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        text_field = typing.cast('RichTextField', self._meta.get_field('text'))
+        text_field = cast('RichTextField', self._meta.get_field('text'))
         text = " ".join(text_field.get_searchable_content(str(self.text_i18n))).strip()
         if len(text):
             text = f'; {text}'
@@ -380,7 +381,7 @@ class AttributeRichText(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        text_field = typing.cast('RichTextField', self._meta.get_field('text'))
+        text_field = cast('RichTextField', self._meta.get_field('text'))
         return " ".join(text_field.get_searchable_content(str(self.text_i18n)))
 
 
@@ -447,7 +448,7 @@ class ModelWithAttributes(ClusterableModel):
         raise NotImplementedError("Implement in subclass")
 
     @classmethod
-    def from_serializable_data(cls, data, check_fks=True, strict_fks=False) -> Self:
+    def from_serializable_data(cls, data: SerializableData, check_fks: bool = True, strict_fks: bool = False) -> Self | None:
         """Called by Wagtail when editing a draft, and by the GraphQL implementation when resolving attributes."""  # noqa: D401
         from actions.attributes import DraftAttributes
         serialized_attributes = data.pop('attributes', {})
@@ -460,7 +461,7 @@ class ModelWithAttributes(ClusterableModel):
 
     def set_attribute(
         self,
-        attribute_type: AttributeTypeWrapper,
+        attribute_type: AttributeTypeWrapper[Any],
         existing_attribute: Attribute | None,
         value_parameters: dict[str, Any],
         attribute_value_input: Any,

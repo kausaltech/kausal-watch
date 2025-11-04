@@ -134,6 +134,10 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_("Password protected"),
         help_text=_("Is this plan password protected?"),
     )
+    # indicators_open_in_modal = models.BooleanField(
+    #     default=False, verbose_name=_("Indicators open in modal"),
+    #     help_text=_("Should indicators open only in a modal dialog in the public UI."),
+    # )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'

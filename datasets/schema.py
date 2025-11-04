@@ -33,21 +33,21 @@ from aplans.graphql_types import DjangoNode, register_django_node
 from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
 
 
-class DimensionNode(BaseDimensionNode, DjangoNode):
+class DimensionNode(BaseDimensionNode, DjangoNode[Dimension]):
     class Meta:
         model = Dimension
         name = 'DatasetsDimension'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'name', 'categories', 'scopes')
 
 
-class DimensionCategoryNode(BaseDimensionCategoryNode, DjangoNode):
+class DimensionCategoryNode(BaseDimensionCategoryNode, DjangoNode[DimensionCategory]):
     class Meta:
         model = DimensionCategory
         name = 'DatasetsDimensionCategory'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'dimension', 'label')
 
 
-class DimensionScopeNode(BaseDimensionScopeNode, DjangoNode):
+class DimensionScopeNode(BaseDimensionScopeNode, DjangoNode[DimensionScope]):
     scope = graphene.Field(lambda: DimensionScopeTypeNode)
 
     class Meta:
@@ -61,13 +61,13 @@ class DimensionScopeTypeNode(BaseDimensionScopeTypeNode):
 
 
 
-class DataPointNode(BaseDataPointNode, DjangoNode):
+class DataPointNode(BaseDataPointNode, DjangoNode[DataPoint]):
     class Meta:
         model = DataPoint
         fields = ('uuid', 'dataset', 'date', 'value', 'dimension_categories')
 
 
-class DatasetSchemaScopeNode(BaseDatasetSchemaScopeNode, DjangoNode):
+class DatasetSchemaScopeNode(BaseDatasetSchemaScopeNode, DjangoNode[DatasetSchemaScope]):
     scope = graphene.Field(lambda: DatasetSchemaScopeTypeNode)
 
     class Meta:
@@ -88,7 +88,7 @@ class DatasetScopeTypeNode(BaseDatasetScopeTypeNode):
             ActionNode, CategoryNode,
         )
 
-class DatasetSchemaDimensionNode(BaseDatasetSchemaDimensionNode, DjangoNode):
+class DatasetSchemaDimensionNode(BaseDatasetSchemaDimensionNode, DjangoNode[DatasetSchemaDimension]):
     class Meta:
         model = DatasetSchemaDimension
         fields = ('order', 'dimension', 'schema')
@@ -101,13 +101,13 @@ class DatasetMetricNode(BaseDatasetMetricNode):
 
 
 @register_django_node
-class DatasetSchemaNode(BaseDatasetSchemaNode, DjangoNode):
+class DatasetSchemaNode(BaseDatasetSchemaNode, DjangoNode[DatasetSchema]):
     class Meta:
         model = DatasetSchema
         fields = ('uuid', 'time_resolution', 'name', 'scopes', 'dimensions', 'metrics')
 
 
-class DatasetNode(BaseDatasetNode, DjangoNode):
+class DatasetNode(BaseDatasetNode, DjangoNode[Dataset]):
     scope = graphene.Field(lambda: DatasetScopeTypeNode)
     class Meta:
         model = Dataset

@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import typing
 
-from reports.report_formatters import ActionReportContentField
+from actions.blocks.base import ActionReportContentField
 from reports.utils import (
     EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
     EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE,

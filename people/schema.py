@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import graphene
 from django.forms import ModelForm
 
@@ -10,7 +12,7 @@ from .models import Person
 
 
 @register_django_node
-class PersonNode(BasePersonNode, DjangoNode):
+class PersonNode(BasePersonNode, DjangoNode[Person]):
     avatar_url = graphene.String(size=graphene.String())
 
     class Meta:

@@ -6,20 +6,24 @@ from wagtail import blocks
 
 import pytest
 
-from aplans.field_registry import ModelFieldProperties, ModelFieldRegistry
+from actions.blocks.base import ActionColumnBlock, ActionContentBlockBase
+from kausal_common.blocks.registry import FieldBlockContext, FieldContextConfig, ModelFieldProperties, ModelFieldRegistry
 
 from actions.blocks import generated
 from actions.blocks.stream_block import generate_stream_block
 from actions.models import Action
 
-from actions.blocks.action_content import (
+from actions.blocks.action_content_blocks import (
     ActionContactFormBlock,
     ActionContentAttributeTypeBlock,
     ActionContentCategoryTypeBlock,
-    ActionContentSectionBlock,
     IndicatorCausalChainBlock,
     PlanDatasetsBlock,
-    ReportComparisonBlock,
+)
+from reports.blocks.report_comparison_block import ReportComparisonBlock
+
+from actions.blocks.action_content import (
+    ActionContentSectionBlock,
 )
 from reports.blocks.action_content import (
     ActionAttributeTypeReportFieldBlock,
@@ -32,7 +36,20 @@ from reports.blocks.action_content import (
 
 @pytest.fixture
 def populated_action_registry():
-    action_registry = ModelFieldRegistry(Action, generated)
+    action_registry = ModelFieldRegistry(model=Action, target_module=generated, contexts=[
+        FieldContextConfig(
+            context=FieldBlockContext.DASHBOARD,
+            block_base_class=ActionColumnBlock,
+        ),
+        FieldContextConfig(
+            context=FieldBlockContext.REPORT,
+            block_base_class=ActionContentBlockBase,
+        ),
+    ])
+
+    def report():  # noqa: ANN202
+        from reports.blocks import action_content
+        return action_content
 
     def register(*field_names, **kwargs):  # noqa: ANN202
         for field_name in field_names:
@@ -41,15 +58,32 @@ def populated_action_registry():
             )
 
     action_registry.disable_fields(
-        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact_groups',
-        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
-        'superseded_actions', 'superseded_by', 'copies', 'copy_of', 'uuid', 'visibility',
+        'completion',
+        'date_format',
+        'decision_level',
+        'dependency_role',
+        'dependent_relationships',
+        'id',
+        'impact_groups',
+        'indicators',
+        'merged_with',
+        'monitoring_quality_points',
+        'order',
+        'plan',
+        'schedule_continuous',
+        'status_updates',
+        'superseded_actions',
+        'superseded_by',
+        'copies',
+        'copy_of',
+        'uuid',
+        'visibility',
     )
 
     register(
         'responsible_parties',
         field_type='many',
-        report_block_class='reports.blocks.action_content.ActionResponsiblePartyReportFieldBlock',
+        report_block_class=lambda: report().ActionResponsiblePartyReportFieldBlock,
         report_formatter_class='reports.report_formatters.ActionResponsiblePartyReportFieldFormatter',
         details_block_class='actions.blocks.action_content_blocks.ActionResponsiblePartiesBlock',
     )
@@ -61,7 +95,7 @@ def populated_action_registry():
     register(
         'categories',
         field_type='many',
-        report_block_class='reports.blocks.action_content.ActionCategoryReportFieldBlock',
+        report_block_class=lambda: report().ActionCategoryReportFieldBlock,
         report_formatter_class='reports.report_formatters.ActionCategoryReportFieldFormatter',
         has_dashboard_column_block=False,
         details_block_class='actions.blocks.action_content_blocks.ActionContentCategoryTypeBlock',
@@ -81,7 +115,7 @@ def populated_action_registry():
         has_dashboard_column_block=True,
         has_details_block=True,
         details_block_class='actions.blocks.action_content_blocks.ActionContentAttributeTypeBlock',
-        report_block_class='reports.blocks.action_content.ActionAttributeTypeReportFieldBlock',
+        report_block_class=lambda: report().ActionAttributeTypeReportFieldBlock,
         report_formatter_class='reports.report_formatters.ActionAttributeTypeReportFieldFormatter',
         dashboard_column_block_class='actions.blocks.action_dashboard.FieldColumnBlock',
     )
@@ -158,14 +192,15 @@ def populated_action_registry():
 def generated_block_class(populated_action_registry):
     def get(name, block_context):  # noqa: ANN202
         return populated_action_registry.get_block(block_context, name)
+
     return get
 
 
 @pytest.fixture
 def action_content_section_element_block():
-    ActionContentSectionElementBlock = generate_stream_block(  # noqa: N806
+    ActionContentSectionElementBlock = generate_stream_block(
         'ActionMainContentSectionElementBlock',
-        fields = (
+        fields=(
             ('attribute', ActionContentAttributeTypeBlock()),
             ('categories', ActionContentCategoryTypeBlock()),
         ),
@@ -175,7 +210,7 @@ def action_content_section_element_block():
 
 @pytest.fixture
 def action_main_content_block():
-    ActionMainContentBlock = generate_stream_block(  # noqa: N806
+    ActionMainContentBlock = generate_stream_block(
         'ActionMainContentBlock',
         fields=(
             ('section', ActionContentSectionBlock(required=True)),
@@ -203,7 +238,7 @@ def action_main_content_block():
 
 @pytest.fixture
 def action_aside_content_block():
-    ActionAsideContentBlock = generate_stream_block(  # noqa: N806
+    ActionAsideContentBlock = generate_stream_block(
         'ActionAsideContentBlock',
         fields=[
             'schedule',
@@ -219,9 +254,9 @@ def action_aside_content_block():
 
 @pytest.fixture
 def action_dashboard_column_block():
-    ActionDashboardColumnBlock = generate_stream_block(  # noqa: N806
+    ActionDashboardColumnBlock = generate_stream_block(
         'ActionDashboardColumnBlock',
-        fields = (
+        fields=(
             'identifier',
             'name',
             'implementation_phase',
@@ -236,16 +271,16 @@ def action_dashboard_column_block():
             'primary_org',
         ),
         support_editing_from_other_form=False,
-        block_context='dashboard',
+        block_context=FieldBlockContext.DASHBOARD,
     )
     return ActionDashboardColumnBlock
 
 
 @pytest.fixture
 def report_field_block(populated_action_registry):
-    ActionDescriptionBlock = populated_action_registry.get_block_class('report', 'description')  # noqa: N806
-    ActionManualStatusReasonBlock = populated_action_registry.get_block_class('report', 'manual_status_reason')  # noqa: N806
-    ActionTasksBlock = populated_action_registry.get_block_class('report', 'tasks')  # noqa: N806
+    ActionDescriptionBlock = populated_action_registry.get_block_class('report', 'description')
+    ActionManualStatusReasonBlock = populated_action_registry.get_block_class('report', 'manual_status_reason')
+    ActionTasksBlock = populated_action_registry.get_block_class('report', 'tasks')
 
     class ReportFieldBlock(blocks.StreamBlock):
         # All blocks mentioned here must have a formatter which implements

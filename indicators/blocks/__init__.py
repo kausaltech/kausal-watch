@@ -22,15 +22,14 @@ from wagtail.blocks import (
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
 
+from indicators.chooser import DimensionChooser, IndicatorChooser
+from indicators.models import Dimension, Indicator
 from pages.blocks import PageLinkBlock
-
-from .chooser import DimensionChooser, IndicatorChooser
-from .models import Dimension, Indicator
 
 if TYPE_CHECKING:
     from kausal_common.graphene import GQLInfo
 
-    from .schema import DashboardIndicatorChartSeries
+    from indicators.schema import DashboardIndicatorChartSeries
 
 
 class IndicatorChooserBlock(ChooserBlock[Indicator]):
@@ -137,7 +136,7 @@ class IndicatorShowcaseBlock(StructBlock):
 
 
 def _get_dashboard_indicator_chart_series_class() -> type[DashboardIndicatorChartSeries]:
-    from .schema import DashboardIndicatorChartSeries
+    from indicators.schema import DashboardIndicatorChartSeries
     return DashboardIndicatorChartSeries
 
 
@@ -168,7 +167,7 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
     ]
 
     def chart_series(self, info: GQLInfo, values: dict[str, Any]) -> list[DashboardIndicatorChartSeries]:
-        from .schema import DashboardIndicatorChartSeries
+        from indicators.schema import DashboardIndicatorChartSeries
         indicator = values['indicator']
         assert isinstance(indicator, Indicator)
         dimension = values['dimension']

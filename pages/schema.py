@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 
 import graphene
 from django.utils.translation import get_language
 
 import graphene_django_optimizer as gql_optimizer
-from grapple.types.interfaces import PageInterface
+from grapple.types.interfaces import get_page_interface
 from loguru import logger
 
-from aplans.graphql_types import get_plan_from_context, register_graphene_node
+from kausal_common.graphene.registry import register_graphene_node
+
+from aplans.graphql_types import get_plan_from_context
 
 from pages.models import AplansPage
 
@@ -22,46 +24,55 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan
 
 
+class MenuItemBase(Protocol):
+    page: AplansPage
+
+    def get_plan_cache(self, info: GQLInfo) -> PlanSpecificCache: ...
+
 @register_graphene_node
-class PageMenuItemNode(graphene.ObjectType):
+class PageMenuItemNode(graphene.ObjectType[MenuItemBase]):
     class Meta:
         name = 'PageMenuItem'
 
     id = graphene.ID(required=True)
-    page: AplansPage = graphene.Field(PageInterface, required=True)  # type: ignore[assignment]
+    page = graphene.Field(get_page_interface, required=True)
     parent = graphene.Field('pages.schema.PageMenuItemNode', required=False)
     children = graphene.List(graphene.NonNull('pages.schema.PageMenuItemNode'), required=False)
     cross_plan_link = graphene.Boolean(default_value=False)
     view_url = graphene.String(client_url=graphene.String(required=False), required=False)
 
-    def resolve_id(self, info):
-        return self.page.pk
+    @staticmethod
+    def resolve_id(root: MenuItemBase, _info: GQLInfo) -> str:
+        return str(root.page.pk)
 
     def get_plan_cache(self, info: GQLInfo) -> PlanSpecificCache:
         plan = get_plan_from_context(info)
         cache = info.context.cache.for_plan(plan)
         return cache
 
-    def resolve_parent(self, info: GQLInfo):
-        if not self.page:
+    @staticmethod
+    def resolve_parent(root: MenuItemBase, info: GQLInfo) -> PageMenuItemNode | None:
+        if not root.page:
             return None
-        cache = self.get_plan_cache(info)
-        parent = self.page.get_visible_parent(cache)
+        cache = root.get_plan_cache(info)
+        parent = root.page.get_visible_parent(cache)
         if parent is None:
             return None
         return PageMenuItemNode(page=parent)
 
-    def resolve_children(self, info: GQLInfo) -> list[PageMenuItemNode]:
-        cache = self.get_plan_cache(info)
-        pages = self.page.get_visible_children(cache)
+    @staticmethod
+    def resolve_children(root: MenuItemBase, info: GQLInfo) -> list[PageMenuItemNode]:
+        cache = root.get_plan_cache(info)
+        pages = root.page.get_visible_children(cache)
 
         # TODO: Get rid of this terrible hack
         if 'footer' in info.path.as_list():
             pages = [page for page in pages if page.show_in_footer]
         return [PageMenuItemNode(page=page) for page in pages]
 
-    def resolve_view_url(self, info, client_url=None) -> None | str:
-        page = self.page
+    @staticmethod
+    def resolve_view_url(root: MenuItemBase, info: GQLInfo, client_url: str | None = None) -> None | str:
+        page = root.page
         plan = page.plan
         if plan is None:
             return None
@@ -72,7 +83,7 @@ class PageMenuItemNode(graphene.ObjectType):
 
 
 @register_graphene_node
-class ExternalLinkMenuItemNode(graphene.ObjectType):
+class ExternalLinkMenuItemNode(graphene.ObjectType[Any]):
     class Meta:
         name = 'ExternalLinkMenuItem'
 
@@ -126,7 +137,7 @@ class MenuNodeMixin:
         return graphene.Field(cls, resolver=cls.resolver_from_plan)
 
 
-class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
+class MainMenuNode(MenuNodeMixin, graphene.ObjectType[Any]):
     class Meta:
         name = 'MainMenu'
 
@@ -150,7 +161,7 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
         return page_items + external_link_items
 
 
-class FooterNode(MenuNodeMixin, graphene.ObjectType):
+class FooterNode(MenuNodeMixin, graphene.ObjectType[Any]):
     class Meta:
         name = 'Footer'
 
@@ -168,7 +179,7 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
         return [PageMenuItemNode(page=page) for page in pages]
 
 
-class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
+class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType[Any]):
     class Meta:
         name = 'AdditionalLinks'
 
@@ -199,9 +210,9 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
 
 
 class Query:
-    plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
+    plan_page = graphene.Field(get_page_interface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
-    def resolve_plan_page(self, info: GQLInfo, plan: str, path: str, **kwargs) -> None | WagtailPage:
+    def resolve_plan_page(self, info: GQLInfo, plan: str, path: str, **_kwargs) -> None | WagtailPage:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             logger.warning('Plan not found', plan=plan, path=path)

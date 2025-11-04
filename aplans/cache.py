@@ -24,6 +24,7 @@ from actions.models import (
     Plan,
 )
 from actions.models.category import Category
+from pages.models import ActionListPage, IndicatorListPage
 from reports.models import Report
 
 if TYPE_CHECKING:
@@ -74,6 +75,20 @@ class PlanSpecificCache:
         if root is None:
             return None
         return root.specific
+
+    @cached_property
+    def action_list_page(self) -> ActionListPage | None:
+        for page in self.visible_pages:
+            if isinstance(page, ActionListPage):
+                return page
+        return None
+
+    @cached_property
+    def indicator_list_page(self) -> IndicatorListPage | None:
+        for page in self.visible_pages:
+            if isinstance(page, IndicatorListPage):
+                return page
+        return None
 
     @cached_property
     def visible_pages(self) -> list[AplansPage]:
@@ -271,6 +286,14 @@ class WatchObjectCache:
     def for_plan(self, plan: Plan) -> PlanSpecificCache:
         return self.for_plan_id(plan.id)
 
+    def for_page_path(self, path: str) -> PlanSpecificCache | None:
+        for plan_cache in self.plan_caches.values():
+            root_page = plan_cache.translated_root_page
+            if root_page is None:
+                continue
+            if path.startswith(root_page.path):
+                return plan_cache
+        return None
 
 class OrganizationActionCountCache:
     plans: list[Plan]

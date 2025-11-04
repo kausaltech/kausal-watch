@@ -9,11 +9,12 @@ from wagtail.admin.panels import HelpPanel
 
 from grapple.helpers import register_streamfield_block
 
-from actions.action_fields import action_registry
+from kausal_common.blocks.registry import FieldBlockContext
+
+from actions.blocks.base import ActionReportContentField
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.stream_block import generate_stream_block
 from reports import report_formatters as formatters
-from reports.report_formatters import ActionReportContentField
 
 if TYPE_CHECKING:
     from django.db.models import Model
@@ -36,7 +37,7 @@ class FieldBlockWithHelpPanel(ActionReportContentField):
 
 
 @register_streamfield_block
-class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
+class ActionAttributeTypeReportFieldBlock(FieldBlockWithHelpPanel):
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
 
     def get_report_value_formatter_class(self):
@@ -54,7 +55,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
 
 
 @register_streamfield_block
-class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
+class ActionCategoryReportFieldBlock(FieldBlockWithHelpPanel):
     category_type = CategoryTypeChooserBlock(required=True)
     category_level = CategoryLevelChooserBlock(required=False)
 
@@ -66,16 +67,17 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
 
 
 @register_streamfield_block
-class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
+class ActionImplementationPhaseReportFieldBlock(FieldBlockWithHelpPanel):
     def get_report_value_formatter_class(self):
         return formatters.ActionImplementationPhaseReportFieldFormatter
 
     class Meta:
         label = _("Implementation phase")
+        field_name = 'implementation_phase'
 
 
 @register_streamfield_block
-class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
+class ActionStatusReportFieldBlock(FieldBlockWithHelpPanel):
     def get_report_value_formatter_class(self):
         return formatters.ActionStatusReportFieldFormatter
 
@@ -84,7 +86,7 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
 
 
 @register_streamfield_block
-class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
+class ActionResponsiblePartyReportFieldBlock(FieldBlockWithHelpPanel):
     # FIXME: Note that this block is currently actually exporting only the primary
     # responsible parties. That's why the label is set accordingly.
     # There should be a field to configure which role(s) should
@@ -108,6 +110,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
     class Meta:
         label = _("Primary responsible party")
+        field_name = 'primary_org'
         default = {
             'target_ancestor_depth': None
         }
@@ -138,5 +141,5 @@ ReportFieldBlock = generate_stream_block(
         'primary_org',
     ),
     support_editing_from_other_form=False,
-    block_context='report',
+    block_context=FieldBlockContext.REPORT,
 )

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 @register_django_node
-class ReportNode(DjangoNode):
+class ReportNode(DjangoNode[Report]):
     fields = graphene.List(graphene.NonNull(lambda: grapple_registry.streamfield_blocks.get(ReportFieldBlock)))
     # values_for_action is null if there is no snapshot for the specified action and the report
     values_for_action = graphene.List(
@@ -70,7 +70,7 @@ class ReportNode(DjangoNode):
 
 
 @register_django_node
-class ReportTypeNode(DjangoNode):
+class ReportTypeNode(DjangoNode[ReportType]):
     class Meta:
         model = ReportType
         fields = public_fields(ReportType)

@@ -391,7 +391,7 @@ SOCIAL_AUTH_ADFS_OPENIDCONNECT_SECRET = env.str('ADFS_CLIENT_SECRET')
 SOCIAL_AUTH_ADFS_OPENIDCONNECT_API_URL = env.str('ADFS_API_URL')
 
 SOCIAL_AUTH_PIPELINE = (
-    'users.pipeline.log_login_attempt',
+    'kausal_common.auth.pipeline.log_login_attempt',
 
     # Get the information we can about the user and return it in a simple
     # format to create the user instance later. On some cases the details are
@@ -404,16 +404,16 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_uid',
 
     # Generate username from UUID
-    'users.pipeline.get_username',
+    'kausal_common.auth.pipeline.get_username',
 
     # Checks if the current social-account is already associated in the site.
     'social_core.pipeline.social_auth.social_user',
 
     # Finds user by email address
-    'users.pipeline.find_user_by_email',
+    'kausal_common.auth.pipeline.find_user_by_email',
 
     # Get or create the user and update user data
-    'users.pipeline.create_or_update_user',
+    'kausal_common.auth.pipeline.create_or_update_user',
 
     # Create the record that associated the social account with this user.
     'social_core.pipeline.social_auth.associate_user',
@@ -423,7 +423,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.load_extra_data',
 
     # Update avatar photo from MS Graph
-    'users.pipeline.update_avatar',
+    'kausal_common.auth.pipeline.update_avatar',
 )
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -772,6 +772,7 @@ WAGTAILADMIN_NOTIFICATION_INCLUDE_SUPERUSERS = False  # prevents adding superuse
 
 GRAPPLE = {
     'APPS': ['pages', 'documents', 'images'],
+    'PAGE_INTERFACE': 'pages.page_interface.PageInterface',
 }
 
 # Static files (CSS, JavaScript, Images)

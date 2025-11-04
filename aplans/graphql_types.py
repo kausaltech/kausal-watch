@@ -33,8 +33,6 @@ if typing.TYPE_CHECKING:
     from actions.models.plan import Plan
     from users.models import User
 
-graphene_registry: list[type[graphene.ObjectType[Any] | graphene.Interface[Any]]] = []
-
 
 def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
     i18n_field = get_i18n_field(obj._meta.model)
@@ -67,7 +65,14 @@ def resolve_i18n_field(field_name: str, obj: Model, info: GQLInfo):
     return value
 
 
-class DjangoNode[M: Model = Model](DjangoObjectType[M]):
+class DjangoNodeMeta[M: Model](Protocol):
+    model: type[M]
+
+
+class DjangoNode[M: Model](DjangoObjectType[M]):
+    class Meta:
+        abstract = True
+
     @staticmethod
     def resolve_id(root, info) -> str:
         return getattr(root, 'pk', None) or f'unpublished-{uuid.uuid4()}'
@@ -110,9 +115,6 @@ class DjangoNode[M: Model = Model](DjangoObjectType[M]):
                     )
                     apply_hints = gql_optimizer.resolver_hints(**hints)
                     field.resolver = apply_hints(resolver)
-
-    class Meta:
-        abstract = True
 
 
 def set_active_plan(info: GQLInfo, plan: Plan):
@@ -170,19 +172,10 @@ def order_queryset[QS: QuerySet[Any]](qs: QS, node_class: type[SupportsOrderable
     return qs
 
 
-def register_graphene_node[OT: graphene.ObjectType[Any]](cls: type[OT]) -> type[OT]:
-    graphene_registry.append(cls)
-    return cls
-
-
-def register_graphene_interface[IT: graphene.Interface[Any]](cls: type[IT]) -> type[IT]:
-    graphene_registry.append(cls)
-    return cls
-
-
 def register_django_node[DN: DjangoNode[Any]](cls: type[DN]) -> type[DN]:
     meta = cls._meta
     model = meta.model
+    assert model not in grapple_registry.django_models, f"Model {model} already registered"
     grapple_registry.django_models[model] = cls
     return cls
 

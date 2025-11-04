@@ -449,7 +449,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     parent_id: int | None
     name_i18n: str
 
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         verbose_name = _('plan')
         verbose_name_plural = _('plans')
         get_latest_by = 'created_at'
