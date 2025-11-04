@@ -23,7 +23,7 @@ class PathsOutcomeBlock(blocks.StructBlock):
     )
 
     outcome_node_id = blocks.CharBlock(
-        max_length=36, required=True, verbose_name=_('Kausal Paths outcome node ID'),
+        max_length=200, required=True, verbose_name=_('Kausal Paths outcome node ID'),
         help_text=_('Kausal Paths outcome node to be used'),
     )
 
