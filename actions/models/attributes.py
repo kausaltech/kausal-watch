@@ -31,8 +31,6 @@ from aplans.utils import (
     ReferenceIndexedModelMixin,
 )
 
-from indicators.models import Unit
-
 if TYPE_CHECKING:
     from modelcluster.fields import PK
 
@@ -116,7 +114,7 @@ class AttributeType(
         max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format')
     )
     unit = models.ForeignKey(
-        Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
+        'indicators.Unit', blank=True, null=True, on_delete=models.PROTECT, related_name='+',
         verbose_name=_('Unit (only if format is numeric)'),
     )
     attribute_category_type = models.ForeignKey(

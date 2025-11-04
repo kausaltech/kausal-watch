@@ -164,23 +164,6 @@ class FrontPageHeroBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
-class PageLinkBlock(blocks.StructBlock):
-    text = blocks.CharBlock(required=False)
-    page = blocks.PageChooserBlock(required=False)
-    # FIXME: `page` should be required, but so far the only use for PageLinkBlock is in IndicatorShowcaseBlock, where
-    # the entire PageLinkBlock should be optional. It is, however, not easily possible to make a StructBlock optional:
-    # https://github.com/wagtail/wagtail/issues/2665
-
-    class Meta:
-        label = _('Page link')
-
-    graphql_fields = [
-        GraphQLString('text'),
-        GraphQLPage('page'),
-    ]
-
-
-@register_streamfield_block
 class CardBlock(blocks.StructBlock):
     image = ImageChooserBlock(required=False)
     heading = blocks.CharBlock()

@@ -20,9 +20,15 @@ from wagtail.blocks import (
 )
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
-
-from pages.blocks import PageLinkBlock
+from grapple.models import (
+    GraphQLBoolean,
+    GraphQLField,
+    GraphQLForeignKey,
+    GraphQLInt,
+    GraphQLPage,
+    GraphQLStreamfield,
+    GraphQLString,
+)
 
 from .chooser import DimensionChooser, IndicatorChooser
 from .models import Dimension, Indicator
@@ -112,6 +118,23 @@ class IndicatorGroupBlock(StructBlock):
 
     class Meta:
         label = _('Indicators')
+
+
+@register_streamfield_block
+class PageLinkBlock(blocks.StructBlock):
+    text = blocks.CharBlock(required=False)
+    page = blocks.PageChooserBlock(required=False)
+    # FIXME: `page` should be required, but so far the only use for PageLinkBlock is in IndicatorShowcaseBlock, where
+    # the entire PageLinkBlock should be optional. It is, however, not easily possible to make a StructBlock optional:
+    # https://github.com/wagtail/wagtail/issues/2665
+
+    class Meta:
+        label = _('Page link')
+
+    graphql_fields = [
+        GraphQLString('text'),
+        GraphQLPage('page'),
+    ]
 
 
 @register_streamfield_block
