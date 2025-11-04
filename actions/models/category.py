@@ -367,7 +367,7 @@ class CategoryBase(OrderedModel):
         help_text=_('Set if the category has a theme color'),
     )
     kausal_paths_node_uuid = models.CharField(
-        max_length=36, blank=True, null=False, default='', verbose_name=_('Kausal Paths node UUID'),
+        max_length=200, blank=True, null=False, default='', verbose_name=_('Kausal Paths node UUID'),
         help_text=_('Kausal Paths node to link this category to'),
     )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
