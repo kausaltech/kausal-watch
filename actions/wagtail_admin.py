@@ -448,6 +448,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('display_field_visibility_restrictions', permission='superuser'),
         FieldPanel('output_report_action_print_layout', permission='superuser'),
         FieldPanel('password_protected', permission='superuser'),
+        FieldPanel('indicators_open_in_modal', permission='superuser'),
     ]
 
     def get_queryset(self, request):

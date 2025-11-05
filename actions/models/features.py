@@ -134,10 +134,10 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_("Password protected"),
         help_text=_("Is this plan password protected?"),
     )
-    # indicators_open_in_modal = models.BooleanField(
-    #     default=False, verbose_name=_("Indicators open in modal"),
-    #     help_text=_("Should indicators open only in a modal dialog in the public UI."),
-    # )
+    indicators_open_in_modal = models.BooleanField(
+        default=False, verbose_name=_("Indicators open in modal"),
+        help_text=_("Should indicators open only in a modal dialog in the public UI."),
+    )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'
@@ -150,6 +150,13 @@ class PlanFeatures(models.Model):
         choices=AccessibilityConformanceLevel.choices,
         default=AccessibilityConformanceLevel.DEFAULT,
     )
+
+    class Meta:
+        verbose_name = _('plan feature')
+        verbose_name_plural = _('plan features')
+
+    def __str__(self) -> str:
+        return "Features for %s" % self.plan
 
     @property
     def public_contact_persons(self) -> bool:
@@ -166,12 +173,5 @@ class PlanFeatures(models.Model):
         'contact_persons_show_organization_ancestors', 'contact_persons_hide_moderators', 'has_action_identifiers',
         'has_action_official_name', 'has_action_lead_paragraph', 'has_action_primary_orgs', 'enable_search',
         'enable_indicator_comparison', 'minimal_statuses', 'has_action_contact_person_roles',
-        'allow_public_site_login', 'contact_persons_show_picture',
+        'allow_public_site_login', 'contact_persons_show_picture', 'indicators_open_in_modal',
     ]
-
-    class Meta:
-        verbose_name = _('plan feature')
-        verbose_name_plural = _('plan features')
-
-    def __str__(self) -> str:
-        return "Features for %s" % self.plan
