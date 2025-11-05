@@ -201,7 +201,7 @@ class AplansPage(Page):
         for page in cache.visible_pages:
             if page.depth >= self.depth:
                 continue
-            if self.path.startswith(page.path):
+            if not self.path.startswith(page.path):
                 continue
             ancestors.append(page)
         return ancestors

@@ -7,8 +7,6 @@ from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLInt, GraphQLString
 
 from actions.blocks.base import ActionFilterBlock
-from kausal_common.blocks.base import FilterBlockBase
-
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.models.attributes import AttributeType

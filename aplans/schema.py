@@ -12,7 +12,6 @@ from graphql.type import (
     GraphQLDirective,
 )
 from strawberry.schema import Schema as StrawberrySchema
-from strawberry.tools.merge_types import merge_types
 from strawberry.types import has_object_definition
 
 import graphene_django_optimizer as gql_optimizer
@@ -32,7 +31,10 @@ from aplans.utils import public_fields
 
 from people.models import Person
 
-if True:
+if True:  # so that import re-ordering won't touch these
+    # These imports need to be before `actions_schema` and others,
+    # because they introduce new some new converter types and patch
+    # the Image-related grapple types.
     from kausal_common import graphql_gis  # noqa: F401
 
     from images import schema as images_schema  # noqa: F401
