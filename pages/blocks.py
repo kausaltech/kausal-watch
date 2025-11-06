@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 from uuid import UUID
 
 import graphene
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.embeds.embeds import get_embed
+from wagtail.embeds.embeds import get_embed, get_finder_for_embed
 from wagtail.embeds.exceptions import EmbedUnsupportedProviderException
 from wagtail.images.blocks import ImageChooserBlock
 
@@ -129,6 +130,11 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
         url = result.get('embed', {}).get('url')
         if url and len(url):
             result['embed']['url'] = sanitize_iframe(url)
+        url = result.get('embed', {}).get('url')
+        try:
+            get_finder_for_embed(url)
+        except EmbedUnsupportedProviderException as e:
+            raise ValidationError(_("The source URL of the embed is invalid or not supported.")) from e
         return result
 
     class Meta:
