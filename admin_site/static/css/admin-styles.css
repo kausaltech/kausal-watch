@@ -111,7 +111,16 @@
   color: var(--w-color-grey-800);
 }
 
-section[role='tabpanel'] .help-block {
+section[role='tabpanel'] .help-block:has(> .field-visibility-label) {
+  /*
+  We are using this to make the "public" vs "non-public" field labels
+  prettier when they are rendered inside a .help-block, which happens
+  when the field in question has its own tab, for example "contant persons".
+  (The label is rendered right below the tab header.)
+
+  We do not want to match other help blocks since they may contain
+  validation errors which we want to be highlighted with colors.
+  */
   background-color: inherit;
   padding-left: 0;
   span.field-visibility-label.w-status--primary {
