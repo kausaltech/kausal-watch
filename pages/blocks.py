@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 from uuid import UUID
 
 import graphene
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.embeds.embeds import get_embed
+from wagtail.embeds.exceptions import EmbedUnsupportedProviderException
 from wagtail.images.blocks import ImageChooserBlock
 
+import sentry_sdk
 from grapple.helpers import register_streamfield_block
 from grapple.models import (
     GraphQLBoolean,
@@ -29,6 +31,8 @@ from actions.blocks.choosers import CategoryChooserBlock
 from actions.models.category import Category
 
 if TYPE_CHECKING:
+    from wagtail.embeds.models import Embed
+
     from aplans.graphql_types import GQLInfo
 
 
@@ -88,14 +92,18 @@ def sanitize_iframe(embed_contents: str) -> str:
 
 
 class EmbedHTMLValue(graphene.ObjectType[Any]):
-    html = graphene.String()
+    html: graphene.String = graphene.String()
 
     @staticmethod
-    def resolve_html(parent: dict[str, Any], _info: GQLInfo) -> str:
+    def resolve_html(parent: dict[Literal['height', 'url'], str], _info: GQLInfo) -> str:
         height_key = parent['height']
         url = parent['url']
         css_class = RESPONSIVE_STYLES.get(height_key, next(iter(RESPONSIVE_STYLES.values())))
-        embed = get_embed(url)
+        try:
+            embed: Embed = get_embed(url)
+        except EmbedUnsupportedProviderException as exception:
+            _ = sentry_sdk.capture_exception(exception)
+            return '<div data-error="unsupported-embed-provider"></div>'
         return f"<div data-embed-provider='{embed.provider_name}' class='responsive-object {css_class}'>{embed.html}</div>"
 
 
@@ -105,7 +113,7 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
     # It doesn't support dynamic, configurable sizes.
     # The extra inner field is just to enable the custom
     # resolve_html method
-    embed = blocks.StructBlock(
+    embed: blocks.StructBlock = blocks.StructBlock(
         [('url', blocks.CharBlock(label=_('URL'))),
          # The height value is actually used as a generic size parameter whose interpretation dependends on
          # the type of embed (the provider)
@@ -114,7 +122,7 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
              label=_('Size'),
          ))],
     )
-    full_width = blocks.BooleanBlock(required=False)
+    full_width: blocks.BooleanBlock = blocks.BooleanBlock(required=False)
 
     def clean(self, value: dict[str, Any]):
         result = super().clean(value)
