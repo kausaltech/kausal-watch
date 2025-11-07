@@ -615,7 +615,7 @@ WAGTAILEMBEDS_FINDERS = [
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'Plotly Chart Studio',
-        'domain_whitelist': ('chart-studio.plotly.com',),
+        'domain_whitelist': ('kausaltech.github.io',),
         'title': 'Chart',
     },
     {
