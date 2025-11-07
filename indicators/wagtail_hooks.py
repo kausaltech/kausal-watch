@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
-from indicators.views import dimension_chooser_viewset
+from indicators.views import dimension_chooser_viewset, indicator_chooser_viewset
 
 from . import wagtail_admin  # noqa
 
@@ -45,5 +45,10 @@ def editor_js():
     )
 
 @hooks.register('register_admin_viewset')
-def register_viewset():
+def register_dimension_chooser_viewset():
     return dimension_chooser_viewset
+
+
+@hooks.register('register_admin_viewset')
+def register_indicator_chooser_viewset():
+    return indicator_chooser_viewset

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
-from wagtail.search.backends import get_search_backend
 
+# from wagtail.search.backends import get_search_backend
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 
@@ -11,46 +12,49 @@ from kausal_common.users import user_or_bust
 
 from admin_site.utils import ChooserListingTabMixinWithEmptyResultsMessage
 
-from .models import Indicator, IndicatorQuerySet, IndicatorValue
+from .models import Indicator, IndicatorValue
+
+# from .models import IndicatorQuerySet
 
 
-class IndicatorChooserMixin(ModelChooserMixin[Indicator, IndicatorQuerySet]):
-    def get_unfiltered_object_list(self):
-        user = user_or_bust(self.request.user)
-        plan = user.get_active_admin_plan()
-        objs = Indicator.objects.filter(plans=plan).distinct()
-        return objs
 
-    def get_object_list(self, search_term=None, **kwargs):
-        objs = self.get_unfiltered_object_list()
+# class IndicatorChooserMixin(ModelChooserMixin[Indicator, IndicatorQuerySet]):
+#     def get_unfiltered_object_list(self):
+#         user = user_or_bust(self.request.user)
+#         plan = user.get_active_admin_plan()
+#         objs = Indicator.objects.filter(plans=plan).distinct()
+#         return objs
 
-        if search_term:
-            search_backend = get_search_backend()
-            objs = search_backend.autocomplete(search_term, objs)
+#     def get_object_list(self, search_term=None, **kwargs):
+#         objs = self.get_unfiltered_object_list()
 
-        return objs
+#         if search_term:
+#             search_backend = get_search_backend()
+#             objs = search_backend.autocomplete(search_term, objs)
 
-
-class IndicatorChooserViewSet(ModelChooserViewSet[Indicator]):
-    chooser_mixin_class = IndicatorChooserMixin
-
-    icon = 'kausal-indicator'
-    model = Indicator
-    page_title = _("Choose an indicator")
-    per_page = 30
-    fields = ['identifier', 'name']
+#         return objs
 
 
-class IndicatorChooser(AdminChooser):
-    choose_one_text = _('Choose an indicator')
-    choose_another_text = _('Choose another indicator')
-    model = Indicator
-    choose_modal_url_name = 'indicator_chooser:choose'
+# class IndicatorChooserViewSet(ModelChooserViewSet[Indicator]):
+#     chooser_mixin_class = IndicatorChooserMixin
+
+#     icon = 'kausal-indicator'
+#     model = Indicator
+#     page_title = _("Choose an indicator")
+#     per_page = 30
+#     fields = ['identifier', 'name']
 
 
-@hooks.register('register_admin_viewset')
-def register_indicator_chooser_viewset():
-    return IndicatorChooserViewSet('indicator_chooser', url_prefix='indicator-chooser')
+# class IndicatorChooser(AdminChooser):
+#     choose_one_text = _('Choose an indicator')
+#     choose_another_text = _('Choose another indicator')
+#     model = Indicator
+#     choose_modal_url_name = 'indicator_chooser:choose'
+
+
+# @hooks.register('register_admin_viewset')
+# def register_indicator_chooser_viewset():
+#     return IndicatorChooserViewSet('indicator_chooser', url_prefix='indicator-chooser')
 
 
 # TODO verify if this get_unfiltered_object_list functionality was used
