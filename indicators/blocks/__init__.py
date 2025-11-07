@@ -22,7 +22,8 @@ from wagtail.blocks import (
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
 
-from indicators.chooser import DimensionChooser, IndicatorChooser
+from indicators.views import dimension_chooser_viewset
+from indicators.chooser import IndicatorChooser
 from indicators.models import Dimension, Indicator
 from pages.blocks import PageLinkBlock
 
@@ -48,20 +49,24 @@ class IndicatorChooserBlock(ChooserBlock[Indicator]):
         label = _('Indicator')
 
 
-class DimensionChooserBlock(ChooserBlock[Dimension]):
-    @cached_property
-    def target_model(self):
-        return Dimension
+DimensionChooserBlock = dimension_chooser_viewset.get_block_class(
+    name="DimensionChooserBlock", module_path="indicators.blocks"
+)
 
-    @cached_property
-    def widget(self):
-        return DimensionChooser()
+# class DimensionChooserBlock(ChooserBlock[Dimension]):
+#     @cached_property
+#     def target_model(self):
+#         return Dimension
 
-    def get_form_state(self, value):
-        return self.widget.get_value_data(value)
+#     @cached_property
+#     def widget(self):
+#         return DimensionChooser()
 
-    class Meta:
-        label = _('Dimension')
+#     def get_form_state(self, value):
+#         return self.widget.get_value_data(value)
+
+#     class Meta:
+#         label = _('Dimension')
 
 
 @register_streamfield_block

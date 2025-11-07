@@ -1,13 +1,20 @@
-from typing import Any, Mapping
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from django.templatetags.static import static
 from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
-from aplans.types import WatchAdminRequest
+from indicators.views import dimension_chooser_viewset
 
 from . import wagtail_admin  # noqa
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from aplans.types import WatchAdminRequest
 
 
 class IndicatorsSummaryItem(SummaryItem):
@@ -36,3 +43,7 @@ def editor_js():
         '<script src="{}"></script>',
         static('indicators/js/dashboard_blocks.js')
     )
+
+@hooks.register('register_admin_viewset')
+def register_viewset():
+    return dimension_chooser_viewset

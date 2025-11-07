@@ -49,7 +49,7 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     get_translation_tabs,
 )
-from indicators.chooser import DimensionChooser, IndicatorValueChooser
+from indicators.chooser import IndicatorValueChooser
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
@@ -562,7 +562,7 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         if not is_linked_to_common_indicator and is_general_admin:
             advanced_panels.append(
                 CondensedInlinePanel('dimensions', panels=[
-                    FieldPanel('dimension', widget=DimensionChooser(include_plan_dimensions=True))
+                    FieldPanel('dimension')
                 ], heading=_("Dimensions")),
             )
 
