@@ -1,54 +1,16 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import TYPE_CHECKING
 
 from django.apps import AppConfig
-from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 
 from kausal_common.users import user_or_bust
 
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from django.http.request import HttpRequest
-    from wagtail.models import Collection
-
-    from wagtail_modeladmin.options import ModelAdmin
-
-    from users.models import User
 
 _wagtail_image_chooser_viewset_permission_policy = None
 _wagtail_get_base_snippet_action_menu_items = None
 _create_deferring_forward_many_to_many_manager  = None  # type: ignore[var-annotated]
-
-
-def _get_collections(user: User) -> Iterable[Collection]:
-    plan = user.get_active_admin_plan()
-    if plan.root_collection is None:
-        return []
-    return plan.root_collection.get_descendants(inclusive=True)
-
-
-class CollectionFilter(SimpleListFilter):
-    title = _('collection')
-    parameter_name = 'collection'
-
-    def lookups(self, request: HttpRequest, model_admin: ModelAdmin) -> list[tuple[str, str]]:
-        user = user_or_bust(request.user)
-        collections = _get_collections(user)
-        return [(str(collection.pk), str(collection)) for collection in collections]
-
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(collection=self.value())
-        return None
-
-
-def get_unfiltered_object_list(self):
-    collections = _get_collections(self.request.user)
-    return self.model.objects.filter(collection__in=collections)
 
 
 def monkeypatch_image_chooser_viewset():
