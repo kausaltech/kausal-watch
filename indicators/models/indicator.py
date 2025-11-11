@@ -283,6 +283,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         TranslatedAutocompleteField('name'),
         TranslatedSearchField('description'),
         index.FilterField('plans'),
+        index.FilterField('plan_id'),
         index.FilterField('visibility'),
     ]
 

@@ -37,13 +37,6 @@ def add_indicators_summary_item(request, items):
     items.append(IndicatorsSummaryItem(request))
 
 
-@hooks.register('insert_editor_js')
-def editor_js():
-    return format_html(
-        '<script src="{}"></script>',
-        static('indicators/js/dashboard_blocks.js')
-    )
-
 @hooks.register('register_admin_viewset')
 def register_dimension_chooser_viewset():
     return dimension_chooser_viewset

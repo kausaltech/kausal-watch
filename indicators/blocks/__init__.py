@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django.forms import ValidationError
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.blocks import (
     BooleanBlock,
     CharBlock,
     ChoiceBlock,
-    ChooserBlock,
     IntegerBlock,
     ListBlock,
     RichTextBlock,
@@ -22,9 +20,8 @@ from wagtail.blocks import (
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
 
-from indicators.views import dimension_chooser_viewset, indicator_chooser_viewset
-# from indicators.chooser import IndicatorChooser
 from indicators.models import Dimension, Indicator
+from indicators.views import dimension_chooser_viewset, indicator_chooser_viewset
 from pages.blocks import PageLinkBlock
 
 if TYPE_CHECKING:
@@ -37,41 +34,14 @@ IndicatorChooserBlock = indicator_chooser_viewset.get_block_class(
     name="IndicatorChooserBlock", module_path="indicators.blocks"
 )
 
-# class IndicatorChooserBlock(ChooserBlock[Indicator]):
-#     @cached_property
-#     def target_model(self):
-#         return Indicator
-
-#     @cached_property
-#     def widget(self):
-#         return IndicatorChooser()
-
-#     def get_form_state(self, value):
-#         return self.widget.get_value_data(value)
-
-#     class Meta:
-#         label = _('Indicator')
-
 
 DimensionChooserBlock = dimension_chooser_viewset.get_block_class(
     name="DimensionChooserBlock", module_path="indicators.blocks"
 )
 
-# class DimensionChooserBlock(ChooserBlock[Dimension]):
-#     @cached_property
-#     def target_model(self):
-#         return Dimension
-
-#     @cached_property
-#     def widget(self):
-#         return DimensionChooser()
-
-#     def get_form_state(self, value):
-#         return self.widget.get_value_data(value)
-
-#     class Meta:
-#         label = _('Dimension')
-
+DimensionChooserBlock.widget = dimension_chooser_viewset.widget_class(linked_fields={
+    'indicator': {'match': r'^.*-\d+-value-\d+-value-', 'append': 'indicator'}
+})
 
 @register_streamfield_block
 class IndicatorHighlightsBlock(StaticBlock):
@@ -161,8 +131,11 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
     )
     dimension = DimensionChooserBlock(
         help_text=_('Choose the indicator dimension that will be used for categories in the visualization'),
-        required=False
+        required=False,
     )
+
+    class Meta:
+        form_classname = 'dashboard-indicator-chart-block'
 
     graphql_fields = [
         GraphQLString('help_text'),

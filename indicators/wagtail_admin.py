@@ -53,6 +53,7 @@ from indicators.chooser import IndicatorValueChooser
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+from .views import dimension_chooser_viewset
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -562,7 +563,7 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         if not is_linked_to_common_indicator and is_general_admin:
             advanced_panels.append(
                 CondensedInlinePanel('dimensions', panels=[
-                    FieldPanel('dimension')
+                   FieldPanel('dimension', widget=dimension_chooser_viewset.widget_class(include_plan_dimensions=True))
                 ], heading=_("Dimensions")),
             )
 
