@@ -543,6 +543,7 @@ class CategoryPage(AplansPage):
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('indicator_group', IndicatorGroupBlock()),
         ('related_indicators', RelatedIndicatorsBlock()),
+        ('dashboard_row', DashboardRowBlock()),
         ('category_list', CategoryListBlock()),
         ('action_list', ActionListBlock()),
         ('embed', AdaptiveEmbedBlock()),
