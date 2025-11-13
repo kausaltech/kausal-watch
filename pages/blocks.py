@@ -25,8 +25,9 @@ from grapple.models import (
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 
-from aplans.utils import validate_json
 from kausal_common.graphene.grapple import make_grapple_field
+
+from aplans.utils import validate_json
 
 from actions.blocks.choosers import CategoryChooserBlock
 from actions.models.category import Category
