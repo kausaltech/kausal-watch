@@ -812,12 +812,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         name: str,
         primary_language: str,
         organization: Organization,
-        other_languages: Sequence[str] = (),
+        other_languages: list[str] | None = None,
         short_name: str | None = None,
         base_path: str | None = None,
         hostname: str | None = None,
         client_name: str | None = None,
     ) -> Plan:
+        if other_languages is None:
+            other_languages = []
         plan = Plan(
             identifier=identifier,
             name=name,
