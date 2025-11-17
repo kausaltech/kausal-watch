@@ -322,36 +322,41 @@ def get_or_create_plan_admin_group(force_perm_sync: bool = False) -> Group:
     return group
 
 
-def _sync_plan_admin_group_permissions() -> None:
-    wagtail_perms = get_wagtail_plan_admin_perms()
-    for plan in Plan.objects.exclude(admin_group__isnull=True):
-        group = plan.admin_group
-        assert group is not None
-        if plan.root_collection is not None:
-            _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
-        root_pages = set()
-        if plan.site and plan.site.root_page:
-            root_pages |= set(plan.site.root_page.get_translations(inclusive=True))
-        root_pages |= set(plan.documentation_root_pages.all())
-        _sync_group_page_perms(root_pages, group)
+def sync_plan_admin_group_permissions(plan: Plan, perms: QuerySet[Permission] | None = None) -> None:
+    if perms is None:
+        perms = get_wagtail_plan_admin_perms()
+    group = plan.admin_group
+    assert group is not None
+    if plan.root_collection is not None:
+        _sync_group_collection_perms(plan.root_collection, group, perms)
+    root_pages = set()
+    if plan.site and plan.site.root_page:
+        root_pages |= set(plan.site.root_page.get_translations(inclusive=True))
+    root_pages |= set(plan.documentation_root_pages.all())
+    _sync_group_page_perms(root_pages, group)
 
 
-def _sync_contact_person_group_permissions() -> None:
-    wagtail_perms = Permission.objects.filter(get_wagtail_contact_person_q())
-
-    for plan in Plan.objects.filter(contact_person_group__isnull=False, root_collection__isnull=False):
-        assert plan.contact_person_group is not None
-        group = plan.contact_person_group
-        assert plan.root_collection is not None
-        _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+def sync_contact_person_group_permissions(plan: Plan, perms: QuerySet[Permission] | None = None) -> None:
+    if perms is None:
+        perms = Permission.objects.filter(get_wagtail_contact_person_q())
+    assert plan.contact_person_group is not None
+    group = plan.contact_person_group
+    assert plan.root_collection is not None
+    _sync_group_collection_perms(plan.root_collection, group, perms)
 
 
 def sync_group_permissions() -> None:
     get_or_create_action_contact_person_group(force_perm_sync=True)
     get_or_create_indicator_contact_person_group(force_perm_sync=True)
     get_or_create_plan_admin_group(force_perm_sync=True)
-    _sync_plan_admin_group_permissions()
-    _sync_contact_person_group_permissions()
+
+    wagtail_perms = get_wagtail_plan_admin_perms()
+    for plan in Plan.objects.exclude(admin_group__isnull=True):
+        sync_plan_admin_group_permissions(plan, wagtail_perms)
+
+    wagtail_perms = Permission.objects.filter(get_wagtail_contact_person_q())
+    for plan in Plan.objects.filter(contact_person_group__isnull=False, root_collection__isnull=False):
+        sync_contact_person_group_permissions(plan, wagtail_perms)
 
 
 def _sync_plan_admin_groups(user: UserModel) -> None:
