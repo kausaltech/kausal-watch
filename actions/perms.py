@@ -345,11 +345,15 @@ def sync_contact_person_group_permissions(plan: Plan, perms: QuerySet[Permission
     _sync_group_collection_perms(plan.root_collection, group, perms)
 
 
+def sync_all_group_permissions_for_plan(plan: Plan):
+    sync_plan_admin_group_permissions(plan)
+    sync_contact_person_group_permissions(plan)
+
+
 def sync_group_permissions() -> None:
     get_or_create_action_contact_person_group(force_perm_sync=True)
     get_or_create_indicator_contact_person_group(force_perm_sync=True)
     get_or_create_plan_admin_group(force_perm_sync=True)
-
     wagtail_perms = get_wagtail_plan_admin_perms()
     for plan in Plan.objects.exclude(admin_group__isnull=True):
         sync_plan_admin_group_permissions(plan, wagtail_perms)
