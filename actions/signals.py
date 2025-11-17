@@ -18,7 +18,7 @@ from .mail import (
 )
 from .models import Action, ActionContactPerson, ActionResponsibleParty, Category, GeneralPlanAdmin, Plan, PlanFeatures
 from .models.attributes import AttributeType
-from .perms import get_people_with_login_rights
+from .perms import get_people_with_login_rights, sync_all_group_permissions_for_plan
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,16 @@ def create_notification_settings(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Plan)
-def create_plan_features(sender, instance, created, **kwargs):
+def create_plan_features_and_sync_group_permissions(sender, instance, created, **kwargs):
     if created:
         PlanFeatures.objects.create(plan=instance)
+        return
+    # post_save is called twice for Plans
+    # since super() is called twice in Plan.save.
+    # During the first call the admin_group and such
+    # are not saved yet. Make sure created is false
+    # before the following call:
+    sync_all_group_permissions_for_plan(instance)
 
 
 @receiver(pre_send)
@@ -47,7 +54,6 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
             f"Email send status '{recipient_status.status}' (message ID {recipient_status.message_id}) from {esp_name} for "
             f"email with subject '{message.subject}' to recipient {email}",
         )
-
 
 @receiver(post_delete, sender=ActionContactPerson)
 def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):

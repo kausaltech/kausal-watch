@@ -6,7 +6,7 @@ from wagtail.models import GroupPagePermission
 import pytest
 
 from actions.models import Plan
-from actions.perms import get_wagtail_plan_admin_perms, sync_group_permissions
+from actions.perms import get_wagtail_plan_admin_perms
 
 pytestmark = pytest.mark.django_db
 
@@ -43,9 +43,6 @@ def test_sync_group_permissions_creates_required_groups_for_plans(organization_f
     plan1_contact_group_id = plan1.contact_person_group.pk
     plan2_admin_group_id = plan2.admin_group.pk
     plan2_contact_group_id = plan2.contact_person_group.pk
-
-    # Run sync_group_permissions
-    sync_group_permissions()
 
     # Verify the groups still exist
     assert Group.objects.filter(id=plan1_admin_group_id).exists()

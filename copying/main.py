@@ -28,7 +28,7 @@ from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
-from actions.signals import create_notification_settings, create_plan_features
+from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
 from content.apps import create_site_general_content
 from copying.utils import (
     get_foreign_keys,
@@ -827,7 +827,7 @@ def copy_plan(
     with ExitStack() as stack:
         # Disconnect signals to prevent creating related model instances when saving the plan
         stack.enter_context(temp_disconnect_signal(signals.post_save, create_notification_settings, Plan))
-        stack.enter_context(temp_disconnect_signal(signals.post_save, create_plan_features, Plan))
+        stack.enter_context(temp_disconnect_signal(signals.post_save, create_plan_features_and_sync_group_permissions, Plan))
         stack.enter_context(temp_disconnect_signal(
             signals.post_save, create_site_general_content, Plan, 'create_site_general_content'
         ))

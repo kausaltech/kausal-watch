@@ -49,7 +49,6 @@ from aplans.utils import (
     PlanRelatedModel,
 )
 
-from actions import perms
 from actions.permission_policy import PlanPermissionPolicy
 from indicators.models import Indicator, IndicatorDimension, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
 from orgs.models import Organization
@@ -644,7 +643,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         if update_fields:
             super().save(update_fields=update_fields)
 
-        perms.sync_all_group_permissions_for_plan(self)
         return ret
 
     def get_site_notification_context(self):
