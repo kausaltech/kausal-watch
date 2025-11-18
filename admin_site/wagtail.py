@@ -410,11 +410,12 @@ class AplansButtonHelper(ButtonHelper):
     def view_live_button(self, obj, classnames_add=None, classnames_exclude=None):
         if obj is None or not hasattr(obj, 'get_view_url'):
             return None
+        request = admin_req(self.request)
         if isinstance(obj, Plan):
-            url = obj.get_view_url()
+            url = obj.get_view_url(request=request)
         else:
             user = user_or_bust(self.request.user)
-            url = obj.get_view_url(plan=user.get_active_admin_plan())
+            url = obj.get_view_url(plan=user.get_active_admin_plan(), request=request)
         if not url:
             return None
 

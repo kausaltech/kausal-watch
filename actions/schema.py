@@ -410,13 +410,13 @@ class PlanNode(DjangoNode[Plan]):
         return None
 
     @staticmethod
-    def resolve_view_url(root: Plan, _info: GQLInfo, client_url: str | None = None):
+    def resolve_view_url(root: Plan, info: GQLInfo, client_url: str | None = None):
         if client_url:
             try:
                 urlparse(client_url)
             except Exception:
                 raise GraphQLError('clientUrl must be a valid URL') from None
-        return root.get_view_url(client_url=client_url, active_locale=get_language())
+        return root.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
 
     @staticmethod
     def resolve_admin_url(root: Plan, info: GQLInfo):
@@ -1303,8 +1303,8 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     @gql_optimizer.resolver_hints(
         model_field=('plan', 'identifier'),
     )
-    def resolve_view_url(root: Action, _info: GQLInfo, client_url: str | None = None):
-        return root.get_view_url(client_url=client_url)
+    def resolve_view_url(root: Action, info: GQLInfo, client_url: str | None = None):
+        return root.get_view_url(client_url=client_url, request=info.context)
 
     @staticmethod
     @gql_optimizer.resolver_hints(

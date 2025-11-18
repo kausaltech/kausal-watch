@@ -81,6 +81,8 @@ if typing.TYPE_CHECKING:
 
     from aplans.cache import PlanSpecificCache, WatchObjectCache
     from aplans.graphql_types import WorkflowStateEnum
+    from aplans.schema_context import WatchGraphQLContext
+    from aplans.types import WatchRequest
 
     from actions.attributes import DraftAttributes
     from actions.models.category import Category, CategoryType
@@ -888,7 +890,7 @@ class Action(
     def generate_identifier(self):
         self.identifier = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
-    def get_notification_context(self, plan=None):
+    def get_notification_context(self, plan=None, request=None):
         if plan is None:
             plan = self.plan
         change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
@@ -898,7 +900,7 @@ class Action(
             'name': self.name,
             'change_url': change_url,
             'updated_at': self.updated_at,
-            'view_url': self.get_view_url(plan=plan),
+            'view_url': self.get_view_url(plan=plan, request=request),
             'order': self.order,
         }
 
@@ -914,11 +916,16 @@ class Action(
         active_tasks = [task for task in self.tasks.all() if task_active(task)]
         return len(active_tasks)
 
-    def get_view_url(self, plan: Plan | None = None, client_url: str | None = None) -> str:
+    def get_view_url(
+        self,
+        plan: Plan | None = None,
+        client_url: str | None = None,
+        request: WatchRequest | WatchGraphQLContext | None = None,
+    ) -> str:
         if plan is None:
             plan = self.plan
         return '%s/actions/%s' % (
-            plan.get_view_url(client_url=client_url, active_locale=translation.get_language()),
+            plan.get_view_url(client_url=client_url, active_locale=translation.get_language(), request=request),
             self.identifier,
         )
 

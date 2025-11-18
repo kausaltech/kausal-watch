@@ -46,6 +46,9 @@ if typing.TYPE_CHECKING:
     from kausal_common.models.types import FK, M2M, RevMany
     from kausal_common.users import UserOrAnon
 
+    from aplans.schema_context import WatchGraphQLContext
+    from aplans.types import WatchRequest
+
     from actions.models import Action
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan, PlanQuerySet
@@ -431,7 +434,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     def has_data(self):
         return self.latest_value_id is not None
 
-    def get_notification_context(self, plan):
+    def get_notification_context(self, plan, request=None):
         edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
         return {
             'id': self.id,
@@ -439,14 +442,20 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             'edit_values_url': edit_values_url,
             'updated_at': self.updated_at,
             'updated_values_due_at': self.updated_values_due_at,
-            'view_url': self.get_view_url(plan),
+            'view_url': self.get_view_url(plan, request=request),
         }
 
-    def get_view_url(self, plan: Plan | None = None, client_url: str | None = None) -> str:
+    def get_view_url(
+        self,
+        plan: Plan | None = None,
+        client_url: str | None = None,
+        request: WatchRequest | WatchGraphQLContext | None = None,
+    ) -> str:
         if plan is None:
             plan = self.plans.first()
         assert plan is not None
-        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url, active_locale=translation.get_language()), self.id)
+        plan_url = plan.get_view_url(client_url=client_url, active_locale=translation.get_language(), request=request)
+        return '%s/indicators/%s' % (plan_url, self.id)
 
     def clean(self):
         if self.updated_values_due_at:

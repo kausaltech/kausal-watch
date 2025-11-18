@@ -738,7 +738,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
             return ''
         return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
-    def get_view_url(self, client_url: str | None = None, active_locale: str | None = None) -> str:  # noqa: C901, PLR0912
+    def get_view_url(  # noqa: C901, PLR0912
+        self,
+        client_url: str | None = None,
+        active_locale: str | None = None,
+        request: WatchRequest | WatchGraphQLContext | None = None,
+    ) -> str:
         """
         Return an URL for the homepage of the plan.
 
@@ -768,7 +773,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
 
         base_path = None
         if hostname:
-            _, wildcard_hostname = get_plan_identifier_from_wildcard_domain(hostname)
+            _, wildcard_hostname = get_plan_identifier_from_wildcard_domain(hostname, request=request)
             if wildcard_hostname:
                 hostname = '%s.%s' % (self.identifier, wildcard_hostname)
                 base_path = '/'
