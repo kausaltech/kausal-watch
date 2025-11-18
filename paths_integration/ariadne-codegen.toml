@@ -1,0 +1,6 @@
+[tool.ariadne-codegen]
+queries_path = "paths_integration/queries.graphql"
+remote_schema_url = 'https://api.paths.kausal.dev/v1/graphql/'
+client_name = 'PathsClient'
+target_package_path = 'paths_integration/_generated_'
+enable_custom_operations = false

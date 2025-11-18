@@ -151,6 +151,7 @@ exclude = [
   "^typings/",
   "^kausal_common/deployment/gunicorn\\.py$",
   "node_modules",
+  "^.*/_generated_/.*$",
   #"^kausal_common/typings/",
 ]
 check_untyped_defs = true
@@ -287,6 +288,7 @@ kausal-paths-extensions = { index = "kausal"}
 
 [dependency-groups]
 dev = [
+    "ariadne-codegen>=0.16.0",
     "basedpyright>=1.32.1",
     "daphne",
     "django-debug-toolbar",

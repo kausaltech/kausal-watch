@@ -1,0 +1,21 @@
+query NodeValues($lang: String!, $instanceId: ID!, $nodeId: ID!) @instance(identifier: $instanceId) @locale(lang: $lang){
+  node(id: $nodeId) {
+    id
+    metricDim {
+      id
+      unit {
+        short
+      }
+      dimensions {
+        id
+        label
+        categories {
+          id
+          label
+        }
+      }
+      years
+      values
+    }
+  }
+}
