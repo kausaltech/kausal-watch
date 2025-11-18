@@ -855,6 +855,8 @@ class Action(
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
+        self.save()
+
     def set_responsible_parties(self, data: list[ResponsiblePartyDict]):
         existing_orgs = {p.organization for p in self.responsible_parties.all()}
         new_orgs = {d['organization'] for d in data}
