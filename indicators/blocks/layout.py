@@ -103,10 +103,19 @@ Field = ModelFieldProperties
 def initialize():
     register(
         Field(field_name='name'),
+        Field(field_name='description'),
         Field(field_name='organization'),
         Field(field_name='updated_at'),
         Field(field_name='level'),
         Field(field_name='unit'),
+        Field(field_name='reference'),
+        Field(
+            field_name='value_summary',
+            custom_label=_('Value summary'),
+            has_details_block=True,
+            has_report_block=False,
+            has_list_filters_block=False,
+        ),
         Field(
             field_name='causality_nav',
             has_details_block=True,
@@ -241,12 +250,56 @@ class IndicatorCategoryContentBlock(IndicatorContentBlock):
         label = _('Category')
 
 
+@register_streamfield_block
+class IndicatorValueSummaryContentBlock(IndicatorContentBlock):
+    show_reference_value = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Show reference value"),
+        help_text=_("This shows the value from the reference year."),
+    )
+    reference_year = blocks.IntegerBlock(
+        required=False,
+        help_text=_("This can be set to override the default reference year."),
+    )
+    show_current_value = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Show current value"),
+    )
+    show_goal_value = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Show goal value"),
+    )
+    show_goal_gap = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Show goal gap"),
+        help_text=_("This shows the difference between the goal and the current value."),
+    )
+
+    class Meta:
+        label = _('Value summary')
+
+    graphql_fields = [
+        GraphQLBoolean('show_reference_value'),
+        GraphQLInt('reference_year'),
+        GraphQLBoolean('show_current_value'),
+        GraphQLBoolean('show_goal_value'),
+        GraphQLBoolean('show_goal_gap'),
+    ]
+
+
 CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
     'name',
+    'description',
     'organization',
     'updated_at',
     ('category', IndicatorCategoryContentBlock()),
     'level',
+    'reference',
+    ('value_summary', IndicatorValueSummaryContentBlock()),
     'visualization',
     'connected_actions',
     'causality_nav',
