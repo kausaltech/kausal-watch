@@ -72,7 +72,9 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     },
     'built_in_field_customizations': {},
     'category_types': {
-        'categories': {},
+        'categories': {
+            'indicator_category_through': {},  # We don't copy the indicators themselves
+        },
         'levels': {},
     },
     'clients': {},

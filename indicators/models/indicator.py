@@ -614,8 +614,16 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
 
 class IndicatorCategoryThrough(models.Model):
-    indicator = models.ForeignKey('indicators.Indicator', on_delete=models.CASCADE, related_name='indicator_category_through')
-    category = models.ForeignKey('actions.Category', on_delete=models.CASCADE)
+    indicator = models.ForeignKey(
+        'indicators.Indicator',
+        on_delete=models.CASCADE,
+        related_name='indicator_category_through',
+    )
+    category = models.ForeignKey(
+        'actions.Category',
+        on_delete=models.CASCADE,
+        related_name='indicator_category_through',
+    )
 
     class Meta:
         db_table = 'indicators_indicator_categories'
