@@ -1,0 +1,138 @@
+publiccodeYmlVersion: "0.4"
+name: "Kausal Watch"
+url: "https://github.com/kausaltech/kausal-watch"
+landingURL: "https://kausal.tech"
+softwareVersion: "1.0.0"
+releaseDate: "2024-11-14"
+platforms:
+  - web
+usedBy:
+  - Kausal
+  # Add more organizations here?
+categories:
+  - project-management
+  - content-management
+  - data-analytics
+  - web-collaboration
+  - workflow-management
+  - task-management
+  - data-visualization
+developmentStatus: stable
+softwareType: "standalone/backend"
+localization:
+  localizationReady: true
+  availableLanguages:
+    - da
+    - de
+    - de-CH
+    - el
+    - en
+    - en-AU
+    - en-GB
+    - es
+    - es-US
+    - fi
+    - lv
+    - pt
+    - pt-BR
+    - sv
+    - sv-FI
+intendedAudience:
+  countries:
+    - "fi"
+    - "de"
+    - "us"
+    - "gb"
+    - "au"
+    - "es"
+    - "dk"
+    - "lv"
+    - "pt"
+    - "se"
+    - "ch"
+    - "gr"
+  scope:
+    - "local-authorities"
+    - "environment"
+    - "government"
+description:
+  en:
+    genericName: "Action Plan Monitoring System"
+    shortDescription: >
+      A comprehensive web-based platform for administrating and monitoring
+      action plans and tracking progress towards strategic goals.
+    longDescription: >
+      Kausal Watch (formerly aplans) is a sophisticated service designed for
+      administrating and monitoring action plans, particularly environmental
+      and sustainability initiatives. The platform provides a comprehensive
+      admin UI for modifying action plan content and a REST API for
+      distributing information to stakeholders and the public.
+
+      Originally developed to implement monitoring for the Carbon-neutral
+      Helsinki 2035 action plan, the system has evolved into a robust
+      platform capable of managing complex action plans with multiple
+      stakeholders, indicators, and reporting requirements.
+
+      The system supports multi-language content management, role-based
+      access control, comprehensive indicator tracking with goal setting,
+      automated status updates, and flexible reporting capabilities. It
+      integrates with various authentication providers including Azure AD,
+      Google, and OIDC, making it suitable for government and organizational
+      deployments.
+
+      Built with Django and modern web technologies, Kausal Watch provides
+      both GraphQL and REST APIs, making it highly integrable with existing
+      systems and frontend applications. The platform includes advanced
+      features like workflow management, document handling, notification
+      systems, and comprehensive audit trails.
+    features:
+      - Multi-language action plan management and content editing
+      - Comprehensive indicator tracking with goals and progress monitoring
+      - Flexible reporting system with Excel export capabilities
+      - Role-based access control and user management
+      - REST and GraphQL APIs for integration
+      - Automated status updates and notifications
+      - Document and image management
+      - Workflow management with approval processes
+      - Multi-tenant support for different organizations
+      - Advanced search and filtering capabilities
+      - Dashboard and analytics for progress tracking
+      - Integration with external authentication providers
+  de:
+    genericName: "Aktionsplan-Überwachungssystem"
+    shortDescription: >
+      Webbasierte Plattform zur Verwaltung und Überwachung von Aktionsplänen
+      und strategischen Zielen.
+    longDescription: >
+      Kausal Watch (ehemals aplans) ist ein ausgeklügelter Service zur
+      Verwaltung und Überwachung von Aktionsplänen, insbesondere für
+      Umwelt- und Nachhaltigkeitsinitiativen. Die Plattform bietet eine
+      umfassende Admin-Benutzeroberfläche zur Bearbeitung von
+      Aktionsplaninhalten und eine REST-API zur Verteilung von
+      Informationen an Stakeholder und die Öffentlichkeit.
+
+      Ursprünglich entwickelt für die Überwachung des Aktionsplans
+      "Klimaneutrales Helsinki 2035", hat sich das System zu einer
+      robusten Plattform entwickelt, die komplexe Aktionspläne mit
+      mehreren Stakeholdern, Indikatoren und Berichtsanforderungen
+      verwalten kann.
+    features:
+      - Mehrsprachige Aktionsplanverwaltung und Inhaltsbearbeitung
+      - Umfassende Indikatorverfolgung mit Zielen und Fortschrittsüberwachung
+      - Flexibles Berichtssystem mit Excel-Export-Funktionen
+      - Rollenbasierte Zugriffskontrolle und Benutzerverwaltung
+      - REST- und GraphQL-APIs für Integration
+      - Automatische Statusaktualisierungen und Benachrichtigungen
+legal:
+  license: AGPL-3.0-or-later
+maintenance:
+  type: "internal"
+  contacts:
+    - name: "Kausal Tech"
+      email: "info@kausal.tech"
+
+  # contractors:
+  #   - name: "Kausal Tech"
+  #     email: "info@kausal.tech"
+  #     website: "https://kausal.tech"
+  #     until: "2026-12-31"
