@@ -17,7 +17,6 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
-from wagtail.blocks import TextBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -33,9 +32,9 @@ from aplans.utils import (
     PlanDefaultsModel,
     RestrictedVisibilityModel,
     get_available_variants_for_language,
-    validate_json,
 )
 
+from indicators.blocks import DashboardRowBlock
 from indicators.models.common_indicator import CommonIndicatorNormalizator
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
@@ -152,7 +151,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     description = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('description'))
     visualizations: StreamField[StreamValue | None] = StreamField(
         [
-            ('raw_visualization', TextBlock(validators=(validate_json,)))
+            ('dashboard_row', DashboardRowBlock())
         ],
         null=True,
         blank=True,

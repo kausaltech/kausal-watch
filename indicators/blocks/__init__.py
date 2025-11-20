@@ -20,9 +20,7 @@ from wagtail.blocks import (
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
 
-from indicators.models import Dimension, Indicator
 from indicators.views import dimension_chooser_viewset, indicator_chooser_viewset
-from pages.blocks import PageLinkBlock
 
 if TYPE_CHECKING:
     from kausal_common.graphene import GQLInfo
@@ -59,7 +57,7 @@ class IndicatorBlock(StructBlock):
     ])
 
     graphql_fields = [
-        GraphQLForeignKey('indicator', Indicator),
+        GraphQLForeignKey('indicator', 'indicators.Indicator'),
         GraphQLString('style'),
     ]
 
@@ -97,10 +95,21 @@ class IndicatorShowcaseBlock(StructBlock):
     title = CharBlock(required=False)
     body = RichTextBlock(required=False)
     indicator = IndicatorChooserBlock()
-    link_button = PageLinkBlock()
+    # link_button = PageLinkBlock()
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
     # PageLinkBlock.
     indicator_is_normalized = BooleanBlock(required=False)
+
+    def __init__(self, local_blocks=None, **kwargs):
+        # avoiding circular import
+        from pages.blocks import PageLinkBlock
+
+        if local_blocks is None:
+            local_blocks = []
+            for name, block in self.__class__.base_blocks.items():
+                local_blocks.append((name, block))
+            local_blocks.append(('link_button', PageLinkBlock()))
+        super().__init__(local_blocks, **kwargs)
 
     class Meta:
         label = _('Indicator showcase')
@@ -108,7 +117,7 @@ class IndicatorShowcaseBlock(StructBlock):
     graphql_fields = [
         GraphQLString('title'),
         GraphQLString('body'),
-        GraphQLForeignKey('indicator', Indicator),
+        GraphQLForeignKey('indicator', 'indicators.Indicator'),
         GraphQLStreamfield('link_button', is_list=False),
         GraphQLBoolean('indicator_is_normalized'),
     ]
@@ -139,8 +148,8 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
 
     graphql_fields = [
         GraphQLString('help_text'),
-        GraphQLForeignKey('indicator', Indicator),
-        GraphQLForeignKey('dimension', Dimension),
+        GraphQLForeignKey('indicator', 'indicators.Indicator'),
+        GraphQLForeignKey('dimension', 'indicators.Dimension'),
         GraphQLField(
             'chart_series',
             _get_dashboard_indicator_chart_series_class,
@@ -150,6 +159,8 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
 
     def chart_series(self, info: GQLInfo, values: dict[str, Any]) -> list[DashboardIndicatorChartSeries]:
         from indicators.schema import DashboardIndicatorChartSeries
+        from indicators.models import Indicator
+        from indicators.models import Dimension
         indicator = values['indicator']
         assert isinstance(indicator, Indicator)
         dimension = values['dimension']
@@ -296,7 +307,7 @@ class DashboardIndicatorSummaryBlock(StructBlock):
     )
 
     graphql_fields = [
-        GraphQLForeignKey('indicator', Indicator),
+        GraphQLForeignKey('indicator', 'indicators.Indicator'),
     ]
 
     class Meta:

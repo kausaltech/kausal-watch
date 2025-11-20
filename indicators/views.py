@@ -6,12 +6,12 @@ from wagtail.admin.viewsets.chooser import ChooserViewSet
 
 from kausal_common.users import user_or_bust
 
-from .models import Dimension, Indicator, IndicatorDimension
-
 
 class DimensionChooseView(ChooseView):
     def get_object_list(self):
         """Filter dimensions based on plan and context (detect indicator from referer)."""
+        from indicators.models import Dimension, Indicator, IndicatorDimension
+
         request = self.request
         user = user_or_bust(request.user)
 
@@ -81,6 +81,8 @@ class IndicatorChooseResultsView(ChooseResultsView):
 class IndicatorChooseView(ChooseView):
     def get_object_list(self):
         """Filter indicators by the current user's active plan."""
+        from indicators.models import Indicator
+
         user = user_or_bust(self.request.user)
         plan = user.get_active_admin_plan()
         return Indicator.objects.filter(plans=plan).distinct()
