@@ -13,7 +13,7 @@ from django.db.models import OneToOneField, Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
@@ -108,7 +108,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         on_delete=models.PROTECT,
         verbose_name=_('common indicator'),
     )
-    organization = models.ForeignKey(
+    organization = ParentalKey(
         'orgs.Organization',
         related_name='indicators',
         on_delete=models.CASCADE,
@@ -159,7 +159,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         verbose_name=_('visualizations'),
     )
 
-    categories: M2M[Category, Any] = models.ManyToManyField(
+    categories: M2M[Category, Any] = ParentalManyToManyField(
         'actions.Category',
         blank=True,
         related_name='indicators',

@@ -82,7 +82,7 @@ class IndicatorValue(ClusterableModel):
 class IndicatorGoal(models.Model):
     """The numeric goal which the organization has set for an indicator."""
 
-    indicator = models.ForeignKey(
+    indicator = ParentalKey['Indicator'](
         'indicators.Indicator', related_name='goals', on_delete=models.CASCADE,
         verbose_name=_('indicator'),
     )
