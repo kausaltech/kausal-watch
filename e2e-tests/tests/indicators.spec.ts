@@ -4,7 +4,7 @@ import {
 } from '@playwright/test';
 
 test.describe('Test indicators', () => {
-  test('open indicator list', async ({ page }) => {
+  test('Open indicator list', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('button', { name: 'Indicators'}).click();
     await page.getByRole('button', { name: 'Indicators', exact: true }).click();
@@ -13,7 +13,7 @@ test.describe('Test indicators', () => {
 })
 
 test.describe('Test common indicators', () => {
-  test('open common indicators list', async ({ page }) => {
+  test('Open common indicators list', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('button', { name: 'Indicators'}).click();
     await page.getByRole('link', { name: 'Common indicators' }).click();
@@ -22,7 +22,7 @@ test.describe('Test common indicators', () => {
 })
 
 test.describe('Test indicator dimensions', () => {
-  test('open indicator dimensions list', async ({ page }) => {
+  test('Open indicator dimensions list', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('button', { name: 'Indicators'}).click();
     await page.getByRole('link', { name: 'Indicator dimensions' }).click();
@@ -31,7 +31,7 @@ test.describe('Test indicator dimensions', () => {
 })
 
 test.describe('Test units', () => {
-  test('open units list', async ({ page }) => {
+  test('Open units list', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('button', { name: 'Indicators'}).click();
     await page.getByRole('link', { name: 'Units' }).click();
@@ -40,7 +40,7 @@ test.describe('Test units', () => {
 })
 
 test.describe('Test quantities', () => {
-  test('open quantities list', async ({ page }) => {
+  test('Open quantities list', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('button', { name: 'Indicators'}).click();
     await page.getByRole('link', { name: 'Quantities' }).click();

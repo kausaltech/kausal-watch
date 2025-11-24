@@ -1,12 +1,11 @@
-import { test, expect } from '@playwright/test';
-
+import {
+  expect,
+  test,
+} from '@playwright/test';
 
 test.describe('Test people', () => {
-
-  test.beforeAll(async () => {
-  })
-  test('list people', async ({ page }) => {
-    await page.goto(`/admin/`);
+  test('List people', async ({ page }) => {
+    await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
 
     await expect(page.getByRole('table')).toBeVisible();
@@ -19,9 +18,11 @@ test.describe('Test people', () => {
     await expect(page.locator('header').getByRole('link', { name: 'Add person' })).toBeVisible();
     await expect(page.getByText('Test User')).toBeVisible();
  });
- test('search person', async ({ page }) => {
-    await page.goto(`/admin/`);
+
+ test('Search person', async ({ page }) => {
+    await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
+
     await expect(page.getByRole('textbox', { name: 'Search for' })).toBeVisible();
     await page.getByPlaceholder('Search people').fill('Rest Yser');
     await page.keyboard.press('Enter');
@@ -31,10 +32,12 @@ test.describe('Test people', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByText('Test User')).toBeVisible();
   });
-  test('filter contact persons', async ({ page }) => {
+
+  test('Filter contact persons', async ({ page }) => {
     test.setTimeout(40000);
-    await page.goto(`/admin/`);
+    await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
+
     await expect(page.getByRole('heading', { name: 'Filter' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'For an action in Sunnydale Climate Action Plan' })).toBeVisible();
     await page.getByRole('link', { name: 'For an action in Sunnydale Climate Action Plan' }).click();
@@ -51,6 +54,5 @@ test.describe('Test people', () => {
     await expect(page.getByText('Test User')).toBeVisible();
     await page.getByRole('link', { name: 'All', exact: true }).click();
     await expect(page.getByText('Test User')).toBeVisible();
-
   });
 });
