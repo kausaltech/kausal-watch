@@ -371,6 +371,12 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 continue
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data, plan=plan)
+
+        if commit:
+            # The instance was saved already when we called `super().save()`, but things like the categories may have
+            # changed afterwards without being committed.
+            obj.save()
+
         return obj
 
     def _save_m2m(self):
