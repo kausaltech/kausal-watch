@@ -161,6 +161,7 @@ def test_manually_scheduled_notification(
     indicator_person = person_factory()
     indicator_contact = indicator_contact_factory(person=indicator_person)
     indicator_contact.indicator.plans.set([plan])
+    indicator_contact.indicator.save()
 
     opa = organization_plan_admin_factory(person=person_factory(), plan=plan)
     org = opa.organization

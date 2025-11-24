@@ -547,6 +547,7 @@ def test_indicator_node(graphql_client_query_data):
     action_indicator = ActionIndicatorFactory.create(action=action, indicator=indicator)
     category = CategoryFactory.create()
     indicator.categories.add(category)
+    indicator.save()
     indicator_dimension = IndicatorDimensionFactory.create(indicator=indicator)
     # Create IndicatorLevel so that `plan` appears in `indicator.plan`
     IndicatorLevelFactory.create(indicator=indicator, plan=plan)

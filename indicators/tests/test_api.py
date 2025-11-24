@@ -305,6 +305,7 @@ def test_get_indicator_with_categories(api_client, plan, plan_admin_user, indica
     category_type = CategoryTypeFactory(plan=plan, usable_for_indicators=True)
     category = CategoryFactory(type=category_type)
     indicator.categories.add(category)
+    indicator.save()
 
     url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
 
