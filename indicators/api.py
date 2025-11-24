@@ -490,6 +490,7 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
             fields['categories'].update(instance, categories_data)
         if contact_persons_data is not None and hasattr(fields['contact_persons'], 'update'):
             fields['contact_persons'].update(instance, contact_persons_data)
+        instance.save()
         return instance
 
     def get_fields(self):
