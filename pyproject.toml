@@ -116,6 +116,9 @@ kausal = [
 
 [tool.ruff]
 extend = "./kausal_common/configs/ruff.toml"
+extend-exclude = ["./paths_integration/_generated_"]
+
+
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "aplans.settings"

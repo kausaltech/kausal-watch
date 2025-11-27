@@ -1,0 +1,83 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags %}
+
+{% block titletag %}
+  {{ view.get_meta_title }}
+{% endblock %}
+
+{% block content %}
+
+  {% block header %}
+    {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon %}
+  {% endblock %}
+
+  {% block content_main %}
+  <div class="nice-padding">
+    {% block confirmation_message %}
+      <p>{{ view.confirmation_message }}</p>
+    {% endblock %}
+
+    {% if errors %}
+      {% for error in errors %}
+        <p>{{ error }}</p>
+      {% endfor %}
+      <p>
+        {% trans "Please verify the correct node is connected to the indicator." %}
+        <a href="{% url 'indicators_indicator_modeladmin_edit' instance_pk=indicator_id %}">{% trans "Edit indicator" %}</a>
+      </p>
+    {% else %}
+      <div style="margin: 10px;">
+        <form action="{{ view.post_url }}" method="POST">
+        {% csrf_token %}
+          <input type="submit" value="{% trans 'Yes' %}" class="button button-primary" />
+          <a href="{{ view.index_url }}" class="button button-secondary">{% trans "No" %}</a>
+        </form>
+      </div>
+      <table class="listing" style="width: 33%">
+        <tbody>
+          <tr>
+            <th>{% trans "Indicator" %}</th>
+            <td>{{ indicator.name }}</td>
+          </tr>
+          <tr>
+            <th>{% trans "Last imported" %}</th>
+            <td>{{ last_import }}</td>
+          </tr>
+          <tr>
+            <th>{% trans "Node" %}</th>
+            <td>{{ node_metadata.name }}
+              <br/>
+              <pre>{{ node_metadata.identifier }}</pre>
+            </td>
+          </tr>
+          <tr>
+            <th>{% trans "Kausal Paths instance" %}</th>
+            <td>{{ node_metadata.instance.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="listing">
+        <thead>
+          <tr>
+            {% for header in headers %}
+            <th>{{ header }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in paths_values %}
+          <tr>
+            {% for year, value in row %}
+            <td class="title">
+              <strong>{{ year }}</strong>
+            </td>
+            <td>{{ value }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  {% endif %}
+  </div>
+  {% endblock %}
+{% endblock %}

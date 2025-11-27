@@ -570,6 +570,11 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             FieldPanel('non_quantified_goal_date'),
         ])
 
+        if instance and instance.pk and plan.kausal_paths_instance_uuid:
+            advanced_panels.append(
+                FieldPanel('kausal_paths_node_uuid')
+            )
+
         if not is_linked_to_common_indicator and is_general_admin:
             advanced_panels.append(
                 CondensedInlinePanel('dimensions', panels=[

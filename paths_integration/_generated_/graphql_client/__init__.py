@@ -33,6 +33,7 @@ from .input_types import (
 )
 from .node_values import (
     NodeValues,
+    NodeValuesInstance,
     NodeValuesNode,
     NodeValuesNodeMetricDim,
     NodeValuesNodeMetricDimDimensions,
@@ -62,6 +63,7 @@ __all__ = [
     "ModelAction",
     "NZCCityEssentialData",
     "NodeValues",
+    "NodeValuesInstance",
     "NodeValuesNode",
     "NodeValuesNodeMetricDim",
     "NodeValuesNodeMetricDimDimensions",

@@ -9,7 +9,13 @@ from .base_model import BaseModel
 
 
 class NodeValues(BaseModel):
+    instance: "NodeValuesInstance"
     node: Optional["NodeValuesNode"]
+
+
+class NodeValuesInstance(BaseModel):
+    id: str
+    name: str
 
 
 class NodeValuesNode(BaseModel):
@@ -17,6 +23,7 @@ class NodeValuesNode(BaseModel):
         alias="__typename"
     )
     id: str
+    name: str
     metric_dim: Optional["NodeValuesNodeMetricDim"] = Field(alias="metricDim")
 
 
@@ -26,6 +33,7 @@ class NodeValuesNodeMetricDim(BaseModel):
     dimensions: List["NodeValuesNodeMetricDimDimensions"]
     years: List[int]
     values: List[float]
+    forecast_from: Optional[int] = Field(alias="forecastFrom")
 
 
 class NodeValuesNodeMetricDimUnit(BaseModel):

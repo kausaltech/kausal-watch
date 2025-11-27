@@ -1,6 +1,11 @@
 query NodeValues($lang: String!, $instanceId: ID!, $nodeId: ID!) @instance(identifier: $instanceId) @locale(lang: $lang){
+  instance {
+    id
+    name
+  }
   node(id: $nodeId) {
     id
+    name
     metricDim {
       id
       unit {
@@ -16,6 +21,7 @@ query NodeValues($lang: String!, $instanceId: ID!, $nodeId: ID!) @instance(ident
       }
       years
       values
+      forecastFrom
     }
   }
 }

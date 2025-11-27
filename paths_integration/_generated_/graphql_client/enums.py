@@ -4,9 +4,15 @@
 from enum import Enum
 
 
-class SearchOperatorEnum(str, Enum):
-    AND = "AND"
-    OR = "OR"
+class VisualizationKind(str, Enum):
+    node = "node"
+    group = "group"
+
+
+class DimensionKind(str, Enum):
+    COMMON = "COMMON"
+    NODE = "NODE"
+    SCENARIO = "SCENARIO"
 
 
 class ScenarioKind(str, Enum):
@@ -22,26 +28,20 @@ class DecisionLevel(str, Enum):
     EU = "EU"
 
 
-class DimensionKind(str, Enum):
-    COMMON = "COMMON"
-    NODE = "NODE"
-    SCENARIO = "SCENARIO"
+class SearchOperatorEnum(str, Enum):
+    AND = "AND"
+    OR = "OR"
+
+
+class DesiredOutcome(str, Enum):
+    increasing = "increasing"
+    decreasing = "decreasing"
 
 
 class ActionSortOrder(str, Enum):
     STANDARD = "STANDARD"
     IMPACT = "IMPACT"
     CUM_IMPACT = "CUM_IMPACT"
-
-
-class VisualizationKind(str, Enum):
-    node = "node"
-    group = "group"
-
-
-class DesiredOutcome(str, Enum):
-    increasing = "increasing"
-    decreasing = "decreasing"
 
 
 class ModelAction(str, Enum):

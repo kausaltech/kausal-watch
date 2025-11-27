@@ -18,9 +18,14 @@ class PathsClient(AsyncBaseClient):
         query = gql(
             """
             query NodeValues($lang: String!, $instanceId: ID!, $nodeId: ID!) @instance(identifier: $instanceId) @locale(lang: $lang) {
+              instance {
+                id
+                name
+              }
               node(id: $nodeId) {
                 __typename
                 id
+                name
                 metricDim {
                   id
                   unit {
@@ -36,6 +41,7 @@ class PathsClient(AsyncBaseClient):
                   }
                   years
                   values
+                  forecastFrom
                 }
               }
             }

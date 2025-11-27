@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import typing
 import uuid
+from datetime import date
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import reversion
 from django.contrib.admin import display
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import OneToOneField, Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -37,6 +38,8 @@ from aplans.utils import (
 )
 
 from indicators.models.common_indicator import CommonIndicatorNormalizator
+from indicators.models.import_log import IndicatorValuesImportLog
+from indicators.models.values import IndicatorValue
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 
@@ -57,7 +60,8 @@ if typing.TYPE_CHECKING:
     from indicators.models.dimensions import IndicatorDimension
     from indicators.models.metadata import Dataset, Unit
     from indicators.models.relationships import RelatedIndicator
-    from indicators.models.values import IndicatorGoal, IndicatorValue
+    from indicators.models.values import IndicatorGoal
+    from paths_integration._generated_.graphql_client.node_values import NodeValuesNodeMetricDim
     from people.models import Person
 
 
@@ -286,6 +290,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         choices=IndicatorNonQuantifiedGoalTarget.choices, null=True, blank=True, verbose_name=_('non-quantified goal')
     )
     non_quantified_goal_date = models.DateField(null=True, blank=True, verbose_name=_('non-quantified goal date'))
+
+    # We are anticipating that this will actually be a UUID although currently it is not
+    kausal_paths_node_uuid = models.CharField(
+        max_length=200,
+        editable=True,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name=_('Node identifier'),  # TODO: change to Node UUID once it's actually a UUID
+        help_text=_('The node identifier of the node in Paths where this indicator\'s data is imported from.'),
+    )
+
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
@@ -612,6 +628,45 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         if self.latest_value is None:
             return None
         return self.latest_value.date
+
+    @transaction.atomic
+    def set_values_from_import(
+        self,
+        metric_dim: NodeValuesNodeMetricDim,
+        import_parameters: dict[str, str],
+        max_year: int | None = None
+    ):
+        if len(metric_dim.dimensions) > 0:
+            raise NotImplementedError('Only dimensionless nodes supported at the moment')
+        if len(metric_dim.years) != len(metric_dim.values):
+            raise ValueError('Years and values do not match')
+
+        values_to_remove = IndicatorValue.objects.filter(
+            indicator=self
+        ).exclude(
+            date__year__in=metric_dim.years
+        ).exclude(
+            date__year__gt=max_year
+        )
+        values_to_remove.delete()
+
+        for year, value in zip(metric_dim.years, metric_dim.values, strict=True):
+            if max_year and year > max_year:
+                break
+            IndicatorValue.objects.update_or_create(
+                indicator=self,
+                date__year=year,
+                defaults={
+                    'value': value,
+                    'date': date(year=year, month=12, day=31)
+                }
+            )
+        IndicatorValuesImportLog.objects.create(
+            indicator=self,
+            source_system=IndicatorValuesImportLog.SOURCE_SYSTEM_KAUSAL_PATHS,
+            source_url=import_parameters['source_url'],
+            import_parameters=import_parameters,
+        )
 
     def __str__(self):
         return self.name_i18n
