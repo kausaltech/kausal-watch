@@ -51,6 +51,7 @@ dependencies = [
     "graphql-core",
     "graphql-relay",
     "html2text",
+    "httpx",
     "humanize",
     "jinja2",
     "libvoikko",
