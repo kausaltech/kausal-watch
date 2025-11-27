@@ -14,8 +14,10 @@ if TYPE_CHECKING:
 
 
 async def get_indicator_values(plan: Plan, indicator: Indicator) -> dict[str, Any]:
-    assert plan.kausal_paths_instance_uuid
     client_url = os.getenv('PATHS_BACKEND_URL', 'https://api.paths.kausal.dev') + '/v1/graphql/'
+    if plan.kausal_paths_instance_uuid is None or indicator.kausal_paths_node_uuid is None:
+        return {}
+
     client = PathsClient(url=client_url)
     response = await client.node_values(
         lang=plan.primary_language,
