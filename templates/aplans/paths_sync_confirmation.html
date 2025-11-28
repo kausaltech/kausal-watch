@@ -23,7 +23,9 @@
       {% endfor %}
       <p>
         {% trans "Please verify the correct node is connected to the indicator." %}
-        <a href="{% url 'indicators_indicator_modeladmin_edit' instance_pk=indicator_id %}">{% trans "Edit indicator" %}</a>
+        </p>
+      <p>
+        <a class="button" href="{% url 'indicators_indicator_modeladmin_edit' instance_pk=indicator_id %}">{% trans "Edit indicator" %}</a>
       </p>
     {% else %}
       <div style="margin: 10px;">
