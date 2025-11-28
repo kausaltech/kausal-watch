@@ -107,6 +107,7 @@ register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.CommonIndicatorNormalizatorFactory)
 register(indicators_factories.IndicatorFactory)
+register(indicators_factories.IndicatorValueFactory)
 register(indicators_factories.IndicatorBlockFactory)
 # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
 # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
