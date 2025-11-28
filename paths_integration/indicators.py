@@ -10,7 +10,6 @@ from paths_integration._generated_.graphql_client.client import PathsClient
 if TYPE_CHECKING:
     from actions.models import Plan
     from indicators.models import Indicator
-    from paths_integration._generated_.graphql_client.node_values import NodeValuesNodeMetricDim
 
 
 async def get_indicator_values(plan: Plan, indicator: Indicator) -> dict[str, Any]:
