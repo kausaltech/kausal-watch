@@ -5,12 +5,20 @@ from wagtail.rich_text import RichText
 
 import pytest
 
-from actions.tests.factories import ActionContactFactory, WorkflowFactory
+from actions.tests.factories import ActionContactFactory, PlanFactory, WorkflowFactory
 from copying.main import copy_plan
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
+from indicators.models.indicator import Indicator
+from indicators.tests.factories import (
+    ActionIndicatorFactory,
+    IndicatorGoalFactory,
+    IndicatorLevelFactory,
+    IndicatorValueFactory,
+    RelatedIndicatorFactory,
+)
 from pages.models import StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory
 
@@ -165,3 +173,128 @@ def test_rich_text_block_references(plan_with_pages, static_page):
     assert isinstance(page_copy, StaticPage)
     assert page_copy.body is not None
     assert page_copy.body[0].value.source == html_with_references([image_copy])
+
+
+def test_indicators_are_shared_when_copy_indicators_is_false(plan_with_pages, indicator):
+    # Do not copy indicators but share them between the original plan and the plan copy
+    assert Indicator.objects.get() == indicator
+    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    assert plan_with_pages.indicators.get() == indicator
+    assert indicator.plans.count() == 1
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=False)
+    assert indicator.plans.count() == 2
+    # While we're at it, make sure no indicators are added or removed
+    assert Indicator.objects.get() == indicator
+    assert plan_with_pages.indicators.get() == indicator
+    assert plan_copy.indicators.get() == indicator
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_copy_indicator(  # noqa: PLR0915
+    plan_with_pages, action, indicator, category, plan_dimension, indicator_dimension, person,
+):
+    # Do not share indicators between the original plan and the plan copy but copy them from the original plan to the
+    # plan copy
+    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    indicator.contact_persons_unordered.add(person)
+    value = IndicatorValueFactory.create(indicator=indicator)
+    goal = IndicatorGoalFactory.create(indicator=indicator)
+    action_indicator = ActionIndicatorFactory.create(action=action, indicator=indicator)
+    effect = RelatedIndicatorFactory.create(
+        causal_indicator=indicator, effect_indicator__plans=[plan_with_pages], effect_indicator__common=None,
+    )
+    cause = RelatedIndicatorFactory.create(
+        effect_indicator=indicator, causal_indicator__plans=[plan_with_pages], causal_indicator__common=None,
+    )
+    assert indicator.contact_persons.count() == 1
+    assert plan_with_pages.dimensions.get() == plan_dimension
+    assert indicator.dimensions.get() == indicator_dimension
+    assert indicator_dimension.dimension == plan_dimension.dimension
+    indicator.categories.add(category)
+    indicator.save()
+
+    # Copy
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+
+    # There should be three indicators in the copy (indicator, its cause and effect)
+    assert plan_with_pages.indicators.count() == 3
+    assert plan_copy.indicators.count() == 3
+    # Test indicator itself
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    assert indicator_copy != indicator
+    assert indicator_copy.name == indicator.name
+    # Test contact persons
+    # We copy contact person through model instances but not Person instances
+    assert indicator_copy.contact_persons.get() != indicator.contact_persons.get()
+    assert indicator_copy.contact_persons_unordered.get() == indicator.contact_persons_unordered.get()
+    # Test value
+    value_copy = indicator_copy.values.get()
+    assert value_copy != value
+    assert value_copy.date == value.date
+    assert value_copy.value == value.value
+    # Test goal
+    goal_copy = indicator_copy.goals.get()
+    assert goal_copy != goal
+    assert goal_copy.date == goal.date
+    assert goal_copy.value == goal.value
+    # Test action indicator (should point to copy of action)
+    action_indicator_copy = indicator_copy.related_actions.get()
+    assert action_indicator_copy.action != action_indicator.action
+    assert action_indicator_copy.action.name == action_indicator.action.name
+    assert action_indicator_copy.effect_type == action_indicator.effect_type
+    assert action_indicator_copy.indicates_action_progress == action_indicator.indicates_action_progress
+    # Test effect indicator
+    effect_copy = indicator_copy.related_effects.get()
+    assert effect_copy != effect
+    assert effect_copy.causal_indicator == indicator_copy
+    assert effect_copy.effect_indicator != effect.effect_indicator
+    assert effect_copy.effect_indicator.name == effect.effect_indicator.name
+    assert effect_copy.confidence_level == effect.confidence_level
+    # Test cause indicator
+    cause_copy = indicator_copy.related_causes.get()
+    assert cause_copy != cause
+    assert cause_copy.effect_indicator == indicator_copy
+    assert cause_copy.causal_indicator != cause.causal_indicator
+    assert cause_copy.causal_indicator.name == cause.causal_indicator.name
+    assert cause_copy.confidence_level == cause.confidence_level
+    # Test dimensions
+    indicator_dimension_copy = indicator_copy.dimensions.get()
+    assert indicator_dimension_copy != indicator_dimension
+    assert indicator_dimension_copy.indicator == indicator_copy
+    assert indicator_dimension_copy.dimension == indicator_dimension.dimension
+    dimension_plan_ids = indicator_dimension.dimension.plans.values_list('plan_id', flat=True)
+    assert {*dimension_plan_ids} == {plan_with_pages.id, plan_copy.id}
+    # Test indicator actions
+    action_copy = plan_copy.actions.get()
+    assert indicator_copy.actions.get() == action_copy
+    # Test indicator categories
+    category_copy = plan_copy.category_types.get().categories.get()
+    assert indicator_copy.categories.get() == category_copy
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_copy_indicator_keeps_original_indicator_unchanged(plan_with_pages, indicator):
+    # Original indicator should still belong to only the original plan
+    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    copy_plan(plan_with_pages, copy_indicators=True)
+    assert indicator.plans.get() == plan_with_pages
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_cannot_copy_indicators_when_shared(plan_with_pages, indicator):
+    # When the original plan shares some indicators with another plan, copying should raise an error
+    another_plan = PlanFactory()
+    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    IndicatorLevelFactory.create(plan=another_plan, indicator=indicator)
+    assert indicator.plans.count() == 2
+    with pytest.raises(ValueError, match='Cannot copy indicators as the plan shares indicators with another plan'):
+        copy_plan(plan_with_pages, copy_indicators=True)
+
+
+def test_cannot_copy_common_indicator_instances(plan_with_pages, indicator):
+    # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
+    # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
+    assert indicator.common is not None
+    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    with pytest.raises(ValueError, match='Cannot copy indicators as some are instances of a common indicator'):
+        copy_plan(plan_with_pages, copy_indicators=True)

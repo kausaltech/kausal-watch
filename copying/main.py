@@ -13,7 +13,7 @@ import wagtail.signal_handlers
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
-from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
+from django.db.models import Count, Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
@@ -40,6 +40,7 @@ from copying.utils import (
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
+from indicators.models.indicator import Indicator, IndicatorLevel
 from pages.models import PlanRootPage
 
 if TYPE_CHECKING:
@@ -86,7 +87,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'general_admins_ordered': {},
     'general_content': {},
     'impact_groups': {},
-    'indicator_levels': {},  # We don't copy the indicators themselves
+    'indicator_levels': {},  # We copy the indicators themselves separately and optionally
     'notification_settings': {},
     'plan_common_category_types_through': {},
     'plan_related_organizations_through': {},
@@ -104,6 +105,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         # },
     #},
     'scenarios': {},
+    'dimensions': {},  # copies through model (`PlanDimension`) instances, not `Dimension` instances
 }
 
 ATTRIBUTE_TYPE_CLONE_STRUCTURE: CloneStructure = {
@@ -114,6 +116,25 @@ ATTRIBUTE_TYPE_CLONE_STRUCTURE: CloneStructure = {
     'numeric_value_attributes': {},
     'text_attributes': {},
     'rich_text_attributes': {},
+}
+
+INDICATOR_CLONE_STRUCTURE: CloneStructure = {
+    # We deliberately exclude the following fields as they seem legacy:
+    # - datasets
+    # - latest_graph
+
+    # We do not copy the following fields `levels` field as they are taken care of by `PLAN_CLONE_STRUCTURE`:
+    # - levels (due to indicator_levels)
+    # - related_actions (due to actions -> related_indicators)
+
+    'contact_persons': {},
+    'values': {},
+    # 'related_actions': {},  # ActionIndicator instances are already copied in PLAN_CLONE_STRUCTURE
+    'related_causes': {},
+    # If we included not only `related_causes` but also `related_effects`, we'd try to copy ActionIndicator instances
+    # twice as it's already done due to `related_causes`.
+    'goals': {},
+    'dimensions': {},
 }
 
 
@@ -779,6 +800,7 @@ def copy_plan(
     version_name: str | None = None,
     supersede_original_plan: bool = False,
     supersede_original_actions: bool = False,
+    copy_indicators: bool = False,
 ) -> Plan:
     """
     Copy the given plan.
@@ -795,12 +817,27 @@ def copy_plan(
     If `supersede_original_plan` is true, the copy will supersede the original plan; if
     `supersede_original_actions` is true, each action copy will supersede its original.
 
+    If `copy_indicators` is true, all indicators of `plan` will be copied. However, this requires the plan to have only
+    indicators that are not shared with another plan, otherwise we abort.
+
     Returns the copy.
     """
     if new_plan_identifier is None:
         new_plan_identifier = plan.default_identifier_for_copying()
     if new_plan_name is None:
         new_plan_name = plan.default_name_for_copying()
+
+    if copy_indicators:
+        plan_has_shared_indicator = (
+            IndicatorLevel.objects.filter(indicator__in=plan.indicators.all())
+            .values('indicator').annotate(num_plans=Count('plan')).filter(num_plans__gt=1)
+        )
+        if plan_has_shared_indicator:
+            raise ValueError("Cannot copy indicators as the plan shares indicators with another plan")
+        # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
+        # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
+        if plan.indicators.filter(common__isnull=False).exists():
+            raise ValueError("Cannot copy indicators as some are instances of a common indicator")
 
     clone_visitor = CloneVisitor(
         site_hostname=_new_site_hostname(plan, new_plan_identifier),
@@ -873,14 +910,26 @@ def copy_plan(
     # revision, which may be the current, yet unpublished, draft.
     copy_action_drafts(plan_copy, clone_visitor)
 
+    if copy_indicators:
+        indicators = list(plan.indicators.all())
+        for indicator in indicators:
+            clone(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
+    else:
+        indicators = []
+
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
-    update_references(plan_copy, attribute_types, clone_visitor)
+    update_references(plan_copy, attribute_types, indicators, clone_visitor)
 
     return plan_copy
 
 
-def update_references(plan_copy: Plan, attribute_types: list[AttributeType], clone_visitor: CloneVisitor):
+def update_references(
+    plan_copy: Plan,
+    attribute_types: list[AttributeType],
+    indicators: list[Indicator],
+    clone_visitor: CloneVisitor,
+):
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
     visit_tree(plan_copy, PLAN_CLONE_STRUCTURE, update_references_visitor)
     update_references_in_page_tree_with_translations(plan_copy.root_page, update_references_visitor)
@@ -888,6 +937,8 @@ def update_references(plan_copy: Plan, attribute_types: list[AttributeType], clo
         update_references_in_page_tree_with_translations(page, update_references_visitor)
     for at in attribute_types:
         visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, update_references_visitor)
+    for indicator in indicators:
+        visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, update_references_visitor)
 
 
 def update_references_in_page_tree_with_translations(root_page: Page, update_references_visitor: UpdateReferencesVisitor):

@@ -107,13 +107,16 @@ register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.CommonIndicatorNormalizatorFactory)
 register(indicators_factories.IndicatorFactory, plans=LazyFixture(lambda plan: [plan]))
+register(indicators_factories.DimensionFactory)
 register(indicators_factories.IndicatorValueFactory)
 register(indicators_factories.IndicatorBlockFactory)
+register(indicators_factories.IndicatorDimensionFactory)
 # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
 # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
 # https://github.com/wagtail/wagtail-factories/issues/40
 # register(indicators_factories.IndicatorGroupBlockFactory)
 register(indicators_factories.IndicatorShowcaseBlockFactory)
+register(indicators_factories.PlanDimensionFactory)
 register(indicators_factories.QuantityFactory)
 register(indicators_factories.UnitFactory)
 register(indicators_factories.IndicatorContactFactory, 'indicator_contact')

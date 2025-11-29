@@ -26,6 +26,7 @@ from indicators.models import (
     RelatedIndicator,
     Unit,
 )
+from indicators.models.dimensions import PlanDimension
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
@@ -43,6 +44,10 @@ class QuantityFactory(DjangoModelFactory[Quantity]):
         model = 'indicators.Quantity'
 
     name = Sequence(lambda i: f"Quantity {i}")
+
+    # Workaround to avoid crashes when trying to print a quantity, as TranslatedModelMixin.get_i18n_value(), which is
+    # called by Quantity.__str__(), can't deal with `i18n` being None
+    name_fi = 'foo'
 
 
 class CommonIndicatorFactory(DjangoModelFactory[CommonIndicator]):
@@ -183,6 +188,14 @@ class IndicatorDimensionFactory(DjangoModelFactory[IndicatorDimension]):
 
     dimension = SubFactory(DimensionFactory)
     indicator = SubFactory(IndicatorFactory)
+
+
+class PlanDimensionFactory(DjangoModelFactory[PlanDimension]):
+    class Meta:
+        model = 'indicators.PlanDimension'
+
+    dimension = SubFactory(DimensionFactory)
+    plan = SubFactory(PlanFactory)
 
 
 class IndicatorValueFactory(DjangoModelFactory[IndicatorValue]):

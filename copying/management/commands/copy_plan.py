@@ -46,6 +46,11 @@ class Command(BaseCommand):
             help="Supersede original actions by their copies",
             action='store_true',
         )
+        parser.add_argument(
+            "--copy-indicators",
+            help="Copy the plan's indicators instead of referencing the same existing indicators in both plans.",
+            action="store_true",
+        )
 
     def handle(self, *args, **options):
         plan = Plan.objects.get(identifier=options['identifier'])
@@ -59,4 +64,5 @@ class Command(BaseCommand):
                 version_name=options['version_name'],
                 supersede_original_plan=options['supersede_original_plan'],
                 supersede_original_actions=options['supersede_original_actions'],
+                copy_indicators=options['copy_indicators'],
             )

@@ -84,7 +84,7 @@ class CommonIndicatorNormalizator(models.Model):
 
 class PlanCommonIndicator(models.Model):
     common_indicator = models.ForeignKey('indicators.CommonIndicator', on_delete=models.CASCADE, related_name='+')
-    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='+')
+    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='plan_common_indicator_through')
 
     def __str__(self):
         return '%s in %s' % (self.common_indicator, self.plan)
