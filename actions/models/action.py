@@ -852,12 +852,16 @@ class Action(
                 cat = all_cats[cat]  # noqa: PLW2901
             new_cats.add(cat)
 
+        changed = False
         for cat in existing_cats - new_cats:
             self.categories.remove(cat)
+            changed = True
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
+            changed = True
 
-        self.save()
+        if changed:
+            self.save()
 
     def set_responsible_parties(self, data: list[ResponsiblePartyDict]):
         existing_orgs = {p.organization for p in self.responsible_parties.all()}
