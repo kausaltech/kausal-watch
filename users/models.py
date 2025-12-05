@@ -303,13 +303,16 @@ class User(AbstractUser):
         orgs = person.organization_plan_admins.values_list('organization')
         return Organization.objects.filter(id__in=orgs)
 
-    def is_organization_admin_for_action(self, action: Action | None = None):
+    def is_organization_admin_for_action(self, action: Action | None = None, plan: Plan | None = None):
         cache = self.get_cache()
         if hasattr(cache, '_org_admin_for_actions'):
             actions = cache._org_admin_for_actions
         else:
             from actions.models import Action
-            actions = Action.objects.get_queryset().user_is_org_admin_for(self)
+            actions = Action.objects.get_queryset()
+            if plan:
+                actions = actions.filter(plan=plan)
+            actions = actions.user_is_org_admin_for(self)
             cache._org_admin_for_actions = actions
         # Ensure below that the actions queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
