@@ -441,13 +441,14 @@ class User(AbstractUser):
             else:
                 plan = action.plan
 
-        if plan is not None and self.is_general_admin_for_plan(plan):
+        # At this point, `plan` is guaranteed to not be None
+        if self.is_general_admin_for_plan(plan):
             return True
         if action is not None and action.is_merged():
             # Merged actions can only be edited by admins
             return False
-        return self.is_contact_person_for_action(action) \
-            or self.is_organization_admin_for_action(action)
+        return self.is_contact_person_for_action_in_plan(plan, action) \
+            or self.is_organization_admin_for_action(action, plan)
 
     def can_create_action(self, plan: Plan):
         assert plan is not None
