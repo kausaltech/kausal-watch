@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, permissions, serializers, viewsets
+from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
 
 from drf_spectacular.types import OpenApiTypes
@@ -19,6 +20,7 @@ from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSer
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
 from kausal_common.api.utils import RegisteredAPIView, register_view_helper
+from kausal_common.datasets.api import I18nFieldSerializerMixin
 from kausal_common.model_images import (
     ModelWithImageSerializerMixin,
     ModelWithImageViewMixin,
@@ -1627,23 +1629,101 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
         return queryset.available_for_plan(plan, include_contact_persons=True)
 
 
-class ActionTaskSerializer(serializers.HyperlinkedModelSerializer):
-    included_serializers = {
-        'action': ActionTask,
-    }
-
+class ActionTaskSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = ActionTask
-        exclude = ('completed_by',)
+        list_serializer_class = BulkListSerializer
+        fields = public_fields(ActionTask)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        plan = self.context.get('plan')
+        action_field = self.fields.get('action')
+        if plan and action_field:
+            assert isinstance(action_field, RelatedField)
+            action_field.queryset = Action.objects.filter(plan=plan)
 
 
 @register_view
-class ActionTaskViewSet(viewsets.ModelViewSet):
+class ActionTaskViewSet(ViewSetWithPlanContext, BulkModelViewSet[ActionTask]):
     queryset = ActionTask.objects.all()
     serializer_class = ActionTaskSerializer
-    filterset_fields = {
-        'action': ('exact',),
-    }
+
+    def get_permissions(self):
+        permission_classes: list[type[permissions.BasePermission]]
+        if self.action == 'list':
+            permission_classes = [AnonReadOnly]
+        else:
+            permission_classes = [ActionTaskPermission]
+        return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
+            return ActionTask.objects.none()
+        plan_pk = self.kwargs['plan_pk']
+        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
+        if plan is None:
+            raise exceptions.NotFound(detail='Plan not found')
+        qs = ActionTask.objects.filter(action__plan=plan_pk)
+        action_id = self.request.query_params.get('action')
+        if action_id:
+            qs = qs.filter(action_id=action_id)
+        return qs
+
+
+plan_router.register(
+    'action-tasks',
+    ActionTaskViewSet,
+    basename='action-task',
+)
+action_task_router = NestedBulkRouter(plan_router, 'action-tasks', lookup='action_task')
+all_routers.append(action_task_router)
+
+
+class ActionTaskPermission(permissions.DjangoObjectPermissions):
+    def check_permission(self, user: User, perm: str, plan: Plan, task: ActionTask | None = None):
+        # Check for object permissions first
+        if not user.has_perms([perm]):
+            return False
+        if task:
+            action = task.action
+        else:
+            action = None
+        if perm in (f'actions.{op}_actiontask' for op in ('change', 'add', 'delete')):
+            if not user.can_modify_action(action=action, plan=plan):
+                return False
+        else:
+            return False
+        return True
+
+    def has_permission(self, request: Request, view):
+        plan_pk = view.kwargs.get('plan_pk')
+        if plan_pk:
+            plan = Plan.objects.filter(id=plan_pk).first()
+            if plan is None:
+                raise exceptions.NotFound(detail='Plan not found')
+        else:
+            plan = Plan.objects.get_queryset().live().first()
+            assert plan is not None
+        if request.method is None:
+            return False
+        perms = self.get_required_permissions(request.method, ActionTask)
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, plan) for perm in perms)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method is None:
+            return False
+        perms = self.get_required_object_permissions(request.method, ActionTask)
+        if not perms and request.method in permissions.SAFE_METHODS:
+            return True
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        return all(self.check_permission(user, perm, obj.action.plan, obj) for perm in perms)
 
 
 class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
