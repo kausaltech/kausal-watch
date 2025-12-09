@@ -54,7 +54,7 @@ Build the Kausal extensions:
 
 1. Clone the [kausal-extensions](https://github.com/kausaltech/kausal-extensions) repo
 2. Follow the [kausal-extensions instructions](https://github.com/kausaltech/kausal-extensions#building) to build the client
-3. Create a symlink in the root of kausal-watch-private
+3. Create a symlink in the root of kausal-watch
    ```shell
    ln -s ../kausal-extensions/watch/kausal_watch_extensions .
    ```

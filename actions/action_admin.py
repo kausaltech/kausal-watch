@@ -491,7 +491,7 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         else:
             for role in _cls.get_roles():
                 # Only show panel for "unspecified" role if there are instances with an unspecified role
-                # https://github.com/kausaltech/kausal-watch-private/pull/111#issuecomment-1896291423
+                # https://github.com/kausaltech/kausal-watch/pull/111#issuecomment-1896291423
                 if role is None and not getattr(action, relation_name).filter(role__isnull=True).exists():
                     continue
                 if role in editable_roles:
