@@ -1,6 +1,6 @@
-# aplans
+# Kausal Watch
 
-aplans is a service for administrating and monitoring action plans. It has the following components:
+Kausal Watch is a service for administrating and monitoring action plans. It has the following components:
 
 - admin UI for modifying action plan content
 - REST API for distributing the information
