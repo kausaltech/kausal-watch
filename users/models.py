@@ -115,7 +115,8 @@ class UserRelatedModelsCache:
     _corresponding_person: Person | None
     _active_admin_plan: Plan
     _adminable_plans: PlanQuerySet
-    _org_admin_for_actions: ActionQuerySet
+    # Key: plan ID (or None to consider actions from all plans)
+    _org_admin_for_actions: dict[int | None, ActionQuerySet]
     _org_admin_for_indicators: IndicatorQuerySet
     _contact_for_actions: set[int]
     _contact_for_indicators: set[int]
@@ -153,7 +154,8 @@ class User(AbstractUser):
     _adminable_plans: models.QuerySet[Plan]
     _instance_visibility_perms: set[InstancesVisibleForMixin.VisibleFor]
     _instance_editable_perms: set[InstancesEditableByMixin.EditableBy]
-    _org_admin_for_actions: ActionQuerySet
+    # Key: plan ID (or None to consider actions from all plans)
+    _org_admin_for_actions: dict[int | None, ActionQuerySet]
     _org_admin_for_indicators: IndicatorQuerySet
     _contact_for_actions: set[int]
     _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
@@ -305,15 +307,18 @@ class User(AbstractUser):
 
     def is_organization_admin_for_action(self, action: Action | None = None, plan: Plan | None = None):
         cache = self.get_cache()
-        if hasattr(cache, '_org_admin_for_actions'):
-            actions = cache._org_admin_for_actions
+        if not hasattr(cache, '_org_admin_for_actions'):
+            cache._org_admin_for_actions = {}
+        plan_key = plan.id if plan else None
+        if plan_key in cache._org_admin_for_actions:
+            actions = cache._org_admin_for_actions[plan_key]
         else:
             from actions.models import Action
             actions = Action.objects.get_queryset()
             if plan:
                 actions = actions.filter(plan=plan)
             actions = actions.user_is_org_admin_for(self)
-            cache._org_admin_for_actions = actions
+            cache._org_admin_for_actions[plan_key] = actions
         # Ensure below that the actions queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
         if action is None:
@@ -403,7 +408,7 @@ class User(AbstractUser):
             q = Q(actions__in=self.perms.contact_for_actions)
             q |= Q(indicators__in=self.perms.contact_for_indicators)
             q |= Q(id__in=cache._general_admin_for_plans)
-            q |= Q(actions__in=cache._org_admin_for_actions)
+            q |= Q(actions__in=cache._org_admin_for_actions[None])
             q |= Q(indicators__in=cache._org_admin_for_indicators)
             plans = Plan.objects.qs.filter(q).distinct()
         cache._adminable_plans = plans
