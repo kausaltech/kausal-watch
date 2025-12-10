@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from django.db import models
 from wagtail.models import ModelLogEntry, PageLogEntry
+from wagtail.models import PageLogEntryManager
 from wagtail.models.audit_log import ModelLogEntryManager
+
 
 
 class PlanScopedModelLogEntryManager(ModelLogEntryManager):
@@ -24,5 +26,13 @@ class PlanScopedModelLogEntry(ModelLogEntry):
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
 
 
+class PlanScopedPageLogEntryManager(PageLogEntryManager):
+    def log_action(self, instance, action, **kwargs):
+        plan = instance.plan
+        kwargs.update(plan=plan)
+        return super().log_action(instance, action, **kwargs)
+
+
 class PlanScopedPageLogEntry(PageLogEntry):
+    objects = PlanScopedPageLogEntryManager()
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)

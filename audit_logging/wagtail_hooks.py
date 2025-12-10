@@ -14,4 +14,4 @@ from .models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 def register_core_log_actions(actions):
     actions.register_model(Plan, PlanScopedModelLogEntry)
     actions.register_model(PlanRelatedModel, PlanScopedModelLogEntry)
-    # actions.register_model(AplansPage, PlanScopedPageLogEntry)
+    actions.register_model(AplansPage, PlanScopedPageLogEntry)
