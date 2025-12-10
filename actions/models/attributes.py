@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -27,6 +27,7 @@ from aplans.utils import (
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
     OrderedModel,
+    PlanRelatedModel,
     ReferenceIndexedModelMixin,
 )
 
@@ -80,6 +81,7 @@ class AttributeType(
     ClusterableModel,
     OrderedModel,
     ModelWithPrimaryLanguage,
+    PlanRelatedModel,
 ):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
@@ -184,21 +186,27 @@ class AttributeType(
         if self.instance_visibility_is_action_specific and self.object_content_type != action_ct:
             raise ValidationError({'instances_visible_for': _('This value is only allowed for action fields')})
 
+    def _get_plan(self) -> Plan | None:
+        if not hasattr(self, 'scope_content_type'):
+            return None
+        scope_app_label = self.scope_content_type.app_label
+        scope_model = self.scope_content_type.model
+        if scope_app_label == 'actions' and scope_model == 'plan':
+            from .plan import Plan
+            assert isinstance(self.scope, Plan)
+            plan = self.scope
+        elif scope_app_label == 'actions' and scope_model == 'categorytype':
+            from .category import CategoryType
+            assert isinstance(self.scope, CategoryType)
+            plan = self.scope.plan
+        else:
+            raise Exception(f"Unexpected AttributeType scope content type {scope_app_label}:{scope_model}")
+        return plan
+
     def save(self, *args, **kwargs):
         if not self.primary_language:
             assert not self.other_languages
-            scope_app_label = self.scope_content_type.app_label
-            scope_model = self.scope_content_type.model
-            if scope_app_label == 'actions' and scope_model == 'plan':
-                from .plan import Plan
-                assert isinstance(self.scope, Plan)
-                plan = self.scope
-            elif scope_app_label == 'actions' and scope_model == 'categorytype':
-                from .category import CategoryType
-                assert isinstance(self.scope, CategoryType)
-                plan = self.scope.plan
-            else:
-                raise Exception(f"Unexpected AttributeType scope content type {scope_app_label}:{scope_model}")
+            plan = self._get_plan()
             self.primary_language = plan.primary_language
             self.other_languages = plan.other_languages
         super().save(*args, **kwargs)
@@ -210,6 +218,17 @@ class AttributeType(
         return qs.filter(
             object_content_type=self.object_content_type, scope_content_type=self.scope_content_type, scope_id=self.scope_id,
         )
+
+    def get_plans(self):
+        plan = self._get_plan()
+        if plan is None:
+            return []
+        return [plan]
+
+    @override
+    def initialize_plan_defaults(self, plan: Plan):
+        # Plan defaults are encoded in the scope elsewhere
+        pass
 
 
 class Attribute(models.Model):

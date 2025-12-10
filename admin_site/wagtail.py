@@ -571,7 +571,7 @@ class PlanRelatedViewModelAdminMixin:
         if instance is not None and isinstance(instance, PlanRelatedModel) and user is not None and user.is_authenticated:
             plan = user.get_active_admin_plan()
             instance_plans = instance.get_plans()
-            if plan not in instance_plans:
+            if len(instance_plans) > 0 and plan not in instance_plans:
                 querystring = QueryDict(mutable=True)
                 querystring[REDIRECT_FIELD_NAME] = request.get_full_path()
                 url = reverse('change-admin-plan', kwargs=dict(plan_id=instance_plans[0].id))
