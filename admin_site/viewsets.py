@@ -10,7 +10,7 @@ from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.snippets.views.snippets import CreateView, EditView, IndexView, SnippetViewSet
 
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel
+from aplans.utils import PlanRelatedModel
 
 from admin_site.forms import WatchAdminModelForm
 from admin_site.mixins import (
@@ -83,7 +83,7 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelFo
 
         Override this in subclasses to implement custom initialization logic.
         """
-        if isinstance(instance, PlanDefaultsModel):
+        if isinstance(instance, PlanRelatedModel):
             plan = request.user.get_active_admin_plan()
             instance.initialize_plan_defaults(plan)
 

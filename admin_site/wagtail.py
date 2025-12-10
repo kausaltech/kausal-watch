@@ -41,7 +41,7 @@ from kausal_common.i18n.helpers import convert_language_code, get_language_from_
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import InstancesVisibleForMixin, PlanDefaultsModel, PlanRelatedModel
+from aplans.utils import InstancesVisibleForMixin, PlanRelatedModel
 
 from actions.models.plan import Plan
 
@@ -692,7 +692,7 @@ class AplansCreateView[M: Model](
     request: HttpRequest
 
     def initialize_instance(self, request):
-        if isinstance(self.instance, PlanDefaultsModel):
+        if isinstance(self.instance, PlanRelatedModel):
             plan = request.user.get_active_admin_plan()
             self.instance.initialize_plan_defaults(plan)
 

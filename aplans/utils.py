@@ -282,23 +282,14 @@ class OrderedModelChildFormSet(BaseChildFormSet):
         return saved_instances
 
 
-class PlanDefaultsModel:
-    """
-    Mixin for models that are plan-related.
-
-    Model instances of this mixin have some plan-specific default values that
-    must be set when creating new instances in the admin.
-    """
-
-    def initialize_plan_defaults(self, plan: Plan):
-        raise NotImplementedError()
-
-
-class PlanRelatedModel(PlanDefaultsModel, models.Model):
+class PlanRelatedModel(models.Model):
     wagtail_reference_index_ignore = False
 
     class Meta:
         abstract = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
@@ -311,8 +302,11 @@ class PlanRelatedModel(PlanDefaultsModel, models.Model):
     def get_plans(self) -> list[Plan]:
         return [cast('Plan', getattr(self, 'plan'))]  # noqa: B009
 
+    # Model instances of this base class have some plan-specific default values that
+    # must be set when creating new instances in the admin.
     def initialize_plan_defaults(self, plan: Plan):
         setattr(self, 'plan', plan)  # noqa: B010
+
 
 
 class PlanRelatedOrderedModel(OrderedModel, PlanRelatedModel):
