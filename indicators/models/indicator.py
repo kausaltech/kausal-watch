@@ -407,6 +407,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, Restricte
             Plan.objects.filter(organization=self.organization)
         )
 
+    def get_plans(self):
+        return self.get_plan_model().objects.filter(indicator_levels__indicator=self)
+
     def get_level_for_plan(self, plan):
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None

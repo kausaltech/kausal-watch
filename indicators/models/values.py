@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 
+from aplans.utils import PlanRelatedModel
+
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
@@ -29,7 +31,7 @@ class IndicatorGraph(models.Model):
         return "%s (%s)" % (self.indicator, self.created_at)
 
 
-class IndicatorValue(ClusterableModel):
+class IndicatorValue(ClusterableModel, PlanRelatedModel):
     """One measurement of an indicator for a certain date/month/year."""
 
     indicator = ParentalKey['Indicator'](
@@ -57,6 +59,9 @@ class IndicatorValue(ClusterableModel):
         super().clean()
         # FIXME: Check for duplicates on categories
 
+    def get_plans(self):
+        return self.indicator.get_plans()
+
     def format_date(self) -> str:
         indicator = cast('Indicator', self.indicator)  # pyright: ignore[reportUnnecessaryCast]
         resolution = indicator.time_resolution
@@ -79,7 +84,7 @@ class IndicatorValue(ClusterableModel):
 
 
 @reversion.register()
-class IndicatorGoal(models.Model):
+class IndicatorGoal(PlanRelatedModel):
     """The numeric goal which the organization has set for an indicator."""
 
     indicator = ParentalKey['Indicator'](
@@ -100,6 +105,9 @@ class IndicatorGoal(models.Model):
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
         unique_together = (('indicator', 'date'),)
+
+    def get_plans(self):
+        return self.indicator.get_plans()
 
     def __str__(self):
         indicator = self.indicator
