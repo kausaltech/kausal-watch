@@ -241,7 +241,8 @@ INSTALLED_APPS = [
 if env('ENABLE_WAGTAIL_STYLEGUIDE'):
     INSTALLED_APPS += ['wagtail.contrib.styleguide']
 
-INSTALLED_APPS += [
+
+WATCH_APPS = [
     'actions',
     'kausal_common.datasets',
     'content',
@@ -255,9 +256,12 @@ INSTALLED_APPS += [
     'people',
     'reports',
     'request_log',
+    'audit_logging',
     'users',
     'budget',
+
 ]
+INSTALLED_APPS += WATCH_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
