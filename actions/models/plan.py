@@ -481,6 +481,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
 
+    def get_plans(self):
+        return [self]
+
     @cached_property
     def cached_actions(self):
         return self.actions.order_by('order')

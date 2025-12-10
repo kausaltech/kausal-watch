@@ -31,7 +31,7 @@ from aplans.utils import (
     AdminSaveContext,
     IdentifierField,
     ModificationTracking,
-    PlanDefaultsModel,
+    PlanRelatedModel,
     RestrictedVisibilityModel,
     get_available_variants_for_language,
     validate_json,
@@ -97,7 +97,7 @@ class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
 
 
 @reversion.register(follow=('goals',))
-class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel, RestrictedVisibilityModel):
+class Indicator(ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, PlanRelatedModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (

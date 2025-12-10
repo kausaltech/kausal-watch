@@ -36,7 +36,7 @@ from loguru import logger
 from kausal_common.graphene.grapple import make_grapple_streamfield
 
 from aplans.extensions import get_body_blocks
-from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
+from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel, PlanRelatedModel
 
 from actions.blocks import (
     RelatedPlanListBlock,
@@ -957,7 +957,7 @@ class AccessibilityStatementPage(FixedSlugPage):
         verbose_name_plural = _('Accessibility statement pages')
 
 
-class PlanLink(OrderedModel):
+class PlanLink(OrderedModel, PlanRelatedModel):
     """A link related to a plan."""
 
     plan = ParentalKey(Plan, on_delete=models.CASCADE, verbose_name=_('plan'), related_name='links')
