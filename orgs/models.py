@@ -20,7 +20,7 @@ from kausal_common.organizations.models import (
     Node,
 )
 
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel
+from aplans.utils import PlanRelatedModel
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -135,7 +135,7 @@ del _OrganizationManager
 
 
 @reversion.register()
-class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySet]):
+class Organization(BaseOrganization, PlanRelatedModel, Node[OrganizationQuerySet]):
     VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
     logo: FK[AplansImage | None] = models.ForeignKey(
@@ -169,6 +169,22 @@ class Organization(BaseOrganization, PlanDefaultsModel, Node[OrganizationQuerySe
     @property
     def parent(self):
         return self.get_parent()
+
+    def get_plans_q(self):
+        ancestors = self.get_ancestors()
+        return (
+            Q(organization=self)
+            | Q(related_organizations=self)
+            | Q(organization__in=ancestors)
+            | Q(related_organizations__in=ancestors)
+        )
+
+    @override
+    def get_plans(self):
+        plan_model = self.get_plan_model()
+        return plan_model.objects.filter(
+            self.get_plans_q()
+        ).distinct()
 
     public_fields = BaseOrganization.public_fields + [  # type: ignore[misc]
         'internal_abbreviation',

@@ -25,7 +25,7 @@ from kausal_common.models.types import MLModelManager, RevManyToManyQS
 from kausal_common.people.models import BasePerson
 from kausal_common.users import user_or_none
 
-from aplans.utils import PlanDefaultsModel
+from aplans.utils import PlanRelatedModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
@@ -117,7 +117,7 @@ DEFAULT_AVATAR_SIZE = 360
 
 
 @reversion.register()
-class Person(BasePerson, PlanDefaultsModel):
+class Person(BasePerson, PlanRelatedModel):
     participated_in_training = models.BooleanField(
         null=True,
         default=False,
@@ -151,6 +151,18 @@ class Person(BasePerson, PlanDefaultsModel):
 
     def initialize_plan_defaults(self, plan: Plan):
         self.organization = plan.organization
+
+    def get_plans(self):
+        from actions.models import Plan
+        org_plans_q = self.organization.get_plans_q()
+        return Plan.objects.filter(
+            org_plans_q
+            | Q(actions__contact_persons__person=self)
+            | Q(general_admins=self)
+            | Q(public_site_viewers__person=self)
+            | Q(organization_plan_admins__person=self)
+            #| Q(organization_metadata_admins__person=self)  DO WE HAVE THESE?
+        ).order_by().distinct()
 
     def download_avatar(self):
         email_hash = hashlib.md5(self.email.encode('utf8'), usedforsecurity=False).hexdigest()
