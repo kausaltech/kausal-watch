@@ -18,6 +18,7 @@ from wagtail.documents import urls as wagtaildocs_urls
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
+from audit_logging.views import PlanScopedLogEntriesView
 from kausal_common.admin_site.views import RootRedirectView
 from kausal_common.datasets.api import all_routers as datasets_api_nested_routers, router as datasets_api_root_router
 from kausal_common.deployment.health_check_view import health_view
@@ -138,6 +139,7 @@ urlpatterns = [
     # FIXME: This overrides the URLs in Wagtail's admin/urls/pages.py to allow filtering the queryset
     path("admin/pages/search/", PageSearchView.as_view(), name="search"),
     re_path(r'^admin/', include(wagtailadmin_urls)),
+    path('watch-site-history/', PlanScopedLogEntriesView.as_view(), name="watch-site-history"),
     re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     # re_path(r'^pages/', include(wagtail_urls)),
