@@ -20,6 +20,12 @@ class PlanScopedModelLogEntryManager(ModelLogEntryManager):
         # one of the several created log entries.
         return retval
 
+    def viewable_by_user(self, user):
+        return super().viewable_by_user(user).filter(
+            plan__isnull=False,
+            plan__in=user.get_adminable_plans()
+        )
+
 
 class PlanScopedModelLogEntry(ModelLogEntry):
     objects = PlanScopedModelLogEntryManager()
@@ -31,6 +37,13 @@ class PlanScopedPageLogEntryManager(PageLogEntryManager):
         plan = instance.plan
         kwargs.update(plan=plan)
         return super().log_action(instance, action, **kwargs)
+
+    def viewable_by_user(self, user):
+        qs = super().viewable_by_user(user)
+        return qs.filter(
+            planscopedpagelogentry__isnull=False,
+            planscopedpagelogentry__plan__in=user.get_adminable_plans()
+        )
 
 
 class PlanScopedPageLogEntry(PageLogEntry):
