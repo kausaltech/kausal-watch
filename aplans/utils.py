@@ -302,11 +302,9 @@ class PlanRelatedModel(models.Model):
     def get_plans(self) -> list[Plan]:
         return [cast('Plan', getattr(self, 'plan'))]  # noqa: B009
 
-    # Model instances of this base class have some plan-specific default values that
-    # must be set when creating new instances in the admin.
     def initialize_plan_defaults(self, plan: Plan):
+        """Set some plan-specific default values that model instances of this base class must have."""
         setattr(self, 'plan', plan)  # noqa: B010
-
 
 
 class PlanRelatedOrderedModel(OrderedModel, PlanRelatedModel):

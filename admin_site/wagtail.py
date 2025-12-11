@@ -558,7 +558,8 @@ class PlanRelatedViewModelAdminMixin:
             # action plan.
             active_plan = admin_req(self.request).user.get_active_admin_plan()
             plans = obj.get_plans()
-            assert active_plan in plans
+            if len(plans):
+                assert active_plan in plans
 
         return super().form_valid(form, *args, **kwargs)
 

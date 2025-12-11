@@ -408,6 +408,8 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, Restricte
         )
 
     def get_plans(self):
+        if not self.pk:
+            return []
         return self.get_plan_model().objects.filter(indicator_levels__indicator=self)
 
     def get_level_for_plan(self, plan):
