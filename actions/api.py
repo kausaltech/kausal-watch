@@ -8,6 +8,8 @@ import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from modeltrans.translator import get_i18n_field
+from modeltrans.utils import build_localized_fieldname
 from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
@@ -1629,7 +1631,38 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
         return queryset.available_for_plan(plan, include_contact_persons=True)
 
 
-class ActionTaskSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
+# FIXME: This is very similar to kausal_common.datasets.api.I18nFieldSerializerMixin
+class I18nFieldPlanLanguagesSerializerMixin:
+    """
+    Add fields for translated strings to serializers whose context contains a plan.
+
+    This adds a field `<field>_<lang>` for every translatable field `<field>` and every language `<lang>` supported by
+    the plan except the primary language (for which there is `<field>`).
+    """
+
+    context: dict[str, Any]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        i18n_field = get_i18n_field(self.Meta.model)  # type: ignore[attr-defined]
+        if not i18n_field:
+            return
+        plan = self.context.get('plan')
+        if not plan:
+            return
+        assert isinstance(plan, Plan)
+        for source_field in i18n_field.fields:
+            if source_field not in self.Meta.fields:  # type: ignore[attr-defined]
+                continue
+            # Add field with language suffix for every non-primary language supported by the plan
+            for lang in plan.other_languages:
+                translated_field = build_localized_fieldname(source_field, lang)
+                self.fields[translated_field] = serializers.CharField(  # type: ignore[attr-defined]
+                    required=False,
+                )
+
+
+class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = ActionTask
         list_serializer_class = BulkListSerializer
