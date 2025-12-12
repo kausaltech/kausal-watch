@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
-from modeltrans.utils import build_localized_fieldname
+from modeltrans.utils import build_localized_fieldname, get_available_languages
 from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
@@ -22,7 +22,6 @@ from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSer
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
 from kausal_common.api.utils import RegisteredAPIView, register_view_helper
-from kausal_common.datasets.api import I18nFieldSerializerMixin
 from kausal_common.model_images import (
     ModelWithImageSerializerMixin,
     ModelWithImageViewMixin,
@@ -1648,14 +1647,19 @@ class I18nFieldPlanLanguagesSerializerMixin:
         if not i18n_field:
             return
         plan = self.context.get('plan')
-        if not plan:
-            return
-        assert isinstance(plan, Plan)
+        if getattr(self.context.get('view'), 'swagger_fake_view', False):
+            # Called during schema generation
+            assert not plan
+            # Add field with language suffix for every language known to this app
+            languages = get_available_languages()
+        else:
+            assert isinstance(plan, Plan)
+            # Add field with language suffix for every non-primary language supported by the plan
+            languages = plan.other_languages
         for source_field in i18n_field.fields:
             if source_field not in self.Meta.fields:  # type: ignore[attr-defined]
                 continue
-            # Add field with language suffix for every non-primary language supported by the plan
-            for lang in plan.other_languages:
+            for lang in languages:
                 translated_field = build_localized_fieldname(source_field, lang)
                 self.fields[translated_field] = serializers.CharField(  # type: ignore[attr-defined]
                     required=False,
@@ -1663,6 +1667,8 @@ class I18nFieldPlanLanguagesSerializerMixin:
 
 
 class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin, serializers.ModelSerializer):
+    """Serializer for the ActionTask model."""
+
     class Meta:
         model = ActionTask
         list_serializer_class = BulkListSerializer
