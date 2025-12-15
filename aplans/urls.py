@@ -134,12 +134,12 @@ urlpatterns = [
     ), name='graphql-voyager'),
 
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
+    re_path(r'^admin/reports/site-history/', PlanScopedLogEntriesView.as_view(), name="watch-site-history"),
     # Hide default reporting URLs provided by Wagtail
     re_path(r'^admin/reports/.*', RootRedirectView.as_view(), name='disabled-reports'),
     # FIXME: This overrides the URLs in Wagtail's admin/urls/pages.py to allow filtering the queryset
     path("admin/pages/search/", PageSearchView.as_view(), name="search"),
     re_path(r'^admin/', include(wagtailadmin_urls)),
-    path('watch-site-history/', PlanScopedLogEntriesView.as_view(), name="watch-site-history"),
     re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     # re_path(r'^pages/', include(wagtail_urls)),

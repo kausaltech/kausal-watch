@@ -12,6 +12,7 @@ from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission, Page
 from loguru import logger
 from treelib import Tree
 
+from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 from kausal_common.datasets import models as dataset_models
 
 from content.models import SiteGeneralContent
@@ -127,7 +128,8 @@ def get_action_contact_person_perms():
     perm_q |= _get_perm_obj_q(Indicator, ('view',))
     perm_q |= _get_perm_obj_q(dataset_models.DataPoint, ALL_PERMS)
     perm_q |= _get_perm_obj_q(dataset_models.Dataset, ALL_PERMS)
-
+    perm_q |= _get_perm_obj_q(PlanScopedModelLogEntry, ('view',))
+    perm_q |= _get_perm_obj_q(PlanScopedPageLogEntry, ('view',))
     perm_q |= Q(content_type__app_label='wagtailadmin', codename='access_admin')
 
     perm_q |= get_wagtail_contact_person_q()
@@ -148,6 +150,8 @@ def get_indicator_contact_person_perms():
     perm_q |= _get_perm_obj_q(IndicatorGoal, ('view', 'change'))
     perm_q |= _get_perm_obj_q(IndicatorValue, ('view', 'change', 'add'))
     perm_q |= _get_perm_obj_q(IndicatorContactPerson, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(PlanScopedModelLogEntry, ('view',))
+    perm_q |= _get_perm_obj_q(PlanScopedPageLogEntry, ('view',))
 
     perm_q |= Q(content_type__app_label='wagtailadmin', codename='access_admin')
     perm_q |= get_wagtail_contact_person_q()
