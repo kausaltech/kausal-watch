@@ -970,7 +970,7 @@ class ActionSerializer(
     ModelWithAttributesSerializerMixin,
     NonTreebeardModelWithTreePositionSerializerMixin[Action],
     BulkSerializerValidationInstanceMixin,
-    PlanRelatedModelSerializer,
+    PlanRelatedModelSerializer[Action],
 ):
     _modifiable_actions_cache: ActionQuerySet
 
