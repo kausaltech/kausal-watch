@@ -181,8 +181,8 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
     @override
     def get_persisted_plans(self):
-        plan_model = self.get_plan_model()
-        return plan_model.objects.filter(
+        from actions.models.plan import Plan
+        return Plan.objects.filter(
             self.get_plans_q()
         ).distinct()
 

@@ -293,10 +293,6 @@ class PlanRelatedModel(models.Model):
     def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         return qs.filter(plan=plan)
 
-    def get_plan_model(self) -> type[Plan]:
-        from actions.models import Plan
-        return Plan
-
     def get_plans(self) -> list[Plan]:
         return [cast('Plan', getattr(self, 'plan'))]  # noqa: B009
 

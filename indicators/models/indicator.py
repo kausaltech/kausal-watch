@@ -408,7 +408,8 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, Restricte
         )
 
     def get_persisted_plans(self):
-        return self.get_plan_model().objects.filter(indicator_levels__indicator=self)
+        from actions.models.plan import Plan
+        return Plan.objects.filter(indicator_levels__indicator=self)
 
     def get_level_for_plan(self, plan):
         level = self.levels.filter(plan=plan).first()
