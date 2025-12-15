@@ -20,6 +20,7 @@ from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail.blocks import TextBlock
 from wagtail.fields import RichTextField, StreamField
+from wagtail.models import RevisionMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -97,7 +98,9 @@ class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
 
 
 @reversion.register(follow=('goals',))
-class Indicator(ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel):
+class Indicator(
+    ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel, RevisionMixin
+):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
