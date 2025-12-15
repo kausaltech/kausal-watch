@@ -123,7 +123,8 @@ class PlanRelatedViewMixin:
             # action plan.
             active_plan = cast(WatchAdminRequest, self.request).user.get_active_admin_plan()
             plans = obj.get_plans()
-            assert active_plan in plans
+            if len(plans):
+                assert active_plan in plans
 
         return super().form_valid(form, *args, **kwargs)  # type: ignore[misc]
 
@@ -137,7 +138,7 @@ class PlanRelatedViewMixin:
                 user is not None and user.is_authenticated and isinstance(user, User)):
             plan = user.get_active_admin_plan()
             instance_plans = instance.get_plans()
-            if plan not in instance_plans:
+            if len(instance_plans) and plan not in instance_plans:
                 querystring = QueryDict(mutable=True)
                 querystring[REDIRECT_FIELD_NAME] = request.get_full_path()
                 url = reverse('change-admin-plan', kwargs=dict(plan_id=instance_plans[0].id))

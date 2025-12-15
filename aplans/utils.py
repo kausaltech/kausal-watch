@@ -28,8 +28,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
 from modelcluster.forms import BaseChildFormSet
-from modeltrans.translator import get_i18n_field
-from modeltrans.utils import get_instance_field_value
 from wagtail.fields import StreamField
 from wagtail.models import Page, ReferenceIndex
 
@@ -305,6 +303,36 @@ class PlanRelatedModel(models.Model):
     def initialize_plan_defaults(self, plan: Plan):
         """Set some plan-specific default values that model instances of this base class must have."""
         setattr(self, 'plan', plan)  # noqa: B010
+
+
+class IndirectPlanRelatedModel(PlanRelatedModel):
+    """
+    A model which belongs to one or several plans but whose plans can only be queried after the model has been persisted.
+
+    The plans of this model are accessed via foreign keys from other models, usually through models,
+    so the model instance needs to have been saved before getting the plans.
+
+    This behaviour is encoded in the get_plans method.
+
+    As a rule of thumb, if a model M belonging to specific plans has a foreign key reference to a plan, or to an instance of model
+    N which is always already persisted when creating new M instances, and which can be used to retrieve the plans, then it's a
+    PlanRelatedModel.  Otherwise, it is an IndirectPlanRelatedModel.
+
+    """
+
+    class Meta:
+        abstract = True
+
+    def get_plans(self):
+        if self.pk is None:
+            return []
+        return self.get_persisted_plans()
+
+    def get_persisted_plans(self):
+        raise NotImplementedError("Implement in subclass")
+
+    def initialize_plan_defaults(self):
+        raise NotImplementedError("Implement in subclass")
 
 
 class PlanRelatedOrderedModel(OrderedModel, PlanRelatedModel):

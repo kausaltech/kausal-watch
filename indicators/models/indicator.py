@@ -30,8 +30,8 @@ from kausal_common.models.types import MLModelManager, ModelManager, OneToOne
 from aplans.utils import (
     AdminSaveContext,
     IdentifierField,
+    IndirectPlanRelatedModel,
     ModificationTracking,
-    PlanRelatedModel,
     RestrictedVisibilityModel,
     get_available_variants_for_language,
     validate_json,
@@ -97,7 +97,7 @@ class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
 
 
 @reversion.register(follow=('goals',))
-class Indicator(ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, PlanRelatedModel):
+class Indicator(ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
@@ -407,9 +407,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, Restricte
             Plan.objects.filter(organization=self.organization)
         )
 
-    def get_plans(self):
-        if not self.pk:
-            return []
+    def get_persisted_plans(self):
         return self.get_plan_model().objects.filter(indicator_levels__indicator=self)
 
     def get_level_for_plan(self, plan):

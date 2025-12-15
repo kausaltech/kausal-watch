@@ -25,7 +25,7 @@ from kausal_common.models.types import MLModelManager, RevManyToManyQS
 from kausal_common.people.models import BasePerson
 from kausal_common.users import user_or_none
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import IndirectPlanRelatedModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
@@ -117,7 +117,7 @@ DEFAULT_AVATAR_SIZE = 360
 
 
 @reversion.register()
-class Person(BasePerson, PlanRelatedModel):
+class Person(BasePerson, IndirectPlanRelatedModel):
     participated_in_training = models.BooleanField(
         null=True,
         default=False,
@@ -152,7 +152,7 @@ class Person(BasePerson, PlanRelatedModel):
     def initialize_plan_defaults(self, plan: Plan):
         self.organization = plan.organization
 
-    def get_plans(self):
+    def get_persisted_plans(self):
         from actions.models import Plan
         org_plans_q = self.organization.get_plans_q()
         return Plan.objects.filter(

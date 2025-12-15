@@ -207,7 +207,7 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplate(IndirectPlanRelatedModel):
+class NotificationTemplate(PlanRelatedModel):
     base: ParentalKey[BaseTemplate, BaseTemplate]
 
     type = models.CharField(
