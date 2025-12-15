@@ -15,6 +15,12 @@ def get_default_plan() -> Plan:
 
 
 class PlanRelatedModelSerializer[Model: PlanRelatedModel](serializers.ModelSerializer[Model]):
+    """
+    ModelSerializer for direct subclasses of PlanRelatedModel.
+
+    Does not support IndirectPlanRelatedModels. Currently this is only used for Actions.
+    """
+
     plan: Plan
 
     def __init__(self, *args, **kwargs):

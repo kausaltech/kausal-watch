@@ -1,13 +1,20 @@
+from __future__ import annotations
+
+import typing
 from typing import Any, Mapping
 
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
-from aplans.types import WatchAdminRequest
-
 from . import wagtail_admin  # noqa
+
+if typing.TYPE_CHECKING:
+    from wagtail.log_actions import LogActionRegistry
+
+    from aplans.types import WatchAdminRequest
 
 
 class IndicatorsSummaryItem(SummaryItem):
@@ -36,6 +43,12 @@ def editor_js():
         '<script src="{}"></script>',
         static('indicators/js/dashboard_blocks.js')
     )
+
+
+@hooks.register('register_log_actions')
+def register_indicator_log_actions(actions: LogActionRegistry):
+    actions.register_action('indicators.update_values', _("Update values"), _("Values updated"))
+    actions.register_action('indicators.update_goals', _("Update goals"), _("Goals updated"))
 
 
 from . import rich_text  # noqa: E402, F401

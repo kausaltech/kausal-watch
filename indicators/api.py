@@ -8,6 +8,7 @@ from rest_framework import exceptions, permissions, serializers, status, viewset
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from wagtail.log_actions import log
 
 import django_filters as filters
 from drf_spectacular.types import OpenApiTypes
@@ -618,7 +619,13 @@ class IndicatorViewSet(BulkModelViewSet):
         indicator = Indicator.objects.get(pk=pk)
         serializer = IndicatorGoalSerializer(data=request.data, many=True, context={'indicator': indicator})
         if serializer.is_valid():
-            serializer.create(serializer.validated_data)
+            instance = serializer.create(serializer.validated_data)
+            log(
+                instance=instance,
+                action="indicator.update_goals",
+                revision=None,
+                content_changed=True,
+            )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({})
@@ -632,7 +639,13 @@ class IndicatorViewSet(BulkModelViewSet):
         ).get(pk=pk)
         serializer = IndicatorValueSerializer(data=request.data, many=True, context={'indicator': indicator})
         if serializer.is_valid():
-            serializer.create(serializer.validated_data)
+            instance = serializer.create(serializer.validated_data)
+            log(
+                instance=instance,
+                action="indicator.update_values",
+                revision=None,
+                content_changed=True,
+            )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
