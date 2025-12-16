@@ -485,23 +485,23 @@ class Action(
         for_concrete_model=False,
     )
 
-    def revision_enabled(self):
-        return self.plan.features.enable_moderation_workflow
-
-    def save_revision(self, *args, **kwargs):
-        # This method has been overridden temporarily.
+    def save_revision(self, *args, user=None, **kwargs):
+        # This method has been overridden temporarily to manually publish the action that was just saved
+        # when moderation is not in use. We want to save revisions so they are associated with an audit
+        # log entry.
         #
-        # The reason is that for plans without the moderation workflow enabled, RevisionMixin.save_revision is still called for
-        # all subclasses of RevisionMixin.
+        # The reason for publishing the revision is that otherwise, when RevisionMixin.save_revision is called
+        # for a newly created action, it results in newly created actions to have has_unpublished_changes == True and for the
+        # state of the action to not be "live" and fully published.
         #
-        # This results in newly created actions to have has_unpublished_changes == True and a revision to be created for them.
-        # This in turn results in the action edit form not showing the actual saved action data but the data of a "draft"
+        # Sometimes, this can result in the action edit form not showing the actual saved action data but the data of a "draft"
         # revision (which itself cannot be edited in a plan with workflows disabled currently).
         #
-        # In the future we will probably want to have drafting enabled by default for all plans and we can remove this.
-        if not self.revision_enabled():
-            return None
-        return super().save_revision(*args, **kwargs)
+        # In the future we will probably want to explicitly enable drafting vs publishing for all plans.
+        new_revision = super().save_revision(*args, user=user, **kwargs)
+        if not self.plan.features.enable_moderation_workflow:
+            new_revision.publish(user=user, skip_permission_checks=True, log_action=False)
+        return new_revision
 
     def commit_attributes(self, attributes: dict[str, Any], user):
         """

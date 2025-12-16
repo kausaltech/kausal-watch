@@ -736,7 +736,6 @@ class SnippetsEditViewCompatibilityMixin(
         # Only use some of the hacks if the plan uses workflows
         if not self.instance.plan.features.enable_moderation_workflow:
             # FIXME: Some code in super().setup() already ran with other values for this. Hopefully nothing breaks.
-            self.revision_enabled = False
             self.draftstate_enabled = False
             self.locking_enabled = False
 
