@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from django.db import models
-from wagtail.models import ModelLogEntry, PageLogEntry
-from wagtail.models import PageLogEntryManager
+from wagtail.models import ModelLogEntry, PageLogEntry, PageLogEntryManager
 from wagtail.models.audit_log import ModelLogEntryManager
-
 
 
 class PlanScopedModelLogEntryManager(ModelLogEntryManager):
