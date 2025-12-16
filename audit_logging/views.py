@@ -13,6 +13,8 @@ class PlanScopedLogEntriesView(LogEntriesView):
     permission_policy = ModelPermissionPolicy(PlanScopedModelLogEntry)
     permission_required = 'view'
 
+    # We want to show only PlanScopedModelEntries
+    #
     # You might think overriding get_filtered_queryset would be better
     # than overriding get_context_data, but due to the way the view
     # is implemented, that does not work.
