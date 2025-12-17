@@ -376,15 +376,8 @@ class InstancesEditableByMixin(models.Model):
         action_specific_values = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
         return self.instances_editable_by in action_specific_values
 
-    def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, instance: Model | None):
+    def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, attribute_holder: Model | None):
         from actions.models.action import Action, ActionContactPerson
-        # `action` may only be None if `self.instances_editable_by` is not action-specific
-        if __debug__ and self.instance_editability_is_action_specific and instance is None:
-            msg = (
-                f"instances_editable_by has action-specific value '{self.instances_editable_by}', "
-                                 "but no action has been supplied."
-            )
-            raise AssertionError(msg)
 
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return False
@@ -398,12 +391,12 @@ class InstancesEditableByMixin(models.Model):
         if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
-            assert isinstance(instance, Action)
-            is_contact_person = user.is_contact_person_for_action(instance)
+            assert isinstance(attribute_holder, Action) or attribute_holder is None
+            is_contact_person = user.is_contact_person_for_action(attribute_holder)
             return is_contact_person or is_plan_admin
         if self.instances_editable_by == self.EditableBy.MODERATORS:
-            assert isinstance(instance, Action)
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
+            assert isinstance(attribute_holder, Action) or attribute_holder is None
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, attribute_holder)
             return is_moderator or is_plan_admin
         if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
             assert user.is_authenticated  # checked above
@@ -451,15 +444,8 @@ class InstancesVisibleForMixin(models.Model):
         action_specific_values = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
         return self.instances_visible_for in action_specific_values
 
-    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, instance: Model | None) -> bool:
+    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, attribute_holder: Model | None) -> bool:
         from actions.models.action import Action, ActionContactPerson
-        # `action` may only be None if `self.instances_visible_for` is not action-specific
-        if __debug__ and self.instance_visibility_is_action_specific and instance is None:
-            msg = (
-                f"instances_visible_for has action-specific value '{self.instances_visible_for}', "
-                                 "but no action has been supplied."
-            )
-            raise AssertionError(msg)
 
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return self.instances_visible_for == self.VisibleFor.PUBLIC
@@ -473,12 +459,12 @@ class InstancesVisibleForMixin(models.Model):
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
-            assert isinstance(instance, Action)
-            is_contact_person = user.is_contact_person_for_action(instance)
+            assert isinstance(attribute_holder, Action) or attribute_holder is None
+            is_contact_person = user.is_contact_person_for_action(attribute_holder)
             return is_contact_person or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.MODERATORS:
-            assert isinstance(instance, Action)
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
+            assert isinstance(attribute_holder, Action) or attribute_holder is None
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, attribute_holder)
             return is_moderator or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.PUBLIC:
             return True

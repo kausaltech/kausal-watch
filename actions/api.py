@@ -32,7 +32,7 @@ from aplans.rest_api import PlanRelatedModelSerializer
 from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase
-from actions.models.attributes import AttributeType, ModelWithAttributes
+from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
 from people.models import Person, PersonQuerySet
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
 
-    from aplans.types import WatchAdminRequest
+    from aplans.types import WatchAdminRequest, WatchAPIRequest
 
     from actions.models.plan import PlanQuerySet
     from users.models import User
@@ -475,6 +475,14 @@ class AttributesSerializerMixin:
     context: dict[str, Any]
     attribute_formats: tuple[AttributeType.AttributeFormat, ...]
 
+    def is_attribute_visible(self, attribute: Attribute) -> bool:
+        request: WatchAPIRequest | None = self.context.get('request')
+        if request is None or not hasattr(request, 'get_active_admin_plan'):
+            return False
+        plan = request.get_active_admin_plan()
+        attribute_holder = attribute.content_object
+        return attribute.type.is_instance_visible_for(request.user, plan, attribute_holder)
+
     # In the serializer, set `attribute_formats` to a tuple of values from `AttributeType.AttributeFormat`
     # (usually just one element)
     def get_fields(self):
@@ -485,12 +493,15 @@ class AttributesSerializerMixin:
             plan = user.get_active_admin_plan()
             attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
             for attribute_type in attribute_types:
+                if not attribute_type.is_instance_visible_for(user, plan, None):
+                    continue
                 if attribute_type.instance_editability_is_action_specific:
                     # Editability is specific to an action and we don't have one here
                     instances_editable = True
                 else:
                     # Editability is not action-specific, so it's safe to call this
                     instances_editable = attribute_type.is_instance_editable_by(user, plan, None)
+                # FIXME: Why the hell is this a FloatField?
                 fields[attribute_type.identifier] = rest_framework.fields.FloatField(
                     label=attribute_type.name,
                     read_only=not instances_editable,
@@ -578,7 +589,7 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.choice_id for v in values}
+        return {v.type.identifier: v.choice_id for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
         return data
@@ -596,7 +607,9 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in values}
+        return {
+            v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in values if self.is_attribute_visible(v)
+        }
 
     def to_internal_value(self, data):
         return data
@@ -620,7 +633,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.value for v in values}
+        return {v.type.identifier: v.value for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
         return data
@@ -640,7 +653,7 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.text for v in values}
+        return {v.type.identifier: v.text for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
         return data
@@ -657,7 +670,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.text for v in values}
+        return {v.type.identifier: v.text for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
         return data
@@ -674,7 +687,9 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
     def to_representation(self, value):
         cached = self.get_cached_values()
         values = cached if cached is not None else value.all()
-        return {v.type.identifier: [cat.id for cat in v.categories.all()] for v in values}
+        return {
+            v.type.identifier: [cat.id for cat in v.categories.all()] for v in values if self.is_attribute_visible(v)
+        }
 
     def to_internal_value(self, data):
         return data
