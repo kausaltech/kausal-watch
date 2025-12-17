@@ -13,6 +13,7 @@ from wagtail.admin.views.generic.base import (
     WagtailAdminTemplateMixin,
 )
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+from wagtail.log_actions import log
 
 from kausal_common.users import user_or_bust
 
@@ -63,12 +64,22 @@ class SetUserFeedbackProcessedView(
             raise ValueError(_("The user feedback is already processed"))
         self.object.is_processed = True
         self.object.save()
+        log(
+            instance=self.object,
+            action='feedback.processed',
+            user=self.request.user,
+        )
 
     def mark_unprocessed(self):
         if not self.object.is_processed:
             raise ValueError(_("The user feedback is already unprocessed"))
         self.object.is_processed = False
         self.object.save()
+        log(
+            instance=self.object,
+            action='feedback.unprocessed',
+            user=self.request.user,
+        )
 
     def post(self, request, *args, **kwargs):
         try:

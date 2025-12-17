@@ -1,10 +1,13 @@
 from __future__ import annotations
+from typing import Self
 
 from django import forms
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
 from aplans.graphql_types import DjangoObjectType
 from aplans.utils import public_fields
+
+from wagtail.log_actions import log
 
 from actions.models import Plan
 
@@ -29,3 +32,14 @@ class UserFeedbackMutation(DjangoModelFormMutation):
         form_class = UserFeedbackForm
         input_field_name = 'data'
         return_field_name = 'feedback'
+
+    @classmethod
+    def perform_mutate(cls, form, info) -> Self:
+        mutation = super().perform_mutate(form, info)
+        instance = mutation.feedback
+        log(
+            instance=instance,
+            action='feedback.received',
+            user=None,
+        )
+        return mutation
