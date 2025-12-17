@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.documents.models import AbstractDocument, Document as WagtailDocument
 from wagtail.search.queryset import SearchableQuerySetMixin
 
+from aplans.utils import PlanRelatedModel
 from kausal_common.models.types import ModelManager
 
 from users.models import User
@@ -25,7 +26,7 @@ class AplansDocumentManager(ModelManager['AplansDocument', AplansDocumentQuerySe
 del _AplansDocumentManager
 
 
-class AplansDocument(AbstractDocument):
+class AplansDocument(AbstractDocument, PlanRelatedModel):
     admin_form_fields = WagtailDocument.admin_form_fields
     uploaded_by_user: FK[User | None] = models.ForeignKey(
         User,
@@ -42,6 +43,13 @@ class AplansDocument(AbstractDocument):
     class Meta:
         verbose_name = _('document')
         verbose_name_plural = _('documents')
+
+    def get_plans(self):
+        from actions.models.plan import Plan
+
+        collections = self.collection.get_ancestors(inclusive=True)
+        plans = Plan.objects.filter(root_collection__in=collections)
+        return list(plans)
 
     @property
     def url(self):

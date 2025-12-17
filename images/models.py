@@ -8,6 +8,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Image as WagtailImage
 
+from aplans.utils import PlanRelatedModel
+
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
@@ -39,7 +41,7 @@ def insert_date_directory_to_path(path: str, target_dir: str, date: datetime.dat
     return truncate_filename([target_dir, date_dir], filename)
 
 
-class AplansImage(AbstractImage):
+class AplansImage(AbstractImage, PlanRelatedModel):
     admin_form_fields = WagtailImage.admin_form_fields + ('image_credit', 'alt_text')
 
     image_credit: models.CharField[str, str] = models.CharField(
@@ -52,6 +54,13 @@ class AplansImage(AbstractImage):
     class Meta:
         verbose_name = _('image')
         verbose_name_plural = _('images')
+
+    def get_plans(self):
+        from actions.models.plan import Plan
+
+        collections = self.collection.get_ancestors(inclusive=True)
+        plans = Plan.objects.filter(root_collection__in=collections)
+        return list(plans)
 
     def get_upload_to(self, filename: str) -> str:
         path = super().get_upload_to(filename)

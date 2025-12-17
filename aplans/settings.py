@@ -591,8 +591,10 @@ CKEDITOR_CONFIGS = {
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILDOCS_SERVE_METHOD = 'serve_view'
+WAGTAILDOCS_DOCUMENT_FORM_BASE = 'documents.forms.AplansDocumentForm'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
 WAGTAILIMAGES_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg']
+WAGTAILIMAGES_IMAGE_FORM_BASE = 'images.forms.AplansImageForm'
 WAGTAILEMBEDS_FINDERS = [
     {
         'class': 'wagtail.embeds.finders.oembed',
