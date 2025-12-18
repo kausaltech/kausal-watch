@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import typing
-from typing import TYPE_CHECKING, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import reversion
 from django.conf import settings
@@ -29,6 +29,8 @@ from people.models import Person
 from .notifications import NotificationType
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from modelcluster.fields import PK
 
     from actions.models.plan import Plan
