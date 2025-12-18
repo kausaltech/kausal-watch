@@ -10,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.images.models import SourceImageIOError
-from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
 
 from sentry_sdk import capture_exception
 
