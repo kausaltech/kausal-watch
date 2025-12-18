@@ -652,6 +652,12 @@ WAGTAILEMBEDS_FINDERS = [
         # If we leave the provider out, the "default" provider will be used
         'domain_whitelist': ('dashboard.klimaschutz-planer.de', ),
         'title': 'Map',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        # If we leave the provider out, the "default" provider will be used
+        'domain_whitelist': ('maps.duesseldorf.de', ),
+        'title': 'Map',
     }
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
