@@ -33,6 +33,10 @@ class PlanScopedModelLogEntry(ModelLogEntry):
 class PlanScopedPageLogEntryManager(PageLogEntryManager):
     def log_action(self, instance, action, **kwargs):
         plan = instance.plan
+        if plan is None:
+            # Plan can be none if it's a root page and the site has not
+            # been created yet
+            return None
         kwargs.update(plan=plan)
         return super().log_action(instance, action, **kwargs)
 
