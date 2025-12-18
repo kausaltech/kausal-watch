@@ -38,6 +38,7 @@ from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ActionQuerySet
 from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes
+from admin_site.models import BuiltInFieldCustomization
 from audit_logging.utils import BulkActionModelList
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
@@ -61,7 +62,7 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from django.db.models import Model, QuerySet
     from django.views.generic import View
@@ -1032,6 +1033,76 @@ class ActionSerializer(
         if value in self.context['seen_identifiers']:
             raise serializers.ValidationError(_('Identifier already exists'))
         self.context['seen_identifiers'].append(value)
+        return value
+
+    def _roles_violating_edit_permissions[Role](
+        self,
+        value: list[dict[str, Any]],
+        fk_name: str,
+        get_existing_objects: Callable[[Action], QuerySet],
+        get_editable_roles: Callable[[Action, User], Iterable[Role]],
+    ) -> list[Role]:
+        request: Request | None = self.context.get('request')
+        action = self._instance
+        if request is None or action is None:
+            return []
+        assert isinstance(action, Action)
+        user = user_or_none(request.user)
+        if user is None:
+            return []
+        existing_objects_by_role: dict[Role, list[Model]] = {}
+        for obj in get_existing_objects(action):
+            existing_related_obj = getattr(obj, fk_name)
+            existing_objects_by_role.setdefault(obj.role, []).append(existing_related_obj)
+        new_objects_by_role: dict[Role, list[Model]] = {}
+        for d in value:
+            new_objects_by_role.setdefault(d['role'], []).append(d[fk_name])
+        roles_with_changes = [
+            role
+            for role in existing_objects_by_role.keys() | new_objects_by_role.keys()
+            if set(existing_objects_by_role.get(role, [])) != set(new_objects_by_role.get(role, []))
+        ]
+        editable_roles = get_editable_roles(action, user)
+        return [role for role in roles_with_changes if role not in editable_roles]
+
+    def validate_contact_persons(self, value):
+        violating_roles = self._roles_violating_edit_permissions(
+            value=value,
+            fk_name='person',
+            get_existing_objects=lambda action: action.contact_persons.all(),
+            get_editable_roles=lambda action, user: user.get_editable_contact_person_roles(action),
+        )
+        if violating_roles:
+            raise serializers.ValidationError(_(
+                'You do not have permission to change contact persons with role "%(role)s" on action "%(action)s."'
+            ) % {'role': violating_roles[0], 'action': self._instance})
+        return value
+
+    def validate_responsible_parties(self, value):
+        def get_editable_roles(action: Action, user: User) -> Iterable[ActionResponsibleParty.Role | None]:
+            try:
+                customization = BuiltInFieldCustomization.objects.get(
+                    plan=self.plan,
+                    content_type=ContentType.objects.get_for_model(Action),
+                    field_name='responsible_parties',
+                )
+                is_editable = customization.is_instance_editable_by(user, self.plan, action)
+            except BuiltInFieldCustomization.DoesNotExist:
+                is_editable = True
+            if is_editable:
+                return user.get_editable_responsible_party_roles(action)
+            return []
+
+        violating_roles = self._roles_violating_edit_permissions(
+            value=value,
+            fk_name='organization',
+            get_existing_objects=lambda action: action.responsible_parties.all(),
+            get_editable_roles=get_editable_roles,
+        )
+        if violating_roles:
+            raise serializers.ValidationError(_(
+                'You do not have permission to change responsible parties with role "%(role)s" on action "%(action)s."'
+            ) % {'role': violating_roles[0], 'action': self._instance})
         return value
 
     def create(self, validated_data: dict):
