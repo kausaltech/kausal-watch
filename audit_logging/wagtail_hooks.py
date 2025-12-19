@@ -31,7 +31,7 @@ def register_core_log_actions(actions):
 def register_audit_log():
     return MenuItem(
         _('Audit log'),
-        reverse('watch-site-history'),
+        reverse('watch-plan-history'),
         icon_name='history',
         order=10000,
     )
