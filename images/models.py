@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING, ClassVar
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Image as WagtailImage
+from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Image as WagtailImage, ImageQuerySet
 
 from aplans.utils import PlanRelatedModel
+
+from kausal_common.models.types import ModelManager
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
@@ -41,7 +43,17 @@ def insert_date_directory_to_path(path: str, target_dir: str, date: datetime.dat
     return truncate_filename([target_dir, date_dir], filename)
 
 
+if TYPE_CHECKING:
+    class AplansImageManager(ModelManager['AplansImage', ImageQuerySet]): ...
+else:
+    AplansImageManager = ModelManager.from_queryset(ImageQuerySet)
+
+
 class AplansImage(AbstractImage, PlanRelatedModel):
+    objects: ClassVar[AplansImageManager] = AplansImageManager()
+    _default_manager: ClassVar[AplansImageManager]
+    renditions: ClassVar[AplansRenditionManager]
+
     admin_form_fields = WagtailImage.admin_form_fields + ('image_credit', 'alt_text')
 
     image_credit: models.CharField[str, str] = models.CharField(
@@ -49,7 +61,7 @@ class AplansImage(AbstractImage, PlanRelatedModel):
     )
     alt_text: models.CharField[str, str] = models.CharField(max_length=254, blank=True, verbose_name=_('Alt text'))
 
-    _default_manager: ClassVar[models.Manager[AplansImage]]
+
 
     class Meta:
         verbose_name = _('image')
@@ -70,8 +82,16 @@ class AplansImage(AbstractImage, PlanRelatedModel):
         def get_rendition(self, filter: Filter | str) -> AplansRendition: ...  # noqa: A002
 
 
+if TYPE_CHECKING:
+    class AplansRenditionManager(ModelManager['AplansRendition', models.QuerySet['AplansRendition']]): ...
+else:
+    AplansRenditionManager = ModelManager.from_queryset(models.QuerySet)
+
+
 class AplansRendition(AbstractRendition):
     image: FK[AplansImage] = models.ForeignKey(AplansImage, related_name='renditions', on_delete=models.CASCADE)
+    objects: ClassVar[AplansRenditionManager] = AplansRenditionManager()
+    _default_manager: ClassVar[AplansRenditionManager]
 
     def get_fqdn_attrs(self, request):
         ret = self.attrs_dict.copy()
