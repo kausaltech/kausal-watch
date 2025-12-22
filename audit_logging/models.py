@@ -9,7 +9,11 @@ class PlanScopedModelLogEntryManager(ModelLogEntryManager):
     def log_action(self, instance, action, **kwargs):
         plans=instance.get_plans()
         retval = None
-        for plan in plans:
+        if not plans and 'user' in kwargs:
+            # We end up here in cases like newly created root organizations where
+            # the plan.related_organizations is not set yet when logging
+            plans = [kwargs['user'].get_active_admin_plan()]
+        for plan in set(plans):
             kwargs.update(plan=plan)
             retval = super().log_action(instance, action, **kwargs)
         # Notice that even though wagtail returns the created
