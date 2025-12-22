@@ -29,3 +29,12 @@ class ImagesConfig(AppConfig):
             pass
         else:
             registry.register_plugin(rustface.willow)
+
+        # Remove the bulk delete bulk actions from documents, images
+        # because that action is not logged in the audit log
+        from wagtail.admin.views.bulk_action.registry import bulk_action_registry
+        for app, model in (('documents', 'aplansdocument'), ('images', 'aplansimage')):
+            if len(bulk_action_registry.get_bulk_actions_for_model(app, model)):
+                bulk_action_registry.actions[app][model] = {
+                    k: v for k, v in bulk_action_registry.actions[app][model].items() if k != 'delete'
+                }
