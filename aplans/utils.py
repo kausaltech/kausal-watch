@@ -327,7 +327,7 @@ class IndirectPlanRelatedModel(PlanRelatedModel):
     def get_persisted_plans(self):
         raise NotImplementedError("Implement in subclass")
 
-    def initialize_plan_defaults(self):
+    def initialize_plan_defaults(self, plan: Plan):
         raise NotImplementedError("Implement in subclass")
 
 

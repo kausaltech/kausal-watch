@@ -10,6 +10,8 @@ from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.snippets.views.snippets import CreateView, EditView, IndexView, SnippetViewSet
 
+from kausal_common.users import user_or_bust
+
 from aplans.utils import PlanRelatedModel
 
 from admin_site.forms import WatchAdminModelForm
@@ -21,7 +23,6 @@ from admin_site.mixins import (
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
 from admin_site.wagtail import execute_admin_post_save_tasks
-from kausal_common.users import user_or_bust
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -84,7 +85,8 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelFo
         Override this in subclasses to implement custom initialization logic.
         """
         if isinstance(instance, PlanRelatedModel):
-            plan = request.user.get_active_admin_plan()
+            user = user_or_bust(request.user)
+            plan = user.get_active_admin_plan()
             instance.initialize_plan_defaults(plan)
 
     def get_initial_form_instance(self):

@@ -15,7 +15,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet
 from kausal_common.api.utils import register_view_helper
-from kausal_common.users import user_or_none
+from kausal_common.users import user_or_bust, user_or_none
 
 from actions.api import plan_router
 from actions.models import Plan
@@ -617,10 +617,11 @@ class IndicatorViewSet(BulkModelViewSet):
     def update_goals(self, request, plan_pk, pk):
         indicator = Indicator.objects.get(pk=pk)
         serializer = IndicatorGoalSerializer(data=request.data, many=True, context={'indicator': indicator})
+        user = user_or_bust(request.user)
         if serializer.is_valid():
             serializer.create(serializer.validated_data)
             indicator.save_revision(
-                user=self.request.user,
+                user=user,
                 log_action='indicator.update_values',
             )
         else:
@@ -635,10 +636,11 @@ class IndicatorViewSet(BulkModelViewSet):
             'dimensions', 'dimensions__dimension', 'dimensions__dimension__categories',
         ).get(pk=pk)
         serializer = IndicatorValueSerializer(data=request.data, many=True, context={'indicator': indicator})
+        user = user_or_bust(self.request.user)
         if serializer.is_valid():
             serializer.create(serializer.validated_data)
             indicator.save_revision(
-                user=self.request.user,
+                user=user,
                 log_action='indicator.update_values',
             )
         else:

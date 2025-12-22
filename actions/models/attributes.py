@@ -207,8 +207,9 @@ class AttributeType(
         if not self.primary_language:
             assert not self.other_languages
             plan = self._get_plan()
-            self.primary_language = plan.primary_language
-            self.other_languages = plan.other_languages
+            if plan is not None:
+                self.primary_language = plan.primary_language
+                self.other_languages = plan.other_languages
         super().save(*args, **kwargs)
 
     def __str__(self):

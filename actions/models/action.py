@@ -485,9 +485,17 @@ class Action(
         for_concrete_model=False,
     )
 
-    def save_revision(self, *args, user=None, **kwargs):
+    def save_revision(
+        self,
+        user=None,
+        approved_go_live_at=None,
+        changed=True,
+        log_action=False,
+        previous_revision=None,
+        clean=True,
+    ):
         # This method has been overridden temporarily to manually publish the action that was just saved
-        # when moderation is not in use. We want to save revisions so they are associated with an audit
+        # *when moderation is not in use*. We want to save revisions so they are associated with an audit
         # log entry.
         #
         # The reason for publishing the revision is that otherwise, when RevisionMixin.save_revision is called
@@ -498,9 +506,19 @@ class Action(
         # revision (which itself cannot be edited in a plan with workflows disabled currently).
         #
         # In the future we will probably want to explicitly enable drafting vs publishing for all plans.
-        new_revision = super().save_revision(*args, user=user, **kwargs)
+        new_revision = super().save_revision(
+            user=user,
+            approved_go_live_at=approved_go_live_at,
+            changed=changed,
+            log_action=log_action,
+            previous_revision=previous_revision
+        )
         if not self.plan.features.enable_moderation_workflow:
-            new_revision.publish(user=user, skip_permission_checks=True, log_action=False)
+            new_revision.publish(
+                user=user,
+                skip_permission_checks=True,
+                log_action=False
+            )
         return new_revision
 
     def commit_attributes(self, attributes: dict[str, Any], user):

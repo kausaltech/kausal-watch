@@ -6,7 +6,7 @@ from contextlib import ExitStack
 from copy import copy as shallow_copy
 from functools import singledispatchmethod
 from itertools import chain
-from typing import Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from uuid import uuid4
 
 import wagtail.signal_handlers
@@ -41,6 +41,10 @@ from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
 from pages.models import PlanRootPage
+
+if TYPE_CHECKING:
+    from wagtail.documents.models import AbstractDocument
+    from wagtail.images.models import AbstractImage
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -680,7 +684,7 @@ def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
 
 
 def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVisitor):
-    images_or_documents = chain(
+    images_or_documents: chain[AbstractImage | AbstractDocument] = chain(
         AplansImage.objects.filter(collection_id=collection.pk),
         AplansDocument.objects.filter(collection_id=collection.pk),
     )
