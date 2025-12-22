@@ -8,9 +8,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Image as WagtailImage, ImageQuerySet
 
-from aplans.utils import PlanRelatedModel
-
 from kausal_common.models.types import ModelManager
+
+from aplans.utils import PlanRelatedModel
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK

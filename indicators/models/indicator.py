@@ -20,7 +20,6 @@ from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail.blocks import TextBlock
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import RevisionMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
