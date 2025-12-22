@@ -56,6 +56,7 @@ from aplans.utils import (
     get_available_variants_for_language,
 )
 
+from actions.models.category import Category
 from indicators.models import ActionIndicator, ActionIndicatorQuerySet, Indicator, IndicatorQuerySet
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
@@ -85,7 +86,7 @@ if typing.TYPE_CHECKING:
     from aplans.types import WatchRequest
 
     from actions.attributes import DraftAttributes
-    from actions.models.category import Category, CategoryType
+    from actions.models.category import CategoryType
     from people.models import Person
 
     from .action_deps import ActionDependencyRelationshipQuerySet, ActionDependencyRole
@@ -1912,27 +1913,24 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
         return self.url
 
 
-class ActionStatusUpdate(models.Model):
-    action = models.ForeignKey(
-        Action,
-        on_delete=models.CASCADE,
-        related_name='status_updates',
-        verbose_name=_('action'),
-    )
+class BaseStatusUpdate(models.Model):
     title = models.CharField(max_length=200, verbose_name=_('title'))
-    date = models.DateField(verbose_name=_('date'), blank=True)
+    date = models.DateField(verbose_name=_('date'))
     author = models.ForeignKey(
         'people.Person',
         on_delete=models.SET_NULL,
-        related_name='status_updates',
         null=True,
         blank=True,
         verbose_name=_('author'),
     )
     content = models.TextField(verbose_name=_('content'))
 
-    created_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
-    modified_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at'),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at'),
+    )
     created_by = models.ForeignKey(
         User,
         null=True,
@@ -1942,35 +1940,102 @@ class ActionStatusUpdate(models.Model):
         editable=False,
     )
 
+    # When extending this class, you might want to override `i18n` and set the `default_language_field` parameter
+    i18n = TranslationField(
+        fields=['title', 'content'],
+        default_language_field='plan__primary_language_lowercase',
+    )
+    title_i18n: str
+    content_i18n: str
+
     public_fields: ClassVar = [
         'id',
-        'action',
         'title',
         'date',
         'author',
         'content',
         'created_at',
-        'modified_at',
+        'updated_at',
+    ]
+
+    class Meta:
+        abstract = True
+        ordering = ('-date',)
+
+
+class ActionStatusUpdate(BaseStatusUpdate):
+    action = models.ForeignKey(
+        Action,
+        on_delete=models.CASCADE,
+        related_name='status_updates',
+        verbose_name=_('action'),
+    )
+
+    i18n = TranslationField(
+        fields=['title', 'content'],
+        default_language_field='action__plan__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
+        'action',
     ]
 
     class Meta:
         verbose_name = _('action status update')
         verbose_name_plural = _('action status updates')
-        ordering = ('-date',)
 
     def __str__(self):
-        return '%s – %s – %s' % (self.action, self.created_at, self.title)  # noqa: RUF001
+        return f'{self.action} – {self.created_at} – {self.title}'  # noqa: RUF001
 
-    def save(self, *args, **kwargs):
-        now = self.action.plan.now_in_local_timezone()
-        if self.pk is None:
-            if self.date is None:
-                self.date = now.date()
-            if self.created_at is None:
-                self.created_at = now.date()
-        if self.modified_at is None:
-            self.modified_at = now.date()
-        return super().save(*args, **kwargs)
+
+class IndicatorStatusUpdate(BaseStatusUpdate):
+    indicator = models.ForeignKey(
+        Indicator,
+        on_delete=models.CASCADE,
+        related_name='status_updates',
+        verbose_name=_('indicator'),
+    )
+
+    i18n = TranslationField(
+        fields=['title', 'content'],
+        default_language_field='indicator__organization__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
+        'indicator',
+    ]
+
+    class Meta:
+        verbose_name = _('indicator status update')
+        verbose_name_plural = _('indicator status updates')
+
+    def __str__(self):
+        return f'{self.indicator} – {self.created_at} – {self.title}'  # noqa: RUF001
+
+
+class CategoryStatusUpdate(BaseStatusUpdate):
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='status_updates',
+        verbose_name=_('category'),
+    )
+
+    i18n = TranslationField(
+        fields=['title', 'content'],
+        default_language_field='category__type__plan__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
+        'category',
+    ]
+
+    class Meta:
+        verbose_name = _('category status update')
+        verbose_name_plural = _('category status updates')
+
+    def __str__(self):
+        return f'{self.category} – {self.created_at} – {self.title}'  # noqa: RUF001
 
 
 class ImpactGroupAction(models.Model):
