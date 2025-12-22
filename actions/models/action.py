@@ -1913,9 +1913,117 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
         return self.url
 
 
+class BaseChangeLogMessage(models.Model):
+    content = models.TextField(verbose_name=_('content'))
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at'),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at'),
+    )
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
+        editable=False,
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='plan__primary_language_lowercase',
+    )
+    content_i18n: str
+
+    public_fields: ClassVar = [
+        'id',
+        'content',
+        'created_at',
+        'updated_at',
+    ]
+
+    class Meta:
+        abstract = True
+        ordering = ('-created_at',)
+
+
+class ActionChangeLogMessage(BaseChangeLogMessage):
+    action = models.ForeignKey(
+        Action,
+        on_delete=models.CASCADE,
+        related_name='change_log_messages',
+        verbose_name=_('action'),
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='action__plan__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
+        'action',
+    ]
+
+    class Meta:
+        verbose_name = _('action change log message')
+        verbose_name_plural = _('action change log messages')
+
+    def __str__(self):
+        return f'{self.action} – {self.created_at}'
+
+class IndicatorChangeLogMessage(BaseChangeLogMessage):
+    indicator = models.ForeignKey(
+        Indicator,
+        on_delete=models.CASCADE,
+        related_name='change_log_messages',
+        verbose_name=_('indicator'),
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='indicator__organization__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
+        'indicator',
+    ]
+
+    class Meta:
+        verbose_name = _('indicator change log message')
+        verbose_name_plural = _('indicator change log messages')
+
+    def __str__(self):
+        return f'{self.indicator} – {self.created_at}'  # noqa: RUF001
+
+class CategoryChangeLogMessage(BaseChangeLogMessage):
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name='change_log_messages',
+        verbose_name=_('category'),
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='category__type__plan__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
+        'category',
+    ]
+
+    class Meta:
+        verbose_name = _('category change log message')
+        verbose_name_plural = _('category change log messages')
+
+    def __str__(self):
+        return f'{self.category} – {self.created_at}'  # noqa: RUF001
+
 class BaseStatusUpdate(models.Model):
     title = models.CharField(max_length=200, verbose_name=_('title'))
-    date = models.DateField(verbose_name=_('date'))
+    date = models.DateField(verbose_name=_('date'), blank=True)
     author = models.ForeignKey(
         'people.Person',
         on_delete=models.SET_NULL,
@@ -1960,7 +2068,7 @@ class BaseStatusUpdate(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ('-date',)
+        ordering = ('-created_at',)
 
 
 class ActionStatusUpdate(BaseStatusUpdate):
@@ -1987,55 +2095,6 @@ class ActionStatusUpdate(BaseStatusUpdate):
     def __str__(self):
         return f'{self.action} – {self.created_at} – {self.title}'  # noqa: RUF001
 
-
-class IndicatorStatusUpdate(BaseStatusUpdate):
-    indicator = models.ForeignKey(
-        Indicator,
-        on_delete=models.CASCADE,
-        related_name='status_updates',
-        verbose_name=_('indicator'),
-    )
-
-    i18n = TranslationField(
-        fields=['title', 'content'],
-        default_language_field='indicator__organization__primary_language_lowercase',
-    )
-
-    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
-        'indicator',
-    ]
-
-    class Meta:
-        verbose_name = _('indicator status update')
-        verbose_name_plural = _('indicator status updates')
-
-    def __str__(self):
-        return f'{self.indicator} – {self.created_at} – {self.title}'  # noqa: RUF001
-
-
-class CategoryStatusUpdate(BaseStatusUpdate):
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
-        related_name='status_updates',
-        verbose_name=_('category'),
-    )
-
-    i18n = TranslationField(
-        fields=['title', 'content'],
-        default_language_field='category__type__plan__primary_language_lowercase',
-    )
-
-    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
-        'category',
-    ]
-
-    class Meta:
-        verbose_name = _('category status update')
-        verbose_name_plural = _('category status updates')
-
-    def __str__(self):
-        return f'{self.category} – {self.created_at} – {self.title}'  # noqa: RUF001
 
 
 class ImpactGroupAction(models.Model):

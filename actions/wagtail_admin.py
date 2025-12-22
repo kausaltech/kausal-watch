@@ -41,7 +41,7 @@ from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
 from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
-from admin_site.viewsets import WatchEditView, WatchViewSet
+from admin_site.viewsets import WatchCreateView, WatchEditView, WatchViewSet
 from admin_site.wagtail import (
     ActivePlanEditView,
     AplansAdminModelForm,
@@ -64,7 +64,15 @@ from . import (
     attribute_type_admin,  # noqa: F401
     category_admin,  # noqa: F401
 )
-from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
+from .models import (
+    ActionChangeLogMessage,
+    ActionImpact,
+    ActionStatus,
+    CategoryChangeLogMessage,
+    IndicatorChangeLogMessage,
+    Plan,
+    PlanFeatures,
+)
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -651,6 +659,231 @@ class PlanViewSet(SnippetViewSet[Plan]):
 
 
 register_snippet(PlanViewSet)
+
+
+class ActionChangeLogMessageCreateView(WatchCreateView[ActionChangeLogMessage]):
+    session_key = 'change_log_action_id'
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        if request.method == 'GET':
+            action_id = request.GET.get('action')
+            if action_id:
+                request.session[self.session_key] = action_id
+
+    def _get_related_action(self):
+        from actions.models import Action
+        action_id = self.request.session.get(self.session_key)
+        if action_id:
+            return Action.objects.filter(pk=action_id).first()
+        return None
+
+    def get_page_subtitle(self):
+        action = self._get_related_action()
+        if action is not None:
+            return _('Add change log message for %(action)s') % {'action': action}
+        return _('Add change log message')
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        action = self._get_related_action()
+        if action is not None:
+            form.instance.action = action  # type: ignore[attr-defined]
+        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
+        return form
+
+    def save_instance(self):
+        instance = super().save_instance()
+        if self.session_key in self.request.session:
+            del self.request.session[self.session_key]
+        return instance
+
+    def get_success_url(self):
+        assert self.object is not None
+        action = self.object.action
+        return reverse('actions_action_modeladmin_edit', args=[action.pk])
+
+
+class ActionChangeLogMessageEditView(WatchEditView[ActionChangeLogMessage]):
+    def get_success_url(self):
+        assert self.object is not None
+        action = self.object.action
+        return reverse('actions_action_modeladmin_edit', args=[action.pk])
+
+
+class ActionChangeLogMessageViewSet(WatchViewSet[ActionChangeLogMessage]):
+    model = ActionChangeLogMessage
+    add_to_admin_menu = False
+    icon = 'doc-full'
+    menu_label = _('Action change log messages')
+    page_title = _('Add change log message')
+    add_view_class = ActionChangeLogMessageCreateView
+    edit_view_class = ActionChangeLogMessageEditView
+
+    panels = [
+        FieldPanel('content'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        if qs is None:
+            return self.model.objects.none()
+        return qs.filter(action__plan=plan)
+
+
+register_snippet(ActionChangeLogMessageViewSet)
+
+
+class IndicatorChangeLogMessageCreateView(WatchCreateView[IndicatorChangeLogMessage]):
+    session_key = 'change_log_indicator_id'
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        if request.method == 'GET':
+            indicator_id = request.GET.get('indicator')
+            if indicator_id:
+                request.session[self.session_key] = indicator_id
+
+    def _get_related_indicator(self):
+        from indicators.models import Indicator
+        indicator_id = self.request.session.get(self.session_key)
+        if indicator_id:
+            return Indicator.objects.filter(pk=indicator_id).first()
+        return None
+
+    def get_page_subtitle(self):
+        indicator = self._get_related_indicator()
+        if indicator is not None:
+            return _('Add change log message for %(indicator)s') % {'indicator': indicator}
+        return _('Add change log message')
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        indicator = self._get_related_indicator()
+        if indicator is not None:
+            form.instance.indicator = indicator  # type: ignore[attr-defined]
+        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
+        return form
+
+    def save_instance(self):
+        instance = super().save_instance()
+        if self.session_key in self.request.session:
+            del self.request.session[self.session_key]
+        return instance
+
+    def get_success_url(self):
+        assert self.object is not None
+        indicator = self.object.indicator
+        return reverse('indicators_indicator_modeladmin_edit', args=[indicator.pk])
+
+
+class IndicatorChangeLogMessageEditView(WatchEditView[IndicatorChangeLogMessage]):
+    def get_success_url(self):
+        assert self.object is not None
+        indicator = self.object.indicator
+        return reverse('indicators_indicator_modeladmin_edit', args=[indicator.pk])
+
+
+class IndicatorChangeLogMessageViewSet(WatchViewSet[IndicatorChangeLogMessage]):
+    model = IndicatorChangeLogMessage
+    add_to_admin_menu = False
+    icon = 'doc-full'
+    menu_label = _('Indicator change log messages')
+    page_title = _('Add change log message')
+    add_view_class = IndicatorChangeLogMessageCreateView
+    edit_view_class = IndicatorChangeLogMessageEditView
+
+    panels = [
+        FieldPanel('content'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        if qs is None:
+            return self.model.objects.none()
+        return qs.filter(indicator__plans=plan)
+
+
+register_snippet(IndicatorChangeLogMessageViewSet)
+
+
+class CategoryChangeLogMessageCreateView(WatchCreateView[CategoryChangeLogMessage]):
+    session_key = 'change_log_category_id'
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        if request.method == 'GET':
+            category_id = request.GET.get('category')
+            if category_id:
+                request.session[self.session_key] = category_id
+
+    def _get_related_category(self):
+        from actions.models import Category
+        category_id = self.request.session.get(self.session_key)
+        if category_id:
+            return Category.objects.filter(pk=category_id).first()
+        return None
+
+    def get_page_subtitle(self):
+        category = self._get_related_category()
+        if category is not None:
+            return _('Add change log message for %(category)s') % {'category': category}
+        return _('Add change log message')
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        category = self._get_related_category()
+        if category is not None:
+            form.instance.category = category  # type: ignore[attr-defined]
+        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
+        return form
+
+    def save_instance(self):
+        instance = super().save_instance()
+        if self.session_key in self.request.session:
+            del self.request.session[self.session_key]
+        return instance
+
+    def get_success_url(self):
+        assert self.object is not None
+        category = self.object.category
+        return reverse('actions_category_modeladmin_edit', args=[category.pk])
+
+
+class CategoryChangeLogMessageEditView(WatchEditView[CategoryChangeLogMessage]):
+    def get_success_url(self):
+        assert self.object is not None
+        category = self.object.category
+        return reverse('actions_category_modeladmin_edit', args=[category.pk])
+
+
+class CategoryChangeLogMessageViewSet(WatchViewSet[CategoryChangeLogMessage]):
+    model = CategoryChangeLogMessage
+    add_to_admin_menu = False
+    icon = 'doc-full'
+    menu_label = _('Category change log messages')
+    page_title = _('Add change log message')
+    add_view_class = CategoryChangeLogMessageCreateView
+    edit_view_class = CategoryChangeLogMessageEditView
+
+    panels = [
+        FieldPanel('content'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        if qs is None:
+            return self.model.objects.none()
+        return qs.filter(category__type__plan=plan)
+
+
+register_snippet(CategoryChangeLogMessageViewSet)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .action import (
     Action,
+    ActionChangeLogMessage,
     ActionContactPerson,
     ActionDecisionLevel,
     ActionImpact,
@@ -12,7 +13,9 @@ from .action import (
     ActionStatus,
     ActionStatusUpdate,
     ActionTask,
+    CategoryChangeLogMessage,
     ImpactGroupAction,
+    IndicatorChangeLogMessage,
     ModelWithRole,
     RestrictedVisibilityModel,
 )
@@ -54,6 +57,7 @@ from .plan import (
 
 __all__ = [
     'Action',
+    'ActionChangeLogMessage',
     'ActionContactPerson',
     'ActionDecisionLevel',
     'ActionDependencyRelationship',
@@ -76,6 +80,7 @@ __all__ = [
     'AttributeType',
     'AttributeTypeChoiceOption',
     'Category',
+    'CategoryChangeLogMessage',
     'CategoryIcon',
     'CategoryLevel',
     'CategoryType',
@@ -86,6 +91,7 @@ __all__ = [
     'ImpactGroup',
     'ImpactGroupAction',
     'IndicatorCategoryRelationship',
+    'IndicatorChangeLogMessage',
     'ModelWithRole',
     'MonitoringQualityPoint',
     'Plan',

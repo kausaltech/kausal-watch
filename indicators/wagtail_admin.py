@@ -419,10 +419,17 @@ class IndicatorAdminOrganizationFilter(SimpleListFilter):
 
 
 class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView[Indicator]):
-    pass
+    def get_success_url(self):
+        from django.urls import reverse
+        change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
+        return f'{change_log_create_url}?indicator={self.instance.pk}'
+
 
 class IndicatorEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView[Indicator]):
-    pass
+    def get_success_url(self):
+        from django.urls import reverse
+        change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
+        return f'{change_log_create_url}?indicator={self.instance.pk}'
 
 
 class IndicatorIndexView(AplansIndexView[Indicator]):

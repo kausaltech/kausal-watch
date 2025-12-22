@@ -40,6 +40,7 @@ from reports.models import Report, ReportType
 
 from .models import (
     Action,
+    ActionChangeLogMessage,
     ActionContactPerson,
     ActionImpact,
     ActionResponsibleParty,
@@ -52,10 +53,12 @@ from .models import (
     AttributeType,
     AttributeTypeChoiceOption,
     Category,
+    CategoryChangeLogMessage,
     CategoryType,
     GeneralPlanAdmin,
     ImpactGroup,
     ImpactGroupAction,
+    IndicatorChangeLogMessage,
     MonitoringQualityPoint,
     Plan,
 )
@@ -124,6 +127,7 @@ def get_action_contact_person_perms():
     perm_q |= _get_perm_obj_q(Plan, ('view',))
     perm_q |= _get_perm_obj_q(ActionContactPerson, ALL_PERMS)
     perm_q |= _get_perm_obj_q(ActionStatusUpdate, ALL_PERMS)
+    perm_q |= _get_perm_obj_q(ActionChangeLogMessage, ALL_PERMS)
     perm_q |= _get_perm_obj_q(ActionIndicator, ('view',))
     perm_q |= _get_perm_obj_q(Indicator, ('view',))
     perm_q |= _get_perm_obj_q(dataset_models.DataPoint, ALL_PERMS)
@@ -152,6 +156,7 @@ def get_indicator_contact_person_perms():
     perm_q |= _get_perm_obj_q(IndicatorContactPerson, ALL_PERMS)
     perm_q |= _get_perm_obj_q(PlanScopedModelLogEntry, ('view',))
     perm_q |= _get_perm_obj_q(PlanScopedPageLogEntry, ('view',))
+    perm_q |= _get_perm_obj_q(IndicatorChangeLogMessage, ALL_PERMS)
 
     perm_q |= Q(content_type__app_label='wagtailadmin', codename='access_admin')
     perm_q |= get_wagtail_contact_person_q()
@@ -269,18 +274,21 @@ PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),
     (ActionImpact, ALL_PERMS),
+    (ActionChangeLogMessage, ALL_PERMS),
     (AttributeType, ALL_PERMS),
     (AttributeTypeChoiceOption, ALL_PERMS),
     (AttributeChoice, ALL_PERMS),
     (AttributeRichText, ALL_PERMS),
     (CategoryType, ALL_PERMS),
     (Category, ALL_PERMS),
+    (CategoryChangeLogMessage, ALL_PERMS),
     (ImpactGroup, ALL_PERMS),
     (ImpactGroupAction, ALL_PERMS),
     (MonitoringQualityPoint, ALL_PERMS),
     (IndicatorLevel, ALL_PERMS),
     (ActionIndicator, ALL_PERMS),
     (Indicator, ALL_PERMS),
+    (IndicatorChangeLogMessage, ALL_PERMS),
     (IndicatorGraph, ALL_PERMS),
     (IndicatorGoal, ALL_PERMS),
     (IndicatorValue, ALL_PERMS),

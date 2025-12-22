@@ -349,9 +349,17 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
             if self.instance.type.hide_category_identifiers:
                 self.instance.generate_identifier()
 
+    def get_success_url(self):
+        from django.urls import reverse
+        change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
+        return f'{change_log_create_url}?category={self.instance.pk}'
+
 
 class CategoryEditView(CategoryTypeQueryParameterMixin, AplansEditView[Category]):
-    pass
+    def get_success_url(self):
+        from django.urls import reverse
+        change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
+        return f'{change_log_create_url}?category={self.instance.pk}'
 
 
 

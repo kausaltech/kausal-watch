@@ -307,8 +307,6 @@ class ActionStatusUpdateFactory(ModelFactory[ActionStatusUpdate]):
     date = datetime.date(2020, 1, 1)
     author = SubFactory(PersonFactory)
     content = "Action status update content"
-    # created_at = None  # Should be set automatically
-    # modified_at = None  # Should be set automatically
     created_by = SubFactory(UserFactory)
 
 
