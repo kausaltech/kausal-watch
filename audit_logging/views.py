@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.views.reports.audit_logging import LogEntriesView
 from wagtail.models import ModelLogEntry, PageLogEntry
 from wagtail.permissions import ModelPermissionPolicy
@@ -9,8 +10,9 @@ from audit_logging.models import PlanScopedModelLogEntry
 
 class PlanScopedLogEntriesView(LogEntriesView):
     results_template_name = "site_history_results.html"
+    page_title = _("Change history")
     LOG_MODELS_TO_EXCLUDE = ModelLogEntry, PageLogEntry
-    permission_policy = ModelPermissionPolicy(PlanScopedModelLogEntry)
+    permission_policy: ModelPermissionPolicy = ModelPermissionPolicy(PlanScopedModelLogEntry)
     permission_required = 'view'
 
     # We want to show only PlanScopedModelEntries

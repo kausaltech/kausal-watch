@@ -23,7 +23,7 @@ def register_core_log_actions(actions):
 @hooks.register('register_admin_menu_item')
 def register_audit_log():
     return MenuItem(
-        _('Audit log'),
+        _('Change history'),
         reverse('watch-plan-history'),
         icon_name='history',
         order=10000,
