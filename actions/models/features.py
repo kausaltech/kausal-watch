@@ -6,7 +6,7 @@ import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 if TYPE_CHECKING:
     from wagtail.models import Workflow
@@ -18,7 +18,7 @@ class OrderBy(models.TextChoices):
         NAME = 'name', _('Order by name')
 
 @reversion.register()
-class PlanFeatures(PlanRelatedModel):
+class PlanFeatures(PlanRelatedModelWithRevision):
     class ContactPersonsPublicData(models.TextChoices):
         NONE = 'none', _('Do not show contact persons publicly')
         NAME = 'name', _('Show only name, role and affiliation')

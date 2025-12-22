@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.documents.models import AbstractDocument, Document as WagtailDocument
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 from kausal_common.models.types import ModelManager
 
 from users.models import User
@@ -26,7 +26,7 @@ class AplansDocumentManager(ModelManager['AplansDocument', AplansDocumentQuerySe
 del _AplansDocumentManager
 
 
-class AplansDocument(AbstractDocument, PlanRelatedModel):
+class AplansDocument(AbstractDocument, PlanRelatedModelWithRevision):
     admin_form_fields = WagtailDocument.admin_form_fields
     uploaded_by_user: FK[User | None] = models.ForeignKey(
         User,

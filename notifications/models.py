@@ -17,12 +17,13 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.fields import RichTextField
+from wagtail.models import RevisionMixin
 
 from wagtail_color_panel.fields import ColorField
 
 from kausal_common.models.types import ModelManager
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModel, PlanRelatedModelWithRevision
 
 from people.models import Person
 
@@ -68,7 +69,7 @@ def notification_type_choice_builder(include_manual: bool = False):
 
 
 @reversion.register()
-class NotificationSettings(ClusterableModel, PlanRelatedModel):
+class NotificationSettings(ClusterableModel, PlanRelatedModelWithRevision):
     plan = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_settings',
         verbose_name=_('plan'),
@@ -141,6 +142,7 @@ class BaseTemplateManager(models.Manager['BaseTemplate']):
 
 _QS = TypeVar('_QS', bound=models.QuerySet)
 
+
 class IndirectPlanRelatedModel(PlanRelatedModel):
     class Meta:
         abstract = True
@@ -151,7 +153,7 @@ class IndirectPlanRelatedModel(PlanRelatedModel):
 
 
 @reversion.register()
-class BaseTemplate(ClusterableModel, PlanRelatedModel):
+class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
     plan: models.OneToOneField[Plan] = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),
@@ -209,7 +211,7 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplate(PlanRelatedModel):
+class NotificationTemplate(IndirectPlanRelatedModel, RevisionMixin):
     base: ParentalKey[BaseTemplate, BaseTemplate]
 
     type = models.CharField(

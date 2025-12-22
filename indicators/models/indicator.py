@@ -98,7 +98,7 @@ class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
 
 @reversion.register(follow=('goals',))
 class Indicator(
-    ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel, RevisionMixin
+    ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel
 ):
     """An indicator with which to measure actions and progress towards strategic goals."""
 

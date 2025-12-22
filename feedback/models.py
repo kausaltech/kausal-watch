@@ -8,14 +8,14 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail.models import Page
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 from actions.models import Action, Plan
 from actions.models.category import Category
 from pages.models import ActionListPage, CategoryPage
 
 
-class UserFeedback(PlanRelatedModel):
+class UserFeedback(PlanRelatedModelWithRevision):
     class FeedbackType(models.TextChoices):
         GENERAL = '', _('General')
         ACCESSIBILITY = 'accessibility', _('Accessibility')

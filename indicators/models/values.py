@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
@@ -31,7 +31,7 @@ class IndicatorGraph(models.Model):
         return "%s (%s)" % (self.indicator, self.created_at)
 
 
-class IndicatorValue(ClusterableModel, PlanRelatedModel):
+class IndicatorValue(ClusterableModel, PlanRelatedModelWithRevision):
     """One measurement of an indicator for a certain date/month/year."""
 
     indicator = ParentalKey['Indicator'](
@@ -84,7 +84,7 @@ class IndicatorValue(ClusterableModel, PlanRelatedModel):
 
 
 @reversion.register()
-class IndicatorGoal(PlanRelatedModel):
+class IndicatorGoal(PlanRelatedModelWithRevision):
     """The numeric goal which the organization has set for an indicator."""
 
     indicator = ParentalKey['Indicator'](

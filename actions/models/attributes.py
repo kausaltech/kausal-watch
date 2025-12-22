@@ -27,7 +27,7 @@ from aplans.utils import (
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
     OrderedModel,
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
     ReferenceIndexedModelMixin,
 )
 
@@ -81,7 +81,7 @@ class AttributeType(
     ClusterableModel,
     OrderedModel,
     ModelWithPrimaryLanguage,
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
 ):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')

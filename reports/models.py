@@ -18,7 +18,7 @@ from wagtail.blocks.stream_block import StreamValue
 from autoslug.fields import AutoSlugField
 from sentry_sdk import capture_message
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 from actions.action_fields import action_registry
 from actions.models.action import Action
@@ -50,7 +50,7 @@ class NoRevisionSaveError(Exception):
 
 
 @reversion.register()
-class ReportType(PlanRelatedModel):
+class ReportType(PlanRelatedModelWithRevision):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
@@ -141,7 +141,7 @@ class ReportType(PlanRelatedModel):
 
 
 @reversion.register()
-class Report(PlanRelatedModel):
+class Report(PlanRelatedModelWithRevision):
     type: FK[ReportType] = models.ForeignKey(ReportType, on_delete=models.CASCADE, related_name='reports')
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(

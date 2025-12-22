@@ -20,7 +20,7 @@ from kausal_common.organizations.models import (
     Node,
 )
 
-from aplans.utils import IndirectPlanRelatedModel, PlanRelatedModel
+from aplans.utils import IndirectPlanRelatedModel, PlanRelatedModelWithRevision
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -351,7 +351,7 @@ class OrganizationIdentifier(BaseOrganizationIdentifier):
 
 
 
-class OrganizationPlanAdmin(PlanRelatedModel):
+class OrganizationPlanAdmin(PlanRelatedModelWithRevision):
     """Person who can administer plan-specific content that is related to the organization."""
 
     class Meta:

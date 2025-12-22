@@ -30,7 +30,7 @@ from aplans.utils import (
     IdentifierField,
     InstancesEditableByMixin,
     OrderedModel,
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
     ReferenceIndexedModelMixin,
     generate_identifier,
 )
@@ -187,7 +187,7 @@ class CommonCategoryType(CategoryTypeBase, ModelWithPrimaryLanguage):
 
 @reversion.register()
 class CategoryType(
-    InstancesEditableByMixin, ReferenceIndexedModelMixin, CategoryTypeBase, ClusterableModel, PlanRelatedModel,
+    InstancesEditableByMixin, ReferenceIndexedModelMixin, CategoryTypeBase, ClusterableModel, PlanRelatedModelWithRevision,
 ):
     """
     Type of the categories.
@@ -455,7 +455,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
 
 
 @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
-class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModel):
+class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModelWithRevision):
     """A category for actions and indicators."""
 
     type: FK[CategoryType] = models.ForeignKey(

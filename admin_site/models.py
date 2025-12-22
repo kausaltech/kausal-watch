@@ -14,7 +14,7 @@ from wagtail.images.models import SourceImageIOError
 from sentry_sdk import capture_exception
 
 from aplans.fields import HostnameField
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModel
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModelWithRevision
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
@@ -153,7 +153,7 @@ class EmailDomains(OrderedModel, ClusterableModel):
 
 
 class BuiltInFieldCustomization(
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
 ):

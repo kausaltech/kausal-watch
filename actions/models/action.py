@@ -49,7 +49,7 @@ from aplans.utils import (
     DateFormatField,
     IdentifierField,
     OrderedModel,
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
     PlanRelatedOrderedModel,
     RestrictedVisibilityModel,
     generate_identifier,
@@ -1539,7 +1539,7 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
         return []
 
 
-class ActionSchedule(PlanRelatedModel):
+class ActionSchedule(PlanRelatedModelWithRevision):
     """A schedule for an action with begin and end dates."""
 
     plan: ParentalKey[Plan] = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='action_schedules')
@@ -1566,7 +1566,7 @@ class ActionSchedule(PlanRelatedModel):
 
 
 @reversion.register()
-class ActionStatus(PlanRelatedModel):
+class ActionStatus(PlanRelatedModelWithRevision):
     """The current status for the action ("on time", "late", "completed", etc.)."""
 
     plan = ParentalKey(
@@ -1660,7 +1660,7 @@ class ActionImplementationPhase(PlanRelatedOrderedModel):
         return self.identifier == 'completed'
 
 
-class ActionDecisionLevel(PlanRelatedModel):
+class ActionDecisionLevel(PlanRelatedModelWithRevision):
     plan = models.ForeignKey(
         'actions.Plan',
         on_delete=models.CASCADE,
@@ -1846,7 +1846,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
         }
 
 
-class ActionImpact(PlanRelatedModel, OrderedModel):
+class ActionImpact(PlanRelatedModelWithRevision, OrderedModel):
     """An impact classification for an action in an action plan."""
 
     plan = ParentalKey(

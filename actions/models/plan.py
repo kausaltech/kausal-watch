@@ -46,7 +46,7 @@ from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
     OrderedModel,
-    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
 )
 
 from actions.permission_policy import PlanPermissionPolicy
@@ -1266,7 +1266,7 @@ class PlanDomain(models.Model):
             raise ValidationError({'hostname': _('Hostname must be a fully qualified domain name in lower-case only')})
 
 
-class Scenario(PlanRelatedModel):
+class Scenario(PlanRelatedModelWithRevision):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='scenarios',
         verbose_name=_('plan'),
@@ -1288,7 +1288,7 @@ class Scenario(PlanRelatedModel):
         return self.name
 
 
-class ImpactGroup(PlanRelatedModel):
+class ImpactGroup(PlanRelatedModelWithRevision):
     plan: FK[Plan] = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='impact_groups',
         verbose_name=_('plan'),
@@ -1318,7 +1318,7 @@ class ImpactGroup(PlanRelatedModel):
         return self.name
 
 
-class MonitoringQualityPoint(PlanRelatedModel, OrderedModel):
+class MonitoringQualityPoint(PlanRelatedModelWithRevision, OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     description_yes = models.CharField(
         max_length=200,

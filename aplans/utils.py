@@ -29,7 +29,7 @@ from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
 from modelcluster.forms import BaseChildFormSet
 from wagtail.fields import StreamField
-from wagtail.models import Page, ReferenceIndex
+from wagtail.models import Page, ReferenceIndex, RevisionMixin
 
 import html2text
 import humanize
@@ -301,7 +301,12 @@ class PlanRelatedModel(models.Model):
         setattr(self, 'plan', plan)  # noqa: B010
 
 
-class IndirectPlanRelatedModel(PlanRelatedModel):
+class PlanRelatedModelWithRevision(RevisionMixin, PlanRelatedModel):
+    class Meta:
+        abstract = True
+
+
+class IndirectPlanRelatedModel(PlanRelatedModelWithRevision):
     """
     A model which belongs to one or several plans but whose plans can only be queried after the model has been persisted.
 

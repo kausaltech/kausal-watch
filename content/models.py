@@ -8,11 +8,11 @@ from django.utils.translation import gettext_lazy as _
 from modeltrans.fields import TranslationField
 from wagtail.fields import RichTextField
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 
 @reversion.register()
-class SiteGeneralContent(PlanRelatedModel):
+class SiteGeneralContent(PlanRelatedModelWithRevision):
     class ActionTerm(models.TextChoices):
         # When changing terms, make sure to also change ACTION_TERM_PLURAL below.
         # Get a printable SiteGeneralContent instance's action term with `instance.get_action_term_display()` and, for

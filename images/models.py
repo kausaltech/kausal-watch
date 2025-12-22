@@ -10,7 +10,7 @@ from wagtail.images.models import AbstractImage, AbstractRendition, Filter, Imag
 
 from kausal_common.models.types import ModelManager
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModelWithRevision
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
@@ -49,7 +49,7 @@ else:
     AplansImageManager = ModelManager.from_queryset(ImageQuerySet)
 
 
-class AplansImage(AbstractImage, PlanRelatedModel):
+class AplansImage(AbstractImage, PlanRelatedModelWithRevision):
     objects: ClassVar[AplansImageManager] = AplansImageManager()
     _default_manager: ClassVar[AplansImageManager]
     renditions: ClassVar[AplansRenditionManager]
