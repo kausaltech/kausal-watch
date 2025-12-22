@@ -723,13 +723,13 @@ def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
     the reference index is updated immediately when a model instance is saved.
     """
     def wrapped(*args, **kwargs) -> R:
-        original_task = wagtail.signal_handlers.update_reference_index_task
+        original_task = wagtail.signal_handlers.update_reference_index_task  # type: ignore[attr-defined]
         tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
         try:
-            wagtail.signal_handlers.update_reference_index_task = tmp_task
+            wagtail.signal_handlers.update_reference_index_task = tmp_task  # type: ignore[attr-defined]
             return f(*args, **kwargs)
         finally:
-            wagtail.signal_handlers.update_reference_index_task = original_task
+            wagtail.signal_handlers.update_reference_index_task = original_task  # type: ignore[attr-defined]
 
     return wrapped
 
