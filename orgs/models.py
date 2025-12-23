@@ -181,10 +181,11 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
     @override
     def get_related_plans(self):
-        from actions.models.plan import Plan
-        return Plan.objects.filter(
-            self.get_plans_q()
-        ).distinct()
+        # TODO: implement this in a performant way.
+        # For now, this is not strictly needed because
+        # the PlanScopedModelLogEntry objects get the
+        # active plan by default
+        return []
 
     public_fields = BaseOrganization.public_fields + [  # type: ignore[misc]
         'internal_abbreviation',

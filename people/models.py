@@ -153,16 +153,11 @@ class Person(BasePerson, IndirectPlanRelatedModel):
         self.organization = plan.organization
 
     def get_related_plans(self):
-        from actions.models import Plan
-        org_plans_q = self.organization.get_plans_q()
-        return Plan.objects.filter(
-            org_plans_q
-            | Q(actions__contact_persons__person=self)
-            | Q(general_admins=self)
-            | Q(public_site_viewers__person=self)
-            | Q(organization_plan_admins__person=self)
-            #| Q(organization_metadata_admins__person=self)  DO WE HAVE THESE?
-        ).order_by().distinct()
+        # TODO: implement this in a performant way.
+        # For now, this is not strictly needed because
+        # the PlanScopedModelLogEntry objects get the
+        # active plan by default
+        return []
 
     def download_avatar(self):
         email_hash = hashlib.md5(self.email.encode('utf8'), usedforsecurity=False).hexdigest()
