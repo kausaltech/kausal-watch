@@ -368,8 +368,11 @@ class CreateEditViewOptionalFeaturesMixin[M: Model]:
                 messages.validation_error(self.request, " ".join(e.messages), self.form)
                 return redirect(self.get_edit_url())
 
-        change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
-        return redirect(f'{change_log_create_url}?action={self.object.pk}')
+        plan = self.object.plan
+        if plan.features.enable_change_log:
+            change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
+            return redirect(f'{change_log_create_url}?action={self.object.pk}')
+        return None
 
     def restart_workflow_action(self):
         self.workflow_state.cancel(user=self.request.user)

@@ -1,0 +1,12 @@
+{% extends "wagtailsnippets/snippets/create.html" %}
+{% load i18n %}
+
+{% block actions %}
+    {{ action_menu.render_html }}
+    {% if skip_url %}
+        <a href="{{ skip_url }}" class="button button-secondary">
+            {% trans "Skip" %}
+        </a>
+    {% endif %}
+{% endblock %}
+

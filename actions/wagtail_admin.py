@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import ProtectedError
 from django.urls import re_path, reverse
 from django.utils.translation import gettext_lazy as _
@@ -457,6 +457,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('output_report_action_print_layout', permission='superuser'),
         FieldPanel('password_protected', permission='superuser'),
         FieldPanel('indicators_open_in_modal', permission='superuser'),
+        FieldPanel('enable_change_log', permission='superuser'),
     ]
 
     def get_queryset(self, request):
@@ -661,34 +662,51 @@ class PlanViewSet(SnippetViewSet[Plan]):
 register_snippet(PlanViewSet)
 
 
-class ActionChangeLogMessageCreateView(WatchCreateView[ActionChangeLogMessage]):
-    session_key = 'change_log_action_id'
+class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
+    related_field_name: str
+    success_url_name: str
+
+    @property
+    def session_key(self) -> str:
+        return f'change_log_{self.related_field_name}_id'
+
+    def get_related_model(self) -> type[models.Model]:
+        return self.model._meta.get_field(self.related_field_name).related_model  # type: ignore[return-value]
 
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
         if request.method == 'GET':
-            action_id = request.GET.get('action')
-            if action_id:
-                request.session[self.session_key] = action_id
+            related_id = request.GET.get(self.related_field_name)
+            if related_id:
+                request.session[self.session_key] = related_id
 
-    def _get_related_action(self):
-        from actions.models import Action
-        action_id = self.request.session.get(self.session_key)
-        if action_id:
-            return Action.objects.filter(pk=action_id).first()
+    def get_related_object(self) -> models.Model | None:
+        related_id = self.request.session.get(self.session_key)
+        if related_id:
+            return self.get_related_model().objects.filter(pk=related_id).first()  # type: ignore[attr-defined]
         return None
 
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        from django.core.exceptions import PermissionDenied
+        related_obj = self.get_related_object()
+        if not self.check_related_object_permission(related_obj):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
     def get_page_subtitle(self):
-        action = self._get_related_action()
-        if action is not None:
-            return _('Add change log message for %(action)s') % {'action': action}
-        return _('Add change log message')
+        related_obj = self.get_related_object()
+        if related_obj is not None:
+            return _('Summarize what was changed in %(obj)s') % {'obj': related_obj}
+        return _('Summarize what was changed')
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
-        action = self._get_related_action()
-        if action is not None:
-            form.instance.action = action  # type: ignore[attr-defined]
+        related_obj = self.get_related_object()
+        if related_obj is not None:
+            setattr(form.instance, self.related_field_name, related_obj)
         form.instance.created_by = self.request.user  # type: ignore[attr-defined]
         return form
 
@@ -698,27 +716,50 @@ class ActionChangeLogMessageCreateView(WatchCreateView[ActionChangeLogMessage]):
             del self.request.session[self.session_key]
         return instance
 
+    def get_skip_url(self) -> str | None:
+        related_obj = self.get_related_object()
+        if related_obj is not None:
+            return reverse(self.success_url_name, args=[related_obj.pk])
+        return None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['skip_url'] = self.get_skip_url()
+        return context
+
     def get_success_url(self):
         assert self.object is not None
-        action = self.object.action
-        return reverse('actions_action_modeladmin_edit', args=[action.pk])
+        related_obj = getattr(self.object, self.related_field_name)
+        return reverse(self.success_url_name, args=[related_obj.pk])
 
 
-class ActionChangeLogMessageEditView(WatchEditView[ActionChangeLogMessage]):
+class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
+    related_field_name: str
+    success_url_name: str
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        from django.core.exceptions import PermissionDenied
+        response = super().dispatch(request, *args, **kwargs)
+        related_obj = getattr(self.object, self.related_field_name, None)
+        if not self.check_related_object_permission(related_obj):
+            raise PermissionDenied
+        return response
+
     def get_success_url(self):
         assert self.object is not None
-        action = self.object.action
-        return reverse('actions_action_modeladmin_edit', args=[action.pk])
+        related_obj = getattr(self.object, self.related_field_name)
+        return reverse(self.success_url_name, args=[related_obj.pk])
 
 
-class ActionChangeLogMessageViewSet(WatchViewSet[ActionChangeLogMessage]):
-    model = ActionChangeLogMessage
+class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
     add_to_admin_menu = False
     icon = 'doc-full'
-    menu_label = _('Action change log messages')
     page_title = _('Add change log message')
-    add_view_class = ActionChangeLogMessageCreateView
-    edit_view_class = ActionChangeLogMessageEditView
+    plan_filter_path: str
+    create_template_name = 'aplans/change_log_message_create.html'
 
     panels = [
         FieldPanel('content'),
@@ -729,158 +770,98 @@ class ActionChangeLogMessageViewSet(WatchViewSet[ActionChangeLogMessage]):
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         if qs is None:
-            return self.model.objects.none()
-        return qs.filter(action__plan=plan)
+            return self.model.objects.none()  # type: ignore[attr-defined]
+        return qs.filter(**{self.plan_filter_path: plan})
+
+
+class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage]):
+    related_field_name = 'action'
+    success_url_name = 'actions_action_modeladmin_edit'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+
+
+class ActionChangeLogMessageEditView(BaseChangeLogMessageEditView[ActionChangeLogMessage]):
+    related_field_name = 'action'
+    success_url_name = 'actions_action_modeladmin_edit'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+
+
+class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
+    model = ActionChangeLogMessage
+    menu_label = _('Action change log messages')
+    plan_filter_path = 'action__plan'
+    add_view_class = ActionChangeLogMessageCreateView
+    edit_view_class = ActionChangeLogMessageEditView
 
 
 register_snippet(ActionChangeLogMessageViewSet)
 
 
-class IndicatorChangeLogMessageCreateView(WatchCreateView[IndicatorChangeLogMessage]):
-    session_key = 'change_log_indicator_id'
+class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[IndicatorChangeLogMessage]):
+    related_field_name = 'indicator'
+    success_url_name = 'indicators_indicator_modeladmin_edit'
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        if request.method == 'GET':
-            indicator_id = request.GET.get('indicator')
-            if indicator_id:
-                request.session[self.session_key] = indicator_id
-
-    def _get_related_indicator(self):
-        from indicators.models import Indicator
-        indicator_id = self.request.session.get(self.session_key)
-        if indicator_id:
-            return Indicator.objects.filter(pk=indicator_id).first()
-        return None
-
-    def get_page_subtitle(self):
-        indicator = self._get_related_indicator()
-        if indicator is not None:
-            return _('Add change log message for %(indicator)s') % {'indicator': indicator}
-        return _('Add change log message')
-
-    def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
-        indicator = self._get_related_indicator()
-        if indicator is not None:
-            form.instance.indicator = indicator  # type: ignore[attr-defined]
-        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
-        return form
-
-    def save_instance(self):
-        instance = super().save_instance()
-        if self.session_key in self.request.session:
-            del self.request.session[self.session_key]
-        return instance
-
-    def get_success_url(self):
-        assert self.object is not None
-        indicator = self.object.indicator
-        return reverse('indicators_indicator_modeladmin_edit', args=[indicator.pk])
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
 
 
-class IndicatorChangeLogMessageEditView(WatchEditView[IndicatorChangeLogMessage]):
-    def get_success_url(self):
-        assert self.object is not None
-        indicator = self.object.indicator
-        return reverse('indicators_indicator_modeladmin_edit', args=[indicator.pk])
+class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorChangeLogMessage]):
+    related_field_name = 'indicator'
+    success_url_name = 'indicators_indicator_modeladmin_edit'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
 
 
-class IndicatorChangeLogMessageViewSet(WatchViewSet[IndicatorChangeLogMessage]):
+class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
     model = IndicatorChangeLogMessage
-    add_to_admin_menu = False
-    icon = 'doc-full'
     menu_label = _('Indicator change log messages')
-    page_title = _('Add change log message')
+    plan_filter_path = 'indicator__plans'
     add_view_class = IndicatorChangeLogMessageCreateView
     edit_view_class = IndicatorChangeLogMessageEditView
-
-    panels = [
-        FieldPanel('content'),
-    ]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
-        if qs is None:
-            return self.model.objects.none()
-        return qs.filter(indicator__plans=plan)
 
 
 register_snippet(IndicatorChangeLogMessageViewSet)
 
 
-class CategoryChangeLogMessageCreateView(WatchCreateView[CategoryChangeLogMessage]):
-    session_key = 'change_log_category_id'
+class CategoryChangeLogMessageCreateView(BaseChangeLogMessageCreateView[CategoryChangeLogMessage]):
+    related_field_name = 'category'
+    success_url_name = 'actions_category_modeladmin_edit'
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        if request.method == 'GET':
-            category_id = request.GET.get('category')
-            if category_id:
-                request.session[self.session_key] = category_id
-
-    def _get_related_category(self):
-        from actions.models import Category
-        category_id = self.request.session.get(self.session_key)
-        if category_id:
-            return Category.objects.filter(pk=category_id).first()
-        return None
-
-    def get_page_subtitle(self):
-        category = self._get_related_category()
-        if category is not None:
-            return _('Add change log message for %(category)s') % {'category': category}
-        return _('Add change log message')
-
-    def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
-        category = self._get_related_category()
-        if category is not None:
-            form.instance.category = category  # type: ignore[attr-defined]
-        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
-        return form
-
-    def save_instance(self):
-        instance = super().save_instance()
-        if self.session_key in self.request.session:
-            del self.request.session[self.session_key]
-        return instance
-
-    def get_success_url(self):
-        assert self.object is not None
-        category = self.object.category
-        return reverse('actions_category_modeladmin_edit', args=[category.pk])
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
 
-class CategoryChangeLogMessageEditView(WatchEditView[CategoryChangeLogMessage]):
-    def get_success_url(self):
-        assert self.object is not None
-        category = self.object.category
-        return reverse('actions_category_modeladmin_edit', args=[category.pk])
+class CategoryChangeLogMessageEditView(BaseChangeLogMessageEditView[CategoryChangeLogMessage]):
+    related_field_name = 'category'
+    success_url_name = 'actions_category_modeladmin_edit'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
 
-class CategoryChangeLogMessageViewSet(WatchViewSet[CategoryChangeLogMessage]):
+class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChangeLogMessage]):
     model = CategoryChangeLogMessage
-    add_to_admin_menu = False
-    icon = 'doc-full'
     menu_label = _('Category change log messages')
-    page_title = _('Add change log message')
+    plan_filter_path = 'category__type__plan'
     add_view_class = CategoryChangeLogMessageCreateView
     edit_view_class = CategoryChangeLogMessageEditView
-
-    panels = [
-        FieldPanel('content'),
-    ]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
-        if qs is None:
-            return self.model.objects.none()
-        return qs.filter(category__type__plan=plan)
 
 
 register_snippet(CategoryChangeLogMessageViewSet)

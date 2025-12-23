@@ -140,6 +140,10 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         default=False, verbose_name=_("Indicators open in modal"),
         help_text=_("Should indicators open only in a modal dialog in the public UI?"),
     )
+    enable_change_log = models.BooleanField(
+        default=False, verbose_name=_("Enable change log"),
+        help_text=_("Prompt users to add a public change log message after editing actions, indicators, or categories."),
+    )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'

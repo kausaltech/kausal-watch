@@ -7,6 +7,7 @@ from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from wagtail import hooks
 from wagtail.admin.panels import (
@@ -420,16 +421,20 @@ class IndicatorAdminOrganizationFilter(SimpleListFilter):
 
 class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView[Indicator]):
     def get_success_url(self):
-        from django.urls import reverse
-        change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-        return f'{change_log_create_url}?indicator={self.instance.pk}'
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        if plan.features.enable_change_log:
+            change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
+            return f'{change_log_create_url}?indicator={self.instance.pk}'
+        return super().get_success_url()
 
 
 class IndicatorEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView[Indicator]):
     def get_success_url(self):
-        from django.urls import reverse
-        change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-        return f'{change_log_create_url}?indicator={self.instance.pk}'
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        if plan.features.enable_change_log:
+            change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
+            return f'{change_log_create_url}?indicator={self.instance.pk}'
+        return super().get_success_url()
 
 
 class IndicatorIndexView(AplansIndexView[Indicator]):

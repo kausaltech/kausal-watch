@@ -6,6 +6,7 @@ from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms.models import WagtailAdminModelForm
@@ -350,16 +351,20 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
                 self.instance.generate_identifier()
 
     def get_success_url(self):
-        from django.urls import reverse
-        change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
-        return f'{change_log_create_url}?category={self.instance.pk}'
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        if plan.features.enable_change_log:
+            change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
+            return f'{change_log_create_url}?category={self.instance.pk}'
+        return super().get_success_url()
 
 
 class CategoryEditView(CategoryTypeQueryParameterMixin, AplansEditView[Category]):
     def get_success_url(self):
-        from django.urls import reverse
-        change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
-        return f'{change_log_create_url}?category={self.instance.pk}'
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        if plan.features.enable_change_log:
+            change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
+            return f'{change_log_create_url}?category={self.instance.pk}'
+        return super().get_success_url()
 
 
 

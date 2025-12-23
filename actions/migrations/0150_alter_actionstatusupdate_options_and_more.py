@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0148_alter_indicatorcategoryrelationship_category"),
+        ("actions", "0149_actiondecisionlevel_latest_revision_and_more"),
         ("indicators", "0041_alter_indicator_reference"),
         ("people", "0013_person_image_hash_person_image_msgraph_etag_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
