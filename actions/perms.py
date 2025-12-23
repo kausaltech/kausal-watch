@@ -12,9 +12,9 @@ from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission, Page
 from loguru import logger
 from treelib import Tree
 
-from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 from kausal_common.datasets import models as dataset_models
 
+from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 from content.models import SiteGeneralContent
 from indicators.models import (
     ActionIndicator,

@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import graphene
 import strawberry
-import strawberry_django
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
@@ -24,6 +23,7 @@ from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
 import sentry_sdk
+import strawberry_django
 from grapple.registry import registry as grapple_registry
 from grapple.types.interfaces import get_page_interface
 
