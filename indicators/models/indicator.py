@@ -409,7 +409,7 @@ class Indicator(
             Plan.objects.filter(organization=self.organization)
         )
 
-    def get_persisted_plans(self):
+    def get_related_plans(self):
         from actions.models.plan import Plan
         return Plan.objects.filter(indicator_levels__indicator=self)
 

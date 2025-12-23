@@ -327,9 +327,9 @@ class IndirectPlanRelatedModel(PlanRelatedModelWithRevision):
     def get_plans(self):
         if self.pk is None:
             return []
-        return self.get_persisted_plans()
+        return self.get_related_plans()
 
-    def get_persisted_plans(self):
+    def get_related_plans(self):
         raise NotImplementedError("Implement in subclass")
 
     def initialize_plan_defaults(self, plan: Plan):

@@ -180,7 +180,7 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
         )
 
     @override
-    def get_persisted_plans(self):
+    def get_related_plans(self):
         from actions.models.plan import Plan
         return Plan.objects.filter(
             self.get_plans_q()

@@ -152,7 +152,7 @@ class Person(BasePerson, IndirectPlanRelatedModel):
     def initialize_plan_defaults(self, plan: Plan):
         self.organization = plan.organization
 
-    def get_persisted_plans(self):
+    def get_related_plans(self):
         from actions.models import Plan
         org_plans_q = self.organization.get_plans_q()
         return Plan.objects.filter(
