@@ -698,8 +698,8 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
     def get_page_subtitle(self):
         related_obj = self.get_related_object()
         if related_obj is not None:
-            return _('Summarize what was changed in %(obj)s') % {'obj': related_obj}
-        return _('Summarize what was changed')
+            return _('Change log message: %(obj)s') % {'obj': related_obj}
+        return _('Change log message')
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
@@ -715,21 +715,23 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
             del self.request.session[self.session_key]
         return instance
 
-    def get_skip_url(self) -> str | None:
+    def get_skip_url(self) -> str:
+        return reverse(self.success_url_name)
+
+    def get_latest_change_log_message(self):
         related_obj = self.get_related_object()
-        if related_obj is not None:
-            return reverse(self.success_url_name, args=[related_obj.pk])
-        return None
+        if related_obj is None:
+            return None
+        return related_obj.change_log_messages.order_by('-created_at').first()  # type: ignore[attr-defined]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['skip_url'] = self.get_skip_url()
+        context['latest_change_log_message'] = self.get_latest_change_log_message()
         return context
 
     def get_success_url(self):
-        assert self.object is not None
-        related_obj = getattr(self.object, self.related_field_name)
-        return reverse(self.success_url_name, args=[related_obj.pk])
+        return reverse(self.success_url_name)
 
 
 class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
@@ -788,7 +790,7 @@ class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
 
 class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage]):
     related_field_name = 'action'
-    success_url_name = 'actions_action_modeladmin_edit'
+    success_url_name = 'actions_action_modeladmin_index'
 
     def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
         if related_obj is None:
@@ -829,7 +831,7 @@ register_snippet(ActionChangeLogMessageViewSet)
 
 class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[IndicatorChangeLogMessage]):
     related_field_name = 'indicator'
-    success_url_name = 'indicators_indicator_modeladmin_edit'
+    success_url_name = 'indicators_indicator_modeladmin_index'
 
     def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
         if related_obj is None:
@@ -870,7 +872,7 @@ register_snippet(IndicatorChangeLogMessageViewSet)
 
 class CategoryChangeLogMessageCreateView(BaseChangeLogMessageCreateView[CategoryChangeLogMessage]):
     related_field_name = 'category'
-    success_url_name = 'actions_category_modeladmin_edit'
+    success_url_name = 'actions_category_modeladmin_index'
 
     def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
         if related_obj is None:
