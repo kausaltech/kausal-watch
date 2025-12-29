@@ -6,6 +6,7 @@ from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLStreamfield, GraphQLString
 
+from audit_logging.blocks import ChangeLogMessageBlock
 from reports.blocks.report_comparison_block import ReportComparisonBlock
 
 from .action_content_blocks import (
@@ -71,6 +72,7 @@ ActionMainContentBlock = generate_stream_block(
         ('report_comparison', ReportComparisonBlock()),
         ('indicator_causal_chain', IndicatorCausalChainBlock()),
         ('datasets', PlanDatasetsBlock()),
+        ('change_log_message', ChangeLogMessageBlock()),
     ),
     support_editing_from_other_form=True,
 )
@@ -83,6 +85,7 @@ ActionAsideContentBlock = generate_stream_block(
         'responsible_parties',
         'attribute',
         'categories',
+        ('change_log_message', ChangeLogMessageBlock()),
     ],
     support_editing_from_other_form=True,
 )

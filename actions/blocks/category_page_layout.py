@@ -14,6 +14,7 @@ from actions.blocks.choosers import (
     CategoryTypeDatasetSchemaChooserBlock,
 )
 from actions.models.attributes import AttributeType
+from audit_logging.blocks import ChangeLogMessageBlock
 
 
 @register_streamfield_block
@@ -86,6 +87,7 @@ class CategoryPageMainBottomBlock(blocks.StreamBlock):
     category_list = CategoryPageCategoryListBlock()
     contact_form = CategoryPageContactFormBlock()
     datasets = CategoryTypeDatasetsBlock()
+    change_log_message = ChangeLogMessageBlock()
     # TODO: CategoryPageSectionBlock
 
     graphql_types = [
@@ -94,6 +96,7 @@ class CategoryPageMainBottomBlock(blocks.StreamBlock):
         CategoryPageCategoryListBlock,
         CategoryPageContactFormBlock,
         CategoryTypeDatasetsBlock,
+        ChangeLogMessageBlock,
     ]
 
 

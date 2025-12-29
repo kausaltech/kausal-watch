@@ -60,6 +60,7 @@ from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
+from audit_logging.blocks import ChangeLogMessageBlock
 from indicators.blocks import (
     DashboardRowBlock,
     IndicatorGroupBlock,
@@ -354,6 +355,7 @@ class StaticPage(AplansPage):
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
         ('raw_visualization', RawVisualizationBlock()),
+        ('change_log_message', ChangeLogMessageBlock()),
         *get_body_blocks('StaticPage'),
     ], null=True, blank=True)
 
@@ -540,6 +542,7 @@ class CategoryPage(AplansPage):
         ('action_list', ActionListBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('raw_visualization', RawVisualizationBlock()),
+        ('change_log_message', ChangeLogMessageBlock()),
     ], null=True, blank=True)
 
     content_panels: Sequence[Panel[Any]] = [
