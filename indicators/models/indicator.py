@@ -417,6 +417,10 @@ class Indicator(
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None
 
+    def get_public_change_log_message(self):
+        from actions.models import IndicatorChangeLogMessage
+        return IndicatorChangeLogMessage.objects.filter(indicator=self).order_by('-created_at').first()
+
     def initialize_plan_defaults(self, plan):
         self.organization = plan.organization
 

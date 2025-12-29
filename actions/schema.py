@@ -95,7 +95,12 @@ from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorList
 from people.models import Person
 from search.backends import get_search_backend
 
-from .models import IndicatorCategoryRelationship as IndicatorCategoryRelationshipModel
+from .models import (
+    ActionChangeLogMessage,
+    CategoryChangeLogMessage,
+    IndicatorCategoryRelationship as IndicatorCategoryRelationshipModel,
+    IndicatorChangeLogMessage,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -105,7 +110,7 @@ if TYPE_CHECKING:
     from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
 
-    from actions.models.action import ActionQuerySet
+    from actions.models.action import ActionQuerySet, BaseChangeLogMessage
     from actions.models.attributes import Attribute
     from actions.models.plan import PlanQuerySet
     from indicators.models import ActionIndicator, IndicatorLevelQuerySet
@@ -857,6 +862,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
     datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
     indicator_relationships = graphene.List(graphene.NonNull(IndicatorCategoryRelationship), required=True)
+    change_log_message = graphene.Field('actions.schema.ChangeLogMessageInterface')
 
     @staticmethod
     def _resolve_field_with_fallback_to_common(root: Category, field_name: str):
@@ -955,6 +961,10 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
             scope_content_type=category_content_type,
             scope_id=root.id,
         )
+
+    @staticmethod
+    def resolve_change_log_message(root: Category, info: GQLInfo):
+        return root.get_public_change_log_message()
 
     class Meta:
         model = Category
@@ -1177,6 +1187,51 @@ class WorkflowInfoNode(graphene.ObjectType[Any]):
         return make_result(getattr(root, '_actual_workflow_state', WorkflowStateEnum.PUBLISHED))
 
 
+class ChangeLogMessageInterface(graphene.Interface[T], Generic[T]):
+    content = graphene.String()
+    created_at = graphene.DateTime()
+    updated_at = graphene.DateTime()
+    created_by = graphene.Field('people.schema.PersonNode')
+
+    @classmethod
+    def resolve_type(cls, instance: BaseChangeLogMessage, _info: GQLInfo) -> type[graphene.ObjectType[Any]] | None:
+        if isinstance(instance, ActionChangeLogMessage):
+            return ActionChangeLogMessageNode
+        if isinstance(instance, IndicatorChangeLogMessage):
+            return IndicatorChangeLogMessageNode
+        if isinstance(instance, CategoryChangeLogMessage):
+            return CategoryChangeLogMessageNode
+        return None
+
+    @staticmethod
+    def resolve_created_by(root: BaseChangeLogMessage, _info: GQLInfo) -> Person:
+        return root.created_by.person
+
+
+@register_django_node
+class ActionChangeLogMessageNode(DjangoNode[ActionChangeLogMessage]):
+    class Meta:
+        model = ActionChangeLogMessage
+        fields = ActionChangeLogMessage.public_fields
+        interfaces = (ChangeLogMessageInterface,)
+
+
+@register_django_node
+class IndicatorChangeLogMessageNode(DjangoNode[IndicatorChangeLogMessage]):
+    class Meta:
+        model = IndicatorChangeLogMessage
+        fields = IndicatorChangeLogMessage.public_fields
+        interfaces = (ChangeLogMessageInterface,)
+
+
+@register_django_node
+class CategoryChangeLogMessageNode(DjangoNode[CategoryChangeLogMessage]):
+    class Meta:
+        model = CategoryChangeLogMessage
+        fields = CategoryChangeLogMessage.public_fields
+        interfaces = (ChangeLogMessageInterface,)
+
+
 @register_django_node
 class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at', 'identifier']
@@ -1201,6 +1256,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         graphene.NonNull('actions.schema.ActionDependencyRelationshipNode'), required=True,
     )
     workflow_status = graphene.Field('actions.schema.WorkflowInfoNode')
+    change_log_message = graphene.Field(ChangeLogMessageInterface)
 
     indicators_count = graphene.Int()
     has_indicators_with_goals = graphene.Boolean()
@@ -1210,6 +1266,10 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     class Meta:
         model = Action
         fields = Action.public_fields
+
+    @staticmethod
+    def resolve_change_log_message(root: Action, info: GQLInfo):
+        return root.get_public_change_log_message()
 
     @staticmethod
     def resolve_merged_with(root: Action, info: GQLInfo):

@@ -529,6 +529,10 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # we do nothing here.
         pass
 
+    def get_public_change_log_message(self):
+        from actions.models import CategoryChangeLogMessage
+        return CategoryChangeLogMessage.objects.filter(category=self).order_by('-created_at').first()
+
     def generate_identifier(self):
         self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
 

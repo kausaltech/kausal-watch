@@ -14,7 +14,7 @@ from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import RestrictedVisibilityModel, public_fields
 
-from actions.models import Action
+from actions.models import Action, IndicatorChangeLogMessage
 from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator,
@@ -259,6 +259,7 @@ class IndicatorNode(DjangoNode[Indicator]):
     level = graphene.String(plan=graphene.ID())
     actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'), plan=graphene.ID(), required=True)
     visualizations_raw = graphene.List(graphene.NonNull(graphene.String), required=True)
+    change_log_message = graphene.Field('actions.schema.ChangeLogMessageInterface')
 
     class Meta:
         fields = public_fields(Indicator)
@@ -360,6 +361,10 @@ class IndicatorNode(DjangoNode[Indicator]):
     def resolve_plans(root: Indicator, info) -> PlanQuerySet:
         plans = cast('PlanQuerySet', root.plans.all())
         return plans.visible_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_change_log_message(root: Indicator, _info: GQLInfo) -> IndicatorChangeLogMessage | None:
+        return root.get_public_change_log_message()
 
 
 class IndicatorDimensionNode(DjangoNode[IndicatorDimension]):
