@@ -1959,6 +1959,15 @@ class ActionChangeLogMessage(BaseChangeLogMessage):
         related_name='change_log_messages',
         verbose_name=_('action'),
     )
+    revision = models.ForeignKey(
+        Revision,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name=_('revision'),
+        help_text=_('The revision this change log message is associated with.'),
+    )
 
     i18n = TranslationField(
         fields=['content'],

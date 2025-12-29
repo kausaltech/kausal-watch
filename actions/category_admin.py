@@ -351,7 +351,7 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
                 self.instance.generate_identifier()
 
     def get_success_url(self):
-        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        plan = self.instance.type.plan
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
             return f'{change_log_create_url}?category={self.instance.pk}'
@@ -360,7 +360,7 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
 
 class CategoryEditView(CategoryTypeQueryParameterMixin, AplansEditView[Category]):
     def get_success_url(self):
-        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        plan = self.instance.type.plan
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
             return f'{change_log_create_url}?category={self.instance.pk}'

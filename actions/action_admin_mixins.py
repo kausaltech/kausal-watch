@@ -371,7 +371,10 @@ class CreateEditViewOptionalFeaturesMixin[M: Model]:
         plan = self.object.plan
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
-            return redirect(f'{change_log_create_url}?action={self.object.pk}')
+            # Get the revision that was just created for this submission
+            revision = self.object.latest_revision
+            revision_param = f'&revision={revision.pk}' if revision else ''
+            return redirect(f'{change_log_create_url}?action={self.object.pk}{revision_param}')
         return None
 
     def restart_workflow_action(self):

@@ -791,6 +791,30 @@ class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
 class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage]):
     related_field_name = 'action'
     success_url_name = 'actions_action_modeladmin_index'
+    revision_session_key = 'change_log_revision_id'
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        if request.method == 'GET':
+            revision_id = request.GET.get('revision')
+            if revision_id:
+                request.session[self.revision_session_key] = revision_id
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        revision_id = self.request.session.get(self.revision_session_key)
+        if revision_id:
+            from wagtail.models import Revision
+            revision = Revision.objects.filter(pk=revision_id).first()
+            if revision:
+                form.instance.revision = revision
+        return form
+
+    def save_instance(self):
+        instance = super().save_instance()
+        if self.revision_session_key in self.request.session:
+            del self.request.session[self.revision_session_key]
+        return instance
 
     def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
         if related_obj is None:
