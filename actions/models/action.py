@@ -2024,24 +2024,28 @@ class CategoryChangeLogMessage(BaseChangeLogMessage):
     def __str__(self):
         return f'{self.category} – {self.created_at}'  # noqa: RUF001
 
-class BaseStatusUpdate(models.Model):
+class ActionStatusUpdate(models.Model):
+    action = models.ForeignKey(
+        Action,
+        on_delete=models.CASCADE,
+        related_name='status_updates',
+        verbose_name=_('action'),
+    )
+
     title = models.CharField(max_length=200, verbose_name=_('title'))
     date = models.DateField(verbose_name=_('date'), blank=True)
     author = models.ForeignKey(
         'people.Person',
         on_delete=models.SET_NULL,
+        related_name='status_updates',
         null=True,
         blank=True,
         verbose_name=_('author'),
     )
     content = models.TextField(verbose_name=_('content'))
 
-    created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at'),
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at'),
-    )
+    created_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
+    modified_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
     created_by = models.ForeignKey(
         User,
         null=True,
@@ -2051,52 +2055,36 @@ class BaseStatusUpdate(models.Model):
         editable=False,
     )
 
-    # When extending this class, you might want to override `i18n` and set the `default_language_field` parameter
-    i18n = TranslationField(
-        fields=['title', 'content'],
-        default_language_field='plan__primary_language_lowercase',
-    )
-    title_i18n: str
-    content_i18n: str
 
     public_fields: ClassVar = [
         'id',
+        'action',
         'title',
         'date',
         'author',
         'content',
         'created_at',
-        'updated_at',
-    ]
-
-    class Meta:
-        abstract = True
-        ordering = ('-date',)
-
-
-class ActionStatusUpdate(BaseStatusUpdate):
-    action = models.ForeignKey(
-        Action,
-        on_delete=models.CASCADE,
-        related_name='status_updates',
-        verbose_name=_('action'),
-    )
-
-    i18n = TranslationField(
-        fields=['title', 'content'],
-        default_language_field='action__plan__primary_language_lowercase',
-    )
-
-    public_fields: ClassVar = BaseStatusUpdate.public_fields + [
-        'action',
+        'modified_at',
     ]
 
     class Meta:
         verbose_name = _('action status update')
         verbose_name_plural = _('action status updates')
+        ordering = ('-date',)
 
     def __str__(self):
-        return f'{self.action} - {self.created_at} - {self.title}'
+        return '%s – %s – %s' % (self.action, self.created_at, self.title)  # noqa: RUF001
+
+    def save(self, *args, **kwargs):
+        now = self.action.plan.now_in_local_timezone()
+        if self.pk is None:
+            if self.date is None:
+                self.date = now.date()
+            if self.created_at is None:
+                self.created_at = now.date()
+        if self.modified_at is None:
+            self.modified_at = now.date()
+        return super().save(*args, **kwargs)
 
 
 class ImpactGroupAction(models.Model):
