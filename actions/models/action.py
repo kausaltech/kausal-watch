@@ -1974,7 +1974,7 @@ class ActionChangeLogMessage(BaseChangeLogMessage):
         verbose_name_plural = _('action change log messages')
 
     def __str__(self):
-        return f'{self.action} – {self.created_at}'
+        return f'{self.action} - {self.created_at}'
 
 class IndicatorChangeLogMessage(BaseChangeLogMessage):
     indicator = models.ForeignKey(
@@ -2071,7 +2071,7 @@ class BaseStatusUpdate(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ('-created_at',)
+        ordering = ('-date',)
 
 
 class ActionStatusUpdate(BaseStatusUpdate):
@@ -2096,8 +2096,7 @@ class ActionStatusUpdate(BaseStatusUpdate):
         verbose_name_plural = _('action status updates')
 
     def __str__(self):
-        return f'{self.action} – {self.created_at} – {self.title}'  # noqa: RUF001
-
+        return f'{self.action} - {self.created_at} - {self.title}'
 
 
 class ImpactGroupAction(models.Model):

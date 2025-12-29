@@ -4,7 +4,7 @@ import re
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
 from django.db.models import ProtectedError
 from django.urls import re_path, reverse
@@ -21,7 +21,7 @@ from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.coreutils import capfirst
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
+from wagtail.snippets.views.snippets import DeleteView as SnippetDeleteView, IndexView, SnippetViewSet
 
 from dal import autocomplete
 from django_filters import filters
@@ -690,7 +690,6 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
-        from django.core.exceptions import PermissionDenied
         related_obj = self.get_related_object()
         if not self.check_related_object_permission(related_obj):
             raise PermissionDenied
@@ -741,7 +740,6 @@ class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
-        from django.core.exceptions import PermissionDenied
         response = super().dispatch(request, *args, **kwargs)
         related_obj = getattr(self.object, self.related_field_name, None)
         if not self.check_related_object_permission(related_obj):
@@ -752,6 +750,20 @@ class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
         assert self.object is not None
         related_obj = getattr(self.object, self.related_field_name)
         return reverse(self.success_url_name, args=[related_obj.pk])
+
+
+class BaseChangeLogMessageDeleteView[M: models.Model](SnippetDeleteView):
+    related_field_name: str
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        related_obj = getattr(self.object, self.related_field_name, None)
+        if not self.check_related_object_permission(related_obj):
+            raise PermissionDenied
+        return response
 
 
 class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
@@ -794,12 +806,22 @@ class ActionChangeLogMessageEditView(BaseChangeLogMessageEditView[ActionChangeLo
         return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
 
 
+class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChangeLogMessage]):
+    related_field_name = 'action'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+
+
 class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
     model = ActionChangeLogMessage
     menu_label = _('Action change log messages')
     plan_filter_path = 'action__plan'
     add_view_class = ActionChangeLogMessageCreateView
     edit_view_class = ActionChangeLogMessageEditView
+    delete_view_class = ActionChangeLogMessageDeleteView
 
 
 register_snippet(ActionChangeLogMessageViewSet)
@@ -825,12 +847,22 @@ class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorCh
         return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
 
 
+class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage]):
+    related_field_name = 'indicator'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
+
+
 class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
     model = IndicatorChangeLogMessage
     menu_label = _('Indicator change log messages')
     plan_filter_path = 'indicator__plans'
     add_view_class = IndicatorChangeLogMessageCreateView
     edit_view_class = IndicatorChangeLogMessageEditView
+    delete_view_class = IndicatorChangeLogMessageDeleteView
 
 
 register_snippet(IndicatorChangeLogMessageViewSet)
@@ -856,12 +888,22 @@ class CategoryChangeLogMessageEditView(BaseChangeLogMessageEditView[CategoryChan
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
 
+class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[CategoryChangeLogMessage]):
+    related_field_name = 'category'
+
+    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
+
+
 class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChangeLogMessage]):
     model = CategoryChangeLogMessage
     menu_label = _('Category change log messages')
     plan_filter_path = 'category__type__plan'
     add_view_class = CategoryChangeLogMessageCreateView
     edit_view_class = CategoryChangeLogMessageEditView
+    delete_view_class = CategoryChangeLogMessageDeleteView
 
 
 register_snippet(CategoryChangeLogMessageViewSet)
