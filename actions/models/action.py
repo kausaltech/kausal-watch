@@ -1189,10 +1189,13 @@ class Action(
         # is stored in the live revision. Currently the change log message is always
         # connected to that previous version, pre-publishing
         previous_revision_to_published_revision = self.live_revision.content['latest_revision']
-        return ActionChangeLogMessage.objects.get(
-            action=self,
-            revision=previous_revision_to_published_revision
-        )
+        try:
+            return ActionChangeLogMessage.objects.get(
+                action=self,
+                revision=previous_revision_to_published_revision
+            )
+        except ActionChangeLogMessage.DoesNotExist:
+            return None
 
     def get_workflow(self) -> Workflow | None:
         return self.plan.features.moderation_workflow

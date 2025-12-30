@@ -722,7 +722,7 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
         related_obj = self.get_related_object()
         if related_obj is None:
             return None
-        return related_obj.change_log_messages.order_by('-created_at').first()  # type: ignore[attr-defined]
+        return related_obj.get_public_change_log_message()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
