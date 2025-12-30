@@ -180,4 +180,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'has_action_official_name', 'has_action_lead_paragraph', 'has_action_primary_orgs', 'enable_search',
         'enable_indicator_comparison', 'minimal_statuses', 'has_action_contact_person_roles',
         'allow_public_site_login', 'contact_persons_show_picture', 'indicators_open_in_modal',
+        'enable_change_log',
     ]
