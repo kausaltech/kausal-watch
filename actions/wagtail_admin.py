@@ -742,11 +742,11 @@ class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
+        self.object = self.get_object()
         related_obj = getattr(self.object, self.related_field_name, None)
         if not self.check_related_object_permission(related_obj):
             raise PermissionDenied
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         assert self.object is not None
@@ -761,11 +761,11 @@ class BaseChangeLogMessageDeleteView[M: models.Model](SnippetDeleteView):
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
+        self.object = self.get_object()
         related_obj = getattr(self.object, self.related_field_name, None)
         if not self.check_related_object_permission(related_obj):
             raise PermissionDenied
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
 
 class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
