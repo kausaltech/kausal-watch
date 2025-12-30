@@ -666,22 +666,17 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
     related_field_name: str
     success_url_name: str
 
-    @property
-    def session_key(self) -> str:
-        return f'change_log_{self.related_field_name}_id'
-
     def get_related_model(self) -> type[models.Model]:
         return self.model._meta.get_field(self.related_field_name).related_model  # type: ignore[return-value]
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        if request.method == 'GET':
-            related_id = request.GET.get(self.related_field_name)
-            if related_id:
-                request.session[self.session_key] = related_id
+    def get_related_id(self) -> str | None:
+        """Get related object ID from GET params or POST data (hidden field)."""
+        if self.request.method == 'POST':
+            return self.request.POST.get(self.related_field_name)
+        return self.request.GET.get(self.related_field_name)
 
     def get_related_object(self) -> models.Model | None:
-        related_id = self.request.session.get(self.session_key)
+        related_id = self.get_related_id()
         if related_id:
             return self.get_related_model().objects.filter(pk=related_id).first()  # type: ignore[attr-defined]
         return None
@@ -709,12 +704,6 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
         form.instance.created_by = self.request.user  # type: ignore[attr-defined]
         return form
 
-    def save_instance(self):
-        instance = super().save_instance()
-        if self.session_key in self.request.session:
-            del self.request.session[self.session_key]
-        return instance
-
     def get_skip_url(self) -> str:
         return reverse(self.success_url_name)
 
@@ -728,6 +717,8 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
         context = super().get_context_data(**kwargs)
         context['skip_url'] = self.get_skip_url()
         context['latest_change_log_message'] = self.get_latest_change_log_message()
+        context['related_field_name'] = self.related_field_name
+        context['related_id'] = self.get_related_id()
         return context
 
     def get_success_url(self):
@@ -791,18 +782,16 @@ class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
 class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage]):
     related_field_name = 'action'
     success_url_name = 'actions_action_modeladmin_index'
-    revision_session_key = 'change_log_revision_id'
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        if request.method == 'GET':
-            revision_id = request.GET.get('revision')
-            if revision_id:
-                request.session[self.revision_session_key] = revision_id
+    def get_revision_id(self) -> str | None:
+        """Get revision ID from GET params or POST data (hidden field)."""
+        if self.request.method == 'POST':
+            return self.request.POST.get('revision')
+        return self.request.GET.get('revision')
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
-        revision_id = self.request.session.get(self.revision_session_key)
+        revision_id = self.get_revision_id()
         if revision_id:
             from wagtail.models import Revision
             revision = Revision.objects.filter(pk=revision_id).first()
@@ -810,11 +799,10 @@ class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChan
                 form.instance.revision = revision
         return form
 
-    def save_instance(self):
-        instance = super().save_instance()
-        if self.revision_session_key in self.request.session:
-            del self.request.session[self.revision_session_key]
-        return instance
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['revision_id'] = self.get_revision_id()
+        return context
 
     def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
         if related_obj is None:

@@ -1,6 +1,16 @@
 {% extends "wagtailsnippets/snippets/create.html" %}
 {% load i18n %}
 
+{% block form_content %}
+    {% if related_id %}
+        <input type="hidden" name="{{ related_field_name }}" value="{{ related_id }}">
+    {% endif %}
+    {% if revision_id %}
+        <input type="hidden" name="revision" value="{{ revision_id }}">
+    {% endif %}
+    {{ block.super }}
+{% endblock %}
+
 {% block before_form %}
     {% if latest_change_log_message %}
         <div style="margin-bottom: 1.5rem; padding: 0.75rem; background-color: var(--w-color-surface-page); border: 2px solid var(--w-color-secondary); border-radius: 0.375rem; max-width: 600px;">
