@@ -53,6 +53,7 @@ if typing.TYPE_CHECKING:
     from aplans.types import WatchRequest
 
     from actions.models import Action
+    from actions.models.action import BaseChangeLogMessage
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan, PlanQuerySet
     from indicators.models.action_links import ActionIndicator
@@ -417,7 +418,7 @@ class Indicator(
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None
 
-    def get_public_change_log_message(self):
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
         from actions.models import IndicatorChangeLogMessage
         return IndicatorChangeLogMessage.objects.filter(indicator=self).order_by('-created_at').first()
 

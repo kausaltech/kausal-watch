@@ -1182,7 +1182,7 @@ class Action(
             cp.person = cp.person.get_redacted_copy(plan)
         return visible_contact_persons
 
-    def get_public_change_log_message(self) -> ActionChangeLogMessage | None:
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
         if not self.live_revision:
             return None
         # When publishing, Wagtail creates a new revision, but the previous revision's id

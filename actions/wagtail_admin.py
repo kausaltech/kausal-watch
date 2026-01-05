@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, override
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
@@ -35,7 +35,7 @@ from kausal_common.users import user_or_bust
 from aplans.context_vars import ctx_instance, ctx_request
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
-from actions.models.action import ActionSchedule
+from actions.models.action import ActionSchedule, BaseChangeLogMessage
 from admin_site.chooser import ClientChooser
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
@@ -53,6 +53,7 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 from copying.views import PlanCopyView
+from indicators.models import Indicator
 from notifications.models import NotificationSettings
 from orgs.chooser import OrganizationChooser
 from orgs.models import Organization
@@ -65,9 +66,11 @@ from . import (
     category_admin,  # noqa: F401
 )
 from .models import (
+    Action,
     ActionChangeLogMessage,
     ActionImpact,
     ActionStatus,
+    Category,
     CategoryChangeLogMessage,
     IndicatorChangeLogMessage,
     Plan,
@@ -662,12 +665,13 @@ class PlanViewSet(SnippetViewSet[Plan]):
 register_snippet(PlanViewSet)
 
 
-class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
+class ObjectWithPublicChangeLogMessage(Protocol):
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None: ...
+
+
+class BaseChangeLogMessageCreateView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchCreateView[M]):
     related_field_name: str
     success_url_name: str
-
-    def get_related_model(self) -> type[models.Model]:
-        return self.model._meta.get_field(self.related_field_name).related_model  # type: ignore[return-value]
 
     def get_related_id(self) -> str | None:
         """Get related object ID from GET params or POST data (hidden field)."""
@@ -675,13 +679,23 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
             return self.request.POST.get(self.related_field_name)
         return self.request.GET.get(self.related_field_name)
 
-    def get_related_object(self) -> models.Model | None:
+    def get_related_object(self) -> RelatedModel | None:
         related_id = self.get_related_id()
-        if related_id:
-            return self.get_related_model().objects.filter(pk=related_id).first()  # type: ignore[attr-defined]
-        return None
+        if not related_id:
+            return None
+        related_object = self.get_related_object_by_pk(related_id)
+        return related_object
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def get_latest_change_log_message(self) -> BaseChangeLogMessage | None:
+        related_object = self.get_related_object()
+        if related_object is None:
+            return None
+        return related_object.get_public_change_log_message()
+
+    def get_related_object_by_pk(self, _pk: str) -> RelatedModel | None:
+        raise NotImplementedError
+
+    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
@@ -707,12 +721,6 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
     def get_skip_url(self) -> str:
         return reverse(self.success_url_name)
 
-    def get_latest_change_log_message(self):
-        related_obj = self.get_related_object()
-        if related_obj is None:
-            return None
-        return related_obj.get_public_change_log_message()
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['skip_url'] = self.get_skip_url()
@@ -725,11 +733,11 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
         return reverse(self.success_url_name)
 
 
-class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
+class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchEditView[M]):
     related_field_name: str
     success_url_name: str
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
@@ -745,10 +753,10 @@ class BaseChangeLogMessageEditView[M: models.Model](WatchEditView[M]):
         return reverse(self.success_url_name, args=[related_obj.pk])
 
 
-class BaseChangeLogMessageDeleteView[M: models.Model](SnippetDeleteView):
+class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](SnippetDeleteView):
     related_field_name: str
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
@@ -779,9 +787,16 @@ class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
         return qs.filter(**{self.plan_filter_path: plan})
 
 
-class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage]):
+class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action]):
     related_field_name = 'action'
     success_url_name = 'actions_action_modeladmin_index'
+
+    @override
+    def get_related_object_by_pk(self, pk: str) -> Action | None:
+        try:
+            return Action.objects.get(pk=pk)
+        except Action.DoesNotExist:
+            return None
 
     def get_revision_id(self) -> str | None:
         """Get revision ID from GET params or POST data (hidden field)."""
@@ -804,29 +819,29 @@ class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChan
         context['revision_id'] = self.get_revision_id()
         return context
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Action | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
 
-class ActionChangeLogMessageEditView(BaseChangeLogMessageEditView[ActionChangeLogMessage]):
+class ActionChangeLogMessageEditView(BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]):
     related_field_name = 'action'
     success_url_name = 'actions_action_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Action | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
 
-class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChangeLogMessage]):
+class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChangeLogMessage, Action]):
     related_field_name = 'action'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Action | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)  # type: ignore[arg-type]
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
 
 class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
@@ -841,30 +856,36 @@ class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogM
 register_snippet(ActionChangeLogMessageViewSet)
 
 
-class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[IndicatorChangeLogMessage]):
+class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[IndicatorChangeLogMessage, Indicator]):
     related_field_name = 'indicator'
     success_url_name = 'indicators_indicator_modeladmin_index'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def get_related_object_by_pk(self, pk: str) -> Indicator | None:
+        try:
+            return Indicator.objects.get(pk=pk)
+        except Indicator.DoesNotExist:
+            return None
+
+    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
 
 
-class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorChangeLogMessage]):
+class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator]):
     related_field_name = 'indicator'
     success_url_name = 'indicators_indicator_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
 
 
-class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage]):
+class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage, Indicator]):
     related_field_name = 'indicator'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
@@ -882,30 +903,36 @@ class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChan
 register_snippet(IndicatorChangeLogMessageViewSet)
 
 
-class CategoryChangeLogMessageCreateView(BaseChangeLogMessageCreateView[CategoryChangeLogMessage]):
+class CategoryChangeLogMessageCreateView(BaseChangeLogMessageCreateView[CategoryChangeLogMessage, Category]):
     related_field_name = 'category'
     success_url_name = 'actions_category_modeladmin_index'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def get_related_object_by_pk(self, pk: str) -> Category | None:
+        try:
+            return Category.objects.get(pk=pk)
+        except Category.DoesNotExist:
+            return None
+
+    def check_related_object_permission(self, related_obj: Category | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
 
-class CategoryChangeLogMessageEditView(BaseChangeLogMessageEditView[CategoryChangeLogMessage]):
+class CategoryChangeLogMessageEditView(BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category]):
     related_field_name = 'category'
     success_url_name = 'actions_category_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Category | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
 
-class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[CategoryChangeLogMessage]):
+class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[CategoryChangeLogMessage, Category]):
     related_field_name = 'category'
 
-    def check_related_object_permission(self, related_obj: models.Model | None) -> bool:
+    def check_related_object_permission(self, related_obj: Category | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
@@ -954,7 +981,7 @@ class ActivePlanModelAdminPermissionHelper(PermissionHelper):
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
-    def get_one_to_one_field(self, plan):
+    def get_one_to_one_field(self, _plan):
         # Implement in subclass
         raise NotImplementedError()
 

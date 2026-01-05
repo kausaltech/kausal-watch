@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import MLMM, RevMany
     from kausal_common.users import UserOrAnon
 
+    from actions.models.action import BaseChangeLogMessage
     from actions.models.plan import Plan
     from indicators.models import Indicator
     from pages.models import CategoryPage, CategoryTypePage, CategoryTypePageLevelLayout
@@ -529,7 +530,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # we do nothing here.
         pass
 
-    def get_public_change_log_message(self):
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
         from actions.models import CategoryChangeLogMessage
         return CategoryChangeLogMessage.objects.filter(category=self).order_by('-created_at').first()
 
