@@ -1204,7 +1204,9 @@ class ChangeLogMessageInterface(graphene.Interface[T], Generic[T]):
         return None
 
     @staticmethod
-    def resolve_created_by(root: BaseChangeLogMessage, _info: GQLInfo) -> Person:
+    def resolve_created_by(root: BaseChangeLogMessage, _info: GQLInfo) -> Person | None:
+        if root.created_by is None:
+            return None
         return root.created_by.person
 
 
