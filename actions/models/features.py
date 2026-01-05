@@ -141,7 +141,7 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         help_text=_("Should indicators open only in a modal dialog in the public UI?"),
     )
     enable_change_log = models.BooleanField(
-        default=False, verbose_name=_("Enable change log"),
+        default=False, verbose_name=_("Enable change history messages"),
         help_text=_("Prompt users to add a public change log message after editing actions, indicators, or categories."),
     )
 
