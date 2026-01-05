@@ -1931,7 +1931,7 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
 class BaseChangeLogMessage(models.Model):
     content = models.TextField(
         verbose_name=_('content'),
-        help_text=_('Summarize what was changed. This message will be displayed publicly.'),
+        help_text=_('Please summarize the change you made. This message will be displayed publicly.'),
     )
 
     created_at = models.DateTimeField(
