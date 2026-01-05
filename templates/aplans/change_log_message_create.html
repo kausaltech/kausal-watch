@@ -14,7 +14,7 @@
 {% block before_form %}
     {% if latest_change_log_message %}
         <div style="margin-bottom: 1.5rem; padding: 0.75rem; background-color: var(--w-color-surface-page); border: 2px solid var(--w-color-secondary); border-radius: 0.375rem; max-width: 600px;">
-            <h3 style="font-weight: 600; margin-bottom: 0.5rem; color: var(--w-color-text-label);">{% trans "Current change log message" %}</h3>
+            <h3 style="font-weight: 600; margin-bottom: 0.5rem; color: var(--w-color-text-label);">{% trans "Current change history message" %}</h3>
             <p style="color: var(--w-color-text-meta); font-size: 0.875rem; margin-bottom: 0.25rem;">{{ latest_change_log_message.created_at|date:"SHORT_DATETIME_FORMAT" }}</p>
             <p style="white-space: pre-wrap; color: var(--w-color-text-label);">{{ latest_change_log_message.content }}</p>
         </div>

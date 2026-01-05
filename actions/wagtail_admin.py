@@ -693,8 +693,8 @@ class BaseChangeLogMessageCreateView[M: models.Model](WatchCreateView[M]):
     def get_page_subtitle(self):
         related_obj = self.get_related_object()
         if related_obj is not None:
-            return pgettext_lazy('page subtitle', 'Change log message: %(obj)s') % {'obj': related_obj}
-        return pgettext_lazy('page subtitle', 'Change log message')
+            return pgettext_lazy('page subtitle', 'Change history message: %(obj)s') % {'obj': related_obj}
+        return pgettext_lazy('page subtitle', 'Change history message')
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
@@ -762,7 +762,7 @@ class BaseChangeLogMessageDeleteView[M: models.Model](SnippetDeleteView):
 class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
     add_to_admin_menu = False
     icon = 'doc-full'
-    page_title = pgettext_lazy('page title', 'Add change log message')
+    page_title = pgettext_lazy('page title', 'Add change history message')
     plan_filter_path: str
     create_template_name = 'aplans/change_log_message_create.html'
 
@@ -831,7 +831,7 @@ class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChan
 
 class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
     model = ActionChangeLogMessage
-    menu_label = pgettext_lazy('menu label', 'Action change log messages')
+    menu_label = pgettext_lazy('menu label', 'Action change history messages')
     plan_filter_path = 'action__plan'
     add_view_class = ActionChangeLogMessageCreateView
     edit_view_class = ActionChangeLogMessageEditView
@@ -872,7 +872,7 @@ class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[Indicat
 
 class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
     model = IndicatorChangeLogMessage
-    menu_label = pgettext_lazy('menu label', 'Indicator change log messages')
+    menu_label = pgettext_lazy('menu label', 'Indicator change history messages')
     plan_filter_path = 'indicator__plans'
     add_view_class = IndicatorChangeLogMessageCreateView
     edit_view_class = IndicatorChangeLogMessageEditView
@@ -913,7 +913,7 @@ class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[Category
 
 class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChangeLogMessage]):
     model = CategoryChangeLogMessage
-    menu_label = pgettext_lazy('menu label', 'Category change log messages')
+    menu_label = pgettext_lazy('menu label', 'Category change history messages')
     plan_filter_path = 'category__type__plan'
     add_view_class = CategoryChangeLogMessageCreateView
     edit_view_class = CategoryChangeLogMessageEditView
