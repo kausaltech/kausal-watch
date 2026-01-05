@@ -728,6 +728,30 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         now = self.now_in_local_timezone()
         return self.published_at is not None and self.published_at <= now and self.archived_at is None
 
+    @property
+    def publication_status(self) -> str:
+        if self.published_at is None:
+            return str(_('Not published'))
+
+        formatted_date = f"{self.published_at.strftime('%Y-%m-%d %H:%M')} (UTC)"
+        now = timezone.now()
+
+        if self.published_at > now:
+            delta = self.published_at - now
+            days = delta.days
+            hours = delta.seconds // 3600
+            if days > 0:
+                time_remaining = _('in %(days)d days %(hours)d hours') % {'days': days, 'hours': hours}
+            elif hours > 0:
+                minutes = (delta.seconds % 3600) // 60
+                time_remaining = _('in %(hours)d hours %(minutes)d minutes') % {'hours': hours, 'minutes': minutes}
+            else:
+                minutes = delta.seconds // 60
+                time_remaining = _('in %(minutes)d minutes') % {'minutes': minutes}
+            return str(_('Scheduled at: %(date)s, %(remaining)s') % {'date': formatted_date, 'remaining': time_remaining})
+
+        return formatted_date
+
     def is_visible_for_user(self, user: UserOrAnon | None) -> bool:
         """Use permission policy to check visibility."""
         if self.features.expose_unpublished_plan_only_to_authenticated_user is False:

@@ -1,0 +1,36 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags %}
+
+{% block titletag %}{{ view.get_meta_title }}{% endblock %}
+
+{% block content %}
+
+    {% block header %}
+        {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon="kausal-plan" %}
+    {% endblock %}
+
+    {% block content_main %}
+        <div class="nice-padding">
+            {% block confirmation_message %}
+                <p>{{ view.confirmation_message }}</p>
+                {% if not view.publish %}
+                    <div class="help-block help-critical">
+                        <svg class="icon icon-warning icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                        {% trans "Unpublishing this plan will make it inaccessible to the public immediately." %}
+                    </div>
+
+                {% endif %}
+            {% endblock %}
+            <form action="" method="POST">
+                {% csrf_token %}
+                {% if view.publish %}
+                    <input type="submit" value="{% trans 'Yes, publish' %}" class="button button-primary" />
+                {% else %}
+                    <input type="submit" value="{% trans 'Yes, unpublish' %}" class="button button--warning" />
+                {% endif %}
+                <a href="{{ view.index_url }}" class="button button-secondary">{% trans "Cancel" %}</a>
+            </form>
+        </div>
+    {% endblock %}
+{% endblock %}
+

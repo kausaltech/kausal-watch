@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.templatetags.static import static
+from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
@@ -11,6 +12,8 @@ from admin_site.wagtail import execute_admin_post_save_tasks
 from . import wagtail_admin  # noqa: F401
 
 if TYPE_CHECKING:
+    from wagtail.log_actions import LogActionRegistry
+
     from laces.typing import RenderContext
 
     from aplans.types import WatchAdminRequest
@@ -45,3 +48,9 @@ def editor_js():
 @hooks.register('after_edit_snippet')
 def after_edit_snippet(request, snippet):
     execute_admin_post_save_tasks(snippet, request.user)
+
+
+@hooks.register('register_log_actions')
+def register_plan_log_actions(actions: LogActionRegistry):
+    actions.register_action('plan.publish', _("Publish plan"), _("Plan published"))
+    actions.register_action('plan.unpublish', _("Unpublish plan"), _("Plan unpublished"))

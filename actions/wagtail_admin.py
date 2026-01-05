@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Protocol, override
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, override
 
+from django.contrib.admin.utils import quote
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
 from django.db.models import ProtectedError
-from django.urls import re_path, reverse
+from django.shortcuts import redirect
+from django.urls import path, re_path, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
+from django.views.generic import TemplateView
+from wagtail.admin import messages
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.messages import validation_error
 from wagtail.admin.panels import (
@@ -18,8 +23,15 @@ from wagtail.admin.panels import (
     TabbedInterface,
 )
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
+from wagtail.admin.views.generic.base import (
+    BaseObjectMixin,
+    WagtailAdminTemplateMixin,
+)
+from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.coreutils import capfirst
+from wagtail.log_actions import log
+from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import DeleteView as SnippetDeleteView, IndexView, SnippetViewSet
 
@@ -568,6 +580,8 @@ class PlanIndexView(IndexView[Plan]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
     permission_required = 'view'
+    publish_url_name: str | None = None
+    unpublish_url_name: str | None = None
     additional_fields_cache: list[str] | None = None
 
     def _get_additional_fields(self) -> list[str]:
@@ -606,6 +620,44 @@ class PlanIndexView(IndexView[Plan]):
     def columns(self):  # type: ignore[override]
         return [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
 
+    def get_publish_url(self, instance: Plan) -> str:
+        return reverse(self.publish_url_name, kwargs={'pk': quote(instance.pk)})
+
+    def get_unpublish_url(self, instance: Plan) -> str:
+        return reverse(self.unpublish_url_name, kwargs={'pk': quote(instance.pk)})
+
+    def publish_button(self, instance: Plan):
+        return wagtailsnippets_widgets.SnippetListingButton(
+            url=self.get_publish_url(instance),
+            label=_('Publish'),
+            icon_name='upload',
+            attrs={'aria-label': _('Publish this plan')},
+        )
+
+    def unpublish_button(self, instance: Plan):
+        return wagtailsnippets_widgets.SnippetListingButton(
+            url=self.get_unpublish_url(instance),
+            label=_('Unpublish'),
+            icon_name='download',
+            attrs={'aria-label': _('Unpublish this plan')},
+        )
+
+    def get_list_more_buttons(self, instance: Plan):
+        buttons = list(super().get_list_more_buttons(instance))
+        user = user_or_bust(self.request.user)
+        # TODO: Enable for general admins once ready for customer use
+        # if not user.is_general_admin_for_plan(instance):
+        #     return buttons
+        if not user.is_superuser:
+            return buttons
+
+        if instance.is_live():
+            buttons.append(self.unpublish_button(instance))
+        else:
+            buttons.append(self.publish_button(instance))
+
+        return buttons
+
 
 def clients_for_request(request: HttpRequest):
     if request is None or request.user.is_anonymous:
@@ -627,16 +679,104 @@ class PlanFilter(WagtailFilterSet):
         fields = ['clients__client']
 
 
+class PlanPublishView(
+    BaseObjectMixin[Plan],
+    PermissionCheckedMixin,
+    WagtailAdminTemplateMixin,
+    TemplateView,
+):
+    model = Plan
+    permission_required = 'publish'
+    publish = True
+    template_name = 'aplans/plan_publish_confirmation.html'
+    index_url_name: ClassVar[str | None] = None
+
+    def user_has_permission(self, permission: str) -> bool:
+        user = user_or_bust(self.request.user)
+        # TODO: Enable for general admins once ready for customer use
+        # return user.is_general_admin_for_plan(self.object)
+        return user.is_superuser
+
+    def get_page_title(self):
+        if self.publish:
+            return _("Publish plan")
+        return _("Unpublish plan")
+
+    def get_meta_title(self):
+        if self.publish:
+            msg = _("Confirm publishing %(plan)s")
+        else:
+            msg = _("Confirm unpublishing %(plan)s")
+        return msg % {'plan': self.object}
+
+    def confirmation_message(self):
+        if self.publish:
+            return _("Do you want to publish the plan '%(plan)s'? This will make it publicly accessible.") % {
+                'plan': self.object
+            }
+        return _(
+            "Do you want to unpublish the plan '%(plan)s'? "
+            "This will make it inaccessible to the public."
+        ) % {'plan': self.object}
+
+    def do_publish(self):
+        if self.object.is_live():
+            raise ValueError(_("The plan is already published."))
+        self.object.published_at = timezone.now()
+        self.object.save(update_fields=['published_at'])
+        log(
+            instance=self.object,
+            action='plan.publish',
+            user=self.request.user,
+        )
+
+    def do_unpublish(self):
+        if not self.object.is_live():
+            raise ValueError(_("The plan is already unpublished."))
+        self.object.published_at = None
+        self.object.save(update_fields=['published_at'])
+        log(
+            instance=self.object,
+            action='plan.unpublish',
+            user=self.request.user,
+        )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if self.publish:
+                self.do_publish()
+            else:
+                self.do_unpublish()
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect(self.index_url)
+        if self.publish:
+            msg = _("Plan '%(plan)s' has been published.")
+        else:
+            msg = _("Plan '%(plan)s' has been unpublished.")
+        messages.success(request, msg % {'plan': self.object})
+        return redirect(self.index_url)
+
+    @cached_property
+    def index_url(self):
+        return reverse(self.index_url_name)
+
+
 class PlanViewSet(SnippetViewSet[Plan]):
     model = Plan
     add_to_admin_menu = True
     icon = 'kausal-plan'
     menu_label = _('Plans')
     menu_order = 9000
-    list_display = ['name', 'version_name', 'parent', 'organization', 'clients_as_string']
+    list_display = [
+        'name', 'version_name', 'parent', 'organization', 'clients_as_string',
+        Column('publication_status', label=_('Published at')),
+    ]
     filterset_class = PlanFilter
     list_per_page = None  # disable pagination
     index_view_class = PlanIndexView
+    publish_url_name = 'publish'
+    unpublish_url_name = 'unpublish'
     # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView
 
     # Copied from UserFeedbackViewSet
@@ -667,6 +807,35 @@ class PlanViewSet(SnippetViewSet[Plan]):
             return Plan.objects.qs.none()
         assert isinstance(request.user, User)
         return request.user.get_adminable_plans()
+
+    @property
+    def publish_view(self):
+        return self.construct_view(PlanPublishView, publish=True)
+
+    @property
+    def unpublish_view(self):
+        return self.construct_view(PlanPublishView, publish=False)
+
+    def get_common_view_kwargs(self, **kwargs):
+        return super().get_common_view_kwargs(
+            publish_url_name=self.get_url_name(self.publish_url_name),
+            unpublish_url_name=self.get_url_name(self.unpublish_url_name),
+            **kwargs,
+        )
+
+    def get_urlpatterns(self):
+        urls = super().get_urlpatterns()
+        publish_url = path(
+            f'{self.publish_url_name}/<str:pk>/',
+            view=self.publish_view,
+            name=self.publish_url_name,
+        )
+        unpublish_url = path(
+            f'{self.unpublish_url_name}/<str:pk>/',
+            view=self.unpublish_view,
+            name=self.unpublish_url_name,
+        )
+        return [*urls, publish_url, unpublish_url]
 
 
 register_snippet(PlanViewSet)
