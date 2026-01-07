@@ -10,7 +10,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.urls import URLPattern, path, re_path
+from django.urls import URLPattern, path, re_path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django.views.generic.detail import SingleObjectMixin
@@ -619,6 +619,14 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
         return form_class
 
 
+def change_log_message_url_or_none(action: Action) -> str | None:
+    plan = action.plan
+    if plan.features.enable_change_log and not plan.features.moderation_workflow:
+        change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
+        return f'{change_log_create_url}?action={action.pk}'
+    return None
+
+
 class ActionCreateView(InitializeFormWithInitialPlanMixin, AplansCreateView):
     instance: Action
 
@@ -637,6 +645,10 @@ class ActionCreateView(InitializeFormWithInitialPlanMixin, AplansCreateView):
                 available_orgs = Organization.objects.get_queryset().available_for_plan(plan)
                 default_org = available_orgs.filter(id=person.organization_id).first()
                 self.instance.primary_org = default_org
+
+    def get_success_url(self):
+        url = change_log_message_url_or_none(self.instance)
+        return url if url else super().get_success_url()
 
 
 class ActionButtonHelper(AplansButtonHelper):
@@ -690,6 +702,11 @@ class ActionButtonHelper(AplansButtonHelper):
 class ActionEditView(
     InitializeFormWithInitialPlanMixin, SnippetsEditViewCompatibilityMixin, SingleObjectMixin[Action], AplansEditView[Action]
 ):
+
+    def get_success_url(self):
+        url = change_log_message_url_or_none(self.instance)
+        return url if url else super().get_success_url()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.instance.plan.features.enable_moderation_workflow:
