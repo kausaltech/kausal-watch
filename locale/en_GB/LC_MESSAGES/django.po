@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
+"POT-Creation-Date: 2026-01-07 09:10+0200\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: English (United Kingdom) <https://weblate.kausal.tech/projects/watch/django/en_GB/>\n"
@@ -1229,7 +1229,7 @@ msgstr ""
 msgid "comment"
 msgstr ""
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 msgid "due date"
 msgstr ""
 
@@ -1316,7 +1316,7 @@ msgid "content"
 msgstr ""
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -1887,8 +1887,10 @@ msgid "Should indicators open only in a modal dialog in the public UI?"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Enable change log"
-msgstr ""
+#, fuzzy
+#| msgid "Action and indicator categorization"
+msgid "Enable change history messages"
+msgstr "Action and indicator categorisation"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change log message after editing actions, indicators, or categories."
@@ -2448,42 +2450,42 @@ msgstr ""
 #, fuzzy, python-format
 #| msgid "synchronize with pages"
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr "synchronise with pages"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "synchronize with pages"
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr "synchronise with pages"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "synchronize with pages"
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr "synchronise with pages"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "synchronize with pages"
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr "synchronise with pages"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Action and indicator categorization"
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr "Action and indicator categorisation"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Action and indicator categorization"
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr "Action and indicator categorisation"
 
 #: admin_site/api.py
@@ -5453,10 +5455,6 @@ msgid "Other responsible parties"
 msgstr "responsible organisations"
 
 #: reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr ""
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -5593,8 +5591,10 @@ msgid "Report types"
 msgstr ""
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
-msgstr ""
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "Current change history message"
+msgstr "synchronise with pages"
 
 #: templates/aplans/change_log_message_create.html
 msgid "Skip"

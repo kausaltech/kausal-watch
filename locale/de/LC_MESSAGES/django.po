@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
-"PO-Revision-Date: 2026-01-02 15:15+0000\n"
+"POT-Creation-Date: 2026-01-07 09:29+0200\n"
+"PO-Revision-Date: 2026-01-07 09:29+0200\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1218,7 +1217,7 @@ msgstr "Status"
 msgid "comment"
 msgstr "Kommentar"
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 msgid "due date"
 msgstr "Frist"
 
@@ -1305,7 +1304,7 @@ msgid "content"
 msgstr "Inhalt"
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr "Fassen Sie die vorgenommene Änderung zusammen. Diese Nachricht wird öffentlich angezeigt."
 
 #: actions/models/action.py aplans/utils.py
@@ -1850,14 +1849,15 @@ msgid "Should indicators open only in a modal dialog in the public UI?"
 msgstr "Sollen Indikatoren in der öffentlichen Benutzeroberfläche nur in einem modalen Dialogfeld geöffnet werden?"
 
 #: actions/models/features.py
-msgid "Enable change log"
-msgstr "Änderungsprotokoll aktivieren"
+#, fuzzy
+#| msgctxt "menu label"
+#| msgid "Category change history messages"
+msgid "Enable change history messages"
+msgstr "Einträge im Kategorieänderungsprotokoll"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change log message after editing actions, indicators, or categories."
-msgstr ""
-"Fordere Benutzer auf, nach der Bearbeitung von Maßnahmen, Indikatoren oder "
-"Kategorien einen öffentlichen Eintrag im Änderungsprotokoll hinzuzufügen."
+msgstr "Fordere Benutzer auf, nach der Bearbeitung von Maßnahmen, Indikatoren oder Kategorien einen öffentlichen Eintrag im Änderungsprotokoll hinzuzufügen."
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -2408,32 +2408,32 @@ msgstr "Pläne"
 #: actions/wagtail_admin.py
 #, python-format
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr "Eintrag im Änderungsprotokoll: %(obj)s"
 
 #: actions/wagtail_admin.py
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr "Eintrag im Änderungsprotokoll"
 
 #: actions/wagtail_admin.py
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr "Eintrag im Änderungsprotokoll hinzufügen"
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr "Einträge im Maßnahmenänderungsprotokoll"
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr "Einträge im Indikatoränderungsprotokoll"
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr "Einträge im Kategorieänderungsprotokoll"
 
 #: admin_site/api.py
@@ -5343,10 +5343,6 @@ msgid "Other responsible parties"
 msgstr "Andere Verantwortliche"
 
 #: reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Seite"
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Steckbriefe"
 
@@ -5483,7 +5479,7 @@ msgid "Report types"
 msgstr "Berichtstypen"
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
+msgid "Current change history message"
 msgstr "Aktuelle Änderungsnotiz"
 
 #: templates/aplans/change_log_message_create.html
@@ -5529,6 +5525,12 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#~ msgid "Enable change log"
+#~ msgstr "Änderungsprotokoll aktivieren"
+
+#~ msgid "Page"
+#~ msgstr "Seite"
 
 #~ msgid "Last modified at"
 #~ msgstr "Zuletzt geändert am"

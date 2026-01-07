@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
+"POT-Creation-Date: 2026-01-07 09:10+0200\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -1267,7 +1267,7 @@ msgstr "κράτος"
 msgid "comment"
 msgstr "σχόλιο"
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 msgid "due date"
 msgstr "ημερομηνία λήξης"
 
@@ -1354,7 +1354,7 @@ msgid "content"
 msgstr "περιεχόμενο"
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -1927,8 +1927,10 @@ msgid "Should indicators open only in a modal dialog in the public UI?"
 msgstr "Θα πρέπει να εμφανίζονται φωτογραφίες προφίλ για τα πρόσωπα επαφής στο δημόσιο περιβάλλον εργασίας;"
 
 #: actions/models/features.py
-msgid "Enable change log"
-msgstr ""
+#, fuzzy
+#| msgid "category levels"
+msgid "Enable change history messages"
+msgstr "επίπεδα κατηγορίας"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change log message after editing actions, indicators, or categories."
@@ -2510,42 +2512,42 @@ msgstr "Σχέδια"
 #, fuzzy, python-format
 #| msgid "Category type pages"
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr "Σελίδες τύπου κατηγορίας"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "action schedules"
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr "χρονοδιαγράμματα δράσης"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Action schedules"
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr "Χρονοδιαγράμματα δράσης"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Action schedules"
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr "Χρονοδιαγράμματα δράσης"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Indicators assigned to me"
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr "Δείκτες που μου έχουν ανατεθεί"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Category type pages"
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr "Σελίδες τύπου κατηγορίας"
 
 #: admin_site/api.py
@@ -5627,12 +5629,6 @@ msgid "Other responsible parties"
 msgstr "Άλλοι υπεύθυνοι"
 
 #: reports/spreadsheets/action_print_layout.py
-#, fuzzy
-#| msgid "Page link"
-msgid "Page"
-msgstr "Σύνδεσμος σελίδας"
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Προφίλ"
 
@@ -5769,8 +5765,10 @@ msgid "Report types"
 msgstr "Τύποι αναφορών"
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
-msgstr ""
+#, fuzzy
+#| msgid "action schedules"
+msgid "Current change history message"
+msgstr "χρονοδιαγράμματα δράσης"
 
 #: templates/aplans/change_log_message_create.html
 msgid "Skip"
@@ -5823,6 +5821,11 @@ msgstr "Χρήστες"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Δεν έχετε δικαίωμα να καταργήσετε τον χρήστη που ανήκει σε σχέδια που δεν διαχειρίζεστε."
+
+#, fuzzy
+#~| msgid "Page link"
+#~ msgid "Page"
+#~ msgstr "Σύνδεσμος σελίδας"
 
 #, fuzzy
 #~| msgid "Last modified"

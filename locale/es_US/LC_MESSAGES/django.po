@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
+"POT-Creation-Date: 2026-01-07 09:10+0200\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/watch/django/es_US/>\n"
@@ -1214,7 +1214,7 @@ msgstr ""
 msgid "comment"
 msgstr ""
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 msgid "due date"
 msgstr ""
 
@@ -1301,7 +1301,7 @@ msgid "content"
 msgstr ""
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -1848,7 +1848,7 @@ msgid "Should indicators open only in a modal dialog in the public UI?"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Enable change log"
+msgid "Enable change history messages"
 msgstr ""
 
 #: actions/models/features.py
@@ -2398,32 +2398,32 @@ msgstr ""
 #: actions/wagtail_admin.py
 #, python-format
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr ""
 
 #: admin_site/api.py
@@ -5323,10 +5323,6 @@ msgid "Other responsible parties"
 msgstr "Otros responsables"
 
 #: reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr ""
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -5463,7 +5459,7 @@ msgid "Report types"
 msgstr ""
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
+msgid "Current change history message"
 msgstr ""
 
 #: templates/aplans/change_log_message_create.html

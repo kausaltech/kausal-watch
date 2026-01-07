@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
+"POT-Creation-Date: 2026-01-07 09:10+0200\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -1430,7 +1430,7 @@ msgstr "estado"
 msgid "comment"
 msgstr "comentário"
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 #, fuzzy
 msgid "due date"
 msgstr "data de vencimento"
@@ -1538,7 +1538,7 @@ msgid "content"
 msgstr "conteúdo"
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -2205,8 +2205,8 @@ msgstr "Os moderadores devem ser ocultados das pessoas de contato visíveis na i
 
 #: actions/models/features.py
 #, fuzzy
-msgid "Enable change log"
-msgstr "Salvar alterações"
+msgid "Enable change history messages"
+msgstr "níveis de categoria"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change log message after editing actions, indicators, or categories."
@@ -2854,37 +2854,37 @@ msgstr "Planos"
 #: actions/wagtail_admin.py
 #, fuzzy, python-format
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr "As alterações foram salvas"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr "As alterações foram salvas"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr "As alterações foram salvas"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr "Cronogramas de ação"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr "Página da lista de indicadores"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr "Páginas de tipo de categoria"
 
 #: admin_site/api.py
@@ -6361,11 +6361,6 @@ msgid "Other responsible parties"
 msgstr "Outros responsáveis"
 
 #: reports/spreadsheets/action_print_layout.py
-#, fuzzy
-msgid "Page"
-msgstr "Link da página"
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -6518,8 +6513,9 @@ msgid "Report types"
 msgstr "Tipos de relatório"
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
-msgstr ""
+#, fuzzy
+msgid "Current change history message"
+msgstr "As alterações foram salvas"
 
 #: templates/aplans/change_log_message_create.html
 msgid "Skip"
@@ -6572,6 +6568,14 @@ msgstr "Usuários"
 #, fuzzy
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nenhuma permissão para remover o usuário pertencente a planos que você não está gerenciando."
+
+#, fuzzy
+#~ msgid "Enable change log"
+#~ msgstr "Salvar alterações"
+
+#, fuzzy
+#~ msgid "Page"
+#~ msgstr "Link da página"
 
 #, fuzzy
 #~ msgid "Last modified at"

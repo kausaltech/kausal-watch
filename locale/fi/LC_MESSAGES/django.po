@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 16:02+0100\n"
+"POT-Creation-Date: 2026-01-07 09:10+0200\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1257,7 +1257,7 @@ msgstr "tila"
 msgid "comment"
 msgstr "kommentti"
 
-#: actions/models/action.py reports/report_formatters.py
+#: actions/models/action.py
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
@@ -1345,7 +1345,7 @@ msgid "content"
 msgstr "sisältö"
 
 #: actions/models/action.py
-msgid "Summarize what was changed. This message will be displayed publicly."
+msgid "Please summarize the change you made. This message will be displayed publicly."
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -1928,9 +1928,9 @@ msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
 #, fuzzy
-#| msgid "Save changes"
-msgid "Enable change log"
-msgstr "Tallenna muutokset"
+#| msgid "category levels"
+msgid "Enable change history messages"
+msgstr "luokan tasot"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change log message after editing actions, indicators, or categories."
@@ -2505,42 +2505,42 @@ msgstr "Toimenpideohjelmat"
 #, fuzzy, python-format
 #| msgid "Changes were saved"
 msgctxt "page subtitle"
-msgid "Change log message: %(obj)s"
+msgid "Change history message: %(obj)s"
 msgstr "Muutokset tallennettu"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Changes were saved"
 msgctxt "page subtitle"
-msgid "Change log message"
+msgid "Change history message"
 msgstr "Muutokset tallennettu"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Changes were saved"
 msgctxt "page title"
-msgid "Add change log message"
+msgid "Add change history message"
 msgstr "Muutokset tallennettu"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Action schedules"
 msgctxt "menu label"
-msgid "Action change log messages"
+msgid "Action change history messages"
 msgstr "Toimenpiteen aikataulu"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Indicators assigned to me"
 msgctxt "menu label"
-msgid "Indicator change log messages"
+msgid "Indicator change history messages"
 msgstr "Minulle osoitetut mittarit"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "Category type pages"
 msgctxt "menu label"
-msgid "Category change log messages"
+msgid "Category change history messages"
 msgstr "Luokkatyyppisivut"
 
 #: admin_site/api.py
@@ -5681,11 +5681,6 @@ msgid "Other responsible parties"
 msgstr "Muut vastuutahot"
 
 #: reports/spreadsheets/action_print_layout.py
-#, fuzzy
-msgid "Page"
-msgstr "ulkopuolinen linkki"
-
-#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -5822,8 +5817,10 @@ msgid "Report types"
 msgstr "Raporttityypit"
 
 #: templates/aplans/change_log_message_create.html
-msgid "Current change log message"
-msgstr ""
+#, fuzzy
+#| msgid "Changes were saved"
+msgid "Current change history message"
+msgstr "Muutokset tallennettu"
 
 #: templates/aplans/change_log_message_create.html
 msgid "Skip"
@@ -5872,6 +5869,15 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#, fuzzy
+#~| msgid "Save changes"
+#~ msgid "Enable change log"
+#~ msgstr "Tallenna muutokset"
+
+#, fuzzy
+#~ msgid "Page"
+#~ msgstr "ulkopuolinen linkki"
 
 #, fuzzy
 #~ msgid "Last modified at"
