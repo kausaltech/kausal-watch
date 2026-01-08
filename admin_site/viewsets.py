@@ -12,6 +12,7 @@ from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
+from wagtail.models import Page
 from wagtail.snippets.views.snippets import CreateView, DeleteView as SnippetDeleteView, EditView, IndexView, SnippetViewSet
 
 from kausal_common.users import user_or_bust
@@ -171,6 +172,8 @@ class BaseChangeLogMessageCreateView[M: models.Model, RelatedModel: ObjectWithPu
         related_object = self.get_related_object()
         if related_object is None:
             return None
+        if isinstance(related_object, Page):
+            related_object = related_object.get_specific()
         return related_object.get_public_change_log_message()
 
     def get_related_object_by_pk(self, _pk: str) -> RelatedModel | None:

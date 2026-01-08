@@ -1201,6 +1201,10 @@ class ChangeLogMessageInterface(graphene.Interface[T], Generic[T]):
             return IndicatorChangeLogMessageNode
         if isinstance(instance, CategoryChangeLogMessage):
             return CategoryChangeLogMessageNode
+        # Import here to avoid circular dependency
+        from pages.models import PageChangeLogMessage
+        if isinstance(instance, PageChangeLogMessage):
+            return PageChangeLogMessageNode
         return None
 
     @staticmethod
@@ -1231,6 +1235,15 @@ class CategoryChangeLogMessageNode(DjangoNode[CategoryChangeLogMessage]):
     class Meta:
         model = CategoryChangeLogMessage
         fields = CategoryChangeLogMessage.public_fields
+        interfaces = (ChangeLogMessageInterface,)
+
+
+@register_django_node
+class PageChangeLogMessageNode(DjangoNode):
+    class Meta:
+        from pages.models import PageChangeLogMessage
+        model = PageChangeLogMessage
+        fields = PageChangeLogMessage.public_fields
         interfaces = (ChangeLogMessageInterface,)
 
 

@@ -20,7 +20,7 @@ from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail.blocks.stream_block import StreamValue
 from wagtail.fields import StreamField
-from wagtail.models import Page, PageManager, PagePermissionTester, Site
+from wagtail.models import Page, PageManager, PagePermissionTester, Revision, Site
 from wagtail.search import index
 
 from grapple.models import (
@@ -43,6 +43,7 @@ from actions.blocks import (
     get_default_action_content_blocks,
     get_default_action_filter_blocks,
 )
+from actions.models.action import BaseChangeLogMessage
 from actions.blocks.action_content import (
     ActionAsideContentBlock,
     ActionMainContentBlock,
@@ -247,6 +248,10 @@ class AplansPage(Page):
     @property
     def preview_modes(self):
         return []
+
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
+        """Get the most recent public change log message for this page."""
+        return self.change_log_messages.order_by('-created_at').first()
 
 
 class PageProtocol(Protocol):
@@ -994,3 +999,37 @@ class PlanLink(OrderedModel, PlanRelatedModelWithRevision):
 
     def filter_siblings(self, qs: models.QuerySet[Self, Self]) -> models.QuerySet[Self, Self]:
         return qs.filter(plan=self.plan)
+
+
+class PageChangeLogMessage(BaseChangeLogMessage):
+    page = models.ForeignKey(
+        Page,
+        on_delete=models.CASCADE,
+        related_name='change_log_messages',
+        verbose_name=_('page'),
+    )
+    revision = models.ForeignKey(
+        Revision,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name=_('revision'),
+        help_text=_('The revision this change history message is associated with'),
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='page__plan__primary_language_lowercase',
+    )
+
+    public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
+        'page',
+    ]
+
+    class Meta:
+        verbose_name = _('page change history message')
+        verbose_name_plural = _('page change history messages')
+
+    def __str__(self):
+        return f'{self.page} – {self.created_at}'  # noqa: RUF001

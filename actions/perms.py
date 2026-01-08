@@ -35,6 +35,7 @@ from indicators.models import (
 )
 from notifications.models import AutomaticNotificationTemplate, BaseTemplate, ContentBlock
 from orgs.models import Organization, OrganizationPlanAdmin
+from pages.models import PageChangeLogMessage
 from people.models import Person
 from reports.models import Report, ReportType
 
@@ -310,6 +311,7 @@ PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
     (AutomaticNotificationTemplate, ALL_PERMS),
     (ContentBlock, ALL_PERMS),
     (User, ('view',)),  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
+    (PageChangeLogMessage, ALL_PERMS),
 )
 
 
