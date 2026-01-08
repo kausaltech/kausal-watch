@@ -41,7 +41,14 @@ from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
 from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
-from admin_site.viewsets import WatchCreateView, WatchEditView, WatchViewSet
+from admin_site.viewsets import (
+    BaseChangeLogMessageCreateView,
+    BaseChangeLogMessageDeleteView,
+    BaseChangeLogMessageEditView,
+    BaseChangeLogMessageViewSet,
+    WatchEditView,
+    WatchViewSet,
+)
 from admin_site.wagtail import (
     ActivePlanEditView,
     AplansAdminModelForm,
@@ -663,128 +670,6 @@ class PlanViewSet(SnippetViewSet[Plan]):
 
 
 register_snippet(PlanViewSet)
-
-
-class ObjectWithPublicChangeLogMessage(Protocol):
-    def get_public_change_log_message(self) -> BaseChangeLogMessage | None: ...
-
-
-class BaseChangeLogMessageCreateView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchCreateView[M]):
-    related_field_name: str
-    success_url_name: str
-
-    def get_related_id(self) -> str | None:
-        """Get related object ID from GET params or POST data (hidden field)."""
-        if self.request.method == 'POST':
-            return self.request.POST.get(self.related_field_name)
-        return self.request.GET.get(self.related_field_name)
-
-    def get_related_object(self) -> RelatedModel | None:
-        related_id = self.get_related_id()
-        if not related_id:
-            return None
-        related_object = self.get_related_object_by_pk(related_id)
-        return related_object
-
-    def get_latest_change_log_message(self) -> BaseChangeLogMessage | None:
-        related_object = self.get_related_object()
-        if related_object is None:
-            return None
-        return related_object.get_public_change_log_message()
-
-    def get_related_object_by_pk(self, _pk: str) -> RelatedModel | None:
-        raise NotImplementedError
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
-
-    def dispatch(self, request, *args, **kwargs):
-        related_obj = self.get_related_object()
-        if not self.check_related_object_permission(related_obj):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_page_subtitle(self):
-        related_obj = self.get_related_object()
-        if related_obj is not None:
-            return pgettext_lazy('page subtitle', 'Change history message: %(obj)s') % {'obj': related_obj}
-        return pgettext_lazy('page subtitle', 'Change history message')
-
-    def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
-        related_obj = self.get_related_object()
-        if related_obj is not None:
-            setattr(form.instance, self.related_field_name, related_obj)
-        form.instance.created_by = self.request.user  # type: ignore[attr-defined]
-        return form
-
-    def get_skip_url(self) -> str:
-        return reverse(self.success_url_name)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['skip_url'] = self.get_skip_url()
-        context['latest_change_log_message'] = self.get_latest_change_log_message()
-        context['related_field_name'] = self.related_field_name
-        context['related_id'] = self.get_related_id()
-        return context
-
-    def get_success_url(self):
-        return reverse(self.success_url_name)
-
-
-class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchEditView[M]):
-    related_field_name: str
-    success_url_name: str
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        related_obj = getattr(self.object, self.related_field_name, None)
-        if not self.check_related_object_permission(related_obj):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_success_url(self):
-        assert self.object is not None
-        related_obj = getattr(self.object, self.related_field_name)
-        return reverse(self.success_url_name, args=[related_obj.pk])
-
-
-class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](SnippetDeleteView):
-    related_field_name: str
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        related_obj = getattr(self.object, self.related_field_name, None)
-        if not self.check_related_object_permission(related_obj):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-
-class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
-    add_to_admin_menu = False
-    icon = 'doc-full'
-    page_title = pgettext_lazy('page title', 'Add change history message')
-    plan_filter_path: str
-    create_template_name = 'aplans/change_log_message_create.html'
-
-    panels = [
-        FieldPanel('content'),
-    ]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
-        if qs is None:
-            return self.model.objects.none()  # type: ignore[attr-defined]
-        return qs.filter(**{self.plan_filter_path: plan})
 
 
 class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action]):

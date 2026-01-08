@@ -57,6 +57,7 @@ from aplans.utils import (
 )
 
 from actions.models.category import Category
+from admin_site.models import BaseChangeLogMessage
 from indicators.models import ActionIndicator, ActionIndicatorQuerySet, Indicator, IndicatorQuerySet
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
@@ -1933,43 +1934,6 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
         return self.url
 
 
-class BaseChangeLogMessage(models.Model):
-    content = models.TextField(
-        verbose_name=_('content'),
-        help_text=_('Please summarize the change you made. This message will be displayed publicly.'),
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at'),
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at'),
-    )
-    created_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        verbose_name=_('created by'),
-        editable=False,
-    )
-
-    i18n = TranslationField(
-        fields=['content'],
-        default_language_field='plan__primary_language_lowercase',
-    )
-    content_i18n: str
-
-    public_fields: ClassVar = [
-        'id',
-        'content',
-        'created_at',
-        'updated_at',
-    ]
-
-    class Meta:
-        abstract = True
-        ordering = ('-created_at',)
 
 
 class ActionChangeLogMessage(BaseChangeLogMessage):

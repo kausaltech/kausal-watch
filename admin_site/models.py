@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -9,12 +9,15 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from modeltrans.fields import TranslationField
 from wagtail.images.models import SourceImageIOError
 
 from sentry_sdk import capture_exception
 
 from aplans.fields import HostnameField
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModelWithRevision
+
+from users.models import User
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
@@ -213,3 +216,42 @@ class BuiltInFieldCustomization(
             'model': model_name,
             'plan': str(self.plan),
         }
+
+
+class BaseChangeLogMessage(models.Model):
+    content = models.TextField(
+        verbose_name=_('content'),
+        help_text=_('Please summarize the change you made. This message will be displayed publicly.'),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at'),
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at'),
+    )
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
+        editable=False,
+    )
+
+    i18n = TranslationField(
+        fields=['content'],
+        default_language_field='plan__primary_language_lowercase',
+    )
+    content_i18n: str
+
+    public_fields: ClassVar = [
+        'id',
+        'content',
+        'created_at',
+        'updated_at',
+    ]
+
+    class Meta:
+        abstract = True
+        ordering = ('-created_at',)
