@@ -1,0 +1,7 @@
+{% load wagtailadmin_tags %}
+<td {% if column.classname %}class="{{ column.classname }}"{% endif %}>
+    <span class="w-status {{ status_class }}" style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ tooltip }}">
+        {{ status_label }}
+    </span>
+</td>
+

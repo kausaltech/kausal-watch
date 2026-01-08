@@ -32,12 +32,11 @@
             {% endif %}
 
             <div>
-                <span class="active-plan-live {% if active_plan.is_live %}public{% else %}internal{% endif %}">
-                    {% if active_plan.is_live %}
-                        {% trans "Public" %}
-                    {% else %}
-                        {% trans "Internal" %}
-                    {% endif %}
+                <span class="active-plan-live {{ active_plan.publication_state }}"
+                    {% if active_plan.publication_state.value == 'scheduled' %}
+                        style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan.publication_status_tooltip }}" data-w-tooltip-placement-value="top"
+                    {% endif %}>
+                    {{ active_plan.publication_state.label }}
                 </span>
             </div>
         </div>

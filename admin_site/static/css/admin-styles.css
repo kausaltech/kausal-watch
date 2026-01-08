@@ -91,6 +91,10 @@
   color: var(--w-color-warning-100);
 }
 
+.active-plan-live.scheduled {
+  color: #d8b4fe;
+}
+
 .sidebar--slim .active-plan-info {
   display: none;
 }
@@ -207,6 +211,21 @@ section[role='tabpanel'] .help-block:has(> .field-visibility-label) {
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+}
+
+.w-status--internal {
+  background-color: var(--w-color-grey-400);
+  color: var(--w-color-white);
+}
+
+.w-status--public {
+  background-color: #fef08a;
+  color: #854d0e;
+}
+
+.w-status--scheduled {
+  background-color: #d8b4fe;
+  color: #6b21a8;
 }
 
 /* Accessibility: Ensure form fields wrap on narrow or zoomed in screens */

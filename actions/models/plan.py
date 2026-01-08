@@ -728,10 +728,24 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         now = self.now_in_local_timezone()
         return self.published_at is not None and self.published_at <= now and self.archived_at is None
 
+    class PublicationState(models.TextChoices):
+        INTERNAL = 'internal', _('Internal')
+        PUBLIC = 'public', _('Public')
+        SCHEDULED = 'scheduled', _('Scheduled')
+
     @property
-    def publication_status(self) -> str:
+    def publication_state(self) -> PublicationState:
         if self.published_at is None:
-            return str(_('Not published'))
+            return self.PublicationState.INTERNAL
+        now = timezone.now()
+        if self.published_at > now:
+            return self.PublicationState.SCHEDULED
+        return self.PublicationState.PUBLIC
+
+    @property
+    def publication_status_tooltip(self) -> str:
+        if self.published_at is None:
+            return str(self.PublicationState.INTERNAL.label)
 
         formatted_date = f"{self.published_at.strftime('%Y-%m-%d %H:%M')} (UTC)"
         now = timezone.now()
@@ -748,7 +762,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
             else:
                 minutes = delta.seconds // 60
                 time_remaining = _('in %(minutes)d minutes') % {'minutes': minutes}
-            return str(_('Scheduled at: %(date)s, %(remaining)s') % {'date': formatted_date, 'remaining': time_remaining})
+            return str(_('Scheduled at: %(date)s (%(remaining)s)') % {'date': formatted_date, 'remaining': time_remaining})
 
         return formatted_date
 

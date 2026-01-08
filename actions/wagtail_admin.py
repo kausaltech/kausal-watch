@@ -576,6 +576,29 @@ class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
 register_snippet(ActivePlanNotificationSettingsViewSet)
 
 
+class PublicationStatusColumn(Column):
+    cell_template_name = "aplans/plan_publication_status_cell.html"
+
+    def __init__(self, name: str = 'publication_status', **kwargs):
+        super().__init__(name, label=_('Publication status'), **kwargs)
+
+    def get_cell_context_data(self, instance: Plan, parent_context):
+        context = super().get_cell_context_data(instance, parent_context)
+        state = instance.publication_state
+        tooltip = instance.publication_status_tooltip
+
+        status_class_map = {
+            Plan.PublicationState.INTERNAL: 'w-status--internal',
+            Plan.PublicationState.PUBLIC: 'w-status--public',
+            Plan.PublicationState.SCHEDULED: 'w-status--scheduled',
+        }
+        context['status_class'] = status_class_map[state]
+        context['status_label'] = state.label
+
+        context['tooltip'] = tooltip
+        return context
+
+
 class PlanIndexView(IndexView[Plan]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
@@ -741,6 +764,25 @@ class PlanPublishView(
             user=self.request.user,
         )
 
+    def get_production_urls(self):
+        from actions.models.plan import PlanDomain
+        domains = self.object.domains.filter(
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION
+        )
+        return [f"https://{domain.hostname}" for domain in domains]
+
+    def get_preview_url(self):
+        try:
+            return f"https://{self.object.default_hostname()}"
+        except Exception:
+            return None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['production_urls'] = self.get_production_urls()
+        context['preview_url'] = self.get_preview_url()
+        return context
+
     def post(self, request, *args, **kwargs):
         try:
             if self.publish:
@@ -770,7 +812,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
     menu_order = 9000
     list_display = [
         'name', 'version_name', 'parent', 'organization', 'clients_as_string',
-        Column('publication_status', label=_('Published at')),
+        PublicationStatusColumn(),
     ]
     filterset_class = PlanFilter
     list_per_page = None  # disable pagination
