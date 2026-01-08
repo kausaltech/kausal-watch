@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db.models import Q
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.filters import ContentTypeFilter, MultipleUserFilter
@@ -40,7 +41,7 @@ class CustomSiteHistoryReportFilterSet(SiteHistoryReportFilterSet):
         if not plan:
             return qs.none()
         persons_available_for_plan = Person.objects.available_for_plan(plan, include_contact_persons=True)
-        return qs.filter(person__in=persons_available_for_plan)
+        return qs.filter(Q(person__in=persons_available_for_plan) | Q(is_superuser=True))
 
 
 class PlanScopedLogEntriesView(LogEntriesView):
