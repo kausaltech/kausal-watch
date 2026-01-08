@@ -1,10 +1,11 @@
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
-from django.utils import translation
+from django.utils import timezone, translation
 from wagtail.models import Locale
 
 import pytest
@@ -12,7 +13,7 @@ import pytest
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 from actions.attributes import AttributeType
-from actions.models import Action, ActionContactPerson
+from actions.models import Action, ActionContactPerson, Plan
 from actions.tests.factories import (
     ActionContactFactory,
     ActionFactory,
@@ -543,3 +544,52 @@ def test_synchronizing_plan_root_collection(plan_factory):
     plan.save()
     new_plan = plan_factory(name='D')
     new_plan.save()
+
+
+class TestPlanPublicationStatus:
+    def test_publication_state_internal_when_not_published(self, plan):
+        plan.published_at = None
+        assert plan.publication_state == Plan.PublicationState.INTERNAL
+
+    def test_publication_state_public_when_published_in_past(self, plan):
+        plan.published_at = timezone.now() - timedelta(days=1)
+        assert plan.publication_state == Plan.PublicationState.PUBLIC
+
+    def test_publication_state_scheduled_when_published_in_future(self, plan):
+        plan.published_at = timezone.now() + timedelta(days=1)
+        assert plan.publication_state == Plan.PublicationState.SCHEDULED
+
+    def test_publication_status_tooltip_internal_when_not_published(self, plan):
+        plan.published_at = None
+        assert plan.publication_status_tooltip == 'Internal'
+
+    def test_publication_status_tooltip_shows_date_when_published(self, plan):
+        plan.published_at = datetime(2025, 6, 15, 14, 30, tzinfo=UTC)
+        assert '2025-06-15 14:30' in plan.publication_status_tooltip
+        assert '(UTC)' in plan.publication_status_tooltip
+
+    def test_publication_status_tooltip_shows_time_remaining_days(self, plan):
+        now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
+        plan.published_at = now + timedelta(days=2, hours=5)
+        with patch('django.utils.timezone.now', return_value=now):
+            tooltip = plan.publication_status_tooltip
+            assert 'Scheduled at:' in tooltip
+            assert '2 days' in tooltip
+            assert '5 hours' in tooltip
+
+    def test_publication_status_tooltip_shows_time_remaining_hours(self, plan):
+        now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
+        plan.published_at = now + timedelta(hours=3, minutes=45)
+        with patch('django.utils.timezone.now', return_value=now):
+            tooltip = plan.publication_status_tooltip
+            assert 'Scheduled at:' in tooltip
+            assert '3 hours' in tooltip
+            assert '45 minutes' in tooltip
+
+    def test_publication_status_tooltip_shows_time_remaining_minutes(self, plan):
+        now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
+        plan.published_at = now + timedelta(minutes=30)
+        with patch('django.utils.timezone.now', return_value=now):
+            tooltip = plan.publication_status_tooltip
+            assert 'Scheduled at:' in tooltip
+            assert '30 minutes' in tooltip
