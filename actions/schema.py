@@ -91,7 +91,7 @@ from actions.models.attributes import ModelWithAttributes
 from actions.models.category import IndicatorCategoryRelationshipType  # noqa: TC001
 from orgs.models import Organization, OrganizationQuerySet
 from pages import schema as pages_schema
-from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorListPage
+from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorListPage, PageChangeLogMessage
 from people.models import Person
 from search.backends import get_search_backend
 
@@ -1239,7 +1239,7 @@ class CategoryChangeLogMessageNode(DjangoNode[CategoryChangeLogMessage]):
 
 
 @register_django_node
-class PageChangeLogMessageNode(DjangoNode):
+class PageChangeLogMessageNode(DjangoNode[PageChangeLogMessage]):
     class Meta:
         from pages.models import PageChangeLogMessage
         model = PageChangeLogMessage

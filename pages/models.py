@@ -58,9 +58,9 @@ from actions.blocks.category_page_layout import (
 from actions.blocks.filters import ActionListFilterBlock, CategoryTypeFilterBlock
 from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
-from actions.models.action import BaseChangeLogMessage
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
+from admin_site.models import BaseChangeLogMessage
 from audit_logging.blocks import ChangeLogMessageBlock
 from indicators.blocks import (
     DashboardRowBlock,
@@ -297,6 +297,7 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
         ('embed', AdaptiveEmbedBlock()),
         ('paths_outcome', PathsOutcomeBlock()),
         ('raw_visualization', RawVisualizationBlock()),
+        ('change_log_message', ChangeLogMessageBlock()),
     ])
 
     content_panels = [
