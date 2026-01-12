@@ -43,7 +43,6 @@ from actions.blocks import (
     get_default_action_content_blocks,
     get_default_action_filter_blocks,
 )
-from actions.models.action import BaseChangeLogMessage
 from actions.blocks.action_content import (
     ActionAsideContentBlock,
     ActionMainContentBlock,
@@ -59,6 +58,7 @@ from actions.blocks.category_page_layout import (
 from actions.blocks.filters import ActionListFilterBlock, CategoryTypeFilterBlock
 from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
+from actions.models.action import BaseChangeLogMessage
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
 from audit_logging.blocks import ChangeLogMessageBlock
