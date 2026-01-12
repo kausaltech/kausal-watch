@@ -33,7 +33,7 @@ from grapple.models import (
 )
 from loguru import logger
 
-from kausal_common.graphene.grapple import make_grapple_streamfield
+from kausal_common.graphene.grapple import grapple_field, make_grapple_streamfield
 
 from aplans.extensions import get_body_blocks
 from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel, PlanRelatedModelWithRevision
@@ -104,6 +104,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
 
     from aplans.cache import PlanSpecificCache
+    from aplans.graphql_types import GQLInfo
 
     from images.models import AplansImage
 
@@ -306,8 +307,21 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
 
     parent_page_types: Sequence[type[Page] | str] = []
 
+    @staticmethod
+    def resolve_change_log_message(root: PlanRootPage, info: GQLInfo) -> BaseChangeLogMessage | None:
+        return root.get_public_change_log_message()
+
     graphql_fields = AplansPage.graphql_fields + [
-        make_grapple_streamfield(lambda: PlanRootPage, 'body'),
+        make_grapple_streamfield(
+            lambda: PlanRootPage,
+            'body'
+        ),
+        grapple_field(
+            'change_log_message',
+            field_type='actions.schema.PageChangeLogMessageNode',
+            resolver=resolve_change_log_message,
+            required=False
+        ),
     ]
 
     search_fields: Sequence[index.BaseField] = [
@@ -1022,7 +1036,6 @@ class PageChangeLogMessage(BaseChangeLogMessage):
 
     i18n = TranslationField(
         fields=['content'],
-        default_language_field='page__plan__primary_language_lowercase',
     )
 
     public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
