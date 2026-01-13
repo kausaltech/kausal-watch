@@ -735,7 +735,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
 
     @property
     def publication_state(self) -> PublicationState:
-        if self.published_at is None:
+        if self.published_at is None or self.archived_at is not None:
             return self.PublicationState.INTERNAL
         now = timezone.now()
         if self.published_at > now:
@@ -744,7 +744,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
 
     @property
     def publication_status_description(self) -> str:
-        if self.published_at is None:
+        if self.published_at is None or self.archived_at is not None:
             return str(self.PublicationState.INTERNAL.label)
 
         utc_time = self.published_at.astimezone(UTC)
