@@ -8,6 +8,7 @@ from wagtail.admin.menu import MenuItem
 from aplans.utils import PlanRelatedModel
 
 from actions.models.plan import Plan
+from audit_logging.utils import BulkActionModelList
 from pages.models import AplansPage
 
 from .models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
@@ -17,6 +18,7 @@ from .models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 def register_core_log_actions(actions):
     actions.register_model(Plan, PlanScopedModelLogEntry)
     actions.register_model(PlanRelatedModel, PlanScopedModelLogEntry)
+    actions.register_model(BulkActionModelList, PlanScopedModelLogEntry)
     actions.register_model(AplansPage, PlanScopedPageLogEntry)
 
 
