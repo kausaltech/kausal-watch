@@ -388,10 +388,20 @@ class StaticPage(AplansPage):
 
     parent_page_types = [PlanRootPage, EmptyPage, 'StaticPage', 'CategoryPage']
 
+    @staticmethod
+    def resolve_change_log_message(root: StaticPage, info: GQLInfo) -> BaseChangeLogMessage | None:
+        return root.get_public_change_log_message()
+
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLImage('header_image'),
         GraphQLString('lead_paragraph'),
         make_grapple_streamfield(lambda: StaticPage, 'body'),
+        grapple_field(
+            'change_log_message',
+            field_type='actions.schema.PageChangeLogMessageNode',
+            resolver=resolve_change_log_message,
+            required=False
+        ),
     ]
 
     search_fields: Sequence[index.BaseField] = [
