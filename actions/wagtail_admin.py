@@ -747,6 +747,7 @@ class PlanPublishView(
             raise ValueError(_("The plan is already published."))
         self.object.published_at = timezone.now()
         self.object.save(update_fields=['published_at'])
+        self.object.invalidate_cache()
         log(
             instance=self.object,
             action='plan.publish',
@@ -758,6 +759,7 @@ class PlanPublishView(
             raise ValueError(_("The plan is already unpublished."))
         self.object.published_at = None
         self.object.save(update_fields=['published_at'])
+        self.object.invalidate_cache()
         log(
             instance=self.object,
             action='plan.unpublish',
