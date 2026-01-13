@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, Any, Protocol, cast, override
 from uuid import UUID
+import uuid
 
 import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
@@ -17,7 +18,9 @@ from rest_framework.routers import SimpleRouter
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
+from wagtail.log_actions import log
 
+from audit_logging.utils import BulkActionModelList
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
@@ -1132,6 +1135,33 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
         if self.action == 'list':
             return [AnonReadOnly()]
         return [ActionPermission()]
+
+    def perform_update(self, serializer: serializers.Serializer[Action]):
+        super().perform_update(serializer)
+        instance = serializer.instance
+        if instance is None:
+            return
+        plan: Plan | None = self.get_plan()
+        if plan is None:
+            user = user_or_none(self.request.user)
+            if user is None:
+                raise exceptions.PermissionDenied()
+            plan = user.get_active_admin_plan()
+
+        if isinstance(instance, list):
+            instance = BulkActionModelList(
+                instance,
+                plan=plan,
+            )
+
+        log(
+            instance,
+            'bulk_update',
+            user=self.request.user,
+            uuid=uuid.uuid4(),
+            title='Bulkzie bulkzie',
+            content_changed=True,
+        )
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):

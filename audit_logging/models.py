@@ -1,12 +1,42 @@
 from __future__ import annotations
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 from wagtail.models import ModelLogEntry, PageLogEntry, PageLogEntryManager
 from wagtail.models.audit_log import ModelLogEntryManager
 
+from audit_logging.utils import BulkActionModelList
+
 
 class PlanScopedModelLogEntryManager(ModelLogEntryManager):
+    def log_bulk_action(self, instance: BulkActionModelList, action: str, **kwargs):
+        if len(instance) == 0:
+            return
+        data = kwargs.pop("data", None) or {}
+        title = kwargs.pop("title", None)
+        timestamp = kwargs.pop("timestamp", timezone.now())
+        content_type=ContentType.objects.get_for_model(
+            instance[0],
+            for_concrete_model=False
+        )
+        log_entries = [
+            PlanScopedModelLogEntry(
+                content_type=content_type,
+                label=title,
+                action=action,
+                timestamp=timestamp,
+                data=data,
+                **kwargs
+            )
+        ]
+        self.model.objects.bulk_create(
+            log_entries
+        )
+
     def log_action(self, instance, action, **kwargs):
+        if isinstance(instance, BulkActionModelList):
+            self.log_bulk_action(instance, action, **kwargs)
         plans=instance.get_plans()
         retval = None
         if not plans and 'user' in kwargs:
