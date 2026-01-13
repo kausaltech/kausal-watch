@@ -26,7 +26,7 @@
                             {% trans "The plan will be published to:" %}
                             <ul style="margin: 0.5em 0 0 1.5em;">
                                 {% for url in production_urls %}
-                                    <li><strong>{{ url }}</strong></li>
+                                    <li><strong><a href="{{ url }}" target="_blank">{{ url }}</a></strong></li>
                                 {% endfor %}
                             </ul>
                         </div>
@@ -34,7 +34,7 @@
                         <div class="help-block help-warning">
                             <svg class="icon icon-warning icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
                             {% if preview_url %}
-                                {% blocktrans %}This plan will only be published at <strong>{{ preview_url }}</strong> because no production domains have been configured.{% endblocktrans %}
+                                {% blocktrans %}This plan will only be published at <strong><a href="{{preview_url}}" target="_blank">{{ preview_url }}</a></strong> because no production domains have been configured.{% endblocktrans %}
                             {% else %}
                                 {% trans "No production domains have been configured for this plan." %}
                             {% endif %}
