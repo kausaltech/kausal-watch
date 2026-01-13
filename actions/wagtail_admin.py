@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, override
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from django.contrib.admin.utils import quote
 from django.core.exceptions import PermissionDenied, ValidationError
