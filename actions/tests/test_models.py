@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from django.utils import timezone, translation
+from django.utils.formats import date_format
 from wagtail.models import Locale
 
 import pytest
@@ -559,37 +560,39 @@ class TestPlanPublicationStatus:
         plan.published_at = timezone.now() + timedelta(days=1)
         assert plan.publication_state == Plan.PublicationState.SCHEDULED
 
-    def test_publication_status_tooltip_internal_when_not_published(self, plan):
+    def test_publication_status_description_internal_when_not_published(self, plan):
         plan.published_at = None
-        assert plan.publication_status_tooltip == 'Internal'
+        assert plan.publication_status_description == 'Internal'
 
-    def test_publication_status_tooltip_shows_date_when_published(self, plan):
+    def test_publication_status_description_shows_date_when_published(self, plan):
         plan.published_at = datetime(2025, 6, 15, 14, 30, tzinfo=UTC)
-        assert '2025-06-15 14:30' in plan.publication_status_tooltip
-        assert '(UTC)' in plan.publication_status_tooltip
+        expected_date = date_format(plan.published_at, 'SHORT_DATETIME_FORMAT')
+        assert plan.publication_status_description == f'{expected_date} (UTC)'
+        with translation.override('en'):
+            assert plan.publication_status_description == '06/15/2025 2:30 p.m. (UTC)'
 
-    def test_publication_status_tooltip_shows_time_remaining_days(self, plan):
+    def test_publication_status_description_shows_time_remaining_days(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(days=2, hours=5)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_tooltip
+            tooltip = plan.publication_status_description
             assert 'Scheduled at:' in tooltip
             assert '2 days' in tooltip
             assert '5 hours' in tooltip
 
-    def test_publication_status_tooltip_shows_time_remaining_hours(self, plan):
+    def test_publication_status_description_shows_time_remaining_hours(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(hours=3, minutes=45)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_tooltip
+            tooltip = plan.publication_status_description
             assert 'Scheduled at:' in tooltip
             assert '3 hours' in tooltip
             assert '45 minutes' in tooltip
 
-    def test_publication_status_tooltip_shows_time_remaining_minutes(self, plan):
+    def test_publication_status_description_shows_time_remaining_minutes(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(minutes=30)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_tooltip
+            tooltip = plan.publication_status_description
             assert 'Scheduled at:' in tooltip
             assert '30 minutes' in tooltip

@@ -585,7 +585,7 @@ class PublicationStatusColumn(Column):
     def get_cell_context_data(self, instance: Plan, parent_context):
         context = super().get_cell_context_data(instance, parent_context)
         state = instance.publication_state
-        tooltip = instance.publication_status_tooltip
+        tooltip = instance.publication_status_description
 
         status_class_map = {
             Plan.PublicationState.INTERNAL: 'w-status--internal',
@@ -777,10 +777,15 @@ class PlanPublishView(
         except Exception:
             return None
 
+    def is_scheduled(self):
+        return self.object.publication_state == Plan.PublicationState.SCHEDULED
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['production_urls'] = self.get_production_urls()
         context['preview_url'] = self.get_preview_url()
+        context['is_scheduled'] = self.is_scheduled()
+        context['scheduled_info'] = self.object.publication_status_description if self.is_scheduled() else None
         return context
 
     def post(self, request, *args, **kwargs):

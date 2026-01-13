@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load static wagtailimages_tags wagtailadmin_tags sentry %}
+{% load static wagtailimages_tags wagtailadmin_tags sentry plan_tags %}
 {% load i18n %}
 
 
@@ -33,8 +33,8 @@
 
             <div>
                 <span class="active-plan-live {{ active_plan.publication_state }}"
-                    {% if active_plan.publication_state.value == 'scheduled' %}
-                        style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan.publication_status_tooltip }}" data-w-tooltip-placement-value="top"
+                    {% if active_plan|is_scheduled %}
+                        style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan.publication_status_description }}" data-w-tooltip-placement-value="top"
                     {% endif %}>
                     {{ active_plan.publication_state.label }}
                 </span>

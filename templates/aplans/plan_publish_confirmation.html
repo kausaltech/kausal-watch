@@ -14,6 +14,12 @@
             {% block confirmation_message %}
                 <p>{{ view.confirmation_message }}</p>
                 {% if view.publish %}
+                    {% if is_scheduled %}
+                        <div class="help-block help-warning">
+                            <svg class="icon icon-warning icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                            {% blocktrans with info=scheduled_info %}This plan is already scheduled for publication: <strong>{{ info }}</strong>. Publishing now will override the scheduled date and make the plan public immediately.{% endblocktrans %}
+                        </div>
+                    {% endif %}
                     {% if production_urls %}
                         <div class="help-block help-info">
                             <svg class="icon icon-info-circle icon" aria-hidden="true"><use href="#icon-info-circle"></use></svg>

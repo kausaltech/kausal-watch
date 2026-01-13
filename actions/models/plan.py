@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import zoneinfo
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import cache
 from typing import TYPE_CHECKING, ClassVar, Self, cast
 from urllib.parse import urlparse
@@ -743,11 +743,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         return self.PublicationState.PUBLIC
 
     @property
-    def publication_status_tooltip(self) -> str:
+    def publication_status_description(self) -> str:
         if self.published_at is None:
             return str(self.PublicationState.INTERNAL.label)
 
-        formatted_date = f"{self.published_at.strftime('%Y-%m-%d %H:%M')} (UTC)"
+        utc_time = self.published_at.astimezone(UTC)
+        formatted_date = f"{date_format(utc_time, 'SHORT_DATETIME_FORMAT')} (UTC)"
         now = timezone.now()
 
         if self.published_at > now:
