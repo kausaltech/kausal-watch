@@ -10,6 +10,8 @@ from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 
+import sentry_sdk
+
 from kausal_common.models.types import MLModelManager
 from kausal_common.organizations.models import (
     BaseNamespace,
@@ -137,6 +139,8 @@ del _OrganizationManager
 @reversion.register()
 class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[OrganizationQuerySet]):
     VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
+
+    _reported_missing_parent_paths: ClassVar[set[str]] = set()
 
     logo: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage',
@@ -272,7 +276,30 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
     @classmethod
     def make_orgs_by_path(cls, orgs: Iterable[Organization]) -> dict[str, Organization]:
-        return {org.path: org for org in orgs}
+        orgs_by_path = {org.path: org for org in orgs}
+        cls._validate_orgs_by_path(orgs_by_path)
+        return orgs_by_path
+
+    @classmethod
+    def _validate_orgs_by_path(cls, orgs_by_path: dict[str, Organization]) -> None:
+        missing_parent_paths: set[str] = set()
+        for org in orgs_by_path.values():
+            if org.depth > 1:
+                parent_path = cls._get_basepath(org.path, org.depth - 1)
+                if parent_path not in orgs_by_path and parent_path not in cls._reported_missing_parent_paths:
+                    missing_parent_paths.add(parent_path)
+
+        for parent_path in missing_parent_paths:
+            cls._reported_missing_parent_paths.add(parent_path)
+            sentry_sdk.capture_exception(
+                KeyError(parent_path),
+                contexts={
+                    'validation': {
+                        'missing_parent_path': parent_path,
+                        'orgs_by_path_size': len(orgs_by_path),
+                    },
+                },
+            )
 
     def get_fully_qualified_name(self, orgs_by_path: dict[str, Organization] | None = None):
         parents = []
@@ -285,6 +312,11 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
         org = self
         while org.depth > 1:
             parent_path = self._get_basepath(org.path, org.depth - 1)
+            if parent_path not in org_map:
+                name = self.name
+                if self.internal_abbreviation:
+                    name = f'{self.internal_abbreviation} - {name}'
+                return name
             org = org_map[parent_path]
             parents.append(org)
 
