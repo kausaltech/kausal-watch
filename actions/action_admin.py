@@ -1225,6 +1225,10 @@ class ActionAdmin(AplansModelAdmin[Action]):
 
             is_visible = customization.is_instance_visible_for(user, plan, instance)
             is_editable = customization.is_instance_editable_by(user, plan, instance)
+
+            # if instance is editable, it should be visible too
+            if is_editable:
+                is_visible = True
         except BuiltInFieldCustomization.DoesNotExist:
             is_visible = True
             is_editable = True
