@@ -106,6 +106,7 @@ if TYPE_CHECKING:
     from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
 
+    from actions.schema import PageChangeLogMessageNode
     from images.models import AplansImage
 
 
@@ -279,6 +280,11 @@ class DefaultSlugForCopyingMixin:
         return f'{slug_base}{max_copy_number+1}'
 
 
+def _get_page_change_log_message_node() -> type[PageChangeLogMessageNode]:
+    from actions.schema import PageChangeLogMessageNode
+    return PageChangeLogMessageNode
+
+
 class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc]
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock()),
@@ -318,7 +324,7 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
         ),
         grapple_field(
             'change_log_message',
-            field_type='actions.schema.PageChangeLogMessageNode',
+            field_type=_get_page_change_log_message_node,
             resolver=resolve_change_log_message,
             required=False
         ),
@@ -398,7 +404,7 @@ class StaticPage(AplansPage):
         make_grapple_streamfield(lambda: StaticPage, 'body'),
         grapple_field(
             'change_log_message',
-            field_type='actions.schema.PageChangeLogMessageNode',
+            field_type=_get_page_change_log_message_node,
             resolver=resolve_change_log_message,
             required=False
         ),
