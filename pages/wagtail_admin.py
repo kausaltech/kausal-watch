@@ -147,7 +147,7 @@ class PageChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[PageChangeLo
 class PageChangeLogMessageViewSet(BaseChangeLogMessageViewSet[PageChangeLogMessage]):
     model = PageChangeLogMessage
     menu_label = pgettext_lazy('menu label', 'Page change history messages')
-    plan_filter_path = 'page__plan'
+    plan_filter_path = 'plan'
     add_view_class = PageChangeLogMessageCreateView
     edit_view_class = PageChangeLogMessageEditView
     delete_view_class = PageChangeLogMessageDeleteView

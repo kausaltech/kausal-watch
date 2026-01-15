@@ -1050,10 +1050,6 @@ class PageChangeLogMessage(BaseChangeLogMessage):
         help_text=_('The revision this change history message is associated with'),
     )
 
-    i18n = TranslationField(
-        fields=['content'],
-    )
-
     public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
         'page',
     ]

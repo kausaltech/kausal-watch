@@ -1934,8 +1934,6 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
         return self.url
 
 
-
-
 class ActionChangeLogMessage(BaseChangeLogMessage):
     action = models.ForeignKey(
         Action,
@@ -1953,11 +1951,6 @@ class ActionChangeLogMessage(BaseChangeLogMessage):
         help_text=_('The revision this change history message is associated with'),
     )
 
-    i18n = TranslationField(
-        fields=['content'],
-        default_language_field='action__plan__primary_language_lowercase',
-    )
-
     public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
         'action',
     ]
@@ -1966,8 +1959,9 @@ class ActionChangeLogMessage(BaseChangeLogMessage):
         verbose_name = pgettext_lazy('verbose name of model', 'action change history message')
         verbose_name_plural = pgettext_lazy('verbose name plural of model', 'action change history messages')
 
-    def __str__(self):
-        return f'{self.action} - {self.created_at}'
+    def get_instance(self):
+        return self.action
+
 
 class IndicatorChangeLogMessage(BaseChangeLogMessage):
     indicator = models.ForeignKey(
@@ -1975,11 +1969,6 @@ class IndicatorChangeLogMessage(BaseChangeLogMessage):
         on_delete=models.CASCADE,
         related_name='change_log_messages',
         verbose_name=_('indicator'),
-    )
-
-    i18n = TranslationField(
-        fields=['content'],
-        default_language_field='indicator__organization__primary_language_lowercase',
     )
 
     public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
@@ -1990,8 +1979,9 @@ class IndicatorChangeLogMessage(BaseChangeLogMessage):
         verbose_name = _('indicator change history message')
         verbose_name_plural = _('indicator change history messages')
 
-    def __str__(self):
-        return f'{self.indicator} – {self.created_at}'  # noqa: RUF001
+    def get_instance(self):
+        return self.indicator
+
 
 class CategoryChangeLogMessage(BaseChangeLogMessage):
     category = models.ForeignKey(
@@ -1999,11 +1989,6 @@ class CategoryChangeLogMessage(BaseChangeLogMessage):
         on_delete=models.CASCADE,
         related_name='change_log_messages',
         verbose_name=_('category'),
-    )
-
-    i18n = TranslationField(
-        fields=['content'],
-        default_language_field='category__type__plan__primary_language_lowercase',
     )
 
     public_fields: ClassVar = BaseChangeLogMessage.public_fields + [
@@ -2014,8 +1999,9 @@ class CategoryChangeLogMessage(BaseChangeLogMessage):
         verbose_name = _('category change history message')
         verbose_name_plural = _('category change history messages')
 
-    def __str__(self):
-        return f'{self.category} – {self.created_at}'  # noqa: RUF001
+    def get_instance(self):
+        return self.category
+
 
 class ActionStatusUpdate(models.Model):
     action = models.ForeignKey(

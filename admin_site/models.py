@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import models
+from django.utils import formats
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -15,7 +16,13 @@ from wagtail.images.models import SourceImageIOError
 from sentry_sdk import capture_exception
 
 from aplans.fields import HostnameField
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModelWithRevision
+from aplans.utils import (
+    InstancesEditableByMixin,
+    InstancesVisibleForMixin,
+    OrderedModel,
+    PlanRelatedModel,
+    PlanRelatedModelWithRevision,
+)
 
 from users.models import User
 
@@ -218,7 +225,13 @@ class BuiltInFieldCustomization(
         }
 
 
-class BaseChangeLogMessage(models.Model):
+class BaseChangeLogMessage(PlanRelatedModel):
+    plan: FK[Plan] = models.ForeignKey(
+        'actions.Plan',
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name='%(class)s_set',
+    )
     content = models.TextField(
         verbose_name=_('content'),
         help_text=_('Please summarize the change you made. This message will be displayed publicly.'),
@@ -255,3 +268,17 @@ class BaseChangeLogMessage(models.Model):
     class Meta:
         abstract = True
         ordering = ('-created_at',)
+
+    def get_str_template(self):
+        return _('%(verbose_name)s: "%(instance)s" (%(date)s).')
+
+    def get_instance(self) -> models.Model:
+        raise NotImplementedError()
+
+    def __str__(self):
+        verbose_name = self._meta.verbose_name or _('change history message')
+        return self.get_str_template() % {
+            'verbose_name': verbose_name.title(),
+            'instance': self.get_instance(),
+            'date': formats.date_format(self.created_at.date())
+        }

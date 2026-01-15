@@ -950,7 +950,7 @@ class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChan
 class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
     model = ActionChangeLogMessage
     menu_label = pgettext_lazy('menu label', 'Action change history messages')
-    plan_filter_path = 'action__plan'
+    plan_filter_path = 'plan'
     add_view_class = ActionChangeLogMessageCreateView
     edit_view_class = ActionChangeLogMessageEditView
     delete_view_class = ActionChangeLogMessageDeleteView
@@ -997,7 +997,7 @@ class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[Indicat
 class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
     model = IndicatorChangeLogMessage
     menu_label = pgettext_lazy('menu label', 'Indicator change history messages')
-    plan_filter_path = 'indicator__plans'
+    plan_filter_path = 'plan'
     add_view_class = IndicatorChangeLogMessageCreateView
     edit_view_class = IndicatorChangeLogMessageEditView
     delete_view_class = IndicatorChangeLogMessageDeleteView
@@ -1044,7 +1044,7 @@ class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[Category
 class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChangeLogMessage]):
     model = CategoryChangeLogMessage
     menu_label = pgettext_lazy('menu label', 'Category change history messages')
-    plan_filter_path = 'category__type__plan'
+    plan_filter_path = 'plan'
     add_view_class = CategoryChangeLogMessageCreateView
     edit_view_class = CategoryChangeLogMessageEditView
     delete_view_class = CategoryChangeLogMessageDeleteView

@@ -264,8 +264,8 @@ class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
+        if qs is None:
+            qs = self.model._default_manager.all()
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
-        if qs is None:
-            return self.model.objects.none()  # type: ignore[attr-defined]
         return qs.filter(**{self.plan_filter_path: plan})
