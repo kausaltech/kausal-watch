@@ -63,7 +63,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
 
 class PlanScopedModelLogEntry(BaseLogEntry):
     # From ModelLogEntry
-    object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    object_id = models.CharField(max_length=255, blank=False, db_index=True)
 
     # Plan-specific fields
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
@@ -96,8 +96,6 @@ class PlanScopedPageLogEntry(BaseLogEntry):
         on_delete=models.DO_NOTHING,
         db_constraint=False,
         related_name='+',
-        null=True,
-        blank=True,
     )
 
     # Plan-specific fields
