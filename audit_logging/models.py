@@ -6,7 +6,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from wagtail.models.audit_log import BaseLogEntryManager
+from wagtail.models.audit_log import BaseLogEntry, BaseLogEntryManager
 
 from audit_logging.utils import BulkActionModelList
 
@@ -61,50 +61,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
         )
 
 
-class PlanScopedModelLogEntry(models.Model):
-    # Temporary fields for migration - from BaseLogEntry
-    content_type = models.ForeignKey(  # Temporary for migration
-        ContentType,
-        models.SET_NULL,
-        verbose_name=_('content type'),
-        blank=True,
-        null=True,
-        related_name='+',
-    )
-    label = models.TextField(null=True, blank=True)  # Temporary for migration
-    action = models.CharField(max_length=255, blank=True, null=True, db_index=True)  # Temporary for migration
-    data = models.JSONField(blank=True, null=True, encoder=DjangoJSONEncoder)  # Temporary for migration
-    timestamp = models.DateTimeField(  # Temporary for migration
-        verbose_name=_('timestamp (UTC)'),
-        null=True,
-        blank=True,
-        db_index=True
-    )
-    uuid = models.UUIDField(  # Temporary for migration
-        blank=True,
-        null=True,
-        editable=False,
-        help_text='Log entries that happened as part of the same user action are assigned the same UUID',
-    )
-    user = models.ForeignKey(  # Temporary for migration
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.DO_NOTHING,
-        db_constraint=False,
-        related_name='+',
-    )
-    revision = models.ForeignKey(  # Temporary for migration
-        'wagtailcore.Revision',
-        null=True,
-        blank=True,
-        on_delete=models.DO_NOTHING,
-        db_constraint=False,
-        related_name='+',
-    )
-    content_changed = models.BooleanField(null=True, blank=True, db_index=True)  # Temporary for migration
-    deleted = models.BooleanField(null=True, blank=True)  # Temporary for migration
-
+class PlanScopedModelLogEntry(BaseLogEntry):
     # From ModelLogEntry
     object_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
@@ -132,47 +89,7 @@ class PlanScopedPageLogEntryManager(BaseLogEntryManager):
         )
 
 
-class PlanScopedPageLogEntry(models.Model):
-    # Temporary fields for migration - from BaseLogEntry
-    content_type = models.ForeignKey(  # Temporary for migration
-        ContentType,
-        models.SET_NULL,
-        verbose_name=_('content type'),
-        blank=True,
-        null=True,
-        related_name='+',
-    )
-    label = models.TextField(null=True, blank=True)  # Temporary for migration
-    action = models.CharField(max_length=255, blank=True, null=True, db_index=True)  # Temporary for migration
-    data = models.JSONField(blank=True, null=True, encoder=DjangoJSONEncoder)  # Temporary for migration
-    timestamp = models.DateTimeField(  # Temporary for migration
-        verbose_name=_('timestamp (UTC)'), null=True, blank=True, db_index=True
-    )
-    uuid = models.UUIDField(  # Temporary for migration
-        blank=True,
-        null=True,
-        editable=False,
-        help_text='Log entries that happened as part of the same user action are assigned the same UUID',
-    )
-    user = models.ForeignKey(  # Temporary for migration
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.DO_NOTHING,
-        db_constraint=False,
-        related_name='+',
-    )
-    revision = models.ForeignKey(  # Temporary for migration
-        'wagtailcore.Revision',
-        null=True,
-        blank=True,
-        on_delete=models.DO_NOTHING,
-        db_constraint=False,
-        related_name='+',
-    )
-    content_changed = models.BooleanField(null=True, blank=True, db_index=True)  # Temporary for migration
-    deleted = models.BooleanField(null=True, blank=True)  # Temporary for migration
-
+class PlanScopedPageLogEntry(BaseLogEntry):
     # From PageLogEntry
     page = models.ForeignKey(
         'wagtailcore.Page',
@@ -184,7 +101,6 @@ class PlanScopedPageLogEntry(models.Model):
     )
 
     # Plan-specific fields
-
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
 
     objects = PlanScopedPageLogEntryManager()
