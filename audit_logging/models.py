@@ -12,30 +12,31 @@ from audit_logging.utils import BulkActionModelList
 
 
 class PlanScopedModelLogEntryManager(BaseLogEntryManager):
-    def log_bulk_action(self, instance: BulkActionModelList, action: str, **kwargs):
-        if len(instance) == 0:
+    def log_bulk_action(self, instances: BulkActionModelList, action: str, **kwargs):
+        if len(instances) == 0:
             return
         data = kwargs.pop('data', None) or {}
         title = kwargs.pop('title', None)
         timestamp = kwargs.pop('timestamp', timezone.now())
+        plan = kwargs['user'].get_active_admin_plan()
         content_type = ContentType.objects.get_for_model(
-            instance[0],
+            instances[0],
             for_concrete_model=False
         )
         log_entries = [
             PlanScopedModelLogEntry(
                 content_type=content_type,
-                label=title,
-                action=action,
+                label=str(instance),
+                action=instance,
                 timestamp=timestamp,
                 data=data,
-                object_id=str(instance[0].pk),
+                plan_id=plan.pk,
+                object_id=str(instance.pk),
                 **kwargs
             )
+            for instance in instances
         ]
-        PlanScopedModelLogEntry.objects.bulk_create(
-            log_entries
-        )
+        PlanScopedModelLogEntry.objects.bulk_create(log_entries)
 
     def log_action(self, instance, action, **kwargs):
         if isinstance(instance, BulkActionModelList):

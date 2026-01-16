@@ -1159,7 +1159,6 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
             'bulk_update',
             user=self.request.user,
             uuid=uuid.uuid4(),
-            title='Bulkzie bulkzie',
             content_changed=True,
         )
 
