@@ -1167,7 +1167,7 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
             permission_classes = [ActionPermission]
         return [permission() for permission in permission_classes]
 
-    def perform_update(self, serializer: serializers.Serializer[Action]):
+    def perform_update(self, serializer: serializers.BaseSerializer[Action]):
         super().perform_update(serializer)
         instance = serializer.instance
         if instance is None:
