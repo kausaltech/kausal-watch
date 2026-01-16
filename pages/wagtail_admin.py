@@ -55,8 +55,8 @@ def remove_page_action_menu_items_except_publish(menu_items, request, context):
 def redirect_to_change_log_after_publish(request, page):
     """Redirect to change log message creation after publishing a page."""
 
-    # Only redirect for some page types
-    if not isinstance(page.specific, PlanRootPage) and not isinstance(page.specific, StaticPage):
+    # Only redirect for some page types (do not allow subclasses of StaticPage)
+    if not isinstance(page.specific, PlanRootPage) and type(page.specific) is not StaticPage:
         return None
 
     # Check if the page's plan has change log enabled
