@@ -62,6 +62,13 @@ class PlanScopedModelLogEntryManager(ModelLogEntryManager):
 class PlanScopedModelLogEntry(ModelLogEntry):
     objects = PlanScopedModelLogEntryManager()
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
+    modellogentry_migration_instance = models.OneToOneField(
+        'wagtailcore.ModelLogEntry',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
 
 
 class PlanScopedPageLogEntryManager(PageLogEntryManager):
@@ -85,3 +92,10 @@ class PlanScopedPageLogEntryManager(PageLogEntryManager):
 class PlanScopedPageLogEntry(PageLogEntry):
     objects = PlanScopedPageLogEntryManager()
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
+    pagelogentry_migration_instance = models.OneToOneField(
+        'wagtailcore.PageLogEntry',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
