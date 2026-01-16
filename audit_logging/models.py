@@ -59,7 +59,7 @@ class PlanScopedModelLogEntryManager(ModelLogEntryManager):
         )
 
 
-class PlanScopedModelLogEntry(ModelLogEntry):
+class PlanScopedModelLogEntry(models.Model):
     objects = PlanScopedModelLogEntryManager()
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
     modellogentry_migration_instance = models.OneToOneField(
@@ -89,7 +89,7 @@ class PlanScopedPageLogEntryManager(PageLogEntryManager):
         )
 
 
-class PlanScopedPageLogEntry(PageLogEntry):
+class PlanScopedPageLogEntry(models.Model):
     objects = PlanScopedPageLogEntryManager()
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
     pagelogentry_migration_instance = models.OneToOneField(
