@@ -1156,7 +1156,7 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
 
         log(
             instance,
-            'bulk_update',
+            'wagtail.edit',
             user=self.request.user,
             uuid=uuid.uuid4(),
             content_changed=True,
