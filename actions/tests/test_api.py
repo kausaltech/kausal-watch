@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from itertools import permutations
 
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 import pytest
@@ -10,6 +11,13 @@ from actions.api import ActionSerializer
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 from people.tests.factories import PersonFactory
+from actions.models import Action
+from actions.tests.factories import ActionContactFactory, ActionFactory
+from actions.tests.utils import assert_log_entry_created, count_log_entries
+from audit_logging.models import PlanScopedModelLogEntry
+from orgs.tests.factories import OrganizationFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory
+from orgs.tests.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -254,6 +262,10 @@ def test_action_post_as_plan_admin_allowed(
         'plan': plan.pk})
     assert response.status_code == 201
 
+    # Verify that a log entry was created for the new action
+    created_action = Action.objects.get(identifier='ID-1', plan=plan)
+    assert_log_entry_created(created_action, 'wagtail.create', admin_person.user, plan)
+
 
 def test_action_put_as_plan_admin_allowed(
         api_client, plan, action, action_detail_url, person_factory):
@@ -267,6 +279,10 @@ def test_action_put_as_plan_admin_allowed(
         'plan': plan_of_admin_person.pk})
     assert response.status_code == 200
 
+    # Verify that a log entry was created for the updated action
+    action.refresh_from_db()
+    assert_log_entry_created(action, 'wagtail.edit', admin_person.user, plan_of_admin_person)
+
 
 def test_action_responsible_party_patch(
         api_client, action, action_detail_url, plan_admin_user):
@@ -275,7 +291,9 @@ def test_action_responsible_party_patch(
     other_org = OrganizationFactory.create()
 
     api_client.force_login(plan_admin_user)
+
     # Check that normal case works
+    initial_log_count = count_log_entries(instance=action, action='wagtail.edit', plan=plan)
     response = api_client.patch(action_detail_url, data={
         'responsible_parties': [{'organization': plan_org.pk, 'role': None}],
     })
@@ -284,6 +302,9 @@ def test_action_responsible_party_patch(
     assert action.responsible_parties.count() == 1
     assert action.responsible_parties.first().organization == plan_org
 
+    # Verify log entry was created for successful PATCH
+    assert count_log_entries(instance=action, action='wagtail.edit', plan=plan) == initial_log_count + 1
+
     # Ensure that only orgs that are available for the plan
     # can be selected.
     response = api_client.patch(action_detail_url, data={
@@ -291,11 +312,15 @@ def test_action_responsible_party_patch(
     })
     assert response.status_code == 400
 
+    current_log_count = count_log_entries(instance=action, action='wagtail.edit', plan=plan)
     response = api_client.patch(action_detail_url, data={
         'responsible_parties': [],
     })
     assert response.status_code == 200
     assert action.responsible_parties.count() == 0
+
+    # Verify log entry was created for second successful PATCH
+    assert count_log_entries(instance=action, action='wagtail.edit', plan=plan) == current_log_count + 1
 
     response = api_client.patch(action_detail_url, data={
         'responsible_parties': [{'organization': 'abc', 'role': None}],
@@ -306,6 +331,38 @@ def test_action_responsible_party_patch(
         'responsible_parties': {'organization': plan_org.pk, 'role': None},
     })
     assert response.status_code == 400
+
+
+def test_action_delete_creates_log_entry(
+        api_client, plan, action_list_url, person_factory):
+    """Test that deleting an action creates a PlanScopedModelLogEntry with action='wagtail.delete'."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    # Create an action to delete
+    action = ActionFactory.create(plan=plan, identifier='DELETE-ME')
+    action_pk = action.pk
+    action_detail_url = reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': action.pk})
+
+    # Delete the action
+    response = api_client.delete(action_detail_url)
+    assert response.status_code == 204
+
+    # Verify the action was deleted
+    assert not Action.objects.filter(pk=action_pk).exists()
+
+    # Verify that a log entry was created for the deletion
+    # Note: We need to create a temporary object with the same pk to use assert_log_entry_created
+    # Or we can check directly
+    content_type = ContentType.objects.get_for_model(Action, for_concrete_model=False)
+    log_entry = PlanScopedModelLogEntry.objects.filter(
+        content_type=content_type,
+        object_id=str(action_pk),
+        action='wagtail.delete',
+        plan=plan
+    ).first()
+    assert log_entry is not None, f"Expected log entry for deleted action {action_pk}"
+    assert log_entry.user_id == admin_person.user.pk
 
 
 def test_openapi_schema(api_client, openapi_url):
@@ -347,6 +404,73 @@ def test_action_bulk_serializer_reorder(plan, order):
     actions_after_save = list(plan.actions.all())
     assert actions_after_save == actions
     assert [a1.order == a2.order for a1, a2 in zip(actions_after_save, actions)]
+
+
+def test_bulk_action_post_creates_individual_log_entries(
+        api_client, plan, action_list_url, person_factory):
+    """Test that bulk POST of actions creates individual PlanScopedModelLogEntry for each action."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
+
+    # Bulk create 3 actions
+    response = api_client.post(action_list_url, data=[
+        {'identifier': 'BULK-1', 'name': 'Action 1', 'plan': plan.pk},
+        {'identifier': 'BULK-2', 'name': 'Action 2', 'plan': plan.pk},
+        {'identifier': 'BULK-3', 'name': 'Action 3', 'plan': plan.pk},
+    ])
+    assert response.status_code == 201
+
+    # Verify 3 actions were created
+    assert Action.objects.filter(plan=plan, identifier__startswith='BULK-').count() == 3
+
+    # Verify that 3 log entries were created (one for each action)
+    final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
+    assert final_log_count == initial_log_count + 3
+
+    # Verify each action has its own log entry with correct object_id
+    for identifier in ['BULK-1', 'BULK-2', 'BULK-3']:
+        action = Action.objects.get(plan=plan, identifier=identifier)
+        assert count_log_entries(instance=action, action='wagtail.create', plan=plan) == 1
+
+
+def test_bulk_action_put_creates_individual_log_entries(
+        api_client, plan, action_list_url, person_factory):
+    """Test that bulk PUT of actions creates individual PlanScopedModelLogEntry for each action."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    # Create 3 actions to update
+    actions = [
+        ActionFactory.create(plan=plan, identifier=f'UPDATE-{i}', name=f'Original {i}')
+        for i in range(1, 4)
+    ]
+
+    # Clear any existing log entries for these actions to have a clean count
+    initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
+
+    # Bulk update all 3 actions
+    data = []
+    for action in actions:
+        serialized = ActionSerializer(action).data
+        serialized['name'] = f'Updated {action.identifier}'
+        data.append(serialized)
+
+    response = api_client.put(action_list_url, data=data)
+    assert response.status_code == 200
+
+    # Verify that log entries were created for bulk update
+    # Note: Based on current implementation, bulk updates create log entries with action='wagtail.edit'
+    final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
+    assert final_log_count > initial_log_count
+
+    # Verify each action has at least one log entry
+    for action in actions:
+        action.refresh_from_db()
+        # At minimum, there should be a wagtail.edit log entry
+        total_logs = count_log_entries(instance=action, plan=plan)
+        assert total_logs >= 1, f"Expected at least 1 log entry for action {action.identifier}"
 
 
 def test_category_api_get(api_client, category_list_url, category):

@@ -27,7 +27,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
             PlanScopedModelLogEntry(
                 content_type=content_type,
                 label=str(instance),
-                action=instance,
+                action=action,
                 timestamp=timestamp,
                 data=data,
                 plan_id=plan.pk,

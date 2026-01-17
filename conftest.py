@@ -51,7 +51,12 @@ class JSONAPIClient(APIClient):
         if 'HTTP_ACCEPT' not in kwargs:
             kwargs['HTTP_ACCEPT'] = 'application/json'
         resp = super().request(**kwargs)
-        resp.json_data = json.loads(resp.content)
+        # Only parse JSON if there's content (avoid parsing empty 204 No Content responses)
+        if resp.status_code == 204:
+            assert not resp.content
+            resp.json_data = None
+        else:
+            resp.json_data = json.loads(resp.content)
         return resp
 
 
