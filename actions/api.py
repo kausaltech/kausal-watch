@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast, override
 from uuid import UUID
 
 import rest_framework.fields
@@ -30,8 +30,8 @@ from kausal_common.people.api import PersonSerializer as BasePersonSerializer
 from kausal_common.users import user_or_none
 
 from aplans.api_router import router
-from aplans.permissions import AnonReadOnly
-from aplans.rest_api import PlanRelatedModelSerializer
+from aplans.permissions import AnonReadOnly, WatchObjectPermissions
+from aplans.rest_api import PlanRelatedModelSerializer, get_plan_from_view
 from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ActionQuerySet
@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from django.db.models import Model, QuerySet
+    from django.views.generic import View
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
 
@@ -220,52 +221,24 @@ plan_router.register(
 )
 
 
-class ActionPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, plan: Plan, action: Action | None = None):
-        # Check for object permissions first
-        if not user.has_perms([perm]):
-            return False
-        if perm == 'actions.change_action':
-            if not user.can_modify_action(action=action, plan=plan):
-                return False
-        elif perm == 'actions.add_action':
-            if not user.can_create_action(plan=plan):
-                return False
-        elif perm == 'actions.delete_action':
-            if not user.can_delete_action(plan=plan):
-                return False
-        else:
-            return False
-        return True
+class ActionPermission(WatchObjectPermissions):
+    model = Action
 
-    def has_permission(self, request: Request, view):
-        plan_pk = view.kwargs.get('plan_pk')
-        if plan_pk:
-            plan = Plan.objects.filter(id=plan_pk).first()
-            if plan is None:
-                raise exceptions.NotFound(detail='Plan not found')
-        else:
-            plan = Plan.objects.get_queryset().live().first()
-            assert plan is not None
-        if request.method is None:
-            return False
-        perms = self.get_required_permissions(request.method, Action)
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, plan) for perm in perms)
-
-    def has_object_permission(self, request, view, obj):
-        if request.method is None:
-            return False
-        perms = self.get_required_object_permissions(request.method, Action)
-        if not perms and request.method in permissions.SAFE_METHODS:
-            return True
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, obj.plan, obj) for perm in perms)
+    @override
+    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+        plan = get_plan_from_view(view)
+        match perm:
+            case 'actions.change_action':
+                assert obj is None or isinstance(obj, Action)
+                return user.can_modify_action(action=obj, plan=plan)
+            case 'actions.add_action':
+                assert obj is None
+                return user.can_create_action(plan=plan)
+            case 'actions.delete_action':
+                # For now we don't have object-specific delete permissions
+                assert obj is None
+                return user.can_delete_action(plan=plan)
+        return False
 
 
 @extend_schema_field(
@@ -1157,12 +1130,9 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
     serializer_class = ActionSerializer
 
     def get_permissions(self):
-        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
-            permission_classes = [AnonReadOnly]
-        else:
-            permission_classes = [ActionPermission]
-        return [permission() for permission in permission_classes]
+            return [AnonReadOnly()]
+        return [ActionPermission()]
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -1223,52 +1193,28 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer[CategoryType
         fields = '__all__'
 
 
-class CategoryPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, category_type: CategoryType, category: Category | None = None) -> bool:
-        # Check for object permissions first
-        if not user.has_perms([perm]):
-            return False
-        if perm == 'actions.change_category':
-            if not user.can_modify_category(category=category):
-                return False
-        elif perm == 'actions.add_category':
-            if not user.can_create_category(category_type=category_type):
-                return False
-        elif perm == 'actions.delete_category':
-            if not user.can_delete_category(category_type=category_type):
-                return False
-        else:
-            return False
-        return True
+class CategoryPermission(WatchObjectPermissions):
+    model = Category
 
-    def has_permission(self, request: Request, view) -> bool:
+    @override
+    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
         category_type_pk = view.kwargs.get('category_type_pk')
-        if category_type_pk:
-            category_type = CategoryType.objects.filter(id=category_type_pk).first()
-            if category_type is None:
-                raise exceptions.NotFound(detail='Category type not found')
-        else:
-            category_type = CategoryType.objects.first()
-            assert category_type is not None
-        if request.method is None:
-            return False
-        perms = self.get_required_permissions(request.method, Category)
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, category_type) for perm in perms)
-
-    def has_object_permission(self, request: Request, view, obj):
-        if request.method is None:
-            return False
-        perms = self.get_required_object_permissions(request.method, Category)
-        if not perms and request.method in permissions.SAFE_METHODS:
-            return True
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, obj.type, obj) for perm in perms)
+        try:
+            category_type = CategoryType.objects.get(id=category_type_pk)
+        except CategoryType.DoesNotExist as e:
+            raise exceptions.NotFound(detail='Category type not found') from e
+        match perm:
+            case 'actions.change_category':
+                assert obj is None or isinstance(obj, Category)
+                return user.can_modify_category(category=obj)
+            case 'actions.add_category':
+                assert obj is None
+                return user.can_create_category(category_type=category_type)
+            case 'actions.delete_category':
+                # For now we don't have object-specific delete permissions
+                assert obj is None
+                return user.can_delete_category(category_type=category_type)
+        return False
 
 
 class CategoryTypeViewSet(viewsets.ModelViewSet[CategoryType]):
@@ -1387,12 +1333,9 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
     serializer_class = CategorySerializer
 
     def get_permissions(self):
-        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
-            permission_classes = [AnonReadOnly]
-        else:
-            permission_classes = [CategoryPermission]
-        return [permission() for permission in permission_classes]
+            return [AnonReadOnly()]
+        return [CategoryPermission()]
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -1410,51 +1353,24 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
 category_type_router.register('categories', CategoryViewSet, basename='category')
 
 
-class OrganizationPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, organization: Organization | None = None):
-        # Check for object permissions first
-        if not user.has_perms([perm]):
-            return False
-        if perm == 'orgs.change_organization':
-            if not user.can_modify_organization(organization=organization):
-                return False
-        elif perm == 'orgs.add_organization':
-            if not user.can_create_organization():
-                return False
-        elif perm == 'orgs.delete_organization':
-            if not user.can_delete_organization():
-                return False
-        else:
-            return False
-        return True
+class OrganizationPermission(WatchObjectPermissions):
+    model = Organization
 
-    def has_permission(self, request: Request, view):
-        # plan_pk = view.kwargs.get('plan_pk')
-        # if plan_pk:
-        #     plan = Plan.objects.filter(id=plan_pk).first()
-        #     if plan is None:
-        #         raise exceptions.NotFound(detail='Plan not found')
-        # else:
-        #     plan = Plan.objects.live().first()
-        if request.method is None:
-            return False
-        perms = self.get_required_permissions(request.method, Organization)
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm) for perm in perms)
+    @override
+    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+        match perm:
+            case 'orgs.change_organization':
+                assert obj is None or isinstance(obj, Organization)
+                return user.can_modify_organization(organization=obj)
+            case 'orgs.add_organization':
+                assert obj is None
+                return user.can_create_organization()
+            case 'orgs.delete_organization':
+                # For now we don't have object-specific delete permissions
+                assert obj is None
+                return user.can_delete_organization()
+        return False
 
-    def has_object_permission(self, request, view, obj):
-        if request.method is None:
-            return False
-        perms = self.get_required_object_permissions(request.method, Organization)
-        if not perms and request.method in permissions.SAFE_METHODS:
-            return True
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, obj) for perm in perms)
 
 class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
     uuid = serializers.UUIDField(required=False)
@@ -1490,12 +1406,9 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return self.bulk_update(request, *args, **kwargs)
 
     def get_permissions(self):
-        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
-            permission_classes = [AnonReadOnly]
-        else:
-            permission_classes = [OrganizationPermission]
-        return [permission() for permission in permission_classes]
+            return [AnonReadOnly()]
+        return [OrganizationPermission()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1510,51 +1423,26 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
 
 
 
-class PersonPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, person: Person = None, plan: Plan = None):
-        # Check for object permissions first
-        if not user.has_perms([perm]):
-            return False
-        if perm == 'people.change_person':
-            if not user.can_modify_person(person=person):
-                return False
-        elif perm == 'people.add_person':
-            if not user.can_create_person():
-                return False
-        elif perm == 'people.delete_person':
-            if person is None:
-                #  Does the user have deletion rights in general
-                if not user.is_general_admin_for_plan(plan) and not user.is_superuser:
-                    return False
-            # Does the user have deletion rights to this person in this plan
-            elif not user.can_edit_or_delete_person_within_plan(person, plan=plan):
-                return False
-        else:
-            return False
-        return True
+class PersonPermission(WatchObjectPermissions):
+    model = Person
 
-    def has_permission(self, request: Request, view):
-        if request.method is None:
-            return False
-        perms = self.get_required_permissions(request.method, Person)
-        plan = request.get_active_admin_plan()
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, plan=plan) for perm in perms)
+    @override
+    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+        match perm:
+            case 'people.change_person':
+                assert obj is None or isinstance(obj, Person)
+                return user.can_modify_person(person=obj)
+            case 'people.add_person':
+                assert obj is None
+                return user.can_create_person()
+            case 'people.delete_person':
+                plan = get_plan_from_view(view)
+                if obj is None:
+                    return user.is_superuser or user.is_general_admin_for_plan(plan)
+                assert isinstance(obj, Person)
+                return user.can_edit_or_delete_person_within_plan(obj, plan=plan)
+        return False
 
-    def has_object_permission(self, request, view, obj):
-        if request.method is None:
-            return False
-        perms = self.get_required_object_permissions(request.method, Person)
-        plan = request.get_active_admin_plan()
-        if not perms and request.method in permissions.SAFE_METHODS:
-            return True
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, person=obj, plan=plan) for perm in perms)
 
 class PersonSerializer(BasePersonSerializer):
     def __init__(self, *args, **kwargs):
@@ -1584,12 +1472,9 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
         instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
     def get_permissions(self):
-        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
-            permission_classes = [AnonReadOnly]
-        else:
-            permission_classes = [PersonPermission]
-        return [permission() for permission in permission_classes]
+            return [AnonReadOnly()]
+        return [PersonPermission()]
 
     def get_plan(self):
         plan_identifier = self.request.query_params.get('plan', None)
@@ -1688,12 +1573,9 @@ class ActionTaskViewSet(ViewSetWithPlanContext, BulkModelViewSet[ActionTask]):
     serializer_class = ActionTaskSerializer
 
     def get_permissions(self):
-        permission_classes: list[type[permissions.BasePermission]]
         if self.action == 'list':
-            permission_classes = [AnonReadOnly]
-        else:
-            permission_classes = [ActionTaskPermission]
-        return [permission() for permission in permission_classes]
+            return [AnonReadOnly()]
+        return [ActionTaskPermission()]
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -1719,49 +1601,20 @@ action_task_router = NestedBulkRouter(plan_router, 'action-tasks', lookup='actio
 all_routers.append(action_task_router)
 
 
-class ActionTaskPermission(permissions.DjangoObjectPermissions):
-    def check_permission(self, user: User, perm: str, plan: Plan, task: ActionTask | None = None):
-        # Check for object permissions first
-        if not user.has_perms([perm]):
-            return False
-        if task:
-            action = task.action
+class ActionTaskPermission(WatchObjectPermissions):
+    model = ActionTask
+
+    @override
+    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+        if obj:
+            assert isinstance(obj, ActionTask)
+            action = obj.action
         else:
             action = None
         if perm in (f'actions.{op}_actiontask' for op in ('change', 'add', 'delete')):
-            if not user.can_modify_action(action=action, plan=plan):
-                return False
-        else:
-            return False
-        return True
-
-    def has_permission(self, request: Request, view):
-        plan_pk = view.kwargs.get('plan_pk')
-        if plan_pk:
-            plan = Plan.objects.filter(id=plan_pk).first()
-            if plan is None:
-                raise exceptions.NotFound(detail='Plan not found')
-        else:
-            plan = Plan.objects.get_queryset().live().first()
-            assert plan is not None
-        if request.method is None:
-            return False
-        perms = self.get_required_permissions(request.method, ActionTask)
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, plan) for perm in perms)
-
-    def has_object_permission(self, request, view, obj):
-        if request.method is None:
-            return False
-        perms = self.get_required_object_permissions(request.method, ActionTask)
-        if not perms and request.method in permissions.SAFE_METHODS:
-            return True
-        user = user_or_none(request.user)
-        if user is None:
-            return False
-        return all(self.check_permission(user, perm, obj.action.plan, obj) for perm in perms)
+            plan = get_plan_from_view(view)
+            return user.can_modify_action(action=action, plan=plan)
+        return False
 
 
 class ScenarioSerializer(serializers.HyperlinkedModelSerializer):

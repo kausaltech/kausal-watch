@@ -7,11 +7,24 @@ from rest_framework import exceptions, serializers
 from actions.models import Plan
 
 if typing.TYPE_CHECKING:
+    from django.views.generic import View
+
     from aplans.utils import PlanRelatedModel
 
 
 def get_default_plan() -> Plan:
     return Plan.objects.get_queryset().live()[0]
+
+
+def get_plan_from_view(view: View) -> Plan:
+    plan_pk = view.kwargs.get('plan_pk')
+    if plan_pk:
+        plan = Plan.objects.filter(id=plan_pk).first()
+    else:
+        plan = Plan.objects.get_queryset().live().first()
+    if plan is None:
+        raise exceptions.NotFound(detail='Plan not found')
+    return plan
 
 
 class PlanRelatedModelSerializer[Model: PlanRelatedModel](serializers.ModelSerializer[Model]):

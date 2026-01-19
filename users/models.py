@@ -506,6 +506,9 @@ class User(AbstractUser):
             return True
         return self.is_general_admin_for_plan(plan)
 
+    def can_delete_indicator(self, plan):
+        return self.can_create_indicator(plan)
+
     def can_modify_indicator(self, indicator=None):
         if self.is_superuser:
             return True
