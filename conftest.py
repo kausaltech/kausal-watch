@@ -106,7 +106,7 @@ register(documents_factories.AplansDocumentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.CommonIndicatorNormalizatorFactory)
-register(indicators_factories.IndicatorFactory)
+register(indicators_factories.IndicatorFactory, plans=LazyFixture(lambda plan: [plan]))
 register(indicators_factories.IndicatorValueFactory)
 register(indicators_factories.IndicatorBlockFactory)
 # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a

@@ -1,12 +1,6 @@
 from django.urls import reverse
 
 import pytest
-from pytest_factoryboy import register
-
-from .factories import IndicatorFactory, UnitFactory
-
-register(IndicatorFactory)
-register(UnitFactory)
 
 
 @pytest.fixture

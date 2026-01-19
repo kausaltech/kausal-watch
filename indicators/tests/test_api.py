@@ -8,6 +8,7 @@ import pytest
 
 from actions.tests.factories import CategoryFactory, CategoryTypeFactory
 from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -204,8 +205,8 @@ def test_add_value_updates_due_date(client, plan, plan_admin_user):
 
 
 def test_update_contact_persons(api_client, plan, plan_admin_user, indicator, indicator_detail_url):
-    contact1 = IndicatorContactFactory()
-    contact2 = IndicatorContactFactory()
+    person1 = PersonFactory.create()
+    person2 = PersonFactory.create()
 
     api_client.force_login(plan_admin_user)
     data = {
@@ -213,8 +214,8 @@ def test_update_contact_persons(api_client, plan, plan_admin_user, indicator, in
         "unit": indicator.unit.id,
         "organization": indicator.organization.id,
         "contact_persons": [
-            {"person": contact1.person.id},
-            {"person": contact2.person.id},
+            {"person": person1.id},
+            {"person": person2.id},
         ],
     }
 
@@ -223,7 +224,7 @@ def test_update_contact_persons(api_client, plan, plan_admin_user, indicator, in
 
     indicator.refresh_from_db()
     assert indicator.contact_persons.count() == 2
-    assert set(indicator.contact_persons.values_list('person_id', flat=True)) == {contact1.person.id, contact2.person.id}
+    assert set(indicator.contact_persons.values_list('person_id', flat=True)) == {person1.id, person2.id}
 
 
 def test_update_categories(api_client, plan, plan_admin_user, indicator, indicator_detail_url):

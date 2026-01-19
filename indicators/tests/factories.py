@@ -94,9 +94,7 @@ class IndicatorFactory(DjangoModelFactory[Indicator]):
     @post_generation
     @staticmethod
     def plans(obj: Indicator, create, extracted, **kwargs) -> None:
-        if not create:
-            return
-        if extracted:
+        if create and extracted:
             for plan in extracted:
                 obj.plans.add(plan)
 

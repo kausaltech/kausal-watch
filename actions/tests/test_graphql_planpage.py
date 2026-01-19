@@ -145,9 +145,10 @@ def test_category_list_block(graphql_client_query_data, category_list_block, pla
     )
 
 
-def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_with_pages):
+@pytest.mark.parametrize('indicator__plans', [[]])
+def test_indicator_group_block(graphql_client_query_data, indicator, indicator_block, plan_with_pages):
     plan = plan_with_pages
-    indicator = indicator_block['indicator']
+    assert indicator == indicator_block['indicator']
     assert not indicator.goals.exists()
     assert not indicator.levels.exists()
     assert indicator.latest_value is None
