@@ -177,7 +177,24 @@ def test_action_put_as_contact_person_denied_for_other_action(api_client, action
     response = api_client.put(action_detail_url, data={
         'identifier': 'ID-1',
         'id': action.id,
-        'name': 'bar'})
+        'name': 'bar',
+    })
+    assert response.status_code == 403
+
+
+def test_action_bulk_put_as_contact_person_denied_for_other_action(api_client, action, action_list_url):
+    contact = ActionContactFactory.create(action__plan=action.plan)
+    user = contact.person.user
+    assert user
+    assert not user.is_superuser
+    assert action.plan not in user.person.general_admin_plans.all()
+    assert contact.action != action
+    api_client.force_login(user)
+    response = api_client.put(action_list_url, data=[{
+        'identifier': 'ID-1',
+        'id': action.id,
+        'name': 'bar',
+    }])
     assert response.status_code == 403
 
 
@@ -193,6 +210,20 @@ def test_action_put_as_contact_person_allowed_for_own_action(api_client, plan):
         'identifier': 'ID-1',
         'id': contact.action.id,
         'name': 'bar'})
+    assert response.status_code == 200
+
+
+def test_action_bulk_put_as_contact_person_allowed_for_own_action(api_client, plan, action_list_url):
+    contact = ActionContactFactory.create(action__plan=plan)
+    user = contact.person.user
+    assert user
+    assert not user.is_superuser
+    assert contact.action.plan not in user.person.general_admin_plans.all()
+    api_client.force_login(user)
+    response = api_client.put(action_list_url, data=[{
+        'identifier': 'ID-1',
+        'id': contact.action.id,
+        'name': 'bar'}])
     assert response.status_code == 200
 
 

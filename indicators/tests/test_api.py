@@ -314,3 +314,25 @@ def test_get_indicator_with_contact_persons(api_client, plan_admin_user, indicat
     response = api_client.get(indicator_detail_url)
     assert response.status_code == 200
     assert response.data['contact_persons'] == [{'person': contact.person.id}]
+
+
+def test_bulk_update_indicator_without_permissions(api_client, plan, indicator_list_url):
+    indicator1 = IndicatorFactory.create(plans=[plan], organization=plan.organization)
+    indicator2 = IndicatorFactory.create(plans=[plan], organization=plan.organization)
+    contact = IndicatorContactFactory.create(indicator=indicator1)
+
+    # User in contact will try to modify indicator2, which they do not have permissions for
+    api_client.force_login(contact.person.user)
+    data = [{
+        'id': indicator2.id,
+        'name': f'updated {indicator2.name}',
+        'unit': indicator2.unit.pk,
+        'organization': indicator2.organization.id,
+    }]
+
+    response = api_client.put(indicator_list_url, data)
+    assert response.status_code == 403
+
+    old_name = indicator2.name
+    indicator2.refresh_from_db()
+    assert indicator2.name == old_name
