@@ -314,7 +314,7 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         # Disallow changing organization to one with different language for now because which language variants of
         # translatable form fields are present depends on the organization's language.
         organization = self.cleaned_data['organization']
-        if self.instance.pk is not None and self.instance.organization != organization:
+        if self.instance.pk is not None and self.instance.organization.primary_language != organization.primary_language:
             raise ValidationError(
                 _("Changing the organization to one with a different primary language is currently not supported"),
             )
