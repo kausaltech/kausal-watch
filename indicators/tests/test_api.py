@@ -385,6 +385,8 @@ def test_indicator_delete_creates_log_entry(
     """Test that deleting an indicator creates a PlanScopedModelLogEntry with action='wagtail.delete'."""
     api_client.force_login(plan_admin_user)
 
+    assert plan.pk == plan_admin_user.person.general_admin_plans.first().pk
+
     indicator = indicator_factory(plans=[plan])
     indicator_pk = indicator.pk
     indicator_detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
@@ -438,17 +440,20 @@ def test_bulk_indicator_put_creates_individual_log_entries(
     api_client.force_login(admin_person.user)
 
     indicators = [
-        indicator_factory(plans=[plan], name=f'Original Indicator {i}')
+        indicator_factory(plans=[plan], organization=plan.organization, name=f'Original Indicator {i}')
         for i in range(1, 4)
     ]
 
     initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
 
-    data = []
-    for indicator in indicators:
-        serialized = IndicatorSerializer(indicator).data
-        serialized['name'] = f'Updated {indicator.name}'
-        data.append(serialized)
+    data = [{
+            'id': indicator.id,
+            'uuid': indicator.uuid,
+            'name': f'Updated {indicator.name}',
+            'unit': indicator.unit.pk,
+            'organization': indicator.organization.pk,
+           } for indicator in indicators
+    ]
 
     response = api_client.put(indicator_list_url, data=data)
     assert response.status_code == 200

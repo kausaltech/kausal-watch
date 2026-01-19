@@ -27,6 +27,8 @@ def test_organization_post_creates_log_entry(
     response = api_client.post(organization_list_url + f'?plan={plan.identifier}', data={
         'name': 'Test Organization',
         'abbreviation': 'TEST-ORG',
+        'parent': None,
+        'left_sibling': None,
     })
     assert response.status_code == 201
 
@@ -35,18 +37,21 @@ def test_organization_post_creates_log_entry(
 
 
 def test_organization_put_creates_log_entry(
-        api_client, plan, organization_list_url, organization_factory, person_factory):
+        api_client, plan, organization_list_url, organization_factory, plan_admin_person):
     """Test that updating an organization creates a PlanScopedModelLogEntry with action='wagtail.edit'."""
-    admin_person = person_factory(general_admin_plans=[plan])
-    api_client.force_login(admin_person.user)
+    api_client.force_login(plan_admin_person.user)
 
-    org = organization_factory(name='Original Name')
-    org.related_plans.add(plan)
+    org = plan_admin_person.organization
+    assert plan_admin_person.organization == plan.organization
+    # org = organization_factory(name='Original Name')
+    # org.related_plans.add(plan)
     organization_detail_url = reverse('organization-detail', kwargs={'pk': org.pk})
 
     response = api_client.put(organization_detail_url + f'?plan={plan.identifier}', data={
         'name': 'Updated Name',
         'abbreviation': org.abbreviation,
+        'parent': None,
+        'left_sibling': None,
     })
     assert response.status_code == 200
 
@@ -89,9 +94,9 @@ def test_bulk_organization_post_creates_individual_log_entries(
     initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
 
     response = api_client.post(organization_list_url + f'?plan={plan.identifier}', data=[
-        {'name': 'Bulk Organization 1', 'abbreviation': 'BULK-ORG-1'},
-        {'name': 'Bulk Organization 2', 'abbreviation': 'BULK-ORG-2'},
-        {'name': 'Bulk Organization 3', 'abbreviation': 'BULK-ORG-3'},
+        {'name': 'Bulk Organization 1', 'abbreviation': 'BULK-ORG-1', 'parent': None, 'left_sibling': None},
+        {'name': 'Bulk Organization 2', 'abbreviation': 'BULK-ORG-2', 'parent': None, 'left_sibling': None},
+        {'name': 'Bulk Organization 3', 'abbreviation': 'BULK-ORG-3', 'parent': None, 'left_sibling': None},
     ])
     assert response.status_code == 201
 

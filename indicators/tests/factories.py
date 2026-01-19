@@ -98,7 +98,6 @@ class IndicatorFactory(DjangoModelFactory[Indicator]):
             for plan in extracted:
                 obj.plans.add(plan)
 
-
 class IndicatorLevelFactory(DjangoModelFactory[IndicatorLevel]):
     class Meta:
         model = 'indicators.IndicatorLevel'

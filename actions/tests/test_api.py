@@ -497,7 +497,8 @@ def test_category_post_creates_log_entry(
     response = api_client.post(category_list_url, data={
         'identifier': 'CAT-1',
         'name': 'Test Category',
-        'type': category_type.pk
+        'type': category_type.pk,
+        'parent': None
     })
     assert response.status_code == 201
 
@@ -521,7 +522,8 @@ def test_category_put_creates_log_entry(
     response = api_client.put(category_detail_url, data={
         'identifier': category.identifier,
         'name': 'Updated Name',
-        'type': category_type.pk
+        'type': category_type.pk,
+        'parent': None
     })
     assert response.status_code == 200
 
@@ -567,9 +569,9 @@ def test_bulk_category_post_creates_individual_log_entries(
     initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
 
     response = api_client.post(category_list_url, data=[
-        {'identifier': 'BULK-CAT-1', 'name': 'Category 1', 'type': category_type.pk},
-        {'identifier': 'BULK-CAT-2', 'name': 'Category 2', 'type': category_type.pk},
-        {'identifier': 'BULK-CAT-3', 'name': 'Category 3', 'type': category_type.pk},
+        {'identifier': 'BULK-CAT-1', 'name': 'Category 1', 'type': category_type.pk, 'parent': None},
+        {'identifier': 'BULK-CAT-2', 'name': 'Category 2', 'type': category_type.pk, 'parent': None},
+        {'identifier': 'BULK-CAT-3', 'name': 'Category 3', 'type': category_type.pk, 'parent': None},
     ])
     assert response.status_code == 201
 
