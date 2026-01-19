@@ -1436,7 +1436,7 @@ class PersonPermission(WatchObjectPermissions):
                 assert obj is None
                 return user.can_create_person()
             case 'people.delete_person':
-                plan = get_plan_from_view(view)
+                plan = user.get_active_admin_plan()
                 if obj is None:
                     return user.is_superuser or user.is_general_admin_for_plan(plan)
                 assert isinstance(obj, Person)
