@@ -236,7 +236,6 @@ class ActionPermission(WatchObjectPermissions):
                 return user.can_create_action(plan=plan)
             case 'actions.delete_action':
                 # For now we don't have object-specific delete permissions
-                assert obj is None
                 return user.can_delete_action(plan=plan)
         return False
 
@@ -1212,7 +1211,6 @@ class CategoryPermission(WatchObjectPermissions):
                 return user.can_create_category(category_type=category_type)
             case 'actions.delete_category':
                 # For now we don't have object-specific delete permissions
-                assert obj is None
                 return user.can_delete_category(category_type=category_type)
         return False
 
@@ -1367,7 +1365,6 @@ class OrganizationPermission(WatchObjectPermissions):
                 return user.can_create_organization()
             case 'orgs.delete_organization':
                 # For now we don't have object-specific delete permissions
-                assert obj is None
                 return user.can_delete_organization()
         return False
 

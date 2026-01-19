@@ -574,7 +574,6 @@ class IndicatorPermission(WatchObjectPermissions):
                 return user.can_create_indicator(plan=plan)
             case 'indicators.delete_indicator':
                 # For now we don't have object-specific delete permissions
-                assert obj is None
                 return user.can_delete_indicator(plan=plan)
         return False
 
