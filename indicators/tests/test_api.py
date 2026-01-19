@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from datetime import date
 
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 import pytest
 
 from actions.tests.factories import CategoryFactory, CategoryTypeFactory
+from actions.tests.utils import assert_log_entry_created, count_log_entries
+from audit_logging.models import PlanScopedModelLogEntry
+from indicators.api import IndicatorSerializer
+from indicators.models import Indicator
 from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
 from people.tests.factories import PersonFactory
 
@@ -337,3 +342,121 @@ def test_bulk_update_indicator_without_permissions(api_client, plan, indicator_l
     old_name = indicator2.name
     indicator2.refresh_from_db()
     assert indicator2.name == old_name
+
+
+def test_indicator_post_creates_log_entry(
+        api_client, plan, indicator_list_url, person_factory, unit_factory, organization_factory):
+    """Test that creating an indicator creates a PlanScopedModelLogEntry with action='wagtail.create'."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    unit = unit_factory()
+    org = organization_factory()
+    org.related_plans.add(plan)
+
+    response = api_client.post(indicator_list_url, data={
+        'name': 'Test Indicator',
+        'unit': unit.pk,
+        'organization': org.pk,
+    })
+    assert response.status_code == 201
+
+    created_indicator = Indicator.objects.get(name='Test Indicator')
+    assert_log_entry_created(created_indicator, 'wagtail.create', admin_person.user, plan)
+
+
+def test_indicator_put_creates_log_entry(
+        api_client, plan, plan_admin_user, indicator, indicator_detail_url):
+    """Test that updating an indicator creates a PlanScopedModelLogEntry with action='wagtail.edit'."""
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(indicator_detail_url, data={
+        'name': 'Updated Indicator',
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+    })
+    assert response.status_code == 200
+
+    assert_log_entry_created(indicator, 'wagtail.edit', plan_admin_user, plan)
+
+
+def test_indicator_delete_creates_log_entry(
+        api_client, plan, plan_admin_user, indicator_factory):
+    """Test that deleting an indicator creates a PlanScopedModelLogEntry with action='wagtail.delete'."""
+    api_client.force_login(plan_admin_user)
+
+    indicator = indicator_factory(plans=[plan])
+    indicator_pk = indicator.pk
+    indicator_detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    response = api_client.delete(indicator_detail_url)
+    assert response.status_code == 204
+
+    assert not Indicator.objects.filter(pk=indicator_pk).exists()
+
+    content_type = ContentType.objects.get_for_model(Indicator, for_concrete_model=False)
+    log_entry = PlanScopedModelLogEntry.objects.filter(
+        content_type=content_type,
+        object_id=str(indicator_pk),
+        action='wagtail.delete',
+        plan=plan
+    ).first()
+    assert log_entry is not None, f"Expected log entry for deleted indicator {indicator_pk}"
+    assert log_entry.user_id == plan_admin_user.pk
+
+
+def test_bulk_indicator_post_creates_individual_log_entries(
+        api_client, plan, indicator_list_url, person_factory, unit_factory, organization_factory):
+    """Test that bulk POST of indicators creates individual PlanScopedModelLogEntry for each indicator."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    unit = unit_factory()
+    org = organization_factory()
+    org.related_plans.add(plan)
+
+    initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
+
+    response = api_client.post(indicator_list_url, data=[
+        {'name': 'Indicator 1', 'unit': unit.pk, 'organization': org.pk},
+        {'name': 'Indicator 2', 'unit': unit.pk, 'organization': org.pk},
+        {'name': 'Indicator 3', 'unit': unit.pk, 'organization': org.pk},
+    ])
+    assert response.status_code == 201
+
+    assert Indicator.objects.filter(name__startswith='Indicator ').count() >= 3
+
+    final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.create').count()
+    assert final_log_count == initial_log_count + 3, \
+        f"Expected 3 new log entries, got {final_log_count - initial_log_count}"
+
+
+def test_bulk_indicator_put_creates_individual_log_entries(
+        api_client, plan, indicator_list_url, person_factory, indicator_factory):
+    """Test that bulk PUT of indicators creates individual PlanScopedModelLogEntry for each indicator."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    indicators = [
+        indicator_factory(plans=[plan], name=f'Original Indicator {i}')
+        for i in range(1, 4)
+    ]
+
+    initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
+
+    data = []
+    for indicator in indicators:
+        serialized = IndicatorSerializer(indicator).data
+        serialized['name'] = f'Updated {indicator.name}'
+        data.append(serialized)
+
+    response = api_client.put(indicator_list_url, data=data)
+    assert response.status_code == 200
+
+    final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
+    assert final_log_count == initial_log_count + 3, \
+        f"Expected 3 new log entries for bulk update, got {final_log_count - initial_log_count}"
+
+    for indicator in indicators:
+        total_logs = count_log_entries(instance=indicator, plan=plan)
+        assert total_logs >= 1, f"Expected at least 1 log entry for indicator {indicator.name}"

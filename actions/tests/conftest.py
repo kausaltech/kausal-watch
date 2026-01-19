@@ -73,3 +73,8 @@ def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workfl
     plan.features.moderation_workflow = workflow
     action_factory(plan=plan)
     return plan
+
+
+@pytest.fixture
+def action_task_list_url(plan):
+    return reverse('action-task-list', args=(plan.pk,))
