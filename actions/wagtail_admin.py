@@ -1150,6 +1150,7 @@ class ActivePlanAdmin(PlanAdmin):
     menu_label = _('Plan')
     menu_icon = 'kausal-plan'
     add_to_settings_menu = True
+    menu_order = 500
 
     def get_menu_item(self, order=None):
         item = ActivePlanMenuItem(self, order or self.get_menu_order())
