@@ -59,15 +59,16 @@ def test_person_put_creates_log_entry(
 
 
 def test_person_delete_creates_log_entry(
-        api_client, plan, person_list_url, plan_admin_person, person_factory):
+    api_client, plan, plan_admin_person, person_factory
+):
     """Test that deleting a person creates a PlanScopedModelLogEntry with action='wagtail.delete'."""
     api_client.force_login(plan_admin_person.user)
 
-    person = person_factory(first_name='Person', last_name='ToDelete')
+    person = person_factory(first_name='Person', last_name='ToDelete', organization=plan.organization)
     person_pk = person.pk
-    person_id_str = str(person.id)
 
-    response = api_client.delete(person_list_url + f'?plan={plan.identifier}', data=[person_id_str])
+    url = reverse('person-detail', kwargs={'pk': person_pk}) + f'?plan={plan.identifier}'
+    response = api_client.delete(url)
     assert response.status_code == 204
 
     assert not Person.objects.filter(pk=person_pk).exists()
