@@ -1,14 +1,25 @@
 {% load i18n %}
 <script>
     $(document).ready(function() {
-        $('.sidebar').append(
-            `<div class="release-impersonation">
+        // Hide the logout button when impersonating. This makes space for the release impersonation button.
+        $('.sidebar-footer ul li').has('form[action*="logout"]').hide();
+
+        // Add the release impersonation button
+        $('.sidebar-footer ul').append(
+            `<li class="sidebar-menu-item">
                 <form method="POST" action="{% url 'hijack:release' %}">
                     {% csrf_token %}
-                    <button type="submit" class="button bicolor icon icon-warning">{% trans 'Back to own user' %}</button>
+                    <button type="submit" class="sidebar-menu-item__link ">
+                        <svg class="icon icon-logout icon--menuitem" aria-hidden="true">
+                            <use href="#icon-logout"></use>
+                        </svg>
+                        <span class="menuitem">
+                            <span class="menuitem-label">{% trans 'Back to own user' %}</span>
+                        </span>
+                    </button>
                     <input type="hidden" name="next" value="{{ request.path }}">
                 </form>
-            </div>`
+            </li>`
         );
     });
 </script>
