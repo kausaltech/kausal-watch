@@ -154,3 +154,18 @@ def test_person_change_email_to_deactivated_users_email(plan_admin_user: User):
     assert old_user.is_active
     new_user.refresh_from_db()
     assert not new_user.is_active
+
+
+@pytest.mark.parametrize('value', [None, True, False])
+def test_person_participated_in_training_accepts_all_values(value):
+    """
+    Test that participated_in_training field accepts None, True, and False.
+
+    Regression test for WATCH-BACKEND-3DN: ValidationError was raised when
+    participated_in_training was blank/None because the field had null=True
+    but lacked blank=True.
+    """
+    person = PersonFactory.create(participated_in_training=value)
+    # full_clean() should not raise ValidationError
+    person.full_clean()
+    assert person.participated_in_training is value

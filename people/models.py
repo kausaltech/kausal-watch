@@ -120,6 +120,7 @@ DEFAULT_AVATAR_SIZE = 360
 class Person(BasePerson, IndirectPlanRelatedModel):
     participated_in_training = models.BooleanField(
         null=True,
+        blank=True,
         default=False,
         verbose_name=_('participated in training'),
         help_text=_('Set to keep track who have attended training sessions'),
