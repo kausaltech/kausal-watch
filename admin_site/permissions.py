@@ -1,7 +1,9 @@
 from contextlib import contextmanager
-from typing import Optional
 
 from django.conf import settings
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AnonymousUser
+from django.db.models import Model
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.permission_policies.collections import (
     CollectionOwnershipPermissionPolicy,
@@ -37,11 +39,41 @@ class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissi
 
 
 class PlanSpecificSingletonModelSuperuserPermissionPolicy(ModelPermissionPolicy):
-    """Allow access to edit a plan specific singleton model only if user is superuser."""
+    """Allow access to edit a plan-specific singleton model only if user is superuser."""
 
-    def user_has_permission(self, user, action):
-        if action == 'change' and user.is_superuser:
+    def user_has_permission(self, user: AbstractBaseUser | AnonymousUser, action: str) -> bool:
+        if action == 'change' and getattr(user, 'is_superuser', False):
             return True
+        return False
+
+
+class PlanSpecificSingletonModelPermissionPolicy(ModelPermissionPolicy):
+    """Allow access to edit a plan-specific singleton model for plan admins and superusers."""
+
+    def user_has_permission(self, user: AbstractBaseUser | AnonymousUser, action: str) -> bool:
+        if not isinstance(user, User):
+            return False
+        if action == 'change':
+            if user.is_superuser:
+                return True
+            # Allow plan admins to edit
+            plan = user.get_active_admin_plan(required=False)
+            if plan is not None and user.is_general_admin_for_plan(plan):
+                return True
+        return False
+
+    def user_has_permission_for_instance(
+        self, user: AbstractBaseUser | AnonymousUser, action: str, instance: Model
+    ) -> bool:
+        if not isinstance(user, User):
+            return False
+        if action == 'change':
+            if user.is_superuser:
+                return True
+            # Check if user is a plan admin for the instance's plan
+            plan = getattr(instance, 'plan', None)
+            if plan is not None and user.is_general_admin_for_plan(plan):
+                return True
         return False
 
 

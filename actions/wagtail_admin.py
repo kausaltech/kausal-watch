@@ -19,6 +19,7 @@ from wagtail.admin.messages import validation_error
 from wagtail.admin.panels import (
     FieldPanel,
     InlinePanel,
+    MultiFieldPanel,
     ObjectList,
     TabbedInterface,
 )
@@ -52,7 +53,10 @@ from admin_site.chooser import ClientChooser
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
-from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
+from admin_site.permissions import (
+    PlanSpecificSingletonModelPermissionPolicy,
+    PlanSpecificSingletonModelSuperuserPermissionPolicy,
+)
 from admin_site.viewsets import (
     BaseChangeLogMessageCreateView,
     BaseChangeLogMessageDeleteView,
@@ -451,14 +455,19 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
     menu_label = _('Plan features')
     menu_order = 501
 
-    panels = [
+    plan_admin_panels = [
         FieldPanel('enable_search'),
         FieldPanel('enable_indicator_comparison'),
         FieldPanel('indicator_ordering'),
-        # Arbitrary string as the 'permission' parameter, here 'superuser', can
-        # be used as a way to restrict a panel only to superusers. This is the
-        # recommended approach given in Wagtail docs as of writing:
-        # https://docs.wagtail.org/en/v6.1.3/reference/pages/panels.html#wagtail.admin.panels.FieldPanel.permission
+        FieldPanel('indicators_open_in_modal'),
+        FieldPanel('enable_change_log'),
+    ]
+
+    # Arbitrary string as the 'permission' parameter, here 'superuser', can
+    # be used as a way to restrict a panel only to superusers. This is the
+    # recommended approach given in Wagtail docs as of writing:
+    # https://docs.wagtail.org/en/v6.1.3/reference/pages/panels.html#wagtail.admin.panels.FieldPanel.permission
+    superuser_only_panels = [
         FieldPanel('allow_images_for_actions', permission='superuser'),
         FieldPanel('show_admin_link', permission='superuser'),
         FieldPanel('allow_public_site_login', permission='superuser'),
@@ -478,9 +487,13 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('display_field_visibility_restrictions', permission='superuser'),
         FieldPanel('output_report_action_print_layout', permission='superuser'),
         FieldPanel('password_protected', permission='superuser'),
-        FieldPanel('indicators_open_in_modal', permission='superuser'),
-        FieldPanel('enable_change_log', permission='superuser'),
     ]
+
+    # Define all panels explicitly to prevent Wagtail from auto-generating form fields
+    # for all model attributes. This list is overridden by ActivePlanFeaturesEditView.get_panel()
+    # which dynamically constructs panels based on user permissions using the plan_admin_panels
+    # and superuser_only_panels defined above.
+    panels = plan_admin_panels + superuser_only_panels
 
     def get_queryset(self, request):
         qs = self.model.objects.get_queryset()
@@ -504,6 +517,28 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView[PlanFeat
     def user_has_permission(self, permission):
         return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
 
+    def get_panel(self):
+        user = user_or_bust(self.request.user)
+
+        if user.is_superuser:
+            # Show grouped panels for superusers
+            panels: list = [
+                MultiFieldPanel(
+                    PlanFeaturesViewSet.plan_admin_panels,
+                    heading=_('Plan features that plan admins are allowed to change'),
+                ),
+                MultiFieldPanel(
+                    PlanFeaturesViewSet.superuser_only_panels,
+                    heading=_('Plan features that only superusers are allowed to change'),
+                    permission='superuser',
+                ),
+            ]
+        else:
+            # Show only plan admin fields without grouping for non-superusers
+            panels = PlanFeaturesViewSet.plan_admin_panels
+
+        return ObjectList(panels).bind_to_model(self.model)
+
 
 class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
     edit_view_class = ActivePlanFeaturesEditView
@@ -514,12 +549,7 @@ class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
 
     @property
     def permission_policy(self):
-        # TODO: Commit history looks like this viewset was meant to be open for
-        # plan admins, but due to a bug was really open only for superusers.
-        # Restrict access to superusers to keep the functionality same for now.
-        # Check in the future if this viewset should be opened up for plan
-        # admins.
-        return PlanSpecificSingletonModelSuperuserPermissionPolicy(self.model)
+        return PlanSpecificSingletonModelPermissionPolicy(self.model)
 
 
 register_snippet(ActivePlanFeaturesViewSet)
