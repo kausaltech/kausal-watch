@@ -387,7 +387,7 @@ def test_indicator_delete_creates_log_entry(
 
     assert plan.pk == plan_admin_user.person.general_admin_plans.first().pk
 
-    indicator = indicator_factory(plans=[plan])
+    indicator = indicator_factory(plans=[plan], organization=plan.organization)
     indicator_pk = indicator.pk
     indicator_detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
 

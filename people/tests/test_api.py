@@ -42,7 +42,7 @@ def test_person_put_creates_log_entry(
     """Test that updating a person creates a PlanScopedModelLogEntry with action='wagtail.edit'."""
     api_client.force_login(plan_admin_person.user)
 
-    person = person_factory(first_name='Original', last_name='Name')
+    person = person_factory(first_name='Original', last_name='Name', organization=plan.organization)
 
     response = api_client.put(person_list_url + f'?plan={plan.identifier}', data=[{
         'id': person.id,
@@ -106,12 +106,16 @@ def test_bulk_person_post_creates_individual_log_entries(
 
 
 def test_bulk_person_put_creates_individual_log_entries(
-        api_client, plan, person_list_url, plan_admin_person, person_factory):
+        api_client, plan, plan_admin_person, person_factory):
     """Test that bulk PUT of persons creates individual PlanScopedModelLogEntry for each person."""
     api_client.force_login(plan_admin_person.user)
-
     persons = [
-        person_factory(first_name=f'Original{i}', last_name=f'Person{i}', email=f'person{i}@example.com')
+        person_factory(
+            first_name=f'Original{i}',
+            last_name=f'Person{i}',
+            email=f'person-{i}@example.com',
+            organization=plan.organization,
+        )
         for i in range(1, 4)
     ]
 
