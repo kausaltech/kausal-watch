@@ -1503,7 +1503,7 @@ class PersonSerializer(BasePersonSerializer):
             self.fields.pop('email')
 
 @register_view
-class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
+class PersonViewSet(ModelWithImageViewMixin, AuditLoggingBulkModelViewSet[Person]):
     queryset = Person.objects.get_queryset()
     serializer_class = PersonSerializer
 
@@ -1519,6 +1519,8 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
         return self.bulk_update(request, *args, **kwargs)
 
     def perform_destroy(self, instance):
+        # Log the deletion before actually deleting
+        self._log_action(instance, 'wagtail.delete')
         # FIXME: Duplicated in people.wagtail_admin.PersonDeleteView.delete_instance()
         acting_admin_user = self.request.user
         instance.delete_and_deactivate_corresponding_user(acting_admin_user)
