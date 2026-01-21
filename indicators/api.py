@@ -19,7 +19,7 @@ from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.permissions import WatchObjectPermissions
 
-from actions.api import get_plan_from_view, plan_router
+from actions.api import AuditLoggingBulkModelViewSet, get_plan_from_view, plan_router
 from actions.models import Plan
 from people.models import Person
 
@@ -584,15 +584,20 @@ class IndicatorPermission(WatchObjectPermissions):
         OpenApiParameter(name='plan_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class IndicatorViewSet(BulkModelViewSet):
+class IndicatorViewSet(AuditLoggingBulkModelViewSet):
     serializer_class = IndicatorSerializer
     filterset_class = IndicatorFilter
 
-    def get_queryset(self):
+    def get_plan(self) -> Plan | None:
         plan_pk = self.kwargs.get('plan_pk')
         if not plan_pk:
+            return None
+        return Plan.objects.get(pk=plan_pk)
+
+    def get_queryset(self):
+        plan = self.get_plan()
+        if not plan:
             return Indicator.objects.none()
-        plan = Plan.objects.get(pk=plan_pk)
         return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')  # type: ignore[attr-defined]
 
     def get_permissions(self):
