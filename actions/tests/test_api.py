@@ -727,14 +727,19 @@ def test_bulk_action_task_put_creates_individual_log_entries(
 
     initial_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
 
-    data = []
-    for task in tasks:
-        serialized = ActionTaskSerializer(task).data
-        serialized['state'] = 'in_progress'
-        data.append(serialized)
+    data = [
+        {
+            'id': task.id,
+            'name': task.name,
+            'state': 'in_progress',
+            'due_at': '2025-12-31',
+            'action': action.pk,
+        }
+        for task in tasks
+    ]
 
     response = api_client.put(action_task_list_url, data=data)
-    assert response.status_code == 200
+    assert response.status_code == 200, response.content
 
     final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
     assert final_log_count == initial_log_count + 3, \
