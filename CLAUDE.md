@@ -30,6 +30,10 @@ Can integrate with Kausal Paths (scenario modeling product) for emissions impact
 ### Testing
 - `python run_tests.py` - Run all tests (includes kausal_watch_extensions if available)
 - `pytest` - Alternative test runner with configuration in pyproject.toml
+- `pytest --reuse-db` Most often better to run tests with this for speed
+- For testing, use pytest fixtures and factory_boy
+- Use the automatically generated factory fixtures and not the CamelCase factories directly
+- For testing, do not use test classes but pytest test functions in the module scope
 
 ### Linting and Type Checking
 - `ruff check` - Run code linting (configuration extends kausal_common/configs/ruff.toml)
@@ -205,3 +209,6 @@ Each Django app follows consistent naming conventions for different functionalit
 For in-depth implementation details on specific subsystems, see:
 
 - [MCP Server](docs/architecture/mcp-server.md) - Adding tools, GraphQL integration, authentication flow
+
+## Code Style Guidelines
+- Do not use inline comments to describe what the code is doing
