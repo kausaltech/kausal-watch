@@ -450,11 +450,17 @@ class Indicator(
             self.latest_value = latest_value
             update_fields.append('latest_value')
 
-        if self.updated_values_due_at is not None:
-            # If latest_value is newer than updated_values_due_at - 1 year, add 1 year to updated_values_due_at
+        if self.updated_values_due_at is not None and latest_value is not None:
+            # If latest_value is within (or past) the reporting period, bump updated_values_due_at forward.
+            # The reporting period is the year preceding the deadline.
+            # We loop in case the deadline was set far in the past and needs multiple bumps.
+            bumped = False
             reporting_period_start = self.updated_values_due_at - relativedelta(years=1)
-            if latest_value is not None and latest_value.date >= reporting_period_start:
+            while latest_value.date >= reporting_period_start:
                 self.updated_values_due_at += relativedelta(years=1)
+                reporting_period_start = self.updated_values_due_at - relativedelta(years=1)
+                bumped = True
+            if bumped:
                 update_fields.append('updated_values_due_at')
 
         if self.common is not None:
