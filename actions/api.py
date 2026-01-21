@@ -1387,7 +1387,9 @@ class OrganizationPermission(WatchObjectPermissions):
     def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
         match perm:
             case 'orgs.change_organization':
-                assert obj is None or isinstance(obj, Organization)
+                if obj is None:
+                    return permissions.DjangoModelPermissions.has_permission(self, view.request, view)
+                assert isinstance(obj, Organization)
                 return user.can_modify_organization(organization=obj)
             case 'orgs.add_organization':
                 assert obj is None
