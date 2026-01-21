@@ -106,7 +106,7 @@ def test_bulk_person_post_creates_individual_log_entries(
 
 
 def test_bulk_person_put_creates_individual_log_entries(
-        api_client, plan, plan_admin_person, person_factory):
+        api_client, person_list_url, plan, plan_admin_person, person_factory):
     """Test that bulk PUT of persons creates individual PlanScopedModelLogEntry for each person."""
     api_client.force_login(plan_admin_person.user)
     persons = [

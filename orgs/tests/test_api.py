@@ -43,8 +43,7 @@ def test_organization_put_creates_log_entry(
 
     org = plan_admin_person.organization
     assert plan_admin_person.organization == plan.organization
-    # org = organization_factory(name='Original Name')
-    # org.related_plans.add(plan)
+    assert plan_admin_person.general_admin_plans.first() == plan
     organization_detail_url = reverse('organization-detail', kwargs={'pk': org.pk})
 
     response = api_client.put(organization_detail_url + f'?plan={plan.identifier}', data={
@@ -53,9 +52,9 @@ def test_organization_put_creates_log_entry(
         'parent': None,
         'left_sibling': None,
     })
-    assert response.status_code == 200
+    assert response.status_code == 200, response.content
 
-    assert_log_entry_created(org, 'wagtail.edit', admin_person.user, plan)
+    assert_log_entry_created(org, 'wagtail.edit', plan_admin_person.user, plan)
 
 
 def test_organization_delete_creates_log_entry(
