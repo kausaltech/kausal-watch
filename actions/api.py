@@ -1125,23 +1125,12 @@ class ViewSetWithPlanContext:
         return context
 
 
-@extend_schema(
-    tags=['action'],
-)
-class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet[Action]):
-    serializer_class = ActionSerializer
+class AuditLoggingBulkModelViewSet[M: Model](BulkModelViewSet[M]):
+    """BulkModelViewSet with automatic audit logging for create/update/delete operations."""
 
-    def get_permissions(self):
-        if self.action == 'list':
-            return [AnonReadOnly()]
-        return [ActionPermission()]
-
-    def perform_update(self, serializer: serializers.Serializer[Action]):
-        super().perform_update(serializer)
-        instance = serializer.instance
-        if instance is None:
-            return
-        plan: Plan | None = self.get_plan()
+    def _log_action(self, instance, action_name: str) -> None:
+        """Log an action for an instance or list of instances."""
+        plan: Plan | None = self.get_plan()  # type: ignore[attr-defined]
         if plan is None:
             user = user_or_none(self.request.user)
             if user is None:
@@ -1156,11 +1145,41 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModel
 
         log(
             instance,
-            'wagtail.edit',
+            action_name,
             user=self.request.user,
             uuid=uuid.uuid4(),
             content_changed=True,
         )
+
+    def perform_create(self, serializer: serializers.Serializer[M]):
+        super().perform_create(serializer)
+        instance = serializer.instance
+        if instance is None:
+            return
+        self._log_action(instance, 'wagtail.create')
+
+    def perform_update(self, serializer: serializers.Serializer[M]):
+        super().perform_update(serializer)
+        instance = serializer.instance
+        if instance is None:
+            return
+        self._log_action(instance, 'wagtail.edit')
+
+    def perform_destroy(self, instance: M):
+        self._log_action(instance, 'wagtail.delete')
+        super().perform_destroy(instance)
+
+
+@extend_schema(
+    tags=['action'],
+)
+class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet[Action]):
+    serializer_class = ActionSerializer
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return [AnonReadOnly()]
+        return [ActionPermission()]
 
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
@@ -1356,7 +1375,7 @@ class CategorySerializer(  # type: ignore[misc]
         OpenApiParameter(name='category_type_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
+class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet):
     serializer_class = CategorySerializer
 
     def get_permissions(self):
