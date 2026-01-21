@@ -1437,7 +1437,7 @@ class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serial
 
 
 @register_view
-class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
+class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     filterset_fields = {
@@ -1457,15 +1457,20 @@ class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
             return [AnonReadOnly()]
         return [OrganizationPermission()]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    def get_plan(self) -> Plan | None:
         plan_identifier = self.request.query_params.get('plan', None)
         if plan_identifier is None:
-            return queryset
+            return None
         try:
-            plan = Plan.objects.get(identifier=plan_identifier)
+            return Plan.objects.get(identifier=plan_identifier)
         except Plan.DoesNotExist:
             raise exceptions.NotFound(detail='Plan not found') from None
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        plan = self.get_plan()
+        if plan is None:
+            return queryset
         return Organization.objects.qs.available_for_plan(plan)
 
 
