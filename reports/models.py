@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -25,6 +26,7 @@ from actions.models.action import Action
 from kausal_common.blocks.registry import FieldBlockContext
 from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
+from reports.utils import get_field_unique_key
 
 # The following model is for very specialized use and is only imported here so that Django finds it
 from actions.blocks.base import ActionReportContentField
@@ -138,6 +140,30 @@ class ReportType(PlanRelatedModelWithRevision):
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
+
+    def clean(self):
+        super().clean()
+
+        if not self.fields:
+            return
+
+        seen_keys: set[str] = set()
+        duplicates: list[str] = []
+        for field in self.fields:
+            if field is None or field.value is None:
+                continue
+            field_key = get_field_unique_key(field)
+            if field_key in seen_keys:
+                duplicates.append(field_key)
+            seen_keys.add(field_key)
+
+        if duplicates:
+            raise ValidationError({
+                'fields': _(
+                    "Duplicate fields detected: %(duplicates)s. "
+                    "Each field type (attribute type, category type) can only be added once."
+                ) % {'duplicates': ', '.join(duplicates)}
+            })
 
 
 @reversion.register()

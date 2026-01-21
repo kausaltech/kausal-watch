@@ -17,7 +17,7 @@ from loguru import logger
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from orgs.models import Organization
-from reports.utils import ReportCellValue, group_by_model
+from reports.utils import ReportCellValue, get_field_unique_key, group_by_model
 
 from .action_print_layout import write_action_summaries
 from .cursor_writer import Cell, CursorWriter
@@ -301,11 +301,21 @@ class ExcelReport:
         }
 
         fields = []
+        seen_field_keys: set[str] = set()
         for field in self.report.type.fields:
             if field is not None and field.value is not None and 'attribute_type' in field.value and \
                     field.value['attribute_type'] is None:
                 logger.error(f"Field has NoneType attribute_type in report type {self.report.type.name}.")
                 continue
+            # Generate a unique key for this field to detect duplicates
+            field_key = get_field_unique_key(field)
+            if field_key in seen_field_keys:
+                logger.warning(
+                    f"Duplicate field '{field_key}' detected in report type '{self.report.type.name}'. "
+                    "Skipping duplicate to prevent DataFrame column length mismatch."
+                )
+                continue
+            seen_field_keys.add(field_key)
             fields.append(field)
         for action in all_actions:
             action_identifier = action.data['identifier']
@@ -328,7 +338,7 @@ class ExcelReport:
                     self, field.value, action.data, related_objects, attribute_versions,
                 )
                 field_name = field.block.name
-                if field_name == 'attribute_type':
+                if field_name == 'attribute':
                     field_name = f'{field_name}.{field.value.get("attribute_type").identifier}'
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)

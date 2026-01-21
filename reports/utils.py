@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import typing
 from datetime import date, datetime
+from typing import Any
 
 if typing.TYPE_CHECKING:
-    from typing import Any, Literal
+    from typing import Literal
 
     from django.db.models import Model
 
@@ -55,6 +56,29 @@ def group_by_model(serialized_versions: list[SerializedVersion]) -> dict[str, li
 
 
 type ReportCellValue = str | datetime | date | float | None
+
+
+def get_field_unique_key(field: Any) -> str:
+    """
+    Generate a unique key for a report field to detect duplicates.
+
+    Different field types need different strategies:
+    - attribute fields: use the attribute type's identifier
+    - categories fields: use the category type's id
+    - other fields: use the block name (they're typically singletons)
+    """
+    block_name = field.block.name
+    # Attribute fields use block name 'attribute' and have an attribute_type in their value
+    if block_name == 'attribute' and field.value.get('attribute_type'):
+        return f'{block_name}.{field.value["attribute_type"].identifier}'
+    if block_name == 'categories' and field.value.get('category_type'):
+        category_type = field.value['category_type']
+        level = field.value.get('category_level')
+        key = f'{block_name}.{category_type.id}'
+        if level:
+            key = f'{key}.level_{level.id}'
+        return key
+    return block_name
 
 # These are magic numbers referring to the Excel built-in, non-custom,
 # and locale-independent formats for date with or without time. It is used to make
