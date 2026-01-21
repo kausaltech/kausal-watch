@@ -471,3 +471,25 @@ with Wagtail's styles but so far these are required.
 .select2-container--default .select2-selection--multiple .select2-selection__clear:hover {
   color: var(--w-color-text-context);
 }
+
+/* Impersonation warning styles */
+/* Style the account menu button with warning background when impersonating */
+.sidebar-footer__account--impersonating {
+  background-color: #FAA500 !important; /* Wagtail warning-100 color */
+  color: #2E1F5E !important; /* Wagtail primary color for proper contrast */
+}
+
+.sidebar-footer__account--impersonating:hover,
+.sidebar-footer__account--impersonating:focus {
+  background-color: #FDD074 !important; /* Wagtail warning-75 color for hover state */
+}
+
+/* Ensure the account label text also uses the proper contrast color */
+.sidebar-footer__account--impersonating .sidebar-footer__account-label {
+  color: #2E1F5E !important;
+}
+
+/* Ensure the chevron icon also uses the proper contrast color */
+.sidebar-footer__account--impersonating .icon {
+  color: #2E1F5E !important;
+}

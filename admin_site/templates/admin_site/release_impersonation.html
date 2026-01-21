@@ -1,7 +1,41 @@
 {% load i18n %}
+<style>
+    /* Informational text item styling */
+    .sidebar-footer ul li.sidebar-menu-item--info {
+        padding: 0.625rem 1rem !important;
+        color: var(--w-color-text-label-menus-default) !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        line-height: 1.5 !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        background-color: rgba(250, 165, 0, 0.15) !important;
+        border-bottom: 1px solid rgba(250, 165, 0, 0.3) !important;
+        pointer-events: none !important;
+        user-select: none !important;
+    }
+
+    /* Make the account menu scrollable when expanded */
+    .sidebar-footer button[aria-expanded="true"] ~ ul {
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+</style>
 <script>
     $(document).ready(function() {
-        // Hide the logout button when impersonating. This makes space for the release impersonation button.
+        // Style the account menu button with warning background
+        $('.sidebar-footer__account').addClass('sidebar-footer__account--impersonating');
+
+        // Add informational text at the top of the account menu
+        $('.sidebar-footer ul').prepend(
+            `<li class="sidebar-menu-item sidebar-menu-item--info">
+                {% trans "Viewing site as another user" %}
+            </li>`
+        );
+
+        // Hide the logout button when impersonating
         $('.sidebar-footer ul li').has('form[action*="logout"]').hide();
 
         // Add the release impersonation button
@@ -9,7 +43,7 @@
             `<li class="sidebar-menu-item">
                 <form method="POST" action="{% url 'hijack:release' %}">
                     {% csrf_token %}
-                    <button type="submit" class="sidebar-menu-item__link ">
+                    <button type="submit" class="sidebar-menu-item__link" title="{% trans 'Back to own user' %}">
                         <svg class="icon icon-logout icon--menuitem" aria-hidden="true">
                             <use href="#icon-logout"></use>
                         </svg>
