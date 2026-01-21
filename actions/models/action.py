@@ -49,6 +49,7 @@ from aplans.utils import (
     DateFormatField,
     IdentifierField,
     OrderedModel,
+    PlanRelatedModel,
     PlanRelatedModelWithRevision,
     PlanRelatedOrderedModel,
     RestrictedVisibilityModel,
@@ -1740,7 +1741,7 @@ class ActionRelatedModelTransModelMixin:
 
 
 @reversion.register()
-class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
+class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
     """
     A task that should be completed during the execution of an action.
 
@@ -1852,6 +1853,20 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
         # today = self.action.plan.now_in_local_timezone().date()
         # if self.completed_at is not None and self.completed_at > today:
         #     raise ValidationError({'completed_at': _("Date can't be in the future")})
+
+    def get_plans(self) -> list[Plan]:
+        """Return the plan(s) this task belongs to through its action."""
+        return [self.action.plan]
+
+    @classmethod
+    def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
+        """Filter queryset by plan through the action relationship."""
+        return qs.filter(action__plan=plan)
+
+    def initialize_plan_defaults(self, plan: Plan):
+        """Initialize plan defaults. ActionTask gets its plan through its action."""
+        # ActionTask doesn't have a direct plan field; it gets the plan through action
+        pass
 
     def get_notification_context(self, plan=None):
         if plan is None:

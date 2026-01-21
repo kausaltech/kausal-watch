@@ -1616,7 +1616,7 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin, serializers.Mo
             action_field.queryset = Action.objects.filter(plan=plan)
 
 
-class ActionTaskViewSet(ViewSetWithPlanContext, BulkModelViewSet[ActionTask]):
+class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[ActionTask]):
     queryset = ActionTask.objects.all()
     serializer_class = ActionTaskSerializer
 
