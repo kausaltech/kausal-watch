@@ -117,14 +117,19 @@ class PlanSpecificCache:
 
     @cached_property
     def category_type_dataset_schemas_by_id(self) -> dict[int, list[DatasetSchema]]:
+        ct_content_type = ContentType.objects.get_for_model(CategoryType)
+        plan_category_type_ids = set(self.plan.category_types.values_list('id', flat=True))
         qs = (
             DatasetSchema.objects.get_queryset()
             .for_model(CategoryType)
-            .filter(scopes__scope_id__in=self.plan.category_types.values_list('id', flat=True))
+            .filter(scopes__scope_id__in=plan_category_type_ids)
+            .prefetch_related('scopes')
         )
         by_id: dict[int, list[DatasetSchema]] = {}
         for ds in qs:
-            by_id.setdefault(ds.pk, []).append(ds)
+            for scope in ds.scopes.all():
+                if scope.scope_content_type_id == ct_content_type.pk and scope.scope_id in plan_category_type_ids:
+                    by_id.setdefault(scope.scope_id, []).append(ds)
         return by_id
 
     def get_dataset_schemas_for_object(self, instance: DatasetScopeType) -> list[DatasetSchema]:
