@@ -7,8 +7,9 @@ from django.urls import reverse
 import pytest
 
 from actions.api import ActionSerializer
-from actions.tests.factories import ActionContactFactory, ActionFactory
-from orgs.tests.factories import OrganizationFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -80,29 +81,45 @@ def test_person_api_get_for_plan_unauthenticated(api_client, person_list_url, pl
     assert 'detail' in keys
 
 
+@pytest.mark.parametrize('admin_type', ['plan_admin', 'organization_plan_admin'])
 def test_person_api_get_authenticated_and_authorized_for_single_plan(
-        client, person_list_url, api_client,
-        plan_factory, person_factory, action_contact_factory):
+    client, person_list_url, api_client, admin_type
+):
+    plan_of_admin_person = PlanFactory.create()
 
-    plan_of_admin_person = plan_factory()
-    admin_person = person_factory(general_admin_plans=[plan_of_admin_person])
+    match admin_type:
+        case 'plan_admin':
+            admin_person = PersonFactory.create(
+                organization=plan_of_admin_person.organization,
+                general_admin_plans=[plan_of_admin_person],
+            )
+        case 'organization_plan_admin':
+            admin_person = PersonFactory.create(organization=plan_of_admin_person.organization)
+            OrganizationPlanAdminFactory.create(
+                person=admin_person,
+                organization=plan_of_admin_person.organization,
+                plan=plan_of_admin_person
+            )
+        case _:
+            pytest.fail('Unexpected admin_type')
 
-    plan_not_accessible_by_admin_person = plan_factory()
+    plan_not_accessible_by_admin_person = PlanFactory.create()
 
-    persons_found = [action_contact_factory(action__plan=plan_of_admin_person).person for _ in range(PERSON_COUNT)]
-    person_not_found = action_contact_factory(action__plan=plan_not_accessible_by_admin_person).person
+    persons_found = [ActionContactFactory.create(action__plan=plan_of_admin_person).person for _ in range(PERSON_COUNT)]
+    person_not_found = ActionContactFactory.create(action__plan=plan_not_accessible_by_admin_person).person
 
     api_client.force_login(admin_person.user)
 
     response = api_client.get(person_list_url, {'plan': plan_of_admin_person.identifier})
     data = response.json_data
+    assert response.status_code == 200
 
-    assert len(data['results']) == PERSON_COUNT
-    for person_found in persons_found:
+    assert len(data['results']) == PERSON_COUNT + 1  # +1 for the admin themselves
+    for person_found in (*persons_found, admin_person):
         result_person_data = next(x for x in data['results'] if x['id'] == person_found.id)
         assert result_person_data['first_name'] == person_found.first_name
         assert result_person_data['last_name'] == person_found.last_name
-        assert result_person_data['last_name'] == person_found.last_name
+        assert result_person_data['email'] == person_found.email
 
     assert person_not_found.id not in (d['id'] for d in data['results'])
 
