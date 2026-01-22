@@ -277,6 +277,14 @@ class User(AbstractUser):
             return bool(plans)
         return plan.pk in plans
 
+    def is_organization_admin_in_plan(self, plan: Plan | None = None) -> bool:
+        if self.is_superuser:
+            return True
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+        return person.organization_plan_admins.filter(plan=plan).exists()
+
     def _get_editable_roles[Role: ModelWithRole.Role](
             self, action: Action, _class: type[ModelWithRole[Role]],
         ) -> Sequence[Role | None]:

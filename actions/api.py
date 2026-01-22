@@ -1490,6 +1490,7 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet[Person]):
             and (
                 user.is_general_admin_for_plan(plan)
                 or user.is_contact_person_in_plan(plan)
+                or user.is_organization_admin_in_plan(plan)
             )
         )
 
