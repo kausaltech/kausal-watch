@@ -119,6 +119,12 @@ class IndicatorShowcaseBlock(StructBlock):
     body = RichTextBlock(required=False)
     indicator = IndicatorChooserBlock()
     link_button = PageLinkBlock()
+    significant_digits = IntegerBlock(
+        required=False,
+        min_value=1,
+        max_value=5,
+        help_text=_('How many significants digits to use for the values displayed'),
+    )
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
     # PageLinkBlock.
     indicator_is_normalized = BooleanBlock(required=False)
@@ -132,6 +138,7 @@ class IndicatorShowcaseBlock(StructBlock):
         GraphQLForeignKey('indicator', Indicator),
         GraphQLStreamfield('link_button', is_list=False),
         GraphQLBoolean('indicator_is_normalized'),
+        GraphQLInt('significant_digits'),
     ]
 
 
