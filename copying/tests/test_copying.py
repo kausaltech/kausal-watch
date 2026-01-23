@@ -14,6 +14,7 @@ from images.tests.factories import AplansImageFactory
 from indicators.models.indicator import Indicator
 from indicators.tests.factories import (
     ActionIndicatorFactory,
+    IndicatorFactory,
     IndicatorGoalFactory,
     IndicatorLevelFactory,
     IndicatorValueFactory,
@@ -39,6 +40,8 @@ def html_with_references(instances):
             html += f'<a linktype="document" id="{instance.pk}">{instance.title}</a>'
         elif isinstance(instance, AplansImage):
             html += f'<embed embedtype="image" format="fullwidth-zoomable" id="{instance.pk}" alt="{instance.title}"/>'
+        elif isinstance(instance, Indicator):
+            html += f'<a linktype="indicator" id="{instance.id}" uuid="{instance.uuid}">{instance.name}</a>'
         else:
             raise TypeError("Unexpected type for referenced instance")
     html += '</p>'
@@ -298,3 +301,15 @@ def test_cannot_copy_common_indicator_instances(plan_with_pages, indicator):
     IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
     with pytest.raises(ValueError, match='Cannot copy indicators as some are instances of a common indicator'):
         copy_plan(plan_with_pages, copy_indicators=True)
+
+
+def test_rich_text_field_indicator_references(plan_with_pages):
+    indicator1 = IndicatorFactory(plans=[plan_with_pages], common=None, description='foo')
+    indicator2 = IndicatorFactory(plans=[plan_with_pages], common=None, description=html_with_references([indicator1]))
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    indicator1_copy = plan_copy.indicators.get(name=indicator1.name)
+    indicator2_copy = plan_copy.indicators.get(name=indicator2.name)
+    assert indicator1 != indicator1_copy
+    assert indicator2 != indicator2_copy
+    assert indicator1_copy.description == indicator1.description
+    assert indicator2_copy.description == html_with_references([indicator1_copy])
