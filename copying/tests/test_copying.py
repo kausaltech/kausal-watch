@@ -49,9 +49,9 @@ def html_with_references(instances):
 
 
 def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, action, user):
-    ActionContactFactory(action=action)
+    ActionContactFactory.create(action=action)
     plan = plan_with_pages
-    plan.features.moderation_workflow = WorkflowFactory()
+    plan.features.moderation_workflow = WorkflowFactory.create()
     plan.features.save(update_fields=['moderation_workflow'])
     action.save_revision(user=user)
     plan_copy = copy_plan(plan)
@@ -96,7 +96,7 @@ def test_succeed_when_category_type_pages_are_synchronized(plan_with_pages, cate
 
 
 def test_update_references_in_page(plan_with_pages, category_type_page, attribute_type):
-    CategoryTypePageLevelLayoutFactory(
+    CategoryTypePageLevelLayoutFactory.create(
         page=category_type_page,
         layout_main_top__0__attribute__attribute_type=attribute_type,
         # TODO: Also test updating of level at some point?
@@ -135,24 +135,24 @@ def test_plan_copy_has_new_collection(plan_with_pages):
 
 
 def test_image_copy_in_collection_copy(plan_with_pages):
-    image = AplansImageFactory(collection=plan_with_pages.root_collection, title='image')
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
     plan_copy = copy_plan(plan_with_pages)
     image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title=image.title)
     assert image_copy.collection == plan_copy.root_collection
 
 
 def test_document_copy_in_collection_copy(plan_with_pages):
-    doc = AplansDocumentFactory(collection=plan_with_pages.root_collection, title='doc')
+    doc = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
     plan_copy = copy_plan(plan_with_pages)
     doc_copy = AplansDocument.objects.get(collection=plan_copy.root_collection, title=doc.title)
     assert doc_copy.collection == plan_copy.root_collection
 
 
 def test_rich_text_field_references(plan_with_pages, action):
-    doc1 = AplansDocumentFactory(collection=plan_with_pages.root_collection, title='doc1')
-    doc2 = AplansDocumentFactory(collection=plan_with_pages.root_collection, title='doc2')
-    image1 = AplansImageFactory(collection=plan_with_pages.root_collection, title='image1')
-    image2 = AplansImageFactory(collection=plan_with_pages.root_collection, title='image2')
+    doc1 = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc1')
+    doc2 = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc2')
+    image1 = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image1')
+    image2 = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image2')
     action.description = html_with_references([doc1, doc2, image1, image2])
     action.save(update_fields=['description'])
     plan_copy = copy_plan(plan_with_pages)
@@ -165,7 +165,7 @@ def test_rich_text_field_references(plan_with_pages, action):
 
 
 def test_rich_text_block_references(plan_with_pages, static_page):
-    image = AplansImageFactory(collection=plan_with_pages.root_collection, title='image')
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
     static_page.body = [
         ('paragraph', RichText(html_with_references([image]))),
     ]
@@ -181,7 +181,6 @@ def test_rich_text_block_references(plan_with_pages, static_page):
 def test_indicators_are_shared_when_copy_indicators_is_false(plan_with_pages, indicator):
     # Do not copy indicators but share them between the original plan and the plan copy
     assert Indicator.objects.get() == indicator
-    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
     assert plan_with_pages.indicators.get() == indicator
     assert indicator.plans.count() == 1
     plan_copy = copy_plan(plan_with_pages, copy_indicators=False)
@@ -198,7 +197,7 @@ def test_copy_indicator(  # noqa: PLR0915
 ):
     # Do not share indicators between the original plan and the plan copy but copy them from the original plan to the
     # plan copy
-    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    assert plan_with_pages.indicators.get() == indicator
     indicator.contact_persons_unordered.add(person)
     value = IndicatorValueFactory.create(indicator=indicator)
     goal = IndicatorGoalFactory.create(indicator=indicator)
@@ -278,7 +277,7 @@ def test_copy_indicator(  # noqa: PLR0915
 @pytest.mark.parametrize('indicator__common', [None])
 def test_copy_indicator_keeps_original_indicator_unchanged(plan_with_pages, indicator):
     # Original indicator should still belong to only the original plan
-    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    assert plan_with_pages.indicators.get() == indicator
     copy_plan(plan_with_pages, copy_indicators=True)
     assert indicator.plans.get() == plan_with_pages
 
@@ -286,9 +285,10 @@ def test_copy_indicator_keeps_original_indicator_unchanged(plan_with_pages, indi
 @pytest.mark.parametrize('indicator__common', [None])
 def test_cannot_copy_indicators_when_shared(plan_with_pages, indicator):
     # When the original plan shares some indicators with another plan, copying should raise an error
-    another_plan = PlanFactory()
-    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    another_plan = PlanFactory.create()
+    assert plan_with_pages.indicators.get() == indicator
     IndicatorLevelFactory.create(plan=another_plan, indicator=indicator)
+    assert another_plan.indicators.get() == indicator
     assert indicator.plans.count() == 2
     with pytest.raises(ValueError, match='Cannot copy indicators as the plan shares indicators with another plan'):
         copy_plan(plan_with_pages, copy_indicators=True)
@@ -298,14 +298,14 @@ def test_cannot_copy_common_indicator_instances(plan_with_pages, indicator):
     # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
     # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
     assert indicator.common is not None
-    IndicatorLevelFactory.create(plan=plan_with_pages, indicator=indicator)
+    assert plan_with_pages.indicators.get() == indicator
     with pytest.raises(ValueError, match='Cannot copy indicators as some are instances of a common indicator'):
         copy_plan(plan_with_pages, copy_indicators=True)
 
 
 def test_rich_text_field_indicator_references(plan_with_pages):
-    indicator1 = IndicatorFactory(plans=[plan_with_pages], common=None, description='foo')
-    indicator2 = IndicatorFactory(plans=[plan_with_pages], common=None, description=html_with_references([indicator1]))
+    indicator1 = IndicatorFactory.create(plans=[plan_with_pages], common=None, description='foo')
+    indicator2 = IndicatorFactory.create(plans=[plan_with_pages], common=None, description=html_with_references([indicator1]))
     plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
     indicator1_copy = plan_copy.indicators.get(name=indicator1.name)
     indicator2_copy = plan_copy.indicators.get(name=indicator2.name)
