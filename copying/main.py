@@ -4,7 +4,7 @@ import dataclasses
 from collections.abc import Callable, Generator, Iterable
 from contextlib import ExitStack
 from copy import copy as shallow_copy
-from functools import singledispatchmethod
+from functools import singledispatchmethod, wraps
 from itertools import chain
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from uuid import uuid4
@@ -552,11 +552,17 @@ class UpdateReferencesVisitor(AbstractVisitor):
             return True
 
         if isinstance(source_field, ManyToOneRel):
-            if not isinstance(from_object, Page):
-                # In this case, we will update the reference elsewhere using the clone structure. (I hope!) For
-                # pages owning (and thus referencing) other objects, we can't use the clone structure because
-                # copying pages uses Wagtail's copy logic.
+            if not isinstance(from_object, ClusterableModel):
+                # In this case, we will update the reference elsewhere using the clone structure. (I hope!)
                 return False
+            # For ClusterableModels (Pages, Organizations, etc.) owning cluster-related objects, we can't rely
+            # on the clone structure to update references because copying these models uses special logic
+            # (Wagtail's Page.copy() for pages, or cluster-related object handling for other ClusterableModels).
+            # Additionally, Wagtail's reference index stores references from cluster-related child objects
+            # at the parent level. For example, if an Indicator (child) has a reference in its description field,
+            # Wagtail stores this in the reference index at the Organization (parent) level with a content path
+            # like "indicators.123.description.". So we need to handle these references here by traversing into
+            # the child objects.
             # `from_object` is the parent of an object that references
             # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
             # The referencing object is of type `source_field.related_model`.
@@ -573,6 +579,14 @@ class UpdateReferencesVisitor(AbstractVisitor):
             if isinstance(child_field, StreamField):
                 update_streamfield_block(referencing_object, child_field_name, child_content_path, to_object, copy)
                 assert field_name in from_object._cluster_related_objects
+            elif isinstance(child_field, RichTextField):
+                assert child_content_path == ['']
+                update_rich_text_reference_in_field(
+                    instance=referencing_object,
+                    field_name=child_field_name,
+                    old_referenced_object=to_object,
+                    new_referenced_object=copy,
+                )
             else:
                 # Not sure if there are other cases, but I haven't accounted for any others...
                 assert isinstance(child_field, ForeignKey)
@@ -743,6 +757,7 @@ def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
     When this decorator is used on a function `f`, this behavior is changed during the call to `f` in such a way that
     the reference index is updated immediately when a model instance is saved.
     """
+    @wraps(f)
     def wrapped(*args, **kwargs) -> R:
         original_task = wagtail.signal_handlers.update_reference_index_task  # type: ignore[attr-defined]
         tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
@@ -937,14 +952,50 @@ def update_references(
         update_references_in_page_tree_with_translations(page, update_references_visitor)
     for at in attribute_types:
         visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, update_references_visitor)
-    for indicator in indicators:
-        visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, update_references_visitor)
+    update_references_in_indicators(indicators, clone_visitor)
 
 
 def update_references_in_page_tree_with_translations(root_page: Page, update_references_visitor: UpdateReferencesVisitor):
     for translation in root_page.get_translations(inclusive=True):
         for page in translation.get_descendants(inclusive=True).specific():
             update_references_visitor.update_instance(page)
+
+
+def update_references_in_indicators(indicators: list[Indicator], clone_visitor: CloneVisitor):
+    """
+    Update references in copied indicators.
+
+    Since Indicator has a ParentalKey to Organization, references from indicators are stored in Wagtail's
+    reference index at the Organization level, not the Indicator level. We need to process references at the
+    parent Organization level to update the cluster-related indicator objects, but we don't want to modify or
+    save the Organization instances themselves.
+    """
+    from orgs.models import Organization
+
+    update_references_visitor = UpdateReferencesVisitor(clone_visitor)
+
+    # Collect all organizations that contain the copied indicators
+    org_ids = set()
+    for indicator in indicators:
+        assert clone_visitor.is_copy(indicator)
+        assert indicator.organization is not None
+        org_ids.add(indicator.organization_id)  # type: ignore[attr-defined]
+
+    # Process indexed references at the Organization level
+    # This updates indicators in the org's _cluster_related_objects
+    for org_id in org_ids:
+        org = Organization.objects.get(pk=org_id)
+        # Process indexed references (this modifies cluster children in memory)
+        update_references_visitor.update_indexed_references(org)
+        # Save only the modified cluster-related indicators, not the org itself
+        for _, child in get_cluster_related_objects(org):
+            if isinstance(child, Indicator) and clone_visitor.is_copy(child):
+                child.save()
+
+    # Also visit the indicator tree to handle foreign keys and other references
+    # in indicators and their related objects (values, goals, dimensions, etc.)
+    for indicator in indicators:
+        visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, update_references_visitor)
 
 
 def visit_tree(root: Model, config: dict, visitor: AbstractVisitor) -> None:

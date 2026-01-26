@@ -380,8 +380,6 @@ class Indicator(
         'sort_key',
     ]
 
-    wagtail_reference_index_ignore = True
-
     objects: ClassVar[IndicatorManager] = IndicatorManager()
 
     # type annotations

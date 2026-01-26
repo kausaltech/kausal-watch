@@ -9,6 +9,7 @@ from wagtail.blocks import StreamValue
 
 from documents.models import AplansDocument
 from images.models import AplansImage
+from indicators.models import Indicator
 
 if typing.TYPE_CHECKING:
     from collections.abc import Generator
@@ -126,24 +127,55 @@ def update_reference_in_html(
     old_referenced_object: Model,
     new_referenced_object: Model,
 ) -> str:
-    """Update a reference to an image or document in a given HTML string."""
+    """Update a reference to an image, document, or indicator in a given HTML string."""
     assert type(old_referenced_object) is type(new_referenced_object)
     if isinstance(old_referenced_object, AplansDocument):
         pattern = r'<a\s+[^>]*linktype="document"[^>]*>'
     elif isinstance(old_referenced_object, AplansImage):
         pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
+    elif isinstance(old_referenced_object, Indicator):
+        pattern = r'<a\s+[^>]*linktype="indicator"[^>]*>'
     else:
         raise TypeError(f"old_referenced_object has unexpected type {type(old_referenced_object)}")
 
     old_id = old_referenced_object.pk
     new_id = new_referenced_object.pk
 
-    def replace_id_in_html_tag(match: re.Match) -> str:
-        return re.sub(rf'\bid="{old_id}"', f'id="{new_id}"', match.group(0))
+    def replace_reference_in_html_tag(match: re.Match) -> str:
+        tag = match.group(0)
+        # Replace the id attribute
+        tag = re.sub(rf'\bid="{old_id}"', f'id="{new_id}"', tag)
+        # For indicators, also replace the uuid attribute
+        if isinstance(old_referenced_object, Indicator):
+            assert isinstance(new_referenced_object, Indicator)
+            old_uuid = str(old_referenced_object.uuid)
+            new_uuid = str(new_referenced_object.uuid)
+            tag = re.sub(rf'\buuid="{old_uuid}"', f'uuid="{new_uuid}"', tag)
+        return tag
 
-    new_html = re.sub(pattern, replace_id_in_html_tag, html)
-    assert new_html != html
-    return new_html
+    new_html = re.sub(pattern, replace_reference_in_html_tag, html)
+
+    if new_html != html:
+        return new_html
+
+    # If nothing changed, make some sanity checks
+    if f'id="{new_id}"' not in html:
+        raise ValueError(
+            f"Failed to update reference from {old_id} to {new_id} in HTML: "
+            f"old reference not found and new reference not present"
+        )
+
+    # For indicators, also verify that the UUID was updated
+    if isinstance(old_referenced_object, Indicator):
+        assert isinstance(new_referenced_object, Indicator)
+        new_uuid = str(new_referenced_object.uuid)
+        if f'uuid="{new_uuid}"' not in html:
+            raise ValueError(f"Reference ID was updated but UUID was not for indicator {new_id}")
+
+    # Reference was already updated -- return unchanged HTML.
+    # This can happen as the reference index may contain, e.g., `description`, `description_en` and `description_i18n`,
+    # which may point to the same field.
+    return html
 
 
 def update_rich_text_reference_in_field(
@@ -152,7 +184,7 @@ def update_rich_text_reference_in_field(
     old_referenced_object: Model,
     new_referenced_object: Model,
 ) -> None:
-    """Update a reference to an image or document in a given rich text field."""
+    """Update a reference to an image, document, or indicator in a given rich text field."""
     old_value: str = getattr(instance, field_name)
     new_value = update_reference_in_html(old_value, old_referenced_object, new_referenced_object)
     setattr(instance, field_name, new_value)
