@@ -185,6 +185,14 @@ class Report(PlanRelatedModelWithRevision):
         default=False, verbose_name=_('public'),
         help_text=_('Set if report can be shown to the public'),
     )
+    show_in_reporting_tab = models.BooleanField(
+        default=True,
+        verbose_name=_('Show in reporting tab'),
+        help_text=_(
+            'Set if the values from this report should be shown in reporting tab when editing the action. '
+            'The values are shown only if this report has been marked as complete.'
+        ),
+    )
 
     # The fields are copied from the report type at the time of completion of this report. These are not currently used anywhere but we
     # might need them in the future to take care of certain edge cases wrt. schema changes

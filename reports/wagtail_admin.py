@@ -213,6 +213,7 @@ class ReportAdmin(AplansModelAdmin):
         FieldPanel('start_date'),
         FieldPanel('end_date'),
         FieldPanel('is_public'),
+        FieldPanel('show_in_reporting_tab'),
     ]
 
     create_view_class = ReportCreateView

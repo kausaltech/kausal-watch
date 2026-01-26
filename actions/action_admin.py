@@ -1032,6 +1032,8 @@ class ActionAdmin(AplansModelAdmin[Action]):
         reporting_panels: list[Panel] = [cast('Panel', panel) for panel in reporting_attribute_panels]
         help_panels_for_field: dict[int, list[Panel]] = {}
         for snapshot in instance.get_snapshots():
+            if not snapshot.report.show_in_reporting_tab:
+                continue
             for field in snapshot.report.type.fields:
                 if not hasattr(field.block, 'get_help_panel'):
                     continue
