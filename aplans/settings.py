@@ -105,6 +105,7 @@ env = environ.FileAwareEnv(
     ENABLE_MCP_SERVER=(bool, False),
     GDAL_LIBRARY_PATH=(str, ''),
     GEOS_LIBRARY_PATH=(str, ''),
+    REDIRECT_HOSTNAMES=(list, []),
     **COMMON_ENV_SCHEMA,
 )
 
@@ -183,6 +184,21 @@ DEPLOY_TASK_GITOPS_REPO = env('DEPLOY_TASK_GITOPS_REPO')
 DEPLOY_YAML_FILE_PATH = env('DEPLOY_YAML_FILE_PATH')
 
 WATCH_BACKEND_REGION_URLS = env('WATCH_BACKEND_REGION_URLS')
+
+# Hostname redirect configuration for HostnameRedirectMiddleware
+# Performs HTTP 301 redirects based on incoming request hostname patterns.
+#
+# Environment variable format (comma-separated list):
+#   REDIRECT_HOSTNAMES=from_pattern:to_hostname,from_pattern:to_hostname,...
+#
+# read more in docs/middleware/redirects.md
+_redirect_hostnames_raw = env.list('REDIRECT_HOSTNAMES', default=[])  # pyright: ignore
+if _redirect_hostnames_raw is None or isinstance(_redirect_hostnames_raw, environ.NoValue):
+    REDIRECT_HOSTNAMES = None
+else:
+    REDIRECT_HOSTNAMES = tuple(
+        tuple(item.split(':', 1)) for item in _redirect_hostnames_raw if ':' in item  # pyright: ignore
+    )
 
 KAUSAL_PATHS_URL = env('KAUSAL_PATHS_URL')
 
@@ -274,6 +290,7 @@ INSTALLED_APPS += WATCH_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    f'{PROJECT_NAME}.middleware.HostnameRedirectMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',

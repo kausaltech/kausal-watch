@@ -2,19 +2,23 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Coroutine, Mapping
+from typing import Any
 
 from django import http
 from django.conf import settings
 from django.contrib import messages
+from django.core.exceptions import MiddlewareNotUsed
 from django.db import connection, transaction
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.decorators import sync_and_async_middleware
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate, gettext_lazy as _
 from wagtail.users.models import UserProfile
 
 import sentry_sdk
+from asgiref.sync import iscoroutinefunction
 from loguru import logger
 from social_core.exceptions import SocialAuthBaseException
 
@@ -154,3 +158,122 @@ class PrintQueryCountMiddleware:
 
         logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms {request.path} {graphql_operation_name}")
         return response
+
+
+def _matches_hostname_pattern(hostname: str, pattern: str) -> bool:
+    """
+    Check if hostname matches pattern with strict wildcard rules.
+
+    Wildcards (*) match only valid subdomain parts (no periods).
+    Example: '*.example.com' matches 'test.example.com' but not 'foo.bar.example.com'.
+
+    Args:
+        hostname: The hostname to check (e.g., 'test.example.com')
+        pattern: The pattern with optional wildcards (e.g., '*.example.com')
+
+    Returns:
+        True if hostname matches the pattern, False otherwise.
+
+    """
+    hostname_parts = hostname.split('.')
+    pattern_parts = pattern.split('.')
+
+    # Must have same number of parts
+    if len(hostname_parts) != len(pattern_parts):
+        return False
+
+    for hostname_part, pattern_part in zip(hostname_parts, pattern_parts, strict=True):
+        if pattern_part == '*':
+            # Wildcard matches any valid subdomain part
+            # Valid: alphanumeric and hyphens, not starting/ending with hyphen
+            if not hostname_part:
+                return False
+            if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$', hostname_part):
+                return False
+        elif hostname_part != pattern_part:
+            # Exact match required
+            return False
+
+    return True
+
+
+def _check_hostname_redirect(request: http.HttpRequest, redirect_hostnames: list[tuple[str, str]]) -> http.HttpResponse | None:
+    """
+    Check if request should be redirected based on hostname patterns.
+
+    Returns:
+        HttpResponsePermanentRedirect if redirect needed, None otherwise.
+
+    """
+    # Get hostname directly from META to avoid ALLOWED_HOSTS validation
+    hostname = request.META.get('HTTP_HOST', '')
+    if not hostname:
+        return None
+
+    for from_pattern, to_hostname in redirect_hostnames:
+        if not _matches_hostname_pattern(hostname, from_pattern):
+            continue
+
+        redirect_url = f"{request.scheme}://{to_hostname}{request.get_full_path()}"
+
+        # Log to application logs
+        logger.info(f"Redirecting hostname '{hostname}' to '{to_hostname}' (pattern: '{from_pattern}')")
+
+        # Send to Sentry for monitoring
+        sentry_sdk.capture_message(
+            f"Hostname redirect: {hostname} -> {to_hostname}",
+            level='info',
+            extras={
+                'from_hostname': hostname,
+                'to_hostname': to_hostname,
+                'pattern': from_pattern,
+                'redirect_url': redirect_url,
+                'original_path': request.get_full_path(),
+            },
+        )
+        return http.HttpResponsePermanentRedirect(redirect_url)
+
+    return None
+
+
+@sync_and_async_middleware
+def hostname_redirect_middleware(get_response):
+    """
+    Redirect requests based on hostname wildcard patterns.
+
+    Checks incoming request hostname against patterns defined in settings.REDIRECT_HOSTNAMES
+    and performs HTTP 301 redirects when a match is found.
+
+    Wildcard rules:
+        - '*' matches any valid subdomain part (letters, numbers, hyphens)
+        - '*' does NOT match multiple levels (no periods in matched part)
+        - Example: '*.app.example.com' matches 'test.app.example.com'
+                   but NOT 'foo.bar.app.example.com'
+
+    Settings format:
+        REDIRECT_HOSTNAMES = (
+            ('*.app.example.com', 'app.example.com'),
+            ('old.example.com', 'new.example.com'),
+        )
+    """
+    redirect_hostnames = getattr(settings, 'REDIRECT_HOSTNAMES', ())
+    if not redirect_hostnames:
+        raise MiddlewareNotUsed('REDIRECT_HOSTNAMES not configured')
+    if iscoroutinefunction(get_response):
+        async def middleware(request: http.HttpRequest):  # pyright: ignore[reportRedeclaration]  # type: ignore[misc]  # noqa: ANN202
+            redirect_response = _check_hostname_redirect(request, redirect_hostnames)
+            if redirect_response:
+                return redirect_response
+            return await get_response(request)
+    else:
+        def middleware(request: http.HttpRequest):  # type: ignore[misc]  # noqa: ANN202
+            redirect_response = _check_hostname_redirect(request, redirect_hostnames)
+            if redirect_response:
+                return redirect_response
+            return get_response(request)
+
+    return middleware
+
+
+# Backward compatibility alias for existing tests and settings
+HostnameRedirectMiddleware = hostname_redirect_middleware
