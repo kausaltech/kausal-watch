@@ -54,6 +54,10 @@ from .plan import (
     PublicationStatus,
     Scenario,
 )
+from .pledge import (
+    Pledge,
+    PledgeActionThrough,
+)
 
 __all__ = [
     'Action',
@@ -98,6 +102,8 @@ __all__ = [
     'PlanDomain',
     'PlanFeatures',
     'PlanPublicSiteViewer',
+    'Pledge',
+    'PledgeActionThrough',
     'PublicationStatus',
     'RestrictedVisibilityModel',
     'Scenario',
