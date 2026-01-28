@@ -945,6 +945,40 @@ class IndicatorListPage(FixedSlugPage):
 
         return list(cts)
 
+
+class PledgeListPage(FixedSlugPage):
+    """Page for displaying list of pledges."""
+
+    force_slug = 'pledges'
+    is_creatable = True  # Allow manual creation
+    parent_page_types = ['PlanRootPage']
+    subpage_types: list[str] = []
+
+    background_image: FK[AplansImage | None] = models.ForeignKey(
+        'images.AplansImage',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_('Background image'),
+    )
+
+    content_panels: Sequence[Panel[Any]] = [
+        *FixedSlugPage.content_panels,
+        FieldPanel('background_image'),
+    ]
+
+    graphql_fields = FixedSlugPage.graphql_fields + [
+        GraphQLImage('background_image'),
+    ]
+
+    _default_manager: ClassVar[PageManager[Self]]
+
+    class Meta:
+        verbose_name = _('Pledge list page')
+        verbose_name_plural = _('Pledge list pages')
+
+
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
     is_creatable = False  # Only let this be created programmatically
