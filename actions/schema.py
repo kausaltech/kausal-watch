@@ -86,6 +86,7 @@ from actions.models import (
     Plan,
     PlanDomain,
     PlanFeatures,
+    Pledge,
     PublicationStatus,
     Scenario,
 )
@@ -145,6 +146,7 @@ class PlanDomainNode(DjangoNode[PlanDomain]):
 class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     public_contact_persons = graphene.Boolean(required=True)
     enable_moderation_workflow = graphene.Boolean(required=True)
+    enable_community_engagement = graphene.Boolean(required=True)
 
     class Meta:
         model = PlanFeatures
@@ -157,6 +159,10 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     @staticmethod
     def resolve_enable_moderation_workflow(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.enable_moderation_workflow
+
+    @staticmethod
+    def resolve_enable_community_engagement(root: PlanFeatures, _info: GQLInfo) -> bool:
+        return root.enable_community_engagement
 
 
 def get_action_list_page_node():
@@ -1006,6 +1012,43 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
         fields = public_fields(CommonCategory)
 
 
+@register_django_node
+class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
+    attributes = graphene.List(graphene.NonNull(AttributeInterface), required=True)
+    actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'))
+    image = graphene.Field('images.schema.ImageNode')
+
+    class Meta:
+        model = Pledge
+        fields = [
+            'id',
+            'uuid',
+            'name',
+            'slug',
+            'description',
+            'image',
+            'body',
+            'resident_count',
+            'impact_statement',
+            'local_equivalency',
+            'actions',
+            'plan',
+            'order',
+        ]
+
+    @staticmethod
+    def resolve_attributes(root: Pledge, info: GQLInfo):
+        return AttributesMixin.resolve_attributes(root, info)
+
+    @staticmethod
+    def resolve_actions(root: Pledge, info: GQLInfo):
+        return list(root.actions.all())
+
+    @staticmethod
+    def resolve_image(root: Pledge, _info: GQLInfo):
+        return root.image
+
+
 class ScenarioNode(DjangoNode[Scenario]):
     class Meta:
         model = Scenario
@@ -1748,6 +1791,16 @@ class Query:
         external_identifier=graphene.ID(required=True),
     )
 
+    pledge = graphene.Field(
+        PledgeNode,
+        id=graphene.ID(),
+        slug=graphene.String(),
+    )
+
+    pledges = graphene.List(
+        graphene.NonNull(PledgeNode),
+    )
+
     workflow_states = graphene.List(
         WorkflowStateDescription, plan=graphene.ID(required=False),
     )
@@ -2001,6 +2054,29 @@ class Query:
         return Category.objects.get(
             type__plan=plan_obj, type__identifier=category_type, external_identifier=external_identifier,
         )
+
+    @staticmethod
+    def resolve_pledge(root, info: GQLInfo, id=None, slug=None):
+        plan = get_plan_from_context(info)
+        if not plan:
+            return None
+
+        qs = Pledge.objects.filter(plan=plan)
+
+        if id:
+            return qs.filter(id=id).first()
+        if slug:
+            return qs.filter(slug=slug).first()
+        return None
+
+    @staticmethod
+    def resolve_pledges(root, info: GQLInfo):
+        plan = get_plan_from_context(info)
+        if not plan:
+            return None
+
+        qs = Pledge.objects.filter(plan=plan)
+        return qs.order_by('order')
 
 
 class ActionResponsiblePartyForm(ModelForm[ActionResponsibleParty]):
