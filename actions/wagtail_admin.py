@@ -262,7 +262,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
 
     COLOR_HELP_TEXT = _(
         "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 "
-        "or grey030.",
+        'or grey030.',
     )
 
     def copy_view(self, request, instance_pk):
@@ -376,15 +376,21 @@ class PlanAdmin(AplansModelAdmin[Plan]):
             panels.append(FieldPanel('kausal_paths_instance_uuid'))
         if not creating and user.is_superuser:
             panels.append(FieldPanel('theme_identifier'))
-            panels.append(InlinePanel('domains', panels=[
-                FieldPanel('hostname'),
-                FieldPanel('base_path'),
-                FieldPanel('redirect_to_hostname'),
-                FieldPanel('deployment_environment'),
-                FieldPanel('redirect_aliases'),
-                FieldPanel('google_site_verification_tag'),
-                FieldPanel('matomo_analytics_url'),
-            ], heading=_('Domains')))
+            panels.append(
+                InlinePanel(
+                    'domains',
+                    panels=[
+                        FieldPanel('hostname'),
+                        FieldPanel('base_path'),
+                        FieldPanel('redirect_to_hostname'),
+                        FieldPanel('deployment_environment'),
+                        FieldPanel('redirect_aliases'),
+                        FieldPanel('google_site_verification_tag'),
+                        FieldPanel('matomo_analytics_url'),
+                    ],
+                    heading=_('Domains'),
+                )
+            )
 
         links_panel = CondensedInlinePanel[Plan, PlanLink](  # type: ignore[assignment]
             'links',
@@ -461,6 +467,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('indicator_ordering'),
         FieldPanel('indicators_open_in_modal'),
         FieldPanel('enable_change_log'),
+        FieldPanel('enable_community_engagement'),
     ]
 
     # Arbitrary string as the 'permission' parameter, here 'superuser', can
@@ -607,7 +614,7 @@ register_snippet(ActivePlanNotificationSettingsViewSet)
 
 
 class PublicationStatusColumn(Column):
-    cell_template_name = "aplans/plan_publication_status_cell.html"
+    cell_template_name = 'aplans/plan_publication_status_cell.html'
 
     def __init__(self, name: str = 'publication_status', **kwargs):
         super().__init__(name, label=_('Publication status'), **kwargs)
@@ -752,29 +759,26 @@ class PlanPublishView(
 
     def get_page_title(self):
         if self.publish:
-            return _("Publish plan")
-        return _("Unpublish plan")
+            return _('Publish plan')
+        return _('Unpublish plan')
 
     def get_meta_title(self):
         if self.publish:
-            msg = _("Confirm publishing %(plan)s")
+            msg = _('Confirm publishing %(plan)s')
         else:
-            msg = _("Confirm unpublishing %(plan)s")
+            msg = _('Confirm unpublishing %(plan)s')
         return msg % {'plan': self.object}
 
     def confirmation_message(self):
         if self.publish:
-            return _("Do you want to publish the plan '%(plan)s'? This will make it publicly accessible.") % {
-                'plan': self.object
-            }
-        return _(
-            "Do you want to unpublish the plan '%(plan)s'? "
-            "This will make it inaccessible to the public."
-        ) % {'plan': self.object}
+            return _("Do you want to publish the plan '%(plan)s'? This will make it publicly accessible.") % {'plan': self.object}
+        return _("Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public.") % {
+            'plan': self.object
+        }
 
     def do_publish(self):
         if self.object.is_live():
-            raise ValueError(_("The plan is already published."))
+            raise ValueError(_('The plan is already published.'))
         self.object.published_at = timezone.now()
         self.object.save(update_fields=['published_at'])
         self.object.invalidate_cache()
@@ -786,7 +790,7 @@ class PlanPublishView(
 
     def do_unpublish(self):
         if not self.object.is_live():
-            raise ValueError(_("The plan is already unpublished."))
+            raise ValueError(_('The plan is already unpublished.'))
         self.object.published_at = None
         self.object.save(update_fields=['published_at'])
         self.object.invalidate_cache()
@@ -798,14 +802,13 @@ class PlanPublishView(
 
     def get_production_urls(self):
         from actions.models.plan import PlanDomain
-        domains = self.object.domains.filter(
-            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION
-        )
-        return [f"https://{domain.hostname}" for domain in domains]
+
+        domains = self.object.domains.filter(deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION)
+        return [f'https://{domain.hostname}' for domain in domains]
 
     def get_preview_url(self):
         try:
-            return f"https://{self.object.default_hostname()}"
+            return f'https://{self.object.default_hostname()}'
         except Exception:
             return None
 
@@ -848,7 +851,11 @@ class PlanViewSet(SnippetViewSet[Plan]):
     menu_label = _('Plans')
     menu_order = 9000
     list_display = [
-        'name', 'version_name', 'parent', 'organization', 'clients_as_string',
+        'name',
+        'version_name',
+        'parent',
+        'organization',
+        'clients_as_string',
         PublicationStatusColumn(),
     ]
     filterset_class = PlanFilter
@@ -942,6 +949,7 @@ class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChan
         revision_id = self.get_revision_id()
         if revision_id:
             from wagtail.models import Revision
+
             revision = Revision.objects.filter(pk=revision_id).first()
             if revision:
                 form.instance.revision = revision

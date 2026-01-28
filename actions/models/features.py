@@ -168,6 +168,11 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Enable change history messages'),
         help_text=_('Prompt users to add a public change history message after editing actions, indicators, or categories.'),
     )
+    enable_community_engagement = models.BooleanField(
+        default=False,
+        verbose_name=_('Enable community engagement'),
+        help_text=_('Enable community engagement features such as pledges for this plan.'),
+    )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'
@@ -218,4 +223,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'contact_persons_show_picture',
         'indicators_open_in_modal',
         'enable_change_log',
+        'enable_community_engagement',
     ]
