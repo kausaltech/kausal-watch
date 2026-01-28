@@ -13,9 +13,11 @@ if TYPE_CHECKING:
 
     from kausal_common.models.types import FK
 
+
 class OrderBy(models.TextChoices):
-        NONE = 'none', _('No ordering')
-        NAME = 'name', _('Order by name')
+    NONE = 'none', _('No ordering')
+    NAME = 'name', _('Order by name')
+
 
 @reversion.register()
 class PlanFeatures(PlanRelatedModelWithRevision):
@@ -27,21 +29,25 @@ class PlanFeatures(PlanRelatedModelWithRevision):
 
     plan = models.OneToOneField('actions.Plan', related_name='features', on_delete=models.CASCADE)
     allow_images_for_actions = models.BooleanField(
-        default=True, verbose_name=_('Allow images for actions'),
+        default=True,
+        verbose_name=_('Allow images for actions'),
         help_text=_('Should custom images for individual actions be allowed'),
     )
     show_admin_link = models.BooleanField(
-        default=False, verbose_name=_('Show admin link'),
+        default=False,
+        verbose_name=_('Show admin link'),
         help_text=_('Should the public website contain a link to the admin login?'),
     )
     allow_public_site_login = models.BooleanField(
-        default=False, verbose_name=_('Allow logging in to the public website'),
+        default=False,
+        verbose_name=_('Allow logging in to the public website'),
         help_text=_('Should users be able to have authenticated sessions in the public UI?'),
     )
 
     expose_unpublished_plan_only_to_authenticated_user = models.BooleanField(
-         default=False, verbose_name=_('Expose unpublished plan only to authenticated users'),
-         help_text=_('Should the plan be exposed only to authenticated users if not published?'),
+        default=False,
+        verbose_name=_('Expose unpublished plan only to authenticated users'),
+        help_text=_('Should the plan be exposed only to authenticated users if not published?'),
     )
 
     contact_persons_public_data = models.CharField(
@@ -54,75 +60,90 @@ class PlanFeatures(PlanRelatedModelWithRevision):
     contact_persons_show_picture = models.BooleanField(
         default=True,
         verbose_name=_('Show profile pictures for contact persons'),
-        help_text=_("Should profile pictures be shown for contact persons in the public UI?"),
+        help_text=_('Should profile pictures be shown for contact persons in the public UI?'),
     )
     contact_persons_show_organization_ancestors = models.BooleanField(
-        default=True, verbose_name=_("Show organization ancestors in contact details of contact persons"),
+        default=True,
+        verbose_name=_('Show organization ancestors in contact details of contact persons'),
         help_text=_(
             "When displaying a contact person's contact details, should the contact person's organization be "
-            "displayed along with all its ancestors?",
+            'displayed along with all its ancestors?',
         ),
     )
     contact_persons_hide_moderators = models.BooleanField(
-        default=False, verbose_name=_('Hide moderators from the contact persons'),
+        default=False,
+        verbose_name=_('Hide moderators from the contact persons'),
         help_text=_('Should moderators be hidden from the visible contact persons in the public UI?'),
     )
     has_action_identifiers = models.BooleanField(
-        default=True, verbose_name=_('Has action identifiers'),
-        help_text=_("Set if the plan uses meaningful action identifiers"),
+        default=True,
+        verbose_name=_('Has action identifiers'),
+        help_text=_('Set if the plan uses meaningful action identifiers'),
     )
     show_action_identifiers = models.BooleanField(
-        default=True, verbose_name=_('Show action identifiers'),
-        help_text=_("Set if action identifiers should be visible in the public UI"),
+        default=True,
+        verbose_name=_('Show action identifiers'),
+        help_text=_('Set if action identifiers should be visible in the public UI'),
     )
     has_action_contact_person_roles = models.BooleanField(
-        default=False, verbose_name=_('Action contact persons have different roles'),
-        help_text=_("Set if there are separate contact persons with publishing rights and others who can only suggest changes"),
+        default=False,
+        verbose_name=_('Action contact persons have different roles'),
+        help_text=_('Set if there are separate contact persons with publishing rights and others who can only suggest changes'),
     )
     minimal_statuses = models.BooleanField(
-        default=False, verbose_name=_('Minimal statuses'),
+        default=False,
+        verbose_name=_('Minimal statuses'),
         help_text=_(
-            "Set to prevent showing status-specific graphs "
+            'Set to prevent showing status-specific graphs '
             "and other elements if statuses aren't systematically used in this action plan",
         ),
     )
     has_action_official_name = models.BooleanField(
-        default=False, verbose_name=_('Has action official name field'),
-        help_text=_("Set if the plan uses the official name field"),
+        default=False,
+        verbose_name=_('Has action official name field'),
+        help_text=_('Set if the plan uses the official name field'),
     )
     has_action_lead_paragraph = models.BooleanField(
-        default=True, verbose_name=_('Has action lead paragraph'),
-        help_text=_("Set if the plan uses the lead paragraph field"),
+        default=True,
+        verbose_name=_('Has action lead paragraph'),
+        help_text=_('Set if the plan uses the lead paragraph field'),
     )
     has_action_primary_orgs = models.BooleanField(
-        default=False, verbose_name=_('Has primary organizations for actions'),
-        help_text=_("Set if actions have a clear primary organization (such as multi-city plans)"),
+        default=False,
+        verbose_name=_('Has primary organizations for actions'),
+        help_text=_('Set if actions have a clear primary organization (such as multi-city plans)'),
     )
     enable_search = models.BooleanField(
-        default=True, verbose_name=_('Enable site search'),
-        help_text=_("Enable site-wide search functionality"),
+        default=True,
+        verbose_name=_('Enable site search'),
+        help_text=_('Enable site-wide search functionality'),
     )
     enable_indicator_comparison = models.BooleanField(
-        default=True, verbose_name=_('Enable indicator comparison'),
-        help_text=_("Set to enable comparing indicators between organizations"),
+        default=True,
+        verbose_name=_('Enable indicator comparison'),
+        help_text=_('Set to enable comparing indicators between organizations'),
     )
     indicator_ordering = models.CharField(
         max_length=50,
         choices=OrderBy.choices,
         default=OrderBy.NONE,
-        verbose_name=_("Indicator order"),
-        help_text=_("Choose how to order indicators in the action pages"),
+        verbose_name=_('Indicator order'),
+        help_text=_('Choose how to order indicators in the action pages'),
     )
     moderation_workflow: FK[Workflow | None] = models.ForeignKey(
-        'wagtailcore.WorkFlow', default=None, null=True, blank=True,
-        help_text=_("Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"),
+        'wagtailcore.WorkFlow',
+        default=None,
+        null=True,
+        blank=True,
+        help_text=_('Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing'),
         on_delete=models.PROTECT,
     )
     display_field_visibility_restrictions = models.BooleanField(
-        default=False, verbose_name=_('Display field visibility as a label in edit views'),
+        default=False,
+        verbose_name=_('Display field visibility as a label in edit views'),
         help_text=_(
-            "For plans which have field-specific visibility restrictions, "
-            "show to users which fields are public and which are restricted.",
+            'For plans which have field-specific visibility restrictions, '
+            'show to users which fields are public and which are restricted.',
         ),
     )
     output_report_action_print_layout = models.BooleanField(
@@ -133,16 +154,19 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         ),
     )
     password_protected = models.BooleanField(
-        default=False, verbose_name=_("Password protected"),
-        help_text=_("Is this plan password protected?"),
+        default=False,
+        verbose_name=_('Password protected'),
+        help_text=_('Is this plan password protected?'),
     )
     indicators_open_in_modal = models.BooleanField(
-        default=False, verbose_name=_("Indicators open in modal"),
-        help_text=_("Should indicators open only in a modal dialog in the public UI?"),
+        default=False,
+        verbose_name=_('Indicators open in modal'),
+        help_text=_('Should indicators open only in a modal dialog in the public UI?'),
     )
     enable_change_log = models.BooleanField(
-        default=False, verbose_name=_("Enable change history messages"),
-        help_text=_("Prompt users to add a public change history message after editing actions, indicators, or categories."),
+        default=False,
+        verbose_name=_('Enable change history messages'),
+        help_text=_('Prompt users to add a public change history message after editing actions, indicators, or categories.'),
     )
 
     class AccessibilityConformanceLevel(models.TextChoices):
@@ -162,12 +186,13 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name_plural = _('plan features')
 
     def __str__(self) -> str:
-        return "Features for %s" % self.plan
+        return 'Features for %s' % self.plan
 
     @property
     def public_contact_persons(self) -> bool:
         return self.contact_persons_public_data not in (
-            self.ContactPersonsPublicData.NONE, self.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+            self.ContactPersonsPublicData.NONE,
+            self.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
         )
 
     @property
@@ -175,10 +200,22 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         return self.moderation_workflow is not None
 
     public_fields: ClassVar = [
-        'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
-        'contact_persons_show_organization_ancestors', 'contact_persons_hide_moderators', 'has_action_identifiers',
-        'has_action_official_name', 'has_action_lead_paragraph', 'has_action_primary_orgs', 'enable_search',
-        'enable_indicator_comparison', 'minimal_statuses', 'has_action_contact_person_roles',
-        'allow_public_site_login', 'contact_persons_show_picture', 'indicators_open_in_modal',
+        'allow_images_for_actions',
+        'show_admin_link',
+        'public_contact_persons',
+        'contact_persons_public_data',
+        'contact_persons_show_organization_ancestors',
+        'contact_persons_hide_moderators',
+        'has_action_identifiers',
+        'has_action_official_name',
+        'has_action_lead_paragraph',
+        'has_action_primary_orgs',
+        'enable_search',
+        'enable_indicator_comparison',
+        'minimal_statuses',
+        'has_action_contact_person_roles',
+        'allow_public_site_login',
+        'contact_persons_show_picture',
+        'indicators_open_in_modal',
         'enable_change_log',
     ]

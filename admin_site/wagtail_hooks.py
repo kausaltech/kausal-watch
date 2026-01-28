@@ -200,15 +200,15 @@ class ClientViewSet(SnippetViewSet):
 register_snippet(ClientViewSet)
 
 
-@hooks.register("insert_global_admin_css")
+@hooks.register('insert_global_admin_css')
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/admin-styles.css"),
+        static('css/admin-styles.css'),
     )
 
 
-@hooks.register("construct_explorer_page_queryset")
+@hooks.register('construct_explorer_page_queryset')
 def restrict_pages_to_plan(parent_page, pages, request):
     plan = request.user.get_active_admin_plan()
     if not plan.site_id:
@@ -222,7 +222,7 @@ def restrict_pages_to_plan(parent_page, pages, request):
     return pages.filter(q)
 
 
-@hooks.register("construct_page_chooser_queryset")
+@hooks.register('construct_page_chooser_queryset')
 def restrict_chooser_pages_to_plan(pages, request):
     plan = request.user.get_active_admin_plan()
     if not plan.site_id:
@@ -257,6 +257,7 @@ def remove_menu_items(
         if names_to_remove and item.name in names_to_remove:
             return True
         return False
+
     to_remove = []
     for item in items:
         if should_remove(item):
@@ -278,7 +279,9 @@ def remove_settings_menu_items(request, items: list[MenuItem]):
     )
 
     item_classes_to_remove = (
-        SitesMenuItem, LocalesMenuItem, RedirectsMenuItem,
+        SitesMenuItem,
+        LocalesMenuItem,
+        RedirectsMenuItem,
     )
     names_to_remove = ('users', 'groups')
     remove_menu_items(items, item_classes_to_remove, names_to_remove)
@@ -290,27 +293,24 @@ def remove_main_menu_items(request, items: list[MenuItem]):
         SnippetsMenuItem,
     )
 
-    item_classes_to_remove = (
-        SnippetsMenuItem,
-    )
+    item_classes_to_remove = (SnippetsMenuItem,)
     remove_menu_items(items, item_classes_to_remove)
 
 
 @hooks.register('register_help_menu_item')
 def register_video_tutorials_menu_item():
     return DismissibleMenuItem(
-        _("Video tutorials"),
+        _('Video tutorials'),
         _('https://kausal.gitbook.io/watch'),
         icon_name='help',
         order=1000,
-        attrs={"target": "_blank"},
+        attrs={'target': '_blank'},
         name='video-tutorials',
     )
 
 
 def should_remove_help_menu_item(item):
-    return (item.name.startswith('whats-new-in-wagtail-')
-            or item.name == 'editor-guide')
+    return item.name.startswith('whats-new-in-wagtail-') or item.name == 'editor-guide'
 
 
 @hooks.register('construct_help_menu')
@@ -334,7 +334,7 @@ def add_documentation_to_help_menu(request, items: list[MenuItem]):
         items.append(item)
 
 
-@hooks.register("register_icons")
+@hooks.register('register_icons')
 def register_icons(icons):
     basenames = [
         'kausal-action',
