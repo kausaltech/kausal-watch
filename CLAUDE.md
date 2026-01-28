@@ -131,6 +131,35 @@ Each Django app follows consistent naming conventions for different functionalit
   ```
 - Always include `from __future__ import annotations` at the top of files.
 
+### Code Structure Conventions
+- **Avoid deeply nested logic** - Prefer flat, readable code over nested conditionals
+- **Use early returns** - Check for exceptional/edge cases first and return early
+- **Reverse conditionals** - Instead of `if condition: main_logic`, use `if not condition: return` then `main_logic`
+
+**Example - Avoid nesting:**
+```python
+# Bad: nested logic
+def process_request(request):
+    if request.user.is_authenticated:
+        if request.user.is_active:
+            if has_permission(request.user):
+                # main logic here
+                return do_something()
+    return None
+
+# Good: early returns
+def process_request(request):
+    if not request.user.is_authenticated:
+        return None
+    if not request.user.is_active:
+        return None
+    if not has_permission(request.user):
+        return None
+
+    # main logic is not nested
+    return do_something()
+```
+
 ### Key Models Hierarchy
 - `actions/models/plan.py` - Plan, PlanDomain, PlanFeatures
 - `actions/models/action.py` - Action (main entity)
