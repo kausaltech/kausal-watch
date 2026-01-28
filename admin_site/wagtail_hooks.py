@@ -344,6 +344,7 @@ def register_icons(icons):
         'kausal-indicator',
         'kausal-organization',
         'kausal-plan',
+        'kausal-pledge',
         'kausal-spreadsheet',
         # Icons we copied from Font Awesome have a `fontawesome-` prefix. We also override some icons shipped with
         # Wagtail, but they don't have a prefix even though some of them also come from Font Awesome and they don't need
