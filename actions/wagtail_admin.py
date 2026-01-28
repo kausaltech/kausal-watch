@@ -87,6 +87,7 @@ from . import (
     action_admin,  # noqa: F401
     attribute_type_admin,  # noqa: F401
     category_admin,  # noqa: F401
+    pledge_admin,  # noqa: F401
 )
 from .models import (
     Action,
