@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="icon-kausal-pledge" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- Award ribbon with circular badge (wreath style) and tails -->
+  <g>
+    <!-- Circular badge/wreath with hole in center using path -->
+    <path d="M8,2 a4,4 0 1,0 0,8 a4,4 0 1,0 0,-8 M8,4 a2,2 0 1,1 0,4 a2,2 0 1,1 0,-4" fill="currentColor" fill-rule="evenodd"/>
+
+    <!-- Left ribbon tail (50% shorter) -->
+    <path d="M5.5,8.5 L4.5,12 L6,11 L7,12 L8,9" fill="currentColor"/>
+
+    <!-- Right ribbon tail (50% shorter) -->
+    <path d="M10.5,8.5 L11.5,12 L10,11 L9,12 L8,9" fill="currentColor"/>
+  </g>
+</svg>
