@@ -348,8 +348,6 @@ def test_action_delete_creates_log_entry(
     assert not Action.objects.filter(pk=action_pk).exists()
 
     # Verify that a log entry was created for the deletion
-    # Note: We need to create a temporary object with the same pk to use assert_log_entry_created
-    # Or we can check directly
     content_type = ContentType.objects.get_for_model(Action, for_concrete_model=False)
     log_entry = PlanScopedModelLogEntry.objects.filter(
         content_type=content_type,
@@ -457,7 +455,6 @@ def test_bulk_action_put_creates_individual_log_entries(
     assert response.status_code == 200
 
     # Verify that log entries were created for bulk update
-    # Note: Based on current implementation, bulk updates create log entries with action='wagtail.edit'
     final_log_count = PlanScopedModelLogEntry.objects.filter(plan=plan, action='wagtail.edit').count()
     assert final_log_count > initial_log_count
 

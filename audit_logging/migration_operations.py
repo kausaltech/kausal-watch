@@ -8,6 +8,8 @@ class SetModelBasesOptionOperation(ModelOptionOperation):
     Update the bases of a model.
 
     This can be used to separate a model from its parent.
+    We need this when removing the multi-table inheritance between
+    models.
     """
 
     def __init__(self, name, bases):

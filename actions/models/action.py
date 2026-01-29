@@ -1855,17 +1855,13 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
         #     raise ValidationError({'completed_at': _("Date can't be in the future")})
 
     def get_plans(self) -> list[Plan]:
-        """Return the plan(s) this task belongs to through its action."""
         return [self.action.plan]
 
     @classmethod
     def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
-        """Filter queryset by plan through the action relationship."""
         return qs.filter(action__plan=plan)
 
     def initialize_plan_defaults(self, plan: Plan):
-        """Initialize plan defaults. ActionTask gets its plan through its action."""
-        # ActionTask doesn't have a direct plan field; it gets the plan through action
         pass
 
     def get_notification_context(self, plan=None):
