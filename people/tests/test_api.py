@@ -5,7 +5,6 @@ from django.urls import reverse
 
 import pytest
 
-from actions.api import PersonSerializer
 from actions.tests.utils import assert_log_entry_created, count_log_entries
 from audit_logging.models import PlanScopedModelLogEntry
 from people.models import Person

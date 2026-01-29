@@ -7,21 +7,13 @@ from django.urls import reverse
 
 import pytest
 
-from actions.api import ActionSerializer
-from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
-from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
-from people.tests.factories import PersonFactory
-from actions.models import Action
-from actions.api import ActionSerializer, ActionTaskSerializer, CategorySerializer
+from actions.api import ActionSerializer, CategorySerializer
 from actions.models import Action, ActionTask, Category
-from actions.api import ActionSerializer
-from actions.models import Action
-from actions.tests.factories import ActionContactFactory, ActionFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.tests.utils import assert_log_entry_created, count_log_entries
 from audit_logging.models import PlanScopedModelLogEntry
-from orgs.tests.factories import OrganizationFactory
-from actions.tests.factories import ActionContactFactory, ActionFactory
-from orgs.tests.factories import OrganizationFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 

@@ -10,7 +10,6 @@ import pytest
 from actions.tests.factories import CategoryFactory, CategoryTypeFactory
 from actions.tests.utils import assert_log_entry_created, count_log_entries
 from audit_logging.models import PlanScopedModelLogEntry
-from indicators.api import IndicatorSerializer
 from indicators.models import Indicator
 from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
 from people.tests.factories import PersonFactory
