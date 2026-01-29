@@ -16,7 +16,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
         if len(instances) == 0:
             return
         data = kwargs.pop('data', None) or {}
-        title = kwargs.pop('title', None)
+        label = kwargs.pop('title', None)
         timestamp = kwargs.pop('timestamp', timezone.now())
         plan = kwargs['user'].get_active_admin_plan()
         content_type = ContentType.objects.get_for_model(
@@ -26,7 +26,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
         log_entries = [
             PlanScopedModelLogEntry(
                 content_type=content_type,
-                label=str(instance),
+                label=label if label else str(instance),
                 action=action,
                 timestamp=timestamp,
                 data=data,
