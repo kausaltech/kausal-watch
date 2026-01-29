@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
-from typing import Any
-
 from django import http
 from django.conf import settings
 from django.contrib import messages
