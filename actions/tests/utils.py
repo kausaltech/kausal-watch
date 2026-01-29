@@ -1,6 +1,8 @@
 """Utility functions for action tests."""
 from __future__ import annotations
 
+from typing import Any
+
 from django.contrib.contenttypes.models import ContentType
 
 from audit_logging.models import PlanScopedModelLogEntry
@@ -25,7 +27,7 @@ def assert_log_entry_created(instance, action, user, plan):
 
 def count_log_entries(instance=None, action=None, plan=None):
     """Count PlanScopedModelLogEntry instances matching the given criteria."""
-    filters = {}
+    filters: dict[str, Any] = {}
     if instance is not None:
         filters['content_type'] = ContentType.objects.get_for_model(instance, for_concrete_model=False)
         filters['object_id'] = str(instance.pk)

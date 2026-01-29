@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import copy
+import uuid
 from typing import TYPE_CHECKING, Any, Protocol, cast, override
 from uuid import UUID
-import uuid
 
 import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
@@ -14,13 +14,12 @@ from modeltrans.utils import build_localized_fieldname, get_available_languages
 from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
+from wagtail.log_actions import log
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
-from wagtail.log_actions import log
 
-from audit_logging.utils import BulkActionModelList
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
@@ -39,6 +38,7 @@ from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ActionQuerySet
 from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes
+from audit_logging.utils import BulkActionModelList
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
 from people.models import Person, PersonQuerySet
@@ -67,6 +67,7 @@ if TYPE_CHECKING:
     from django.views.generic import View
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
+    from rest_framework.views import APIView
 
     from aplans.types import WatchAdminRequest, WatchAPIRequest
 
@@ -1151,14 +1152,14 @@ class AuditLoggingBulkModelViewSet[M: Model](BulkModelViewSet[M]):
             content_changed=True,
         )
 
-    def perform_create(self, serializer: serializers.Serializer[M]):
+    def perform_create(self, serializer: serializers.BaseSerializer[M]):
         super().perform_create(serializer)
         instance = serializer.instance
         if instance is None:
             return
         self._log_action(instance, 'wagtail.create')
 
-    def perform_update(self, serializer: serializers.Serializer[M]):
+    def perform_update(self, serializer: serializers.BaseSerializer[M]):
         super().perform_update(serializer)
         instance = serializer.instance
         if instance is None:
@@ -1403,7 +1404,7 @@ class OrganizationPermission(WatchObjectPermissions):
     model = Organization
 
     @override
-    def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+    def check_permission(self, perm: str, user: User, view: APIView, obj: Model | None = None) -> bool:
         match perm:
             case 'orgs.change_organization':
                 if obj is None:

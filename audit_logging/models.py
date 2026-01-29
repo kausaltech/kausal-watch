@@ -91,7 +91,8 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
 
 
 class PlanScopedModelLogEntry(BaseLogEntry):
-    object_id = models.CharField(max_length=255, blank=False, db_index=True)
+    # The type error below stems from the Wagtail code
+    object_id = models.CharField(max_length=255, blank=False, db_index=True)  # type: ignore[assignment]
     plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
 
     objects = PlanScopedModelLogEntryManager()
@@ -166,7 +167,10 @@ class PlanScopedPageLogEntryManager(BaseLogEntryManager):
         explorable_instances = page_permission_policy.explorable_instances(user)
         q = Q(page__in=explorable_instances.values_list('pk', flat=True))
 
-        root_page_permissions = Page.get_first_root_node().permissions_for_user(user)
+        root_page = Page.get_first_root_node()
+        if root_page is None:
+            raise ValueError('No root page found')
+        root_page_permissions = root_page.permissions_for_user(user)
         if (
             user.is_superuser
             or root_page_permissions.can_add_subpage()

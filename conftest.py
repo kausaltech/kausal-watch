@@ -54,9 +54,9 @@ class JSONAPIClient(APIClient):
         # Only parse JSON if there's content (avoid parsing empty 204 No Content responses)
         if resp.status_code == 204:
             assert not resp.content
-            resp.json_data = None
+            resp.json_data = None  # type: ignore[attr-defined]
         else:
-            resp.json_data = json.loads(resp.content)
+            resp.json_data = json.loads(resp.content)  # type: ignore[attr-defined]
         return resp
 
 
