@@ -15,9 +15,10 @@ class SetModelBasesOptionOperation(ModelOptionOperation):
     def __init__(self, name, bases):
         super().__init__(name)
         self.bases = bases
+        self.name = name
 
     def deconstruct(self):
-        return (self.__class__.__qualname__, [], {'bases': self.bases})
+        return (self.__class__.__qualname__, [self.name], {'bases': self.bases})
 
     def state_forwards(self, app_label, state):
         model_state = state.models[app_label, self.name_lower]
