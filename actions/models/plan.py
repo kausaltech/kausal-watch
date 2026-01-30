@@ -83,6 +83,7 @@ if TYPE_CHECKING:
     from .action import Action, ActionImplementationPhase, ActionStatus
     from .category import CategoryType
     from .features import PlanFeatures
+    from .pledge import Pledge
 
 
 logger = logging.getLogger(__name__)
@@ -192,7 +193,7 @@ class UsageStatus(models.TextChoices):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # type: ignore[django-manager-missing]
     """
     The Action Plan under monitoring.
 
@@ -424,6 +425,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     actions: RevManyQS[Action, ActionQuerySet]
     category_types: RevMany[CategoryType]
     children: RevMany[Plan]
+    pledges: RevMany[Pledge]
     clients: RevMany[ClientPlan]
     copies: RevMany[Plan]
     documentation_root_pages: RevMany[DocumentationRootPage]

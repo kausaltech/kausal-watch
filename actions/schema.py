@@ -815,7 +815,7 @@ class AttributesMixin:
             *['choice_attributes__choice__type', 'choice_with_text_attributes__choice__type'],
         ],
     )
-    def resolve_attributes(root: Category | Action, info: GQLInfo, id: str | None = None):
+    def resolve_attributes(root: ModelWithAttributes, info: GQLInfo, id: str | None = None):
         request = info.context
 
         plan_identifier = info.variable_values.get('plan')
@@ -1035,10 +1035,6 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
             'plan',
             'order',
         ]
-
-    @staticmethod
-    def resolve_attributes(root: Pledge, info: GQLInfo):
-        return AttributesMixin.resolve_attributes(root, info)
 
     @staticmethod
     def resolve_actions(root: Pledge, info: GQLInfo):
