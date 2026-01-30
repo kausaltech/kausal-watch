@@ -291,8 +291,9 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
         for parent_path in missing_parent_paths:
             cls._reported_missing_parent_paths.add(parent_path)
-            sentry_sdk.capture_exception(
-                KeyError(parent_path),
+            sentry_sdk.capture_message(
+                f"Organization parent path not found: {parent_path}",
+                level="warning",
                 contexts={
                     'validation': {
                         'missing_parent_path': parent_path,
