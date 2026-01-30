@@ -116,7 +116,7 @@ class BaseTemplateViewSet(WatchViewSet[BaseTemplate, BaseTemplateForm]):
     edit_view_class = BaseTemplateEditView
     icon = 'fontawesome-bell'
     menu_label = _('Notifications')
-    menu_order = 501
+    menu_order = 504
 
     panels = [
         FieldPanel('from_name'),
