@@ -38,7 +38,7 @@ from admin_site.wagtail import (
 )
 
 from .attributes import AttributeType as AttributeTypeWrapper
-from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
+from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
@@ -51,9 +51,11 @@ class AttributeTypeFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         action_ct_id = ContentType.objects.get_for_model(Action).id
         category_ct_id = ContentType.objects.get_for_model(Category).id
+        pledge_ct_id = ContentType.objects.get_for_model(Pledge).id
         return (
             (action_ct_id, Action._meta.verbose_name),
             (category_ct_id, Category._meta.verbose_name),
+            (pledge_ct_id, Pledge._meta.verbose_name),
         )
 
     def queryset(self, request, queryset):
@@ -123,6 +125,8 @@ class AttributeTypeCreateView(
                 scope_ct_model = 'plan'
             elif (object_ct.app_label, object_ct.model) == ('actions', 'category'):
                 scope_ct_model = 'categorytype'
+            elif (object_ct.app_label, object_ct.model) == ('actions', 'pledge'):
+                scope_ct_model = 'plan'
             else:
                 raise Exception(f"Invalid content type {object_ct.app_label}.{object_ct.model}")
             instance.scope_content_type = ContentType.objects.get(app_label='actions', model=scope_ct_model)
@@ -210,6 +214,11 @@ def add_attribute_types_to_settings_menu(request, items: list):
         items.append(AttributeTypeMenuItem(action_ct, icon_name='kausal-attribute'))
         items.append(AttributeTypeMenuItem(category_ct, icon_name='kausal-attribute'))
 
+        # Only show pledge attribute types if community engagement is enabled
+        if plan.features.enable_community_engagement:
+            pledge_ct = ContentType.objects.get_for_model(Pledge)
+            items.append(AttributeTypeMenuItem(pledge_ct, icon_name='kausal-attribute'))
+
 
 class AttributeTypeForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
@@ -277,7 +286,10 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(AttributeType)
         choice_option_panels = insert_model_translation_panels(
-            AttributeTypeChoiceOption, self.choice_option_panels, request, instance,
+            AttributeTypeChoiceOption,
+            self.choice_option_panels,
+            request,
+            instance,
         )
 
         creating = instance.pk is None
@@ -323,6 +335,11 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             panels.append(FieldPanel('action_detail_content_section'))
         elif (content_type.app_label, content_type.model) == ('actions', 'category'):
             panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_("Category type")))
+        elif (content_type.app_label, content_type.model) == ('actions', 'pledge'):
+            # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
+            # don't add a panel for choosing a plan.
+            # Remove show_in_reporting_tab since pledges are not used with reporting
+            panels = [p for p in panels if getattr(p, 'field_name', None) != 'show_in_reporting_tab']
         else:
             raise Exception(f"Invalid content type {content_type.app_label}.{content_type.model}")
 
@@ -340,6 +357,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         plan = user.get_active_admin_plan()
         action_ct = ContentType.objects.get(app_label='actions', model='action')
         category_ct = ContentType.objects.get(app_label='actions', model='category')
+        pledge_ct = ContentType.objects.get(app_label='actions', model='pledge')
         plan_ct = ContentType.objects.get(app_label='actions', model='plan')
         category_type_ct = ContentType.objects.get(app_label='actions', model='categorytype')
         category_types_in_plan = plan.category_types.all()
@@ -347,6 +365,11 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             # Attribute types for actions of the active plan
             (Q(object_content_type=action_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
             # Attribute types for categories whose category type is the active plan
-            | (Q(object_content_type=category_ct) & Q(scope_content_type=category_type_ct)
-               & Q(scope_id__in=category_types_in_plan)),
+            | (
+                Q(object_content_type=category_ct)
+                & Q(scope_content_type=category_type_ct)
+                & Q(scope_id__in=category_types_in_plan)
+            )
+            # Attribute types for pledges of the active plan
+            | (Q(object_content_type=pledge_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id)),
         )
