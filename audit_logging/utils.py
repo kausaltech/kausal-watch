@@ -16,6 +16,7 @@ class BulkActionModelList(list[Model]):
     so that we can handle the case of bulk creating model log entry instances
     within our application when bulk operations are executed in the REST API.
     """
+    plan: Plan
 
     def __init__(self, *args, plan: Plan, **kwargs):
         super().__init__(*args, **kwargs)

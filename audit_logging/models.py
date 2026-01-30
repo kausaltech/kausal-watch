@@ -25,7 +25,7 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
         data = kwargs.pop('data', None) or {}
         label = kwargs.pop('title', None)
         timestamp = kwargs.pop('timestamp', timezone.now())
-        plan = kwargs['user'].get_active_admin_plan()
+        plan = instances.plan
         content_type = ContentType.objects.get_for_model(
             instances[0],
             for_concrete_model=False
