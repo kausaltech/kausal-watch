@@ -30,19 +30,25 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
             instances[0],
             for_concrete_model=False
         )
-        log_entries = [
-            PlanScopedModelLogEntry(
-                content_type=content_type,
-                label=label if label else str(instance),
-                action=action,
-                timestamp=timestamp,
-                data=data,
-                plan_id=plan.pk,
-                object_id=str(instance.pk),
-                **kwargs
+        log_entries = []
+        for instance in instances:
+            if instance.pk is None:
+                raise ValueError(
+                    'Attempted to log an action for object %r with empty primary key'
+                    % (instance,)
+                )
+            log_entries.append(
+                PlanScopedModelLogEntry(
+                    content_type=content_type,
+                    label=label if label else str(instance),
+                    action=action,
+                    timestamp=timestamp,
+                    data=data,
+                    plan_id=plan.pk,
+                    object_id=str(instance.pk),
+                    **kwargs
+                )
             )
-            for instance in instances
-        ]
         PlanScopedModelLogEntry.objects.bulk_create(log_entries)
 
     def log_action(self, instance, action, **kwargs):
