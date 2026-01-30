@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from wagtail.admin.forms.models import WagtailAdminModelForm
     from wagtail.admin.panels.base import Panel
 
-class BaseTemplateForm(AplansAdminModelForm):
 
+class BaseTemplateForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         if 'plan' in kwargs:
             self.plan = kwargs.pop('plan')
@@ -76,8 +76,8 @@ class BaseTemplateEditView(SuccessUrlEditPageMixin, WatchEditView[BaseTemplate, 
 
     def get_error_message(self):
         if self.object.pk:
-            return _("Notifications could not be modified due to errors.")
-        return _("Notifications could not be set up due to errors.")
+            return _('Notifications could not be modified due to errors.')
+        return _('Notifications could not be set up due to errors.')
 
 
 class BaseTemplateSendDatePanel(FieldPanel):
@@ -92,7 +92,7 @@ class BaseTemplateSendDatePanel(FieldPanel):
         instance: Model | None = None,
         request: HttpRequest | None = None,
         form: WagtailAdminModelForm[Model, AbstractBaseUser] | None = None,
-        prefix: str = 'panel'
+        prefix: str = 'panel',
     ) -> Panel.BoundPanel[
         Panel[Model, WagtailAdminModelForm[Model, AbstractBaseUser]],
         WagtailAdminModelForm[Model, AbstractBaseUser],
@@ -104,7 +104,7 @@ class BaseTemplateSendDatePanel(FieldPanel):
         time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
         self.help_text = format_lazy(
             '{msg} {time}.',
-            msg=_("The email message will be sent on the specified day at"),
+            msg=_('The email message will be sent on the specified day at'),
             time=time,
         )
         return super().get_bound_panel(instance, request, form, prefix)
@@ -136,31 +136,44 @@ class BaseTemplateViewSet(WatchViewSet[BaseTemplate, BaseTemplateForm]):
         FieldPanel('subject'),
         BaseTemplateSendDatePanel('date'),
         FieldPanel('content'),
-        MultiFieldPanel([
-            FieldRowPanel([
-                FieldPanel('send_to_plan_admins'),
-                FieldPanel('send_to_action_contact_persons'),
-                FieldPanel('send_to_indicator_contact_persons'),
-                FieldPanel('send_to_organization_admins'),
-                FieldPanel('send_to_custom_email'),
-            ]),
-            FieldPanel('custom_email'),
-        ], classname='collapsible'),
+        MultiFieldPanel(
+            [
+                FieldRowPanel(
+                    [
+                        FieldPanel('send_to_plan_admins'),
+                        FieldPanel('send_to_action_contact_persons'),
+                        FieldPanel('send_to_indicator_contact_persons'),
+                        FieldPanel('send_to_organization_admins'),
+                        FieldPanel('send_to_custom_email'),
+                    ]
+                ),
+                FieldPanel('custom_email'),
+            ],
+            classname='collapsible',
+        ),
     ]
 
     templates_panels = [
         FieldPanel('type'),
         FieldPanel('subject'),
         FieldPanel('custom_email'),
-        MultiFieldPanel([
-            FieldRowPanel([
-                FieldPanel('send_to_plan_admins'),
-                FieldPanel('send_to_custom_email'),
-            ]),
-            FieldRowPanel([
-                FieldPanel('send_to_contact_persons'),
-            ]),
-        ], heading=_('Recipients'), classname='collapsible'),
+        MultiFieldPanel(
+            [
+                FieldRowPanel(
+                    [
+                        FieldPanel('send_to_plan_admins'),
+                        FieldPanel('send_to_custom_email'),
+                    ]
+                ),
+                FieldRowPanel(
+                    [
+                        FieldPanel('send_to_contact_persons'),
+                    ]
+                ),
+            ],
+            heading=_('Recipients'),
+            classname='collapsible',
+        ),
     ]
 
     block_panels = [
@@ -181,26 +194,32 @@ class BaseTemplateViewSet(WatchViewSet[BaseTemplate, BaseTemplateForm]):
 
     def get_edit_handler(self) -> ObjectList | TabbedInterface | None:
         tabs = [
+            ObjectList(self.panels, heading=_('Basic information')),
             ObjectList(
-                self.panels,
-                heading=_('Basic information')),
-            ObjectList([
-                InlinePanel(
-                    'manually_scheduled_notification_templates',
-                    panels=self.manually_scheduled_notification_panels,
-                )],
-                heading=_('One-off notifications')),
-            ObjectList([
-                InlinePanel(
-                    'templates',
-                    panels=self.templates_panels,
-                )],
-                heading=_('Event-based notifications')),
-            ObjectList([
-                CondensedInlinePanel(
-                    'content_blocks',
-                    panels=self.block_panels,
-                )],
+                [
+                    InlinePanel(
+                        'manually_scheduled_notification_templates',
+                        panels=self.manually_scheduled_notification_panels,
+                    )
+                ],
+                heading=_('One-off notifications'),
+            ),
+            ObjectList(
+                [
+                    InlinePanel(
+                        'templates',
+                        panels=self.templates_panels,
+                    )
+                ],
+                heading=_('Event-based notifications'),
+            ),
+            ObjectList(
+                [
+                    CondensedInlinePanel(
+                        'content_blocks',
+                        panels=self.block_panels,
+                    )
+                ],
                 heading=_('Notification contents'),
             ),
         ]
@@ -253,7 +272,7 @@ class BaseTemplateMenuItem(MenuItem):
 
 
 class NotificationsPreferencesPanel(BaseSettingsPanel):
-    name = 'notification-preferences'   # Wagtail's admin.views.account already defines 'notifications'
+    name = 'notification-preferences'  # Wagtail's admin.views.account already defines 'notifications'
     title = _('Notification preferences')
     tab = notifications_tab
     order = 101

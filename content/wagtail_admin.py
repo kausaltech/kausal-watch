@@ -80,7 +80,7 @@ class SiteGeneralContentViewSet(WatchViewSet):
             'sitewide_announcement',
         ]
 
-        i18n_fields = self.model._meta.get_field("i18n").fields
+        i18n_fields = self.model._meta.get_field('i18n').fields
         result = []
         for panel in panels:
             if panel in i18n_fields:
