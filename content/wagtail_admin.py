@@ -56,7 +56,7 @@ class SiteGeneralContentViewSet(WatchViewSet):
     add_to_settings_menu = True
     icon = 'cogs'
     menu_label = _('Site settings')
-    menu_order = 503
+    menu_order = 502
 
     @property
     def permission_policy(self):

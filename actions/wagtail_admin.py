@@ -567,7 +567,7 @@ class NotificationSettingsViewSet(WatchViewSet[NotificationSettings]):
     model = NotificationSettings
     icon = 'fontawesome-bell'
     menu_label = _('Plan notification settings')
-    menu_order = 502
+    menu_order = 503
 
     panels = [
         FieldPanel('notifications_enabled'),
