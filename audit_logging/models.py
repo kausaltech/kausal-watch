@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, ClassVar
+
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
@@ -9,6 +11,11 @@ from wagtail.models import Page
 from wagtail.models.audit_log import BaseLogEntry, BaseLogEntryManager, LogEntryQuerySet
 
 from audit_logging.utils import BulkActionModelList
+
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
+
+    from actions.models import Plan
 
 
 class PlanScopedModelLogEntryManager(BaseLogEntryManager):
@@ -93,9 +100,9 @@ class PlanScopedModelLogEntryManager(BaseLogEntryManager):
 class PlanScopedModelLogEntry(BaseLogEntry):
     # The type error below stems from the Wagtail code
     object_id = models.CharField(max_length=255, blank=False, db_index=True)  # type: ignore[assignment]
-    plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
+    plan: FK[Plan] = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
 
-    objects = PlanScopedModelLogEntryManager()
+    objects: ClassVar[PlanScopedModelLogEntryManager] = PlanScopedModelLogEntryManager()  # type: ignore[misc]
 
     class Meta:
         ordering = ['-timestamp', '-id']
@@ -192,13 +199,13 @@ class PlanScopedPageLogEntryManager(BaseLogEntryManager):
 
 
 class PlanScopedPageLogEntry(BaseLogEntry):
-    page = models.ForeignKey(
+    page: FK[Page] = models.ForeignKey(
         'wagtailcore.Page',
         on_delete=models.DO_NOTHING,
         db_constraint=False,
         related_name='+',
     )
-    plan = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
+    plan: FK[Plan] = models.ForeignKey('actions.Plan', null=False, blank=False, on_delete=models.PROTECT)
 
     objects = PlanScopedPageLogEntryManager()
 
