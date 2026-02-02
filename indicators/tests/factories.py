@@ -55,7 +55,7 @@ class CommonIndicatorFactory(DjangoModelFactory[CommonIndicator]):
         model = 'indicators.CommonIndicator'
 
     identifier = Sequence(lambda i: f'common-indicator-{i}')
-    name = "Common indicator"
+    name = Sequence(lambda i: f"Common indicator {i}")
     description = RichText("<p>Common indicator description</p>")
     quantity = SubFactory(QuantityFactory)
     unit = SubFactory(UnitFactory)
@@ -171,7 +171,7 @@ class DimensionFactory(DjangoModelFactory[Dimension]):
     class Meta:
         model = 'indicators.Dimension'
 
-    name = "Dimension"
+    name = Sequence(lambda i: f"Dimension {i}")
 
 
 class DimensionCategoryFactory(DjangoModelFactory[DimensionCategory]):
@@ -179,7 +179,7 @@ class DimensionCategoryFactory(DjangoModelFactory[DimensionCategory]):
         model = 'indicators.DimensionCategory'
 
     dimension = SubFactory(DimensionFactory)
-    name = "Dimension category"
+    name = Sequence(lambda i: f"Dimension category {i}")
 
 
 class IndicatorDimensionFactory(DjangoModelFactory[IndicatorDimension]):

@@ -14,6 +14,7 @@ from images.tests.factories import AplansImageFactory
 from indicators.models.indicator import Indicator
 from indicators.tests.factories import (
     ActionIndicatorFactory,
+    DimensionCategoryFactory,
     IndicatorFactory,
     IndicatorGoalFactory,
     IndicatorLevelFactory,
@@ -199,7 +200,11 @@ def test_copy_indicator(  # noqa: PLR0915
     # plan copy
     assert plan_with_pages.indicators.get() == indicator
     indicator.contact_persons_unordered.add(person)
-    value = IndicatorValueFactory.create(indicator=indicator)
+    # Create dimension categories for the test
+    dimension = plan_dimension.dimension
+    dimension_category1 = DimensionCategoryFactory.create(dimension=dimension)
+    dimension_category2 = DimensionCategoryFactory.create(dimension=dimension)
+    value = IndicatorValueFactory.create(indicator=indicator, categories=[dimension_category1, dimension_category2])
     goal = IndicatorGoalFactory.create(indicator=indicator)
     action_indicator = ActionIndicatorFactory.create(action=action, indicator=indicator)
     effect = RelatedIndicatorFactory.create(
@@ -259,13 +264,26 @@ def test_copy_indicator(  # noqa: PLR0915
     assert cause_copy.causal_indicator != cause.causal_indicator
     assert cause_copy.causal_indicator.name == cause.causal_indicator.name
     assert cause_copy.confidence_level == cause.confidence_level
-    # Test dimensions
+    # Test dimensions (dimensions are copied, not shared, when copy_indicators=True)
     indicator_dimension_copy = indicator_copy.dimensions.get()
     assert indicator_dimension_copy != indicator_dimension
     assert indicator_dimension_copy.indicator == indicator_copy
-    assert indicator_dimension_copy.dimension == indicator_dimension.dimension
-    dimension_plan_ids = indicator_dimension.dimension.plans.values_list('plan_id', flat=True)
-    assert {*dimension_plan_ids} == {plan_with_pages.id, plan_copy.id}
+    dimension_copy = indicator_dimension_copy.dimension
+    assert dimension_copy != dimension
+    assert dimension_copy.name == dimension.name
+    # Original dimension should only be linked to the original plan
+    original_dimension_plan_ids = dimension.plans.values_list('plan_id', flat=True)
+    assert list(original_dimension_plan_ids) == [plan_with_pages.id]
+    # Copied dimension should only be linked to the copied plan
+    copied_dimension_plan_ids = dimension_copy.plans.values_list('plan_id', flat=True)
+    assert list(copied_dimension_plan_ids) == [plan_copy.id]
+    # Test dimension categories (should be copied along with dimensions)
+    dimension_category1_copy = dimension_copy.categories.get(name=dimension_category1.name)
+    dimension_category2_copy = dimension_copy.categories.get(name=dimension_category2.name)
+    assert dimension_category1_copy != dimension_category1
+    assert dimension_category2_copy != dimension_category2
+    # Test that indicator value categories reference the copied dimension categories
+    assert set(value_copy.categories.all()) == {dimension_category1_copy, dimension_category2_copy}
     # Test indicator actions
     action_copy = plan_copy.actions.get()
     assert indicator_copy.actions.get() == action_copy
