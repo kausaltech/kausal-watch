@@ -105,6 +105,8 @@ from .models import (
     CategoryChangeLogMessage,
     IndicatorCategoryRelationship as IndicatorCategoryRelationshipModel,
     IndicatorChangeLogMessage,
+    PledgeCommitment,
+    PledgeUser,
 )
 
 if TYPE_CHECKING:
@@ -2092,9 +2094,88 @@ class UpdatePlanMutation(UpdateModelInstanceMutation):
         form_class = PlanForm
 
 
+class RegisterPledgeUserPayload(graphene.ObjectType[Any]):
+    """Payload returned after registering a pledge user."""
+
+    uuid = graphene.UUID(required=True)
+
+
+class RegisterPledgeUserMutation(graphene.Mutation):
+    """Create a new anonymous PledgeUser."""
+
+    Output = RegisterPledgeUserPayload
+
+    @classmethod
+    def mutate(cls, _root, _info: GQLInfo) -> RegisterPledgeUserPayload:
+        pledge_user = PledgeUser.objects.create()
+        return RegisterPledgeUserPayload(uuid=pledge_user.uuid)
+
+
+class CommitToPledgePayload(graphene.ObjectType[Any]):
+    """Payload returned after committing to or uncommitting from a pledge."""
+
+    committed = graphene.Boolean(required=True)
+
+
+class CommitToPledgeMutation(graphene.Mutation):
+    """Create or remove a commitment to a pledge."""
+
+    class Arguments:
+        user_id = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        pledge_id = graphene.ID(required=True, description='ID of the Pledge')
+        committed = graphene.Boolean(required=True, description='True to commit, False to uncommit')
+
+    Output = CommitToPledgePayload
+
+    @classmethod
+    def mutate(cls, _root, _info: GQLInfo, user_id: uuid.UUID, pledge_id: str, committed: bool) -> CommitToPledgePayload:
+        # Get the PledgeUser
+        try:
+            pledge_user = PledgeUser.objects.get(uuid=user_id)
+        except PledgeUser.DoesNotExist:
+            raise GraphQLError('PledgeUser not found') from None
+
+        # Get the Pledge
+        try:
+            pledge = Pledge.objects.get(id=pledge_id)
+        except Pledge.DoesNotExist:
+            raise GraphQLError('Pledge not found') from None
+
+        if committed:
+            # Create commitment (ignore if already exists)
+            PledgeCommitment.objects.get_or_create(
+                pledge=pledge,
+                pledge_user=pledge_user,
+            )
+        else:
+            # Remove commitment if it exists
+            PledgeCommitment.objects.filter(
+                pledge=pledge,
+                pledge_user=pledge_user,
+            ).delete()
+
+        return CommitToPledgePayload(committed=committed)
+
+
+class PledgeMutations(graphene.ObjectType[Any]):
+    """Mutations related to pledges and community engagement."""
+
+    register_user = RegisterPledgeUserMutation.Field(
+        description='Register a new anonymous pledge user. Returns the UUID for the created user.',
+    )
+    commit_to_pledge = CommitToPledgeMutation.Field(
+        description='Commit to or uncommit from a pledge.',
+    )
+
+
 class Mutation(graphene.ObjectType[Any]):
     update_plan = UpdatePlanMutation.Field()
     update_action_responsible_party = UpdateActionResponsiblePartyMutation.Field()
+    pledge = graphene.Field(PledgeMutations, required=True)
+
+    @staticmethod
+    def resolve_pledge(root, info: GQLInfo) -> PledgeMutations:
+        return PledgeMutations()
 
 
 @sb.type
