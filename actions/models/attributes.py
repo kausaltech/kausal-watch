@@ -7,15 +7,16 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import ObjectDoesNotExist, Q
 from django.db.models.constraints import Deferrable
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager, MultilingualQuerySet
 from wagtail.fields import RichTextField
 
+import sentry_sdk
 from autoslug.fields import AutoSlugField
 
 from kausal_common.i18n.helpers import get_supported_languages
@@ -325,7 +326,21 @@ class AttributeChoice(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return str(self.choice)
+        try:
+            choice = self.choice
+        except ObjectDoesNotExist as e:
+            # The choice can be missing if it has been deleted
+            # but an old reference exists in a serialized revision or snapshot
+            sentry_sdk.set_extra(
+                'serializedReferenceError',
+                'Deleted AttributeChoice instance referenced. '
+                'Probable cause: serialized report representation has stale reference to choice.'
+            )
+            sentry_sdk.set_extra("attributeType", self.type.pk)
+            sentry_sdk.set_extra("attributeChoicePk", self.choice_id)
+            sentry_sdk.capture_exception(e)
+            return gettext('Missing value')
+        return str(choice)
 
 
 @reversion.register(follow=['choice'])
