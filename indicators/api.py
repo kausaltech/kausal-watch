@@ -25,6 +25,7 @@ from people.models import Person
 
 from .models import (
     ActionIndicator,
+    DimensionCategory,
     Indicator,
     IndicatorContactPerson,
     IndicatorGoal,
@@ -223,6 +224,13 @@ class IndicatorDataPointMixin:
 
 
 class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
+    # Explicit declaration required because ManyToManyField with explicit through model
+    # is not automatically handled by DRF's ModelSerializer
+    categories = serializers.PrimaryKeyRelatedField(
+        queryset=DimensionCategory.objects.all(),
+        many=True,
+        required=False,
+    )
 
     def validate_categories(self, cats):
         indicator = self.context['indicator']

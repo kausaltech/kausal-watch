@@ -62,6 +62,7 @@ from indicators.models.values import (
     IndicatorGoal,
     IndicatorGraph,
     IndicatorValue,
+    IndicatorValueCategory,
 )
 
 __all__ = [
@@ -90,6 +91,7 @@ __all__ = [
     'IndicatorQuerySet',
     'IndicatorRelationship',
     'IndicatorValue',
+    'IndicatorValueCategory',
     'PlanCommonIndicator',
     'PlanDimension',
     'Quantity',
