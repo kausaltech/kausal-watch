@@ -296,6 +296,44 @@ class PledgeUser(models.Model):
 
 
 @reversion.register()
+class PledgeCommitment(models.Model):
+    """
+    A commitment made by a PledgeUser to a specific Pledge.
+
+    Tracks when anonymous community members commit to supporting climate action
+    through pledges.
+    """
+
+    pledge: FK[Pledge] = models.ForeignKey(
+        Pledge,
+        on_delete=models.CASCADE,
+        related_name='commitments',
+        verbose_name=_('pledge'),
+    )
+    pledge_user: FK[PledgeUser] = models.ForeignKey(
+        PledgeUser,
+        on_delete=models.CASCADE,
+        related_name='commitments',
+        verbose_name=_('pledge user'),
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('created at'),
+    )
+
+    objects: ClassVar[models.Manager[PledgeCommitment]]
+
+    class Meta:
+        db_table = 'actions_pledgecommitment'
+        verbose_name = _('pledge commitment')
+        verbose_name_plural = _('pledge commitments')
+        unique_together = [('pledge', 'pledge_user')]
+
+    def __str__(self) -> str:
+        return f'{self.pledge_user} - {self.pledge}'
+
+
+@reversion.register()
 class PledgeActionThrough(models.Model):
     """Through model for Pledge-Action many-to-many relationship."""
 
