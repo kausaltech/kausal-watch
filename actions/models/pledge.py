@@ -266,6 +266,36 @@ class Pledge(
 
 
 @reversion.register()
+class PledgeUser(models.Model):
+    """
+    An anonymous user who can make pledge commitments.
+
+    PledgeUser represents community members who participate in pledges without
+    requiring a full user account. The user_data field stores freeform key-value
+    pairs for information like zip_code that can be used for analytics and
+    aggregation purposes.
+    """
+
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_('user data'),
+        help_text=_('Freeform key-value data about the user (e.g., zip_code)'),
+    )
+
+    objects: ClassVar[models.Manager[PledgeUser]]
+
+    class Meta:
+        db_table = 'actions_pledgeuser'
+        verbose_name = _('pledge user')
+        verbose_name_plural = _('pledge users')
+
+    def __str__(self) -> str:
+        return str(self.uuid)
+
+
+@reversion.register()
 class PledgeActionThrough(models.Model):
     """Through model for Pledge-Action many-to-many relationship."""
 
