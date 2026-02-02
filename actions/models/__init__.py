@@ -57,6 +57,7 @@ from .plan import (
 from .pledge import (
     Pledge,
     PledgeActionThrough,
+    PledgeUser,
 )
 
 __all__ = [
@@ -104,6 +105,7 @@ __all__ = [
     'PlanPublicSiteViewer',
     'Pledge',
     'PledgeActionThrough',
+    'PledgeUser',
     'PublicationStatus',
     'RestrictedVisibilityModel',
     'Scenario',
