@@ -40,6 +40,7 @@ from copying.utils import (
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
+from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator, IndicatorLevel
 from pages.models import PlanRootPage
 
@@ -105,6 +106,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         # },
     #},
     'scenarios': {},
+    # Note that `Dimension` instances are copied separately when `copy_indicators` is true.
     'dimensions': {},  # copies through model (`PlanDimension`) instances, not `Dimension` instances
 }
 
@@ -128,13 +130,19 @@ INDICATOR_CLONE_STRUCTURE: CloneStructure = {
     # - related_actions (due to actions -> related_indicators)
 
     'contact_persons': {},
-    'values': {},
+    'values': {
+        'category_links': {},  # copies through model instances, not `DimensionCategory` instances
+    },
     # 'related_actions': {},  # ActionIndicator instances are already copied in PLAN_CLONE_STRUCTURE
     'related_causes': {},
     # If we included not only `related_causes` but also `related_effects`, we'd try to copy ActionIndicator instances
     # twice as it's already done due to `related_causes`.
     'goals': {},
-    'dimensions': {},
+    'dimensions': {},  # copies through model (`IndicatorDimension`) instances, not `Dimension` instances
+}
+
+DIMENSION_CLONE_STRUCTURE: CloneStructure = {
+    'categories': {},
 }
 
 
@@ -832,8 +840,8 @@ def copy_plan(
     If `supersede_original_plan` is true, the copy will supersede the original plan; if
     `supersede_original_actions` is true, each action copy will supersede its original.
 
-    If `copy_indicators` is true, all indicators of `plan` will be copied. However, this requires the plan to have only
-    indicators that are not shared with another plan, otherwise we abort.
+    If `copy_indicators` is true, all indicators and dimensions of `plan` will be copied. However, this requires the
+    plan to have only indicators that are not shared with another plan, otherwise we abort.
 
     Returns the copy.
     """
@@ -929,6 +937,8 @@ def copy_plan(
         indicators = list(plan.indicators.all())
         for indicator in indicators:
             clone(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
+        for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
+            clone(dimension, DIMENSION_CLONE_STRUCTURE, clone_visitor)
     else:
         indicators = []
 
