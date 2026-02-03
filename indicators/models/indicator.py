@@ -325,6 +325,16 @@ class Indicator(
         help_text=_('The node identifier of the node in Paths where this indicator\'s data is imported from.'),
     )
 
+    hide_indicator_graph = models.BooleanField(
+        verbose_name=_('Hide graph'),
+        help_text=_('Do not show the graph for this indicator on the indicator\'s own page.'),
+        default=False,
+    )
+    hide_indicator_table = models.BooleanField(
+        verbose_name=_('Hide table'),
+        help_text=_('Do not show this indicator\'s values in a table on the indicator\'s own page.'),
+        default=False
+    )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
@@ -376,6 +386,8 @@ class Indicator(
         'ticks_rounding',
         'value_rounding',
         'data_categories_are_stackable',
+        'hide_indicator_graph',
+        'hide_indicator_table',
         'reference_value',
         'sort_key',
     ]

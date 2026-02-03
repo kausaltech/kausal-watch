@@ -536,6 +536,11 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             ),
         )
 
+        indicator_page_settings_panels = [
+            FieldPanel('hide_indicator_graph'),
+            FieldPanel('hide_indicator_table')
+        ]
+
         # Visualisation settings
         visualisation_settings_panels = [
             FieldRowPanel(
@@ -562,10 +567,18 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         ]
         panels.append(
             MultiFieldPanel(
+                indicator_page_settings_panels,
+                heading=_('Indicator page settings'),
+                classname='collapsed',
+            )
+        )
+
+        panels.append(
+            MultiFieldPanel(
                 visualisation_settings_panels,
                 heading=_('Visualization settings'),
                 classname='collapsed',
-            ),
+            )
         )
 
         # Advanced settings
