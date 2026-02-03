@@ -468,7 +468,6 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('indicator_ordering'),
         FieldPanel('indicators_open_in_modal'),
         FieldPanel('enable_change_log'),
-        FieldPanel('enable_community_engagement'),
     ]
 
     # Arbitrary string as the 'permission' parameter, here 'superuser', can
@@ -495,6 +494,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('display_field_visibility_restrictions', permission='superuser'),
         FieldPanel('output_report_action_print_layout', permission='superuser'),
         FieldPanel('password_protected', permission='superuser'),
+        FieldPanel('enable_community_engagement', permission='superuser'),
     ]
 
     # Define all panels explicitly to prevent Wagtail from auto-generating form fields
