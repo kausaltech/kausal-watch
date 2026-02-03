@@ -1014,7 +1014,6 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
 
 @register_django_node
 class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
-    attributes = graphene.List(graphene.NonNull(AttributeInterface), required=True)
     actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'))
     image = graphene.Field('images.schema.ImageNode')
 
@@ -2054,7 +2053,7 @@ class Query:
     @staticmethod
     def resolve_pledge(root, info: GQLInfo, id=None, slug=None):
         plan = get_plan_from_context(info)
-        if not plan:
+        if not plan or not plan.features.enable_community_engagement:
             return None
 
         qs = Pledge.objects.filter(plan=plan)
@@ -2068,7 +2067,7 @@ class Query:
     @staticmethod
     def resolve_pledges(root, info: GQLInfo):
         plan = get_plan_from_context(info)
-        if not plan:
+        if not plan or not plan.features.enable_community_engagement:
             return None
 
         qs = Pledge.objects.filter(plan=plan)
