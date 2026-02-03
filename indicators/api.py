@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast, override
 
 from django.db import transaction
+from django.db.models import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -13,13 +14,14 @@ import django_filters as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 
-from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet
+from kausal_common.api.bulk import BulkListSerializer
 from kausal_common.api.utils import register_view_helper
 from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.permissions import WatchObjectPermissions
+from aplans.rest_api import get_plan_from_view
 
-from actions.api import AuditLoggingBulkModelViewSet, get_plan_from_view, plan_router
+from actions.api import AuditLoggingBulkModelViewSet, plan_router
 from actions.models import Plan
 from people.models import Person
 
@@ -461,13 +463,17 @@ class IndicatorSerializerMixin:
                 fields[field_name].context['_cache'] = cache
 
 
-class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer):
+class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[Indicator]):
     _modifiable_indicators_cache: IndicatorQuerySet
 
     uuid = serializers.UUIDField(required=False)
     latest_value = IndicatorValueSerializer(read_only=True, required=False, label=_('Latest value'))
     contact_persons = IndicatorContactPersonSerializer(required=False, label=_('Contact persons'))
     categories = IndicatorCategoriesSerializer(required=False)
+    # The level is in singular because an indicator is always manipulated in the
+    # context of a single plan. The other levels of the indicator should be left
+    # intact.
+    level = serializers.ChoiceField(choices=Indicator.LEVELS, required=False, allow_null=True, label=_('Level'))
 
     class Meta:
         model = Indicator
@@ -475,12 +481,23 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
             'latest_value', 'reference', 'internal_notes', 'visibility', 'contact_persons', 'categories',
-            'description',
+            'description', 'level',
         )
+
+    def to_representation(self, instance: Indicator) -> dict[str, Any]:
+        representation = super().to_representation(instance)
+        plan = self.context['plan']
+        try:
+            representation['level'] = instance.levels.get(plan=plan).level
+        except ObjectDoesNotExist:
+            representation['level'] = None
+        return representation
 
     def create(self, validated_data: dict):
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
+        _not_provided = object()
+        level = validated_data.pop('level', _not_provided)
         instance = super().create(validated_data)
 
         fields = cast(dict[str, serializers.Field], self.fields)
@@ -490,15 +507,18 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         if contact_persons_data is not None and hasattr(fields['contact_persons'], 'update'):
             fields['contact_persons'].update(instance, contact_persons_data)
         assert not instance.levels.exists()
-        plan = self.context['request'].user.get_active_admin_plan()
-        level = 'strategic'
-        assert level in [v for v, _ in Indicator.LEVELS]
-        instance.levels.create(plan=plan, level=level)
+        plan = self.context['plan']
+        if level is _not_provided:
+            level = 'strategic'
+        if level is not None:
+            assert level in [v for v, _ in Indicator.LEVELS]
+            instance.levels.create(plan=plan, level=level)
         return instance
 
     def update(self, instance, validated_data):
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
+        level = validated_data.pop('level', None)
         instance = super().update(instance, validated_data)
 
         fields = cast(dict[str, serializers.Field], self.fields)
@@ -508,6 +528,19 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         if contact_persons_data is not None and hasattr(fields['contact_persons'], 'update'):
             fields['contact_persons'].update(instance, contact_persons_data)
         instance.save()
+
+        plan = self.context['plan']
+        if level is None:
+            instance.levels.filter(plan=plan).delete()
+        else:
+            try:
+                plan_level = instance.levels.get(plan=plan)
+            except ObjectDoesNotExist:
+                instance.levels.create(plan=plan, level=level)
+            else:
+                plan_level.level = level
+                plan_level.save()
+
         return instance
 
     def get_fields(self):
@@ -593,7 +626,7 @@ class IndicatorPermission(WatchObjectPermissions):
         OpenApiParameter(name='plan_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class IndicatorViewSet(AuditLoggingBulkModelViewSet):
+class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
     serializer_class = IndicatorSerializer
     filterset_class = IndicatorFilter
 
@@ -608,6 +641,11 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet):
         if not plan:
             return Indicator.objects.none()
         return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')  # type: ignore[attr-defined]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['plan'] = self.get_plan()
+        return context
 
     def get_permissions(self):
         if self.action == 'update_values':
