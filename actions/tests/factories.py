@@ -51,6 +51,7 @@ from actions.models import (
     Plan,
     PlanDomain,
     PlanFeatures,
+    Pledge,
     Scenario,
 )
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
@@ -460,3 +461,28 @@ class WorkflowTaskFactory(ModelFactory[WorkflowTask]):
 
     workflow = SubFactory(WorkflowFactory)
     task = SubFactory(WagtailTaskFactory)
+
+
+@mute_signals(post_save)
+class PledgeFactory(ModelFactory[Pledge]):
+    plan = SubFactory(PlanFactory)
+    name = Sequence(lambda i: f"Pledge {i}")
+    slug = Sequence(lambda i: f'pledge-{i}')
+    description = "A test pledge description"
+    resident_count = 100
+    impact_statement = "We save <b>100kg CO₂e</b> each year"
+    local_equivalency = "That's equivalent to <b>10 round trips</b>"
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs) -> Pledge:
+        # OrderedModel.save() auto-assigns order unless order_on_create is set
+        if 'order' in kwargs:
+            kwargs['order_on_create'] = kwargs.pop('order')
+        return super()._create(model_class, *args, **kwargs)
+
+    @post_generation
+    @staticmethod
+    def actions(obj: Pledge, create, extracted, **kwargs) -> None:
+        if create and extracted:
+            for action in extracted:
+                obj.actions.add(action)

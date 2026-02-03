@@ -156,8 +156,9 @@ class Pledge(
 
     # Manager configuration
     if TYPE_CHECKING:
-
-        class PledgeManager(MLModelManager['Pledge', PledgeQuerySet]): ...
+        class PledgeManager(MLModelManager['Pledge', PledgeQuerySet]):
+            def for_plan(self, plan: Plan) -> PledgeQuerySet: ...
+            def visible_for_user(self, user: UserOrAnon, plan: Plan) -> PledgeQuerySet: ...
     else:
         PledgeManager = MLModelManager.from_queryset(PledgeQuerySet)
 
