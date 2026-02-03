@@ -571,6 +571,33 @@ class PlanNode(DjangoNode[Plan]):
     def resolve_has_indicator_relationships(root: Plan, info: GQLInfo):
         return root.has_indicator_relationships(info.context.user)
 
+    # Community engagement: Pledges
+    pledge = graphene.Field(
+        'actions.schema.PledgeNode',
+        id=graphene.ID(),
+        slug=graphene.String(),
+    )
+    pledges = graphene.List(graphene.NonNull('actions.schema.PledgeNode'))
+
+    @staticmethod
+    def resolve_pledge(root: Plan, info: GQLInfo, id: str | None = None, slug: str | None = None):
+        if not root.features.enable_community_engagement:
+            return None
+
+        qs = Pledge.objects.filter(plan=root)
+
+        if id:
+            return qs.filter(id=id).first()
+        if slug:
+            return qs.filter(slug=slug).first()
+        return None
+
+    @staticmethod
+    def resolve_pledges(root: Plan, info: GQLInfo):
+        if not root.features.enable_community_engagement:
+            return None
+
+        return Pledge.objects.filter(plan=root).order_by('order')
 
     class Meta:
         model = Plan
@@ -1786,16 +1813,6 @@ class Query:
         external_identifier=graphene.ID(required=True),
     )
 
-    pledge = graphene.Field(
-        PledgeNode,
-        id=graphene.ID(),
-        slug=graphene.String(),
-    )
-
-    pledges = graphene.List(
-        graphene.NonNull(PledgeNode),
-    )
-
     workflow_states = graphene.List(
         WorkflowStateDescription, plan=graphene.ID(required=False),
     )
@@ -2049,29 +2066,6 @@ class Query:
         return Category.objects.get(
             type__plan=plan_obj, type__identifier=category_type, external_identifier=external_identifier,
         )
-
-    @staticmethod
-    def resolve_pledge(root, info: GQLInfo, id=None, slug=None):
-        plan = get_plan_from_context(info)
-        if not plan or not plan.features.enable_community_engagement:
-            return None
-
-        qs = Pledge.objects.filter(plan=plan)
-
-        if id:
-            return qs.filter(id=id).first()
-        if slug:
-            return qs.filter(slug=slug).first()
-        return None
-
-    @staticmethod
-    def resolve_pledges(root, info: GQLInfo):
-        plan = get_plan_from_context(info)
-        if not plan or not plan.features.enable_community_engagement:
-            return None
-
-        qs = Pledge.objects.filter(plan=plan)
-        return qs.order_by('order')
 
 
 class ActionResponsiblePartyForm(ModelForm[ActionResponsibleParty]):
