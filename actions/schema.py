@@ -2161,6 +2161,35 @@ class CommitToPledgeMutation(graphene.Mutation):
         return CommitToPledgePayload(committed=committed)
 
 
+class SetUserDataPayload(graphene.ObjectType[Any]):
+    """Payload returned after setting user data."""
+
+    uuid = graphene.UUID(required=True)
+
+
+class SetUserDataMutation(graphene.Mutation):
+    """Set a key-value pair in a PledgeUser's user_data."""
+
+    class Arguments:
+        user_id = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        key = graphene.String(required=True, description='Key to set in user_data')
+        value = graphene.String(required=True, description='Value to set for the key')
+
+    Output = SetUserDataPayload
+
+    @classmethod
+    def mutate(cls, _root, _info: GQLInfo, user_id: uuid.UUID, key: str, value: str) -> SetUserDataPayload:
+        try:
+            pledge_user = PledgeUser.objects.get(uuid=user_id)
+        except PledgeUser.DoesNotExist:
+            raise GraphQLError('PledgeUser not found') from None
+
+        pledge_user.user_data[key] = value
+        pledge_user.save(update_fields=['user_data'])
+
+        return SetUserDataPayload(uuid=pledge_user.uuid)
+
+
 class PledgeMutations(graphene.ObjectType[Any]):
     """Mutations related to pledges and community engagement."""
 
@@ -2169,6 +2198,9 @@ class PledgeMutations(graphene.ObjectType[Any]):
     )
     commit_to_pledge = CommitToPledgeMutation.Field(
         description='Commit to or uncommit from a pledge.',
+    )
+    set_user_data = SetUserDataMutation.Field(
+        description='Set a key-value pair in a PledgeUser\'s user_data.',
     )
 
 
