@@ -98,6 +98,7 @@ register(actions_factories.AttributeTypeChoiceOptionFactory)
 register(actions_factories.ImpactGroupFactory)
 register(actions_factories.PlanFactory)
 register(actions_factories.PlanFeaturesFactory)
+register(actions_factories.PledgeFactory)
 register(actions_factories.PlanDomainFactory)
 # We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
 # because `client` is already taken by django.test.Client and the following problem appears when we register the

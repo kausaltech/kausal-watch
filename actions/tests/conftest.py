@@ -1,27 +1,8 @@
-import json
-
 from django.urls import reverse
 
 import pytest
-from pytest_factoryboy import register
 
-from .factories import (
-    ActionFactory,
-    CategoryFactory,
-    CategoryTypeFactory,
-    CommonCategoryFactory,
-    CommonCategoryTypeFactory,
-    PlanFactory,
-)
-from .fixtures import actions_with_relations_factory  # noqa
-
-register(ActionFactory)
-register(CategoryFactory)
-register(CategoryTypeFactory)
-register(CommonCategoryFactory)
-register(CommonCategoryTypeFactory)
-register(PlanFactory)
-# register(UserFactory)
+from .fixtures import actions_with_relations_factory  # noqa: F401
 
 
 @pytest.fixture
