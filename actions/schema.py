@@ -2137,9 +2137,13 @@ class CommitToPledgeMutation(graphene.Mutation):
 
         # Get the Pledge
         try:
-            pledge = Pledge.objects.get(id=pledge_id)
+            pledge = Pledge.objects.select_related('plan__features').get(id=pledge_id)
         except Pledge.DoesNotExist:
             raise GraphQLError('Pledge not found') from None
+
+        # Check that community engagement is enabled for this plan
+        if not pledge.plan.features.enable_community_engagement:
+            raise GraphQLError('Community engagement is not enabled for this plan') from None
 
         if committed:
             # Create commitment (ignore if already exists)
