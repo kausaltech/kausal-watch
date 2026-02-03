@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
     from actions.attributes import AttributeFieldPanel, AttributeType
     from actions.models.action import Action
+    from images.models import AplansImage
 
 
 class PledgeQuerySet(MultilingualQuerySet['Pledge']):
@@ -85,7 +86,7 @@ class Pledge(
         verbose_name=_('description'),
         help_text=_('A short description of the pledge'),
     )
-    image: FK[None] = models.ForeignKey(
+    image: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage',
         null=True,
         blank=True,
@@ -338,6 +339,8 @@ class PledgeCommitment(models.Model):
 @reversion.register()
 class PledgeActionThrough(models.Model):
     """Through model for Pledge-Action many-to-many relationship."""
+
+    objects: ClassVar[models.Manager[PledgeActionThrough]]
 
     pledge: FK[Pledge] = models.ForeignKey(
         Pledge,
