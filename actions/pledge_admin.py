@@ -13,6 +13,8 @@ from wagtail.snippets.models import register_snippet
 
 from dal import autocomplete
 
+from kausal_common.users import user_or_bust
+
 from admin_site.forms import WatchAdminModelForm
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchViewSet
@@ -20,7 +22,6 @@ from admin_site.wagtail import (
     AplansTabbedInterface,
     get_translation_tabs,
 )
-from kausal_common.users import user_or_bust
 
 from .models import Pledge
 
@@ -28,8 +29,6 @@ if TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
     from django.contrib.auth.models import AnonymousUser
     from django.http import HttpRequest
-
-    from aplans.types import WatchAdminRequest
 
 
 class PledgePermissionPolicy(PlanRelatedPermissionPolicy):
@@ -90,7 +89,7 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
         else:
             attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_type.on_form_save(obj, self.cleaned_data)
+            attribute_type.on_form_save(obj, self.cleaned_data, commit=commit)
         return obj
 
 
