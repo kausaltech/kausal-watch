@@ -223,7 +223,6 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "pledge action",
                 "verbose_name_plural": "pledge actions",
-                "db_table": "actions_pledge_actions",
                 "unique_together": {("pledge", "action")},
             },
         ),

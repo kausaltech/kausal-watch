@@ -353,7 +353,6 @@ class PledgeActionThrough(models.Model):
     )
 
     class Meta:
-        db_table = 'actions_pledge_actions'
         unique_together = [('pledge', 'action')]
         verbose_name = _('pledge action')
         verbose_name_plural = _('pledge actions')
