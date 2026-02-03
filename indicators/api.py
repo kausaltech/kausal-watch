@@ -475,6 +475,7 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
             'latest_value', 'reference', 'internal_notes', 'visibility', 'contact_persons', 'categories',
+            'description',
         )
 
     def create(self, validated_data: dict):
