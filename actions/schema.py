@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 import graphene
 import strawberry
 import strawberry as sb
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
@@ -31,8 +32,8 @@ from grapple.registry import registry as grapple_registry
 from grapple.types.interfaces import get_page_interface
 
 from kausal_common.datasets.models import Dataset
-from kausal_common.graphene.grapple import make_grapple_streamfield
 from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
+from kausal_common.graphene.grapple import make_grapple_streamfield
 from kausal_common.graphene.registry import register_graphene_node
 from kausal_common.users import is_authenticated, user_or_none
 
@@ -48,7 +49,7 @@ from aplans.graphql_types import (
     register_django_node,
     set_active_plan,
 )
-from aplans.utils import hyphenate_fi, public_fields
+from aplans.utils import get_hostname_redirect_hostname, hyphenate_fi, public_fields
 
 from actions.action_admin import ActionAdmin
 from actions.action_status_summary import (
@@ -133,6 +134,7 @@ PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
 class PlanDomainNode(DjangoNode[PlanDomain]):
     status = PublicationStatusNode(source='status')
     status_message = graphene.String(required=False, source='status_message')
+
     class Meta:
         model = PlanDomain
         fields = (
@@ -145,6 +147,25 @@ class PlanDomainNode(DjangoNode[PlanDomain]):
             'status',
             'status_message',
         )
+
+    @staticmethod
+    def resolve_redirect_to_hostname(root: PlanDomain, _info: GQLInfo) -> str | None:
+        if root.redirect_to_hostname:
+            return root.redirect_to_hostname
+
+        redirect_hostnames = settings.REDIRECT_UI_HOSTNAMES
+        if not redirect_hostnames:
+            return None
+        hostname = get_hostname_redirect_hostname(
+            hostname=root.hostname,
+            redirect_hostnames=redirect_hostnames,
+            allowed_non_wildcard_hosts=set(),
+            preserve_subdomain=True
+        )
+        if hostname:
+            sentry_sdk.capture_message(f'Wildcard hostname UI redirect: {root.hostname} -> {hostname}', level='info')
+        return hostname
+
 
 class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     public_contact_persons = graphene.Boolean(required=True)
@@ -203,9 +224,20 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         context_hostname = getattr(info.context, '_plan_hostname', None)
         if not hostname:
             hostname = context_hostname
-            if not hostname:
-                return None
-        return root.domains.filter(plan=root, hostname=hostname).first()
+        if not hostname:
+            return None
+        explicit_domains = root.domains.filter(plan=root, hostname=hostname).first()
+        if explicit_domains:
+            return explicit_domains
+
+        implicit_domain = PlanDomain(
+            plan=root,
+            hostname=hostname,
+            redirect_to_hostname=None,
+            base_path='',
+            redirect_aliases=[],
+        )
+        return implicit_domain
 
     @staticmethod
     @gql_optimizer.resolver_hints(

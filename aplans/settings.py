@@ -106,6 +106,7 @@ env = environ.FileAwareEnv(
     GDAL_LIBRARY_PATH=(str, ''),
     GEOS_LIBRARY_PATH=(str, ''),
     REDIRECT_HOSTNAMES=(list, []),
+    REDIRECT_UI_HOSTNAMES=(list, []),
     **COMMON_ENV_SCHEMA,
 )
 
@@ -185,20 +186,31 @@ DEPLOY_YAML_FILE_PATH = env('DEPLOY_YAML_FILE_PATH')
 
 WATCH_BACKEND_REGION_URLS = env('WATCH_BACKEND_REGION_URLS')
 
+def parse_redirect_hostnames(redirect_hostnames: list[str]) -> tuple[tuple[str, str], ...]:
+    return tuple(  # type: ignore[reportReturnType]
+        tuple(item.split(':', 1)) for item in redirect_hostnames if ':' in item  # type: ignore[misc]
+    )
+
 # Hostname redirect configuration for HostnameRedirectMiddleware
 # Performs HTTP 301 redirects based on incoming request hostname patterns.
 #
 # Environment variable format (comma-separated list):
 #   REDIRECT_HOSTNAMES=from_pattern:to_hostname,from_pattern:to_hostname,...
 #
+# The REDIRECT_UI_HOSTNAMES follows the same syntax but is not used
+# in a middleware -- it is passed to the UI to do the redirect
+#
 # read more in docs/middleware/redirects.md
-_redirect_hostnames_raw = env.list('REDIRECT_HOSTNAMES', default=[])  # pyright: ignore
-if _redirect_hostnames_raw is None or isinstance(_redirect_hostnames_raw, environ.NoValue):
-    REDIRECT_HOSTNAMES = None
-else:
-    REDIRECT_HOSTNAMES = tuple(
-        tuple(item.split(':', 1)) for item in _redirect_hostnames_raw if ':' in item  # pyright: ignore
-    )
+REDIRECT_HOSTNAMES = None
+REDIRECT_UI_HOSTNAMES = None
+
+_redirect_hostnames_raw = env.list('REDIRECT_HOSTNAMES', default=[])
+if _redirect_hostnames_raw:
+    REDIRECT_HOSTNAMES = parse_redirect_hostnames(_redirect_hostnames_raw)
+
+_redirect_ui_hostnames_raw = env.list('REDIRECT_UI_HOSTNAMES', default=[])
+if _redirect_ui_hostnames_raw:
+    REDIRECT_UI_HOSTNAMES = parse_redirect_hostnames(_redirect_ui_hostnames_raw)
 
 KAUSAL_PATHS_URL = env('KAUSAL_PATHS_URL')
 

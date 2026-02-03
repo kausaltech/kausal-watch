@@ -31,3 +31,13 @@ Behavior:
   - Original path, query string, and scheme (http/https) are preserved
   - First matching pattern wins (order matters)
   - Redirects are logged to application logs and sent to Sentry
+
+# UI-based redirects
+
+A similar mechanism can be used to instruct the UI to do a 301
+redirect, presumably redirecting a plan identifier based legacy wildcard
+URL to the proper wildcard URL in use.
+
+In this case the ENV variable is called REDIRECT_UI_HOSTNAMES
+and it follows the same format as above, except port numbers are
+not supported.

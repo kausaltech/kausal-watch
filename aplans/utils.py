@@ -13,12 +13,13 @@ from typing import (
     Literal,
     Protocol,
     Self,
+    Sequence,
     TypedDict,
     cast,
 )
 from typing_extensions import TypeVar
 
-from django import forms
+from django import forms, http
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.postgres.fields import ArrayField
@@ -722,3 +723,131 @@ class StaticBlockToStructBlockWorkaroundMixin(_StructBlock):
         if len(li) == 1 and li[0] is None:
             values = [{}]
         return super().bulk_to_python(values)
+
+
+def _matches_hostname_pattern(hostname: str, pattern: str) -> tuple[bool, str | None]:
+    """
+    Check if hostname matches pattern with strict wildcard rules.
+
+    Wildcards (*) match only valid subdomain parts (no periods).
+    Example: '*.example.com' matches 'test.example.com' but not 'foo.bar.example.com'.
+
+    Args:
+        hostname: The hostname to check (e.g., 'test.example.com')
+        pattern: The pattern with optional wildcards (e.g., '*.example.com')
+
+    Returns:
+        Tuple of:
+          True if hostname matches the pattern, False otherwise.
+          The part of the hostname that matched the wildcard, or None
+
+    """
+    hostname_parts = hostname.split('.')
+    pattern_parts = pattern.split('.')
+
+    # Must have same number of parts
+    if len(hostname_parts) != len(pattern_parts):
+        return False, None
+
+    match = None
+
+    for hostname_part, pattern_part in zip(hostname_parts, pattern_parts, strict=True):
+        if pattern_part == '*':
+            # Wildcard matches any valid subdomain part
+            # Valid: alphanumeric and hyphens, not starting/ending with hyphen
+            if not hostname_part:
+                return False, None
+            match = re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$', hostname_part)
+            if not match:
+                return False, None
+        elif hostname_part != pattern_part:
+            # Exact match required
+            return False, None
+
+    return True, (match.group(0) if match else None)
+
+
+def get_hostname_redirect_hostname(
+    hostname: str,
+    redirect_hostnames: Sequence[tuple[str, str]],
+    allowed_non_wildcard_hosts: set[str],
+    preserve_subdomain: bool = False,
+) -> str | None:
+
+    for from_pattern, to_hostname in redirect_hostnames:
+        if hostname == to_hostname or hostname in allowed_non_wildcard_hosts:
+            continue
+        is_match, wildcard_subdomain_part = _matches_hostname_pattern(hostname, from_pattern)
+        if not is_match:
+            continue
+
+        result_hostname = to_hostname
+        if preserve_subdomain and wildcard_subdomain_part:
+            result_hostname = f'{wildcard_subdomain_part}.{to_hostname}'
+        return result_hostname
+    return None
+
+
+def get_hostname_redirect_url(
+    hostname: str,
+    schema: str | None,
+    path: str,
+    redirect_hostnames: Sequence[tuple[str, str]],
+    allowed_non_wildcard_hosts: set[str],
+    preserve_subdomain: bool = False
+) -> str | None:
+    """
+    Check if request should be redirected based on hostname patterns.
+
+    If the request host matches any host in allowed_non_wildcard_hosts,
+    do not redirect!
+
+    Returns:
+        string with full redirect url if redirect needed, otherwise None
+
+    """
+    redirect_to_hostname = get_hostname_redirect_hostname(
+        hostname,
+        redirect_hostnames,
+        allowed_non_wildcard_hosts,
+        preserve_subdomain,
+    )
+    if not redirect_to_hostname:
+        return None
+    redirect_url = f"{schema}://{redirect_to_hostname}{path}"
+    return redirect_url
+
+
+def get_hostname_redirect_response(
+    request: http.HttpRequest,
+    redirect_hostnames: list[tuple[str, str]],
+    allowed_non_wildcard_hosts: set[str],
+) -> http.HttpResponse | None:
+    # Get hostname directly from META to avoid ALLOWED_HOSTS validation
+    hostname = request.META.get('HTTP_HOST', '')
+    if not hostname:
+        return None
+
+    url = get_hostname_redirect_url(
+            hostname=hostname,
+            schema=request.scheme,
+            path=request.get_full_path(),
+            redirect_hostnames=redirect_hostnames,
+            allowed_non_wildcard_hosts=allowed_non_wildcard_hosts,
+        )
+    if url is None:
+        return None
+
+    # Log to application logs
+    logger.info(f'Redirecting hostname \'{hostname}\' to \'{url}\'')
+
+    # Send to Sentry for monitoring
+    sentry_sdk.capture_message(
+        f'Hostname redirect: {hostname} -> {url}',
+        level='info',
+        extras={
+            'from_hostname': hostname,
+            'to_url': url,
+        },
+    )
+    return http.HttpResponsePermanentRedirect(url)
