@@ -1064,7 +1064,7 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
 
     @staticmethod
     def resolve_actions(root: Pledge, info: GQLInfo):
-        return list(root.actions.all())
+        return root.actions.get_queryset().visible_for_user(info.context.user)
 
     @staticmethod
     def resolve_image(root: Pledge, _info: GQLInfo):

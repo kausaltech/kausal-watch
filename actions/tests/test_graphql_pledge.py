@@ -348,6 +348,44 @@ class TestPledgeActionsResolver:
         assert data['plan']['pledge'] is not None
         assert data['plan']['pledge']['actions'] == []
 
+    def test_pledge_actions_filtered_by_user_visibility(self, graphql_client_query_data):
+        """
+        Test that pledge actions are filtered by user visibility.
+
+        Internal actions should not be visible to anonymous users when accessed
+        through a pledge, just like when accessed directly through categories.
+        This prevents bypassing action visibility restrictions.
+        """
+        from aplans.utils import RestrictedVisibilityModel
+
+        # Create a public action that should be visible
+        public_action = ActionFactory.create(
+            plan=self.plan,
+            visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
+        )
+        # Create an internal action that should NOT be visible to anonymous users
+        internal_action = ActionFactory.create(
+            plan=self.plan,
+            visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL,
+        )
+
+        # Associate both actions with the pledge
+        pledge = PledgeFactory.create(
+            plan=self.plan,
+            actions=[public_action, internal_action],
+        )
+
+        # Query as anonymous user (default for graphql_client_query_data)
+        data = graphql_client_query_data(
+            PLEDGE_WITH_ACTIONS_QUERY,
+            variables={'plan': self.plan.identifier, 'id': str(pledge.id)},
+        )
+
+        assert data['plan']['pledge'] is not None
+        # Only the public action should be returned
+        assert len(data['plan']['pledge']['actions']) == 1
+        assert data['plan']['pledge']['actions'][0]['id'] == str(public_action.id)
+
 
 class TestPledgeImageResolver:
     @pytest.fixture(autouse=True)
