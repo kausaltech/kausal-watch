@@ -76,6 +76,8 @@ class TestCommitToPledgeMutation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.plan = PlanFactory.create()
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
         self.pledge = Pledge.objects.create(
             plan=self.plan,
             name='Test Pledge',
@@ -239,3 +241,29 @@ class TestCommitToPledgeMutation:
 
         assert 'errors' in response
         assert 'Pledge not found' in response['errors'][0]['message']
+
+    def test_commit_when_community_engagement_disabled_returns_error(self, graphql_client_query):
+        """Test that committing fails when community engagement is disabled for the plan."""
+        self.plan.features.enable_community_engagement = False
+        self.plan.features.save()
+
+        response = graphql_client_query(
+            """
+            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userId': str(self.pledge_user.uuid),
+                'pledgeId': str(self.pledge.id),
+                'committed': True,
+            },
+        )
+
+        assert 'errors' in response
+        assert 'Community engagement is not enabled for this plan' in response['errors'][0]['message']
+        assert PledgeCommitment.objects.count() == 0
