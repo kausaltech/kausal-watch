@@ -916,6 +916,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
         plan.create_default_site(hostname)
         plan.save()
 
+        plan.related_organizations.add(plan.organization)
+
         with translation.override(plan.primary_language):
             from actions.models import ActionImplementationPhase, ActionStatus
 
