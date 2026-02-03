@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self, cast, override
 
 import graphene
 from django.contrib.contenttypes.models import ContentType
@@ -973,6 +973,20 @@ class PledgeListPage(FixedSlugPage):
     ]
 
     _default_manager: ClassVar[PageManager[Self]]
+
+    @classmethod
+    @override
+    def can_create_at(cls, parent: Page) -> bool:
+        if not super().can_create_at(parent):
+            return False
+        if not isinstance(parent, PlanRootPage):
+            return False
+        if parent.get_children().filter(slug=cls.force_slug).exists():
+            return False
+        plan = parent.plan
+        if plan and plan.features.enable_community_engagement:
+            return True
+        return False
 
     class Meta:
         verbose_name = _('Pledge list page')
