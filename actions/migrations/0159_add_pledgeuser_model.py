@@ -36,11 +36,17 @@ class Migration(migrations.Migration):
                         verbose_name="user data",
                     ),
                 ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        verbose_name="created at",
+                    ),
+                ),
             ],
             options={
                 "verbose_name": "pledge user",
                 "verbose_name_plural": "pledge users",
-                "db_table": "actions_pledgeuser",
             },
         ),
     ]
