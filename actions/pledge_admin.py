@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel,
@@ -75,6 +76,15 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def clean_slug(self):
+        # Since the plan field is excluded from the form, `validate_unique()` won't check
+        # the unique_together = [('plan', 'slug')] constraint. We validate it manually here.
+        slug = self.cleaned_data['slug']
+        plan = self.instance.plan
+        if Pledge.objects.filter(plan=plan, slug=slug).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(_("There is already a pledge with this slug."))
+        return slug
 
     def save(self, commit=True):
         obj = super().save(commit)
