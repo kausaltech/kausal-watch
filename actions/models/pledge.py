@@ -171,7 +171,6 @@ class Pledge(
     ]
 
     class Meta:
-        db_table = 'actions_pledge'
         verbose_name = _('pledge')
         verbose_name_plural = _('pledges')
         unique_together = [('plan', 'slug')]
@@ -283,11 +282,14 @@ class PledgeUser(models.Model):
         verbose_name=_('user data'),
         help_text=_('Freeform key-value data about the user (e.g., zip_code)'),
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('created at'),
+    )
 
     objects: ClassVar[models.Manager[PledgeUser]]
 
     class Meta:
-        db_table = 'actions_pledgeuser'
         verbose_name = _('pledge user')
         verbose_name_plural = _('pledge users')
 
@@ -324,7 +326,6 @@ class PledgeCommitment(models.Model):
     objects: ClassVar[models.Manager[PledgeCommitment]]
 
     class Meta:
-        db_table = 'actions_pledgecommitment'
         verbose_name = _('pledge commitment')
         verbose_name_plural = _('pledge commitments')
         unique_together = [('pledge', 'pledge_user')]
