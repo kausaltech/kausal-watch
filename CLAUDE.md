@@ -30,6 +30,7 @@ Can integrate with Kausal Paths (scenario modeling product) for emissions impact
 ### Testing
 - `python run_tests.py` - Run all tests (includes kausal_watch_extensions if available)
 - `pytest` - Alternative test runner with configuration in pyproject.toml
+- Always use `--reuse-db` flag to avoid recreating the database on each test run
 
 ### Linting and Type Checking
 - `ruff check` - Run code linting (configuration extends kausal_common/configs/ruff.toml)
