@@ -189,7 +189,6 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "pledge",
                 "verbose_name_plural": "pledges",
-                "db_table": "actions_pledge",
                 "ordering": ["plan", "order"],
             },
             bases=(models.Model, wagtail.search.index.Indexed),
