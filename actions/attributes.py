@@ -462,6 +462,10 @@ class AttributeType(ABC, Generic[T]):
             from actions.models.category import Category
             assert isinstance(obj, Category)
             assert self.instance.scope == obj.type
+        elif content_type.model == 'pledge':
+            from actions.models.pledge import Pledge
+            assert isinstance(obj, Pledge)
+            assert self.instance.scope == obj.plan
         else:
             raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model} of object {obj}")
         return self.attributes.filter(content_type=content_type, object_id=obj.id)
