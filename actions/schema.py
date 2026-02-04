@@ -2121,17 +2121,17 @@ class CommitToPledgeMutation(graphene.Mutation):
     """Create or remove a commitment to a pledge."""
 
     class Arguments:
-        user_id = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        user_uuid = graphene.UUID(required=True, description='UUID of the PledgeUser')
         pledge_id = graphene.ID(required=True, description='ID of the Pledge')
         committed = graphene.Boolean(required=True, description='True to commit, False to uncommit')
 
     Output = CommitToPledgePayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo, user_id: uuid.UUID, pledge_id: str, committed: bool) -> CommitToPledgePayload:
+    def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, pledge_id: str, committed: bool) -> CommitToPledgePayload:
         # Get the PledgeUser
         try:
-            pledge_user = PledgeUser.objects.get(uuid=user_id)
+            pledge_user = PledgeUser.objects.get(uuid=user_uuid)
         except PledgeUser.DoesNotExist:
             raise GraphQLError('PledgeUser not found') from None
 
@@ -2171,16 +2171,16 @@ class SetUserDataMutation(graphene.Mutation):
     """Set a key-value pair in a PledgeUser's user_data."""
 
     class Arguments:
-        user_id = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        user_uuid = graphene.UUID(required=True, description='UUID of the PledgeUser')
         key = graphene.String(required=True, description='Key to set in user_data')
         value = graphene.String(required=True, description='Value to set for the key')
 
     Output = SetUserDataPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo, user_id: uuid.UUID, key: str, value: str) -> SetUserDataPayload:
+    def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, key: str, value: str) -> SetUserDataPayload:
         try:
-            pledge_user = PledgeUser.objects.get(uuid=user_id)
+            pledge_user = PledgeUser.objects.get(uuid=user_uuid)
         except PledgeUser.DoesNotExist:
             raise GraphQLError('PledgeUser not found') from None
 

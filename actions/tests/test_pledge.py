@@ -269,7 +269,6 @@ class TestPledgeUser:
         pledge_user = PledgeUser.objects.create(user_data=user_data)
 
         assert pledge_user.user_data == user_data
-        assert pledge_user.user_data['zip_code'] == '12345'
 
     def test_pledge_user_uuid_unique(self):
         """Test that each PledgeUser gets a unique UUID."""
