@@ -534,26 +534,23 @@ class TestCommitToPledgeMutation:
 
         data = graphql_client_query_data(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
         )
 
         assert data['pledge']['commitToPledge']['committed'] is True
-        assert PledgeCommitment.objects.count() == 1
-
-        commitment = PledgeCommitment.objects.first()
-        assert commitment is not None
+        commitment = PledgeCommitment.objects.get()
         assert commitment.pledge == self.pledge
         assert commitment.pledge_user == self.pledge_user
 
@@ -568,16 +565,16 @@ class TestCommitToPledgeMutation:
 
         data = graphql_client_query_data(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': False,
             },
@@ -597,16 +594,16 @@ class TestCommitToPledgeMutation:
 
         data = graphql_client_query_data(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -621,16 +618,16 @@ class TestCommitToPledgeMutation:
 
         data = graphql_client_query_data(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': False,
             },
@@ -639,22 +636,22 @@ class TestCommitToPledgeMutation:
         assert data['pledge']['commitToPledge']['committed'] is False
         assert PledgeCommitment.objects.count() == 0
 
-    def test_commit_with_invalid_user_id_returns_error(self, graphql_client_query):
-        """Test that committing with invalid user ID returns an error."""
+    def test_commit_with_invalid_user_uuid_returns_error(self, graphql_client_query):
+        """Test that committing with invalid user UUID returns an error."""
         fake_uuid = str(uuid.uuid4())
 
         response = graphql_client_query(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': fake_uuid,
+                'userUuid': fake_uuid,
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -667,16 +664,16 @@ class TestCommitToPledgeMutation:
         """Test that committing with invalid pledge ID returns an error."""
         response = graphql_client_query(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': '99999',
                 'committed': True,
             },
@@ -692,16 +689,16 @@ class TestCommitToPledgeMutation:
 
         response = graphql_client_query(
             """
-            mutation($userId: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
               pledge {
-                commitToPledge(userId: $userId, pledgeId: $pledgeId, committed: $committed) {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
                   committed
                 }
               }
             }
             """,
             variables={
-                'userId': str(self.pledge_user.uuid),
+                'userUuid': str(self.pledge_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -722,16 +719,16 @@ class TestSetUserDataMutation:
 
         data = graphql_client_query_data(
             """
-            mutation($userId: UUID!, $key: String!, $value: String!) {
+            mutation($userUuid: UUID!, $key: String!, $value: String!) {
               pledge {
-                setUserData(userId: $userId, key: $key, value: $value) {
+                setUserData(userUuid: $userUuid, key: $key, value: $value) {
                   uuid
                 }
               }
             }
             """,
             variables={
-                'userId': str(pledge_user.uuid),
+                'userUuid': str(pledge_user.uuid),
                 'key': 'zip_code',
                 'value': '01234',
             },
@@ -748,16 +745,16 @@ class TestSetUserDataMutation:
 
         graphql_client_query_data(
             """
-            mutation($userId: UUID!, $key: String!, $value: String!) {
+            mutation($userUuid: UUID!, $key: String!, $value: String!) {
               pledge {
-                setUserData(userId: $userId, key: $key, value: $value) {
+                setUserData(userUuid: $userUuid, key: $key, value: $value) {
                   uuid
                 }
               }
             }
             """,
             variables={
-                'userId': str(pledge_user.uuid),
+                'userUuid': str(pledge_user.uuid),
                 'key': 'zip_code',
                 'value': '99999',
             },
@@ -772,16 +769,16 @@ class TestSetUserDataMutation:
 
         graphql_client_query_data(
             """
-            mutation($userId: UUID!, $key: String!, $value: String!) {
+            mutation($userUuid: UUID!, $key: String!, $value: String!) {
               pledge {
-                setUserData(userId: $userId, key: $key, value: $value) {
+                setUserData(userUuid: $userUuid, key: $key, value: $value) {
                   uuid
                 }
               }
             }
             """,
             variables={
-                'userId': str(pledge_user.uuid),
+                'userUuid': str(pledge_user.uuid),
                 'key': 'zip_code',
                 'value': '00100',
             },
@@ -791,22 +788,22 @@ class TestSetUserDataMutation:
         assert pledge_user.user_data['city'] == 'Helsinki'
         assert pledge_user.user_data['zip_code'] == '00100'
 
-    def test_set_user_data_with_invalid_user_id_returns_error(self, graphql_client_query):
-        """Test that setting data with invalid user ID returns an error."""
+    def test_set_user_data_with_invalid_user_uuid_returns_error(self, graphql_client_query):
+        """Test that setting data with invalid user UUID returns an error."""
         fake_uuid = str(uuid.uuid4())
 
         response = graphql_client_query(
             """
-            mutation($userId: UUID!, $key: String!, $value: String!) {
+            mutation($userUuid: UUID!, $key: String!, $value: String!) {
               pledge {
-                setUserData(userId: $userId, key: $key, value: $value) {
+                setUserData(userUuid: $userUuid, key: $key, value: $value) {
                   uuid
                 }
               }
             }
             """,
             variables={
-                'userId': fake_uuid,
+                'userUuid': fake_uuid,
                 'key': 'zip_code',
                 'value': '01234',
             },
