@@ -464,3 +464,222 @@ def test_bulk_indicator_put_creates_individual_log_entries(
     for indicator in indicators:
         total_logs = count_log_entries(instance=indicator, plan=plan)
         assert total_logs >= 1, f"Expected at least 1 log entry for indicator {indicator.name}"
+
+
+def test_get_indicator_returns_level_for_plan(api_client, plan, plan_admin_user, indicator_factory):
+    indicator = indicator_factory(plans=[])
+    indicator.levels.create(plan=plan, level='strategic')
+    indicator.organization.related_plans.add(plan)
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.get(detail_url)
+    assert response.status_code == 200
+    assert 'level' in response.data
+    assert response.data['level'] == 'strategic'
+
+
+def test_get_indicator_returns_null_level_when_no_level_exists(
+        api_client, plan, plan_admin_user, indicator_factory, unit_factory, organization_factory):
+    indicator = indicator_factory(plans=[])
+    indicator.organization.related_plans.add(plan)
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.get(detail_url)
+    assert response.status_code == 200
+    assert response.data['level'] is None
+
+
+def test_create_indicator_sets_strategic_level(
+        api_client, plan, person_factory, unit_factory, organization_factory, indicator_list_url):
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    unit = unit_factory()
+    org = organization_factory()
+    org.related_plans.add(plan)
+
+    response = api_client.post(indicator_list_url, data={
+        'name': 'New Indicator',
+        'unit': unit.pk,
+        'organization': org.pk,
+    })
+    assert response.status_code == 201
+
+    created_indicator = Indicator.objects.get(name='New Indicator')
+    assert created_indicator.levels.count() == 1
+    level = created_indicator.levels.first()
+    assert level is not None
+    assert level.plan == plan
+    assert level.level == 'strategic'
+
+
+def test_create_indicator_with_custom_level(
+        api_client, plan, person_factory, unit_factory, organization_factory, indicator_list_url):
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    unit = unit_factory()
+    org = organization_factory()
+    org.related_plans.add(plan)
+
+    response = api_client.post(indicator_list_url, data={
+        'name': 'Tactical Indicator',
+        'unit': unit.pk,
+        'organization': org.pk,
+        'level': 'tactical',
+    })
+    assert response.status_code == 201
+
+    created_indicator = Indicator.objects.get(name='Tactical Indicator')
+    assert created_indicator.levels.count() == 1
+    level = created_indicator.levels.first()
+    assert level is not None
+    assert level.plan == plan
+    assert level.level == 'tactical'
+
+
+def test_create_indicator_with_null_level_creates_no_level(
+        api_client, plan, person_factory, unit_factory, organization_factory, indicator_list_url):
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    unit = unit_factory()
+    org = organization_factory()
+    org.related_plans.add(plan)
+
+    response = api_client.post(indicator_list_url, data={
+        'name': 'No Level Indicator',
+        'unit': unit.pk,
+        'organization': org.pk,
+        'level': None,
+    })
+    assert response.status_code == 201
+
+    created_indicator = Indicator.objects.get(name='No Level Indicator')
+    assert created_indicator.levels.count() == 0
+
+
+def test_update_indicator_level_changes_level(api_client, plan, plan_admin_user, indicator, indicator_detail_url):
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(indicator_detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': 'tactical',
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    level = indicator.levels.get(plan=plan)
+    assert level.level == 'tactical'
+
+
+def test_update_indicator_level_to_null_removes_level(api_client, plan, plan_admin_user, indicator, indicator_detail_url):
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(indicator_detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': None,
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert not indicator.levels.filter(plan=plan).exists()
+
+
+def test_update_indicator_adds_level_when_none_exists(
+        api_client, plan, plan_admin_user, indicator_factory, indicator_contact_factory):
+    indicator = indicator_factory(plans=[])
+    indicator.organization.related_plans.add(plan)
+    indicator_contact_factory(indicator=indicator, person=plan_admin_user.person)
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+
+    assert not indicator.levels.filter(plan=plan).exists()
+
+    response = api_client.put(detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': 'operational',
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    level = indicator.levels.get(plan=plan)
+    assert level.level == 'operational'
+
+
+def test_update_indicator_level_does_not_affect_other_plans(
+        api_client, plan, plan_admin_user, indicator_factory, plan_factory):
+    other_plan = plan_factory()
+    indicator = indicator_factory(plans=[])
+    indicator.organization.related_plans.add(plan)
+    indicator.organization.related_plans.add(other_plan)
+    indicator.levels.create(plan=plan, level='strategic')
+    indicator.levels.create(plan=other_plan, level='tactical')
+
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': 'operational',
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert indicator.levels.get(plan=plan).level == 'operational'
+    assert indicator.levels.get(plan=other_plan).level == 'tactical'
+
+
+def test_remove_indicator_level_does_not_affect_other_plans(
+        api_client, plan, plan_admin_user, indicator_factory, plan_factory):
+    other_plan = plan_factory()
+    indicator = indicator_factory(plans=[])
+    indicator.organization.related_plans.add(plan)
+    indicator.organization.related_plans.add(other_plan)
+    indicator.levels.create(plan=plan, level='strategic')
+    indicator.levels.create(plan=other_plan, level='tactical')
+
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': None,
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert not indicator.levels.filter(plan=plan).exists()
+    assert indicator.levels.get(plan=other_plan).level == 'tactical'
+
+
+def test_update_indicator_with_invalid_level_returns_400(
+        api_client, plan, plan_admin_user, indicator_factory):
+    indicator = indicator_factory(plans=[])
+    indicator.levels.create(plan=plan, level='strategic')
+    indicator.organization.related_plans.add(plan)
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(detail_url, data={
+        'name': indicator.name,
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+        'level': 'invalid_level',
+    })
+    assert response.status_code == 400
+    assert 'level' in response.data
