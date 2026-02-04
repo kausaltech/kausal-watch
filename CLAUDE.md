@@ -30,7 +30,7 @@ Can integrate with Kausal Paths (scenario modeling product) for emissions impact
 ### Testing
 - `python run_tests.py` - Run all tests (includes kausal_watch_extensions if available)
 - `pytest` - Alternative test runner with configuration in pyproject.toml
-- Always use `--reuse-db` flag to avoid recreating the database on each test run
+- Use `--reuse-db` flag to avoid recreating the database on each test run
 
 ### Linting and Type Checking
 - `ruff check` - Run code linting (configuration extends kausal_common/configs/ruff.toml)
@@ -132,6 +132,9 @@ Each Django app follows consistent naming conventions for different functionalit
   ```
 - Always include `from __future__ import annotations` at the top of files.
 
+### Code Style Conventions
+- For user-facing strings, use double quotes; for strings not visible to users, use single quotes.
+
 ### Code Structure Conventions
 - **Avoid deeply nested logic** - Prefer flat, readable code over nested conditionals
 - **Use early returns** - Check for exceptional/edge cases first and return early
@@ -160,6 +163,9 @@ def process_request(request):
     # main logic is not nested
     return do_something()
 ```
+
+### Testing Conventions
+- If there is a factory (e.g., `ModelFactory`) registered as a fixture (e.g., `model_factory`), prefer creating objects via `ModelFactory.create()` over `model_factory()`.
 
 ### Key Models Hierarchy
 - `actions/models/plan.py` - Plan, PlanDomain, PlanFeatures

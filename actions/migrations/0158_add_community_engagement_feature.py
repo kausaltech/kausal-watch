@@ -138,7 +138,7 @@ class Migration(migrations.Migration):
                     "impact_statement",
                     wagtail.fields.RichTextField(
                         blank=True,
-                        help_text='Describe the total environmental benefit if this many residents commit. Include specific numbers and units. Start with "We save" or "We reduce" for consistency. Example: "We save <b>9,200kg CO₂e</b> each year"',
+                        help_text='Describe the total environmental benefit if this many residents commit. Include specific numbers and units. Start with "We save" or "We reduce" for consistency. Example: "We save 9,200kg CO₂e each year"',
                         max_length=120,
                         verbose_name="environmental impact at scale",
                     ),
@@ -147,7 +147,7 @@ class Migration(migrations.Migration):
                     "local_equivalency",
                     wagtail.fields.RichTextField(
                         blank=True,
-                        help_text='Translate the environmental impact into something relatable and specific to your community. Use local landmarks, familiar distances, or everyday activities. Start with "That\'s equivalent to" or "That\'s like" for consistency. Example: "That\'s equivalent to avoiding <b>575 round trips</b> between City Hall and the waterfront"',
+                        help_text='Translate the environmental impact into something relatable and specific to your community. Use local landmarks, familiar distances, or everyday activities. Start with "That\'s equivalent to" or "That\'s like" for consistency. Example: "That\'s equivalent to avoiding 575 round trips between City Hall and the waterfront"',
                         max_length=120,
                         verbose_name="local equivalency comparison",
                     ),

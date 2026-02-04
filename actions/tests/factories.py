@@ -470,8 +470,8 @@ class PledgeFactory(ModelFactory[Pledge]):
     slug = Sequence(lambda i: f'pledge-{i}')
     description = "A test pledge description"
     resident_count = 100
-    impact_statement = "We save <b>100kg CO₂e</b> each year"
-    local_equivalency = "That's equivalent to <b>10 round trips</b>"
+    impact_statement = "We save 100kg CO₂e each year."
+    local_equivalency = "That's equivalent to 10 round trips."
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Pledge:

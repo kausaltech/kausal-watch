@@ -25,8 +25,8 @@ class TestPledge:
             slug='test-pledge',
             description='A test pledge description',
             resident_count=100,
-            impact_statement='We save <b>100kg CO₂e</b> each year',
-            local_equivalency="That's equivalent to <b>10 round trips</b>",
+            impact_statement='We save 100kg CO₂e each year',
+            local_equivalency="That's equivalent to 10 round trips",
         )
 
         assert pledge.name == 'Test Pledge'
@@ -68,16 +68,6 @@ class TestPledge:
         assert pledge1.slug == pledge2.slug
         assert pledge1.plan != pledge2.plan
 
-    def test_feature_flag_default_false(self):
-        """Test that feature flag defaults to False for new plans."""
-        new_plan = PlanFactory.create()
-        # Reset to default (factory might set it)
-        new_plan.features.enable_community_engagement = False
-        new_plan.features.save()
-        new_plan.features.refresh_from_db()
-
-        assert new_plan.features.enable_community_engagement is False
-
     def test_feature_flag_in_public_fields(self):
         """Test that enable_community_engagement is in public_fields."""
         assert 'enable_community_engagement' in self.plan.features.public_fields
@@ -111,10 +101,7 @@ class TestPledgeActionRelationship:
 
         pledge = PledgeFactory.create(plan=self.plan, actions=[action1, action2, action3])
 
-        assert pledge.actions.count() == 3
-        assert action1 in pledge.actions.all()
-        assert action2 in pledge.actions.all()
-        assert action3 in pledge.actions.all()
+        assert set(pledge.actions.all()) == {action1, action2, action3}
 
     def test_action_can_be_in_multiple_pledges(self):
         """Test that an action can be associated with multiple pledges."""
@@ -157,12 +144,10 @@ class TestPledgeOrdering:
         # Use explicit order_by to verify ordering
         pledges = list(Pledge.objects.filter(plan=self.plan).order_by('order'))
 
+        assert pledges == [pledge1, pledge2, pledge3]
         assert pledges[0].order == 1
         assert pledges[1].order == 2
         assert pledges[2].order == 3
-        assert pledges[0] == pledge1
-        assert pledges[1] == pledge2
-        assert pledges[2] == pledge3
 
     def test_pledge_order_can_be_changed(self):
         """Test that pledge order can be modified."""

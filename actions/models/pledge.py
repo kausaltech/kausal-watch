@@ -119,24 +119,24 @@ class Pledge(
         ),
     )
     impact_statement = RichTextField(
-        max_length=120,
+        max_length=150,
         blank=True,
         verbose_name=_('environmental impact at scale'),
         help_text=_(
             'Describe the total environmental benefit if this many residents commit. '
             'Include specific numbers and units. Start with "We save" or "We reduce" for consistency. '
-            'Example: "We save <b>9,200kg CO₂e</b> each year"'
+            'Example: "We save 9,200kg CO₂e each year."'
         ),
     )
     local_equivalency = RichTextField(
-        max_length=120,
+        max_length=150,
         blank=True,
         verbose_name=_('local equivalency comparison'),
         help_text=_(
             'Translate the environmental impact into something relatable and specific to your community. '
             'Use local landmarks, familiar distances, or everyday activities. '
             'Start with "That\'s equivalent to" or "That\'s like" for consistency. '
-            'Example: "That\'s equivalent to avoiding <b>575 round trips</b> between City Hall and the waterfront"'
+            'Example: "That\'s equivalent to avoiding 575 round trips between City Hall and the waterfront."'
         ),
     )
 

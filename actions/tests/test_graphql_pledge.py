@@ -84,8 +84,8 @@ PLAN_FEATURES_QUERY = """
 
 class TestPledgeQueryById:
     @pytest.fixture(autouse=True)
-    def setup(self, plan_factory):
-        plan = plan_factory()
+    def setup(self):
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -143,8 +143,8 @@ class TestPledgeQueryById:
             slug='test-pledge',
             description='Test description',
             resident_count=150,
-            impact_statement='We save <b>150kg CO₂e</b>',
-            local_equivalency="That's equivalent to <b>15 trips</b>",
+            impact_statement='We save 150kg CO₂e',
+            local_equivalency="That's equivalent to 15 trips",
             order=5,
         )
 
@@ -158,16 +158,16 @@ class TestPledgeQueryById:
         assert result['slug'] == 'test-pledge'
         assert result['description'] == 'Test description'
         assert result['residentCount'] == 150
-        assert result['impactStatement'] == 'We save <b>150kg CO₂e</b>'
-        assert result['localEquivalency'] == "That's equivalent to <b>15 trips</b>"
+        assert result['impactStatement'] == 'We save 150kg CO₂e'
+        assert result['localEquivalency'] == "That's equivalent to 15 trips"
         assert result['order'] == 5
         assert result['uuid'] is not None
 
 
 class TestPledgeQueryFeatureFlag:
-    def test_pledge_query_returns_null_when_feature_disabled(self, graphql_client_query_data, plan_factory):
+    def test_pledge_query_returns_null_when_feature_disabled(self, graphql_client_query_data):
         """Test that pledge query returns null when enable_community_engagement is False."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = False
         plan.features.save()
 
@@ -180,9 +180,9 @@ class TestPledgeQueryFeatureFlag:
 
         assert data['plan']['pledge'] is None
 
-    def test_pledge_query_returns_pledge_when_feature_enabled(self, graphql_client_query_data, plan_factory):
+    def test_pledge_query_returns_pledge_when_feature_enabled(self, graphql_client_query_data):
         """Test that pledge query returns pledge when feature is enabled."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -199,8 +199,8 @@ class TestPledgeQueryFeatureFlag:
 
 class TestPledgesListQuery:
     @pytest.fixture(autouse=True)
-    def setup(self, plan_factory):
-        plan = plan_factory()
+    def setup(self):
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -265,9 +265,9 @@ class TestPledgesListQuery:
 
 
 class TestPledgePlanIsolation:
-    def test_pledge_query_returns_null_for_other_plan_pledge(self, graphql_client_query_data, plan_factory):
+    def test_pledge_query_returns_null_for_other_plan_pledge(self, graphql_client_query_data):
         """Test that pledge query cannot access pledges from different plans."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -285,9 +285,9 @@ class TestPledgePlanIsolation:
 
         assert data['plan']['pledge'] is None
 
-    def test_pledges_query_only_returns_current_plan_pledges(self, graphql_client_query_data, plan_factory):
+    def test_pledges_query_only_returns_current_plan_pledges(self, graphql_client_query_data):
         """Test that pledges query only returns pledges for the current plan."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -311,8 +311,8 @@ class TestPledgePlanIsolation:
 
 class TestPledgeActionsResolver:
     @pytest.fixture(autouse=True)
-    def setup(self, plan_factory):
-        plan = plan_factory()
+    def setup(self):
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -389,8 +389,8 @@ class TestPledgeActionsResolver:
 
 class TestPledgeImageResolver:
     @pytest.fixture(autouse=True)
-    def setup(self, plan_factory):
-        plan = plan_factory()
+    def setup(self):
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -423,9 +423,9 @@ class TestPledgeImageResolver:
 
 
 class TestPlanFeaturesGraphQL:
-    def test_enable_community_engagement_exposed_in_graphql(self, graphql_client_query_data, plan_factory):
+    def test_enable_community_engagement_exposed_in_graphql(self, graphql_client_query_data):
         """Test that enable_community_engagement flag is exposed in GraphQL."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -436,9 +436,9 @@ class TestPlanFeaturesGraphQL:
 
         assert data['plan']['features']['enableCommunityEngagement'] is True
 
-    def test_enable_community_engagement_false_exposed_in_graphql(self, graphql_client_query_data, plan_factory):
+    def test_enable_community_engagement_false_exposed_in_graphql(self, graphql_client_query_data):
         """Test that enable_community_engagement=False is correctly exposed."""
-        plan = plan_factory()
+        plan = PlanFactory.create()
         plan.features.enable_community_engagement = False
         plan.features.save()
 

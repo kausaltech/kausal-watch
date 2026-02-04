@@ -74,9 +74,6 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
             'actions': autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def clean_slug(self):
         # Since the plan field is excluded from the form, `validate_unique()` won't check
         # the unique_together = [('plan', 'slug')] constraint. We validate it manually here.
@@ -106,10 +103,8 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
 class PledgeViewMixin:
     """Mixin for Pledge create/edit views with dynamic attribute panels."""
 
-    if TYPE_CHECKING:
-        # Type annotations for attributes provided by the view class
-        model: type[Pledge]
-        request: HttpRequest
+    model: type[Pledge]
+    request: HttpRequest
 
     def get_form_class(self):
         """Build form class with dynamic attribute fields."""
@@ -133,19 +128,14 @@ class PledgeViewMixin:
             for field in attribute_type.get_form_fields(user, plan, instance)
         }
 
-        # If no attribute fields, just use the base form
-        if not attribute_fields:
-            return PledgeAdminForm
-
-        # Create a dynamic form class with attribute fields
-        # Include _user as a class attribute so the form can access it
+        # Create a dynamic form class with attribute fields and user context.
+        # Include _user as a class attribute so the form can access it.
         form_attrs = {**attribute_fields, '_user': user}
         form_class = type(
-            'PledgeAdminFormWithAttributes',
+            'DynamicPledgeAdminForm',
             (PledgeAdminForm,),
             form_attrs,
         )
-
         return form_class
 
     def get_panel(self):
@@ -168,16 +158,16 @@ class PledgeViewMixin:
         main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(user)
 
         # Build panels list using ViewSet's panels directly (don't copy to preserve widget config)
-        # The ViewSet panels are: name, slug, description, image, body, impact MultiFieldPanel, actions
-        # Insert attribute panels after image (position 4)
-        panels: list = list(PledgeViewSet.panels[:4])  # name, slug, description, image
+        # Insert attribute panels at the position specified by attribute_panel_position
+        pos = PledgeViewSet.attribute_panel_position
+        panels: list = list(PledgeViewSet.panels[:pos])
 
         # Add attribute panels
         if main_attribute_panels:
             panels.extend(list(main_attribute_panels))
 
-        # Add remaining panels: body, impact MultiFieldPanel, actions
-        panels.extend(PledgeViewSet.panels[4:])
+        # Add remaining panels
+        panels.extend(PledgeViewSet.panels[pos:])
 
         # Get translation tabs
         i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
@@ -194,13 +184,9 @@ class PledgeViewMixin:
 class PledgeCreateView(PledgeViewMixin, WatchCreateView[Pledge]):
     """Custom create view for Pledge with dynamic attribute panels."""
 
-    pass
-
 
 class PledgeEditView(PledgeViewMixin, WatchEditView[Pledge]):
     """Custom edit view for Pledge with dynamic attribute panels."""
-
-    pass
 
 
 class PledgeViewSet(WatchViewSet[Pledge]):
@@ -225,6 +211,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
         FieldPanel('slug'),
         FieldPanel('description'),
         FieldPanel('image'),
+        # Attribute panels will come here (set in PledgeViewSet.attribute_panel_position)
         FieldPanel('body'),
         MultiFieldPanel(
             [
@@ -236,6 +223,9 @@ class PledgeViewSet(WatchViewSet[Pledge]):
         ),
         FieldPanel('actions', widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete')),
     ]
+
+    # Position in `panels` where attribute panels are inserted (after name, slug, description, image)
+    attribute_panel_position = 4
 
     @property
     def permission_policy(self):
