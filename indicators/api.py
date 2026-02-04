@@ -493,7 +493,7 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[
             representation['level'] = None
         return representation
 
-    def create(self, validated_data: dict):
+    def create(self, validated_data: dict[str, Any]):
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
         _not_provided = object()
@@ -515,10 +515,11 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[
             instance.levels.create(plan=plan, level=level)
         return instance
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data: dict[str, Any]):
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
-        level = validated_data.pop('level', None)
+        _not_provided = object()
+        level = validated_data.pop('level', _not_provided)
         instance = super().update(instance, validated_data)
 
         fields = cast(dict[str, serializers.Field], self.fields)
@@ -530,7 +531,9 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[
         instance.save()
 
         plan = self.context['plan']
-        if level is None:
+        if level is _not_provided:
+            pass
+        elif level is None:
             instance.levels.filter(plan=plan).delete()
         else:
             try:

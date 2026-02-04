@@ -683,3 +683,25 @@ def test_update_indicator_with_invalid_level_returns_400(
     })
     assert response.status_code == 400
     assert 'level' in response.data
+
+
+def test_update_indicator_omitting_level_leaves_level_intact(
+        api_client, plan, plan_admin_user, indicator_factory):
+    indicator = indicator_factory(plans=[])
+    indicator.levels.create(plan=plan, level='strategic')
+    indicator.organization.related_plans.add(plan)
+    detail_url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(detail_url, data={
+        'name': 'Updated Name',
+        'unit': indicator.unit.pk,
+        'organization': indicator.organization.pk,
+    })
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert indicator.name == 'Updated Name'
+    level = indicator.levels.get(plan=plan)
+    assert level.level == 'strategic'
