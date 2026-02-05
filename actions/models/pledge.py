@@ -7,7 +7,6 @@ import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
-from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail import blocks
