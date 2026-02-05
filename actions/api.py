@@ -1065,12 +1065,36 @@ class ActionSerializer(
         editable_roles = get_editable_roles(action, user)
         return [role for role in roles_with_changes if role not in editable_roles]
 
+    def _get_editable_roles_with_customization[Role](
+        self,
+        action: Action,
+        user: User,
+        field_name: str,
+        get_user_editable_roles: Callable[[User, Action], Iterable[Role]],
+    ) -> Iterable[Role]:
+        """Get editable roles, respecting BuiltInFieldCustomization restrictions."""
+        try:
+            customization = BuiltInFieldCustomization.objects.get(
+                plan=self.plan,
+                content_type=ContentType.objects.get_for_model(Action),
+                field_name=field_name,
+            )
+            is_editable = customization.is_instance_editable_by(user, self.plan, action)
+        except BuiltInFieldCustomization.DoesNotExist:
+            is_editable = True
+        if is_editable:
+            return get_user_editable_roles(user, action)
+        return []
+
     def validate_contact_persons(self, value):
         violating_roles = self._roles_violating_edit_permissions(
             value=value,
             fk_name='person',
             get_existing_objects=lambda action: action.contact_persons.all(),
-            get_editable_roles=lambda action, user: user.get_editable_contact_person_roles(action),
+            get_editable_roles=lambda action, user: self._get_editable_roles_with_customization(
+                action, user, 'contact_persons',
+                lambda u, a: u.get_editable_contact_person_roles(a),
+            ),
         )
         if violating_roles:
             raise serializers.ValidationError(_(
@@ -1079,25 +1103,14 @@ class ActionSerializer(
         return value
 
     def validate_responsible_parties(self, value):
-        def get_editable_roles(action: Action, user: User) -> Iterable[ActionResponsibleParty.Role | None]:
-            try:
-                customization = BuiltInFieldCustomization.objects.get(
-                    plan=self.plan,
-                    content_type=ContentType.objects.get_for_model(Action),
-                    field_name='responsible_parties',
-                )
-                is_editable = customization.is_instance_editable_by(user, self.plan, action)
-            except BuiltInFieldCustomization.DoesNotExist:
-                is_editable = True
-            if is_editable:
-                return user.get_editable_responsible_party_roles(action)
-            return []
-
         violating_roles = self._roles_violating_edit_permissions(
             value=value,
             fk_name='organization',
             get_existing_objects=lambda action: action.responsible_parties.all(),
-            get_editable_roles=get_editable_roles,
+            get_editable_roles=lambda action, user: self._get_editable_roles_with_customization(
+                action, user, 'responsible_parties',
+                lambda u, a: u.get_editable_responsible_party_roles(a),
+            ),
         )
         if violating_roles:
             raise serializers.ValidationError(_(

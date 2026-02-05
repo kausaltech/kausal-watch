@@ -737,3 +737,87 @@ def test_bulk_action_task_put_creates_individual_log_entries(
     for task in tasks:
         total_logs = count_log_entries(instance=task, plan=plan)
         assert total_logs >= 1, f"Expected at least 1 log entry for task {task.name}"
+
+
+@pytest.mark.parametrize(('field_name', 'role'), [
+    ('contact_persons', 'editor'),  # ActionContactPerson requires a role (no blank allowed)
+    ('responsible_parties', None),  # ActionResponsibleParty allows blank/None role
+])
+def test_action_field_customization_restricts_editing(
+    api_client, plan, action, field_name, role
+):
+    """
+    Test that BuiltInFieldCustomization restrictions are respected in the REST API.
+
+    When a BuiltInFieldCustomization restricts editing of contact_persons or responsible_parties
+    to plan_admins only, regular contact persons should not be able to modify those fields.
+    """
+    from aplans.utils import InstancesEditableByMixin
+
+    from admin_site.tests.factories import BuiltInFieldCustomizationFactory
+
+    # Create a contact person for this action (not a plan admin)
+    contact = ActionContactFactory.create(action=action)
+    user = contact.person.user
+
+    # Create a customization that restricts editing to plan admins only
+    BuiltInFieldCustomizationFactory.create(
+        plan=plan,
+        field_name=field_name,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+    )
+
+    api_client.force_login(user)
+    url = reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': action.pk})
+
+    # Attempt to modify the restricted field
+    if field_name == 'contact_persons':
+        new_person = PersonFactory.create(organization=plan.organization)
+        new_value = [{'person': new_person.pk, 'role': role}]
+    else:  # responsible_parties
+        new_value = [{'organization': plan.organization.pk, 'role': role}]
+
+    response = api_client.patch(url, data={field_name: new_value})
+
+    # Should be rejected because user is only a contact person, not a plan admin
+    assert response.status_code == 400
+    assert 'do not have permission' in response.json_data[field_name][0].lower()
+
+
+@pytest.mark.parametrize(('field_name', 'role'), [
+    ('contact_persons', 'editor'),  # ActionContactPerson requires a role (no blank allowed)
+    ('responsible_parties', None),  # ActionResponsibleParty allows blank/None role
+])
+def test_action_field_customization_allows_plan_admin(
+    api_client, plan, action, field_name, role
+):
+    """Test that plan admins can edit fields even when BuiltInFieldCustomization restricts to plan_admins."""
+
+    from aplans.utils import InstancesEditableByMixin
+
+    from admin_site.tests.factories import BuiltInFieldCustomizationFactory
+
+    # Create a plan admin
+    admin_person = PersonFactory.create(general_admin_plans=[plan])
+
+    # Create a customization that restricts editing to plan admins only
+    BuiltInFieldCustomizationFactory.create(
+        plan=plan,
+        field_name=field_name,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+    )
+
+    api_client.force_login(admin_person.user)
+    url = reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': action.pk})
+
+    # Attempt to modify the restricted field
+    if field_name == 'contact_persons':
+        new_person = PersonFactory.create(organization=plan.organization)
+        new_value = [{'person': new_person.pk, 'role': role}]
+    else:  # responsible_parties
+        new_value = [{'organization': plan.organization.pk, 'role': role}]
+
+    response = api_client.patch(url, data={field_name: new_value})
+
+    # Should succeed because user is a plan admin
+    assert response.status_code == 200
