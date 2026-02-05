@@ -1098,7 +1098,10 @@ class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
 
 
 class PledgeUserNode(DjangoNode[PledgeUser]):
-    commitments = graphene.List(graphene.NonNull(PledgeCommitmentNode))
+    commitments = graphene.List(
+        graphene.NonNull(PledgeCommitmentNode),
+        plan=graphene.ID(description='Filter commitments by plan identifier'),
+    )
 
     class Meta:
         model = PledgeUser
@@ -1109,10 +1112,13 @@ class PledgeUserNode(DjangoNode[PledgeUser]):
         ]
 
     @staticmethod
-    def resolve_commitments(root: PledgeUser, info: GQLInfo):
-        return root.commitments.filter(
+    def resolve_commitments(root: PledgeUser, info: GQLInfo, plan: str | None = None):
+        qs = root.commitments.filter(
             pledge__plan__features__enable_community_engagement=True,
         ).select_related('pledge', 'pledge__plan', 'pledge__plan__features')
+        if plan is not None:
+            qs = qs.filter(pledge__plan__identifier=plan)
+        return qs
 
 
 class ScenarioNode(DjangoNode[Scenario]):

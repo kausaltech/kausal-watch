@@ -990,3 +990,42 @@ class TestPledgeUserQuery:
         assert 'Pledge 1' in pledge_names
         assert 'Pledge 2' in pledge_names
         assert 'Pledge 3' in pledge_names
+
+    def test_pledge_user_query_filters_commitments_by_plan(self, graphql_client_query_data):
+        """Test that commitments can be filtered by plan identifier."""
+        plan1 = PlanFactory.create()
+        plan1.features.enable_community_engagement = True
+        plan1.features.save()
+
+        plan2 = PlanFactory.create()
+        plan2.features.enable_community_engagement = True
+        plan2.features.save()
+
+        pledge1 = PledgeFactory.create(plan=plan1, name='Plan 1 Pledge')
+        pledge2 = PledgeFactory.create(plan=plan2, name='Plan 2 Pledge')
+
+        pledge_user = PledgeUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge1, pledge_user=pledge_user)
+        PledgeCommitment.objects.create(pledge=pledge2, pledge_user=pledge_user)
+
+        # Query with plan filter
+        query_with_plan = """
+            query($uuid: UUID!, $plan: ID) {
+                pledgeUser(uuid: $uuid) {
+                    commitments(plan: $plan) {
+                        pledge {
+                            name
+                        }
+                    }
+                }
+            }
+        """
+
+        data = graphql_client_query_data(
+            query_with_plan,
+            variables={'uuid': str(pledge_user.uuid), 'plan': plan1.identifier},
+        )
+
+        assert data['pledgeUser'] is not None
+        assert len(data['pledgeUser']['commitments']) == 1
+        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Plan 1 Pledge'
