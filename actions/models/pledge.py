@@ -53,7 +53,6 @@ class PledgeQuerySet(MultilingualQuerySet['Pledge']):
 class Pledge(
     PlanRelatedOrderedModel,
     ModelWithAttributes,
-    ClusterableModel,
     index.Indexed,
 ):
     """
