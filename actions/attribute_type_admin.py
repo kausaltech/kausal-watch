@@ -36,6 +36,7 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     insert_model_translation_panels,
 )
+from kausal_common.users import user_or_bust
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
@@ -353,7 +354,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        user = request.user
+        user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         action_ct = ContentType.objects.get(app_label='actions', model='action')
         category_ct = ContentType.objects.get(app_label='actions', model='category')
@@ -361,15 +362,17 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         plan_ct = ContentType.objects.get(app_label='actions', model='plan')
         category_type_ct = ContentType.objects.get(app_label='actions', model='categorytype')
         category_types_in_plan = plan.category_types.all()
-        return qs.filter(
-            # Attribute types for actions of the active plan
-            (Q(object_content_type=action_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
-            # Attribute types for categories whose category type is the active plan
-            | (
-                Q(object_content_type=category_ct)
-                & Q(scope_content_type=category_type_ct)
-                & Q(scope_id__in=category_types_in_plan)
-            )
-            # Attribute types for pledges of the active plan
-            | (Q(object_content_type=pledge_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id)),
+        # Attribute types for actions of the active plan
+        actions_q = Q(object_content_type=action_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id)
+        # Attribute types for categories whose category type is the active plan
+        categories_q = (
+            Q(object_content_type=category_ct)
+            & Q(scope_content_type=category_type_ct)
+            & Q(scope_id__in=category_types_in_plan)
         )
+        # Attribute types for pledges of the active plan
+        pledges_q = Q(object_content_type=pledge_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id)
+        q = actions_q | categories_q
+        if plan.features.enable_community_engagement:
+            q |= pledges_q
+        return qs.filter(q)

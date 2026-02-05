@@ -2,13 +2,20 @@ from __future__ import annotations
 
 import typing
 
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 import pytest
 from pytest_django.asserts import assertContains
 
 from actions.action_admin import ActionAdmin
-from actions.tests.factories import ActionFactory, PlanFactory
+from actions.attribute_type_admin import AttributeTypeAdmin
+from actions.tests.factories import (
+    ActionFactory,
+    AttributeTypeFactory,
+    CategoryTypeFactory,
+    PlanFactory,
+)
 from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
 
@@ -142,3 +149,80 @@ def test_action_admin(
     test_modeladmin_edit(
         ActionAdmin, other_action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=False,
     )
+
+
+class TestAttributeTypeAdminQueryset:
+    """Tests for AttributeTypeAdmin.get_queryset filtering based on community engagement feature."""
+
+    @pytest.fixture
+    def action_attribute_type(self, plan):
+        """Create an attribute type for actions scoped to the plan."""
+        action_ct = ContentType.objects.get(app_label='actions', model='action')
+        plan_ct = ContentType.objects.get(app_label='actions', model='plan')
+        return AttributeTypeFactory.create(
+            object_content_type=action_ct,
+            scope_content_type=plan_ct,
+            scope_id=plan.id,
+            name='Action Attribute',
+        )
+
+    @pytest.fixture
+    def category_attribute_type(self, plan):
+        """Create an attribute type for categories scoped to a category type."""
+        category_ct = ContentType.objects.get(app_label='actions', model='category')
+        category_type_ct = ContentType.objects.get(app_label='actions', model='categorytype')
+        category_type = CategoryTypeFactory.create(plan=plan)
+        return AttributeTypeFactory.create(
+            object_content_type=category_ct,
+            scope_content_type=category_type_ct,
+            scope_id=category_type.id,
+            name='Category Attribute',
+        )
+
+    @pytest.fixture
+    def pledge_attribute_type(self, plan):
+        """Create an attribute type for pledges scoped to the plan."""
+        pledge_ct = ContentType.objects.get(app_label='actions', model='pledge')
+        plan_ct = ContentType.objects.get(app_label='actions', model='plan')
+        return AttributeTypeFactory.create(
+            object_content_type=pledge_ct,
+            scope_content_type=plan_ct,
+            scope_id=plan.id,
+            name='Pledge Attribute',
+        )
+
+    def test_pledge_attribute_types_excluded_when_community_engagement_disabled(
+        self, rf, plan, plan_admin_user,
+        action_attribute_type, category_attribute_type, pledge_attribute_type,
+    ):
+        """Pledge attribute types should not appear when community engagement is disabled."""
+        plan.features.enable_community_engagement = False
+        plan.features.save()
+
+        admin = AttributeTypeAdmin()
+        request = rf.get('/admin/')
+        request.user = plan_admin_user
+
+        qs = admin.get_queryset(request)
+
+        assert action_attribute_type in qs
+        assert category_attribute_type in qs
+        assert pledge_attribute_type not in qs
+
+    def test_pledge_attribute_types_included_when_community_engagement_enabled(
+        self, rf, plan, plan_admin_user,
+        action_attribute_type, category_attribute_type, pledge_attribute_type,
+    ):
+        """Pledge attribute types should appear when community engagement is enabled."""
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+
+        admin = AttributeTypeAdmin()
+        request = rf.get('/admin/')
+        request.user = plan_admin_user
+
+        qs = admin.get_queryset(request)
+
+        assert action_attribute_type in qs
+        assert category_attribute_type in qs
+        assert pledge_attribute_type in qs
