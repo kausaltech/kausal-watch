@@ -21,6 +21,8 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView, IndexView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from kausal_common.users import user_or_bust
+
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import OrderedModelChildFormSet
 
@@ -36,7 +38,6 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     insert_model_translation_panels,
 )
-from kausal_common.users import user_or_bust
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
@@ -52,12 +53,16 @@ class AttributeTypeFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         action_ct_id = ContentType.objects.get_for_model(Action).id
         category_ct_id = ContentType.objects.get_for_model(Category).id
-        pledge_ct_id = ContentType.objects.get_for_model(Pledge).id
-        return (
+        result = [
             (action_ct_id, Action._meta.verbose_name),
             (category_ct_id, Category._meta.verbose_name),
-            (pledge_ct_id, Pledge._meta.verbose_name),
-        )
+        ]
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        if plan.features.enable_community_engagement:
+            pledge_ct_id = ContentType.objects.get_for_model(Pledge).id
+            result.append((pledge_ct_id, Pledge._meta.verbose_name))
+        return result
 
     def queryset(self, request, queryset):
         if self.value():
