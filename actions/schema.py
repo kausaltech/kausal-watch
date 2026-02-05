@@ -1078,6 +1078,43 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
         return root.commitments.count()
 
 
+class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
+    pledge = graphene.Field(PledgeNode)
+
+    class Meta:
+        model = PledgeCommitment
+        fields = [
+            'id',
+            'pledge',
+            'created_at',
+        ]
+
+    @staticmethod
+    def resolve_pledge(root: PledgeCommitment, info: GQLInfo) -> Pledge | None:
+        pledge = root.pledge
+        if not pledge.plan.features.enable_community_engagement:
+            return None
+        return pledge
+
+
+class PledgeUserNode(DjangoNode[PledgeUser]):
+    commitments = graphene.List(graphene.NonNull(PledgeCommitmentNode))
+
+    class Meta:
+        model = PledgeUser
+        fields = [
+            'id',
+            'uuid',
+            'created_at',
+        ]
+
+    @staticmethod
+    def resolve_commitments(root: PledgeUser, info: GQLInfo):
+        return root.commitments.filter(
+            pledge__plan__features__enable_community_engagement=True,
+        ).select_related('pledge', 'pledge__plan', 'pledge__plan__features')
+
+
 class ScenarioNode(DjangoNode[Scenario]):
     class Meta:
         model = Scenario
@@ -1823,6 +1860,16 @@ class Query:
     workflow_states = graphene.List(
         WorkflowStateDescription, plan=graphene.ID(required=False),
     )
+
+    pledge_user = graphene.Field(
+        PledgeUserNode,
+        uuid=graphene.UUID(required=True),
+        description='Get a pledge user by UUID to retrieve their commitments',
+    )
+
+    @staticmethod
+    def resolve_pledge_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PledgeUser | None:
+        return PledgeUser.objects.filter(uuid=uuid).first()
 
     @staticmethod
     def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None):
