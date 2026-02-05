@@ -1045,6 +1045,7 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
 class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
     actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'))
     image = graphene.Field('images.schema.ImageNode')
+    commitment_count = graphene.Int(required=True, description='Number of commitments to this pledge')
 
     class Meta:
         model = Pledge
@@ -1071,6 +1072,10 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
     @staticmethod
     def resolve_image(root: Pledge, _info: GQLInfo):
         return root.image
+
+    @staticmethod
+    def resolve_commitment_count(root: Pledge, _info: GQLInfo) -> int:
+        return root.commitments.count()
 
 
 class ScenarioNode(DjangoNode[Scenario]):

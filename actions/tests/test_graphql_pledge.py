@@ -21,6 +21,7 @@ PLEDGE_FIELDS = """
     impactStatement
     localEquivalency
     order
+    commitmentCount
 """
 
 # Pledges are nested under plan
@@ -423,6 +424,73 @@ class TestPledgeImageResolver:
 
         assert data['plan']['pledge'] is not None
         assert data['plan']['pledge']['image'] is None
+
+
+class TestPledgeCommitmentCount:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+        self.plan = plan
+
+    def test_pledge_with_no_commitments_returns_zero(self, graphql_client_query_data):
+        """Test that a pledge with no commitments returns commitmentCount of 0."""
+        pledge = PledgeFactory.create(plan=self.plan)
+
+        data = graphql_client_query_data(
+            PLEDGE_QUERY,
+            variables={'plan': self.plan.identifier, 'id': str(pledge.id)},
+        )
+
+        assert data['plan']['pledge'] is not None
+        assert data['plan']['pledge']['commitmentCount'] == 0
+
+    def test_pledge_with_commitments_returns_correct_count(self, graphql_client_query_data):
+        """Test that a pledge with commitments returns the correct count."""
+        pledge = PledgeFactory.create(plan=self.plan)
+
+        # Create multiple pledge users and commitments
+        for _ in range(3):
+            pledge_user = PledgeUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge, pledge_user=pledge_user)
+
+        data = graphql_client_query_data(
+            PLEDGE_QUERY,
+            variables={'plan': self.plan.identifier, 'id': str(pledge.id)},
+        )
+
+        assert data['plan']['pledge'] is not None
+        assert data['plan']['pledge']['commitmentCount'] == 3
+
+    def test_commitment_count_is_independent_per_pledge(self, graphql_client_query_data):
+        """Test that commitment counts are independent for different pledges."""
+        pledge1 = PledgeFactory.create(plan=self.plan, order=1)
+        pledge2 = PledgeFactory.create(plan=self.plan, order=2)
+
+        # Create 2 commitments for pledge1
+        for _ in range(2):
+            pledge_user = PledgeUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge1, pledge_user=pledge_user)
+
+        # Create 5 commitments for pledge2
+        for _ in range(5):
+            pledge_user = PledgeUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge2, pledge_user=pledge_user)
+
+        data = graphql_client_query_data(
+            PLEDGES_QUERY,
+            variables={'plan': self.plan.identifier},
+        )
+
+        pledges = data['plan']['pledges']
+        assert len(pledges) == 2
+
+        pledge1_data = next(p for p in pledges if p['id'] == str(pledge1.id))
+        pledge2_data = next(p for p in pledges if p['id'] == str(pledge2.id))
+
+        assert pledge1_data['commitmentCount'] == 2
+        assert pledge2_data['commitmentCount'] == 5
 
 
 class TestPlanFeaturesGraphQL:
