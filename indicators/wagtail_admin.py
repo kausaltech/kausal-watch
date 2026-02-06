@@ -560,10 +560,6 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             CustomizableBuiltInFieldPanel('show_trendline'),
             CustomizableBuiltInFieldPanel('desired_trend'),
             CustomizableBuiltInFieldPanel('data_categories_are_stackable'),
-            CustomizableBuiltInFieldPanel(
-                'visualizations',
-                help_text=_('Only used for raw visualization data exported from Plotly')
-            ),
         ]
         panels.append(
             MultiFieldPanel(

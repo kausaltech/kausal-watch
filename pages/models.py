@@ -88,7 +88,6 @@ from .blocks import (
     FrontPageHeroBlock,
     LargeImageBlock,
     QuestionAnswerBlock,
-    RawVisualizationBlock,
 )
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -303,7 +302,6 @@ class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc
         ('large_image', LargeImageBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('paths_outcome', PathsOutcomeBlock()),
-        ('raw_visualization', RawVisualizationBlock()),
         ('change_log_message', ChangeLogMessageBlock()),
     ])
 
@@ -380,7 +378,6 @@ class StaticPage(AplansPage):
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
-        ('raw_visualization', RawVisualizationBlock()),
         ('change_log_message', ChangeLogMessageBlock()),
         *get_body_blocks('StaticPage'),
     ], null=True, blank=True)
@@ -584,7 +581,6 @@ class CategoryPage(AplansPage):
         ('category_list', CategoryListBlock()),
         ('action_list', ActionListBlock()),
         ('embed', AdaptiveEmbedBlock()),
-        ('raw_visualization', RawVisualizationBlock()),
         ('change_log_message', ChangeLogMessageBlock()),
     ], null=True, blank=True)
 

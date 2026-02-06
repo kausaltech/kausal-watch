@@ -241,10 +241,6 @@ class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode[IndicatorGoal]):
         return None
 
 
-def _clean_value(block_value: str) -> str:
-    return block_value.replace('\r', ' ').replace('\n', ' ')
-
-
 @register_django_node
 class IndicatorNode(DjangoNode[Indicator]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at']
@@ -258,18 +254,11 @@ class IndicatorNode(DjangoNode[Indicator]):
     values = graphene.List(graphene.NonNull(IndicatorValueNode), include_dimensions=graphene.Boolean(), required=True)
     level = graphene.String(plan=graphene.ID())
     actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'), plan=graphene.ID(), required=True)
-    visualizations_raw = graphene.List(graphene.NonNull(graphene.String), required=True)
     change_log_message = graphene.Field('actions.schema.ChangeLogMessageInterface')
 
     class Meta:
         fields = public_fields(Indicator)
         model = Indicator
-
-    @staticmethod
-    def resolve_visualizations_raw(root: Indicator, info, plan=None) -> list[str]:
-        if not root.visualizations:
-            return []
-        return [_clean_value(v.value) for v in root.visualizations]
 
     @gql_optimizer.resolver_hints(
         model_field='goals',

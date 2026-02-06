@@ -18,8 +18,7 @@ from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
-from wagtail.blocks import TextBlock
-from wagtail.fields import RichTextField, StreamField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -34,7 +33,6 @@ from aplans.utils import (
     ModificationTracking,
     RestrictedVisibilityModel,
     get_available_variants_for_language,
-    validate_json,
 )
 
 from indicators.models.common_indicator import CommonIndicatorNormalizator
@@ -44,8 +42,6 @@ from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 
 if typing.TYPE_CHECKING:
-    from wagtail.blocks.stream_block import StreamValue
-
     from kausal_common.models.types import FK, M2M, RevMany
     from kausal_common.users import UserOrAnon
 
@@ -176,14 +172,6 @@ class Indicator(
         help_text=_('Used in visualizations as the Y axis maximum'),
     )
     description = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('description'))
-    visualizations: StreamField[StreamValue | None] = StreamField(
-        [
-            ('raw_visualization', TextBlock(validators=(validate_json,)))
-        ],
-        null=True,
-        blank=True,
-        verbose_name=_('visualizations'),
-    )
 
     sort_key = models.CharField(
         verbose_name=_('sort key'),
