@@ -62,9 +62,9 @@ if TYPE_CHECKING:
 
     from aplans.graphql_types import GQLInfo
 
+    from actions.graphql_admin_schema import AdminQuery
     from actions.models import Plan
     from users.models import User
-
 
 def mp_node_get_ancestors[QS: MP_NodeQuerySet[Any]](qs: QS, include_self: bool = False) -> QS:
     # https://github.com/django-treebeard/django-treebeard/issues/98
@@ -82,6 +82,11 @@ class SiteGeneralContentNode(DjangoNode[SiteGeneralContent]):
     class Meta:
         model = SiteGeneralContent
         fields = public_fields(SiteGeneralContent)
+
+
+def get_admin_query():
+    from actions.graphql_admin_schema import AdminQuery
+    return AdminQuery
 
 
 @sb.type
@@ -106,6 +111,14 @@ class Query(
     )
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True), plan=graphene.ID(required=True))
     me = graphene.Field(UserNode, required=False, description='The current user')
+
+    @sb.field(description='Admin query namespace')
+    @staticmethod
+    def admin(root, info: SBInfo) -> Annotated[AdminQuery, sb.lazy('actions.graphql_admin_schema')]:
+        user = user_or_none(info.context.user)
+        if user is None or not user.is_superuser:
+            raise PermissionError('Admin namespace requires authenticated access')
+        return get_admin_query()()
 
     def resolve_plan_organizations(
         self, info: GQLInfo, plan: str | None, with_ancestors: bool, for_responsible_parties: bool, for_contact_persons: bool,
@@ -190,7 +203,8 @@ class Query(
 
         return qs
 
-    def resolve_person(self, info: GQLInfo, id: str, plan: str | None = None) -> Person | None:
+    @staticmethod
+    def resolve_person(_root, info: GQLInfo, id: str, plan: str | None = None) -> Person | None:
         user = user_or_none(info.context.user)
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
@@ -198,7 +212,8 @@ class Query(
         qs = Person.objects.get_queryset().available_for_plan(plan_obj).visible_for_user(user, plan=plan_obj)
         return qs.filter(id=id).first()
 
-    def resolve_me(self, info: GQLInfo) -> User | None:
+    @staticmethod
+    def resolve_me(_root, info: GQLInfo) -> User | None:
         return user_or_none(info.context.user)
 
 

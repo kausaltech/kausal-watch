@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import functools
 import re
 import typing
@@ -120,6 +121,20 @@ class DjangoNode[M: Model](DjangoObjectType[M]):
 def set_active_plan(info: GQLInfo, plan: Plan):
     info.context.active_plan = plan
     assert plan.is_visible_for_user(info.context.user), 'Plan is not visible for user'
+
+
+@contextmanager
+def active_plan_context(info: GQLInfo, plan: Plan):
+    old_context = info.context.active_plan
+    try:
+        info.context.active_plan = plan
+        yield
+    finally:
+        info.context.active_plan = old_context
+
+
+def is_plan_context_active(info: GQLInfo) -> bool:
+    return info.context.active_plan is not None
 
 
 @typing.overload
