@@ -717,7 +717,29 @@ class ActionEditView(
                 instance=self.instance,
                 locked_for_user=self.locked_for_user,
             )
+        # Display warnings for any attributes that were lost during draft deserialization
+        self._display_draft_attribute_warnings()
         return context
+
+    def _display_draft_attribute_warnings(self) -> None:
+        """Display warning messages for any attributes lost during draft deserialization."""
+        obj = self.object
+        if obj is None:
+            return
+        if not hasattr(obj, 'draft_attributes') or obj.draft_attributes is None:
+            return
+        draft_attributes = obj.draft_attributes
+        if not draft_attributes.deserialization_warnings:
+            return
+        for warning in draft_attributes.deserialization_warnings:
+            if warning.attribute_type_name:
+                msg = _('Attribute "%(attribute_type)s": %(message)s') % {
+                    'attribute_type': warning.attribute_type_name,
+                    'message': warning.message,
+                }
+            else:
+                msg = warning.message
+            messages.warning(self.request, msg)
 
     def get_description(self):
         action = self.instance

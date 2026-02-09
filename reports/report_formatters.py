@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, override
 
 from django.apps import apps
 from django.db.models.fields import Field
@@ -70,7 +70,7 @@ class ReportFieldFormatter(ABC):
 
     def value_for_action_snapshot(
         self,
-        block_value: dict[str, ReportCellValue],
+        block_value: dict[str, Any],
         snapshot: ActionSnapshot,
     ) -> ValueType:
         raise NotImplementedError
@@ -398,8 +398,13 @@ class ActionAttributeTypeReportFieldFormatter(ReportFieldFormatter):
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True),
     ]
 
+    @override
     def value_for_action_snapshot(self, block_value, snapshot) -> Model | None:
-        return snapshot.get_attribute_for_type(block_value['attribute_type'])
+        attribute_type = block_value['attribute_type']
+        if attribute_type is None:
+            return None
+        assert isinstance(attribute_type, AttributeTypeModel)
+        return snapshot.get_attribute_for_type(attribute_type)
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
         attribute = self.value_for_action_snapshot(field.value, snapshot)
@@ -508,6 +513,7 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
 
     def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         category_type = block_value['category_type']
+        assert isinstance(category_type, CategoryType)
         related_objects = snapshot.get_related_versions()
         category_ids = self._get_category_ids(
             snapshot.action_version.field_dict.get('id'),

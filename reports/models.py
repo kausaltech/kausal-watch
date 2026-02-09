@@ -453,7 +453,7 @@ class ActionSnapshot(models.Model):
                 return instance
         return None
 
-    def get_attribute_for_type(self, attribute_type):
+    def get_attribute_for_type(self, attribute_type: AttributeType):
         """
         Get the first action attribute of the given type in this snapshot.
 

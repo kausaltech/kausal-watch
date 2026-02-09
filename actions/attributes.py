@@ -135,6 +135,19 @@ class AttributeValue(ABC):
     def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> AttributeValue:
         pass
 
+    @classmethod
+    def from_serialized_value_with_warning(
+        cls, value: Any, cache: PlanSpecificCache | None = None,
+    ) -> tuple[AttributeValue, str | None]:
+        """
+        Deserialize a value and return any warning message.
+
+        Returns a tuple of (attribute_value, warning_message).
+        The warning_message is None if deserialization was successful without issues.
+        Subclasses that can have missing references should override this method.
+        """
+        return (cls.from_serialized_value(value, cache=cache), None)
+
     @abstractmethod
     def serialize(self) -> Any:
         pass
@@ -171,6 +184,14 @@ class OrderedChoiceAttributeValue(AttributeValue):
 
     @classmethod
     def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> OrderedChoiceAttributeValue:
+        result, _ = cls.from_serialized_value_with_warning(value, cache=cache)
+        return result
+
+    @classmethod
+    def from_serialized_value_with_warning(
+        cls, value: Any, cache: PlanSpecificCache | None = None,
+    ) -> tuple[OrderedChoiceAttributeValue, str | None]:
+        warning: str | None = None
         if value is None:
             option = None
         else:
@@ -186,7 +207,8 @@ class OrderedChoiceAttributeValue(AttributeValue):
                         f"Could not deserialize ordered choice attribute value '{value}' because "
                         "AttributeTypeChoiceOption does not exist. Setting to None."
                     )
-        return OrderedChoiceAttributeValue(option=option)
+                    warning = str(_("A choice option used in this draft no longer exists. The selection has been cleared."))
+        return (OrderedChoiceAttributeValue(option=option), warning)
 
     def serialize(self) -> Any:
         return self.option.pk if self.option else None
@@ -253,6 +275,14 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
 
     @classmethod
     def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> OptionalChoiceWithTextAttributeValue:
+        result, _ = cls.from_serialized_value_with_warning(value, cache=cache)
+        return result
+
+    @classmethod
+    def from_serialized_value_with_warning(
+        cls, value: Any, cache: PlanSpecificCache | None = None,
+    ) -> tuple[OptionalChoiceWithTextAttributeValue, str | None]:
+        warning: str | None = None
         if value['choice'] is None:
             option = None
         else:
@@ -268,9 +298,10 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
                         f"Could not deserialize optional choice with text attribute value '{value}' because "
                         "AttributeTypeChoiceOption does not exist. Setting choice to None."
                     )
+                    warning = str(_("A choice option used in this draft no longer exists. The selection has been cleared."))
         text_vals = value['text']
         assert isinstance(text_vals, dict)
-        return OptionalChoiceWithTextAttributeValue(option=option, text_vals=text_vals)
+        return (OptionalChoiceWithTextAttributeValue(option=option, text_vals=text_vals), warning)
 
     def serialize(self) -> Any:
         return {
@@ -950,6 +981,15 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
 type DraftAttributesValuesMap = dict[str, dict[int, AttributeValue]]
 
 
+@dataclass
+class DeserializationWarning:
+    """Represents a warning that occurred during draft attribute deserialization."""
+
+    attribute_type_id: int
+    attribute_type_name: str | None
+    message: str
+
+
 class DraftAttributes:
     """
     Contains the values of all draft attributes of a ModelWithAttributes instance.
@@ -959,9 +999,55 @@ class DraftAttributes:
 
     # map attribute type format to a mapping from attribute type ID to attribute value
     _values: DraftAttributesValuesMap
+    # warnings that occurred during deserialization
+    deserialization_warnings: list[DeserializationWarning]
 
     def __init__(self):
         self._values = {}
+        self.deserialization_warnings = []
+
+    @classmethod
+    def _deserialize_single_attribute(
+        cls,
+        attr_type_id: int,
+        serialized_value: Any,
+        value_class: type[AttributeValue],
+        cache: PlanSpecificCache | None,
+    ) -> tuple[AttributeValue | None, DeserializationWarning | None]:
+        """
+        Deserialize a single attribute value and check for missing attribute types.
+
+        Returns a tuple of (attribute_value, warning). If the attribute type doesn't exist,
+        returns (None, warning). If the value had issues (e.g., missing choice option),
+        returns (value, warning).
+        """
+        # Check if the attribute type still exists
+        try:
+            attr_type_instance = models.AttributeType.objects.get(pk=attr_type_id)
+        except models.AttributeType.DoesNotExist:
+            logger.warning(
+                f"Could not deserialize attribute for AttributeType {attr_type_id} because "
+                "the AttributeType does not exist. This attribute will be lost."
+            )
+            msg = _("An attribute type used in this draft no longer exists. "
+                    "The attribute has been removed from the draft.")
+            return (None, DeserializationWarning(
+                attribute_type_id=attr_type_id,
+                attribute_type_name=None,
+                message=str(msg),
+            ))
+        # Deserialize the value, checking for choice option issues
+        attribute_value, choice_warning = value_class.from_serialized_value_with_warning(
+            serialized_value, cache=cache,
+        )
+        warning = None
+        if choice_warning:
+            warning = DeserializationWarning(
+                attribute_type_id=attr_type_id,
+                attribute_type_name=str(attr_type_instance),
+                message=choice_warning,
+            )
+        return (attribute_value, warning)
 
     @classmethod
     def from_revision_content(cls, data: dict[str, dict[str, Any]], cache: PlanSpecificCache | None = None) -> DraftAttributes:
@@ -970,10 +1056,16 @@ class DraftAttributes:
             # No idea anymore why we serialize the IDs as strings
             assert all(isinstance(k, str) for k in id_to_serialized_value)
             at_class = AttributeType.format_to_class(models.AttributeType.AttributeFormat(format))
-            draft_attributes._values[format] = {
-                int(id): at_class.VALUE_CLASS.from_serialized_value(serialized_value, cache=cache)
-                for id, serialized_value in id_to_serialized_value.items()
-            }
+            draft_attributes._values[format] = {}
+            for str_id, serialized_value in id_to_serialized_value.items():
+                attr_type_id = int(str_id)
+                value, warning = cls._deserialize_single_attribute(
+                    attr_type_id, serialized_value, at_class.VALUE_CLASS, cache,
+                )
+                if warning:
+                    draft_attributes.deserialization_warnings.append(warning)
+                if value is not None:
+                    draft_attributes._values[format][attr_type_id] = value
         return draft_attributes
 
     def update(self, attribute_type: AttributeType, value: AttributeValue):
