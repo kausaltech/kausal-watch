@@ -1,5 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledPlugins": {
+    "basedpyright-lsp@kausal-backend-plugins": true
+  },
+  "env": {
+    "ENABLE_LSP_TOOL": "1",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "extraKnownMarketplaces": {
+    "kausal-backend-plugins": {
+      "source": {
+        "path": "./kausal_common/development/claude",
+        "source": "directory"
+      }
+    }
+  },
+  "hooks": {},
   "permissions": {
     "allow": [
       "WebFetch",
@@ -8,24 +24,10 @@
       "Bash(uv:*)",
       "Bash(find:*)",
       "Bash(mv:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(uvx turms:*)",
+      "mcp__sentry__update_issue",
+      "Bash(kausal_common/development/tools/generate-mcp-schema.sh:*)"
     ]
-  },
-  "enabledPlugins": {
-    "basedpyright-lsp@kausal-backend-plugins": true
-  },
-  "env": {
-    "ENABLE_TOOL_SEARCH": "true",
-    "ENABLE_LSP_TOOL": "1"
-  },
-  "extraKnownMarketplaces": {
-    "kausal-backend-plugins": {
-      "source": {
-        "source": "directory",
-        "path": "./kausal_common/development/claude"
-      }
-    }
-  },
-  "hooks": {
   }
 }
