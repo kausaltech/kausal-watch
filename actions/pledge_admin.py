@@ -194,6 +194,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
 
     model = Pledge
     menu_label = _('Pledges')
+    icon = 'kausal-pledge'
     menu_icon = 'kausal-pledge'
     menu_order = 41  # After Indicators (40)
     add_to_admin_menu = True
