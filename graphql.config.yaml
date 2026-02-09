@@ -5,11 +5,20 @@ projects:
     extensions:
       turms: # path for configuration for turms
         out_dir: mcp_server/__generated__
+        options:
+          allow_population_by_field_name: true
+        object_bases:
+          - mcp_server.generated_base.OperationModel
         plugins: # path for plugin configuration
           - type: turms.plugins.enums.EnumsPlugin
           - type: turms.plugins.inputs.InputsPlugin
+            inputtype_bases:
+              - mcp_server.generated_base.InputTypeModel
           - type: turms.plugins.fragments.FragmentsPlugin
           - type: turms.plugins.operations.OperationsPlugin
+            arguments_allow_population_by_field_name: true
+            arguments_bases:
+              - mcp_server.generated_base.ArgumentsModel
           - type: turms.plugins.funcs.FuncsPlugin
         stylers:
           - type: turms.stylers.snake_case.SnakeCaseStyler
