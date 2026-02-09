@@ -76,13 +76,19 @@ class Pledge(
     slug = models.SlugField(
         max_length=100,
         verbose_name=_('slug'),
-        help_text=_('A unique identifier for this pledge, used in URLs'),
+        help_text=_(
+            "The unique part of the page's URL, usually based on the title. "
+            "Use lowercase letters, numbers, and hyphens only (e.g., turn-off-electronics)."
+        ),
     )
     description = models.TextField(
         max_length=300,
         blank=True,
         verbose_name=_('description'),
-        help_text=_('A short description of the pledge'),
+        help_text=_(
+            "Brief description shown on pledge cards and at the top of the pledge page. "
+            "Keep it under 2-3 sentences. Use the body content below for additional details."
+        ),
     )
     image: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage',
