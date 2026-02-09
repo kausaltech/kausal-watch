@@ -214,6 +214,8 @@ def process_request(request):
 - Factory Boy for test data generation
 - Coverage reporting available
 
+**For detailed testing practices, see [Unit Testing Guide](docs/unit-tests.md)**
+
 ### Type Checking
 - MyPy configuration with Django plugin
 - Baseline file `.mypy-baseline.txt` for gradual typing adoption
@@ -253,3 +255,4 @@ For in-depth implementation details on specific subsystems, see:
 
 - [MCP Server](docs/architecture/mcp-server.md) - Adding tools, GraphQL integration, authentication flow
 - [Plan Metadata Model](docs/architecture/plan-metadata.md) - How climate action plans are structured, including CategoryTypes, Attributes, and common classification systems
+- [Unit Testing Guide](docs/unit-tests.md) - Comprehensive guide to testing practices, Factory Boy patterns, fixtures, and type annotations in tests
