@@ -69,6 +69,8 @@ The application provides dual GraphQL implementations:
 Each Django app follows consistent naming conventions for different functionality:
 
 - `schema.py` - GraphQL schema definitions (Graphene/Strawberry)
+- `graphql_admin_schema.py` - Strawberry GraphQL types and queries requiring authentication (e.g., admin-only queries)
+- `mutations.py` - Strawberry GraphQL mutations
 - `api.py` - Django REST Framework components (serializers, viewsets, permissions)
 - `wagtail_admin.py` - Wagtail admin interface customizations (ModelViewSet, SnippetViewSet)
   - For large admin modules, split into `*_admin.py` files (e.g., `action_admin.py`, `category_admin.py`)
@@ -134,6 +136,15 @@ Each Django app follows consistent naming conventions for different functionalit
 
 ### Code Style Conventions
 - For user-facing strings, use double quotes; for strings not visible to users, use single quotes.
+- Multi-line docstring summaries start on the **second** line (ruff D213):
+  ```python
+  def foo():
+      """
+      Summary line here.
+
+      Details...
+      """
+  ```
 
 ### Code Structure Conventions
 - **Avoid deeply nested logic** - Prefer flat, readable code over nested conditionals
