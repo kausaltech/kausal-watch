@@ -36,6 +36,7 @@ import html2text
 import humanize
 import libvoikko  # type: ignore
 import sentry_sdk
+from autoslug.fields import AutoSlugField
 from tinycss2.color3 import parse_color
 
 if typing.TYPE_CHECKING:
@@ -48,7 +49,7 @@ if typing.TYPE_CHECKING:
     from modeltrans.fields import TranslationField
     from wagtail.blocks import StructBlock
 
-    from aplans.types import UserOrAnon
+    from kausal_common.users import UserOrAnon
 
     from actions.models.plan import Plan
     from users.models import User
@@ -851,3 +852,17 @@ def get_hostname_redirect_response(
         },
     )
     return http.HttpResponsePermanentRedirect(url)
+
+
+def _register_custom_fields() -> None:
+    import strawberry
+    from strawberry_django.fields.types import field_type_map
+    from wagtail.fields import RichTextField
+
+    field_type_map.update({
+        IdentifierField: strawberry.ID,
+        RichTextField: str,
+        AutoSlugField: strawberry.ID,
+    })
+
+_register_custom_fields()

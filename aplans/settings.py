@@ -525,6 +525,11 @@ GRAPHENE = {
     'DJANGO_CHOICE_FIELD_ENUM_V2_NAMING': True,
 }
 
+STRAWBERRY_DJANGO = {
+    "FIELD_DESCRIPTION_FROM_HELP_TEXT": True,
+    "TYPE_DESCRIPTION_FROM_MODEL_DOCSTRING": True,
+}
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
