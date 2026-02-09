@@ -133,6 +133,12 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
             lookup |= Q(identifier=identifier)
         return self.filter(lookup)
 
+    def by_id_or_identifier(self, id_or_identifier: str) -> Self:
+        """Get a plan by id or identifier."""
+        if id_or_identifier.isnumeric():
+            return self.filter(pk=id_or_identifier)
+        return self.filter(identifier=id_or_identifier)
+
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
 
