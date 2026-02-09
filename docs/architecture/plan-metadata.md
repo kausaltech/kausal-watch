@@ -20,7 +20,41 @@ A **Plan** represents a single climate action plan, typically owned by a city or
 
 **Organizations** represent the entities responsible for implementing actions. In multi-city plans, each participating city is an Organization. Actions link to their responsible organization via the `primary_org` field.
 
-Organizations can be hierarchical (e.g., City → Department → Division).
+Organizations form a **tree hierarchy** using django-treebeard's materialized path implementation:
+
+```
+Organization: Helsinki (path='00A1', depth=1)
+├── Organization: City Executive Office (path='00A10001', depth=2)
+│   ├── Organization: Communications Unit (path='00A100010001', depth=3)
+│   └── Organization: Legal Affairs (path='00A100010002', depth=3)
+└── Organization: Climate Department (path='00A10002', depth=2)
+```
+
+**Key fields:**
+- `path`: Materialized path string encoding tree position (e.g., "00A10001")
+- `depth`: Tree level (1 = root, 2 = child of root, etc.)
+- `parent`: Not stored directly - computed from `path` using treebeard
+
+**Tree navigation methods:**
+```python
+org.get_parent()        # Returns parent organization or None
+org.get_ancestors()     # QuerySet of all ancestors (root to parent)
+org.get_descendants()   # QuerySet of all children recursively
+org.get_children()      # QuerySet of direct children only
+```
+
+**Plan Relationships:**
+
+Plans connect to organizations via two mechanisms:
+
+1. **`Plan.organization`** (ForeignKey): The primary organization that owns the plan (typically a city)
+2. **`Plan.related_organizations`** (M2M): Additional organizations participating in the plan
+
+The `Organization.objects.available_for_plan(plan)` method returns all organizations accessible for a plan by combining:
+- The plan's primary organization and all its descendants
+- All related organizations and all their descendants
+
+This filtering includes descendants but **not ancestors**. If child organizations are related to a plan but their parent is not, this creates an "orphaned hierarchy" that may cause validation errors. When adding organizations to a plan, ensure parent organizations are also included if their children are present.
 
 ## Classification System
 

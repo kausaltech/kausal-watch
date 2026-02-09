@@ -20,6 +20,10 @@ query MCPListPlans {
     otherLanguages
     publishedAt
     viewUrl
+    organization {
+      id
+      name
+    }
   }
 }
 
@@ -158,254 +162,284 @@ query MCPGetPlan($identifier: ID!) @context(input: {identifier: $identifier}) {
   }
 }
 
-query MCPGetAction($plan: ID!, $identifier: ID!) @context(input: {identifier: $plan}) {
-  action(plan: $plan, identifier: $identifier) {
-    # Core identifiers
-    id
-    uuid
-    identifier
-    name
-    officialName
-
-    # Content
-    leadParagraph
-    description
-
-    # Scheduling
-    startDate
-    endDate
-    scheduleContinuous
-    dateFormat
-    updatedAt
-
-    # Status & Progress
-    completion
-    manualStatusReason
-    status {
-      id
-      identifier
-      name
-      isCompleted
-    }
-    implementationPhase {
-      id
-      identifier
-      name
-    }
-    statusSummary {
-      identifier
-      label
-      sentiment
-      isActive
-      isCompleted
-    }
-    timeliness {
-      identifier
-      comparison
-      days
-    }
-    color
-
-    # Impact
-    impact {
-      id
-      identifier
-      name
-    }
-
-    # Organizations
-    primaryOrg {
+query MCPListOrganizations(
+  $plan: ID,
+  $parent: ID,
+  $depth: Int,
+  $contains: String
+) {
+  admin {
+    organizations(plan: $plan, parent: $parent, depth: $depth, contains: $contains) {
       id
       name
       abbreviation
-    }
-    responsibleParties {
-      id
-      role
-      specifier
-      organization {
+      parent {
         id
-        name
-        abbreviation
       }
     }
+  }
+}
 
-    # Categories
-    categories {
+mutation MCPCreatePlan($input: PlanInput!) {
+  plan {
+    createPlan(input: $input) {
       id
       identifier
       name
-      type {
+      shortName
+      versionName
+      primaryLanguage
+      otherLanguages
+    }
+  }
+}
+
+mutation MCPAddRelatedOrganization($input: AddRelatedOrganizationInput!) {
+  plan {
+    addRelatedOrganization(input: $input) {
+      id
+      identifier
+      name
+    }
+  }
+}
+
+query MCPGetActions($ids: [ID!]!) {
+  admin {
+    actions(ids: $ids) {
+      # Core identifiers
+      id
+      uuid
+      identifier
+      name
+      officialName
+
+      # Content
+      leadParagraph
+      description
+
+      # Scheduling
+      startDate
+      endDate
+      scheduleContinuous
+      dateFormat
+      updatedAt
+
+      # Status & Progress
+      completion
+      manualStatusReason
+      status {
+        id
+        identifier
+        name
+        isCompleted
+      }
+      implementationPhase {
         id
         identifier
         name
       }
-    }
+      statusSummary {
+        identifier
+        label
+        sentiment
+        isActive
+        isCompleted
+      }
+      timeliness {
+        identifier
+        comparison
+        days
+      }
+      color
 
-    # Contact Persons
-    contactPersons {
-      id
-      role
-      primaryContact
-      person {
+      # Impact
+      impact {
         id
-        firstName
-        lastName
-        title
-        email
+        identifier
+        name
+      }
+
+      # Organizations
+      primaryOrg {
+        id
+        name
+        abbreviation
+      }
+      responsibleParties {
+        id
+        role
+        specifier
         organization {
           id
           name
           abbreviation
         }
       }
-    }
 
-    # Tasks
-    tasks {
-      id
-      name
-      state
-      dueAt
-      completedAt
-      comment
-    }
-
-    # Indicators
-    relatedIndicators {
-      id
-      effectType
-      indicatesActionProgress
-      indicator {
+      # Categories
+      categories {
         id
         identifier
         name
-        unit {
+        type {
           id
-          name
-          shortName
-        }
-        latestValue {
-          id
-          date
-          value
-        }
-      }
-    }
-
-    # Links
-    links {
-      id
-      url
-      title
-    }
-
-    # Status Updates
-    statusUpdates {
-      id
-      title
-      date
-      content
-      author {
-        id
-        firstName
-        lastName
-      }
-    }
-
-    # Related Actions
-    relatedActions {
-      id
-      identifier
-      name
-    }
-    mergedWith {
-      id
-      identifier
-      name
-    }
-    mergedActions {
-      id
-      identifier
-      name
-    }
-    supersededBy {
-      id
-      identifier
-      name
-    }
-    supersededActions {
-      id
-      identifier
-      name
-    }
-
-    # Dependencies
-    allDependencyRelationships {
-      preceding {
-        id
-        identifier
-        name
-      }
-      dependent {
-        id
-        identifier
-        name
-      }
-    }
-
-    # Impact Groups
-    impactGroups {
-      id
-      group {
-        id
-        identifier
-        name
-      }
-      impact {
-        id
-        identifier
-      }
-    }
-
-    # Attributes (dynamic fields)
-    attributes {
-      __typename
-      type {
-        identifier
-        name
-        unit {
-          shortName
-        }
-      }
-      keyIdentifier
-      ... on AttributeText {
-        textValue: value
-      }
-      ... on AttributeRichText {
-        richTextValue: value
-      }
-      ... on AttributeCategoryChoice {
-        categories {
           identifier
-          type {
+          name
+        }
+      }
+
+      # Contact Persons
+      contactPersons {
+        id
+        role
+        primaryContact
+        person {
+          id
+          firstName
+          lastName
+          title
+          email
+          organization {
+            id
+            name
+            abbreviation
+          }
+        }
+      }
+
+      # Tasks
+      tasks {
+        id
+        name
+        state
+        dueAt
+        completedAt
+        comment
+      }
+
+      # Indicators
+      relatedIndicators {
+        id
+        effectType
+        indicatesActionProgress
+        indicator {
+          id
+          identifier
+          name
+          unit {
+            id
+            name
+            shortName
+          }
+          latestValue {
+            id
+            date
+            value
+          }
+        }
+      }
+
+      # Links
+      links {
+        id
+        url
+        title
+      }
+
+      # Status Updates
+      statusUpdates {
+        id
+        title
+        date
+        content
+        author {
+          id
+          firstName
+          lastName
+        }
+      }
+
+      # Related Actions
+      relatedActions {
+        id
+        identifier
+        name
+      }
+      mergedWith {
+        id
+        identifier
+        name
+      }
+      mergedActions {
+        id
+        identifier
+        name
+      }
+      supersededBy {
+        id
+        identifier
+        name
+      }
+      supersededActions {
+        id
+        identifier
+        name
+      }
+
+      # Dependencies
+      allDependencyRelationships {
+        preceding {
+          id
+          identifier
+          name
+        }
+        dependent {
+          id
+          identifier
+          name
+        }
+      }
+
+      # Attributes (dynamic fields)
+      attributes {
+        __typename
+        type {
+          identifier
+          name
+          unit {
+            shortName
+          }
+        }
+        keyIdentifier
+        ... on AttributeText {
+          textValue: value
+        }
+        ... on AttributeRichText {
+          richTextValue: value
+        }
+        ... on AttributeCategoryChoice {
+          categories {
+            identifier
+            type {
+              identifier
+            }
+          }
+        }
+        ... on AttributeNumericValue {
+          numericValue: value
+        }
+        ... on AttributeChoice {
+          choice {
             identifier
           }
         }
       }
-      ... on AttributeNumericValue {
-        numericValue: value
-      }
-      ... on AttributeChoice {
-        choice {
-          identifier
-        }
-      }
-    }
 
-    # Metadata
-    visibility
-    order
-    viewUrl
+      # Metadata
+      visibility
+      order
+      viewUrl
+    }
   }
 }

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
 
 from fastmcp.exceptions import ToolError
 
-from mcp_server.__generated__.schema import MCPGetAction, MCPGetActionAction, MCPListActions, MCPListActionsPlanactions
+from mcp_server.__generated__.schema import (
+    MCPGetActions,
+    MCPGetActionsAdminActions,
+    MCPListActions,
+)
 
-from .helpers import execute_operation
+from .helpers import execute_operation, execute_schema_query
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -17,49 +21,113 @@ async def list_actions(
     category: Annotated[str | None, 'Filter by category ID (includes descendants)'] = None,
     first: Annotated[int | None, 'Limit number of results (default: all)'] = None,
     order_by: Annotated[str | None, "Order by field: 'updated_at' or 'identifier'"] = None,
-) -> list[MCPListActionsPlanactions]:
+) -> str:
     """
     List actions from a climate action plan with optional filtering.
 
-    Returns actions with their status, responsible organizations, and categories.
-    Use the category filter to narrow down to a specific theme or strategy.
+    Returns a compact list of actions with identifier, name, status, and primary organization.
+    Use get_actions(ids) for full details on specific actions.
     """
     result = await execute_operation(
-        MCPListActions, # type: ignore[type-var]
+        MCPListActions,  # type: ignore[type-var]
         MCPListActions.Arguments(plan=plan, category=category, first=first, orderBy=order_by),
     )
 
     if result.plan_actions is None:
         raise ToolError(f"Plan '{plan}' not found or not accessible")
 
-    return result.plan_actions
+    lines: list[str] = []
+    for action in result.plan_actions:
+        parts = [f"{action.identifier} (id:{action.id}): {action.name}"]
+
+        # Add status
+        if action.status_summary:
+            parts.append(f"[{action.status_summary.label}]")
+
+        # Add primary org
+        if action.primary_org:
+            org_name = action.primary_org.abbreviation or action.primary_org.name
+            parts.append(f"({org_name})")
+
+        lines.append(" ".join(parts))
+
+    return "\n".join(lines)
 
 
-async def get_action(
-    plan: Annotated[str, "The plan identifier (e.g., 'sunnydale', 'tampere-ilmasto')"],
-    identifier: Annotated[str, "The action identifier within the plan (e.g., '1.1.1', 'A.2')"],
-) -> MCPGetActionAction:
+async def get_actions(
+    ids: Annotated[list[str], 'List of action IDs to fetch'],
+) -> list[MCPGetActionsAdminActions]:
     """
-    Get detailed information about a specific action in a climate action plan.
+    Get detailed information about multiple actions by their IDs.
 
-    Returns comprehensive action details including:
-    - Status and completion information
-    - Responsible organizations and contact persons
-    - Tasks and their states
-    - Related indicators with latest values
-    - Links and status updates
-    - Related and dependent actions
+    Returns comprehensive action details including status, organizations,
+    tasks, indicators, and more. Use list_actions to discover action IDs first.
     """
-    result = await execute_operation(MCPGetAction, MCPGetAction.Arguments(plan=plan, identifier=identifier))  # type: ignore[type-var]
+    result = await execute_operation(MCPGetActions, MCPGetActions.Arguments(ids=ids))  # type: ignore[type-var]
+    return result.admin.actions
 
-    if result.action is None:
-        raise ToolError(f"Action '{identifier}' not found in plan '{plan}'")
 
-    return result.action
+async def query_actions(
+    plan: Annotated[str, "The plan identifier (e.g., 'sunnydale', 'bremen-klima-copy1')"],
+    fields: Annotated[
+        str,
+        "GraphQL fields to select (fragment body on Action type). Read schema://action-fields for available fields.",
+    ],
+    category: Annotated[str | None, 'Filter by category ID (includes descendants)'] = None,
+    first: Annotated[int | None, 'Limit number of results'] = None,
+) -> list[dict[str, Any]]:
+    """
+    Query actions with custom field selection.
+
+    Use this for flexible queries when you need specific fields or want to filter/analyze
+    actions based on their attributes. Read the schema://action-fields resource first
+    to see available fields.
+
+    Example fields parameter:
+        identifier
+        name
+        statusSummary { label sentiment }
+        attributes {
+            ... on AttributeChoice {
+                type { identifier }
+                choice { identifier name }
+            }
+        }
+    """
+    # Build the query with the provided fields
+    # The @context directive activates the correct plan context for language and permissions
+    query = """
+    query MCPQueryActions($plan: ID!, $category: ID, $first: Int) @context(input: {identifier: $plan}) {
+        planActions(plan: $plan, category: $category, first: $first) {
+            ...FreeformActionFields
+        }
+    }
+    fragment FreeformActionFields on Action {
+        %s
+    }
+    """ % fields
+
+    variables: dict[str, Any] = {'plan': plan}
+    if category is not None:
+        variables['category'] = category
+    if first is not None:
+        variables['first'] = first
+
+    result = await execute_schema_query(query, variables)
+
+    if result.errors:
+        error_msgs = '; '.join(str(e) for e in result.errors)
+        raise ToolError(f"GraphQL query failed: {error_msgs}")
+
+    if result.data is None:
+        raise ToolError("No data returned from query")
+
+    return result.data.get('planActions', [])
 
 
 def register_action_tools(mcp: FastMCP) -> None:
     """Register all action-related MCP tools."""
 
     mcp.tool(list_actions)
-    mcp.tool(get_action)
+    mcp.tool(get_actions)
+    mcp.tool(query_actions)

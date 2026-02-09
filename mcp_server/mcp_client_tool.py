@@ -149,7 +149,13 @@ def print_tools_list(tools: list[dict[str, Any]]) -> None:
     """Print a formatted list of tools."""
     print(f'\nAvailable tools ({len(tools)}):')
     for tool in tools:
-        print(f'  - {tool["name"]}: {tool.get("description", "No description")}')
+        description = tool.get('description', 'No description')
+        # Indent continuation lines for multi-line descriptions
+        lines = description.split('\n')
+        first_line = lines[0]
+        print(f'  - {tool["name"]}: {first_line}')
+        for line in lines[1:]:
+            print(f'      {line}')
 
 
 def handle_call_result(result: dict[str, Any], raw: bool) -> None:
