@@ -1552,11 +1552,11 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
             raise exceptions.NotFound(detail='Plan not found') from None
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().order_by('id')
         plan = self.get_plan()
         if plan is None:
             return queryset
-        return Organization.objects.qs.available_for_plan(plan)
+        return Organization.objects.qs.available_for_plan(plan).order_by('id')
 
 
 
