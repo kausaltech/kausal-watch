@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from django.contrib.admin import SimpleListFilter
@@ -13,8 +15,9 @@ from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
-from wagtail.admin.panels import FieldPanel, ObjectList
+from wagtail.admin.panels import FieldPanel, ObjectList, Panel
 
+from loguru import logger
 from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
@@ -41,9 +44,219 @@ from admin_site.wagtail import (
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
+from .models.attributes import AttributeChoice, AttributeChoiceWithText
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
+
+logger = logger.bind(name='actions.attribute_type_admin')
+
+
+@dataclass
+class ChoiceOptionUsageInfo:
+    draft_action_names: list[str] = field(default_factory=list)
+    published_action_names: list[str] = field(default_factory=list)
+    report_names: list[str] = field(default_factory=list)
+
+    @property
+    def draft_action_count(self) -> int:
+        return len(self.draft_action_names)
+
+    @property
+    def published_action_count(self) -> int:
+        return len(self.published_action_names)
+
+    @property
+    def report_count(self) -> int:
+        return len(self.report_names)
+
+    @property
+    def has_usage(self) -> bool:
+        return self.draft_action_count > 0 or self.published_action_count > 0 or self.report_count > 0
+
+
+def _extract_choice_pk_from_revision_value(format_key: str, value: object) -> int | None:
+    """Extract the choice option PK from a serialized revision attribute value."""
+    if format_key in ('ordered_choice', 'unordered_choice') and isinstance(value, int):
+        return value
+    if format_key == 'optional_choice' and isinstance(value, dict):
+        return value.get('choice')
+    return None
+
+
+def _collect_drafts_per_option(
+    attribute_type: AttributeType, option_pks: set[int],
+) -> dict[int, list[str]]:
+    """Collect action names of unpublished drafts referencing each choice option."""
+    draft_action_names: dict[int, list[str]] = defaultdict(list)
+    actions_with_drafts = Action.objects.filter(
+        plan_id=attribute_type.scope_id,
+        has_unpublished_changes=True,
+    ).select_related('latest_revision')
+
+    format_key = str(attribute_type.format)
+    attr_type_key = str(attribute_type.pk)
+
+    for action in actions_with_drafts:
+        revision = action.latest_revision
+        if not revision:
+            continue
+        attributes = revision.content.get('attributes', {})
+        value = attributes.get(format_key, {}).get(attr_type_key)
+        if value is None:
+            continue
+        choice_pk = _extract_choice_pk_from_revision_value(format_key, value)
+        if choice_pk is not None and choice_pk in option_pks:
+            draft_action_names[choice_pk].append(str(action))
+
+    return draft_action_names
+
+
+def _collect_published_per_option(
+    attribute_type: AttributeType, option_pks: set[int],
+) -> dict[int, list[str]]:
+    """Collect action names of published actions referencing each choice option."""
+    published_action_names: dict[int, list[str]] = defaultdict(list)
+    action_ct = ContentType.objects.get_for_model(Action)
+
+    # Collect choice_id -> action_id mappings
+    choice_to_action_ids: dict[int, list[int]] = defaultdict(list)
+
+    # From AttributeChoice
+    for choice_id, action_id in AttributeChoice.objects.filter(
+        type=attribute_type,
+        content_type=action_ct,
+        choice_id__in=option_pks,
+    ).values_list('choice_id', 'object_id'):
+        choice_to_action_ids[choice_id].append(action_id)
+
+    # From AttributeChoiceWithText
+    for choice_id, action_id in AttributeChoiceWithText.objects.filter(
+        type=attribute_type,
+        content_type=action_ct,
+        choice_id__in=option_pks,
+    ).values_list('choice_id', 'object_id'):
+        choice_to_action_ids[choice_id].append(action_id)
+
+    # Fetch all actions in bulk
+    all_action_ids = []
+    for action_ids in choice_to_action_ids.values():
+        all_action_ids.extend(action_ids)
+
+    if all_action_ids:
+        actions_by_id = {
+            action.id: str(action)
+            for action in Action.objects.filter(id__in=all_action_ids)
+        }
+
+        # Build result with action names
+        for choice_id, action_ids in choice_to_action_ids.items():
+            published_action_names[choice_id] = [
+                actions_by_id[action_id]
+                for action_id in action_ids
+                if action_id in actions_by_id
+            ]
+
+    return published_action_names
+
+
+def _get_choice_option_usage(attribute_type: AttributeType) -> dict[int, ChoiceOptionUsageInfo]:
+    """
+    Compute usage info for all choice options of an attribute type.
+
+    Returns a mapping from choice_option_pk to ChoiceOptionUsageInfo.
+    Only applies to attribute types scoped to actions.
+    """
+    if attribute_type.object_content_type.model != 'action':
+        return {}
+
+    option_pks = set(attribute_type.choice_options.values_list('pk', flat=True))
+    if not option_pks:
+        return {}
+
+    draft_action_names_by_option = _collect_drafts_per_option(attribute_type, option_pks)
+    published_action_names_by_option = _collect_published_per_option(attribute_type, option_pks)
+
+    # Find incomplete reports for options that have live attribute references
+    from reports.models import Report
+    action_ct = ContentType.objects.get_for_model(Action)
+
+    used_option_pks: set[int] = set()
+    used_option_pks.update(
+        AttributeChoice.objects.filter(
+            type=attribute_type, content_type=action_ct,
+        ).values_list('choice_id', flat=True),
+    )
+    used_option_pks.update(
+        AttributeChoiceWithText.objects.filter(
+            type=attribute_type, content_type=action_ct, choice_id__isnull=False,
+        ).values_list('choice_id', flat=True),
+    )
+    used_option_pks &= option_pks
+
+    report_names: list[str] = []
+    if used_option_pks:
+        report_names = [
+            str(r) for r in Report.objects.filter(
+                is_complete=False, type__plan_id=attribute_type.scope_id,
+            )
+        ]
+
+    # Build result
+    result: dict[int, ChoiceOptionUsageInfo] = {}
+    for pk in option_pks:
+        info = ChoiceOptionUsageInfo(
+            draft_action_names=draft_action_names_by_option.get(pk, []),
+            published_action_names=published_action_names_by_option.get(pk, []),
+            report_names=report_names if pk in used_option_pks else [],
+        )
+        if info.has_usage:
+            result[pk] = info
+    return result
+
+
+class ChoiceOptionUsagePanel(Panel):
+    """Panel that warns admins about choice option usage in drafts and reports."""
+
+    def __init__(self, usage_by_option: dict[int, ChoiceOptionUsageInfo], **kwargs):
+        super().__init__(**kwargs)
+        self.usage_by_option = usage_by_option
+
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        kwargs['usage_by_option'] = self.usage_by_option
+        return kwargs
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = 'aplans/panels/choice_option_usage_panel.html'
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            option = self.instance
+            if option and option.pk:
+                info = self.panel.usage_by_option.get(option.pk)
+            else:
+                info = None
+
+            if info is not None:
+                self.draft_action_count = info.draft_action_count
+                self.published_action_count = info.published_action_count
+                self.report_count = info.report_count
+                self.draft_action_names = info.draft_action_names
+                self.published_action_names = info.published_action_names
+                self.report_names = info.report_names
+                self.has_usage = info.has_usage
+            else:
+                self.draft_action_count = 0
+                self.published_action_count = 0
+                self.report_count = 0
+                self.draft_action_names = []
+                self.published_action_names = []
+                self.report_names = []
+                self.has_usage = False
+
+        def is_shown(self):
+            return self.has_usage
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -280,7 +493,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     # wagtailorderable hasn't accounted for this.
     @display(ordering='order', description=_('Order'))
     def index_order(self, obj):
-        return mark_safe(  # noqa: S308
+        return mark_safe(
             '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
             '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
             '<use href="#icon-grip"></use>'
@@ -297,6 +510,11 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             request,
             instance,
         )
+
+        if instance.pk is not None:
+            usage_by_option = _get_choice_option_usage(instance)
+            if usage_by_option:
+                choice_option_panels = [*choice_option_panels, ChoiceOptionUsagePanel(usage_by_option)]
 
         creating = instance.pk is None
         if not creating and instance and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
