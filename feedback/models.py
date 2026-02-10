@@ -12,6 +12,7 @@ from aplans.utils import PlanRelatedModelWithRevision
 
 from actions.models import Action, Plan
 from actions.models.category import Category
+from actions.models.pledge import Pledge
 from pages.models import ActionListPage, CategoryPage
 
 
@@ -20,7 +21,8 @@ class UserFeedback(PlanRelatedModelWithRevision):
         GENERAL = '', _('General')
         ACCESSIBILITY = 'accessibility', _('Accessibility')
         ACTION = 'action', pgettext_lazy('Action model', 'Action')
-        CATEGORY = "category", _("Category")
+        CATEGORY = 'category', _('Category')
+        PLEDGE = 'pledge', _('Pledge')
 
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='user_feedbacks', verbose_name=_("plan"))
     type = models.CharField(
@@ -33,6 +35,10 @@ class UserFeedback(PlanRelatedModelWithRevision):
     category = models.ForeignKey(
         Category, blank=True, null=True, on_delete=models.SET_NULL, related_name='user_feedbacks',
         verbose_name=_("category"),
+    )
+    pledge = models.ForeignKey(
+        Pledge, blank=True, null=True, on_delete=models.SET_NULL, related_name='user_feedbacks',
+        verbose_name=_('pledge'),
     )
 
     name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("name"))

@@ -1,13 +1,13 @@
 from __future__ import annotations
+
 from typing import Self
 
 from django import forms
 from graphene_django.forms.mutation import DjangoModelFormMutation
+from wagtail.log_actions import log
 
 from aplans.graphql_types import DjangoObjectType
 from aplans.utils import public_fields
-
-from wagtail.log_actions import log
 
 from actions.models import Plan
 
@@ -18,7 +18,10 @@ class UserFeedbackForm(forms.ModelForm):
     plan = forms.ModelChoiceField(queryset=Plan.objects.all(), to_field_name='identifier')
     class Meta:
         model = UserFeedback
-        fields = ('plan', 'type', 'action', 'category', 'name', 'email', 'comment', 'url', 'additional_fields', 'page_id')
+        fields = (
+            'plan', 'type', 'action', 'category', 'pledge', 'name', 'email',
+            'comment', 'url', 'additional_fields', 'page_id',
+        )
 
 
 class UserFeedbackNode(DjangoObjectType):
