@@ -439,7 +439,7 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_admin_url(root: Plan, info: GQLInfo):
-        if not root.features.show_admin_link or not root.is_visible_for_user(info.context.user):
+        if not root.is_visible_for_user(info.context.user):
             return None
         client_plan = root.clients.first()
         if client_plan is None:

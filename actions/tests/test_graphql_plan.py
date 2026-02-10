@@ -132,11 +132,7 @@ def test_plan_admin_url(graphql_client_query_data, plan, show_admin_link):
         """,
         variables=dict(plan=plan.identifier),
     )
-    if show_admin_link:
-        admin_url = settings.ADMIN_BASE_URL
-        assert data == {'plan': {'adminUrl': admin_url}}
-    else:
-        assert data == {'plan': {'adminUrl': None}}
+    assert data == {'plan': {'adminUrl': settings.ADMIN_BASE_URL}}
 
 
 def test_categorytypes(graphql_client_query_data, plan, category_type, category_factory):
