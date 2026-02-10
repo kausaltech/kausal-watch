@@ -1136,6 +1136,7 @@ class PledgeUserNode(DjangoNode[PledgeUser]):
         fields = [
             'id',
             'uuid',
+            'user_data',
             'created_at',
         ]
 

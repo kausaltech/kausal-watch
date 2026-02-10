@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 import pytest
@@ -965,6 +966,7 @@ class TestPledgeUserQuery:
             pledgeUser(uuid: $uuid) {
                 id
                 uuid
+                userData
                 commitments {
                     id
                     createdAt
@@ -1105,3 +1107,26 @@ class TestPledgeUserQuery:
         assert data['pledgeUser'] is not None
         assert len(data['pledgeUser']['commitments']) == 1
         assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Plan 1 Pledge'
+
+    def test_pledge_user_query_returns_user_data(self, graphql_client_query_data):
+        pledge_user = PledgeUser.objects.create(user_data={'zip_code': '90210', 'city': 'Beverly Hills'})
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(pledge_user.uuid)},
+        )
+
+        assert data['pledgeUser'] is not None
+        user_data = json.loads(data['pledgeUser']['userData'])
+        assert user_data == {'zip_code': '90210', 'city': 'Beverly Hills'}
+
+    def test_pledge_user_query_returns_empty_user_data(self, graphql_client_query_data):
+        pledge_user = PledgeUser.objects.create()
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(pledge_user.uuid)},
+        )
+
+        assert data['pledgeUser'] is not None
+        assert json.loads(data['pledgeUser']['userData']) == {}
