@@ -4,11 +4,11 @@
     {% trans "This choice option is currently in use. Changing or deleting it will affect the following objects:" %}
     {% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." as change_tooltip %}
     <ul>
-      {% if self.published_action_count > 0 %}
-        {% include "aplans/_usage_tooltip_item.html" with label=self.published_action_label names=self.published_action_names tooltip_text=change_tooltip %}
+      {% if self.published_count > 0 %}
+        {% include "aplans/_usage_tooltip_item.html" with label=self.published_object_label names=self.published_object_names tooltip_text=change_tooltip %}
       {% endif %}
-      {% if self.draft_action_count > 0 %}
-        {% include "aplans/_usage_tooltip_item.html" with label=self.draft_action_label names=self.draft_action_names tooltip_text=change_tooltip %}
+      {% if self.draft_count > 0 %}
+        {% include "aplans/_usage_tooltip_item.html" with label=self.draft_object_label names=self.draft_object_names tooltip_text=change_tooltip %}
       {% endif %}
       {% if self.report_count > 0 %}
         {% trans "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete." as report_extra_tooltip %}

@@ -64,41 +64,23 @@ logger = logger.bind(name='actions.attribute_type_admin')
 
 @dataclass
 class ChoiceOptionUsageInfo:
-    draft_action_names: list[str] = field(default_factory=list)
-    published_action_names: list[str] = field(default_factory=list)
+    published_object_names: list[str] = field(default_factory=list)
+    published_object_label: str = ''
+    draft_object_names: list[str] = field(default_factory=list)
+    draft_object_label: str = ''
     report_names: list[str] = field(default_factory=list)
 
     @property
-    def draft_action_count(self) -> int:
-        return len(self.draft_action_names)
+    def published_count(self) -> int:
+        return len(self.published_object_names)
 
     @property
-    def published_action_count(self) -> int:
-        return len(self.published_action_names)
+    def draft_count(self) -> int:
+        return len(self.draft_object_names)
 
     @property
     def report_count(self) -> int:
         return len(self.report_names)
-
-    @property
-    def has_usage(self) -> bool:
-        return self.draft_action_count > 0 or self.published_action_count > 0 or self.report_count > 0
-
-    @property
-    def published_action_label(self) -> str:
-        return ngettext_lazy(
-            '%(count)d published action',
-            '%(count)d published actions',
-            self.published_action_count,
-        ) % {'count': self.published_action_count}
-
-    @property
-    def draft_action_label(self) -> str:
-        return ngettext_lazy(
-            '%(count)d action draft',
-            '%(count)d action drafts',
-            self.draft_action_count,
-        ) % {'count': self.draft_action_count}
 
     @property
     def report_label(self) -> str:
@@ -107,6 +89,10 @@ class ChoiceOptionUsageInfo:
             '%(count)d reports',
             self.report_count,
         ) % {'count': self.report_count}
+
+    @property
+    def has_usage(self) -> bool:
+        return self.published_count > 0 or self.draft_count > 0 or self.report_count > 0
 
 
 def _extract_choice_pk_from_revision_value(format_key: str, value: object) -> int | None:
@@ -121,18 +107,25 @@ def _extract_choice_pk_from_revision_value(format_key: str, value: object) -> in
 def _collect_drafts_per_option(
     attribute_type: AttributeType, option_pks: set[int],
 ) -> dict[int, list[str]]:
-    """Collect action names of unpublished drafts referencing each choice option."""
-    draft_action_names: dict[int, list[str]] = defaultdict(list)
-    actions_with_drafts = Action.objects.filter(
-        plan_id=attribute_type.scope_id,
+    """Collect names of objects with unpublished drafts referencing each choice option."""
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+
+    plan = attribute_type._get_plan()
+    if plan is None:
+        return {}
+
+    draft_names: dict[int, list[str]] = defaultdict(list)
+    objects_with_drafts = object_model.objects.filter(  # type: ignore[attr-defined]
+        plan_id=plan.pk,
         has_unpublished_changes=True,
     ).select_related('latest_revision')
 
     format_key = str(attribute_type.format)
     attr_type_key = str(attribute_type.pk)
 
-    for action in actions_with_drafts:
-        revision = action.latest_revision
+    for obj in objects_with_drafts:
+        revision = obj.latest_revision
         if not revision:
             continue
         attributes = revision.content.get('attributes', {})
@@ -141,57 +134,52 @@ def _collect_drafts_per_option(
             continue
         choice_pk = _extract_choice_pk_from_revision_value(format_key, value)
         if choice_pk is not None and choice_pk in option_pks:
-            draft_action_names[choice_pk].append(str(action))
+            draft_names[choice_pk].append(str(obj))
 
-    return draft_action_names
+    return draft_names
 
 
 def _collect_published_per_option(
     attribute_type: AttributeType, option_pks: set[int],
 ) -> dict[int, list[str]]:
-    """Collect action names of published actions referencing each choice option."""
-    published_action_names: dict[int, list[str]] = defaultdict(list)
-    action_ct = ContentType.objects.get_for_model(Action)
+    """Collect names of published objects referencing each choice option."""
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+    obj_ct = attribute_type.object_content_type
 
-    # Collect choice_id -> action_id mappings
-    choice_to_action_ids: dict[int, list[int]] = defaultdict(list)
+    published_names: dict[int, list[str]] = defaultdict(list)
+    choice_to_obj_ids: dict[int, list[int]] = defaultdict(list)
 
-    # From AttributeChoice
-    for choice_id, action_id in AttributeChoice.objects.filter(
+    for choice_id, obj_id in AttributeChoice.objects.filter(
         type=attribute_type,
-        content_type=action_ct,
+        content_type=obj_ct,
         choice_id__in=option_pks,
     ).values_list('choice_id', 'object_id'):
-        choice_to_action_ids[choice_id].append(action_id)
+        choice_to_obj_ids[choice_id].append(obj_id)
 
-    # From AttributeChoiceWithText
-    for choice_id, action_id in AttributeChoiceWithText.objects.filter(
+    for choice_id, obj_id in AttributeChoiceWithText.objects.filter(
         type=attribute_type,
-        content_type=action_ct,
+        content_type=obj_ct,
         choice_id__in=option_pks,
     ).values_list('choice_id', 'object_id'):
-        choice_to_action_ids[choice_id].append(action_id)
+        choice_to_obj_ids[choice_id].append(obj_id)
 
-    # Fetch all actions in bulk
-    all_action_ids = []
-    for action_ids in choice_to_action_ids.values():
-        all_action_ids.extend(action_ids)
+    all_obj_ids = [oid for ids in choice_to_obj_ids.values() for oid in ids]
 
-    if all_action_ids:
-        actions_by_id = {
-            action.id: str(action)
-            for action in Action.objects.filter(id__in=all_action_ids)
+    if all_obj_ids:
+        objects_by_id = {
+            obj.id: str(obj)
+            for obj in object_model.objects.filter(id__in=all_obj_ids)  # type: ignore[attr-defined]
         }
 
-        # Build result with action names
-        for choice_id, action_ids in choice_to_action_ids.items():
-            published_action_names[choice_id] = [
-                actions_by_id[action_id]
-                for action_id in action_ids
-                if action_id in actions_by_id
+        for choice_id, obj_ids in choice_to_obj_ids.items():
+            published_names[choice_id] = [
+                objects_by_id[oid]
+                for oid in obj_ids
+                if oid in objects_by_id
             ]
 
-    return published_action_names
+    return published_names
 
 
 def _get_choice_option_usage(attribute_type: AttributeType) -> dict[int, ChoiceOptionUsageInfo]:
@@ -199,49 +187,56 @@ def _get_choice_option_usage(attribute_type: AttributeType) -> dict[int, ChoiceO
     Compute usage info for all choice options of an attribute type.
 
     Returns a mapping from choice_option_pk to ChoiceOptionUsageInfo.
-    Only applies to attribute types scoped to actions.
     """
-    if attribute_type.object_content_type.model != 'action':
-        return {}
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+    assert issubclass(object_model, ModelWithAttributes)
 
     option_pks = set(attribute_type.choice_options.values_list('pk', flat=True))
     if not option_pks:
         return {}
 
-    draft_action_names_by_option = _collect_drafts_per_option(attribute_type, option_pks)
-    published_action_names_by_option = _collect_published_per_option(attribute_type, option_pks)
+    published_names_by_option = _collect_published_per_option(attribute_type, option_pks)
 
-    # Find incomplete reports for options that have live attribute references
-    from reports.models import Report
-    action_ct = ContentType.objects.get_for_model(Action)
+    draft_names_by_option: dict[int, list[str]] = {}
+    if issubclass(object_model, DraftStateMixin):
+        draft_names_by_option = _collect_drafts_per_option(attribute_type, option_pks)
 
+    # Reports only track action attributes; for other models, skip report collection.
     used_option_pks: set[int] = set()
-    used_option_pks.update(
-        AttributeChoice.objects.filter(
-            type=attribute_type, content_type=action_ct,
-        ).values_list('choice_id', flat=True),
-    )
-    used_option_pks.update(
-        AttributeChoiceWithText.objects.filter(
-            type=attribute_type, content_type=action_ct, choice_id__isnull=False,
-        ).values_list('choice_id', flat=True),
-    )
-    used_option_pks &= option_pks
-
     report_names: list[str] = []
-    if used_option_pks:
-        report_names = [
-            str(r) for r in Report.objects.filter(
-                is_complete=False, type__plan_id=attribute_type.scope_id,
-            )
-        ]
+    if object_model is Action:
+        obj_ct = attribute_type.object_content_type
+        used_option_pks.update(
+            AttributeChoice.objects.filter(
+                type=attribute_type, content_type=obj_ct,
+            ).values_list('choice_id', flat=True),
+        )
+        used_option_pks.update(
+            AttributeChoiceWithText.objects.filter(
+                type=attribute_type, content_type=obj_ct, choice_id__isnull=False,
+            ).values_list('choice_id', flat=True),
+        )
+        used_option_pks &= option_pks
+
+        if used_option_pks:
+            from reports.models import Report
+            report_names = [
+                str(r) for r in Report.objects.filter(
+                    is_complete=False, type__plan_id=attribute_type.scope_id,
+                )
+            ]
 
     # Build result
     result: dict[int, ChoiceOptionUsageInfo] = {}
     for pk in option_pks:
+        pub_names = published_names_by_option.get(pk, [])
+        draft_names = draft_names_by_option.get(pk, [])
         info = ChoiceOptionUsageInfo(
-            draft_action_names=draft_action_names_by_option.get(pk, []),
-            published_action_names=published_action_names_by_option.get(pk, []),
+            published_object_names=pub_names,
+            published_object_label=_published_label(object_model, len(pub_names)) if pub_names else '',
+            draft_object_names=draft_names,
+            draft_object_label=_draft_label(object_model, len(draft_names)) if draft_names else '',
             report_names=report_names if pk in used_option_pks else [],
         )
         if info.has_usage:
@@ -461,25 +456,25 @@ class ChoiceOptionUsagePanel(Panel):
                 info = None
 
             if info is not None:
-                self.draft_action_count = info.draft_action_count
-                self.published_action_count = info.published_action_count
+                self.published_count = info.published_count
+                self.draft_count = info.draft_count
                 self.report_count = info.report_count
-                self.draft_action_names = info.draft_action_names
-                self.published_action_names = info.published_action_names
+                self.published_object_names = info.published_object_names
+                self.published_object_label = info.published_object_label
+                self.draft_object_names = info.draft_object_names
+                self.draft_object_label = info.draft_object_label
                 self.report_names = info.report_names
-                self.published_action_label = info.published_action_label
-                self.draft_action_label = info.draft_action_label
                 self.report_label = info.report_label
                 self.has_usage = info.has_usage
             else:
-                self.draft_action_count = 0
-                self.published_action_count = 0
+                self.published_count = 0
+                self.draft_count = 0
                 self.report_count = 0
-                self.draft_action_names = []
-                self.published_action_names = []
+                self.published_object_names = []
+                self.published_object_label = ''
+                self.draft_object_names = []
+                self.draft_object_label = ''
                 self.report_names = []
-                self.published_action_label = ''
-                self.draft_action_label = ''
                 self.report_label = ''
                 self.has_usage = False
 
