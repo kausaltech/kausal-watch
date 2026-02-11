@@ -26,6 +26,7 @@ Can integrate with Kausal Paths (scenario modeling product) for emissions impact
 - `python manage.py runserver` - Start development server
 - `python manage.py migrate` - Run database migrations
 - `python manage.py shell_plus` - Enhanced Django shell (from django-extensions)
+- `python manage.py shell_plus --quiet-load -c "print(Plan.objects.last())"` - Run one-off Python with all models auto-imported; useful for quick DB lookups
 
 ### Testing
 - `python run_tests.py` - Run all tests (includes kausal_watch_extensions if available)
