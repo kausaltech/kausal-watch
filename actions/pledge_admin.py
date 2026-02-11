@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel,
     MultiFieldPanel,
     ObjectList,
 )
+from wagtail.admin.ui.tables import Column
 from wagtail.images.widgets import AdminImageChooser
 from wagtail.snippets.models import register_snippet
 
@@ -198,7 +200,10 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     menu_icon = 'kausal-pledge'
     menu_order = 41  # After Indicators (40)
     add_to_admin_menu = True
-    list_display = ['name', 'plan']
+    list_display = [
+        'name',
+        Column('commitment_count', label=_('Commitments'), sort_key='commitment_count'),
+    ]
     search_fields = ['name']
     ordering = ['plan', 'order']
     add_view_class = PledgeCreateView  # type: ignore[assignment]
@@ -257,7 +262,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
             qs = self.model._default_manager.all()
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
-        return qs.filter(plan=plan)
+        return qs.filter(plan=plan).annotate(commitment_count=Count('commitments'))
 
 
 register_snippet(PledgeViewSet)
