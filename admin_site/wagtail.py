@@ -41,7 +41,7 @@ from kausal_common.i18n.helpers import convert_language_code, get_language_from_
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import InstancesVisibleForMixin, PlanRelatedModel
+from aplans.utils import InstancesVisibleForMixin, PlanRelatedModel, append_query_parameter
 
 from actions.models.plan import Plan
 
@@ -394,6 +394,40 @@ def get_dataset_buttons(
             }
         buttons.append(button)
     return buttons
+
+
+class QueryParameterButtonHelper(ButtonHelper):
+    """
+    Button helper that preserves a query parameter across admin view URLs.
+
+    Subclasses must set ``parameter_name`` to the GET parameter to preserve
+    (e.g., ``'content_type'``, ``'category_type'``).
+    """
+
+    parameter_name: str
+
+    def add_button(self, *args, **kwargs):
+        """Only show the "add" button when the query parameter is present."""
+        if self.parameter_name not in self.request.GET:
+            return None
+        data = super().add_button(*args, **kwargs)
+        data['url'] = append_query_parameter(self.request, data['url'], self.parameter_name)
+        return data
+
+    def inspect_button(self, *args, **kwargs):
+        data = super().inspect_button(*args, **kwargs)
+        data['url'] = append_query_parameter(self.request, data['url'], self.parameter_name)
+        return data
+
+    def edit_button(self, *args, **kwargs):
+        data = super().edit_button(*args, **kwargs)
+        data['url'] = append_query_parameter(self.request, data['url'], self.parameter_name)
+        return data
+
+    def delete_button(self, *args, **kwargs):
+        data = super().delete_button(*args, **kwargs)
+        data['url'] = append_query_parameter(self.request, data['url'], self.parameter_name)
+        return data
 
 
 class AplansButtonHelper(ButtonHelper):

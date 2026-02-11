@@ -19,7 +19,6 @@ from wagtail.admin.panels import FieldPanel, ObjectList, Panel
 from wagtail.models import DraftStateMixin
 
 from loguru import logger
-from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView, IndexView
@@ -28,7 +27,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import OrderedModelChildFormSet
+from aplans.utils import OrderedModelChildFormSet, append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.chooser import CategoryTypeChooser
@@ -40,6 +39,7 @@ from admin_site.wagtail import (
     AplansTabbedInterface,
     CondensedInlinePanel,
     InitializeFormWithPlanMixin,
+    QueryParameterButtonHelper,
     insert_model_translation_panels,
 )
 
@@ -506,32 +506,24 @@ class AttributeTypeFilter(SimpleListFilter):
         return queryset
 
 
-def _append_content_type_query_parameter(request, url):
-    content_type = request.GET.get('content_type')
-    if content_type:
-        assert '?' not in url
-        return f'{url}?content_type={content_type}'
-    return url
-
-
 class ContentTypeQueryParameterMixin:
     request: HttpRequest
 
     @property
     def index_url(self):
-        return _append_content_type_query_parameter(self.request, super().index_url)
+        return append_query_parameter(self.request, super().index_url, 'content_type')
 
     @property
     def create_url(self):
-        return _append_content_type_query_parameter(self.request, super().create_url)
+        return append_query_parameter(self.request, super().create_url, 'content_type')
 
     @property
     def edit_url(self):
-        return _append_content_type_query_parameter(self.request, super().edit_url)
+        return append_query_parameter(self.request, super().edit_url, 'content_type')
 
     @property
     def delete_url(self):
-        return _append_content_type_query_parameter(self.request, super().delete_url)
+        return append_query_parameter(self.request, super().delete_url, 'content_type')
 
 
 class AttributeTypeIndexView(IndexView):
@@ -600,34 +592,8 @@ class AttributeTypeDeleteView(ContentTypeQueryParameterMixin, DeleteView):
         return ['aplans/attribute_type_delete.html']
 
 
-class AttributeTypeAdminButtonHelper(ButtonHelper):
-    # TODO: duplicated as CategoryAdminButtonHelper
-    def add_button(self, *args, **kwargs):
-        """
-        Only show "add" button if the request contains a content type.
-
-        Set GET parameter content_type to the type for the URL when clicking the button.
-        """
-        if 'content_type' in self.request.GET:
-            data = super().add_button(*args, **kwargs)
-            data['url'] = _append_content_type_query_parameter(self.request, data['url'])
-            return data
-        return None
-
-    def inspect_button(self, *args, **kwargs):
-        data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_content_type_query_parameter(self.request, data['url'])
-        return data
-
-    def edit_button(self, *args, **kwargs):
-        data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_content_type_query_parameter(self.request, data['url'])
-        return data
-
-    def delete_button(self, *args, **kwargs):
-        data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_content_type_query_parameter(self.request, data['url'])
-        return data
+class AttributeTypeAdminButtonHelper(QueryParameterButtonHelper):
+    parameter_name = 'content_type'
 
 
 class AttributeTypeAdminMenuItem(ModelAdminMenuItem):

@@ -20,7 +20,6 @@ from wagtail.admin.panels import (
 
 from dal import autocomplete
 from wagtail_color_panel.edit_handlers import NativeColorPanel
-from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
@@ -46,6 +45,7 @@ from admin_site.wagtail import (
     InitializeFormWithInitialPlanMixin,
     InitializeFormWithPlanMixin,
     PlanFilteredFieldPanel,
+    QueryParameterButtonHelper,
     get_dataset_buttons,
     get_translation_tabs,
     insert_model_translation_panels,
@@ -379,36 +379,8 @@ class CategoryDeleteView(CategoryTypeQueryParameterMixin, DeleteView):
         return super().delete_instance()
 
 
-class CategoryAdminButtonHelper(ButtonHelper):
-    request: HttpRequest
-
-    # TODO: duplicated as AttributeTypeAdminButtonHelper
-    def add_button(self, *args, **kwargs):
-        """
-        Only show "add" button if the request contains a category type.
-
-        Set GET parameter category_type to the type for the URL when clicking the button.
-        """
-        if 'category_type' in self.request.GET:
-            data = super().add_button(*args, **kwargs)
-            data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
-            return data
-        return None
-
-    def inspect_button(self, *args, **kwargs):
-        data = super().inspect_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
-        return data
-
-    def edit_button(self, *args, **kwargs):
-        data = super().edit_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
-        return data
-
-    def delete_button(self, *args, **kwargs):
-        data = super().delete_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
-        return data
+class CategoryAdminButtonHelper(QueryParameterButtonHelper):
+    parameter_name = 'category_type'
 
     def get_buttons_for_obj(self, obj: Category, exclude=None, classnames_add=None, classnames_exclude=None):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
@@ -642,33 +614,8 @@ class CommonCategoryDeleteView(CommonCategoryTypeQueryParameterMixin, DeleteView
     pass
 
 
-class CommonCategoryAdminButtonHelper(ButtonHelper):
-    def add_button(self, *args, **kwargs):
-        """
-        Only show "add" button if the request contains a common category type.
-
-        Set GET parameter common_category_type to the type for the URL when clicking the button.
-        """
-        if 'common_category_type' in self.request.GET:
-            data = super().add_button(*args, **kwargs)
-            data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
-            return data
-        return None
-
-    def inspect_button(self, *args, **kwargs):
-        data = super().inspect_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
-        return data
-
-    def edit_button(self, *args, **kwargs):
-        data = super().edit_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
-        return data
-
-    def delete_button(self, *args, **kwargs):
-        data = super().delete_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
-        return data
+class CommonCategoryAdminButtonHelper(QueryParameterButtonHelper):
+    parameter_name = 'common_category_type'
 
 
 class CommonCategoryAdminMenuItem(ModelAdminMenuItem):

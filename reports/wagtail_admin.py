@@ -7,14 +7,13 @@ from django.urls import re_path
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
 
-from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
 from aplans.utils import append_query_parameter
 
-from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin
+from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin, QueryParameterButtonHelper
 
 from .models import Report, ReportType
 from .views import MarkReportAsCompleteView
@@ -56,38 +55,11 @@ class ReportDeleteView(ReportTypeQueryParameterMixin, DeleteView):
     pass
 
 
-class ReportAdminButtonHelper(ButtonHelper):
-    # TODO: duplicated as AttributeTypeAdminButtonHelper
+class ReportAdminButtonHelper(QueryParameterButtonHelper):
+    parameter_name = 'report_type'
     download_report_button_classnames = []
     mark_as_complete_button_classnames = []
     undo_marking_as_complete_button_classnames = []
-
-    def add_button(self, *args, **kwargs):
-        """
-        Only show "add" button if the request contains a report type.
-
-        Set GET parameter report_type to the type for the URL when clicking the button.
-        """
-        if 'report_type' in self.request.GET:
-            data = super().add_button(*args, **kwargs)
-            data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
-            return data
-        return None
-
-    def inspect_button(self, *args, **kwargs):
-        data = super().inspect_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
-        return data
-
-    def edit_button(self, *args, **kwargs):
-        data = super().edit_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
-        return data
-
-    def delete_button(self, *args, **kwargs):
-        data = super().delete_button(*args, **kwargs)
-        data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
-        return data
 
     def download_report_button(self, report_pk, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
