@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from unittest.mock import Mock
 
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -226,3 +227,154 @@ class TestAttributeTypeAdminQueryset:
         assert action_attribute_type in qs
         assert category_attribute_type in qs
         assert pledge_attribute_type in qs
+
+
+class TestAttributeTypeAdminButtonHelper:
+    """Tests for AttributeTypeAdminButtonHelper preserving content_type parameter."""
+
+    @pytest.fixture
+    def attribute_type(self, plan):
+        """Create an attribute type for testing."""
+        action_ct = ContentType.objects.get(app_label='actions', model='action')
+        plan_ct = ContentType.objects.get(app_label='actions', model='plan')
+        return AttributeTypeFactory.create(
+            object_content_type=action_ct,
+            scope_content_type=plan_ct,
+            scope_id=plan.id,
+            name='Test Attribute',
+        )
+
+    def test_add_button_shown_with_content_type_parameter(
+        self, rf, plan, plan_admin_user, attribute_type
+    ):
+        """Add button should be shown when content_type parameter is present."""
+        from actions.attribute_type_admin import AttributeTypeAdmin, AttributeTypeAdminButtonHelper
+
+        admin = AttributeTypeAdmin()
+        request = rf.get(f'/admin/?content_type={attribute_type.object_content_type.id}')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = admin.model
+        view.url_helper = Mock()
+        view.url_helper.create_url = '/admin/create/'
+        view.permission_helper = Mock()
+
+        helper = AttributeTypeAdminButtonHelper(view, request)
+        result = helper.add_button()
+
+        assert result is not None
+        assert f'content_type={attribute_type.object_content_type.id}' in result['url']
+
+    def test_add_button_hidden_without_content_type_parameter(self, rf, plan, plan_admin_user):
+        """Add button should be hidden when content_type parameter is missing."""
+        from actions.attribute_type_admin import AttributeTypeAdmin, AttributeTypeAdminButtonHelper
+
+        admin = AttributeTypeAdmin()
+        request = rf.get('/admin/')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = admin.model
+        view.url_helper = Mock()
+        view.permission_helper = Mock()
+
+        helper = AttributeTypeAdminButtonHelper(view, request)
+        result = helper.add_button()
+
+        assert result is None
+
+    def test_edit_button_preserves_content_type_parameter(
+        self, rf, plan, plan_admin_user, attribute_type
+    ):
+        """Edit button should preserve content_type parameter in URL."""
+        from actions.attribute_type_admin import AttributeTypeAdminButtonHelper
+
+        request = rf.get(f'/admin/?content_type={attribute_type.object_content_type.id}')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = AttributeTypeFactory._meta.model
+        view.url_helper = Mock()
+        view.url_helper.get_action_url = Mock(
+            side_effect=lambda action, pk: f'/admin/{action}/{pk}/'
+        )
+        view.permission_helper = Mock()
+
+        helper = AttributeTypeAdminButtonHelper(view, request)
+        result = helper.edit_button(pk=attribute_type.id)
+
+        assert result is not None
+        assert f'content_type={attribute_type.object_content_type.id}' in result['url']
+
+
+class TestCategoryAdminButtonHelper:
+    """Tests for CategoryAdminButtonHelper preserving category_type parameter."""
+
+    @pytest.fixture
+    def category_type(self, plan):
+        """Create a category type for testing."""
+        return CategoryTypeFactory.create(plan=plan, name='Test Category Type')
+
+    def test_add_button_shown_with_category_type_parameter(
+        self, rf, plan, plan_admin_user, category_type
+    ):
+        """Add button should be shown when category_type parameter is present."""
+        from actions.category_admin import CategoryAdmin, CategoryAdminButtonHelper
+
+        admin = CategoryAdmin()
+        request = rf.get(f'/admin/?category_type={category_type.id}')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = admin.model
+        view.url_helper = Mock()
+        view.url_helper.create_url = '/admin/create/'
+        view.permission_helper = Mock()
+
+        helper = CategoryAdminButtonHelper(view, request)
+        result = helper.add_button()
+
+        assert result is not None
+        assert f'category_type={category_type.id}' in result['url']
+
+    def test_add_button_hidden_without_category_type_parameter(self, rf, plan, plan_admin_user):
+        """Add button should be hidden when category_type parameter is missing."""
+        from actions.category_admin import CategoryAdmin, CategoryAdminButtonHelper
+
+        admin = CategoryAdmin()
+        request = rf.get('/admin/')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = admin.model
+        view.url_helper = Mock()
+        view.permission_helper = Mock()
+
+        helper = CategoryAdminButtonHelper(view, request)
+        result = helper.add_button()
+
+        assert result is None
+
+    def test_inspect_button_preserves_category_type_parameter(
+        self, rf, plan, plan_admin_user, category_type
+    ):
+        """Inspect button should preserve category_type parameter in URL."""
+        from actions.category_admin import CategoryAdminButtonHelper
+
+        request = rf.get(f'/admin/?category_type={category_type.id}')
+        request.user = plan_admin_user
+
+        view = Mock()
+        view.model = CategoryTypeFactory._meta.model
+        view.url_helper = Mock()
+        view.url_helper.get_action_url = Mock(
+            side_effect=lambda action, pk: f'/admin/{action}/{pk}/'
+        )
+        view.permission_helper = Mock()
+
+        helper = CategoryAdminButtonHelper(view, request)
+        result = helper.inspect_button(pk=category_type.id)
+
+        assert result is not None
+        assert f'category_type={category_type.id}' in result['url']
