@@ -2,68 +2,18 @@
 <div class="help-block help-warning">
     {% if self.has_usage %}
     {% trans "This choice option is currently in use. Changing or deleting it will affect the following objects:" %}
+    {% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." as change_tooltip %}
     <ul>
       {% if self.published_action_count > 0 %}
-      <li>
-        <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
-          {% blocktrans count published_action_count=self.published_action_count %}{{ published_action_count }} published action{% plural %}{{ published_action_count }} published actions{% endblocktrans %}
-          <div data-w-tooltip-target="content" hidden>
-            <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
-              {% with remaining=self.published_action_names|length|add:"-8" %}
-              {% if remaining > 1 %}
-                {% for name in self.published_action_names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
-                <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
-              {% else %}
-                {% for name in self.published_action_names %}<li>{{ name }}</li>{% endfor %}
-              {% endif %}
-              {% endwith %}
-            </ul>
-            <div>{% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." %}</div>
-          </div>
-        </span>
-      </li>
+        {% include "aplans/_usage_tooltip_item.html" with label=self.published_action_label names=self.published_action_names tooltip_text=change_tooltip %}
       {% endif %}
       {% if self.draft_action_count > 0 %}
-      <li>
-        <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
-          {% blocktrans count draft_action_count=self.draft_action_count %}{{ draft_action_count }} action draft{% plural %}{{ draft_action_count }} action drafts{% endblocktrans %}
-          <div data-w-tooltip-target="content" hidden>
-            <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
-              {% with remaining=self.draft_action_names|length|add:"-8" %}
-              {% if remaining > 1 %}
-                {% for name in self.draft_action_names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
-                <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
-              {% else %}
-                {% for name in self.draft_action_names %}<li>{{ name }}</li>{% endfor %}
-              {% endif %}
-              {% endwith %}
-            </ul>
-            <div>{% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." %}</div>
-          </div>
-        </span>
-      </li>
+        {% include "aplans/_usage_tooltip_item.html" with label=self.draft_action_label names=self.draft_action_names tooltip_text=change_tooltip %}
       {% endif %}
       {% if self.report_count > 0 %}
-      <li>
-        <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
-          {% blocktrans count report_count=self.report_count %}{{ report_count }} report{% plural %}{{ report_count }} reports{% endblocktrans %}
-          <div data-w-tooltip-target="content" hidden>
-            <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
-              {% with remaining=self.report_names|length|add:"-8" %}
-              {% if remaining > 1 %}
-                {% for name in self.report_names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
-                <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
-              {% else %}
-                {% for name in self.report_names %}<li>{{ name }}</li>{% endfor %}
-              {% endif %}
-              {% endwith %}
-            </ul>
-            <div>{% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." %}</div>
-            <div>{% trans "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete." %}</div>
-            {# Technically it would be enough to mark the actions as complete for those reports, but the text is technical enough as it is. #}
-          </div>
-        </span>
-      </li>
+        {% trans "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete." as report_extra_tooltip %}
+        {# Technically it would be enough to mark the actions as complete for those reports, but the text is technical enough as it is. #}
+        {% include "aplans/_usage_tooltip_item.html" with label=self.report_label names=self.report_names tooltip_text=change_tooltip tooltip_text_extra=report_extra_tooltip %}
       {% endif %}
     </ul>
     {% endif %}

@@ -24,42 +24,14 @@
                     {% trans "This field is currently in use. Deleting it will remove attribute values from the following objects:" %}
                     <ul>
                         {% if usage_info.published_count > 0 %}
-                        <li>
-                            <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
-                                {{ usage_info.published_label }}
-                                <div data-w-tooltip-target="content" hidden>
-                                    <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
-                                        {% with remaining=usage_info.published_object_names|length|add:"-8" %}
-                                        {% if remaining > 1 %}
-                                            {% for name in usage_info.published_object_names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
-                                            <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
-                                        {% else %}
-                                            {% for name in usage_info.published_object_names %}<li>{{ name }}</li>{% endfor %}
-                                        {% endif %}
-                                        {% endwith %}
-                                    </ul>
-                                </div>
-                            </span>
-                        </li>
+                            {% include "aplans/_usage_tooltip_item.html" with label=usage_info.published_label names=usage_info.published_object_names %}
                         {% endif %}
                         {% if usage_info.draft_count > 0 %}
-                        <li>
-                            <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
-                                {{ usage_info.draft_label }}
-                                <div data-w-tooltip-target="content" hidden>
-                                    <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
-                                        {% with remaining=usage_info.draft_object_names|length|add:"-8" %}
-                                        {% if remaining > 1 %}
-                                            {% for name in usage_info.draft_object_names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
-                                            <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
-                                        {% else %}
-                                            {% for name in usage_info.draft_object_names %}<li>{{ name }}</li>{% endfor %}
-                                        {% endif %}
-                                        {% endwith %}
-                                    </ul>
-                                </div>
-                            </span>
-                        </li>
+                            {% include "aplans/_usage_tooltip_item.html" with label=usage_info.draft_label names=usage_info.draft_object_names %}
+                        {% endif %}
+                        {% if usage_info.report_count > 0 %}
+                            {% trans "If you would like to keep the current value in reports even after deleting this field, please mark the reports as complete." as report_tooltip %}
+                            {% include "aplans/_usage_tooltip_item.html" with label=usage_info.report_label names=usage_info.report_names tooltip_text=report_tooltip %}
                         {% endif %}
                     </ul>
                 </div>

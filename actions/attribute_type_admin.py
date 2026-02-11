@@ -84,6 +84,30 @@ class ChoiceOptionUsageInfo:
     def has_usage(self) -> bool:
         return self.draft_action_count > 0 or self.published_action_count > 0 or self.report_count > 0
 
+    @property
+    def published_action_label(self) -> str:
+        return ngettext_lazy(
+            '%(count)d published action',
+            '%(count)d published actions',
+            self.published_action_count,
+        ) % {'count': self.published_action_count}
+
+    @property
+    def draft_action_label(self) -> str:
+        return ngettext_lazy(
+            '%(count)d action draft',
+            '%(count)d action drafts',
+            self.draft_action_count,
+        ) % {'count': self.draft_action_count}
+
+    @property
+    def report_label(self) -> str:
+        return ngettext_lazy(
+            '%(count)d report',
+            '%(count)d reports',
+            self.report_count,
+        ) % {'count': self.report_count}
+
 
 def _extract_choice_pk_from_revision_value(format_key: str, value: object) -> int | None:
     """Extract the choice option PK from a serialized revision attribute value."""
@@ -252,6 +276,7 @@ class AttributeTypeUsageInfo:
 
     published_object_names: list[str] = field(default_factory=list)
     draft_object_names: list[str] = field(default_factory=list)
+    report_names: list[str] = field(default_factory=list)
     published_label: str = ''
     draft_label: str = ''
 
@@ -264,8 +289,20 @@ class AttributeTypeUsageInfo:
         return len(self.draft_object_names)
 
     @property
+    def report_count(self) -> int:
+        return len(self.report_names)
+
+    @property
+    def report_label(self) -> str:
+        return ngettext_lazy(
+            '%(count)d report',
+            '%(count)d reports',
+            self.report_count,
+        ) % {'count': self.report_count}
+
+    @property
     def has_usage(self) -> bool:
-        return self.published_count > 0 or self.draft_count > 0
+        return self.published_count > 0 or self.draft_count > 0 or self.report_count > 0
 
 
 def _collect_published_for_attribute_type(attribute_type: AttributeType) -> list[str]:
@@ -363,6 +400,19 @@ def _draft_label(model: type[ModelWithAttributes], count: int) -> str:
     return label % {'count': count}
 
 
+def _collect_reports_for_attribute_type(attribute_type: AttributeType) -> list[str]:
+    """Collect names of incomplete reports affected by this attribute type."""
+    if attribute_type.object_content_type.model != 'action':
+        return []
+
+    from reports.models import Report
+    return [
+        str(r) for r in Report.objects.filter(
+            is_complete=False, type__plan_id=attribute_type.scope_id,
+        )
+    ]
+
+
 def _get_attribute_type_usage(attribute_type: AttributeType) -> AttributeTypeUsageInfo:
     """Compute usage info for an AttributeType across published objects and drafts."""
     published = _collect_published_for_attribute_type(attribute_type)
@@ -372,16 +422,19 @@ def _get_attribute_type_usage(attribute_type: AttributeType) -> AttributeTypeUsa
     assert object_model is not None
     assert issubclass(object_model, ModelWithAttributes)
 
-    usage_info_kwargs = {
-        'published_object_names': published,
-        'draft_object_names': drafts,
-        'published_label': _published_label(object_model, len(published)),
-    }
+    report_names = _collect_reports_for_attribute_type(attribute_type) if published else []
 
+    extra_kwargs: dict[str, str] = {}
     if issubclass(object_model, DraftStateMixin):
-        usage_info_kwargs['draft_label'] = _draft_label(object_model, len(drafts))
+        extra_kwargs['draft_label'] = _draft_label(object_model, len(drafts))
 
-    return AttributeTypeUsageInfo(**usage_info_kwargs)
+    return AttributeTypeUsageInfo(
+        published_object_names=published,
+        draft_object_names=drafts,
+        report_names=report_names,
+        published_label=_published_label(object_model, len(published)),
+        **extra_kwargs,
+    )
 
 
 class ChoiceOptionUsagePanel(Panel):
@@ -414,6 +467,9 @@ class ChoiceOptionUsagePanel(Panel):
                 self.draft_action_names = info.draft_action_names
                 self.published_action_names = info.published_action_names
                 self.report_names = info.report_names
+                self.published_action_label = info.published_action_label
+                self.draft_action_label = info.draft_action_label
+                self.report_label = info.report_label
                 self.has_usage = info.has_usage
             else:
                 self.draft_action_count = 0
@@ -422,6 +478,9 @@ class ChoiceOptionUsagePanel(Panel):
                 self.draft_action_names = []
                 self.published_action_names = []
                 self.report_names = []
+                self.published_action_label = ''
+                self.draft_action_label = ''
+                self.report_label = ''
                 self.has_usage = False
 
         def is_shown(self):

@@ -1,0 +1,20 @@
+{% load i18n %}
+<li>
+    <span data-controller="w-tooltip" style="text-decoration: underline dotted; cursor: help;">
+        {{ label }}
+        <div data-w-tooltip-target="content" hidden>
+            <ul style="margin: 0; padding-left: 1.2em; text-align: left;">
+                {% with remaining=names|length|add:"-8" %}
+                {% if remaining > 1 %}
+                    {% for name in names|slice:":8" %}<li>{{ name }}</li>{% endfor %}
+                    <li>{% blocktrans context "X more objects" %}... {{ remaining }} more{% endblocktrans %}</li>
+                {% else %}
+                    {% for name in names %}<li>{{ name }}</li>{% endfor %}
+                {% endif %}
+                {% endwith %}
+            </ul>
+            {% if tooltip_text %}<div>{{ tooltip_text }}</div>{% endif %}
+            {% if tooltip_text_extra %}<div>{{ tooltip_text_extra }}</div>{% endif %}
+        </div>
+    </span>
+</li>
