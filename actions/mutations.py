@@ -4,15 +4,26 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 
 import strawberry as sb
 import strawberry_django
+from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
+from strawberry import auto
 from strawberry.extensions import FieldExtension
+from strawberry.types.unset import UnsetType
 
 from kausal_common.users import user_or_bust, user_or_none
 
 from actions.models import Action, Plan
-from actions.models.attributes import AttributeType, AttributeTypeChoiceOption
+from actions.models.attributes import AttributeChoice, AttributeType, AttributeTypeChoiceOption
 from actions.models.category import Category, CategoryType
 from actions.models.features import PlanFeatures
-from actions.schema import ActionNode, AttributeTypeNode, CategoryNode, CategoryTypeNode, PlanNode  # noqa: TC001
+from actions.schema import (  # noqa: TC001
+    ActionNode,
+    AttributeTypeFormat,
+    AttributeTypeNode,
+    CategoryNode,
+    CategoryTypeNode,
+    PlanNode,
+)
 
 if TYPE_CHECKING:
     from aplans.graphql_types import SBInfo
@@ -22,23 +33,35 @@ if TYPE_CHECKING:
 
 @strawberry_django.input(PlanFeatures)
 class PlanFeaturesInput:
-    has_action_identifiers: sb.auto
-    has_action_official_name: sb.auto
-    has_action_lead_paragraph: sb.auto
-    has_action_primary_orgs: sb.auto
+    has_action_identifiers: auto
+    has_action_official_name: auto
+    has_action_lead_paragraph: auto
+    has_action_primary_orgs: auto
 
 
 # Input types
 @strawberry_django.input(Plan)
 class PlanInput:
-    name: sb.auto
-    identifier: sb.auto
-    primary_language: sb.auto
+    name: auto
+    identifier: auto
     organization_id: sb.ID
-    short_name: sb.auto
-    other_languages: sb.auto
-    theme_identifier: sb.auto
+    primary_language: str = sb.field(
+        default='en-US',
+        description='Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH").',
+    )
+    short_name: auto
+    other_languages: list[str] = sb.field(
+        default_factory=list,
+        description='Additional language codes (ISO 639-1).',
+    )
+    theme_identifier: auto
     features: PlanFeaturesInput | None = None
+
+
+@sb.input
+class ActionAttributeValueInput:
+    attribute_type_id: sb.ID
+    choice_id: sb.ID
 
 
 @strawberry_django.input(Action)
@@ -48,6 +71,8 @@ class ActionInput:
     identifier: sb.auto
     description: sb.auto
     primary_org_id: sb.auto
+    category_ids: list[sb.ID] | None = None
+    attribute_values: list[ActionAttributeValueInput] | None = None
 
 
 @sb.input
@@ -75,6 +100,13 @@ class CategoryTypeInput:
     usable_for_indicators: sb.auto
     editable_for_actions: sb.auto
     hide_category_identifiers: sb.auto
+    primary_action_classification: bool = sb.field(
+        description=(
+            'Whether this category type is the primary action classification. '
+            'NOTE: A Plan must have exactly one primary action classification.'
+        ),
+        default=False,
+    )
 
 
 @strawberry_django.input(Category)
@@ -91,7 +123,7 @@ class AttributeTypeInput:
     plan_id: sb.ID
     identifier: sb.auto
     name: sb.auto
-    format: sb.auto
+    format: AttributeTypeFormat  # pyright: ignore[reportInvalidTypeForm]  # type: ignore[valid-type]
     help_text: sb.auto
     unit_id: sb.ID | None = None
     choice_options: list[ChoiceOptionInput] | None = None
@@ -116,10 +148,15 @@ class ValidationError(Exception):
     pass
 
 
+def _strip_unset(**kwargs: Any) -> dict[str, Any]:
+    """Remove strawberry UNSET values from keyword arguments."""
+    return {k: v for k, v in kwargs.items() if not isinstance(v, UnsetType)}
+
+
 # Mutation classes
 @sb.type
 class PlanMutations:
-    @sb.mutation(extensions=[PlanAdminOnlyMutation()], description='Create a new plan')
+    @sb.mutation(extensions=[PlanAdminOnlyMutation()], description='Create a new plan. Returns the newly created plan.')
     def create_plan(self, input: PlanInput) -> PlanNode:
         from actions.models import Plan
         from orgs.models import Organization
@@ -127,27 +164,52 @@ class PlanMutations:
         # Get the organization
         org: Organization = Organization.objects.get(pk=input.organization_id)
 
+        short_name = None if isinstance(input.short_name, UnsetType) else input.short_name
+        theme_identifier = None if isinstance(input.theme_identifier, UnsetType) else input.theme_identifier
+
         # Create plan with defaults
         plan = Plan.create_with_defaults(
             identifier=input.identifier,
             name=input.name,
             primary_language=input.primary_language,
             organization=org,
-            other_languages=input.other_languages,
-            short_name=input.short_name,
+            other_languages=input.other_languages or None,
+            short_name=short_name,
         )
 
         # Set theme if provided
-        if input.theme_identifier:
-            plan.theme_identifier = input.theme_identifier
-            plan.save()
+        if theme_identifier:
+            plan.theme_identifier = theme_identifier
+        else:
+            plan.theme_identifier = 'default'
+        plan.save()
+
+        # Apply feature flags if provided
+        if input.features is not None:
+            features = plan.features
+            for field_name in (
+                'has_action_identifiers',
+                'has_action_official_name',
+                'has_action_lead_paragraph',
+                'has_action_primary_orgs',
+            ):
+                val = getattr(input.features, field_name)
+                if isinstance(val, bool):
+                    setattr(features, field_name, val)
+            features.save()
 
         return cast('PlanNode', plan)  # pyright: ignore[reportInvalidCast]
 
-    @sb.mutation(extensions=[PlanAdminOnlyMutation()])
+    @sb.mutation(
+        extensions=[PlanAdminOnlyMutation()], description='Create a new category type. Returns the newly created category type.'
+    )
+    @transaction.atomic
     def create_category_type(self, input: CategoryTypeInput) -> CategoryTypeNode:
         # Get the plan
-        plan: Plan = Plan.objects.get(pk=input.plan_id)
+        plan = Plan.objects.get(pk=input.plan_id)
+
+        if input.primary_action_classification and plan.primary_action_classification is not None:
+            raise ValidationError('A plan can only have one primary action classification.')
 
         # Create category type. For new plans, default editability to match usability --
         # it doesn't make sense to restrict editing before categories exist. Editability
@@ -156,24 +218,32 @@ class PlanMutations:
             plan=plan,
             identifier=input.identifier,
             name=input.name,
-            select_widget=input.select_widget,
-            usable_for_actions=input.usable_for_actions,
-            usable_for_indicators=input.usable_for_indicators,
-            editable_for_actions=input.usable_for_actions,
-            editable_for_indicators=input.usable_for_indicators,
-            hide_category_identifiers=input.hide_category_identifiers,
+            **_strip_unset(
+                select_widget=input.select_widget,
+                usable_for_actions=input.usable_for_actions,
+                usable_for_indicators=input.usable_for_indicators,
+                editable_for_actions=input.usable_for_actions,
+                editable_for_indicators=input.usable_for_indicators,
+                hide_category_identifiers=input.hide_category_identifiers,
+            ),
         )
 
+        if input.primary_action_classification:
+            plan.primary_action_classification = category_type
+            plan.save()
+
+        category_type = CategoryType.objects.get(pk=category_type.pk)
         return cast('CategoryTypeNode', category_type)  # pyright: ignore[reportInvalidCast]
 
-    @sb.mutation(extensions=[PlanAdminOnlyMutation()])
+    @sb.mutation(extensions=[PlanAdminOnlyMutation()], description='Create a new category. Returns the newly created category.')
+    @transaction.atomic
     def create_category(self, input: CategoryInput) -> CategoryNode:
         # Get the category type
-        category_type: CategoryType = CategoryType.objects.get(pk=input.type_id)
+        category_type = CategoryType.objects.get(pk=input.type_id)
 
         # Get parent if provided
         parent: Category | None = None
-        if input.parent_id:
+        if input.parent_id and not isinstance(input.parent_id, UnsetType):
             parent = Category.objects.get(pk=input.parent_id)
 
         if not category_type.editable_for_actions and not category_type.editable_for_indicators:
@@ -187,7 +257,7 @@ class PlanMutations:
             parent=parent,
         )
 
-        if input.order is not None:
+        if isinstance(input.order, int):
             category.order_on_create = input.order
 
         category.save()
@@ -195,13 +265,15 @@ class PlanMutations:
         return cast('CategoryNode', category)  # pyright: ignore[reportInvalidCast]
 
     @sb.mutation(extensions=[PlanAdminOnlyMutation()])
-    def create_attribute_type(self, input: AttributeTypeInput) -> AttributeTypeNode:
+    @transaction.atomic
+    def create_attribute_type(self, info: SBInfo, input: AttributeTypeInput) -> AttributeTypeNode:
         from django.contrib.contenttypes.models import ContentType
 
         from indicators.models import Unit
 
         # Get the plan
-        plan = Plan.objects.get(pk=input.plan_id)
+        user = user_or_bust(info.context.user)
+        plan = Plan.objects.qs.visible_for_user(user).by_id_or_identifier(input.plan_id).get()
 
         # Get content types
         action_ct = ContentType.objects.get_for_model(Action)
@@ -212,21 +284,8 @@ class PlanMutations:
         if input.unit_id:
             unit = Unit.objects.get(pk=input.unit_id)
 
-        # Create attribute type
-        attr_type = AttributeType.objects.create(
-            object_content_type=action_ct,
-            scope_content_type=plan_ct,
-            scope_id=plan.id,
-            identifier=input.identifier,
-            name=input.name,
-            format=input.format,
-            help_text=input.help_text or '',
-            unit=unit,
-            primary_language=plan.primary_language,
-            other_languages=plan.other_languages or [],
-        )
-
-        needs_choices = attr_type.format in (
+        format = AttributeType.AttributeFormat(input.format.value)
+        needs_choices = format in (
             AttributeType.AttributeFormat.ORDERED_CHOICE,
             AttributeType.AttributeFormat.UNORDERED_CHOICE,
             AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
@@ -239,20 +298,57 @@ class PlanMutations:
                     'Choice options are only allowed for ordered choice, unordered choice,'
                     ' and optional choice with optional text attributes.'
                 )
-            for choice_option in input.choice_options:
-                AttributeTypeChoiceOption.objects.create(
-                    type=attr_type,
-                    identifier=choice_option.identifier,
-                    name=choice_option.name,
-                    order=choice_option.order,
-                )
         elif needs_choices:
             raise ValidationError(
                 'Choice options are required for ordered choice, unordered choice,'
                 ' and optional choice with optional text attributes.'
             )
 
+        # Create attribute type
+        attr_type = AttributeType(
+            object_content_type=action_ct,
+            scope_content_type=plan_ct,
+            scope_id=plan.id,
+            identifier=input.identifier,
+            name=input.name,
+            format=format,
+            help_text=input.help_text or '',
+            unit=unit,
+            primary_language=plan.primary_language,
+            other_languages=plan.other_languages or [],
+        )
+        attr_type.full_clean()
+        attr_type.save()
+
+        for choice_option in input.choice_options or []:
+            AttributeTypeChoiceOption.objects.create(
+                type=attr_type,
+                identifier=choice_option.identifier,
+                name=choice_option.name,
+                order=choice_option.order,
+            )
+
+        attr_type = AttributeType.objects.get(pk=attr_type.pk)
         return cast('AttributeTypeNode', attr_type)  # pyright: ignore[reportInvalidCast]
+
+    @sb.mutation(extensions=[PlanAdminOnlyMutation()], description='Delete a recently created plan (must be < 2 days old)')
+    def delete_plan(self, id: sb.ID) -> bool:
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        plan = Plan.objects.qs.by_id_or_identifier(id).first()
+        if plan is None:
+            raise ValidationError('Plan not found.')
+
+        max_age = timedelta(days=2)
+        if timezone.now() - plan.created_at > max_age:
+            raise ValidationError(
+                f'Can only delete plans created within the last 2 days. This plan was created on {plan.created_at.date()}.'
+            )
+
+        plan.delete()
+        return True
 
     @sb.mutation(extensions=[PlanAdminOnlyMutation()], description='Add a related organization to a plan')
     def add_related_organization(self, info: SBInfo, input: AddRelatedOrganizationInput) -> PlanNode:
@@ -276,7 +372,42 @@ class PlanMutations:
 
 @sb.type
 class ActionMutations:
+    def _create_action_m2m(self, action: Action, input: ActionInput) -> None:
+        plan = action.plan
+        # Assign categories
+        if input.category_ids:
+            categories = Category.objects.filter(pk__in=input.category_ids)
+            # Verify all categories belong to the plan
+            for cat in categories:
+                if cat.type_id not in plan.category_types.values_list('pk', flat=True):
+                    raise ValidationError(f'Category {cat.pk} does not belong to plan {plan.identifier}.')
+            # Group by type and set
+            by_type: dict[CategoryType, list[Category]] = {}
+            for cat in categories:
+                by_type.setdefault(cat.type, []).append(cat)
+            for cat_type, cats in by_type.items():
+                action.set_categories(cat_type, list(cats))
+
+        # Assign choice attributes
+        if input.attribute_values:
+            action_ct = ContentType.objects.get_for_model(Action)
+            for attr_val in input.attribute_values:
+                attr_type = plan.action_attribute_types.filter(pk=attr_val.attribute_type_id).first()
+                if attr_type is None:
+                    raise ValidationError(
+                        f'Attribute type {attr_val.attribute_type_id} does not belong to plan {plan.identifier} or '
+                        'is not usable for actions.'
+                    )
+                choice = AttributeTypeChoiceOption.objects.get(pk=attr_val.choice_id, type=attr_type)
+                AttributeChoice.objects.create(
+                    type=attr_type,
+                    content_type=action_ct,
+                    object_id=action.pk,
+                    choice=choice,
+                )
+
     @sb.mutation(extensions=[PlanAdminOnlyMutation()])
+    @transaction.atomic
     def create_action(self, input: ActionInput) -> ActionNode:
         from actions.models import Action, Plan
         from orgs.models import Organization
@@ -310,6 +441,10 @@ class ActionMutations:
                 raise ValidationError('Action identifier required for this plan.')
             action.generate_identifier()
 
+        action.full_clean()
         action.save()
 
+        self._create_action_m2m(action, input)
+
+        action = Action.objects.get(pk=action.pk)
         return cast('ActionNode', action)  # pyright: ignore[reportInvalidCast]

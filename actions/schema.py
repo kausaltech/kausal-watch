@@ -115,14 +115,16 @@ from .models import (
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Iterable, Mapping, Sequence
 
+    from django.db import models
     from django_stubs_ext import StrOrPromise
 
     from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
 
-    from actions.models.action import ActionQuerySet, BaseChangeLogMessage
+    from actions.models.action import ActionQuerySet
     from actions.models.attributes import Attribute
     from actions.models.plan import PlanQuerySet
+    from admin_site.models import BaseChangeLogMessage
     from indicators.models import ActionIndicator, IndicatorLevelQuerySet
     from indicators.schema import IndicatorNode
     from users.models import User
@@ -773,8 +775,20 @@ class CategoryLevelNode(DjangoNode[CategoryLevel]):
         fields = public_fields(CategoryLevel)
 
 
+def django_choices_to_graphene(field: models.Field[Any, Any]):
+    from graphene_django.converter import convert_django_field_with_choices
+    from graphene_django.registry import get_global_registry
+    registry = get_global_registry()
+    graphene_type = convert_django_field_with_choices(field, registry=registry, convert_choices_to_enum=True)
+    return graphene_type._type._of_type
+
+
+AttributeTypeFormat = django_choices_to_graphene(AttributeType._meta.get_field('format'))  # pyright: ignore[reportArgumentType]
+
+
 @register_django_node
 class AttributeTypeNode(DjangoNode[AttributeType]):
+    format = graphene.Field(AttributeTypeFormat, required=True)
     class Meta:
         model = AttributeType
         fields = public_fields(AttributeType)
@@ -946,7 +960,7 @@ def indicators_schema():
     return schema
 
 
-@strawberry_django.type(IndicatorCategoryRelationshipModel)
+@strawberry_django.type(IndicatorCategoryRelationshipModel, description='A relationship between an indicator and a category.')
 class IndicatorCategoryRelationship:
     id: auto
     indicator: Annotated[IndicatorNode, strawberry.lazy('indicators.schema')]

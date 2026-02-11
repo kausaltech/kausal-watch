@@ -103,7 +103,7 @@ class AttributeType(
     # TODO: Enforce Plan or CategoryType
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
-    scope: FK[Plan] | FK[CategoryType] = GenericForeignKey(
+    scope: FK[Plan] | FK[CategoryType] = GenericForeignKey(  # pyright: ignore[reportAssignmentType]
         'scope_content_type', 'scope_id',
     )  # type: ignore
 
@@ -117,7 +117,8 @@ class AttributeType(
     )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField[AttributeFormat, AttributeFormat](
-        max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format')
+        max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'),
+        help_text=_('The format of the attributes with this type.'),
     )
     unit = models.ForeignKey(
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import graphene
 from django.db.models.query import Prefetch
@@ -8,13 +8,8 @@ from django.db.models.query import Prefetch
 import graphene_django_optimizer as gql_optimizer
 
 from kausal_common.organizations.schema import (
-    CreateOrganizationMutation as BaseCreateOrganizationMutation,
-    DeleteOrganizationMutation as BaseDeleteOrganizationMutation,
-    Mutation as BaseMutation,
     OrganizationClassNode as BaseOrganizationClassNode,
-    OrganizationForm as BaseOrganizationForm,
     OrganizationNode as BaseOrganizationNode,
-    UpdateOrganizationMutation as BaseUpdateOrganizationMutation,
 )
 
 from aplans.graphql_helpers import (
@@ -31,14 +26,6 @@ if TYPE_CHECKING:
 
     from actions.models.plan import PlanQuerySet
     from images.models import AplansImage
-
-
-# This form is just used in the GraphQL schema, not in Wagtail. For Wagtail, a different form class is created in
-# OrganizationEditHandler.get_form_class().
-class OrganizationForm(BaseOrganizationForm):
-    class Meta:
-        model = Organization
-        fields = ['parent', 'name', 'classification', 'abbreviation', 'founding_date', 'dissolution_date']
 
 
 @register_django_node
@@ -124,22 +111,15 @@ class Query:
         return Organization.objects.get(id=id)
 
 
-class CreateOrganizationMutation(BaseCreateOrganizationMutation):
-    class Meta:
-        form_class = OrganizationForm
+def _get_organization_mutation_namespace() -> type:
+    from .mutations import OrganizationMutations
+
+    return OrganizationMutations
 
 
-class UpdateOrganizationMutation(BaseUpdateOrganizationMutation):
-    class Meta:
-        form_class = OrganizationForm
+class Mutation(graphene.ObjectType[Any]):
+    organization = graphene.Field(_get_organization_mutation_namespace)
 
-
-class DeleteOrganizationMutation(BaseDeleteOrganizationMutation):
-    class Meta:
-        model = Organization
-
-
-class Mutation(BaseMutation):
-    create_organization = CreateOrganizationMutation.Field()
-    update_organization = UpdateOrganizationMutation.Field()
-    delete_organization = DeleteOrganizationMutation.Field()
+    @staticmethod
+    def resolve_organization(root, info: GQLInfo) -> Any:
+        return _get_organization_mutation_namespace()()

@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING, Annotated, Any
 from fastmcp.exceptions import ToolError
 
 from mcp_server.__generated__.schema import (
+    ActionAttributeValueInput,
+    ActionInput,
+    MCPCreateAction,
     MCPGetActions,
     MCPGetActionsAdminActions,
     MCPListActions,
@@ -125,9 +128,56 @@ async def query_actions(
     return result.data.get('planActions', [])
 
 
+async def create_action(
+    plan_id: Annotated[str, "The ID (pk) of the plan to create the action in"],
+    name: Annotated[str, "Name of the action"],
+    identifier: Annotated[str | None, "Action identifier (required if plan has action identifiers enabled)"] = None,
+    description: Annotated[str | None, "Detailed description of the action"] = None,
+    primary_org_id: Annotated[str | None, "ID of the primary responsible organization"] = None,
+    category_ids: Annotated[list[str] | None, "List of category IDs to assign to the action"] = None,
+    attribute_values: Annotated[
+        list[dict[str, str]] | None,
+        "List of attribute values, each with 'attribute_type_id' and 'choice_id'",
+    ] = None,
+) -> MCPCreateAction:
+    """
+    Create a new action in a plan.
+
+    Use get_plan to check if the plan requires action identifiers (hasActionIdentifiers feature).
+    Use list_organizations to find organization IDs for primary_org_id.
+    """
+    attr_inputs: list[ActionAttributeValueInput] | None = None
+    if attribute_values:
+        attr_inputs = [
+            ActionAttributeValueInput(
+                attributeTypeId=av['attribute_type_id'],
+                choiceId=av['choice_id'],
+            )
+            for av in attribute_values
+        ]
+
+    result = await execute_operation(
+        MCPCreateAction,
+        MCPCreateAction.Arguments(
+            input=ActionInput(
+                planId=plan_id,
+                name=name,
+                identifier=identifier or '',
+                description=description,
+                primaryOrgId=primary_org_id,
+                categoryIds=category_ids,
+                attributeValues=attr_inputs,
+            )
+        ),
+    )  # type: ignore[type-var]
+
+    return result
+
+
 def register_action_tools(mcp: FastMCP) -> None:
     """Register all action-related MCP tools."""
 
     mcp.tool(list_actions)
     mcp.tool(get_actions)
     mcp.tool(query_actions)
+    mcp.tool(create_action)

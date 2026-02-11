@@ -180,6 +180,19 @@ query MCPListOrganizations(
   }
 }
 
+mutation MCPCreateOrganization($input: OrganizationInput!) {
+  organization {
+    createOrganization(input: $input) {
+      id
+      name
+      abbreviation
+      parent {
+        id
+      }
+    }
+  }
+}
+
 mutation MCPCreatePlan($input: PlanInput!) {
   plan {
     createPlan(input: $input) {
@@ -200,6 +213,88 @@ mutation MCPAddRelatedOrganization($input: AddRelatedOrganizationInput!) {
       id
       identifier
       name
+    }
+  }
+}
+
+mutation MCPDeletePlan($id: ID!) {
+  plan {
+    deletePlan(id: $id)
+  }
+}
+
+mutation MCPCreateAction($input: ActionInput!) {
+  action {
+    createAction(input: $input) {
+      id
+      identifier
+      name
+      description
+      primaryOrg {
+        id
+        name
+      }
+      categories {
+        id
+        identifier
+        name
+        type {
+          identifier
+        }
+      }
+      attributes {
+        ... on AttributeChoice {
+          type { identifier }
+          choice { identifier name }
+        }
+      }
+    }
+  }
+}
+
+mutation MCPCreateCategoryType($input: CategoryTypeInput!) {
+  plan {
+    createCategoryType(input: $input) {
+      id
+      identifier
+      name
+      usableForActions
+      usableForIndicators
+    }
+  }
+}
+
+mutation MCPCreateCategory($input: CategoryInput!) {
+  plan {
+    createCategory(input: $input) {
+      id
+      identifier
+      name
+      parent {
+        id
+      }
+      order
+    }
+  }
+}
+
+mutation MCPCreateAttributeType($input: AttributeTypeInput!) {
+  plan {
+    createAttributeType(input: $input) {
+      id
+      identifier
+      name
+      format
+      helpText
+      unit {
+        id
+        shortName
+      }
+      choiceOptions {
+        id
+        identifier
+        name
+      }
     }
   }
 }

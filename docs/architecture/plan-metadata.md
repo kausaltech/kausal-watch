@@ -16,6 +16,8 @@ A **Plan** represents a single climate action plan, typically owned by a city or
 - **Indicators** (metrics for tracking progress)
 - **CategoryTypes** and **AttributeTypes** (metadata schema, described below)
 
+NOTE: Exactly one CategoryType (that is marked as usable for actions) must be configured as primary action classification. (`Plan.primary_action_classification`)
+
 ### Organization
 
 **Organizations** represent the entities responsible for implementing actions. In multi-city plans, each participating city is an Organization. Actions link to their responsible organization via the `primary_org` field.
