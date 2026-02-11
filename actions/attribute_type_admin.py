@@ -12,10 +12,11 @@ from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList, Panel
+from wagtail.models import DraftStateMixin
 
 from loguru import logger
 from wagtail_modeladmin.helpers.button import ButtonHelper
@@ -44,7 +45,16 @@ from admin_site.wagtail import (
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
-from .models.attributes import AttributeChoice, AttributeChoiceWithText
+from .models.attributes import (
+    Attribute,
+    AttributeCategoryChoice,
+    AttributeChoice,
+    AttributeChoiceWithText,
+    AttributeNumericValue,
+    AttributeRichText,
+    AttributeText,
+    ModelWithAttributes,
+)
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
@@ -215,6 +225,165 @@ def _get_choice_option_usage(attribute_type: AttributeType) -> dict[int, ChoiceO
     return result
 
 
+ATTRIBUTE_VALUE_MODELS = [
+    AttributeChoice, AttributeChoiceWithText, AttributeText,
+    AttributeRichText, AttributeNumericValue, AttributeCategoryChoice,
+]
+_ATTRIBUTE_VALUE_MODELS_IGNORED: list[type[Attribute]] = []
+
+
+def check_attribute_value_models() -> None:
+    expected = {
+        cls for cls in Attribute.__subclasses__()
+        if not cls._meta.abstract and cls not in _ATTRIBUTE_VALUE_MODELS_IGNORED
+    }
+    actual = set(ATTRIBUTE_VALUE_MODELS)
+    missing = expected - actual
+    extra = actual - expected
+    if missing:
+        logger.warning('ATTRIBUTE_VALUE_MODELS is missing subclasses of Attribute: {cls}', cls=missing)
+    if extra:
+        logger.warning('ATTRIBUTE_VALUE_MODELS contains classes that are not subclasses of Attribute: {cls}', cls=extra)
+
+
+@dataclass
+class AttributeTypeUsageInfo:
+    """Usage information for an AttributeType across published objects and drafts."""
+
+    published_object_names: list[str] = field(default_factory=list)
+    draft_object_names: list[str] = field(default_factory=list)
+    published_label: str = ''
+    draft_label: str = ''
+
+    @property
+    def published_count(self) -> int:
+        return len(self.published_object_names)
+
+    @property
+    def draft_count(self) -> int:
+        return len(self.draft_object_names)
+
+    @property
+    def has_usage(self) -> bool:
+        return self.published_count > 0 or self.draft_count > 0
+
+
+def _collect_published_for_attribute_type(attribute_type: AttributeType) -> list[str]:
+    """Collect names of published objects that have attribute values for this type."""
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+
+    object_ids: set[int] = set()
+    for model in ATTRIBUTE_VALUE_MODELS:
+        object_ids.update(
+            model.objects.filter(type=attribute_type).values_list('object_id', flat=True),  # type: ignore[attr-defined]
+        )
+
+    if not object_ids:
+        return []
+
+    return sorted(str(obj) for obj in object_model.objects.filter(id__in=object_ids))  # type: ignore[attr-defined]
+
+
+def _collect_drafts_for_attribute_type(attribute_type: AttributeType) -> list[str]:
+    """Collect names of objects with unpublished draft attribute values for this type."""
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+
+    if not issubclass(object_model, DraftStateMixin):
+        return []
+
+    plan = attribute_type._get_plan()
+    if plan is None:
+        return []
+
+    # Scope to the plan so we don't load drafts from every plan in the system.
+    # This assumes every DraftStateMixin model has a plan_id field; if a future
+    # model breaks that assumption, this will fail with a FieldError.
+    objects_with_drafts = object_model.objects.filter(  # type: ignore[attr-defined]
+        plan_id=plan.pk,
+        has_unpublished_changes=True,
+    ).select_related('latest_revision')
+
+    format_key = str(attribute_type.format)
+    attr_type_key = str(attribute_type.pk)
+
+    draft_names = []
+    for obj in objects_with_drafts:
+        revision = obj.latest_revision
+        if not revision:
+            continue
+        attributes = revision.content.get('attributes', {})
+        value = attributes.get(format_key, {}).get(attr_type_key)
+        if value is not None:
+            draft_names.append(str(obj))
+
+    return sorted(draft_names)
+
+
+def _published_label(model: type[ModelWithAttributes], count: int) -> str:
+    """Return a translatable label for the number of published objects of a given model."""
+    if model is Action:
+        label = ngettext_lazy(
+            '%(count)d published action',
+            '%(count)d published actions',
+            count,
+        )
+    elif model is Category:
+        label = ngettext_lazy(
+            '%(count)d category',
+            '%(count)d categories',
+            count,
+        )
+    elif model is Pledge:
+        label = ngettext_lazy(
+            '%(count)d pledge',
+            '%(count)d pledges',
+            count,
+        )
+    else:
+        # So far the models above are the only ones that support attributes. Here we catch the issue of forgetting to
+        # update this function if at some point we create a new model that supports attributes.
+        raise TypeError(f'Unexpected model: {model}')
+    return label % {'count': count}
+
+
+def _draft_label(model: type[ModelWithAttributes], count: int) -> str:
+    """Return a translatable label for the number of unpublished draft objects of a given model."""
+    if model is Action:
+        label = ngettext_lazy(
+            '%(count)d action draft',
+            '%(count)d action drafts',
+            count,
+        )
+    else:
+        # So far the models above are the only ones that support attributes and drafts. Here we catch the issue of
+        # forgetting to update this function if at some point we create a new model that supports attributes and drafts.
+        raise TypeError(f'Unexpected model: {model}')
+    return label % {'count': count}
+
+
+def _get_attribute_type_usage(attribute_type: AttributeType) -> AttributeTypeUsageInfo:
+    """Compute usage info for an AttributeType across published objects and drafts."""
+    published = _collect_published_for_attribute_type(attribute_type)
+    drafts = _collect_drafts_for_attribute_type(attribute_type)
+
+    object_model = attribute_type.object_content_type.model_class()
+    assert object_model is not None
+    assert issubclass(object_model, ModelWithAttributes)
+
+    usage_info_kwargs = {
+        'published_object_names': published,
+        'draft_object_names': drafts,
+        'published_label': _published_label(object_model, len(published)),
+    }
+
+    if issubclass(object_model, DraftStateMixin):
+        usage_info_kwargs['draft_label'] = _draft_label(object_model, len(drafts))
+
+    return AttributeTypeUsageInfo(**usage_info_kwargs)
+
+
 class ChoiceOptionUsagePanel(Panel):
     """Panel that warns admins about choice option usage in drafts and reports."""
 
@@ -368,7 +537,13 @@ class AttributeTypeEditView(
 
 
 class AttributeTypeDeleteView(ContentTypeQueryParameterMixin, DeleteView):
-    pass
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['usage_info'] = _get_attribute_type_usage(self.instance)
+        return context
+
+    def get_template_names(self):
+        return ['aplans/attribute_type_delete.html']
 
 
 class AttributeTypeAdminButtonHelper(ButtonHelper):

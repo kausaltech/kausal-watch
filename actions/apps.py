@@ -173,3 +173,6 @@ class ActionsConfig(AppConfig):
         import actions.signals
         actions.signals.register_signal_handlers()
         monkeypatch_deferring_forward_many_to_many_manager()
+
+        from actions.attribute_type_admin import check_attribute_value_models
+        check_attribute_value_models()
