@@ -174,6 +174,7 @@ class Pledge(
         index.SearchField('name', boost=10),
         index.SearchField('description'),
         index.SearchField('body'),
+        index.FilterField('plan_id')
     ]
 
     class Meta:
