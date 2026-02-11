@@ -98,7 +98,6 @@ class CategoryTypeInput:
     select_widget: sb.auto
     usable_for_actions: sb.auto
     usable_for_indicators: sb.auto
-    editable_for_actions: sb.auto
     hide_category_identifiers: sb.auto
     primary_action_classification: bool = sb.field(
         description=(
@@ -222,8 +221,8 @@ class PlanMutations:
                 select_widget=input.select_widget,
                 usable_for_actions=input.usable_for_actions,
                 usable_for_indicators=input.usable_for_indicators,
-                editable_for_actions=input.usable_for_actions,
-                editable_for_indicators=input.usable_for_indicators,
+                editable_for_actions=input.usable_for_actions,  # initially has to be editable if usable
+                editable_for_indicators=input.usable_for_indicators,  # initially has to be editable if usable
                 hide_category_identifiers=input.hide_category_identifiers,
             ),
         )
@@ -241,13 +240,13 @@ class PlanMutations:
         # Get the category type
         category_type = CategoryType.objects.get(pk=input.type_id)
 
+        if not category_type.editable_for_actions and not category_type.editable_for_indicators:
+            raise ValidationError('Categories of this type are not editable.')
+
         # Get parent if provided
         parent: Category | None = None
         if input.parent_id and not isinstance(input.parent_id, UnsetType):
-            parent = Category.objects.get(pk=input.parent_id)
-
-        if not category_type.editable_for_actions and not category_type.editable_for_indicators:
-            raise ValidationError('Categories of this type are not editable.')
+            parent = Category.objects.get(type=category_type, pk=input.parent_id)
 
         # Create category
         category = Category(
@@ -260,6 +259,7 @@ class PlanMutations:
         if isinstance(input.order, int):
             category.order_on_create = input.order
 
+        category.full_clean()
         category.save()
 
         return cast('CategoryNode', category)  # pyright: ignore[reportInvalidCast]
@@ -373,39 +373,54 @@ class PlanMutations:
 
 @sb.type
 class ActionMutations:
-    def _create_action_m2m(self, action: Action, input: ActionInput) -> None:
+    def _set_action_categories(self, action: Action, category_ids: list[sb.ID]) -> None:
         plan = action.plan
+        ct_qs = plan.category_types.filter(editable_for_actions=True)
+        cts_by_id = {ct.id: ct for ct in ct_qs}
+        cats_by_id = {cat.id: cat for cat in Category.objects.filter(type__in=ct_qs)}
+        for cat in cats_by_id.values():
+            cat.type = cts_by_id[cat.type_id]
+
+        cats_by_type: dict[CategoryType, list[Category]] = {}
+        for cat_id in category_ids:
+            cat_obj = cats_by_id.get(int(cat_id))
+            if cat_obj is None:
+                raise ValidationError(f'Category {cat_id} does not belong to plan {plan.identifier}.')
+            cats_by_type.setdefault(cat_obj.type, []).append(cat_obj)
+
+        for cat_type, cats in cats_by_type.items():
+            if cat_type.select_widget == cat_type.SelectWidget.SINGLE and len(cats) > 1:
+                raise ValidationError(
+                    'Only one category can be assigned to a single-select category type (identifier: {cat_type.identifier}).'
+                )
+            action.set_categories(cat_type, list(cats))
+
+    def _set_action_choice_attributes(self, action: Action, attribute_values: list[ActionAttributeValueInput]) -> None:
+        action_ct = ContentType.objects.get_for_model(Action)
+        plan = action.plan
+        for attr_val in attribute_values:
+            attr_type = plan.action_attribute_types.filter(pk=attr_val.attribute_type_id).first()
+            if attr_type is None:
+                raise ValidationError(
+                    f'Attribute type {attr_val.attribute_type_id} does not belong to plan {plan.identifier} or '
+                    'is not usable for actions.'
+                )
+            choice = AttributeTypeChoiceOption.objects.get(pk=attr_val.choice_id, type=attr_type)
+            AttributeChoice.objects.create(
+                type=attr_type,
+                content_type=action_ct,
+                object_id=action.pk,
+                choice=choice,
+            )
+
+    def _create_action_m2m(self, action: Action, input: ActionInput) -> None:
         # Assign categories
         if input.category_ids:
-            categories = Category.objects.filter(pk__in=input.category_ids)
-            # Verify all categories belong to the plan
-            for cat in categories:
-                if cat.type_id not in plan.category_types.values_list('pk', flat=True):
-                    raise ValidationError(f'Category {cat.pk} does not belong to plan {plan.identifier}.')
-            # Group by type and set
-            by_type: dict[CategoryType, list[Category]] = {}
-            for cat in categories:
-                by_type.setdefault(cat.type, []).append(cat)
-            for cat_type, cats in by_type.items():
-                action.set_categories(cat_type, list(cats))
+            self._set_action_categories(action, input.category_ids)
 
         # Assign choice attributes
         if input.attribute_values:
-            action_ct = ContentType.objects.get_for_model(Action)
-            for attr_val in input.attribute_values:
-                attr_type = plan.action_attribute_types.filter(pk=attr_val.attribute_type_id).first()
-                if attr_type is None:
-                    raise ValidationError(
-                        f'Attribute type {attr_val.attribute_type_id} does not belong to plan {plan.identifier} or '
-                        'is not usable for actions.'
-                    )
-                choice = AttributeTypeChoiceOption.objects.get(pk=attr_val.choice_id, type=attr_type)
-                AttributeChoice.objects.create(
-                    type=attr_type,
-                    content_type=action_ct,
-                    object_id=action.pk,
-                    choice=choice,
-                )
+            self._set_action_choice_attributes(action, input.attribute_values)
 
     @sb.mutation(extensions=[PlanAdminOnlyMutation()])
     @transaction.atomic

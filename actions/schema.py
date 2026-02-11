@@ -399,9 +399,6 @@ class PlanNode(DjangoNode[Plan]):
         return qs.visible_for_user(info.context.user)
 
     @staticmethod
-    @gql_optimizer.resolver_hints(
-        only=('status', 'implementation_phase')
-    )
     def resolve_action_status_summaries(root: Plan, info: GQLInfo):
         return [a.get_data({'plan': root, 'cache': info.context.cache}) for a in ActionStatusSummaryIdentifier]
 
@@ -1686,6 +1683,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     @staticmethod
     @gql_optimizer.resolver_hints(
         only=('status', 'implementation_phase', 'merged_with'),
+        select_related=('status', 'implementation_phase'),
     )
     def resolve_status_summary(root: Action, info: GQLInfo):
         return root.get_status_summary(cache=info.context.cache)

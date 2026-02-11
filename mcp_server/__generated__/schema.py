@@ -208,7 +208,6 @@ class CategoryTypeInput(InputTypeModel):
     'Choose "Multiple" only if more than one category can be selected at a time, otherwise choose "Single" which is the default.'
     usable_for_actions: bool | None = Field(alias='usableForActions', default=None)
     usable_for_indicators: bool | None = Field(alias='usableForIndicators', default=None)
-    editable_for_actions: bool | None = Field(alias='editableForActions', default=None)
     hide_category_identifiers: bool | None = Field(alias='hideCategoryIdentifiers', default=None)
     'Set if the categories do not have meaningful identifiers'
     primary_action_classification: bool = Field(alias='primaryActionClassification')

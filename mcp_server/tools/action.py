@@ -70,6 +70,34 @@ async def get_actions(
     return result.admin.actions
 
 
+def parse_and_validate_action_query(query: str):
+    from graphql.language.parser import parse
+    from graphql.validation import validate
+
+    from aplans.schema import schema
+
+    document = parse(query)
+    errors = validate(schema._schema, document, max_errors=5)
+    if errors:
+        error_msgs = '; '.join(str(e) for e in errors)
+        raise ToolError(f"GraphQL fragment validation failed: {error_msgs}")
+
+    defs = document.to_dict()['definitions']
+    if len(defs) != 2 or defs[0]['kind'] != 'operation_definition' or defs[1]['kind'] != 'fragment_definition':
+        raise ToolError("Invalid action query: expected exactly one operation and one fragment definition")
+
+    op_def = defs[0]
+    frag_def = defs[1]
+    if op_def.get('operation') != 'query':
+        raise ToolError("Invalid action query: operation must be a query")
+    if frag_def.get('name', {}).get('value') != 'FreeformActionFields':
+        raise ToolError("Invalid action query: unexpected fragment name")
+    if frag_def.get('type_condition', {}).get('name', {}).get('value') != 'Action':
+        raise ToolError("Invalid action query: fragment must target the Action type")
+
+    return document
+
+
 async def query_actions(
     plan: Annotated[str, "The plan identifier (e.g., 'sunnydale', 'bremen-klima-copy1')"],
     fields: Annotated[
@@ -97,6 +125,7 @@ async def query_actions(
             }
         }
     """
+
     # Build the query with the provided fields
     # The @context directive activates the correct plan context for language and permissions
     query = """
@@ -107,8 +136,9 @@ async def query_actions(
     }
     fragment FreeformActionFields on Action {
         %s
-    }
-    """ % fields
+    }""" % fields
+
+    parse_and_validate_action_query(query)
 
     variables: dict[str, Any] = {'plan': plan}
     if category is not None:
