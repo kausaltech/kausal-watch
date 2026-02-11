@@ -123,7 +123,7 @@ class AttributeTypeInput:
     plan_id: sb.ID
     identifier: sb.auto
     name: sb.auto
-    format: AttributeTypeFormat  # pyright: ignore[reportInvalidTypeForm]  # type: ignore[valid-type]
+    format: AttributeTypeFormat  # type: ignore[valid-type]  # pyright: ignore[reportInvalidTypeForm]
     help_text: sb.auto
     unit_id: sb.ID | None = None
     choice_options: list[ChoiceOptionInput] | None = None
@@ -284,7 +284,8 @@ class PlanMutations:
         if input.unit_id:
             unit = Unit.objects.get(pk=input.unit_id)
 
-        format = AttributeType.AttributeFormat(input.format.value)
+        format_value: str = getattr(input.format, 'value')  # noqa: B009
+        format = AttributeType.AttributeFormat(format_value)
         needs_choices = format in (
             AttributeType.AttributeFormat.ORDERED_CHOICE,
             AttributeType.AttributeFormat.UNORDERED_CHOICE,

@@ -910,7 +910,7 @@ class AttributesMixin:
             *['choice_attributes__choice__type', 'choice_with_text_attributes__choice__type'],
         ],
     )
-    def resolve_attributes(root: ModelWithAttributes, info: GQLInfo, id: str | None = None):
+    def resolve_attributes(root: Action | Category, info: GQLInfo, id: str | None = None):
         request = info.context
 
         plan_identifier = info.variable_values.get('plan')
