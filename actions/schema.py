@@ -2245,6 +2245,7 @@ class CommitToPledgeMutation(graphene.Mutation):
                 pledge_user=pledge_user,
             ).delete()
 
+        pledge.plan.invalidate_cache()
         return CommitToPledgePayload(committed=committed)
 
 
