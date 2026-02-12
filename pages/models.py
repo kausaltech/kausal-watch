@@ -950,6 +950,9 @@ class PledgeListPage(FixedSlugPage):
     parent_page_types = ['PlanRootPage']
     subpage_types: list[str] = []
 
+    def get_admin_display_title(self):
+        return _('Pledges')
+
     background_image: FK[AplansImage | None] = models.ForeignKey(
         'images.AplansImage',
         null=True,
