@@ -37,7 +37,11 @@ class WatchfilesReloader(autoreload.BaseReloader):
         watched_files = list(self.watched_files(include_globs=False))
         watched_roots = self.watched_roots(watched_files)
         roots = autoreload.common_roots(watched_roots)
-        watcher = watchfiles.watch(*roots, watch_filter=DjangoPythonFilter())
+        # Watch Python files plus template files (HTML, Jinja2, text templates for emails)
+        watcher = watchfiles.watch(
+            *roots,
+            watch_filter=DjangoPythonFilter(extra_extensions=('html', 'jinja2', 'txt'))
+        )
         for file_changes in watcher:
             for _, path in file_changes:
                 self.notify_file_changed(Path(path))
