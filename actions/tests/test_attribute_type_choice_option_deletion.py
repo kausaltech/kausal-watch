@@ -17,7 +17,12 @@ from django.contrib.contenttypes.models import ContentType
 
 import pytest
 
-from actions.attributes import DraftAttributes, OptionalChoiceWithTextAttributeValue, OrderedChoiceAttributeValue
+from actions.attributes import (
+    AttributeType as AttributeTypeWrapper,
+    DraftAttributes,
+    OptionalChoiceWithTextAttributeValue,
+    OrderedChoiceAttributeValue,
+)
 from actions.models import (
     Action,
     AttributeChoice,
@@ -36,6 +41,8 @@ from reports.models import ActionSnapshot
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 if TYPE_CHECKING:
+    from actions.models.category import Category, CategoryType
+    from actions.models.plan import Plan
     from users.models import User
 
 pytestmark = pytest.mark.django_db
@@ -66,66 +73,38 @@ def count_choice_with_text_attributes_for_action(action: Action) -> int:
 # Fixtures
 # =============================================================================
 
-@pytest.fixture
-def action_attribute_type_ordered_choice(plan):
-    """Create an ordered choice attribute type scoped to the plan."""
-    return AttributeTypeFactory.create(
-        object_content_type=ContentType.objects.get_for_model(Action),
-        scope=plan,
-        format=AttributeType.AttributeFormat.ORDERED_CHOICE,
-        name='Test Ordered Choice',
-    )
-
+# The following registered fixtures from conftest.py are used throughout:
+#   - action_attribute_type__ordered_choice (AttributeType)
+#   - action_attribute_type__optional_choice (AttributeType, format=OPTIONAL_CHOICE_WITH_TEXT)
+#   - attribute_type_choice_option (AttributeTypeChoiceOption for ordered_choice)
+#   - attribute_type_choice_option__optional (AttributeTypeChoiceOption for optional_choice)
 
 @pytest.fixture
-def action_attribute_type_optional_choice_with_text(plan):
-    """Create an optional choice with text attribute type scoped to the plan."""
-    return AttributeTypeFactory.create(
-        object_content_type=ContentType.objects.get_for_model(Action),
-        scope=plan,
-        format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
-        name='Test Optional Choice With Text',
-    )
-
-
-@pytest.fixture
-def choice_option(action_attribute_type_ordered_choice):
-    """Create a choice option for the ordered choice attribute type."""
-    return AttributeTypeChoiceOptionFactory.create(
-        type=action_attribute_type_ordered_choice,
-        name='Option A',
-    )
-
-
-@pytest.fixture
-def choice_option_with_text(action_attribute_type_optional_choice_with_text):
-    """Create a choice option for the optional choice with text attribute type."""
-    return AttributeTypeChoiceOptionFactory.create(
-        type=action_attribute_type_optional_choice_with_text,
-        name='Option With Text',
-    )
-
-
-@pytest.fixture
-def action_with_choice_attribute(plan, action_attribute_type_ordered_choice, choice_option):
+def action_with_choice_attribute(
+    plan: Plan,
+    attribute_type_choice_option: AttributeTypeChoiceOption,
+) -> Action:
     """Create an action with a choice attribute."""
     action = ActionFactory.create(plan=plan)
     AttributeChoiceFactory.create(
-        type=action_attribute_type_ordered_choice,
+        type=attribute_type_choice_option.type,
         content_object=action,
-        choice=choice_option,
+        choice=attribute_type_choice_option,
     )
     return action
 
 
 @pytest.fixture
-def action_with_choice_with_text_attribute(plan, action_attribute_type_optional_choice_with_text, choice_option_with_text):
+def action_with_choice_with_text_attribute(
+    plan: Plan,
+    attribute_type_choice_option__optional: AttributeTypeChoiceOption,
+) -> Action:
     """Create an action with a choice-with-text attribute."""
     action = ActionFactory.create(plan=plan)
     AttributeChoiceWithTextFactory.create(
-        type=action_attribute_type_optional_choice_with_text,
+        type=attribute_type_choice_option__optional.type,
         content_object=action,
-        choice=choice_option_with_text,
+        choice=attribute_type_choice_option__optional,
         text='Some explanatory text',
     )
     return action
@@ -140,8 +119,8 @@ class TestBasicDeletionCascade:
 
     def test_deleting_choice_option_cascades_to_attribute_choice(
         self,
-        action_with_choice_attribute,
-        choice_option,
+        action_with_choice_attribute: Action,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
     ):
         """Deleting a choice option should cascade-delete related AttributeChoice instances."""
         action = action_with_choice_attribute
@@ -150,15 +129,15 @@ class TestBasicDeletionCascade:
         assert count_choice_attributes_for_action(action) == 1
 
         # Delete the choice option
-        choice_option.delete()
+        attribute_type_choice_option.delete()
 
         # Verify the AttributeChoice was also deleted (CASCADE)
         assert count_choice_attributes_for_action(action) == 0
 
     def test_deleting_choice_option_cascades_to_attribute_choice_with_text(
         self,
-        action_with_choice_with_text_attribute,
-        choice_option_with_text,
+        action_with_choice_with_text_attribute: Action,
+        attribute_type_choice_option__optional: AttributeTypeChoiceOption,
     ):
         """Deleting a choice option should cascade-delete related AttributeChoiceWithText instances."""
         action = action_with_choice_with_text_attribute
@@ -167,7 +146,7 @@ class TestBasicDeletionCascade:
         assert count_choice_with_text_attributes_for_action(action) == 1
 
         # Delete the choice option
-        choice_option_with_text.delete()
+        attribute_type_choice_option__optional.delete()
 
         # Verify the AttributeChoiceWithText was also deleted (CASCADE)
         # Note: The FK is nullable but uses CASCADE, so the whole record is deleted
@@ -175,13 +154,13 @@ class TestBasicDeletionCascade:
 
     def test_deleting_option_used_by_multiple_actions(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Deleting a choice option used by multiple actions should cascade to all."""
         # Create a single choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Shared Option',
         )
 
@@ -190,7 +169,7 @@ class TestBasicDeletionCascade:
         for _ in range(3):
             action = ActionFactory.create(plan=plan)
             AttributeChoiceFactory.create(
-                type=action_attribute_type_ordered_choice,
+                type=action_attribute_type__ordered_choice,
                 content_object=action,
                 choice=option,
             )
@@ -208,14 +187,14 @@ class TestBasicDeletionCascade:
 
     def test_deleting_all_options_from_attribute_type(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Deleting all options from an attribute type should cascade to all related attributes."""
         # Create multiple options
         options = [
             AttributeTypeChoiceOptionFactory.create(
-                type=action_attribute_type_ordered_choice,
+                type=action_attribute_type__ordered_choice,
                 name=f'Option {i}',
             )
             for i in range(3)
@@ -225,20 +204,20 @@ class TestBasicDeletionCascade:
         for option in options:
             action = ActionFactory.create(plan=plan)
             AttributeChoiceFactory.create(
-                type=action_attribute_type_ordered_choice,
+                type=action_attribute_type__ordered_choice,
                 content_object=action,
                 choice=option,
             )
 
         # Verify attributes exist
-        assert AttributeChoice.objects.filter(type=action_attribute_type_ordered_choice).count() == 3
+        assert AttributeChoice.objects.filter(type=action_attribute_type__ordered_choice).count() == 3
 
         # Delete all options
         for option in options:
             option.delete()
 
         # Verify all attributes were deleted
-        assert AttributeChoice.objects.filter(type=action_attribute_type_ordered_choice).count() == 0
+        assert AttributeChoice.objects.filter(type=action_attribute_type__ordered_choice).count() == 0
 
 
 # =============================================================================
@@ -250,12 +229,12 @@ class TestDraftAttributesDeletion:
 
     def test_deserializing_draft_with_deleted_choice_option_sets_value_to_none(
         self,
-        action_attribute_type_ordered_choice,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Deserializing a draft with a deleted choice option should set value to None gracefully."""
         # Create a choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Soon to be deleted',
         )
         option_pk = option.pk
@@ -263,7 +242,7 @@ class TestDraftAttributesDeletion:
         # Simulate serialized draft data with this option
         serialized_data = {
             'ordered_choice': {
-                str(action_attribute_type_ordered_choice.pk): option_pk,
+                str(action_attribute_type__ordered_choice.pk): option_pk,
             }
         }
 
@@ -274,8 +253,7 @@ class TestDraftAttributesDeletion:
         draft_attributes = DraftAttributes.from_revision_content(serialized_data)
 
         # Get the value - should have option=None
-        from actions.attributes import AttributeType as AttributeTypeWrapper
-        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type_ordered_choice)
+        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type__ordered_choice)
         value = draft_attributes.get_value_for_attribute_type(attr_type_wrapper)
 
         assert isinstance(value, OrderedChoiceAttributeValue)
@@ -283,12 +261,12 @@ class TestDraftAttributesDeletion:
 
     def test_deserializing_draft_with_deleted_choice_in_optional_choice_with_text(
         self,
-        action_attribute_type_optional_choice_with_text,
+        action_attribute_type__optional_choice: AttributeType,
     ):
         """Deserializing an optional choice with text draft should preserve text when choice is deleted."""
         # Create a choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_optional_choice_with_text,
+            type=action_attribute_type__optional_choice,
             name='Soon to be deleted',
         )
         option_pk = option.pk
@@ -296,7 +274,7 @@ class TestDraftAttributesDeletion:
         # Simulate serialized draft data with this option and text
         serialized_data = {
             'optional_choice': {
-                str(action_attribute_type_optional_choice_with_text.pk): {
+                str(action_attribute_type__optional_choice.pk): {
                     'choice': option_pk,
                     'text': {'text': 'Important text that should be preserved'},
                 },
@@ -310,9 +288,8 @@ class TestDraftAttributesDeletion:
         draft_attributes = DraftAttributes.from_revision_content(serialized_data)
 
         # Get the value - choice should be None, text should be preserved
-        from actions.attributes import AttributeType as AttributeTypeWrapper
         attr_type_wrapper: AttributeTypeWrapper = (
-            AttributeTypeWrapper.from_model_instance(action_attribute_type_optional_choice_with_text)
+            AttributeTypeWrapper.from_model_instance(action_attribute_type__optional_choice)
         )
         value = draft_attributes.get_value_for_attribute_type(attr_type_wrapper)
 
@@ -322,15 +299,15 @@ class TestDraftAttributesDeletion:
 
     def test_committing_draft_with_deleted_choice_option(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Committing a draft with a deleted choice option should not create an attribute."""
         action = ActionFactory.create(plan=plan)
 
         # Create a choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Soon to be deleted',
         )
         option_pk = option.pk
@@ -338,7 +315,7 @@ class TestDraftAttributesDeletion:
         # Simulate serialized draft data
         serialized_data = {
             'ordered_choice': {
-                str(action_attribute_type_ordered_choice.pk): option_pk,
+                str(action_attribute_type__ordered_choice.pk): option_pk,
             }
         }
 
@@ -348,8 +325,7 @@ class TestDraftAttributesDeletion:
         # Deserialize and commit the draft
         draft_attributes = DraftAttributes.from_revision_content(serialized_data)
 
-        from actions.attributes import AttributeType as AttributeTypeWrapper
-        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type_ordered_choice)
+        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type__ordered_choice)
         value = draft_attributes.get_value_for_attribute_type(attr_type_wrapper)
 
         # Commit should not create an attribute since option is None
@@ -360,18 +336,17 @@ class TestDraftAttributesDeletion:
 
     def test_draft_attributes_serialization_roundtrip_with_deleted_option(
         self,
-        action_attribute_type_ordered_choice,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Test that draft attributes can be serialized, option deleted, then deserialized."""
         # Create a choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Roundtrip option',
         )
 
         # Create draft attributes with this option
-        from actions.attributes import AttributeType as AttributeTypeWrapper
-        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type_ordered_choice)
+        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type__ordered_choice)
 
         draft_attributes = DraftAttributes()
         draft_attributes.update(attr_type_wrapper, OrderedChoiceAttributeValue(option=option))
@@ -395,12 +370,12 @@ class TestDeserializationWarnings:
 
     def test_warning_generated_for_deleted_choice_option(
         self,
-        action_attribute_type_ordered_choice,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Deserializing a draft with a deleted choice option should generate a warning."""
         # Create a choice option
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Warning option',
         )
         option_pk = option.pk
@@ -408,7 +383,7 @@ class TestDeserializationWarnings:
         # Simulate serialized draft data with this option
         serialized_data = {
             'ordered_choice': {
-                str(action_attribute_type_ordered_choice.pk): option_pk,
+                str(action_attribute_type__ordered_choice.pk): option_pk,
             }
         }
 
@@ -421,24 +396,24 @@ class TestDeserializationWarnings:
         # Verify a warning was generated
         assert len(draft_attributes.deserialization_warnings) == 1
         warning = draft_attributes.deserialization_warnings[0]
-        assert warning.attribute_type_id == action_attribute_type_ordered_choice.pk
-        assert warning.attribute_type_name == str(action_attribute_type_ordered_choice)
+        assert warning.attribute_type_id == action_attribute_type__ordered_choice.pk
+        assert warning.attribute_type_name == str(action_attribute_type__ordered_choice)
         assert 'choice option' in warning.message.lower()
 
     def test_warning_generated_for_deleted_optional_choice_with_text(
         self,
-        action_attribute_type_optional_choice_with_text,
+        action_attribute_type__optional_choice: AttributeType,
     ):
         """Deserializing optional choice with text with deleted option should generate a warning."""
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_optional_choice_with_text,
+            type=action_attribute_type__optional_choice,
             name='Warning option with text',
         )
         option_pk = option.pk
 
         serialized_data = {
             'optional_choice': {
-                str(action_attribute_type_optional_choice_with_text.pk): {
+                str(action_attribute_type__optional_choice.pk): {
                     'choice': option_pk,
                     'text': {'text': 'Some text'},
                 },
@@ -451,12 +426,12 @@ class TestDeserializationWarnings:
 
         assert len(draft_attributes.deserialization_warnings) == 1
         warning = draft_attributes.deserialization_warnings[0]
-        assert warning.attribute_type_id == action_attribute_type_optional_choice_with_text.pk
+        assert warning.attribute_type_id == action_attribute_type__optional_choice.pk
         assert 'choice option' in warning.message.lower()
 
     def test_warning_generated_for_deleted_attribute_type(
         self,
-        plan,
+        plan: Plan,
     ):
         """Deserializing a draft with a deleted attribute type should generate a warning."""
         # Create an attribute type
@@ -497,17 +472,17 @@ class TestDeserializationWarnings:
 
     def test_no_warning_when_option_exists(
         self,
-        action_attribute_type_ordered_choice,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """No warning should be generated when choice option exists."""
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Existing option',
         )
 
         serialized_data = {
             'ordered_choice': {
-                str(action_attribute_type_ordered_choice.pk): option.pk,
+                str(action_attribute_type__ordered_choice.pk): option.pk,
             }
         }
 
@@ -520,7 +495,7 @@ class TestDeserializationWarnings:
 
     def test_multiple_warnings_for_multiple_deleted_options(
         self,
-        plan,
+        plan: Plan,
     ):
         """Multiple warnings should be generated when multiple attribute types have missing options."""
         attr_type1 = AttributeTypeFactory.create(
@@ -565,19 +540,19 @@ class TestReportsDeletion:
 
     def test_attribute_choice_str_handles_deleted_choice_option(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """AttributeChoice.__str__ should handle deleted choice option gracefully."""
         action = ActionFactory.create(plan=plan)
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Will be deleted',
         )
 
         # Create attribute
         attr = AttributeChoiceFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             content_object=action,
             choice=option,
         )
@@ -592,20 +567,20 @@ class TestReportsDeletion:
 
     def test_report_snapshot_with_deleted_choice_option(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
         user: User,
     ):
         """Creating a snapshot and then deleting the choice option should be handled gracefully."""
         action = ActionFactory.create(plan=plan)
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Snapshot option',
         )
 
         # Create attribute
         AttributeChoiceFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             content_object=action,
             choice=option,
         )
@@ -623,7 +598,7 @@ class TestReportsDeletion:
         snapshot.save()
 
         # Get the attribute from snapshot before deletion
-        attr_from_snapshot = snapshot.get_attribute_for_type(action_attribute_type_ordered_choice)
+        attr_from_snapshot = snapshot.get_attribute_for_type(action_attribute_type__ordered_choice)
         assert attr_from_snapshot is not None
         # Access the choice_id via field_dict pattern
         assert attr_from_snapshot.choice_id == option.pk  # type: ignore[attr-defined]
@@ -633,7 +608,7 @@ class TestReportsDeletion:
 
         # The snapshot should still have the reference, but accessing .choice will fail
         # This simulates what happens with stale snapshot data
-        attr_from_snapshot_after = snapshot.get_attribute_for_type(action_attribute_type_ordered_choice)
+        attr_from_snapshot_after = snapshot.get_attribute_for_type(action_attribute_type__ordered_choice)
         # The attribute from snapshot still exists with the old choice_id
         assert attr_from_snapshot_after is not None
         # But calling str() should handle the missing choice gracefully
@@ -643,19 +618,19 @@ class TestReportsDeletion:
 
     def test_report_get_live_versions_with_deleted_choice(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """get_live_versions should not crash when choice options have been deleted."""
         action = ActionFactory.create(plan=plan)
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Live version option',
         )
 
         # Create attribute
         AttributeChoiceFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             content_object=action,
             choice=option,
         )
@@ -675,20 +650,20 @@ class TestReportsDeletion:
 
     def test_complete_report_undo_after_choice_deletion(
         self,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
         user: User,
     ):
         """Undoing report completion after choice option deletion should work."""
         action = ActionFactory.create(plan=plan)
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Report option',
         )
 
         # Create attribute
         AttributeChoiceFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             content_object=action,
             choice=option,
         )
@@ -720,19 +695,19 @@ class TestGraphQLDeletion:
     def test_query_action_attributes_after_choice_deletion(
         self,
         graphql_client_query_data,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Querying action attributes after choice option deletion should return empty list."""
         action = ActionFactory.create(plan=plan)
         option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='GraphQL option',
         )
 
         # Create attribute
         AttributeChoiceFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             content_object=action,
             choice=option,
         )
@@ -783,17 +758,17 @@ class TestGraphQLDeletion:
     def test_query_attribute_type_choice_options_after_deletion(
         self,
         graphql_client_query_data,
-        plan,
-        action_attribute_type_ordered_choice,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Querying attribute type choice options after deletion should return remaining options."""
         # Create multiple options
         option1 = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Option 1',
         )
         AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Option 2',
         )
 
@@ -820,7 +795,7 @@ class TestGraphQLDeletion:
         # Find our attribute type
         attr_type_data = next(
             at for at in data['plan']['actionAttributeTypes']
-            if at['name'] == 'Test Ordered Choice'
+            if at['name'] == action_attribute_type__ordered_choice.name
         )
 
         assert len(attr_type_data['choiceOptions']) == 1
@@ -836,12 +811,12 @@ class TestEdgeCases:
 
     def test_recreating_option_with_same_identifier_after_deletion(
         self,
-        action_attribute_type_ordered_choice,
+        action_attribute_type__ordered_choice: AttributeType,
     ):
         """Re-creating an option with the same identifier should not affect old draft references."""
         # Create and delete option
         old_option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Reused Name',
         )
         old_pk = old_option.pk
@@ -849,7 +824,7 @@ class TestEdgeCases:
         # Simulate serialized draft with old option PK
         serialized_data = {
             'ordered_choice': {
-                str(action_attribute_type_ordered_choice.pk): old_pk,
+                str(action_attribute_type__ordered_choice.pk): old_pk,
             }
         }
 
@@ -858,7 +833,7 @@ class TestEdgeCases:
 
         # Create new option with same name (will get different PK)
         new_option = AttributeTypeChoiceOptionFactory.create(
-            type=action_attribute_type_ordered_choice,
+            type=action_attribute_type__ordered_choice,
             name='Reused Name',
         )
 
@@ -868,8 +843,7 @@ class TestEdgeCases:
         # Deserializing old draft should get None, not the new option
         draft_attributes = DraftAttributes.from_revision_content(serialized_data)
 
-        from actions.attributes import AttributeType as AttributeTypeWrapper
-        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type_ordered_choice)
+        attr_type_wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(action_attribute_type__ordered_choice)
         value = draft_attributes.get_value_for_attribute_type(attr_type_wrapper)
 
         assert isinstance(value, OrderedChoiceAttributeValue)
@@ -877,7 +851,7 @@ class TestEdgeCases:
 
     def test_deleting_attribute_type_cascades_to_options_and_attributes(
         self,
-        plan,
+        plan: Plan,
     ):
         """Deleting an attribute type should cascade to options and attributes."""
         attr_type = AttributeTypeFactory.create(
@@ -912,7 +886,7 @@ class TestEdgeCases:
 
     def test_draft_with_multiple_deleted_choice_options(
         self,
-        plan,
+        plan: Plan,
     ):
         """Draft with multiple different attribute types having deleted options should deserialize."""
         # Create two attribute types
@@ -947,8 +921,6 @@ class TestEdgeCases:
         # Deserialize should work and both should be None
         draft_attributes = DraftAttributes.from_revision_content(serialized_data)
 
-        from actions.attributes import AttributeType as AttributeTypeWrapper
-
         wrapper1: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(attr_type1)
         value1 = draft_attributes.get_value_for_attribute_type(wrapper1)
         assert isinstance(value1, OrderedChoiceAttributeValue)
@@ -969,8 +941,8 @@ class TestCategoryAttributeDeletion:
 
     def test_deleting_choice_option_cascades_to_category_attribute(
         self,
-        category_type,
-        category,
+        category_type: CategoryType,
+        category: Category,
     ):
         """Deleting a choice option should cascade to CategoryAttributeChoice."""
         from actions.models import Category
