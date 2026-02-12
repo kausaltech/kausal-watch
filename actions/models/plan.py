@@ -1107,7 +1107,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         return "; ".join(self.clients.values_list('client__name', flat=True))
 
     def delete(self, *args, **kwargs):
-        from audit_logging.models import PlanScopedPageLogEntry
+        from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
 
         if self.site_id is not None:
             # Deleting root page cascades to Site
@@ -1115,6 +1115,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         self.documentation_root_pages.all().delete()
         # Clean up PROTECT-ed log entries before deleting the plan
         PlanScopedPageLogEntry.objects.filter(plan=self).delete()
+        PlanScopedModelLogEntry.objects.filter(plan=self).delete()
         result = super().delete(*args, **kwargs)
         if self.root_collection:
             self.root_collection.delete()

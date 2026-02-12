@@ -337,7 +337,7 @@ class TestCreateAction:
         self, graphql_client_query_data, client, superuser: User, plan: Plan,
     ):
         client.force_login(superuser)
-        ct = CategoryTypeFactory.create(plan=plan, editable_for_actions=True)
+        ct = CategoryTypeFactory.create(plan=plan, editable_for_actions=True, select_widget=CategoryType.SelectWidget.MULTIPLE)
         cat1 = CategoryFactory.create(type=ct, identifier='theme-a', name='Theme A')
         cat2 = CategoryFactory.create(type=ct, identifier='theme-b', name='Theme B')
 

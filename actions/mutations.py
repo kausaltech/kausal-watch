@@ -391,7 +391,7 @@ class ActionMutations:
         for cat_type, cats in cats_by_type.items():
             if cat_type.select_widget == cat_type.SelectWidget.SINGLE and len(cats) > 1:
                 raise ValidationError(
-                    'Only one category can be assigned to a single-select category type (identifier: {cat_type.identifier}).'
+                    f'Only one category can be assigned to a single-select category type (identifier: {cat_type.identifier}).'
                 )
             action.set_categories(cat_type, list(cats))
 
