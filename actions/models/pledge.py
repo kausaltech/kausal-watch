@@ -153,6 +153,12 @@ class Pledge(
         help_text=_('Actions this pledge supports'),
     )
 
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        editable=False,
+        verbose_name=_('updated at'),
+    )
+
     # Translation configuration
     i18n = TranslationField(
         fields=('name', 'description', 'impact_statement', 'local_equivalency'),

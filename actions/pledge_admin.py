@@ -203,6 +203,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     list_display = [
         'name',
         Column('commitment_count', label=_('Commitments'), sort_key='commitment_count'),
+        Column('updated_at', label=_('Updated at'), sort_key='updated_at'),
     ]
     search_fields = ['name']
     ordering = ['plan', 'order']
