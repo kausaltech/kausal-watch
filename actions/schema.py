@@ -1105,7 +1105,7 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
     @staticmethod
     def resolve_category_instances(root: CommonCategory, info: GQLInfo):
         return root.category_instances.filter(
-            type__plan=Plan.objects.get_queryset().available_for_request(info.context).visible_for_user(info.context.user)
+            type__plan=Plan.objects.get_queryset().live().visible_for_user(info.context.user)
         )
 
     class Meta:
@@ -2408,7 +2408,7 @@ class PledgeMutations(graphene.ObjectType[Any]):
         description="Commit to or uncommit from a pledge",
     )
     set_user_data = SetUserDataMutation.Field(
-        description="Set a key-value pair in a PledgeUser's user_data",
+        description="Set a key-value pair in a PledgeUser's user_data.",
     )
 
 

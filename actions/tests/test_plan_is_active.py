@@ -79,7 +79,7 @@ class TestPlanQuerySet:
         request = rf.get('/')
         request.user = AnonymousUser()
 
-        available_plans = Plan.objects.qs.available_for_request(request)
+        available_plans = Plan.objects.qs.live()
 
         assert active_plan in available_plans
         assert inactive_plan not in available_plans

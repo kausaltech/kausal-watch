@@ -36,10 +36,10 @@ if typing.TYPE_CHECKING:
 class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
     """Add compatibility for Wagtail read_only field panels for attributes."""
 
-    attribute_type: AttributeType | None
+    attribute_type: AttributeType[Any]
     language: str
 
-    def __init__(self, *args, attribute_type: AttributeType, language: str, **kwargs):
+    def __init__(self, *args, attribute_type: AttributeType[Any], language: str, **kwargs):
         super().__init__(*args, **kwargs)
         self.language = language
         self.attribute_type = attribute_type
@@ -55,8 +55,9 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
         kwargs['language'] = self.language
         return kwargs
 
-    class BoundPanel[_M: models.ModelWithAttributes](field_panel.FieldPanel.BoundPanel):
-        instance: _M
+    class BoundPanel[BM: models.ModelWithAttributes](field_panel.FieldPanel.BoundPanel['AttributeFieldPanel[BM]']):
+        instance: BM
+        panel: AttributeFieldPanel[BM]
 
         def value_from_instance(self):
             if (
@@ -95,7 +96,7 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
 @dataclass
 class FormField[M: models.ModelWithAttributes]:
     plan: Plan
-    attribute_type: AttributeType
+    attribute_type: AttributeType[Any]
     django_field: forms.Field
     name: str
     label: str = ''
@@ -573,7 +574,7 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
         plan: Plan,
         obj: models.ModelWithAttributes | None = None,
         draft_attributes: DraftAttributes | None = None,
-    ) -> list[FormField]:
+    ) -> list[FormField[Any]]:
         initial_choice = None
         if draft_attributes:
             try:

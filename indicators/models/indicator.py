@@ -136,6 +136,7 @@ class Indicator(
         on_delete=models.CASCADE,
         verbose_name=_('organization'),
     )
+    organization_id: int
     plans: M2M[Plan, IndicatorLevel] = models.ManyToManyField(
         'actions.Plan',
         through='indicators.IndicatorLevel',

@@ -24,6 +24,10 @@ class OrganizationInput:
         default=None,
         description="ID of the parent organization; omit for a root organization",
     )
+    primary_language: str = sb.field(
+        default='en-US',
+        description='Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH").',
+    )
 
 
 class ValidationError(Exception):
@@ -43,6 +47,7 @@ class OrganizationMutations:
         org = Organization(
             name=input.name,
             abbreviation=input.abbreviation or '',
+            primary_language=input.primary_language,
         )
 
         if input.parent_id:

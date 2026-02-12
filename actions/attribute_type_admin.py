@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.decorators import display
@@ -666,7 +666,7 @@ class AttributeTypeEditHandler(AplansTabbedInterface):
 
 
 @modeladmin_register
-class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
+class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin[AttributeType]):
     model = AttributeType
     menu_icon = 'kausal-attribute'
     menu_label = _("Fields")
@@ -674,7 +674,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     list_display = ('name', 'format')
     list_filter = (AttributeTypeFilter,)
 
-    choice_option_panels = [
+    choice_option_panels: list[Panel[Any]] = [
         FieldPanel('name'),
     ]
 
@@ -699,7 +699,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     def get_edit_handler(self):
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(AttributeType)
-        choice_option_panels = insert_model_translation_panels(
+        choice_option_panels: list[Panel[Any]] = insert_model_translation_panels(
             AttributeTypeChoiceOption,
             self.choice_option_panels,
             request,

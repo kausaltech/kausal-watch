@@ -36,6 +36,7 @@ async def create_organization(
     name: Annotated[str, "The official name of the organization"],
     abbreviation: Annotated[str | None, "Short abbreviation (e.g. 'NASA', 'YM')"] = None,
     parent_id: Annotated[str | None, "ID of the parent organization. Omit for a root organization."] = None,
+    primary_language: Annotated[str, "Primary language code (ISO 639-1, e.g. 'en-US', 'fi', 'de-CH')"] = 'en-US',
 ) -> MCPCreateOrganization:
     """
     Create a new organization.
@@ -45,7 +46,7 @@ async def create_organization(
     result = await execute_operation(
         MCPCreateOrganization,
         MCPCreateOrganization.Arguments(
-            input=OrganizationInput(name=name, abbreviation=abbreviation, parentId=parent_id)
+            input=OrganizationInput(name=name, abbreviation=abbreviation, parentId=parent_id, primaryLanguage=primary_language)
         ),
     )  # type: ignore[type-var]
 

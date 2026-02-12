@@ -191,7 +191,7 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
         # active plan by default
         return []
 
-    public_fields = BaseOrganization.public_fields + [  # type: ignore[misc]
+    public_fields: ClassVar = BaseOrganization.public_fields + [  # type: ignore[misc]
         'internal_abbreviation',
     ]
 

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel
+from modeltrans.translator import get_i18n_field
+from wagtail.admin.panels import FieldPanel, Panel
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 
 from kausal_common.i18n.panels import TranslatedFieldPanel
+from kausal_common.users import user_or_none
 
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
+from admin_site.utils import admin_req
 from admin_site.viewsets import WatchEditView, WatchViewSet
+from users.models import User
 
 from .models import SiteGeneralContent
 
@@ -20,8 +24,11 @@ if TYPE_CHECKING:
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
-class SiteGeneralContentPermissionPolicy(ModelPermissionPolicy):
+class SiteGeneralContentPermissionPolicy(ModelPermissionPolicy[SiteGeneralContent, User]):
     def user_has_permission(self, user, action):
+        user = user_or_none(user)
+        if user is None:
+            return False
         if action == 'view':
             return user.is_superuser
         if action == 'add':
@@ -43,14 +50,17 @@ class SiteGeneralContentMenuItem(PlanSpecificSingletonModelMenuItem):
         return plan.general_content
 
 
-class SiteGeneralContentEditView(SuccessUrlEditPageMixin, WatchEditView):
+class SiteGeneralContentEditView(SuccessUrlEditPageMixin, WatchEditView[SiteGeneralContent]):
     permission_policy: SiteGeneralContentPermissionPolicy
 
     def user_has_permission(self, permission):
-        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
+        user = user_or_none(self.request.user)
+        if user is None:
+            return False
+        return self.permission_policy.user_has_permission_for_instance(user, permission, self.object)
 
 
-class SiteGeneralContentViewSet(WatchViewSet):
+class SiteGeneralContentViewSet(WatchViewSet[SiteGeneralContent]):
     model = SiteGeneralContent
     edit_view_class = SiteGeneralContentEditView
     add_to_settings_menu = True
@@ -80,8 +90,10 @@ class SiteGeneralContentViewSet(WatchViewSet):
             'sitewide_announcement',
         ]
 
-        i18n_fields = self.model._meta.get_field('i18n').fields
-        result = []
+        i18n_field = get_i18n_field(self.model)
+        assert i18n_field is not None
+        i18n_fields = i18n_field.fields
+        result: list[Panel[Any]] = []
         for panel in panels:
             if panel in i18n_fields:
                 result.append(TranslatedFieldPanel(panel))
@@ -92,6 +104,7 @@ class SiteGeneralContentViewSet(WatchViewSet):
 
     def get_queryset(self, request):
         qs = self.model.objects.get_queryset()
+        request = admin_req(request)
         plan = request.get_active_admin_plan()
         return qs.filter(plan=plan)
 

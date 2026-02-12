@@ -11,6 +11,7 @@ from django.db.models import ProtectedError
 from django.shortcuts import redirect
 from django.urls import path, re_path, reverse
 from django.utils import timezone
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django.views.generic import TemplateView
 from wagtail.admin import messages
@@ -30,7 +31,6 @@ from wagtail.admin.views.generic.base import (
 )
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.admin.widgets.button import ButtonWithDropdown
-from wagtail.coreutils import capfirst
 from wagtail.log_actions import log
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
@@ -40,7 +40,8 @@ from dal import autocomplete
 from django_filters import filters
 from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers.permission import PermissionHelper
-from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
+from wagtail_modeladmin.menus import ModelAdminMenuItem
+from wagtail_modeladmin.options import modeladmin_register
 
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust
@@ -172,7 +173,7 @@ class PlanCreateView(AplansCreateView[Plan]):
         return reverse('change-admin-plan', kwargs=dict(plan_id=self.instance.id))
 
 
-class PlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView[Plan]):
+class PlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()
@@ -198,7 +199,7 @@ class PlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView[Plan]):
         return super().form_valid(form)
 
 
-class PlanModelAdminPermissionHelper(PermissionHelper):
+class PlanModelAdminPermissionHelper(PermissionHelper[Plan]):
     def user_can_list(self, user):
         return user.is_superuser
 
@@ -441,7 +442,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                 ),
             )
 
-        handler = TabbedInterface(tabs, base_form_class=PlanForm)
+        handler = TabbedInterface[Plan, PlanForm](tabs, base_form_class=PlanForm)
         return handler
 
     def get_queryset(self, request):
@@ -528,9 +529,10 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView[PlanFeat
     def get_panel(self):
         user = user_or_bust(self.request.user)
 
+        panels: list[Panel[Any]]
         if user.is_superuser:
             # Show grouped panels for superusers
-            panels: list = [
+            panels = [
                 MultiFieldPanel(
                     PlanFeaturesViewSet.plan_admin_panels,
                     heading=_('Plan features that plan admins are allowed to change'),
@@ -543,7 +545,7 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView[PlanFeat
             ]
         else:
             # Show only plan admin fields without grouping for non-superusers
-            panels = PlanFeaturesViewSet.plan_admin_panels
+            panels = list(PlanFeaturesViewSet.plan_admin_panels)
 
         return ObjectList(panels).bind_to_model(self.model)
 
@@ -660,7 +662,7 @@ class PlanTable(Table):
         return ''
 
 
-class PlanIndexView(IndexView[Plan]):
+class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
     permission_required = 'view'
@@ -1170,7 +1172,7 @@ Organization.autocomplete_label = org_autocomplete_label  # type: ignore[attr-de
 
 
 # FIXME: This is partly duplicated in content/admin.py.
-class ActivePlanModelAdminPermissionHelper(PermissionHelper):
+class ActivePlanModelAdminPermissionHelper(PermissionHelper[Any]):
     def user_can_list(self, user):
         return user.is_superuser
 
@@ -1190,7 +1192,7 @@ class ActivePlanModelAdminPermissionHelper(PermissionHelper):
 # TODO: Reimplemented in admin_site/menu.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
+class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem[Plan]):
     def get_one_to_one_field(self, _plan):
         # Implement in subclass
         raise NotImplementedError()
@@ -1200,20 +1202,20 @@ class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
         link_menu_item = super().render_component(request)
         plan = user_or_bust(request.user).get_active_admin_plan()
         field = self.get_one_to_one_field(plan)
-        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)  # type: ignore[attr-defined]
+        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
         return link_menu_item
 
-    def is_shown(self, request: WatchAdminRequest):
+    def is_shown(self, request: HttpRequest):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
         # this menu item is about editing a plan features instance, not listing.
-        user = request.user
+        user = user_or_bust(request.user)
         if user.is_superuser:
             return True
-        plan = request.user.get_active_admin_plan(required=False)
+        plan = user.get_active_admin_plan(required=False)
         if plan is None:
             return False
         field = self.get_one_to_one_field(plan)
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+        return self.model_admin.permission_helper.user_can_edit_obj(user, field)
 
 
 class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
@@ -1222,7 +1224,7 @@ class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
 
 
 class ActivePlanAdmin(PlanAdmin):
-    edit_view_class = ActivePlanEditView
+    edit_view_class = ActivePlanEditView  # type: ignore[assignment]
     permission_helper_class = ActivePlanModelAdminPermissionHelper  # type: ignore[assignment]
     menu_label = _('Plan')
     menu_icon = 'kausal-plan'

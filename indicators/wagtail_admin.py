@@ -185,7 +185,7 @@ class DimensionCreateView(AplansCreateView[Dimension]):
         return response
 
 
-class DimensionDeleteView(DeleteView):
+class DimensionDeleteView(DeleteView[Dimension]):
     def post(self, request, *args, **kwargs):
         dimension = self.instance
         current_plan = request.user.get_active_admin_plan()
@@ -419,7 +419,9 @@ class IndicatorAdminOrganizationFilter(SimpleListFilter):
         return queryset
 
 
-class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView[Indicator]):
+class IndicatorCreateView(
+    InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansCreateView[Indicator]
+):
     def get_success_url(self):
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         if plan.features.enable_change_log:
@@ -428,7 +430,9 @@ class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitial
         return super().get_success_url()
 
 
-class IndicatorEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView[Indicator]):
+class IndicatorEditView(
+    InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansEditView[Indicator]
+):
     def get_success_url(self):
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         if plan.features.enable_change_log:
@@ -753,7 +757,7 @@ class CommonIndicatorForm(AplansAdminModelForm[CommonIndicator]):
         return super().clean()
 
 
-class CommonIndicatorAdmin(AplansModelAdmin):
+class CommonIndicatorAdmin(AplansModelAdmin[CommonIndicator]):
     model = CommonIndicator
     menu_icon = 'kausal-indicator'  # FIXME
     menu_label = _('Common indicators')
@@ -766,16 +770,16 @@ class CommonIndicatorAdmin(AplansModelAdmin):
         FieldPanel('description'),
     ]
 
+    @admin.display(description=_('Unit'))
     def unit_display(self, obj):
         unit = obj.unit
         if not unit:
             return ''
         return unit.short_name or unit.name
-    unit_display.short_description = _('Unit')
 
     def get_edit_handler(self):
         instance = ctx_instance.get()  # FIXME: Fails when creating a new common indicator
-        basic_panels = list(self.basic_panels)
+        basic_panels: list[Panel[Any]] = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator
         if not instance.pk or not instance.indicators.exists():
@@ -794,7 +798,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
                           }
             basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
-        handler = ObjectList(basic_panels)
+        handler = ObjectList[CommonIndicator, CommonIndicatorForm](basic_panels)
         handler.base_form_class = CommonIndicatorForm
         return handler
 

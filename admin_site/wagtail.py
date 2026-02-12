@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from importlib.util import find_spec
-from typing import TYPE_CHECKING, Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urljoin
 
 import reversion
@@ -12,7 +12,7 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import Model, ProtectedError
 from django.forms.models import ModelChoiceField, ModelForm
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
@@ -34,8 +34,7 @@ from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.options import ModelAdmin
-from wagtail_modeladmin.views import CreateView, EditView, IndexView
-from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
+from wagtail_modeladmin.views import CreateView, EditView, IndexView, InstanceSpecificView, ModelFormView, WMABaseView
 
 from kausal_common.i18n.helpers import convert_language_code, get_language_from_default_language_field
 from kausal_common.users import user_or_bust
@@ -50,7 +49,6 @@ from .utils import FieldLabelRenderer, admin_req
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from django.db.models import Model
     from django.http import HttpRequest
     from modeltrans.fields import TranslatedVirtualField
     from wagtail.admin.panels.base import Panel
@@ -62,24 +60,30 @@ if TYPE_CHECKING:
     from aplans.cache import PlanSpecificCache
     from aplans.types import WatchAdminRequest
 
+    from actions.models import AttributeType
     from users.models import User
 
+    class ViewMixinBase[M: Model](WMABaseView[M]):
+        pass
+else:
+    class ViewMixinBase[M: Model]: ...
 
-def insert_model_translation_panels[M: Model](
+
+def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
     model: type[M],
-    panels: Sequence[Panel[M]],
+    panels: Sequence[PanelT],
     request: HttpRequest,
-    plan: Plan | None = None,
-) -> Sequence[Panel[M]]:
+    instance: Plan | AttributeType | None = None,
+) -> list[PanelT]:
     """Return a list of panels containing all of `panels` and language-specific panels for fields with i18n."""
     i18n_field = get_i18n_field(model)
     if not i18n_field:
-        return ()
+        return list(panels)
 
-    out = []
-    if plan is None:
+    out: list[PanelT] = []
+    if instance is None:
         user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
+        instance = user.get_active_admin_plan()
 
     field_map: dict[str, dict[str | None, TranslatedVirtualField]] = {}
     for f in i18n_field.get_translated_fields():
@@ -93,7 +97,7 @@ def insert_model_translation_panels[M: Model](
         if not t_fields:
             continue
 
-        for lang_code in plan.other_languages:
+        for lang_code in instance.other_languages:
             tf = t_fields.get(convert_language_code(lang_code, 'django'))
             if not tf:
                 continue
@@ -101,7 +105,9 @@ def insert_model_translation_panels[M: Model](
     return out
 
 
-def get_translation_tabs(instance: Model, request: HttpRequest, include_all_languages: bool = False, extra_panels=None):
+def get_translation_tabs(
+    instance: Model, request: HttpRequest, include_all_languages: bool = False, extra_panels=None
+) -> list[Panel[Any]]:
     """
     Get tabs for entering translated strings.
 
@@ -119,7 +125,7 @@ def get_translation_tabs(instance: Model, request: HttpRequest, include_all_lang
     i18n_field = get_i18n_field(model)
     if not i18n_field:
         return []
-    tabs = []
+    tabs: list[Panel[Any]] = []
 
     user = user_or_bust(request.user)
     plan = user.get_active_admin_plan()
@@ -149,7 +155,7 @@ def get_translation_tabs(instance: Model, request: HttpRequest, include_all_lang
 # TODO: Reimplemented in admin_site/permissions.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanRelatedModelAdminPermissionHelper[M: PlanRelatedModel](PermissionHelper):
+class PlanRelatedModelAdminPermissionHelper[M: PlanRelatedModel](PermissionHelper[M]):
     check_admin_plan = True
 
     def disable_admin_plan_check(self):
@@ -187,7 +193,7 @@ class PlanRelatedModelAdminPermissionHelper[M: PlanRelatedModel](PermissionHelpe
 # TODO: Reimplemented in admin_site/permissions.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanContextModelAdminPermissionHelper(PermissionHelper):
+class PlanContextModelAdminPermissionHelper[M: Model](PermissionHelper[M]):
     plan: Plan | None
 
     def __init__(self, model, inspect_view_enabled=False):
@@ -233,7 +239,7 @@ class BoundPlanFilteredFieldPanelMixin(BoundFieldPanelMixinBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        field = cast('ModelChoiceField', self.bound_field.field)
+        field = cast('ModelChoiceField[Any]', self.bound_field.field)
         queryset = field.queryset
         assert queryset is not None
         plan = self.request.get_active_admin_plan()
@@ -287,17 +293,30 @@ class CustomizableBuiltInPlanFilteredFieldPanel[M: Model](FieldPanel[M]):  # Ugh
 
 
 if TYPE_CHECKING:
-    FieldPanelMixinBase = FieldPanel[Any]
+
+    class FieldPanelMixinBase[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](FieldPanel[M, Any, FormT]):
+        pass
+
+    class TabbedInterfaceMixinBase[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](TabbedInterface[M, FormT]):
+        pass
 else:
-    FieldPanelMixinBase = object
 
+    class FieldPanelMixinBase[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]]:
+        pass
 
-class BuiltInFieldCustomizationAwareEditHandlerMixin(FieldPanelMixinBase):
+    class TabbedInterfaceMixinBase[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]]:
+        pass
+
+class BuiltInFieldCustomizationAwareEditHandlerMixin[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
+    TabbedInterfaceMixinBase[M, FormT]
+):
     """
     Mixin to make an edit handler take instances of BuiltInFieldCustomization into account.
 
     It will delete all fields from the edit handler's form that are not visible to the current user.
     """
+
+    BoundPanel: Any
 
     def get_form_class(self):
         from admin_site.models import BuiltInFieldCustomization
@@ -324,6 +343,7 @@ class BuiltInFieldCustomizationAwareEditHandlerMixin(FieldPanelMixinBase):
                         form_class.base_fields[field_name].disabled = True
                         form_class.base_fields[field_name].required = False
 
+        assert self.model is not None
         # Disable / remove built-in fields that are not editable / visible due to customization
         change_base_fields(form_class, self.model)
         for formset in form_class.formsets.values():
@@ -466,9 +486,7 @@ class AplansButtonHelper(ButtonHelper):
             'target': '_blank',
         }
 
-    def get_buttons_for_obj(
-        self, obj, exclude=None, classnames_add=None, classnames_exclude=None
-    ):
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
         from actions.models import Action, Category
 
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
@@ -485,7 +503,7 @@ class AplansButtonHelper(ButtonHelper):
         return buttons
 
 
-class AplansTabbedInterface[M: Model, F: ModelForm[Any]](TabbedInterface[M, F]):
+class AplansTabbedInterface[M: Model, F: ModelForm[Any] = ModelForm[Any]](TabbedInterface[M, F]):
     class BoundPanel(TabbedInterface.BoundPanel[Any, Any, Any]):
         pass
 
@@ -506,26 +524,26 @@ class AplansTabbedInterface[M: Model, F: ModelForm[Any]](TabbedInterface[M, F]):
         if not is_admin:
             for child in list(self.children):
                 if isinstance(child, AdminOnlyPanel):
-                    cast('list', self.children).remove(child)
+                    cast('list[Panel[Any]]', self.children).remove(child)
 
         return super().get_bound_panel(instance, request, form, prefix)
 
 
 if TYPE_CHECKING:
-    class PersistFiltersBase:
+    class PersistFiltersBase[M: Model](ModelFormView[M]):
         continue_editing_active: Callable[[], bool]
-        get_success_url: Callable[[], str | None]
         model_name: str
-        request: HttpRequest
+    class InstanceSpecificViewBase[M: Model](InstanceSpecificView[M]):
+        pass
 else:
-    PersistFiltersBase = object
-
+    class PersistFiltersBase[M: Model]: ...
+    class InstanceSpecificViewBase[M: Model]: ...
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PersistFiltersEditingModelAdminMixin(PersistFiltersBase):
-    def get_success_url(self: PersistFiltersBase):
+class PersistFiltersEditingModelAdminMixin[M: Model](PersistFiltersBase[M]):
+    def get_success_url(self):
         if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():  # type: ignore[misc]
             return super().get_success_url()  # type: ignore[misc]
         model = self.model_name
@@ -545,10 +563,8 @@ class PersistFiltersEditingModelAdminMixin(PersistFiltersBase):
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class ContinueEditingModelAdminMixin[M: Model]:
-    pk_quoted: str | None
+class ContinueEditingModelAdminMixin[M: Model](PersistFiltersBase[M], InstanceSpecificViewBase[M]):
     instance: M
-    request: HttpRequest
     url_helper: AdminURLHelper
 
     def continue_editing_active(self):
@@ -582,7 +598,7 @@ class ContinueEditingModelAdminMixin[M: Model]:
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanRelatedViewModelAdminMixin:
+class PlanRelatedViewModelAdminMixin[M: Model](PersistFiltersBase[M]):
     request: HttpRequest
 
     def form_valid(self, form, *args, **kwargs):
@@ -597,13 +613,13 @@ class PlanRelatedViewModelAdminMixin:
 
         return super().form_valid(form, *args, **kwargs)
 
-    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
-        user = request.user
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        user = user_or_bust(request.user)
         instance = getattr(self, 'instance', None)
         # Check if we need to change the active action plan to be able to modify
         # the instance. This might happen e.g. when the user clicks on an edit link
         # in the email notification.
-        if instance is not None and isinstance(instance, PlanRelatedModel) and user is not None and user.is_authenticated:
+        if instance is not None and isinstance(instance, PlanRelatedModel):
             plan = user.get_active_admin_plan()
             instance_plans = instance.get_plans()
             if len(instance_plans) > 0 and plan not in instance_plans:
@@ -618,15 +634,16 @@ class PlanRelatedViewModelAdminMixin:
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class ActivatePermissionHelperPlanContextModelAdminMixin:
-    permission_helper: PermissionHelper
+class ActivatePermissionHelperPlanContextModelAdminMixin[M: Model](ViewMixinBase[M]):
+    permission_helper: PermissionHelper[M]
 
     @method_decorator(login_required)
-    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
         """Set the plan context for permission helper before dispatching request."""
 
+        user = user_or_bust(request.user)
         if isinstance(self.permission_helper, PlanContextModelAdminPermissionHelper):
-            with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
+            with self.permission_helper.activate_plan_context(user.get_active_admin_plan()):
                 ret = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
                 # We trigger render here, because the plan context is needed
                 # still in the render stage.
@@ -639,7 +656,7 @@ class ActivatePermissionHelperPlanContextModelAdminMixin:
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class SetInstanceModelAdminMixin[M: Model]:
+class SetInstanceModelAdminMixin[M: Model](ViewMixinBase[M]):
     instance: M
 
     def setup(self, *args, **kwargs):
@@ -676,12 +693,12 @@ def execute_admin_post_save_tasks(instance: Model, user: User):
 # implementing new classes or migrating away from ModelAdmin. Remove this class
 # when ModelAdmin migration is finished.
 class AplansEditView[M: Model](
-    PersistFiltersEditingModelAdminMixin,
+    PersistFiltersEditingModelAdminMixin[M],
     ContinueEditingModelAdminMixin[M],
-    PlanRelatedViewModelAdminMixin,
-    ActivatePermissionHelperPlanContextModelAdminMixin,
+    PlanRelatedViewModelAdminMixin[M],
+    ActivatePermissionHelperPlanContextModelAdminMixin[M],
     SetInstanceModelAdminMixin[M],
-    EditView,
+    EditView[M],
 ):
     def form_valid(self, form, *args, **kwargs):
         try:
@@ -700,7 +717,7 @@ class AplansEditView[M: Model](
 
     def get_error_message(self):
         if hasattr(self.instance, 'verbose_name_partitive'):
-            model_name = self.instance.verbose_name_partitive
+            model_name = self.instance.verbose_name_partitive  # pyright: ignore[reportAttributeAccessIssue]
         else:
             model_name = self.verbose_name
 
@@ -710,7 +727,7 @@ class AplansEditView[M: Model](
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class SuccessUrlEditPageModelAdminMixin:
+class SuccessUrlEditPageModelAdminMixin[M: Model](InstanceSpecificViewBase[M]):
     """After editing a model instance, redirect to the edit page again instead of the index page."""
 
     def get_success_url(self):
@@ -718,11 +735,11 @@ class SuccessUrlEditPageModelAdminMixin:
 
 
 class AplansCreateView[M: Model](
-    PersistFiltersEditingModelAdminMixin,
+    PersistFiltersEditingModelAdminMixin[M],
     ContinueEditingModelAdminMixin[M],
-    PlanRelatedViewModelAdminMixin,
+    PlanRelatedViewModelAdminMixin[M],
     SetInstanceModelAdminMixin[M],
-    CreateView,
+    CreateView[M],
 ):
     request: HttpRequest
 
@@ -750,20 +767,20 @@ class AplansCreateView[M: Model](
         return ret
 
 
-class AplansIndexView[M: Model](ActivatePermissionHelperPlanContextModelAdminMixin, IndexView):
+class AplansIndexView[M: Model](ActivatePermissionHelperPlanContextModelAdminMixin[M], IndexView[M]):
     pass
 
 
 # TODO: Partly reimplemented in admin_site/viewsets.py as SnippetViewSet. Use
 # that when implementing new classes or migrating away from ModelAdmin. Remove
 # this class when ModelAdmin migration is finished.
-class AplansModelAdmin[M: Model](ModelAdmin):
+class AplansModelAdmin[M: Model](ModelAdmin[M]):
     model: type[M]
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
     index_view_class = AplansIndexView
     button_helper_class: type[ButtonHelper] = AplansButtonHelper
-    permission_helper_class: type[PermissionHelper] | None
+    permission_helper_class: type[PermissionHelper[M]]
 
     def __init__(self, *args, **kwargs):
         if not self.permission_helper_class and issubclass(self.model, PlanRelatedModel):
@@ -779,52 +796,22 @@ class CondensedInlinePanel[M: Model, RelatedM: Model](InlinePanel[M, RelatedM]):
     pass
 
 
-class AutocompletePanel(WagtailAutocompletePanel):
-    def __init__(self, field_name, target_model=None, placeholder_text=None, **kwargs):
-        self.placeholder_text = placeholder_text
-        super().__init__(field_name, target_model, **kwargs)
-
-    def clone(self):
-        return self.__class__(
-            field_name=self.field_name,
-            target_model=self.target_model_kwarg,
-            placeholder_text=self.placeholder_text,
-        )
-
-    def on_model_bound(self):
-        super().on_model_bound()
-        self.widget.placeholder_text = self.placeholder_text
-
-        old_get_context = self.widget.get_context
-
-        def get_context(self, *args, **kwargs):
-            context = old_get_context(self, *args, **kwargs)
-            context['widget']['placeholder_text'] = self.placeholder_text
-            return context
-
-        old_render_js_init = self.widget.render_js_init
-
-        def render_js_init(self, id):
-            ret = old_render_js_init(self, id)
-            if self.placeholder_text:
-                ret += "\nsetTimeout(function() { $('#%s').attr('placeholder', '%s'); }, 5000);" % (
-                    id,
-                    quote(self.placeholder_text),
-                )
-            return ret
-
-        self.widget.get_context = get_context
-        self.widget.render_js_init = render_js_init
+if TYPE_CHECKING:
+    class ModelFormViewMixin[M: Model](ModelFormView[M]):
+        pass
+else:
+    class ModelFormViewMixin[M: Model]: ...
 
 
-class InitializeFormWithPlanMixin:
+class InitializeFormWithPlanMixin[M: Model](ModelFormViewMixin[M]):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update({'plan': self.request.user.get_active_admin_plan()})
+        user = user_or_bust(self.request.user)
+        kwargs.update({'plan': user.get_active_admin_plan()})
         return kwargs
 
 
-class InitializeFormWithInitialPlanMixin:
+class InitializeFormWithInitialPlanMixin[M: Model](ModelFormViewMixin[M]):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()  # type: ignore
         kwargs.update({'initial_plan_id': self.request.session.get('initial_plan_id')})  # type: ignore
@@ -840,14 +827,14 @@ class InitializeFormWithInitialPlanMixin:
         return super().dispatch(request, *args, **kwargs)  # type: ignore
 
 
-class InitializeFormWithUserMixin:
+class InitializeFormWithUserMixin[M: Model](ModelFormViewMixin[M]):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update({'user': self.request.user})
         return kwargs
 
 
-class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView[Plan]):
+class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()

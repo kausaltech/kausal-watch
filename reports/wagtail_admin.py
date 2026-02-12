@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.contrib.admin.utils import quote
+from django.db.models import Model
 from django.http import HttpResponse
 from django.urls import re_path
 from django.utils.translation import gettext_lazy as _
@@ -11,8 +12,11 @@ from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
+from kausal_common.users import user_or_bust
+
 from aplans.utils import append_query_parameter
 
+from actions.category_admin import ModelAdminMixinBase
 from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin, QueryParameterButtonHelper
 
 from .models import Report, ReportType
@@ -20,7 +24,7 @@ from .views import MarkReportAsCompleteView
 
 
 # FIXME: Duplicated code in category_admin.py and attribute_type_admin.py
-class ReportTypeQueryParameterMixin:
+class ReportTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
     @property
     def index_url(self):
         return append_query_parameter(self.request, super().index_url, 'report_type')
@@ -38,7 +42,7 @@ class ReportTypeQueryParameterMixin:
         return append_query_parameter(self.request, super().delete_url, 'report_type')
 
 
-class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
+class ReportCreateView(ReportTypeQueryParameterMixin[Report], AplansCreateView[Report]):
     def initialize_instance(self, request):
         """Set the new report's type to the one given in the GET data end set the report fields from the type."""
         report_type = request.GET.get('report_type')
@@ -47,19 +51,19 @@ class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
             self.instance.type = ReportType.objects.get(pk=int(report_type))
 
 
-class ReportEditView(ReportTypeQueryParameterMixin, AplansEditView):
+class ReportEditView(ReportTypeQueryParameterMixin[Report], AplansEditView[Report]):
     pass
 
 
-class ReportDeleteView(ReportTypeQueryParameterMixin, DeleteView):
+class ReportDeleteView(ReportTypeQueryParameterMixin[Report], DeleteView[Report]):
     pass
 
 
 class ReportAdminButtonHelper(QueryParameterButtonHelper):
     parameter_name = 'report_type'
-    download_report_button_classnames = []
-    mark_as_complete_button_classnames = []
-    undo_marking_as_complete_button_classnames = []
+    download_report_button_classnames: list[str] = []
+    mark_as_complete_button_classnames: list[str] = []
+    undo_marking_as_complete_button_classnames: list[str] = []
 
     def download_report_button(self, report_pk, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
@@ -111,7 +115,7 @@ class ReportAdminButtonHelper(QueryParameterButtonHelper):
 
 
 @modeladmin_register
-class ReportTypeAdmin(AplansModelAdmin):
+class ReportTypeAdmin(AplansModelAdmin[ReportType]):
     model = ReportType
     menu_label = _('Report types')
     menu_icon = 'doc-full'
@@ -125,8 +129,8 @@ class ReportTypeAdmin(AplansModelAdmin):
         FieldPanel('fields', heading=_('fields')),
     ]
 
-    def get_form_fields_exclude(self, request):
-        exclude = super().get_form_fields_exclude(request)
+    def get_form_fields_exclude(self, request):  # type: ignore[override]
+        exclude = super().get_form_fields_exclude(request)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
         exclude += ['plan']
         return exclude
 
@@ -153,7 +157,7 @@ class ReportTypeFilter(admin.SimpleListFilter):
     parameter_name = 'report_type'
 
     def lookups(self, request, model_admin):
-        user = request.user
+        user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         choices = [(i.id, i.name) for i in plan.report_types.all()]
         return choices

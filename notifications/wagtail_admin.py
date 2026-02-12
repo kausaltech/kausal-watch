@@ -222,7 +222,7 @@ class BaseTemplateViewSet(WatchViewSet[BaseTemplate, BaseTemplateForm]):
                 heading=_("Notification contents"),
             ),
         ]
-        handler = TabbedInterface(tabs)
+        handler = TabbedInterface[BaseTemplate, BaseTemplateForm](tabs)
         handler.base_form_class = BaseTemplateForm
         return handler.bind_to_model(self.model)
 

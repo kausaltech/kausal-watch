@@ -87,7 +87,7 @@ def test_plan_edit_button_not_shown_to_action_contact_person(rf, client, action_
 
 
 def test_superuser_can_list_plans(rf, superuser, plan, client):
-    other_plan = PlanFactory()
+    other_plan = PlanFactory.create()
     view_set = PlanViewSet()
     index_view = get_plan_index_view(rf, client, superuser, view_set)
     qs = index_view.get_queryset()
@@ -96,7 +96,7 @@ def test_superuser_can_list_plans(rf, superuser, plan, client):
 
 
 def test_admin_can_list_only_own_plan(rf, plan, plan_admin_user, client):
-    other_plan = PlanFactory()
+    other_plan = PlanFactory.create()
     view_set = PlanViewSet()
     index_view = get_plan_index_view(rf, client, plan_admin_user, view_set)
     qs = index_view.get_queryset()
@@ -105,7 +105,7 @@ def test_admin_can_list_only_own_plan(rf, plan, plan_admin_user, client):
 
 
 def test_can_access_plan_edit_page(plan, plan_admin_user, client):
-    ClientPlanFactory(plan=plan)
+    ClientPlanFactory.create(plan=plan)
     view_set = PlanViewSet()
     edit_url_name = view_set.get_url_name('edit')
     url = reverse(edit_url_name, args=[plan.pk])
@@ -115,7 +115,7 @@ def test_can_access_plan_edit_page(plan, plan_admin_user, client):
 
 
 def test_cannot_access_other_plan_edit_page(plan, plan_admin_user, client):
-    other_plan = PlanFactory()
+    other_plan = PlanFactory.create()
     view_set = PlanViewSet()
     edit_url_name = view_set.get_url_name('edit')
     url = reverse(edit_url_name, args=[other_plan.pk])

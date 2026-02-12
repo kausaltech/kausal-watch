@@ -62,6 +62,8 @@ class ReportType(PlanRelatedModelWithRevision):
         'id', 'plan', 'name', 'reports',
     ]
 
+    id: int
+
     class Meta:
         verbose_name = _('report type')
         verbose_name_plural = _('report types')

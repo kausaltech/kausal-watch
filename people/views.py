@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
@@ -15,12 +19,14 @@ from wagtail.admin.forms.auth import PasswordResetForm
 from wagtail_modeladmin.views import WMABaseView
 
 from people.models import Person
-from users.models import User
+
+if TYPE_CHECKING:
+    from users.models import User
 
 
-class ResetPasswordView(WMABaseView):
+class ResetPasswordView(WMABaseView[Person]):
     page_title = gettext_lazy("Reset password")
-    target_person_pk = None
+    target_person_pk: str
     template_name = 'aplans/confirmation.html'
 
     def __init__(self, model_admin, target_person_pk):
@@ -31,11 +37,13 @@ class ResetPasswordView(WMABaseView):
     def check_action_permitted(self, user):
         plan = user.get_active_admin_plan()
         user_is_admin = user.is_general_admin_for_plan(plan)
-        target_is_admin_of_any_plan = self.target_person.user.is_general_admin_for_plan()
+        target_user = self.target_person.user
+        assert target_user is not None
+        target_is_admin_of_any_plan = target_user.is_general_admin_for_plan()
         # Better safe than sorry...
-        target_in_same_plan = Person.objects.available_for_plan(plan).filter(pk=self.target_person_pk).exists()
+        target_in_same_plan = Person.objects.qs.available_for_plan(plan).filter(pk=self.target_person_pk).exists()
         return (
-            user_is_admin and target_in_same_plan and not self.target_person.user.is_superuser
+            user_is_admin and target_in_same_plan and not target_user.is_superuser
             and not target_is_admin_of_any_plan
         )
 
@@ -55,8 +63,10 @@ class ResetPasswordView(WMABaseView):
 
     def reset_password(self):
         # Does mostly the same as Wagtail's wagtail.admin.views.PasswordResetView
+        target_user = self.target_person.user
+        assert target_user is not None
         form = PasswordResetForm({
-            'email': self.target_person.user.email,
+            'email': target_user.email,
         })
         assert form.is_valid()
         save_kwargs = {
@@ -65,12 +75,14 @@ class ResetPasswordView(WMABaseView):
             'subject_template_name': 'wagtailadmin/account/password_reset/email_subject.txt',
             'request': self.request,
         }
-        form.save(**save_kwargs)
+        form.save(**save_kwargs)  # pyright: ignore[reportArgumentType]
 
     def make_reset_url(self):
         # cf. wagtail.contrib.auth.forms.PasswordResetForm.save()
         reset_token = default_token_generator.make_token(self.target_person.user)
-        uid = urlsafe_base64_encode(force_bytes(self.target_person.user.pk))
+        target_user = self.target_person.user
+        assert target_user is not None
+        uid = urlsafe_base64_encode(force_bytes(target_user.pk))
         kwargs = {'uidb64': uid, 'token': reset_token}
         reset_path = reverse('wagtailadmin_password_reset_confirm', kwargs=kwargs)
         return f'{settings.ADMIN_BASE_URL}{reset_path}'
@@ -96,9 +108,9 @@ class ResetPasswordView(WMABaseView):
         return redirect(self.index_url)
 
 
-class ImpersonateUserView(WMABaseView):
+class ImpersonateUserView(WMABaseView[Person]):
     page_title = gettext_lazy("View as user")
-    target_person_pk = None
+    target_person_pk: str
     template_name = 'people/view_as_user.html'
     post_url = reverse_lazy('hijack:acquire')
 

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import copy
 import uuid
-from typing import TYPE_CHECKING, Any, Protocol, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast, override
 from uuid import UUID
 
 import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
@@ -37,7 +38,7 @@ from aplans.rest_api import PlanRelatedModelSerializer, get_plan_from_view
 from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ActionQuerySet
-from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes
+from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes, SetAttributeReturn
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.utils import BulkActionModelList
 from orgs.models import Organization
@@ -64,7 +65,7 @@ from .models import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from django.db.models import Model, QuerySet
+    from django.db.models import Model
     from django.views.generic import View
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
@@ -72,8 +73,14 @@ if TYPE_CHECKING:
 
     from aplans.types import WatchAdminRequest, WatchAPIRequest
 
+    from actions.attributes import AttributeType as AttributeTypeWrapper, AttributeValue
     from actions.models.plan import PlanQuerySet
     from users.models import User
+
+    class ModelSerializerMixin[M: Model](serializers.ModelSerializer[M]): ...
+else:
+    class ModelSerializerMixin[M: Model]: ...
+
 
 all_views: list[RegisteredAPIView] = []
 all_routers: list[BaseRouter] = []
@@ -255,7 +262,7 @@ class ActionPermission(WatchObjectPermissions):
         ),
     )
 )
-class ActionCategoriesSerializer(serializers.Serializer):
+class ActionCategoriesSerializer(serializers.Serializer[QuerySet[Category]]):
     parent: ActionSerializer
 
     def to_representation(self, instance):
@@ -316,26 +323,29 @@ class ActionCategoriesSerializer(serializers.Serializer):
             out[ct_id] = cats
         return out
 
-    def update(self, instance: Action, validated_data):
+    def update(self, instance: Action, validated_data):  # type: ignore[override]
         assert isinstance(instance, Action)
         assert instance.pk is not None
         for ct_id, cats in validated_data.items():
             instance.set_categories(ct_id, cats)
 
 
-class ActionResponsibleWithRoleSerializer(serializers.Serializer):
+class ActionResponsibleWithRoleSerializer[M: Model](serializers.Serializer[M]):
     parent: ActionSerializer
 
-    def get_type_label(self):
+    def get_type_label(self) -> str:
         raise NotImplementedError()
 
-    def get_available_instances(self, plan) -> QuerySet:
+    def get_available_instances(self, plan: Plan) -> set[int]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def get_allowed_roles(self):
+    def get_allowed_roles(self) -> list[str | None] | list[str]:
         raise NotImplementedError()
 
     def get_queryset(self):
+        raise NotImplementedError()
+
+    def get_instance_by_id(self, pk: int) -> M:
         raise NotImplementedError()
 
     def set_instance_values(self, instance, data):
@@ -381,7 +391,7 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
             val[key] = self.get_instance_by_id(instance_id)
         return data
 
-    def update(self, instance: Action, validated_data):
+    def update(self, instance: Action, validated_data):  # type: ignore[override]
         assert isinstance(instance, Action)
         assert instance.pk is not None
         self.set_instance_values(instance, validated_data)
@@ -393,20 +403,20 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
         title=_('Responsible parties'),
     )
 )
-class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
+class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer[Organization]):
     def get_type_label(self):
         return 'organization'
 
-    def get_available_instances(self, plan) -> set[int]:
+    def get_available_instances(self, plan: Plan) -> set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_organization_ids' not in cache:
-            return Organization.objects.available_for_plan(plan)
+            return set(Organization.objects.get_queryset().available_for_plan(plan).values_list('id', flat=True))
         return cache['available_organization_ids']
 
-    def get_allowed_roles(self):
+    def get_allowed_roles(self) -> list[str | None] | list[str]:
         return ActionResponsibleParty.Role.values
 
-    def get_instance_by_id(self, pk):
+    def get_instance_by_id(self, pk: int) -> Organization:
         cache = self.context.get('_cache')
         if cache is None or 'organizations_by_id' not in cache:
             return Organization.objects.get(id=pk)
@@ -425,33 +435,45 @@ class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
         title=_('Contact persons'),
     )
 )
-class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
+class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer[Person]):
     def get_type_label(self):
         return 'person'
 
-    def get_available_instances(self, plan) -> set[int]:
+    def get_available_instances(self, plan: Plan) -> set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_person_ids' not in cache:
-            return Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True)
+            return set(
+                Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True)
+            )
         return cache['available_person_ids']
 
-    def get_allowed_roles(self):
+    def get_allowed_roles(self) -> list[str]:
         return ActionContactPerson.Role.values
 
-    def get_instance_by_id(self, pk):
+    def get_instance_by_id(self, pk: int) -> Person:
         cache = self.context.get('_cache')
         if cache is None or 'persons_by_id' not in cache:
             return Person.objects.get(id=pk)
         return cache['persons_by_id'][pk]
 
-    def set_instance_values(self, instance, data):
+    def set_instance_values(self, instance: Action, data: list[dict[str, Any]]):
         instance.set_contact_persons(data)
 
     def get_multiple_error(self):
         return _('Person occurs multiple times as contact person')
 
 
-class AttributesSerializerMixin:
+if TYPE_CHECKING:
+
+    class AttributesSerializerMixinBase[InstanceT: Any](serializers.Serializer[InstanceT]):
+        pass
+else:
+
+    class AttributesSerializerMixinBase[InstanceT: Any]:
+        pass
+
+
+class AttributesSerializerMixin[InstanceT: Any](AttributesSerializerMixinBase[InstanceT]):
     context: dict[str, Any]
     attribute_formats: tuple[AttributeType.AttributeFormat, ...]
 
@@ -467,9 +489,9 @@ class AttributesSerializerMixin:
     # (usually just one element)
     def get_fields(self):
         fields = super().get_fields()
-        request = self.context.get('request')
-        if request is not None and request.user and request.user.is_authenticated:
-            user = request.user
+        request: Request | None = self.context.get('request')
+        user = user_or_none(request.user) if request is not None else None
+        if user is not None:
             plan = user.get_active_admin_plan()
             attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
             for attribute_type in attribute_types:
@@ -497,19 +519,25 @@ class AttributesSerializerMixin:
         # listserializer. Hence, the need to store the instance in the context
         if instance_pk is None:
             instance_pk = self.context['_current_instance'].pk
-        attributes = {}
+        attributes: dict[int, list[AttributeValue]] = {}
         for format in self.attribute_formats:
             for action_pk, attribute_vals in self.context['_cache']['attribute_values'].get(format, {}).items():
                 attributes.setdefault(action_pk, []).extend(attribute_vals)
-        return attributes.get(instance_pk, [])
+        return attributes.get(cast('int', instance_pk), [])
 
-    def get_cached_attribute_type(self, attribute_type_identifier: str):
+    def get_cached_attribute_type(self, attribute_type_identifier: str) -> AttributeTypeWrapper[Any] | None:
         if '_cache' not in self.context:
             return None
         attribute_type = self.context['_cache']['attribute_types'][attribute_type_identifier]
         return attribute_type
 
-    def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
+    def set_instance_attribute(
+        self,
+        instance: ModelWithAttributes,
+        attribute_type: AttributeTypeWrapper[Any],
+        existing_attribute: Attribute | None,
+        item: Any,
+    ) -> SetAttributeReturn:
         return instance.set_attribute(
             attribute_type,
             existing_attribute,
@@ -517,7 +545,7 @@ class AttributesSerializerMixin:
             self.to_attribute_value_input(item),
         )
 
-    def update(self, instance: Model, validated_data):
+    def update(self, instance: ModelWithAttributes, validated_data: dict[str, Any]) -> list[SetAttributeReturn]:  # type: ignore[override]
         assert instance.pk is not None
         cached_values = self.get_cached_values(instance_pk=instance.pk)
         attribute_operations = []
@@ -527,6 +555,7 @@ class AttributesSerializerMixin:
                 # We reach here when creating new host instances with new attributes
                 existing_attributes = []
             else:
+                assert attribute_type is not None
                 existing_attributes = [cv for cv in cached_values if cv.type == attribute_type.instance]
             if len(existing_attributes) == 0:
                 existing_attribute = None
@@ -534,6 +563,7 @@ class AttributesSerializerMixin:
                 assert len(existing_attributes) == 1
                 existing_attribute = existing_attributes[0]
             assert len(existing_attributes) < 2
+            assert attribute_type is not None
             attribute_operations.append(
                 self.set_instance_attribute(instance, attribute_type, existing_attribute, item),
             )
@@ -607,7 +637,7 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
         }
 
 
-class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+class NumericValueAttributesSerializer(AttributesSerializerMixin[Any], serializers.Serializer[Any]):
     attribute_formats = (AttributeType.AttributeFormat.NUMERIC,)
 
     def to_representation(self, value):
@@ -661,7 +691,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
         }
 
 
-class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+class CategoryChoiceAttributesSerializer(AttributesSerializerMixin[Any], serializers.Serializer[Any]):
     attribute_formats = (AttributeType.AttributeFormat.CATEGORY_CHOICE,)
 
     def to_representation(self, value):
@@ -683,7 +713,9 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
 
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
-class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
+class ModelWithAttributesSerializerMixin[M: ModelWithAttributes](
+    ModelSerializerMixin[M], DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass
+):
     choice_attributes = ChoiceAttributesSerializer(required=False)
     choice_with_text_attributes = ChoiceWithTextAttributesSerializer(required=False)
     numeric_value_attributes = NumericValueAttributesSerializer(required=False)
@@ -764,17 +796,18 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
                 self.add_deferred_operations(ops)
 
 
-
 class HasUUIDAndOrder(Protocol):
     uuid: UUID
     order: int
 
 
+
+
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class NonTreebeardModelWithTreePositionSerializerMixin[M: HasUUIDAndOrder](
-    DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass
+    ModelSerializerMixin[M], DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass  # type: ignore[type-var]  # pyright: ignore[reportInvalidTypeArguments]
 ):
-    left_sibling = PrevSiblingField(allow_null=True, required=False)
+    left_sibling = PrevSiblingField[Any](allow_null=True, required=False)
     _cached_instances: dict[UUID, M]
     instance: M | None
 
@@ -815,7 +848,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: HasUUIDAndOrder](
         fields.append('left_sibling')
         return fields
 
-    def create(self, validated_data: dict):
+    def create(self, validated_data: dict[str, Any]) -> M:
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().create(validated_data)
         self.init_cached_instances(instance)
@@ -943,8 +976,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: HasUUIDAndOrder](
                 self._cache_descendants(child)
 
 
-class ActionSerializer(
-    ModelWithAttributesSerializerMixin,
+class ActionSerializer(  # type: ignore[misc]
+    ModelWithAttributesSerializerMixin[Action],
     NonTreebeardModelWithTreePositionSerializerMixin[Action],
     BulkSerializerValidationInstanceMixin,
     PlanRelatedModelSerializer[Action],
@@ -1386,12 +1419,12 @@ class NonTreebeardParentUUIDField(serializers.Field):
 
 
 class CategorySerializer(  # type: ignore[misc]
-    ModelWithAttributesSerializerMixin,
-    NonTreebeardModelWithTreePositionSerializerMixin[Category],
+    ModelWithAttributesSerializerMixin[Category],
+    NonTreebeardModelWithTreePositionSerializerMixin[Category],  # pyright: ignore[reportInvalidTypeArguments]
     BulkSerializerValidationInstanceMixin,
     serializers.ModelSerializer[Category],
 ):
-    parent = NonTreebeardParentUUIDField(allow_null=True, required=False)  # type: ignore[assignment]
+    parent = NonTreebeardParentUUIDField(allow_null=True, required=False)  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
     uuid = serializers.UUIDField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -1460,7 +1493,7 @@ class CategorySerializer(  # type: ignore[misc]
         OpenApiParameter(name='category_type_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet):
+class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet[Category]):
     serializer_class = CategorySerializer
 
     def get_permissions(self):
@@ -1504,13 +1537,14 @@ class OrganizationPermission(WatchObjectPermissions):
         return False
 
 
+
 class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
     uuid = serializers.UUIDField(required=False)
 
     class Meta:
         model = Organization
         list_serializer_class = BulkListSerializer
-        fields = public_fields(Organization)
+        fields: ClassVar = public_fields(Organization)
 
     def create(self, validated_data):
         instance = super().create(validated_data)
@@ -1522,7 +1556,7 @@ class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serial
 
 
 @register_view
-class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet):
+class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet[Organization]):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     filterset_fields = {
@@ -1581,11 +1615,13 @@ class PersonPermission(WatchObjectPermissions):
         return False
 
 
+
 class PersonSerializer(BasePersonSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.context.get('authorized_for_plan') is None:
             self.fields.pop('email')
+
 
 @register_view
 class PersonViewSet(ModelWithImageViewMixin, AuditLoggingBulkModelViewSet[Person]):
@@ -1656,7 +1692,7 @@ class PersonViewSet(ModelWithImageViewMixin, AuditLoggingBulkModelViewSet[Person
 
 
 # FIXME: This is very similar to kausal_common.datasets.api.I18nFieldSerializerMixin
-class I18nFieldPlanLanguagesSerializerMixin:
+class I18nFieldPlanLanguagesSerializerMixin[M: Model](ModelSerializerMixin[M]):
     """
     Add fields for translated strings to serializers whose context contains a plan.
 
@@ -1668,7 +1704,7 @@ class I18nFieldPlanLanguagesSerializerMixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        i18n_field = get_i18n_field(self.Meta.model)  # type: ignore[attr-defined]
+        i18n_field = get_i18n_field(self.Meta.model)  # type: ignore[attr-defined]  # pyright: ignore[reportGeneralTypeIssues]
         if not i18n_field:
             return
         plan = self.context.get('plan')
@@ -1691,7 +1727,7 @@ class I18nFieldPlanLanguagesSerializerMixin:
                 )
 
 
-class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin, serializers.ModelSerializer):
+class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], serializers.ModelSerializer[ActionTask]):
     """Serializer for the ActionTask model."""
 
     class Meta:
@@ -1757,14 +1793,14 @@ class ActionTaskPermission(WatchObjectPermissions):
         return False
 
 
-class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
+class ScenarioSerializer(serializers.HyperlinkedModelSerializer[Scenario]):
     class Meta:
         model = Scenario
         fields = '__all__'
 
 
 @register_view
-class ScenarioViewSet(viewsets.ModelViewSet):
+class ScenarioViewSet(viewsets.ModelViewSet[Scenario]):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
     filterset_fields = {
@@ -1773,7 +1809,7 @@ class ScenarioViewSet(viewsets.ModelViewSet):
     }
 
 
-class ImpactGroupSerializer(serializers.HyperlinkedModelSerializer):
+class ImpactGroupSerializer(serializers.HyperlinkedModelSerializer[ImpactGroup]):
     name = serializers.CharField()  # translated field
 
     class Meta:
@@ -1782,7 +1818,7 @@ class ImpactGroupSerializer(serializers.HyperlinkedModelSerializer):
 
 
 @register_view
-class ImpactGroupViewSet(viewsets.ModelViewSet):
+class ImpactGroupViewSet(viewsets.ModelViewSet[ImpactGroup]):
     queryset = ImpactGroup.objects.all()
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
     serializer_class = ImpactGroupSerializer
@@ -1792,7 +1828,7 @@ class ImpactGroupViewSet(viewsets.ModelViewSet):
     }
 
 
-class ImpactGroupActionSerializer(serializers.HyperlinkedModelSerializer):
+class ImpactGroupActionSerializer(serializers.HyperlinkedModelSerializer[ImpactGroupAction]):
     impact = ActionImpactSerializer()
 
     class Meta:
@@ -1801,6 +1837,6 @@ class ImpactGroupActionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 @register_view
-class ImpactGroupActionViewSet(viewsets.ModelViewSet):
+class ImpactGroupActionViewSet(viewsets.ModelViewSet[ImpactGroupAction]):
     queryset = ImpactGroupAction.objects.all()
     serializer_class = ImpactGroupActionSerializer

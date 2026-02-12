@@ -1,26 +1,19 @@
 from __future__ import annotations
 
-import functools
-import re
 import typing
 import uuid
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import graphene
 import strawberry as sb
 from django.db.models import Model, QuerySet
-from django.db.models.constants import LOOKUP_SEP
 from django.utils.translation import gettext_lazy as _
 from graphene.utils.str_converters import to_camel_case, to_snake_case
-from graphene.utils.trim_docstring import trim_docstring
-from graphene_django import DjangoObjectType
-from modeltrans.translator import get_i18n_field
 
-import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
-from kausal_common.i18n.helpers import get_language_from_default_language_field
+from kausal_common.graphene import DjangoNode as BaseDjangoNode
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -34,87 +27,13 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 
-def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
-    i18n_field = get_i18n_field(obj._meta.model)
-    assert i18n_field is not None
-    fallback_value = getattr(obj, field_name)
-    fallback_lang = get_language_from_default_language_field(obj, i18n_field)
-    fallback = (fallback_value, fallback_lang)
-
-    active_language = info.context.graphql_query_language
-    if not active_language:
-        return fallback
-
-    active_language = active_language.lower().replace('-', '_')
-
-    i18n_values = getattr(obj, i18n_field.name)
-    if i18n_values is None or active_language == fallback_lang:
-        return fallback
-
-    lang_field_name = '%s_%s' % (field_name, active_language)
-    trans_value = i18n_values.get(lang_field_name)
-    if not trans_value:
-        return fallback
-
-    trans_value = i18n_values.get(lang_field_name, getattr(obj, field_name))
-    return trans_value, active_language
-
-
-def resolve_i18n_field(field_name: str, obj: Model, info: GQLInfo):
-    value, _lang = get_i18n_field_with_fallback(field_name, obj, info)
-    return value
-
-
-class DjangoNodeMeta[M: Model](Protocol):
-    model: type[M]
-
-
-class DjangoNode[M: Model](DjangoObjectType[M]):
+class DjangoNode[M: Model](BaseDjangoNode[M]):
     class Meta:
         abstract = True
 
     @staticmethod
     def resolve_id(root, info) -> str:
         return getattr(root, 'pk', None) or f'unpublished-{uuid.uuid4()}'
-
-    @classmethod
-    def __init_subclass_with_meta__(cls, **kwargs: Any) -> None:  # type: ignore[override]
-        if 'name' not in kwargs:
-            # Remove the trailing 'Node' from the object types
-            kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
-
-        model: type[M] = kwargs['model']
-        assert model.__doc__ is not None, f"Model {model} does not have __doc__"
-        is_autogen = re.match(r'^\w+\([\w_, ]+\)$', model.__doc__)
-        if 'description' not in kwargs and not cls.__doc__ and not is_autogen:
-            kwargs['description'] = trim_docstring(model.__doc__)
-
-        super().__init_subclass_with_meta__(**kwargs)
-
-        # Set default resolvers for i18n fields
-        i18n_field = get_i18n_field(cls._meta.model)
-        if i18n_field is not None:
-            fields = cls._meta.fields
-            for translated_field_name in i18n_field.fields:
-                # translated_field_name is only in fields if it is in *Node.Meta.fields
-                field = fields.get(translated_field_name)
-                if field is not None and field.resolver is None and not hasattr(cls, 'resolve_%s' % translated_field_name):
-                    resolver = functools.partial(resolve_i18n_field, translated_field_name)
-                    only = [translated_field_name, i18n_field.name]
-                    select_related=[]
-                    default_language_field = i18n_field.default_language_field
-                    if default_language_field:
-                        parsed_default_language_field = default_language_field.split(LOOKUP_SEP)
-                        only.append(default_language_field)
-                        if len(parsed_default_language_field) > 1:
-                            related_path = parsed_default_language_field[:-1]
-                            select_related.append(LOOKUP_SEP.join(related_path))
-                    hints = dict(
-                        only=only,
-                        select_related=select_related,
-                    )
-                    apply_hints = gql_optimizer.resolver_hints(**hints)
-                    field.resolver = apply_hints(resolver)
 
 
 def set_active_plan(info: GQLInfo, plan: Plan):
@@ -153,8 +72,6 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> 
 class SupportsOrderable(Protocol):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]]
 
-
-Q = TypeVar('Q', bound=QuerySet[Any])
 
 def order_queryset[QS: QuerySet[Any]](qs: QS, node_class: type[SupportsOrderable], order_by: str | None) -> QS:
     if order_by is None:

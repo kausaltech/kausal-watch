@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Literal
 
 from pydantic import ConfigDict, Field
@@ -7,7 +7,7 @@ from pydantic import ConfigDict, Field
 from mcp_server.generated_base import ArgumentsModel, InputTypeModel, OperationModel
 
 
-class ActionContactPersonRole(str, Enum):
+class ActionContactPersonRole(StrEnum):
     """An enumeration."""
 
     EDITOR = 'EDITOR'
@@ -16,7 +16,7 @@ class ActionContactPersonRole(str, Enum):
     'Moderator'
 
 
-class ActionDateFormat(str, Enum):
+class ActionDateFormat(StrEnum):
     """An enumeration."""
 
     FULL = 'FULL'
@@ -27,7 +27,7 @@ class ActionDateFormat(str, Enum):
     'Year (2020)'
 
 
-class ActionIndicatorEffectType(str, Enum):
+class ActionIndicatorEffectType(StrEnum):
     """An enumeration."""
 
     INCREASES = 'INCREASES'
@@ -36,7 +36,7 @@ class ActionIndicatorEffectType(str, Enum):
     'decreases'
 
 
-class ActionResponsiblePartyRole(str, Enum):
+class ActionResponsiblePartyRole(StrEnum):
     """An enumeration."""
 
     NONE = 'NONE'
@@ -47,7 +47,7 @@ class ActionResponsiblePartyRole(str, Enum):
     'Collaborator'
 
 
-class ActionStatusSummaryIdentifier(str, Enum):
+class ActionStatusSummaryIdentifier(StrEnum):
     """An enumeration."""
 
     COMPLETED = 'COMPLETED'
@@ -62,7 +62,7 @@ class ActionStatusSummaryIdentifier(str, Enum):
     UNDEFINED = 'UNDEFINED'
 
 
-class ActionTaskState(str, Enum):
+class ActionTaskState(StrEnum):
     """An enumeration."""
 
     NOT_STARTED = 'NOT_STARTED'
@@ -75,7 +75,7 @@ class ActionTaskState(str, Enum):
     'cancelled'
 
 
-class ActionTimelinessIdentifier(str, Enum):
+class ActionTimelinessIdentifier(StrEnum):
     """An enumeration."""
 
     OPTIMAL = 'OPTIMAL'
@@ -84,7 +84,7 @@ class ActionTimelinessIdentifier(str, Enum):
     STALE = 'STALE'
 
 
-class ActionVisibility(str, Enum):
+class ActionVisibility(StrEnum):
     """An enumeration."""
 
     INTERNAL = 'INTERNAL'
@@ -93,7 +93,7 @@ class ActionVisibility(str, Enum):
     'Public'
 
 
-class AttributeTypeFormat(str, Enum):
+class AttributeTypeFormat(StrEnum):
     """An enumeration."""
 
     ORDERED_CHOICE = 'ORDERED_CHOICE'
@@ -112,14 +112,14 @@ class AttributeTypeFormat(str, Enum):
     'Category'
 
 
-class Comparison(str, Enum):
+class Comparison(StrEnum):
     """An enumeration."""
 
     LTE = 'LTE'
     GT = 'GT'
 
 
-class PlanFeaturesContactPersonsPublicData(str, Enum):
+class PlanFeaturesContactPersonsPublicData(StrEnum):
     """An enumeration."""
 
     NONE = 'NONE'
@@ -132,7 +132,7 @@ class PlanFeaturesContactPersonsPublicData(str, Enum):
     'Show all information but only for authenticated users'
 
 
-class Sentiment(str, Enum):
+class Sentiment(StrEnum):
     """An enumeration."""
 
     POSITIVE = 'POSITIVE'
@@ -231,6 +231,8 @@ class OrganizationInput(InputTypeModel):
     'Short abbreviation (e.g. "NASA", "YM").'
     parent_id: str | None = Field(alias='parentId', default=None)
     'ID of the parent organization. Omit for a root organization.'
+    primary_language: str = Field(alias='primaryLanguage')
+    'Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH").'
 
 
 class PlanFeaturesInput(InputTypeModel):

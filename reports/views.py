@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
@@ -11,15 +13,17 @@ from django.utils.translation import gettext_lazy as _
 
 from wagtail_modeladmin.views import WMABaseView
 
+from kausal_common.users import user_or_bust
+
 from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
 from .models import ActionSnapshot, Report
 
 
-class MarkActionAsCompleteView(WMABaseView):
-    action_pk = None
-    report_pk = None
+class MarkActionAsCompleteView(WMABaseView[Action]):
+    action_pk: str
+    report_pk: str
     complete = True
     template_name = 'aplans/confirmation.html'
 
@@ -34,8 +38,7 @@ class MarkActionAsCompleteView(WMABaseView):
     def get_page_title(self):
         if self.complete:
             return _("Mark action as complete")
-        else:
-            return _("Undo marking action as complete")
+        return _("Undo marking action as complete")
 
     def check_action_permitted(self, user):
         return user.can_modify_action(self.action)
@@ -77,8 +80,8 @@ class MarkActionAsCompleteView(WMABaseView):
         return redirect(self.index_url)
 
 
-class MarkReportAsCompleteView(WMABaseView):
-    report_pk = None
+class MarkReportAsCompleteView(WMABaseView[Report]):
+    report_pk: str
     complete = True
     template_name = 'reports/mark_report_as_complete_confirmation.html'
 
@@ -91,8 +94,7 @@ class MarkReportAsCompleteView(WMABaseView):
     def get_page_title(self):
         if self.complete:
             return _("Mark report as complete")
-        else:
-            return _("Undo marking report as complete")
+        return _("Undo marking report as complete")
 
     def check_action_permitted(self, user):
         plan = user.get_active_admin_plan()
@@ -114,7 +116,7 @@ class MarkReportAsCompleteView(WMABaseView):
     def get_context_data(self, **kwargs):
         context =  super().get_context_data(**kwargs)
         if self.complete:
-            complete_actions = Action.objects.complete_for_report(self.report)
+            complete_actions = Action.objects.qs.complete_for_report(self.report)
             context['affected_actions'] = self.report.type.plan.actions.exclude(id__in=complete_actions)
         else:
             action_ids = (
@@ -126,11 +128,12 @@ class MarkReportAsCompleteView(WMABaseView):
         return context
 
     def post(self, request, *args, **kwargs):
+        user = user_or_bust(self.request.user)
         try:
             if self.complete:
-                self.report.mark_as_complete(self.request.user)
+                self.report.mark_as_complete(user)
             else:
-                self.report.undo_marking_as_complete(self.request.user)
+                self.report.undo_marking_as_complete(user)
         except ValueError as e:
             messages.error(request, str(e))
             return redirect(self.index_url)

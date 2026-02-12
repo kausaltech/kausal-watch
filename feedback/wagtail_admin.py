@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.contrib.admin.utils import quote
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.ui.tables import BooleanColumn
 from wagtail.coreutils import multigetattr
 from wagtail.permission_policies.base import ModelPermissionPolicy
@@ -18,6 +19,7 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
 )
 
+from kausal_common.models.types import QS
 from kausal_common.users import UserOrAnon, is_authenticated, user_or_bust, user_or_none
 
 from users.models import User
@@ -63,7 +65,7 @@ class UserFeedbackDeleteView(DeleteView[UserFeedback]):
         return self.permission_policy.user_has_permission_for_instance(user, permission, self.object)
 
 
-class UserFeedbackInspectView(InspectView):
+class UserFeedbackInspectView(InspectView[UserFeedback]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line
     # (and the whole class) can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
@@ -76,7 +78,7 @@ class UserFeedbackInspectView(InspectView):
         return context
 
 
-class UserFeedbackIndexView(IndexView[UserFeedback]):
+class UserFeedbackIndexView(IndexView[UserFeedback, QS[UserFeedback]]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line
     # can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
@@ -203,7 +205,7 @@ class UserFeedbackIndexView(IndexView[UserFeedback]):
         return [*buttons, process_button]
 
 
-class UserFeedbackViewSet(SnippetViewSet[UserFeedback]):
+class UserFeedbackViewSet(SnippetViewSet[UserFeedback, WagtailAdminModelForm[UserFeedback]]):
     model = UserFeedback
     add_to_admin_menu = True
     icon = 'mail'
@@ -239,7 +241,7 @@ class UserFeedbackViewSet(SnippetViewSet[UserFeedback]):
     # workaround should be safe to delete.
     def get_menu_item(self, order: int | None = None) -> MenuItem:
         menu_item = super().get_menu_item(order)
-        menu_item.is_shown = lambda _request: True  # type: ignore[assignment]
+        menu_item.is_shown = lambda request: True  # type: ignore[assignment]  # noqa: ARG005
         return menu_item
 
     def get_common_view_kwargs(self, **kwargs):

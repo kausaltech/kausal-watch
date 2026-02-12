@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, cast, override
 
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -448,6 +448,10 @@ class AttributeNumericValue(Attribute):
         return str(self.value)
 
 
+type SetAttributeReturn = (
+    tuple[Literal['create', 'delete'], Attribute] | tuple[Literal['update'], Attribute, list[str]] | tuple[None, None]
+)
+
 class ModelWithAttributes(ClusterableModel):
     """
     Fields for models with attributes.
@@ -513,7 +517,7 @@ class ModelWithAttributes(ClusterableModel):
         existing_attribute: Attribute | None,
         value_parameters: dict[str, Any],
         attribute_value_input: Any,
-    ):
+    ) -> SetAttributeReturn:
         if existing_attribute is None:
             if self._value_is_empty(value_parameters):
                 return (None, None)
@@ -526,7 +530,7 @@ class ModelWithAttributes(ClusterableModel):
             return ('delete', existing_attribute)
         for k, v in value_parameters.items():
             setattr(existing_attribute, k, v)
-        return ('update', existing_attribute, value_parameters.keys())
+        return ('update', existing_attribute, list(value_parameters.keys()))
 
     def set_category_choice_attribute(self, attribute_type, existing_attribute, category_ids):
         if existing_attribute is None:

@@ -501,7 +501,7 @@ class User(AbstractUser):
             return self._check_moderation_publish_permissions(action, person)
         if moderation_action == ModerationAction.APPROVE:
             return self._check_moderation_approve_permissions(action, person)
-        return None
+        return False
 
     def can_publish_action(self, action: Action):
         return self._check_moderation_permissions(ModerationAction.PUBLISH, action)
@@ -618,7 +618,7 @@ class User(AbstractUser):
             return True
 
         # The creating user has edit rights until the created user first logs in
-        if person.created_by_id == self.id and person.user and not person.user.last_login:  # pyright: ignore
+        if person.created_by_id == self.pk and person.user and not person.user.last_login:
             return True
 
         if plan is not None and self.is_general_admin_for_plan(plan):

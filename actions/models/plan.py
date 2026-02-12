@@ -55,7 +55,6 @@ from orgs.models import Organization
 from people.models import Person
 
 if TYPE_CHECKING:
-    from django.http.request import HttpRequest
     from django_stubs_ext import StrOrPromise
 
     from rich.repr import RichReprResult
@@ -75,7 +74,7 @@ if TYPE_CHECKING:
     from content.models import SiteGeneralContent
     from documentation.models import DocumentationRootPage
     from feedback.models import UserFeedback
-    from notifications.models import NotificationSettings
+    from notifications.models import BaseTemplate, NotificationSettings
     from orgs.models import OrganizationPlanAdmin
     from pages.models import PlanLink
     from reports.models import ReportType
@@ -141,10 +140,6 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True, is_active=True)
-
-    def available_for_request(self, request: HttpRequest | WatchGraphQLContext):
-        # FIXME later: support for logged-in users
-        return self.live()
 
     def user_has_staff_role_for(self, user: UserOrAnon):
         from actions.models.action import Action
@@ -412,6 +407,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         object_id_field='scope_id',
     )
     action_dependency_roles: RevMany[ActionDependencyRole]
+    notification_base_template: RevOne[Plan, BaseTemplate]
 
     public_fields: ClassVar = [
         'id', 'name', 'short_name', 'version_name', 'identifier', 'short_identifier', 'image', 'action_schedules',

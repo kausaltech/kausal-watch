@@ -10,6 +10,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.forms import BaseModelFormSet
 from django.urls import URLPattern, path, re_path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
@@ -38,7 +39,7 @@ from dal import autocomplete, forward as dal_forward
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust, user_or_none
 
-from aplans.context_vars import ctx_instance, ctx_request
+from aplans.context_vars import ctx_instance, ctx_request, get_admin_cache
 from aplans.extensions import modeladmin_register
 from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
@@ -81,8 +82,6 @@ if typing.TYPE_CHECKING:
     from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
 
-    from aplans.types import WatchAdminRequest
-
     from actions.attributes import DraftAttributes
     from users.models import User
 
@@ -108,7 +107,7 @@ class ReadOnlyInlinePanel(Panel):
     class BoundPanel(Panel.BoundPanel[Any, Any, Any]):
         panel: ReadOnlyInlinePanel
 
-        template_name = "aplans/panels/read_only_inline_panel.html"
+        template_name = 'aplans/panels/read_only_inline_panel.html'
 
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
@@ -154,10 +153,8 @@ class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper[Action]):
 
 
 MODELS_WITH_ROLES: list[tuple[type[ModelWithRole[Any]], str, type[Model], str]] = [
-    (ActionContactPerson, 'contact_persons',
-     Person, 'person'),
-    (ActionResponsibleParty, 'responsible_parties',
-     Organization, 'organization'),
+    (ActionContactPerson, 'contact_persons', Person, 'person'),
+    (ActionResponsibleParty, 'responsible_parties', Organization, 'organization'),
 ]
 
 
@@ -180,12 +177,16 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         identifier = self.cleaned_data['identifier']
         plan = self.instance.plan
         if Action.objects.filter(plan=plan, identifier=identifier).exclude(pk=self.instance.pk).exists():
-            raise ValidationError(_("There is already an action with this identifier."))
+            raise ValidationError(_('There is already an action with this identifier.'))
         return identifier
 
     def get_related_objects_with_role(
-            self, _cls: type[ModelWithRole[Any]], role: str,
-            relation_name: str, wrapped_cls: type[Model], wrapped_object_attr: str,
+        self,
+        _cls: type[ModelWithRole[Any]],
+        role: str,
+        relation_name: str,
+        wrapped_cls: type[Model],
+        wrapped_object_attr: str,
     ) -> Iterable[Model]:
         formset = self.formsets.get(f'{relation_name}_{role}')
         # There is a corresponding formset for a role if and only if we can edit the relations of that role.
@@ -197,18 +198,26 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         return wrapped_cls._default_manager.filter(id__in=obj_ids)
 
     def _validate_unique_relations_with_roles(
-            self, _cls: type[ModelWithRole[Any]], relation_name: str, wrapped_object_cls: type[Model], wrapped_object_attr: str,
+        self,
+        _cls: type[ModelWithRole[Any]],
+        relation_name: str,
+        wrapped_object_cls: type[Model],
+        wrapped_object_attr: str,
     ) -> None:
         seen_related_objects = set()
         for role in _cls.get_roles():
             if role is None:
                 role = 'None'  # noqa: PLW2901
             for obj in self.get_related_objects_with_role(
-                _cls, role, relation_name, wrapped_object_cls, wrapped_object_attr,
+                _cls,
+                role,
+                relation_name,
+                wrapped_object_cls,
+                wrapped_object_attr,
             ):
                 if obj.pk in seen_related_objects:
                     raise ValidationError(
-                        _("%s is listed multiple times in the action.") % obj,
+                        _('%s is listed multiple times in the action.') % obj,
                     )
                 seen_related_objects.add(obj.pk)
 
@@ -225,10 +234,15 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             initial_plan = Plan.objects.get(id=initial_plan_id)
 
             request = ctx_request.get()
-            messages.add_message(request, messages.WARNING,
-                                 _('While editing this action you have switched to a different plan. '
-                                   'This action was still saved with the original plan "%s".')
-                                 % initial_plan.name)
+            messages.add_message(
+                request,
+                messages.WARNING,
+                _(
+                    'While editing this action you have switched to a different plan. '
+                    'This action was still saved with the original plan "%s".'
+                )
+                % initial_plan.name,
+            )
             self.instance.plan = initial_plan
 
         if hasattr(self.instance, 'updated_at'):
@@ -380,8 +394,9 @@ class ModelWithRoleInlinePanel(InlinePanel):
         return result
 
     def on_model_bound(self):
-        assert ((self.filter_by_role and self.relation_name == self.get_relation_name(self.role))
-                or self.relation_name == self.get_relation_name())
+        assert (
+            self.filter_by_role and self.relation_name == self.get_relation_name(self.role)
+        ) or self.relation_name == self.get_relation_name()
         # In either case, we set the DB field to `contact_persons` (or similarly for other models). We rely on the
         # queryset for `contact_persons_{role}` being filtered accordingly due to `ActionAdminForm.__init__()`.
         # The code below could be simplified, but let's keep it like this to resemble InlinePanel.on_model_bound()`.
@@ -393,12 +408,13 @@ class ModelWithRoleInlinePanel(InlinePanel):
 # FIXME: Duplicates stuff from ReadOnlyInlinePanel
 class ModelWithRoleReadOnlyInlinePanel(Panel):
     def __init__(
-            self,
-            relation_name: str | None = None,
-            filter_by_role: bool = False,
-            role: ModelWithRole.Role | None = None,
-            *args, **kwargs,
-        ):
+        self,
+        relation_name: str | None = None,
+        filter_by_role: bool = False,
+        role: ModelWithRole.Role | None = None,
+        *args,
+        **kwargs,
+    ):
         self.filter_by_role = filter_by_role
         self.role = role
         self.relation_name = relation_name
@@ -412,7 +428,7 @@ class ModelWithRoleReadOnlyInlinePanel(Panel):
         return result
 
     class BoundPanel(Panel.BoundPanel):
-        template_name = "aplans/panels/read_only_inline_panel.html"
+        template_name = 'aplans/panels/read_only_inline_panel.html'
 
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
@@ -512,7 +528,9 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         return kwargs
 
 
-class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTabbedInterface[Action, ActionAdminForm]):  # type: ignore[misc]
+class ActionEditHandler(
+    BuiltInFieldCustomizationAwareEditHandlerMixin[Action, ActionAdminForm], AplansTabbedInterface[Action, ActionAdminForm]
+):
     def __init__(self, *args, draft_attributes: DraftAttributes | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.draft_attributes = draft_attributes
@@ -538,7 +556,10 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
                 field.name: field.django_field
                 for attribute_type in attribute_types
                 for field in attribute_type.get_form_fields(
-                    user, plan, instance, draft_attributes=self.draft_attributes,
+                    user,
+                    plan,
+                    instance,
+                    draft_attributes=self.draft_attributes,
                 )
             }
         else:
@@ -562,7 +583,7 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
 
-        formsets = dict(form_class.formsets)
+        formsets = dict[str, type[BaseModelFormSet[Any, Any]] | BaseModelFormSet[Any, Any]](form_class.formsets)
 
         # TODO: Move this to BuiltInFieldCustomizationAwareEditHandlerMixin or somewhere else so it can be reused?
         if not user.is_general_admin_for_plan(plan):
@@ -627,9 +648,7 @@ def change_log_message_url_or_none(action: Action) -> str | None:
     return None
 
 
-class ActionCreateView(InitializeFormWithInitialPlanMixin, AplansCreateView):
-    instance: Action
-
+class ActionCreateView(InitializeFormWithInitialPlanMixin[Action], AplansCreateView[Action]):
     def initialize_instance(self, request):
         plan = request.user.get_active_admin_plan()
         assert self.instance.pk is None
@@ -661,9 +680,9 @@ class ActionButtonHelper(AplansButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _("Mark as complete for report %s") % report.name,
+            'label': _('Mark as complete for report %s') % report.name,
             'classname': cn,
-            'title': _("Mark this action as complete for the report %s") % str(report),
+            'title': _('Mark this action as complete for the report %s') % str(report),
         }
 
     def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
@@ -673,9 +692,9 @@ class ActionButtonHelper(AplansButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _("Undo marking as complete for report %s") % report.name,
+            'label': _('Undo marking as complete for report %s') % report.name,
             'classname': cn,
-            'title': _("Undo marking this action as complete for the report %s") % str(report),
+            'title': _('Undo marking this action as complete for the report %s') % str(report),
         }
 
     def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
@@ -684,13 +703,14 @@ class ActionButtonHelper(AplansButtonHelper):
         if not user or not self.permission_helper.user_can_edit_obj(user, obj):
             return buttons
 
-        latest_reports = self.request.admin_cache.latest_reports
+        latest_reports = get_admin_cache(self.request).latest_reports
         # For each report type, display one button for the latest report of that type
         for latest_report in latest_reports:
             if latest_report.is_complete:
                 continue
-            if latest_report.type.only_plan_admins_can_mark_actions_as_complete and \
-                    not user.is_general_admin_for_plan(latest_report.type.plan):
+            if latest_report.type.only_plan_admins_can_mark_actions_as_complete and not user.is_general_admin_for_plan(
+                latest_report.type.plan
+            ):
                 continue
             if obj.is_complete_for_report(latest_report):
                 buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
@@ -700,14 +720,18 @@ class ActionButtonHelper(AplansButtonHelper):
 
 
 class ActionEditView(
-    InitializeFormWithInitialPlanMixin, SnippetsEditViewCompatibilityMixin, SingleObjectMixin[Action], AplansEditView[Action]
+    InitializeFormWithInitialPlanMixin[Action],
+    SnippetsEditViewCompatibilityMixin,
+    SingleObjectMixin[Action],
+    AplansEditView[Action],
 ):
+    model_admin: ActionAdmin
 
     def get_success_url(self):
         url = change_log_message_url_or_none(self.instance)
-        return url if url else super().get_success_url()
+        return url or super().get_success_url()
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):  # type: ignore[override]
         context = super().get_context_data(**kwargs)
         if self.instance.plan.features.enable_moderation_workflow:
             context['action_menu'] = SnippetActionMenu(
@@ -751,11 +775,12 @@ class ActionEditView(
             return ''
         category = category.first()
         crumb = [category]
+        assert category is not None
         parent = category.parent
         while parent is not None:
             crumb.append(parent)
             parent = parent.parent
-        return " / ".join([str(c) for c in reversed(crumb)])
+        return ' / '.join([str(c) for c in reversed(crumb)])
 
     def get_edit_handler(self):
         # We need to inject this view's instance to be accessible to the edit handler
@@ -796,17 +821,13 @@ class ActionAdmin(AplansModelAdmin[Action]):
         CustomizableBuiltInFieldPanel[Action]('lead_paragraph'),
         CustomizableBuiltInFieldPanel[Action]('description'),
     )
-    basic_related_panels: Sequence[Panel[Action]] = (
-        CustomizableBuiltInFieldPanel('image'),
-    )
+    basic_related_panels: Sequence[Panel[Action]] = (CustomizableBuiltInFieldPanel('image'),)
     basic_related_panels_general_admin: list[Panel[Any]] = [
         CustomizableBuiltInFieldPanel(
             'related_actions',
             widget=autocomplete.ModelSelect2Multiple(
                 url='action-autocomplete',
-                forward=(
-                    dal_forward.Const(True, 'related_plans'),
-                ),
+                forward=(dal_forward.Const(val=True, dst='related_plans'),),
             ),
         ),
         CustomizableBuiltInFieldPanel('merged_with', widget=ActionChooser),
@@ -892,23 +913,26 @@ class ActionAdmin(AplansModelAdmin[Action]):
         delta = now - obj.updated_at
         return naturaltime(delta)
 
-    def get_list_display(self, request: WatchAdminRequest):
+    def get_list_display(self, request: HttpRequest):
         cached_list_display = getattr(request, '_action_admin_list_display', None)
         if cached_list_display:
             return cached_list_display
 
+        user = user_or_bust(request.user)
+
         @admin.display(description=_('Name'))
-        def name_link(obj: Action) -> SafeString | str:# -> SafeString | Any:
+        def name_link(obj: Action) -> SafeString | str:  # -> SafeString | Any:
             from django.utils.html import format_html
 
-            if self.permission_helper.user_can_edit_obj(request.user, obj):
+            if self.permission_helper.user_can_edit_obj(user, obj):
                 url = self.url_helper.get_action_url('edit', obj.pk)
                 return format_html('<a href="{}">{}</a>', url, obj.name)
             else:
                 return obj.name
+
         self.name_link = name_link
 
-        plan = request.user.get_active_admin_plan()
+        plan = user.get_active_admin_plan()
 
         list_display = ['name_link']
         if plan.features.has_action_identifiers:
@@ -918,9 +942,11 @@ class ActionAdmin(AplansModelAdmin[Action]):
 
         ct = plan.category_types.filter(identifier='action').first()
         if ct:
+
             @admin.display(description=ct.name)
             def action_category(obj: Action) -> str:
                 return '; '.join([str(cat) for cat in obj.categories.all() if cat.type_id == ct.id])
+
             self.action_category = action_category
             list_display.append('action_category')
 
@@ -932,7 +958,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         """
 
         out = tuple(list_display)
-        request._action_admin_list_display = out
+        setattr(request, '_action_admin_list_display', out)  # noqa: B010
         return out
 
     def get_task_header_formatter(self):
@@ -959,7 +985,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         attribute_panels = instance.get_attribute_panels(user, draft_attributes)
         main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
 
-        all_tabs = []
+        all_tabs: list[Panel[Any]] = []
 
         is_general_admin = user.is_general_admin_for_plan(plan)
         panels: list[Panel[Action]] = list(self.basic_panels)
@@ -1002,20 +1028,26 @@ class ActionAdmin(AplansModelAdmin[Action]):
             panels += self.basic_related_panels_general_admin
 
             if plan.superseded_by:
-                panels.append(FieldPanel('superseded_by', widget=autocomplete.ModelSelect2(
-                    url='action-autocomplete',
-                    forward=(
-                        dal_forward.Const(plan.superseded_by.id, 'plan'),
-                    ),
-                )))
+                panels.append(
+                    FieldPanel(
+                        'superseded_by',
+                        widget=autocomplete.ModelSelect2(
+                            url='action-autocomplete',
+                            forward=(dal_forward.Const(plan.superseded_by.id, 'plan'),),
+                        ),
+                    )
+                )
 
             if plan.copy_of:
-                panels.append(FieldPanel('copy_of', widget=autocomplete.ModelSelect2(
-                    url='action-autocomplete',
-                    forward=(
-                        dal_forward.Const(plan.copy_of.id, 'plan'),
-                    ),
-                )))
+                panels.append(
+                    FieldPanel(
+                        'copy_of',
+                        widget=autocomplete.ModelSelect2(
+                            url='action-autocomplete',
+                            forward=(dal_forward.Const(plan.copy_of.id, 'plan'),),
+                        ),
+                    )
+                )
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
@@ -1032,23 +1064,32 @@ class ActionAdmin(AplansModelAdmin[Action]):
         all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
         contact_persons_panels = self.get_contact_persons_panels(request, instance)
-        all_tabs.append(ObjectList(
-            contact_persons_panels,
-            help_text=render_field_label('', public=plan.features.public_contact_persons), heading=_('Contact persons'),
-        ))
+        all_tabs.append(
+            ObjectList(
+                contact_persons_panels,
+                help_text=render_field_label('', public=plan.features.public_contact_persons),
+                heading=_('Contact persons'),
+            )
+        )
 
         responsible_parties_panels = self.get_responsible_parties_panels(request, instance)
-        all_tabs.append(ObjectList(
-            responsible_parties_panels, help_text=render_field_label('', public=True), heading=_('Responsible parties')))
+        all_tabs.append(
+            ObjectList(
+                responsible_parties_panels, help_text=render_field_label('', public=True), heading=_('Responsible parties')
+            )
+        )
 
         all_tabs += [
-            ObjectList([
-                CondensedInlinePanel(
-                    'tasks',
-                    panels=task_panels,
-                ),
-            ], heading=plan.general_content.get_action_task_term_display_plural(),
-               help_text=render_field_label('', public=True)),
+            ObjectList(
+                [
+                    CondensedInlinePanel(
+                        'tasks',
+                        panels=task_panels,
+                    ),
+                ],
+                heading=plan.general_content.get_action_task_term_display_plural(),
+                help_text=render_field_label('', public=True),
+            ),
         ]
 
         reporting_panels: list[Panel] = [cast('Panel', panel) for panel in reporting_attribute_panels]
@@ -1100,7 +1141,6 @@ class ActionAdmin(AplansModelAdmin[Action]):
             ]
             all_tabs.append(ObjectList(dependency_panels, heading=_('Dependencies')))
 
-
         i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
@@ -1148,8 +1188,8 @@ class ActionAdmin(AplansModelAdmin[Action]):
             template_name=self.usage_view_class.template_name,
             # header_icon=self.icon,
             permission_policy=self.permission_policy,
-            index_url_name=self.get_url_name("list"),
-            edit_url_name=self.get_url_name("edit"),
+            index_url_name=self.get_url_name('list'),
+            edit_url_name=self.get_url_name('edit'),
         )
 
     @property
@@ -1162,18 +1202,18 @@ class ActionAdmin(AplansModelAdmin[Action]):
             template_name=self.unpublish_view_class.template_name,
             # header_icon=self.icon,
             permission_policy=self.permission_policy,
-            index_url_name=self.get_url_name("list"),
-            edit_url_name=self.get_url_name("edit"),
-            unpublish_url_name=self.get_url_name("unpublish"),
-            usage_url_name=self.get_url_name("usage"),
+            index_url_name=self.get_url_name('list'),
+            edit_url_name=self.get_url_name('edit'),
+            unpublish_url_name=self.get_url_name('unpublish'),
+            usage_url_name=self.get_url_name('usage'),
         )
 
     @property
     def collect_workflow_action_data_view(self):
         return self.collect_workflow_action_data_view_class.as_view(
             model=self.model,
-            redirect_url_name=self.get_url_name("edit"),
-            submit_url_name=self.get_url_name("collect_workflow_action_data"),
+            redirect_url_name=self.get_url_name('edit'),
+            submit_url_name=self.get_url_name('collect_workflow_action_data'),
         )
 
     @property
@@ -1184,7 +1224,8 @@ class ActionAdmin(AplansModelAdmin[Action]):
         urls: tuple[URLPattern, ...] = super().get_admin_urls_for_registration()
         mark_as_complete_url = re_path(
             # self.url_helper.get_action_url_pattern('mark_action_as_complete'),
-            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$'
+            % (
                 self.opts.app_label,
                 self.opts.model_name,
                 'mark_action_as_complete',
@@ -1194,7 +1235,8 @@ class ActionAdmin(AplansModelAdmin[Action]):
         )
         undo_marking_as_complete_url = re_path(
             # self.url_helper.get_action_url_pattern('undo_marking_action_as_complete'),
-            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$'
+            % (
                 self.opts.app_label,
                 self.opts.model_name,
                 'undo_marking_action_as_complete',
@@ -1213,7 +1255,8 @@ class ActionAdmin(AplansModelAdmin[Action]):
                 f'{self.opts.app_label}/{self.opts.model_name}/{view_name}/{route}/',
                 getattr(self, f'{view_name}_view'),
                 name=self.url_helper.get_action_url_name(view_name),
-            ) for view_name, route in snippet_view_routes.items()
+            )
+            for view_name, route in snippet_view_routes.items()
         )
         return urls + (
             mark_as_complete_url,
@@ -1227,7 +1270,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         instance: Action,
         field_name: str,
         relation_name: str,
-        model_cls: type[ModelWithRole],
+        model_cls: type[ModelWithRole[Any]],
         heading: str | Promise,
         get_editable_roles_method: str,
     ) -> list[Panel]:
@@ -1241,11 +1284,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         ct = ContentType.objects.get_for_model(Action)
 
         try:
-            customization = BuiltInFieldCustomization.objects.get(
-                plan=plan,
-                content_type=ct,
-                field_name=field_name
-            )
+            customization = BuiltInFieldCustomization.objects.get(plan=plan, content_type=ct, field_name=field_name)
 
             is_visible = customization.is_instance_visible_for(user, plan, instance)
             is_editable = customization.is_instance_editable_by(user, plan, instance)
@@ -1265,7 +1304,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         class VisibilityAwarePanel(RelatedModelWithRolePanel):
             _is_visible = is_visible
 
-            class BoundPanel(RelatedModelWithRolePanel.BoundPanel):
+            class BoundPanel(RelatedModelWithRolePanel.BoundPanel[Any, Any, Any]):
                 def is_shown(self) -> bool:
                     original_result = super().is_shown()
                     return original_result and self.panel._is_visible
@@ -1287,7 +1326,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
             relation_name='contact_persons',
             model_cls=ActionContactPerson,
             heading=_('Contact persons'),
-            get_editable_roles_method='get_editable_contact_person_roles'
+            get_editable_roles_method='get_editable_contact_person_roles',
         )
 
     def get_responsible_parties_panels(self, request: HttpRequest, instance: Action):
@@ -1298,5 +1337,5 @@ class ActionAdmin(AplansModelAdmin[Action]):
             relation_name='responsible_parties',
             model_cls=ActionResponsibleParty,
             heading=_('Responsible parties'),
-            get_editable_roles_method='get_editable_responsible_party_roles'
+            get_editable_roles_method='get_editable_responsible_party_roles',
         )

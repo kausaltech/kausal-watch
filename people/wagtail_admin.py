@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import typing
 from datetime import date, timedelta
-from typing import cast
+from typing import Any, cast
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
@@ -19,7 +19,7 @@ from django.urls import re_path
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, ObjectList, Panel, TabbedInterface
 
 from dal import autocomplete
 from wagtail_modeladmin.helpers.button import ButtonHelper
@@ -52,9 +52,9 @@ from .models import Person
 from .views import ImpersonateUserView, ResetPasswordView
 
 if typing.TYPE_CHECKING:
+    from django.contrib.admin.options import _DisplayT
+    from django.http import HttpRequest
     from django_stubs_ext import StrOrPromise
-
-    from aplans.types import WatchAdminRequest
 
     from users.models import User
 
@@ -130,7 +130,7 @@ class AvatarWidget(AdminFileWidget):
     template_name = 'kausal_common/people/avatar_widget.html'
 
 
-class PersonForm(AplansAdminModelForm):
+class PersonForm(AplansAdminModelForm[Person]):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         self.user = kwargs.pop('user')
@@ -185,7 +185,7 @@ class PersonFormForGeneralAdmin(PersonForm):
             # Allow removing lingering public site restriction if public site login was recently removed
             del self.fields['access_level']
         if 'organization_plan_admin_orgs' in self.fields:
-            cast('ModelMultipleChoiceField', self.fields['organization_plan_admin_orgs']).queryset = (
+            cast('ModelMultipleChoiceField[Any]', self.fields['organization_plan_admin_orgs']).queryset = (
                 Organization.objects.get_queryset().available_for_plan(self.plan).filter(dissolution_date=None)
             )
 
@@ -226,10 +226,10 @@ class PersonFormForGeneralAdmin(PersonForm):
 
 
 class PersonCreateView(
-    ActivatePermissionHelperPlanContextModelAdminMixin,
-    InitializeFormWithPlanMixin,
-    InitializeFormWithUserMixin,
-    AplansCreateView,
+    ActivatePermissionHelperPlanContextModelAdminMixin[Person],
+    InitializeFormWithPlanMixin[Person],
+    InitializeFormWithUserMixin[Person],
+    AplansCreateView[Person],
 ):
     def form_valid(self, form, *args, **kwargs):
         # Make sure form only contains is_admin_for_active_plan
@@ -246,11 +246,11 @@ class PersonCreateView(
         return super().form_valid(form, *args, **kwargs)
 
 
-class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansEditView):
+class PersonEditView(InitializeFormWithPlanMixin[Person], InitializeFormWithUserMixin[Person], AplansEditView[Person]):
     pass
 
 
-class PersonIndexView(AplansIndexView):
+class PersonIndexView(AplansIndexView[Person]):
     def get_ordering(self, request, queryset):
         ret = super().get_ordering(request, queryset)
         out = []
@@ -273,10 +273,10 @@ class PersonIndexView(AplansIndexView):
         return out
 
 
-class PersonPermissionHelper(PlanContextModelAdminPermissionHelper):
+class PersonPermissionHelper(PlanContextModelAdminPermissionHelper[Person]):
     _org_map: dict[int, Organization] | None
 
-    def __init__(self, model, inspect_view_enabled=False):
+    def __init__(self, model: type[Person], inspect_view_enabled=False):
         self._org_map = None
         super().__init__(model, inspect_view_enabled)
 
@@ -371,7 +371,7 @@ class PersonButtonHelper(ButtonHelper):
         return buttons
 
 
-class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin, DeleteView):
+class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin[Person], DeleteView[Person]):
     instance: Person
     model: type[Person]
 
@@ -415,7 +415,7 @@ class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin, Delet
         self.instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
 
-class PersonAdmin(AplansModelAdmin):
+class PersonAdmin(AplansModelAdmin[Person]):
     model = Person
     create_view_class = PersonCreateView
     edit_view_class = PersonEditView
@@ -436,8 +436,9 @@ class PersonAdmin(AplansModelAdmin):
     def get_permission_helper_class(self):
         return super().get_permission_helper_class()
 
-    def get_queryset(self, request: WatchAdminRequest):
-        plan = request.user.get_active_admin_plan()
+    def get_queryset(self, request: HttpRequest):
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
         qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
         return qs
 
@@ -446,12 +447,13 @@ class PersonAdmin(AplansModelAdmin):
             return display_for_value(value=False, empty_value_display='', boolean=True)
         return super().get_empty_value_display(field)
 
-    def get_list_display(self, request: WatchAdminRequest):  # noqa: C901
+    def get_list_display(self, request: HttpRequest):  # noqa: C901
         # get_list_display() gets called a lot, so we cache the results
         if hasattr(request, '_person_list_display'):
             return getattr(request, '_person_list_display')  # noqa: B009
 
-        plan = request.get_active_admin_plan()
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
 
         # We use a cached and path-indexed version of all organizations to reduce
         # SQL queries.
@@ -460,7 +462,7 @@ class PersonAdmin(AplansModelAdmin):
         orgs_by_id = {org.id: org for org in all_orgs}
 
         def edit_url(obj: Person) -> str | None:
-            if self.permission_helper.user_can_edit_obj(request.user, obj):
+            if self.permission_helper.user_can_edit_obj(user, obj):
                 return self.url_helper.get_action_url('edit', obj.pk)
             return None
 
@@ -512,7 +514,7 @@ class PersonAdmin(AplansModelAdmin):
             org = orgs_by_id.get(org_id, obj.organization)
             return org.get_fully_qualified_name(orgs_by_path=orgs_by_path)
 
-        fields = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
+        fields: list[_DisplayT[Person]] = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
         #fields = [avatar, first_name, last_name, 'title', organization]
 
         @admin.display(description=_('last login'), ordering='user__last_login')
@@ -527,7 +529,6 @@ class PersonAdmin(AplansModelAdmin):
             return naturaltime(delta)
         setattr(last_logged_in, '_name', 'last_logged_in')  # noqa: B010
 
-        user = request.user
         if user.is_general_admin_for_plan(plan):
             plan_admins = set(plan.general_admins.values_list('id', flat=True))
 
@@ -537,7 +538,7 @@ class PersonAdmin(AplansModelAdmin):
             setattr(is_plan_admin, '_name', 'is_plan_admin')  # noqa: B010
             fields.append(is_plan_admin)
 
-            fields.append(last_logged_in)
+            fields.append(last_logged_in)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
             fields.append('participated_in_training')
 
         @admin.display(description=_('contact for actions'))
@@ -599,7 +600,7 @@ class PersonAdmin(AplansModelAdmin):
         else:
             form_class = PersonForm
 
-        tabs = [ObjectList(basic_panels, heading=_('General'))]
+        tabs: list[Panel[Any]] = [ObjectList(basic_panels, heading=_('General'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
