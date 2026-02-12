@@ -21,13 +21,12 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
 
         Allow viewing of plans if the expose_unpublished_plan_only_to_authenticated_user flag is False.
         If the expose_unpublished_plan_only_to_authenticated_user flag is True, only allow viewing of published plans.
+        Inactive plans are never visible to anonymous users.
         """
         if action == 'view':
-            return Q(
-                features__expose_unpublished_plan_only_to_authenticated_user=False
-            ) | Q(
-                published_at__isnull=False,
-                published_at__lte=timezone.now(),
+            return Q(is_active=True) & (
+                Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
+                | Q(published_at__isnull=False, published_at__lte=timezone.now())
             )
         return None
 
@@ -35,33 +34,42 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
         """
         Construct permission query for authenticated users.
 
-        Allow viewing all plans but require specific permissions for other actions.
+        Only superusers can see inactive plans. For non-superusers, inactive plans
+        are excluded from both admin and public-facing access.
         """
         if action == 'view':
+            # get_adminable_plans() already filters out inactive plans for non-superusers,
+            # and get_viewable_plans() also excludes inactive plans.
             viewable_plans = user.get_adminable_plans().union(user.get_viewable_plans()).values_list("id", flat=True)
-            return Q(id__in=viewable_plans) | Q(
-                published_at__isnull=False,
-                published_at__lte=timezone.now(),
-            ) | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
+            return Q(id__in=viewable_plans) | (
+                Q(is_active=True) & (
+                    Q(published_at__isnull=False, published_at__lte=timezone.now())
+                    | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
+                )
+            )
         return None
 
     def user_has_perm(self, user: User, action: ObjectSpecificAction, obj: Plan) -> bool:
         """Check permissions for a specific plan instance."""
         if action == 'view':
+            if not obj.is_active:
+                return user.is_superuser
             if user.can_access_public_site(obj):
                 return True
             if obj.features.expose_unpublished_plan_only_to_authenticated_user:
                 return obj.published_at is not None and obj.published_at <= timezone.now()
-            return True # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
+            return True  # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
         # Add other permission checks when needed
         return False
 
     def anon_has_perm(self, action: ObjectSpecificAction, obj: Plan) -> bool:
         """Check permissions for anonymous users."""
         if action == 'view':
+            if not obj.is_active:
+                return False
             if obj.features.expose_unpublished_plan_only_to_authenticated_user:
                 return obj.published_at is not None and obj.published_at <= timezone.now()
-            return True # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
+            return True  # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
         return False
 
     def user_can_create(self, user: User, context: PlanQuerySet) -> bool:

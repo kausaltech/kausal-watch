@@ -140,7 +140,7 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
         return self.filter(identifier=id_or_identifier)
 
     def live(self):
-        return self.filter(published_at__isnull=False, archived_at__isnull=True)
+        return self.filter(published_at__isnull=False, archived_at__isnull=True, is_active=True)
 
     def available_for_request(self, request: HttpRequest | WatchGraphQLContext):
         # FIXME later: support for logged-in users
@@ -396,6 +396,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         help_text=_('UUID of the corresponding Kausal Paths instance for Kausal Paths integration'),
     )
 
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('is active'),
+        help_text=_("Inactive plans are only visible to superusers."),
+    )
+
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language_lowercase')
 
@@ -417,7 +423,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
         'copy_of', 'copies', 'report_types', 'external_feedback_url', 'action_dependency_roles',
-        'kausal_paths_instance_uuid',
+        'kausal_paths_instance_uuid', 'is_active',
     ]
 
     objects: ClassVar[PlanManager] = PlanManager()
