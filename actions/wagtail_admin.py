@@ -5,8 +5,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from django.contrib.admin.utils import quote
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import models, transaction
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import ProtectedError
 from django.shortcuts import redirect
 from django.urls import path, re_path, reverse
@@ -23,7 +23,7 @@ from wagtail.admin.panels import (
     ObjectList,
     TabbedInterface,
 )
-from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
+from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column, Table
 from wagtail.admin.views.generic.base import (
     BaseObjectMixin,
     WagtailAdminTemplateMixin,
@@ -34,7 +34,7 @@ from wagtail.coreutils import capfirst
 from wagtail.log_actions import log
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import DeleteView as SnippetDeleteView, IndexView, SnippetViewSet
+from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
 from dal import autocomplete
 from django_filters import filters
@@ -48,7 +48,7 @@ from kausal_common.users import user_or_bust
 from aplans.context_vars import ctx_instance, ctx_request
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
-from actions.models.action import ActionSchedule, BaseChangeLogMessage
+from actions.models.action import ActionSchedule
 from admin_site.chooser import ClientChooser
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
@@ -637,10 +637,34 @@ class PublicationStatusColumn(Column):
         return context
 
 
+class InactiveWarningColumn(Column):
+    cell_template_name = 'aplans/warning_cell.html'
+
+    def __init__(self, name: str = 'inactive_warning', **kwargs):
+        super().__init__(name, label='', **kwargs)
+
+    def get_cell_context_data(self, instance: Plan, parent_context):
+        context = super().get_cell_context_data(instance, parent_context)
+        context['show_warning'] = not instance.is_active
+        context['tooltip'] = str(_("This plan is inactive and only visible to superusers."))
+        return context
+
+
+class PlanTable(Table):
+    class Media:
+        css = {'all': ('css/modeladmin-index.css',)}
+
+    def get_row_classname(self, instance: Plan) -> str:
+        if not instance.is_active:
+            return 'warning-row'
+        return ''
+
+
 class PlanIndexView(IndexView[Plan]):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
     permission_required = 'view'
+    table_class = PlanTable
     publish_url_name: str | None = None
     unpublish_url_name: str | None = None
     additional_fields_cache: list[str] | None = None
@@ -679,7 +703,9 @@ class PlanIndexView(IndexView[Plan]):
 
     @cached_property
     def columns(self):  # type: ignore[override]
-        return [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
+        cols = [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
+        cols.insert(0, InactiveWarningColumn())
+        return cols
 
     def get_publish_url(self, instance: Plan) -> str:
         return reverse(self.publish_url_name, kwargs={'pk': quote(instance.pk)})
@@ -729,15 +755,51 @@ def clients_for_request(request: HttpRequest):
     return clients.order_by('name')
 
 
+class IsActiveFilter(filters.ChoiceFilter):
+    """
+    Filter for plan active status that defaults to showing only active plans.
+
+    Unlike a standard ChoiceFilter, this filter applies is_active=True when
+    no explicit selection is made, ensuring inactive plans are hidden by default.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('choices', [
+            ('active', _('Active')),
+            ('inactive', _('Inactive')),
+            ('all', _('All')),
+        ])
+        kwargs.setdefault('label', _('Active status'))
+        kwargs.setdefault('empty_label', None)
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == 'inactive':
+            return qs.filter(is_active=False)
+        if value == 'all':
+            return qs
+        # Default (including empty/unselected): show only active plans
+        return qs.filter(is_active=True)
+
+
 class PlanFilter(WagtailFilterSet):
     clients__client = filters.ModelChoiceFilter(
         queryset=clients_for_request,
         label=capfirst(Client._meta.verbose_name),
     )
+    is_active = IsActiveFilter()  # only for superusers
+
+    def __init__(self, *args, request: HttpRequest | None = None, **kwargs):
+        super().__init__(*args, request=request, **kwargs)
+
+        if request:
+            user = user_or_bust(request.user)
+            if not user.is_superuser:
+                del self.filters['is_active']
 
     class Meta:
         model = Plan
-        fields = ['clients__client']
+        fields = ['clients__client', 'is_active']
 
 
 class PlanPublishView(
@@ -894,8 +956,12 @@ class PlanViewSet(SnippetViewSet[Plan]):
     def get_queryset(self, request: HttpRequest) -> PlanQuerySet | None:
         if request.user.is_anonymous:
             return Plan.objects.qs.none()
-        assert isinstance(request.user, User)
-        return request.user.get_adminable_plans()
+        user = user_or_bust(request.user)
+        qs = user.get_adminable_plans()
+        # Non-superusers don't have access to the is_active filter, so show only active plans by default
+        if not user.is_superuser:
+            qs = qs.filter(is_active=True)
+        return qs
 
     @property
     def publish_view(self):

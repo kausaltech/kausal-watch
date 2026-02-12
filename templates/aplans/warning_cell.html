@@ -1,0 +1,9 @@
+<td {% if column.classname %}class="{{ column.classname }}"{% endif %}>
+    {% if show_warning %}
+    <span data-controller="w-tooltip" data-w-tooltip-content-value="{{ tooltip }}" style="cursor: pointer;">
+        <svg class="icon icon-warning" style="height: 1.5em; width: 1.5em;" aria-hidden="true">
+            <use href="#icon-warning"></use>
+        </svg>
+    </span>
+    {% endif %}
+</td>

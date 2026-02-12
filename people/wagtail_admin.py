@@ -483,16 +483,11 @@ class PersonAdmin(AplansModelAdmin):
                     "indicators are assigned to them.",
                 )
                 return format_html(
-                    '<div class="tooltip-wrapper">'
-                    f'<div aria-describedby="access-warning-tooltip-{obj.id}">'
+                    '<span data-controller="w-tooltip" data-w-tooltip-content-value="{}" style="cursor: pointer;">'
                     '<svg class="icon icon-warning" style="height: 1.5em; width: 1.5em;" aria-hidden="true">'
                     '<use href="#icon-warning"></use>'
                     '</svg>'
-                    '</div>'
-                    f'<div id="access-warning-tooltip-{obj.id}" role="tooltip">'
-                    '{}'
-                    '</div>'
-                    '</div>',
+                    '</span>',
                     tooltip,
                 )
             return ''
@@ -616,7 +611,7 @@ class PersonAdmin(AplansModelAdmin):
         if not _person_can_access_admin(obj):
             # Add CSS class to highlight rows of users without admin access
             return {
-                'class': 'user-without-admin-access',
+                'class': 'warning-row',
             }
         return {}
 
