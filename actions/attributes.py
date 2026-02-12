@@ -1029,8 +1029,8 @@ class DraftAttributes:
                 f"Could not deserialize attribute for AttributeType {attr_type_id} because "
                 "the AttributeType does not exist. This attribute will be lost."
             )
-            msg = _("An attribute type used in this draft no longer exists. "
-                    "The attribute has been removed from the draft.")
+            msg = _("A field used in this draft no longer exists. The field and its value have been removed from the "
+                    "draft.")
             return (None, DeserializationWarning(
                 attribute_type_id=attr_type_id,
                 attribute_type_name=None,

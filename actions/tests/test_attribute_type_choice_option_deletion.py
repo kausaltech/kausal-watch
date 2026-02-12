@@ -493,7 +493,7 @@ class TestDeserializationWarnings:
         warning = draft_attributes.deserialization_warnings[0]
         assert warning.attribute_type_id == attr_type_pk
         assert warning.attribute_type_name is None  # Type doesn't exist, so no name
-        assert 'attribute type' in warning.message.lower()
+        assert 'field' in warning.message.lower()
 
     def test_no_warning_when_option_exists(
         self,
