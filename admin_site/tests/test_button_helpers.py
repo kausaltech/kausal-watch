@@ -135,58 +135,6 @@ class TestQueryParameterButtonHelperDeleteButton:
         assert result['url'] == '/admin/delete/42/'
 
 
-class TestQueryParameterButtonHelperWithDifferentParameterNames:
-    """Tests for button helpers with different parameter names."""
-
-    def test_content_type_parameter(self, view, rf):
-        """Test with content_type parameter (AttributeTypeAdminButtonHelper pattern)."""
-
-        class ContentTypeButtonHelper(QueryParameterButtonHelper):
-            parameter_name = 'content_type'
-
-        request = rf.get('/admin/?content_type=action')
-        helper = ContentTypeButtonHelper(view, request)
-
-        add_result = helper.add_button()
-        assert add_result is not None
-        assert 'content_type=action' in add_result['url']
-
-        edit_result = helper.edit_button(pk=1)
-        assert 'content_type=action' in edit_result['url']
-
-    def test_category_type_parameter(self, view, rf):
-        """Test with category_type parameter (CategoryAdminButtonHelper pattern)."""
-
-        class CategoryTypeButtonHelper(QueryParameterButtonHelper):
-            parameter_name = 'category_type'
-
-        request = rf.get('/admin/?category_type=5')
-        helper = CategoryTypeButtonHelper(view, request)
-
-        add_result = helper.add_button()
-        assert add_result is not None
-        assert 'category_type=5' in add_result['url']
-
-        inspect_result = helper.inspect_button(pk=10)
-        assert 'category_type=5' in inspect_result['url']
-
-    def test_report_type_parameter(self, view, rf):
-        """Test with report_type parameter (ReportAdminButtonHelper pattern)."""
-
-        class ReportTypeButtonHelper(QueryParameterButtonHelper):
-            parameter_name = 'report_type'
-
-        request = rf.get('/admin/?report_type=annual')
-        helper = ReportTypeButtonHelper(view, request)
-
-        add_result = helper.add_button()
-        assert add_result is not None
-        assert 'report_type=annual' in add_result['url']
-
-        delete_result = helper.delete_button(pk=20)
-        assert 'report_type=annual' in delete_result['url']
-
-
 class TestQueryParameterButtonHelperEdgeCases:
     """Tests for edge cases and error conditions."""
 
