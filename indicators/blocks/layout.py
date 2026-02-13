@@ -106,7 +106,6 @@ Field = ModelFieldProperties
 
 def initialize():
     register(
-        Field(field_name='name'),
         Field(field_name='description'),
         Field(field_name='organization'),
         Field(field_name='updated_at'),
@@ -206,7 +205,6 @@ class IndicatorValueColumn(IndicatorListColumn):
 IndicatorListColumnsStream = generate_stream_block(
     name='IndicatorListColumnsStream',
     fields=(
-        'name',
         'organization',
         'level',
         ('category', IndicatorCategoryColumn()),
@@ -297,7 +295,6 @@ class IndicatorValueSummaryContentBlock(IndicatorContentBlock):
 
 
 CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
-    'name',
     'description',
     'organization',
     'updated_at',
