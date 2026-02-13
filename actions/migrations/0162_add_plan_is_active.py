@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0160_add_pledgecommitment_model"),
+        ("actions", "0161_add_pledge_updated_at"),
     ]
 
     operations = [
