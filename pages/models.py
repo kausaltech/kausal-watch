@@ -131,7 +131,7 @@ class AplansPage(Page):
     )
 
     content_panels: Sequence[Panel[Any]] = [
-        FieldPanel('title', classname="full title"),
+        FieldPanel('title'),
     ]
 
     common_settings_panels = [
