@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
@@ -11,6 +13,7 @@ from wagtail.admin.panels import (
     ObjectList,
 )
 from wagtail.admin.ui.tables import Column
+from wagtail.admin.views.mixins import Echo
 from wagtail.images.widgets import AdminImageChooser
 from wagtail.snippets.models import register_snippet
 
@@ -20,13 +23,14 @@ from kausal_common.users import user_or_bust
 
 from admin_site.forms import WatchAdminModelForm
 from admin_site.permissions import PlanRelatedPermissionPolicy
-from admin_site.viewsets import WatchCreateView, WatchEditView, WatchViewSet
+from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
 from admin_site.wagtail import (
     AplansTabbedInterface,
     get_translation_tabs,
 )
 
 from .models import Pledge
+from .models.pledge import PledgeCommitment
 
 if TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -191,6 +195,92 @@ class PledgeEditView(PledgeViewMixin, WatchEditView[Pledge]):
     """Custom edit view for Pledge with dynamic attribute panels."""
 
 
+class PledgeIndexView(WatchIndexView[Pledge]):
+    """Custom index view for Pledge with spreadsheet export support."""
+
+    _user_data_keys_cache: list[str] | None = None
+    export_headings = {
+        'commitment_count': _('Number of commitments'),
+    }
+
+    @property
+    def list_export(self) -> list[str]:
+        return ['id', 'name', 'slug', 'commitment_count'] + [
+            f'user_data:{key}' for key in self._get_user_data_keys()
+        ]
+
+    @list_export.setter
+    def list_export(self, value: list[str]) -> None:
+        pass
+
+    @property
+    def export_filename(self) -> str:
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        return f'{_("Pledges")} - {plan}'
+
+    @export_filename.setter
+    def export_filename(self, value: str) -> None:
+        pass
+
+    def get_heading(self, queryset, field: str) -> str:
+        if field.startswith('user_data:'):
+            return field.removeprefix('user_data:')
+        return super().get_heading(queryset, field)
+
+    def _get_user_data_keys(self) -> list[str]:
+        """Discover all unique keys from user_data across commitments for the current queryset."""
+        if self._user_data_keys_cache is not None:
+            return self._user_data_keys_cache
+
+        pledge_ids = self.get_queryset().values_list('pk', flat=True)
+        user_data_values = (
+            PledgeCommitment.objects
+            .filter(pledge_id__in=pledge_ids)
+            .exclude(pledge_user__user_data={})
+            .values_list('pledge_user__user_data', flat=True)
+        )
+        keys: list[str] = []
+        for user_data in user_data_values:
+            if user_data:
+                for key in user_data:
+                    if key not in keys:
+                        keys.append(key)
+        self._user_data_keys_cache = keys
+        return keys
+
+    def stream_csv(self, queryset):
+        """Override to use QUOTE_ALL so fields with spaces aren't split into separate columns."""
+        writer = csv.DictWriter(Echo(), fieldnames=self.list_export, quoting=csv.QUOTE_ALL)
+        yield writer.writerow(
+            {field: self.get_heading(queryset, field) for field in self.list_export}
+        )
+        for item in queryset:
+            yield self.write_csv_row(writer, self.to_row_dict(item))
+
+    def to_row_dict(self, item: Pledge) -> OrderedDict[str, str]:
+        row: OrderedDict[str, str] = OrderedDict()
+        row['id'] = str(item.pk)
+        row['name'] = str(item.name)
+        row['slug'] = item.slug
+        row['commitment_count'] = str(getattr(item, 'commitment_count', item.commitments.count()))
+
+        # Collect user_data values from all commitments for this pledge
+        commitments_user_data = list(
+            item.commitments
+            .exclude(pledge_user__user_data={})
+            .values_list('pledge_user__user_data', flat=True)
+        )
+        for key in self._get_user_data_keys():
+            values = [
+                str(ud.get(key))
+                for ud in commitments_user_data
+                if ud and key in ud
+            ]
+            row[f'user_data:{key}'] = ', '.join(values)
+
+        return row
+
+
 class PledgeViewSet(WatchViewSet[Pledge]):
     """Admin interface for Pledges."""
 
@@ -207,6 +297,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     ]
     search_fields = ['name']
     ordering = ['plan', 'order']
+    index_view_class = PledgeIndexView  # type: ignore[assignment]
     add_view_class = PledgeCreateView  # type: ignore[assignment]
     edit_view_class = PledgeEditView  # type: ignore[assignment]
 
