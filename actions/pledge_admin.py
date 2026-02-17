@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from collections import OrderedDict
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
@@ -198,7 +199,6 @@ class PledgeEditView(PledgeViewMixin, WatchEditView[Pledge]):
 class PledgeIndexView(WatchIndexView[Pledge]):
     """Custom index view for Pledge with spreadsheet export support."""
 
-    _user_data_keys_cache: list[str] | None = None
     export_headings = {
         'commitment_count': _('Number of commitments'),
     }
@@ -206,7 +206,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
     @property
     def list_export(self) -> list[str]:
         return ['id', 'name', 'slug', 'commitment_count'] + [
-            f'user_data:{key}' for key in self._get_user_data_keys()
+            f'user_data:{key}' for key in self._user_data_keys
         ]
 
     @list_export.setter
@@ -227,11 +227,9 @@ class PledgeIndexView(WatchIndexView[Pledge]):
             return field.removeprefix('user_data:')
         return super().get_heading(queryset, field)
 
-    def _get_user_data_keys(self) -> list[str]:
+    @cached_property
+    def _user_data_keys(self) -> list[str]:
         """Discover all unique keys from user_data across commitments for the current queryset."""
-        if self._user_data_keys_cache is not None:
-            return self._user_data_keys_cache
-
         pledge_ids = self.get_queryset().values_list('pk', flat=True)
         user_data_values = (
             PledgeCommitment.objects
@@ -239,14 +237,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
             .exclude(pledge_user__user_data={})
             .values_list('pledge_user__user_data', flat=True)
         )
-        keys: list[str] = []
-        for user_data in user_data_values:
-            if user_data:
-                for key in user_data:
-                    if key not in keys:
-                        keys.append(key)
-        self._user_data_keys_cache = keys
-        return keys
+        return sorted({key for user_data in user_data_values if user_data for key in user_data})
 
     def stream_csv(self, queryset):
         """Override to use QUOTE_ALL so fields with spaces aren't split into separate columns."""
@@ -270,7 +261,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
             .exclude(pledge_user__user_data={})
             .values_list('pledge_user__user_data', flat=True)
         )
-        for key in self._get_user_data_keys():
+        for key in self._user_data_keys:
             values = [
                 str(ud.get(key))
                 for ud in commitments_user_data
