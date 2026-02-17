@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.attributes import AttributeType as AttributeTypeWrapper, DraftAttributes
+    from images.models import AplansImage
 
     from .category import CategoryType
     from .plan import Plan
@@ -140,6 +141,14 @@ class AttributeType(
     )
     max_length = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('character limit for text fields'))
     show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
+    icon: FK[AplansImage | None] = models.ForeignKey(
+        'images.AplansImage',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_("Icon"),
+    )
 
     # Intentionally overrides ModelWithPrimaryLanguage.primary_language
     # leaving out the default keyword argument
@@ -160,7 +169,7 @@ class AttributeType(
 
     public_fields: ClassVar = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'attribute_category_type', 'show_choice_names',
-        'has_zero_option', 'choice_options',
+        'has_zero_option', 'icon', 'choice_options',
     ]
 
     objects: AttributeTypeManager = AttributeTypeManager()
@@ -179,14 +188,17 @@ class AttributeType(
         from actions.models.action import Action
         super().clean()
         if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
-            raise ValidationError({'unit': _('Unit must only be used for numeric fields')})
+            raise ValidationError({'unit': _("Unit must only be used for numeric fields")})
         if not self.primary_language and self.other_languages:
-            raise ValidationError(_('If no primary language is set, there must not be other languages'))
+            raise ValidationError(_("If no primary language is set, there must not be other languages"))
         action_ct = ContentType.objects.get_for_model(Action)
         if self.instance_editability_is_action_specific and self.object_content_type != action_ct:
-            raise ValidationError({'instances_editable_by': _('This value is only allowed for action fields')})
+            raise ValidationError({'instances_editable_by': _("This value is only allowed for action fields")})
         if self.instance_visibility_is_action_specific and self.object_content_type != action_ct:
-            raise ValidationError({'instances_visible_for': _('This value is only allowed for action fields')})
+            raise ValidationError({'instances_visible_for': _("This value is only allowed for action fields")})
+        if self.icon and not self.icon.filename.endswith('.svg'):
+            raise ValidationError({'icon': _("Icon must be an SVG file")})
+
 
     def _get_plan(self) -> Plan | None:
         if not hasattr(self, 'scope_content_type'):

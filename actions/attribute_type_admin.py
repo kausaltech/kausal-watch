@@ -727,6 +727,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         panels = [
             FieldPanel('name'),
             FieldPanel('help_text'),
+            FieldPanel('icon'),
             format_field_panel,
             FieldPanel('unit'),
             FieldPanel('attribute_category_type', widget=CategoryTypeChooser),

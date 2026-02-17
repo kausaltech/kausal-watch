@@ -15,9 +15,11 @@ from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 from actions.attributes import AttributeType
 from actions.models import Action, ActionContactPerson, Plan
+from actions.models.attributes import AttributeType as AttributeTypeModel
 from actions.tests.factories import (
     ActionContactFactory,
     ActionFactory,
+    AplansImageFactory,
     AttributeTextFactory,
     AttributeTypeFactory,
     CategoryFactory,
@@ -412,6 +414,55 @@ def test_attribute_type_visibility_contact_person_particular_action(plan, action
     # For InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, it should not enough to be a contact person for *any*
     # action; you need to be a contact person of that particular action.
     assert not invisible_attr.is_visible_for_user(person.user, plan)
+
+
+def test_attribute_type_icon_field(plan):
+    """Test that AttributeType can store an optional icon."""
+    # Create attribute type without icon
+    attr_type = AttributeTypeFactory.create(
+        scope=plan,
+        object_content_type=ContentType.objects.get_for_model(Action),
+        format=AttributeTypeModel.AttributeFormat.TEXT,
+    )
+    assert attr_type.icon is None
+
+    # Add icon
+    image = AplansImageFactory.create()
+    attr_type.icon = image
+    attr_type.save()
+    attr_type.refresh_from_db()
+    assert attr_type.icon == image
+
+    # Delete image (should set icon to None, not delete attr_type)
+    image.delete()
+    attr_type.refresh_from_db()
+    assert attr_type.icon is None
+    assert AttributeTypeModel.objects.filter(pk=attr_type.pk).exists()
+
+
+def test_attribute_type_icon_fails_for_jpeg(plan):
+    """Test that AttributeType icon field does not accept files ending in '.jpg'."""
+    attr_type = AttributeTypeFactory.create(
+        scope=plan,
+        object_content_type=ContentType.objects.get_for_model(Action),
+        format=AttributeTypeModel.AttributeFormat.TEXT,
+    )
+    jpg_image = AplansImageFactory.create(file__filename='icon.jpg')
+    attr_type.icon = jpg_image
+    with pytest.raises(ValidationError):
+        attr_type.full_clean()
+
+
+def test_attribute_type_icon_accepts_svg(plan):
+    """Test that AttributeType icon field accepts files ending in '.svg'."""
+    attr_type = AttributeTypeFactory.create(
+        scope=plan,
+        object_content_type=ContentType.objects.get_for_model(Action),
+        format=AttributeTypeModel.AttributeFormat.TEXT,
+    )
+    svg_image = AplansImageFactory.create(file__filename='icon.svg')
+    attr_type.icon = svg_image
+    attr_type.full_clean()
 
 
 LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]
