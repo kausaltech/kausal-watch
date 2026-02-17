@@ -62,6 +62,9 @@ from .models import (
     IndicatorChangeLogMessage,
     MonitoringQualityPoint,
     Plan,
+    Pledge,
+    PledgeCommitment,
+    PledgeUser,
 )
 
 if typing.TYPE_CHECKING:
@@ -312,6 +315,9 @@ PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
     (ContentBlock, ALL_PERMS),
     (User, ('view',)),  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
     (PageChangeLogMessage, ALL_PERMS),
+    (Pledge, ALL_PERMS),
+    (PledgeCommitment, ('view',)),
+    (PledgeUser, ('view',)),
 )
 
 
