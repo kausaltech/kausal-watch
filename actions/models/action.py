@@ -1721,17 +1721,14 @@ else:
 class ActionRelatedModelTransModelMixin:
     @classmethod
     def from_serializable_data(cls, data: SerializableData, check_fks: bool = True, strict_fks: bool = False) -> Self | None:
-        data.pop('i18n', None)
-        kwargs = {}
         to_delete = set()
         assert hasattr(cls, '_meta')
         meta = cast('Options[Any]', cast('models.Model', cls)._meta)  # pyright: ignore[reportInvalidCast]
-        for field_name, value in data.items():
-            field = None
+        for field_name in list(data.keys()):
             try:
                 field = meta.get_field(field_name)
             except FieldDoesNotExist:
-                kwargs[field_name] = value
+                continue
             if isinstance(field, TranslatedVirtualField):
                 to_delete.add(field_name)
         for f in to_delete:
