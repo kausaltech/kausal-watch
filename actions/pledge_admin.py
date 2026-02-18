@@ -202,6 +202,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
     export_headings = {
         'commitment_count': _('Number of commitments'),
     }
+    show_export_buttons = True
 
     @property
     def list_export(self) -> list[str]:
@@ -230,7 +231,12 @@ class PledgeIndexView(WatchIndexView[Pledge]):
     @cached_property
     def _user_data_keys(self) -> list[str]:
         """Discover all unique keys from user_data across commitments for the current queryset."""
-        pledge_ids = self.get_queryset().values_list('pk', flat=True)
+        qs = self.get_queryset()
+        # Wagtail search returns PostgresSearchResults which doesn't support values_list
+        if hasattr(qs, 'values_list'):
+            pledge_ids = qs.values_list('pk', flat=True)
+        else:
+            pledge_ids = [item.pk for item in qs]
         user_data_values = (
             PledgeCommitment.objects
             .filter(pledge_id__in=pledge_ids)
