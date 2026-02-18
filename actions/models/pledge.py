@@ -178,9 +178,10 @@ class Pledge(
     # Search configuration
     search_fields = [
         index.SearchField('name', boost=10),
+        index.AutocompleteField('name'),
         index.SearchField('description'),
         index.SearchField('body'),
-        index.FilterField('plan_id')
+        index.FilterField('plan_id'),
     ]
 
     class Meta:

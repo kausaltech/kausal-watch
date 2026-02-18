@@ -234,7 +234,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
         qs = self.get_queryset()
         # Wagtail search returns PostgresSearchResults which doesn't support values_list
         if hasattr(qs, 'values_list'):
-            pledge_ids = qs.values_list('pk', flat=True)
+            pledge_ids = list(qs.values_list('pk', flat=True))
         else:
             pledge_ids = [item.pk for item in qs]
         user_data_values = (
