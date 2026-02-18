@@ -287,6 +287,7 @@ class IndicatorValueSummaryContentBlock(IndicatorContentBlock):
         label = _('Value summary')
 
     graphql_fields = [
+        *IndicatorContentBlock.graphql_fields,
         GraphQLBoolean('show_reference_value'),
         GraphQLInt('reference_year', required=False),
         GraphQLBoolean('show_current_value'),
