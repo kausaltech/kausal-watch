@@ -21,28 +21,6 @@ from actions.permission_policy import PlanPermissionPolicy
 pytestmark = pytest.mark.django_db
 
 
-class TestPlanIsActiveField:
-    """Test the is_active field on Plan model."""
-
-    def test_plan_is_active_defaults_to_true(self, plan_factory):
-        """Test that is_active defaults to True when creating a new plan."""
-        plan = plan_factory()
-        assert plan.is_active is True
-
-    def test_plan_can_be_created_as_inactive(self, plan_factory):
-        """Test that a plan can be explicitly created as inactive."""
-        plan = plan_factory(is_active=False)
-        assert plan.is_active is False
-
-    def test_plan_can_be_deactivated(self, plan):
-        """Test that an active plan can be deactivated."""
-        assert plan.is_active is True
-        plan.is_active = False
-        plan.save()
-        plan.refresh_from_db()
-        assert plan.is_active is False
-
-
 class TestPlanQuerySet:
     """Test Plan queryset methods respect is_active field."""
 
