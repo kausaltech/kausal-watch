@@ -862,8 +862,8 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
 
     The two page trees must be isomorphic.
     """
-    original_pages = original_root.get_descendants().specific()
-    page_copies = root_copy.get_descendants().specific()
+    original_pages = original_root.get_descendants(inclusive=True).specific()
+    page_copies = root_copy.get_descendants(inclusive=True).specific()
     for original_page, page_copy in zip(original_pages, page_copies, strict=True):
         assert type(original_page) is type(page_copy)
         clone_visitor.register_copy(original_page, page_copy)
