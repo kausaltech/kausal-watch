@@ -681,9 +681,15 @@ class UpdateReferencesVisitor(AbstractVisitor):
 
         raise TypeError("Unexpected source field type")
 
-    def update_indexed_references(self, instance: Model) -> list[str]:
+    def update_indexed_references(
+            self,
+            instance: Model,
+            filter_reference: Callable[[ReferenceIndex], bool] | None = None,
+    ) -> list[str]:
         update_fields = set()
         for ref in ReferenceIndex.get_references_for_object(instance):
+            if filter_reference is not None and not filter_reference(ref):
+                continue
             to_model = ref.to_content_type.model_class()
             try:
                 to_object = ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)
@@ -1044,6 +1050,13 @@ def update_references_in_indicators(indicators: list[Indicator], clone_visitor: 
 
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
 
+    # Set up filter to only process references whose content path is `indicators.<n>.*`, where `<n>` is the PK of an
+    # indicator we copied.
+    indicator_pks = {i.pk for i in indicators}
+    def filter_reference(ref: ReferenceIndex) -> bool:
+        field, pk_str, _ = ref.content_path.split('.')
+        return field == 'indicators' and int(pk_str) in indicator_pks
+
     # Collect all organizations that contain the copied indicators
     org_ids = set()
     for indicator in indicators:
@@ -1056,7 +1069,7 @@ def update_references_in_indicators(indicators: list[Indicator], clone_visitor: 
     for org_id in org_ids:
         org = Organization.objects.get(pk=org_id)
         # Process indexed references (this modifies cluster children in memory)
-        update_references_visitor.update_indexed_references(org)
+        update_references_visitor.update_indexed_references(org, filter_reference)
         # Save only the modified cluster-related indicators, not the org itself
         for _, child in get_cluster_related_objects(org):
             if isinstance(child, Indicator) and clone_visitor.is_copy(child):
