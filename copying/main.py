@@ -469,9 +469,11 @@ class UpdateReferencesVisitor(AbstractVisitor):
 
     @get_references.register
     def _(self, instance: Page) -> Generator[Field | GenericForeignKey]:
-        # Pages are copied via Wagtail's Page.copy(), which handles page_ptr, latest_revision, and live_revision
-        # internally. These objects are not registered in the clone visitor, so skip them to avoid spurious warnings.
-        return self._get_references(instance, exclude_fields=['page_ptr', 'latest_revision', 'live_revision'])
+        # Pages are copied via Wagtail's Page.copy(), which handles certain fields  internally. These objects are not
+        # registered in the clone visitor, so skip them to avoid spurious warnings.
+        return self._get_references(instance, exclude_fields=[
+            'page_ptr', 'latest_revision', 'live_revision', 'staticpage_ptr',
+        ])
 
     def update_extractable_references(self, instance: Model) -> bool:
         updated = False
@@ -880,20 +882,19 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
             clone_visitor.register_copy(original_child, child_copy)
 
 
-def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, copy_indicators: bool) -> str:
+def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, new_site_hostname: str, copy_indicators: bool) -> None:
     """
     Validate arguments for copy_plan before any mutations.
 
-    Returns the new site hostname. Raises ValueError if validation fails.
+    Raises ValueError if validation fails.
     """
     if Plan.objects.filter(identifier=new_plan_identifier).exists():
         raise ValueError(f"A plan with identifier '{new_plan_identifier}' already exists")
-    new_site_hostname = _new_site_hostname(plan, new_plan_identifier)
     if Site.objects.filter(hostname=new_site_hostname).exists():
         raise ValueError(f"A site with hostname '{new_site_hostname}' already exists")
 
     if not copy_indicators:
-        return new_site_hostname
+        return
 
     plan_has_shared_indicator = (
         IndicatorLevel.objects.filter(indicator__in=plan.indicators.all())
@@ -905,8 +906,6 @@ def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, copy_indicato
     # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
     if plan.indicators.filter(common__isnull=False).exists():
         raise ValueError("Cannot copy indicators as some are instances of a common indicator")
-
-    return new_site_hostname
 
 
 def _clone_plan_objects(
@@ -1034,7 +1033,8 @@ def copy_plan(
     if new_plan_name is None:
         new_plan_name = plan.default_name_for_copying()
 
-    new_site_hostname = _validate_copy_plan_args(plan, new_plan_identifier, copy_indicators)
+    new_site_hostname = _new_site_hostname(plan, new_plan_identifier)
+    _validate_copy_plan_args(plan, new_plan_identifier, new_site_hostname, copy_indicators)
 
     clone_visitor = CloneVisitor(
         site_hostname=new_site_hostname,

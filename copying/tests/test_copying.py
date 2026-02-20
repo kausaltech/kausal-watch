@@ -6,7 +6,7 @@ from wagtail.rich_text import RichText
 import pytest
 
 from actions.tests.factories import ActionContactFactory, PlanFactory, WorkflowFactory
-from copying.main import copy_plan
+from copying.main import _new_site_hostname, _validate_copy_plan_args, copy_plan
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
 from images.models import AplansImage
@@ -25,6 +25,47 @@ from pages.models import StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory
 
 pytestmark = pytest.mark.django_db
+
+
+class TestValidateCopyPlanArgs:
+    def test_rejects_duplicate_plan_identifier(self, plan):
+        new_site_hostname = _new_site_hostname(plan, 'new-identifier')
+        with pytest.raises(ValueError, match="already exists"):
+            _validate_copy_plan_args(plan, plan.identifier, new_site_hostname, copy_indicators=False)
+
+    def test_rejects_duplicate_site_hostname(self, plan_with_pages):
+        assert plan_with_pages.site is not None
+        existing_hostname = plan_with_pages.site.hostname
+        with pytest.raises(ValueError, match="already exists"):
+            _validate_copy_plan_args(plan_with_pages, 'unique-identifier', existing_hostname, copy_indicators=False)
+
+    def test_passes_with_valid_args(self, plan):
+        new_identifier = 'brand-new-plan'
+        new_site_hostname = _new_site_hostname(plan, new_identifier)
+        # Should not raise
+        _validate_copy_plan_args(plan, new_identifier, new_site_hostname, copy_indicators=False)
+
+    def test_rejects_shared_indicators(self, plan, indicator):
+        another_plan = PlanFactory.create()
+        IndicatorLevelFactory.create(plan=another_plan, indicator=indicator)
+        new_identifier = 'new-plan'
+        new_site_hostname = _new_site_hostname(plan, new_identifier)
+        with pytest.raises(ValueError, match='shares indicators with another plan'):
+            _validate_copy_plan_args(plan, new_identifier, new_site_hostname, copy_indicators=True)
+
+    def test_rejects_common_indicator_instances(self, plan, indicator):
+        assert indicator.common is not None
+        new_identifier = 'new-plan'
+        new_site_hostname = _new_site_hostname(plan, new_identifier)
+        with pytest.raises(ValueError, match='some are instances of a common indicator'):
+            _validate_copy_plan_args(plan, new_identifier, new_site_hostname, copy_indicators=True)
+
+    @pytest.mark.parametrize('indicator__common', [None])
+    def test_passes_with_copy_indicators(self, plan, indicator):
+        new_identifier = 'new-plan'
+        new_site_hostname = _new_site_hostname(plan, new_identifier)
+        # Should not raise when indicators are not shared and have no common indicator
+        _validate_copy_plan_args(plan, new_identifier, new_site_hostname, copy_indicators=True)
 
 
 def get_page_copy(page, plan_copy):
