@@ -14,6 +14,7 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import Count, Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
@@ -879,65 +880,46 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
             clone_visitor.register_copy(original_child, child_copy)
 
 
-@update_reference_index_immediately
-def copy_plan(
+def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, copy_indicators: bool) -> str:
+    """
+    Validate arguments for copy_plan before any mutations.
+
+    Returns the new site hostname. Raises ValueError if validation fails.
+    """
+    if Plan.objects.filter(identifier=new_plan_identifier).exists():
+        raise ValueError(f"A plan with identifier '{new_plan_identifier}' already exists")
+    new_site_hostname = _new_site_hostname(plan, new_plan_identifier)
+    if Site.objects.filter(hostname=new_site_hostname).exists():
+        raise ValueError(f"A site with hostname '{new_site_hostname}' already exists")
+
+    if not copy_indicators:
+        return new_site_hostname
+
+    plan_has_shared_indicator = (
+        IndicatorLevel.objects.filter(indicator__in=plan.indicators.all())
+        .values('indicator').annotate(num_plans=Count('plan')).filter(num_plans__gt=1)
+    )
+    if plan_has_shared_indicator:
+        raise ValueError("Cannot copy indicators as the plan shares indicators with another plan")
+    # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
+    # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
+    if plan.indicators.filter(common__isnull=False).exists():
+        raise ValueError("Cannot copy indicators as some are instances of a common indicator")
+
+    return new_site_hostname
+
+
+def _clone_plan_objects(
     plan: Plan,
-    new_plan_identifier: str | None = None,
-    new_plan_name: str | None = None,
-    general_name_suffix: str | None = None,
-    root_page_title_suffix: str | None = None,
-    version_name: str | None = None,
-    supersede_original_plan: bool = False,
-    supersede_original_actions: bool = False,
-    copy_indicators: bool = False,
+    clone_visitor: CloneVisitor,
+    root_page_title_suffix: str | None,
+    copy_indicators: bool,
 ) -> Plan:
     """
-    Copy the given plan.
+    Perform the actual cloning of all plan objects within a transaction.
 
-    Sets identifier and name of the copy of the plan to the given values, defaults to the result of calling
-    `default_identifier_for_copying()` and `default_name_for_copying()` on the original.
-
-    Adds the suffix given in `general_name_suffix` to the names of other models. (Defaults to no suffix.)
-
-    Does what you expect for `root_page_title_suffix`.
-
-    The plan version name of the copy can be specified with `version_name`.
-
-    If `supersede_original_plan` is true, the copy will supersede the original plan; if
-    `supersede_original_actions` is true, each action copy will supersede its original.
-
-    If `copy_indicators` is true, all indicators and dimensions of `plan` will be copied. However, this requires the
-    plan to have only indicators that are not shared with another plan, otherwise we abort.
-
-    Returns the copy.
+    Returns the copy of the plan.
     """
-    if new_plan_identifier is None:
-        new_plan_identifier = plan.default_identifier_for_copying()
-    if new_plan_name is None:
-        new_plan_name = plan.default_name_for_copying()
-
-    if copy_indicators:
-        plan_has_shared_indicator = (
-            IndicatorLevel.objects.filter(indicator__in=plan.indicators.all())
-            .values('indicator').annotate(num_plans=Count('plan')).filter(num_plans__gt=1)
-        )
-        if plan_has_shared_indicator:
-            raise ValueError("Cannot copy indicators as the plan shares indicators with another plan")
-        # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
-        # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
-        if plan.indicators.filter(common__isnull=False).exists():
-            raise ValueError("Cannot copy indicators as some are instances of a common indicator")
-
-    clone_visitor = CloneVisitor(
-        site_hostname=_new_site_hostname(plan, new_plan_identifier),
-        plan_identifier=new_plan_identifier,
-        plan_name=new_plan_name,
-        copy_name_suffix=general_name_suffix,
-        version_name=version_name,
-        supersede_original_plan=supersede_original_plan,
-        supersede_original_actions=supersede_original_actions,
-    )
-    # A couple of hacks to avoid things breaking when creating a copy of the plan.
     # Work on fresh `Plan` objects because `clone` changes its first argument. We just want to get stuff into the
     # visitor's copy cache (and the DB of course).
     root_collection = Plan.objects.get(pk=plan.pk).root_collection
@@ -1013,6 +995,59 @@ def copy_plan(
     update_references(plan_copy, attribute_types, indicators, clone_visitor)
 
     return plan_copy
+
+
+@update_reference_index_immediately
+def copy_plan(
+    plan: Plan,
+    new_plan_identifier: str | None = None,
+    new_plan_name: str | None = None,
+    general_name_suffix: str | None = None,
+    root_page_title_suffix: str | None = None,
+    version_name: str | None = None,
+    supersede_original_plan: bool = False,
+    supersede_original_actions: bool = False,
+    copy_indicators: bool = False,
+) -> Plan:
+    """
+    Copy the given plan.
+
+    Sets identifier and name of the copy of the plan to the given values, defaults to the result of calling
+    `default_identifier_for_copying()` and `default_name_for_copying()` on the original.
+
+    Adds the suffix given in `general_name_suffix` to the names of other models. (Defaults to no suffix.)
+
+    Does what you expect for `root_page_title_suffix`.
+
+    The plan version name of the copy can be specified with `version_name`.
+
+    If `supersede_original_plan` is true, the copy will supersede the original plan; if
+    `supersede_original_actions` is true, each action copy will supersede its original.
+
+    If `copy_indicators` is true, all indicators and dimensions of `plan` will be copied. However, this requires the
+    plan to have only indicators that are not shared with another plan, otherwise we abort.
+
+    Returns the copy.
+    """
+    if new_plan_identifier is None:
+        new_plan_identifier = plan.default_identifier_for_copying()
+    if new_plan_name is None:
+        new_plan_name = plan.default_name_for_copying()
+
+    new_site_hostname = _validate_copy_plan_args(plan, new_plan_identifier, copy_indicators)
+
+    clone_visitor = CloneVisitor(
+        site_hostname=new_site_hostname,
+        plan_identifier=new_plan_identifier,
+        plan_name=new_plan_name,
+        copy_name_suffix=general_name_suffix,
+        version_name=version_name,
+        supersede_original_plan=supersede_original_plan,
+        supersede_original_actions=supersede_original_actions,
+    )
+
+    with transaction.atomic():
+        return _clone_plan_objects(plan, clone_visitor, root_page_title_suffix, copy_indicators)
 
 
 def update_references(

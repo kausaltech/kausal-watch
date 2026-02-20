@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
 
 from actions.models.plan import Plan
 
@@ -54,15 +53,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         plan = Plan.objects.get(identifier=options['identifier'])
-        with transaction.atomic():
-            copy_plan(
-                plan=plan,
-                new_plan_identifier=options['dest_identifier'],
-                new_plan_name=options['dest_name'],
-                general_name_suffix=options['name_suffix'],
-                root_page_title_suffix=options['root_page_title_suffix'],
-                version_name=options['version_name'],
-                supersede_original_plan=options['supersede_original_plan'],
-                supersede_original_actions=options['supersede_original_actions'],
-                copy_indicators=options['copy_indicators'],
-            )
+        copy_plan(
+            plan=plan,
+            new_plan_identifier=options['dest_identifier'],
+            new_plan_name=options['dest_name'],
+            general_name_suffix=options['name_suffix'],
+            root_page_title_suffix=options['root_page_title_suffix'],
+            version_name=options['version_name'],
+            supersede_original_plan=options['supersede_original_plan'],
+            supersede_original_actions=options['supersede_original_actions'],
+            copy_indicators=options['copy_indicators'],
+        )

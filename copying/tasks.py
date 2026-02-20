@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from django.db import transaction
-
 from celery import shared_task
 
 from actions.models.plan import Plan
@@ -19,12 +17,11 @@ def copy_plan(
     supersede_original_actions: bool,
 ):
     plan = Plan.objects.get(id=plan_id)
-    with transaction.atomic():
-        copy_plan_implementation(
-            plan=plan,
-            new_plan_identifier=new_plan_identifier,
-            new_plan_name=new_plan_name,
-            version_name=version_name,
-            supersede_original_plan=supersede_original_plan,
-            supersede_original_actions=supersede_original_actions,
-        )
+    copy_plan_implementation(
+        plan=plan,
+        new_plan_identifier=new_plan_identifier,
+        new_plan_name=new_plan_name,
+        version_name=version_name,
+        supersede_original_plan=supersede_original_plan,
+        supersede_original_actions=supersede_original_actions,
+    )
