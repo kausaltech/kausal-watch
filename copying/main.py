@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from uuid import uuid4
 
 import wagtail.signal_handlers
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
@@ -18,6 +19,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Revision, Site
+from wagtail.models.i18n import Locale
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
@@ -26,9 +28,10 @@ from relations_iterator import AbstractVisitor, ConfigurableRelationTree, Relati
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
-from actions.models.category import Category, CategoryType
+from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType
 from actions.models.plan import Plan
 from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
+from admin_site.models import Client
 from content.apps import create_site_general_content
 from copying.utils import (
     get_foreign_keys,
@@ -40,9 +43,14 @@ from copying.utils import (
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from images.models import AplansImage
+from indicators.models.common_indicator import CommonIndicator
 from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator, IndicatorLevel
+from indicators.models.metadata import Quantity, Unit
+from orgs.models import Organization
 from pages.models import PlanRootPage
+from people.models import Person
+from users.models import User
 
 if TYPE_CHECKING:
     from wagtail.documents.models import AbstractDocument
@@ -144,6 +152,23 @@ INDICATOR_CLONE_STRUCTURE: CloneStructure = {
 DIMENSION_CLONE_STRUCTURE: CloneStructure = {
     'categories': {},
 }
+
+# Models that are not scoped by a plan and thus deliberately excluded from copying. References to these models are
+# skipped in `UpdateReferencesVisitor.get_references()` and warnings are suppressed in `update_reference()`.
+MODELS_NOT_COPIED = [
+    Client,
+    CommonCategory,
+    CommonCategoryType,
+    CommonIndicator,
+    ContentType,
+    Group,
+    Locale,
+    Organization,
+    Person,
+    Quantity,
+    Unit,
+    User,
+]
 
 
 class CloneVisitor(AbstractVisitor):
@@ -421,7 +446,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         if exclude_fields is None:
             exclude_fields = []
         for fk in get_foreign_keys(instance):
-            if fk.name not in exclude_fields:
+            if fk.name not in exclude_fields and fk.related_model not in MODELS_NOT_COPIED:
                 yield fk
         for gfk in get_generic_foreign_keys(instance):
             if gfk.name not in exclude_fields:
@@ -517,6 +542,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             assert hasattr(fk, 'name')
             related_object = getattr(instance, fk.name)
             if related_object:
+                if related_object._meta.model in MODELS_NOT_COPIED:
+                    continue
                 try:
                     copy = self.clone_visitor.get_copy(related_object)
                 except KeyError:
@@ -540,6 +567,9 @@ class UpdateReferencesVisitor(AbstractVisitor):
 
         Returns true if and only if the instance was updated.
         """
+
+        if to_object._meta.model in MODELS_NOT_COPIED:
+            return False
 
         try:
             copy = self.clone_visitor.get_copy(to_object)
