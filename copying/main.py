@@ -466,6 +466,12 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def _(self, instance: Plan) -> Generator[Field | GenericForeignKey]:
         return self._get_references(instance, exclude_fields=['copy_of'])
 
+    @get_references.register
+    def _(self, instance: Page) -> Generator[Field | GenericForeignKey]:
+        # Pages are copied via Wagtail's Page.copy(), which handles page_ptr, latest_revision, and live_revision
+        # internally. These objects are not registered in the clone visitor, so skip them to avoid spurious warnings.
+        return self._get_references(instance, exclude_fields=['page_ptr', 'latest_revision', 'live_revision'])
+
     def update_extractable_references(self, instance: Model) -> bool:
         updated = False
         for field in instance._meta.get_fields():
