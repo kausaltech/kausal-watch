@@ -423,9 +423,11 @@ class UpdateReferencesVisitor(AbstractVisitor):
         logger.trace(f"Update references of {type(instance).__name__} {instance.pk}: {instance}")
         update_fields = []
         update_fields += self.update_cluster_related_objects(instance)
+        logger.info(f"Updating foreign keys of {type(instance).__name__} {instance.pk}: {instance}")
         update_fields += self.update_foreign_keys(instance)
         update_fields += self.update_indexed_references(instance)
         if isinstance(instance, Page) and not skip_page_draft:
+            logger.info(f"Updating page draft of {type(instance).__name__} {instance.pk}: {instance}")
             update_fields += self.update_page_draft(instance)
         # Save changes
         if update_fields and save:
@@ -489,12 +491,12 @@ class UpdateReferencesVisitor(AbstractVisitor):
             if cro.pk is not None and not self.clone_visitor.is_copy(cro):
                 # Probably there is no copy because the model instance that `cro` originally corresponded to no
                 # longer exists in the database.
-                cro.pk = None
-                updated = True
                 logger.warning(
                     f"In cluster related objects of {type(parent).__name__} {parent.pk}: Could not find "
                     f"copy for {type(cro).__name__} {cro.pk}: {cro}"
                 )
+                cro.pk = None
+                updated = True
         else:
             assert cro.pk != cro_copy.pk
             cro.pk = cro_copy.pk
@@ -547,10 +549,16 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 try:
                     copy = self.clone_visitor.get_copy(related_object)
                 except KeyError:
-                    logger.trace(
-                        f"Could not find copy for {type(related_object).__name__} {related_object.pk}: "
-                        f"{related_object}"
-                    )
+                    if self.clone_visitor.is_copy(related_object):
+                        logger.trace(
+                            f"Trying to update foreign key '{fk.name}' of {type(instance).__name__} {instance.pk} "
+                            f"that is already a copy: {type(related_object).__name__} {related_object.pk}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Could not find copy for {type(related_object).__name__} {related_object.pk} "
+                            f"when trying to update foreign key '{fk.name}' of {type(instance).__name__} {instance.pk}"
+                        )
                     continue
                 logger.trace(f"Set foreign key '{fk.name}' of {type(instance).__name__} {instance.pk} to: {copy.pk}")
                 setattr(instance, fk.name, copy)
@@ -574,7 +582,17 @@ class UpdateReferencesVisitor(AbstractVisitor):
         try:
             copy = self.clone_visitor.get_copy(to_object)
         except KeyError:
-           return False
+            if self.clone_visitor.is_copy(to_object):
+                logger.trace(
+                    f"Trying to update reference in {type(from_object).__name__} {from_object.pk} at path "
+                    f"'{content_path}' that is already a copy: {type(to_object).__name__} {to_object.pk}"
+                )
+            else:
+                logger.warning(
+                    f"Cannot update reference in {type(from_object).__name__} {from_object.pk} at path '{content_path}': "
+                    f"Could not find copy for {type(to_object).__name__} {to_object.pk}"
+                )
+            return False
 
         if isinstance(source_field, StreamField):
             # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
