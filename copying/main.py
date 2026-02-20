@@ -209,7 +209,8 @@ class CloneVisitor(AbstractVisitor):
             self.copy_name_suffix = ''
         self.version_name = version_name
         self.copies = {}
-        self._copy_to_original_pk: dict[int, Any] = {}
+        self._copy_keys: set[tuple[type[Model], Any]] = set()
+        self._copy_to_original_pk: dict[tuple[type[Model], Any], Any] = {}
         self.removed_links = {}
         self.supersede_original_plan = supersede_original_plan
         self.supersede_original_actions = supersede_original_actions
@@ -220,7 +221,7 @@ class CloneVisitor(AbstractVisitor):
 
     def is_copy(self, instance: Model) -> bool:
         """Return true if the given instance is a copy of something."""
-        return instance in self.copies.values()
+        return (type(instance), instance.pk) in self._copy_keys
 
     def get_copy[M: Model](self, instance: M) -> M:
         """Get the copy that has been created for the given instance."""
@@ -231,7 +232,7 @@ class CloneVisitor(AbstractVisitor):
 
     def _get_original_pk(self, copy: Model) -> Any:
         """Get the PK of the original instance for the given copy."""
-        return self._copy_to_original_pk[id(copy)]
+        return self._copy_to_original_pk[(type(copy), copy.pk)]
 
     def register_copy[M: Model](self, original: M, copy: M):
         """
@@ -245,7 +246,8 @@ class CloneVisitor(AbstractVisitor):
         assert not self.has_copy(original)  # should be the same as the previous line, but you never know
         assert not self.is_copy(copy)  # `copy` can't be a copy of multiple originals
         self.copies[key] = copy
-        self._copy_to_original_pk[id(copy)] = original.pk
+        self._copy_keys.add((type(copy), copy.pk))
+        self._copy_to_original_pk[(type(copy), copy.pk)] = original.pk
 
     def visit(self, node: TreeNode):
         """
@@ -469,7 +471,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
 
     @get_references.register
     def _(self, instance: Page) -> Generator[Field | GenericForeignKey]:
-        # Pages are copied via Wagtail's Page.copy(), which handles certain fields  internally. These objects are not
+        # Pages are copied via Wagtail's Page.copy(), which handles certain fields internally. These objects are not
         # registered in the clone visitor, so skip them to avoid spurious warnings.
         return self._get_references(instance, exclude_fields=[
             'page_ptr', 'latest_revision', 'live_revision', 'staticpage_ptr',
@@ -613,8 +615,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             # propagate changes to its value to the StreamField's value.
             field_name, *content_path_rest = content_path.split('.')
             assert field_name == source_field.name
-            # Make sure we only update copies
-            assert self.clone_visitor.is_copy(from_object)
+            # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
+            assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
             update_streamfield_block(from_object, field_name, content_path_rest, to_object, copy)
             return True
 
@@ -672,8 +674,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             field_name, *content_path_rest = content_path.split('.')
             assert field_name == source_field.name
             assert content_path_rest == ['']
-            # Make sure we only update copies
-            assert self.clone_visitor.is_copy(from_object)
+            # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
+            assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
             update_rich_text_reference_in_field(
                 instance=from_object,
                 field_name=field_name,
@@ -737,7 +739,9 @@ class UpdateReferencesVisitor(AbstractVisitor):
         self.update_instance(node.instance)
 
 
-def copy_root_pages(root_page: PlanRootPage | DocumentationRootPage, title_suffix=None) -> Page:
+def copy_root_pages(
+    root_page: PlanRootPage | DocumentationRootPage, title_suffix: str | None = None,
+) -> list[tuple[Page, Page]]:
     """
     Copy the given root page and all its translations.
 
@@ -746,7 +750,7 @@ def copy_root_pages(root_page: PlanRootPage | DocumentationRootPage, title_suffi
     A suffix can be appended to the title field of the root page using the argument `title_suffix` (defaults to `''`).
     If a suffix is appended, a space is put before it.
 
-    Returns the copy of `root_page`.
+    Returns a list of (original, copy) tuples for the root page and each of its translations.
     """
     if title_suffix is None:
         title_suffix = ''
@@ -759,10 +763,10 @@ def copy_root_pages(root_page: PlanRootPage | DocumentationRootPage, title_suffi
         'slug': root_page.default_slug_for_copying(),
     }
     root_page_copy = root_page.copy(recursive=True, update_attrs=update_attrs)
+    copies: list[tuple[Page, Page]] = [(root_page, root_page_copy)]
     new_translation_key = root_page_copy.translation_key
     assert root_page_copy.translation_key != root_page.translation_key
     # When copying the translations of `root_page`, reuse this translation key
-    update_attrs['translation_key'] = new_translation_key
     for page in root_page.get_translations():
         assert isinstance(page, PlanRootPage)
         update_attrs = {
@@ -770,13 +774,14 @@ def copy_root_pages(root_page: PlanRootPage | DocumentationRootPage, title_suffi
             'title': page.title + title_suffix,
             'slug': page.default_slug_for_copying(),
         }
-        page.copy(recursive=True, update_attrs=update_attrs)
-    return root_page_copy
+        translation_copy = page.copy(recursive=True, update_attrs=update_attrs)
+        copies.append((page, translation_copy))
+    return copies
 
 
 def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
-    for action in plan_copy.actions.all():
+    for action in Action.objects.filter(plan=plan_copy, latest_revision__isnull=False).select_related('latest_revision'):
         if action.latest_revision:
             assert isinstance(action.latest_revision, Revision)
             rev_obj = action.latest_revision.as_object()
@@ -927,11 +932,13 @@ def _clone_plan_objects(
     clone(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
     assert plan.site
     assert isinstance(plan.site.root_page.specific, PlanRootPage)
-    root_page_copy = copy_root_pages(
+    root_page_copies = copy_root_pages(
         root_page=plan.site.root_page.specific,
         title_suffix=root_page_title_suffix,
     )
-    register_page_copies(clone_visitor, plan.site.root_page.specific, root_page_copy)
+    for original_root, root_copy in root_page_copies:
+        register_page_copies(clone_visitor, original_root, root_copy)
+    root_page_copy = root_page_copies[0][1]
     plan_copy = Plan.objects.get(pk=plan.pk)
     # Hack to avoid site (and root page) initialization in Plan.save()  # noqa: FIX004
     plan_copy._site_created = True
@@ -949,14 +956,16 @@ def _clone_plan_objects(
 
     # Copy documentation page hierarchy
     for documentation_root_page in plan.documentation_root_pages.all():
-        root_page = copy_root_pages(
+        doc_page_copies = copy_root_pages(
             root_page=documentation_root_page,
             title_suffix=root_page_title_suffix,
         )
-        assert isinstance(root_page, DocumentationRootPage)
-        root_page.plan = plan_copy
-        root_page.save(update_fields=['plan'])
-        register_page_copies(clone_visitor, documentation_root_page, root_page)
+        for original_doc_root, doc_root_copy in doc_page_copies:
+            register_page_copies(clone_visitor, original_doc_root, doc_root_copy)
+        doc_root_page_copy = doc_page_copies[0][1]
+        assert isinstance(doc_root_page_copy, DocumentationRootPage)
+        doc_root_page_copy.plan = plan_copy
+        doc_root_page_copy.save(update_fields=['plan'])
 
     # Attribute types use generic foreign keys, so we need to copy them ourselves
     plan_ct = ContentType.objects.get_for_model(Plan)
@@ -1089,8 +1098,13 @@ def update_references_in_indicators(indicators: list[Indicator], clone_visitor: 
     # indicator we copied.
     indicator_pks = {i.pk for i in indicators}
     def filter_reference(ref: ReferenceIndex) -> bool:
-        field, pk_str, _ = ref.content_path.split('.')
-        return field == 'indicators' and int(pk_str) in indicator_pks
+        parts = ref.content_path.split('.', maxsplit=2)
+        if len(parts) < 2:
+            return False
+        field, pk_str = parts[0], parts[1]
+        if field != 'indicators' or not pk_str.isdigit():
+            return False
+        return int(pk_str) in indicator_pks
 
     # Collect all organizations that contain the copied indicators
     org_ids = set()
