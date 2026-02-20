@@ -604,6 +604,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             # propagate changes to its value to the StreamField's value.
             field_name, *content_path_rest = content_path.split('.')
             assert field_name == source_field.name
+            # Make sure we only update copies
+            assert self.clone_visitor.is_copy(from_object)
             update_streamfield_block(from_object, field_name, content_path_rest, to_object, copy)
             return True
 
@@ -630,6 +632,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             # Create `from_object._cluster_related_objects`
             manager.get_object_list()  # type: ignore[attr-defined]
             referencing_object = manager.get(id=id)
+            # Make sure we only update copies
+            assert self.clone_visitor.is_copy(referencing_object)
             child_field_name, *child_content_path = content_path_rest
             child_field = referencing_object._meta.get_field(child_field_name)
             if isinstance(child_field, StreamField):
@@ -659,6 +663,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
             field_name, *content_path_rest = content_path.split('.')
             assert field_name == source_field.name
             assert content_path_rest == ['']
+            # Make sure we only update copies
+            assert self.clone_visitor.is_copy(from_object)
             update_rich_text_reference_in_field(
                 instance=from_object,
                 field_name=field_name,
