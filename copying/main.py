@@ -183,6 +183,7 @@ class CloneVisitor(AbstractVisitor):
             self.copy_name_suffix = ''
         self.version_name = version_name
         self.copies = {}
+        self._copy_to_original_pk: dict[int, Any] = {}
         self.removed_links = {}
         self.supersede_original_plan = supersede_original_plan
         self.supersede_original_actions = supersede_original_actions
@@ -204,9 +205,7 @@ class CloneVisitor(AbstractVisitor):
 
     def _get_original_pk(self, copy: Model) -> Any:
         """Get the PK of the original instance for the given copy."""
-        # This is inefficient, but for now we only call it in exceptional cases.
-        _, pk = list(self.copies.keys())[list(self.copies.values()).index(copy)]
-        return pk
+        return self._copy_to_original_pk[id(copy)]
 
     def register_copy[M: Model](self, original: M, copy: M):
         """
@@ -220,6 +219,7 @@ class CloneVisitor(AbstractVisitor):
         assert not self.has_copy(original)  # should be the same as the previous line, but you never know
         assert not self.is_copy(copy)  # `copy` can't be a copy of multiple originals
         self.copies[key] = copy
+        self._copy_to_original_pk[id(copy)] = original.pk
 
     def visit(self, node: TreeNode):
         """
