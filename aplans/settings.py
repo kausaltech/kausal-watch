@@ -825,7 +825,7 @@ if ELASTICSEARCH_URL:
             'BACKEND': 'search.backends',
             'URLS': [ELASTICSEARCH_URL],
             'INDEX': 'watch-%s' % lang,
-            'TIMEOUT': 5,
+            'TIMEOUT': 10,
             'LANGUAGE_CODE': lang,
             'INDEX_SETTINGS': {
                 'settings': {
@@ -838,7 +838,9 @@ if ELASTICSEARCH_URL:
                 },
             },
         }
-    WAGTAILSEARCH_BACKENDS['default'] = WAGTAILSEARCH_BACKENDS['default-fi']
+    WAGTAILSEARCH_BACKENDS['default'] = dict(
+        BACKEND='search.backends.WatchDefaultSearchBackend'
+    )
 
 
 THUMBNAIL_PROCESSORS = (

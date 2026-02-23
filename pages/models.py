@@ -10,18 +10,16 @@ from django.core.validators import MinValueValidator, URLValidator
 from django.db import models
 from django.db.models.aggregates import Max
 from django.db.models.functions import Cast, Substr
-from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail import blocks
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.blocks.stream_block import StreamValue
 from wagtail.fields import StreamField
-from wagtail.models import Page, PageManager, PagePermissionTester, Revision, Site
-from wagtail.search import index
+from wagtail.models import Page, PagePermissionTester, Revision, Site
 
 from grapple.models import (
     GraphQLBoolean,
@@ -32,6 +30,7 @@ from grapple.models import (
     GraphQLString,
 )
 from loguru import logger
+from modelsearch import index
 
 from kausal_common.graphene.grapple import grapple_field, make_grapple_streamfield
 
@@ -75,6 +74,7 @@ from indicators.blocks.layout import (
     IndicatorListFilterStream,
     IndicatorMainContentStream,
 )
+from search.models import SearchableModel, get_supported_variants
 
 from .blocks import (
     AccessibilityStatementComplianceStatusBlock,
@@ -98,6 +98,8 @@ logger = logger.bind(name=__name__)
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from wagtail.admin.panels import Panel
+    from wagtail.models import PageManager
     from wagtail.query import PageQuerySet
 
     from kausal_common.models.types import FK, RevMany
@@ -109,7 +111,7 @@ if TYPE_CHECKING:
     from images.models import AplansImage
 
 
-class AplansPage(Page):
+class AplansPage(SearchableModel['PageQuerySet'], Page):
     i18n = models.JSONField(blank=True, null=True)
     show_in_footer = models.BooleanField[bool, bool](
         default=False, verbose_name=_('show in footer'), help_text=_('Should the page be shown in the footer?'),
@@ -129,6 +131,8 @@ class AplansPage(Page):
         default=False, verbose_name=_('children use secondary navigation'),
         help_text=_('Should subpages of this page use secondary navigation?'),
     )
+
+    change_log_messages: ClassVar[RevMany[PageChangeLogMessage]]
 
     content_panels: Sequence[Panel[Any]] = [
         FieldPanel('title'),
@@ -227,12 +231,21 @@ class AplansPage(Page):
         return plan
 
     @classmethod
-    def get_indexed_objects(cls) -> PageQuerySet:
-        # Return only the actions whose plan supports the current language
-        lang = translation.get_language()
-        qs = super().get_indexed_objects()
-        qs = qs.filter(locale__language_code__istartswith=lang)
+    def filter_for_language(cls, qs: PageQuerySet, language: str | None) -> PageQuerySet:
+        if language is None:
+            return qs
+        languages = get_supported_variants(language)
+        qs = qs.filter(locale__language_code__in=languages)
+        qs = qs.live().public()
+
+        root_page_key = PlanRootPage.objects.filter(path=models.OuterRef('path')[0:8]).values('translation_key')
+        qs = qs.annotate(root_page_key=root_page_key)
+        plan = Plan.objects.filter(site__root_page__translation_key=models.OuterRef('root_page_key')).values('id')
+        qs = qs.annotate(plan=plan)
         return qs
+
+    def get_indexed_instance(self) -> Self | None:
+        return super(Page, self).get_indexed_instance()
 
     def get_url_parts(self, request=None):
         plan = self.plan

@@ -3,14 +3,14 @@ from __future__ import annotations
 import typing
 import uuid
 from datetime import date
-from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
 import reversion
 from django.contrib.admin import display
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import OneToOneField, Q, QuerySet
+from django.db.models import OneToOneField, Q
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
@@ -19,20 +19,19 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail.fields import RichTextField
-from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
 from dateutil.relativedelta import relativedelta
+from modelsearch import index
 
-from kausal_common.models.types import MLModelManager, ModelManager, OneToOne
+from kausal_common.models.types import MLModelManager, ModelManager
 
 from aplans.utils import (
-    AdminSaveContext,
     IdentifierField,
     IndirectPlanRelatedModel,
     ModificationTracking,
+    PlanRelatedModelQuerySet,
     RestrictedVisibilityModel,
-    get_available_variants_for_language,
 )
 
 from indicators.models.common_indicator import CommonIndicatorNormalizator
@@ -40,18 +39,22 @@ from indicators.models.import_log import IndicatorValuesImportLog
 from indicators.models.values import IndicatorValue
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
+from search.models import SearchableModel
 
 if typing.TYPE_CHECKING:
-    from kausal_common.models.types import FK, M2M, RevMany
+    from kausal_common.models.types import FK, M2M, OneToOne, RevMany
     from kausal_common.users import UserOrAnon
 
     from aplans.schema_context import WatchGraphQLContext
     from aplans.types import WatchRequest
+    from aplans.utils import (
+        AdminSaveContext,
+    )
 
     from actions.models import Action
-    from actions.models.action import BaseChangeLogMessage
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan, PlanQuerySet
+    from admin_site.models import BaseChangeLogMessage
     from indicators.models.action_links import ActionIndicator
     from indicators.models.contact_persons import IndicatorContactPerson
     from indicators.models.dimensions import IndicatorDimension
@@ -63,7 +66,15 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 
-class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator']):
+class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator'], PlanRelatedModelQuerySet['Indicator']):
+    @override
+    def in_plan(self, plan: Plan) -> Self:
+        return self.filter(plans__in=[plan])
+
+    @override
+    def in_plan_qs(self, plan_qs: PlanQuerySet) -> Self:
+        return self.filter(plans__in=plan_qs)
+
     def modifiable_by(self, user: User) -> Self:
         if user.is_superuser:
             return self
@@ -106,7 +117,11 @@ class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
 
 @reversion.register(follow=('goals',))
 class Indicator(
-    ClusterableModel, index.Indexed, ModificationTracking, RestrictedVisibilityModel, IndirectPlanRelatedModel
+    ClusterableModel,
+    SearchableModel[IndicatorQuerySet],
+    ModificationTracking,
+    RestrictedVisibilityModel,
+    IndirectPlanRelatedModel,
 ):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
@@ -311,17 +326,17 @@ class Indicator(
         blank=True,
         null=True,
         verbose_name=_('Node identifier'),  # TODO: change to Node UUID once it's actually a UUID
-        help_text=_('The node identifier of the node in Paths where this indicator\'s data is imported from.'),
+        help_text=_("The node identifier of the node in Paths where this indicator's data is imported from."),
     )
 
     hide_indicator_graph = models.BooleanField(
         verbose_name=_('Hide graph'),
-        help_text=_('Do not show the graph for this indicator on the indicator\'s own page.'),
+        help_text=_("Do not show the graph for this indicator on the indicator's own page."),
         default=False,
     )
     hide_indicator_table = models.BooleanField(
         verbose_name=_('Hide table'),
-        help_text=_('Do not show this indicator\'s values in a table on the indicator\'s own page.'),
+        help_text=_("Do not show this indicator's values in a table on the indicator's own page."),
         default=False
     )
 
@@ -408,21 +423,18 @@ class Indicator(
             rel_action.action.recalculate_status()
 
     def get_plans_with_access(self):
-        from actions.models import Plan
-
-        plan_qs = self.plans.all()
-        return (
-            plan_qs
-            |
-            # For unconnected indicators, allow seeing and
-            # connecting them for plan admins for plans
-            # with same organization as indicator organization
-            Plan.objects.filter(organization=self.organization)
-        )
+        plans = set()
+        for plan in self.plans.all():
+            plans.add(plan)
+        # For unconnected indicators, allow seeing and
+        # connecting them for plan admins for plans
+        # with same organization as indicator organization
+        for plan in self.organization.plans.all():
+            plans.add(plan)
+        return plans
 
     def get_related_plans(self):
-        from actions.models.plan import Plan
-        return Plan.objects.filter(indicator_levels__indicator=self)
+        return self.plans.all()
 
     def get_level_for_plan(self, plan):
         level = self.levels.filter(plan=plan).first()
@@ -709,22 +721,20 @@ class Indicator(
     def __str__(self):
         return self.name_i18n
 
-    @classmethod
-    def get_indexed_objects(cls) -> QuerySet[Self]:
-        # Return only the actions whose plan supports the current language
-        lang = translation.get_language()
-        lang_variants = get_available_variants_for_language(lang)
-        qs = super().get_indexed_objects()
-        q = Q(plans__primary_language__startswith=lang)
-        for variant in lang_variants:
-            q |= Q(plans__other_languages__contains=[variant])
-        qs = qs.filter(q).distinct()
-        # FIXME find out how to use action default manager here
-        qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return qs
-
     def autocomplete_label(self):
         return str(self)
+
+    def get_indexed_instance_for_language(self, language: str | None) -> Self | None:
+        if language is None:
+            return self
+
+        return super().get_indexed_instance_for_language(language)
+
+    @classmethod
+    def get_indexed_objects(cls) -> IndicatorQuerySet:
+        qs = super().get_indexed_objects()
+        qs = qs.select_related('organization').prefetch_related('plans')
+        return qs
 
 
 class IndicatorCategoryThrough(models.Model):

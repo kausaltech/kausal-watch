@@ -34,8 +34,9 @@ from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 
 from django_countries.fields import CountryField
+from modelsearch import index
 from wagtail_color_panel.fields import ColorField
-from wagtail_localize.operations import TranslationCreator  # type: ignore
+from wagtail_localize.operations import TranslationCreator
 
 from kausal_common.i18n.helpers import get_default_language, get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
@@ -53,6 +54,7 @@ from actions.permission_policy import PlanPermissionPolicy
 from indicators.models import Indicator, IndicatorDimension, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
+from search.models import SearchableModel
 
 if TYPE_CHECKING:
     from django_stubs_ext import StrOrPromise
@@ -194,7 +196,7 @@ class UsageStatus(models.TextChoices):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # type: ignore[django-manager-missing]
+class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, SearchableModel[PlanQuerySet]):
     """
     The Action Plan under monitoring.
 
@@ -420,6 +422,21 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
         'copy_of', 'copies', 'report_types', 'external_feedback_url', 'action_dependency_roles',
         'kausal_paths_instance_uuid', 'is_active',
+    ]
+
+    search_fields = [
+        index.SearchField('name'),
+        index.FilterField('name'),
+        index.FilterField('version_name'),
+        index.FilterField('parent'),
+        index.AutocompleteField('name'),
+        index.AutocompleteField('identifier', boost=5),
+        index.FilterField('organization'),
+        index.FilterField('is_active'),
+        index.RelatedFields('organization', [
+            index.SearchField('name'),
+            index.AutocompleteField('name'),
+        ]),
     ]
 
     objects: ClassVar[PlanManager] = PlanManager()
@@ -719,7 +736,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
                 page.save(update_fields=['draft_title', 'title'])
 
         # Create subpages of root page
-        def _dummy_function_so_makemessages_finds_strings():  # noqa: ANN202
+        def _dummy_function_so_makemessages_finds_strings():  # noqa: ANN202  # pyright: ignore[reportUnusedFunction]
             # This is never called
             pgettext_lazy("Action model", "Actions")
             _("Indicators")
@@ -977,7 +994,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         if recursive:
             # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
             for child in list(result):
-                result |= cast('PlanQuerySet', child.get_superseded_plans(recursive=True))
+                result |= child.get_superseded_plans(recursive=True)
         return result
 
     def get_superseding_plans(self, recursive=False, user=None):
@@ -1034,7 +1051,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         return now >= should_send_at_or_after
 
     def get_workflow_tasks(self):
-        tasks = WorkflowTask.objects.filter(workflow=self.features.moderation_workflow)
+        tasks = WorkflowTask._default_manager.filter(workflow=self.features.moderation_workflow)
         assert tasks.count() < 3, 'Currently max. 2 task workflows supported'
         return tasks
 
@@ -1147,6 +1164,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
             self.contact_person_group.delete()
         return result
 
+    def get_indexed_instance_for_language(self, language: str | None) -> Self | None:
+        # We index all plans for all languages
+        return self
+
+    @classmethod
+    def filter_for_language(cls, qs: PlanQuerySet, language: str | None) -> PlanQuerySet:
+        # We index all plans for all languages
+        _ = language
+        return qs
 
 class PlanRelatedOrganizationsThrough(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='plan_related_organizations_through')

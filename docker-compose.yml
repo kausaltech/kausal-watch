@@ -144,12 +144,12 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx2g"
       - ELASTIC_PASSWORD
     deploy:
       resources:
         limits:
-          memory: ${ELASTIC_MEM_LIMIT:-2G}
+          memory: ${ELASTIC_MEM_LIMIT:-4G}
 
 volumes:
   db_data:

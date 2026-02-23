@@ -6,7 +6,7 @@ import hashlib
 import logging
 import re
 import uuid
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, override
 
 import reversion
 from django.db import models
@@ -21,7 +21,7 @@ import requests
 from easy_thumbnails.files import get_thumbnailer  # type: ignore
 from sentry_sdk import capture_exception
 
-from kausal_common.models.types import MLModelManager, RevManyToManyQS
+from kausal_common.models.types import MLModelManager
 from kausal_common.people.models import BasePerson
 from kausal_common.users import user_or_none
 
@@ -29,19 +29,20 @@ from aplans.utils import IndirectPlanRelatedModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
-from orgs.models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
+from orgs.models import Organization
+from search.models import SearchableModel
 from users.models import User
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
 
-    from kausal_common.models.types import M2M, RevMany
+    from kausal_common.models.types import M2M, RevMany, RevManyToManyQS
     from kausal_common.users import UserOrAnon
 
     from actions.models.action import Action
     from actions.models.plan import Plan, PlanPublicSiteViewer
     from indicators.models import Indicator
-    from orgs.models import OrganizationPlanAdmin
+    from orgs.models import OrganizationMetadataAdmin, OrganizationPlanAdmin, OrganizationQuerySet
     from users.models import User as UserModel
 
 
@@ -117,7 +118,7 @@ DEFAULT_AVATAR_SIZE = 360
 
 
 @reversion.register()
-class Person(BasePerson, IndirectPlanRelatedModel):
+class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedModel):
     participated_in_training = models.BooleanField(
         null=True,
         blank=True,
@@ -264,7 +265,7 @@ class Person(BasePerson, IndirectPlanRelatedModel):
                     % (
                         self.email,
                         self.id,
-                        len(clients),  # pyright: ignore
+                        len(clients),
                     )
                 )
         if not client:
@@ -373,6 +374,17 @@ class Person(BasePerson, IndirectPlanRelatedModel):
 
     def __str__(self):
         return '%s %s' % (self.first_name, self.last_name)
+
+    @override
+    @classmethod
+    def filter_for_language(cls, qs: PersonQuerySet, language: str | None) -> PersonQuerySet:
+        # We accept any language for now
+        return qs
+
+    @override
+    def get_indexed_instance_for_language(self, language: str | None) -> Self | None:
+        # We accept any language for now
+        return self
 
 
 # Override wagtail default avatar_url templatetag (registered in people/apps.py)

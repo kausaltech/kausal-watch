@@ -11,13 +11,15 @@ from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
-from wagtail.search import index
 
-from kausal_common.models.types import FK, M2M, MLModelManager
+from modelsearch import index
 
-from aplans.utils import PlanRelatedOrderedModel
+from kausal_common.models.types import MLModelManager
+
+from aplans.utils import PlanRelatedModelQuerySet, PlanRelatedOrderedModel
 
 from pages.blocks import LargeImageBlock, QuestionAnswerBlock
+from search.models import SearchableModel
 
 from .attributes import ModelWithAttributes
 from .plan import Plan
@@ -28,14 +30,15 @@ if TYPE_CHECKING:
     from modelcluster.fields import PK
     from wagtail.fields import StreamValue
 
+    from kausal_common.models.types import FK, M2MQS, RevMany
     from kausal_common.users import UserOrAnon
 
     from actions.attributes import AttributeFieldPanel, AttributeType
-    from actions.models.action import Action
+    from actions.models.action import Action, ActionQuerySet
     from images.models import AplansImage
 
 
-class PledgeQuerySet(MultilingualQuerySet['Pledge']):
+class PledgeQuerySet(PlanRelatedModelQuerySet['Pledge'], MultilingualQuerySet['Pledge']):
     def visible_for_user(self, user: UserOrAnon, plan: Plan):
         """Filter pledges visible to the given user for the given plan."""
         qs = self.filter(plan=plan)
@@ -48,11 +51,20 @@ class PledgeQuerySet(MultilingualQuerySet['Pledge']):
         return self.filter(plan=plan)
 
 
+# Manager configuration
+if TYPE_CHECKING:
+    class PledgeManager(MLModelManager['Pledge', PledgeQuerySet]):
+        def for_plan(self, plan: Plan) -> PledgeQuerySet: ...
+        def visible_for_user(self, user: UserOrAnon, plan: Plan) -> PledgeQuerySet: ...
+else:
+    PledgeManager = MLModelManager.from_queryset(PledgeQuerySet)
+
+
 @reversion.register(follow=['pledge_action_through'] + ModelWithAttributes.REVERSION_FOLLOW)
 class Pledge(
     PlanRelatedOrderedModel,
     ModelWithAttributes,
-    index.Indexed,
+    SearchableModel[PledgeQuerySet],
 ):
     """
     A Pledge represents a commitment that community members can make to support climate action.
@@ -145,7 +157,7 @@ class Pledge(
     )
 
     # Relationships
-    actions: M2M[Action, PledgeActionThrough] = ParentalManyToManyField(
+    actions: M2MQS[Action, PledgeActionThrough, ActionQuerySet] = ParentalManyToManyField(  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
         'actions.Action',
         through='PledgeActionThrough',
         blank=True,
@@ -165,13 +177,7 @@ class Pledge(
         default_language_field='plan__primary_language_lowercase',
     )
 
-    # Manager configuration
-    if TYPE_CHECKING:
-        class PledgeManager(MLModelManager['Pledge', PledgeQuerySet]):
-            def for_plan(self, plan: Plan) -> PledgeQuerySet: ...
-            def visible_for_user(self, user: UserOrAnon, plan: Plan) -> PledgeQuerySet: ...
-    else:
-        PledgeManager = MLModelManager.from_queryset(PledgeQuerySet)
+    commitments: RevMany[PledgeCommitment]
 
     objects: ClassVar[PledgeManager] = PledgeManager()
 
@@ -302,6 +308,8 @@ class PledgeUser(models.Model):
     )
 
     objects: ClassVar[models.Manager[PledgeUser]]
+
+    commitments: RevMany[PledgeCommitment]
 
     class Meta:
         verbose_name = _('pledge user')

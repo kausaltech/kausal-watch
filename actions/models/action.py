@@ -15,7 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Count, Exists, IntegerField, Max, OuterRef, Q, QuerySet
+from django.db.models import Count, Exists, F, IntegerField, Max, OuterRef, Q
 from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -35,26 +35,25 @@ from wagtail.models import (
     RevisionMixin,
     Task,
     TaskState,
-    Workflow,
     WorkflowMixin,
 )
-from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from kausal_common.models.types import MLModelManager, RevManyQS
+from modelsearch import index
+
+from kausal_common.models.types import MLModelManager
 from kausal_common.users import user_or_none
 
 from aplans.utils import (
-    ConstantMetadata,
     DateFormatField,
     IdentifierField,
     OrderedModel,
     PlanRelatedModel,
+    PlanRelatedModelQuerySet,
     PlanRelatedModelWithRevision,
     PlanRelatedOrderedModel,
     RestrictedVisibilityModel,
     generate_identifier,
-    get_available_variants_for_language,
 )
 
 from actions.models.category import Category
@@ -62,6 +61,7 @@ from admin_site.models import BaseChangeLogMessage
 from indicators.models import ActionIndicator, ActionIndicatorQuerySet, Indicator, IndicatorQuerySet
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
+from search.models import SearchableModel
 from users.models import User
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, SummaryContext
@@ -74,18 +74,25 @@ from .features import PlanFeatures
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
+    from django.db.models import QuerySet
     from django.db.models.expressions import Combinable
     from django.db.models.options import Options
     from modelcluster.fields import PK
-    from wagtail.models import SerializableData
+    from wagtail.models import (
+        SerializableData,
+        Workflow,
+    )
 
-    from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany
+    from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany, RevManyQS
     from kausal_common.users import UserOrAnon
 
     from aplans.cache import PlanSpecificCache, WatchObjectCache
     from aplans.graphql_types import WorkflowStateEnum
     from aplans.schema_context import WatchGraphQLContext
     from aplans.types import WatchRequest
+    from aplans.utils import (
+        ConstantMetadata,
+    )
 
     from actions.attributes import DraftAttributes
     from actions.models.category import CategoryType
@@ -98,7 +105,7 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
+class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], PlanRelatedModelQuerySet['Action']):
     def modifiable_by(self, user: User) -> Self:
         if user.is_superuser:
             return self
@@ -189,7 +196,6 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
 
 
 if TYPE_CHECKING:
-
     class ActionManager(MLModelManager['Action', ActionQuerySet]): ...
 else:
     ActionManager = MLModelManager.from_queryset(ActionQuerySet)
@@ -199,7 +205,9 @@ class ActionIdentifierSearchMixin(index.BaseField):
     def get_value(self, obj: Action):
         # If the plan doesn't have meaningful action identifiers,
         # do not index them.
-        if not obj.plan.features.has_action_identifiers:
+        if has_identifier := getattr(obj, '_plan_has_action_identifiers', None) is None:
+            has_identifier = obj.plan.features.has_action_identifiers
+        if not has_identifier:
             return None
         return super().get_value(obj)
 
@@ -310,7 +318,7 @@ class Action(
     ModelWithAttributes,
     ClusterableModel,
     RestrictedVisibilityModel,
-    index.Indexed,
+    SearchableModel[ActionQuerySet],
 ):
     """One action/measure tracked in an action plan."""
 
@@ -499,7 +507,7 @@ class Action(
         blank=True,
         null=True,
     )
-    date_format = DateFormatField(
+    date_format = DateFormatField[str | None](
         verbose_name=_('Date format'),
         help_text=_(
             'Format of action start and end dates shown in the public UI. \
@@ -989,7 +997,7 @@ class Action(
             self.status = status
             self.save(update_fields=['status'])
 
-    def handle_admin_save(self, context: dict | None = None):
+    def handle_admin_save(self, context: dict[str, Any] | None = None):
         self.recalculate_status(force_update=True)
 
     def set_categories(self, type_: str | CategoryType, categories: list[Category | int]):
@@ -1029,7 +1037,7 @@ class Action(
                 defaults={'role': d['role']},
             )
 
-    def set_contact_persons(self, data: list):
+    def set_contact_persons(self, data: list[ContactPersonDict]):
         existing_persons = {p.person for p in self.contact_persons.all()}
         new_persons = {d['person'] for d in data}
         ActionContactPerson.objects.filter(
@@ -1084,21 +1092,6 @@ class Action(
             plan.get_view_url(client_url=client_url, active_locale=translation.get_language(), request=request),
             self.identifier,
         )
-
-    @classmethod
-    def get_indexed_objects(cls) -> ActionQuerySet:
-        # Return only the actions whose plan supports the current language
-        lang = translation.get_language()
-
-        qs = super().get_indexed_objects()
-        lang_variants = get_available_variants_for_language(lang)
-        q = Q(plan__primary_language__startswith=lang)
-        for variant in lang_variants:
-            q |= Q(plan__other_languages__contains=[variant])
-        qs = qs.filter(q)
-        # FIXME find out how to use action default manager here
-        qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return qs
 
     def get_editable_attribute_types(
         self,
@@ -1425,6 +1418,13 @@ class Action(
                 return True
         return False
 
+    @classmethod
+    def get_indexed_objects(cls) -> ActionQuerySet:
+        qs = super().get_indexed_objects()
+        qs = qs.annotate(_plan_has_action_identifiers=F('plan__features__has_action_identifiers'))
+        qs = qs.select_related('plan')
+        return qs
+
 
 @reversion.register(follow=['action', 'category'])
 class ActionCategoryThrough(models.Model):
@@ -1593,6 +1593,11 @@ class ActionResponsibleParty(OrderedModel, ModelWithRole['ActionResponsibleParty
                 None,  # for responsible parties with unspecified role
             ]
         return []
+
+
+class ContactPersonDict(TypedDict):
+    person: Person
+    role: ActionContactPerson.Role
 
 
 class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role']):  # pyright: ignore
@@ -1900,7 +1905,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
         verbose_name=_('due date'),
         help_text=_('The date by which the task should be completed (deadline)'),
     )
-    date_format = DateFormatField(
+    date_format = DateFormatField[str | None](
         verbose_name=_('Due date format'),
         help_text=_(
             'Format of action task due dates shown in the public UI. \
