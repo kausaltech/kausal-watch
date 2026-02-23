@@ -150,7 +150,7 @@ class OwnIndicatorsPanel(Component):
     order = 102
     template_name = 'admin_site/own_indicators_panel.html'
 
-    def get_context_data(self, parent_context: RenderContext) -> RenderContext:  # type: ignore[override]
+    def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:  # type: ignore[override]
         request: WatchAdminRequest = parent_context['request']
         ctx = super().get_context_data(parent_context)
         assert ctx is not None
@@ -180,7 +180,7 @@ def remove_default_site_summary_items(request, items: list[MenuItem]):
     items.clear()
 
 
-class ClientViewSet(SnippetViewSet):
+class ClientViewSet(SnippetViewSet[Client]):
     model = Client
     icon = 'globe'
     menu_order = 520

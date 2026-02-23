@@ -202,13 +202,13 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
     @classmethod
     def get_parent_choices(cls, user: User, obj: Organization | None = None) -> OrganizationQuerySet:
-        parent_choices = Organization.objects.qs.editable_by_user(user)  # type: ignore[attr-defined]
+        parent_choices = Organization.objects.qs.editable_by_user(user)
         # If the parent is not editable, the form would display an empty parent,
         # leading to the org becoming a root when saved. Prevent this by adding
         # the parent to the queryset.
-        if obj and (parent := obj.get_parent()):  # type: ignore[attr-defined]
-            parent_choices |= Organization.objects.filter(pk=parent.pk)  # type: ignore[attr-defined]
-        return parent_choices
+        if obj and (parent := obj.get_parent()):
+            parent_choices |= Organization.objects.qs.filter(pk=parent.pk)
+        return parent_choices.distinct('path').order_by('path')
 
     def generate_distinct_name(self, levels=1):
         # FIXME: This relies on legacy identifiers
@@ -305,6 +305,9 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
     def get_fully_qualified_name(self, orgs_by_path: dict[str, Organization] | None = None):
         parents = []
         org_map = orgs_by_path
+        if self.depth is None:  # pyright: ignore[reportUnnecessaryComparison]
+            # Model is not fully initialized yet
+            return self.name
         if org_map is None:
             if self.depth > 1:
                 org_map = {org.path: org for org in self.get_ancestors()}
@@ -333,6 +336,13 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
             parent_path = ' | '.join([get_org_path_str(org) for org in parents])
             name += ' (%s)' % parent_path
+        return name
+
+    @property
+    def tree_label(self) -> str:
+        name = self.name
+        if self.internal_abbreviation:
+            name = f'{self.internal_abbreviation} - {name}'
         return name
 
     def print_tree(self):
@@ -374,6 +384,11 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
         if self.dissolution_date:
             fq_name += ' [dissolved]'
         return fq_name
+
+    autocomplete_search_field = 'distinct_name'
+
+    def autocomplete_label(self):
+        return self.distinct_name
 
 
 class Namespace(BaseNamespace):

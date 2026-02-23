@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
-from django.db.models import Model, ProtectedError
+from django.db.models import Model, ProtectedError, QuerySet
 from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.text import capfirst
@@ -127,9 +127,9 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelFo
             'plan': user_or_bust(self.request.user).get_active_admin_plan(),
         }
 
-class WatchIndexView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
+class WatchIndexView[ModelT: Model, QS: QuerySet[Any] = QuerySet[ModelT]](
     ActivatePermissionHelperPlanContextMixin,
-    IndexView[ModelT],
+    IndexView[ModelT, QS],
 ):
     pass
 
@@ -151,7 +151,11 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
         return super().get_form_class(for_update)
 
 
-class BaseChangeLogMessageCreateView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchCreateView[M]):
+class BaseChangeLogMessageCreateView[
+    M: models.Model,
+    RelatedModel: ObjectWithPublicChangeLogMessage,
+    FormT: ModelForm[Any] = WagtailAdminModelForm[Any],
+](WatchCreateView[M, FormT]):
     related_field_name: str
     success_url_name: str
 
@@ -251,7 +255,7 @@ class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPu
         return super().dispatch(request, *args, **kwargs)
 
 
-class BaseChangeLogMessageViewSet[M: models.Model](WatchViewSet[M]):
+class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):
     add_to_admin_menu = False
     icon = 'doc-full'
     page_title = pgettext_lazy('page title', 'Add change history message')

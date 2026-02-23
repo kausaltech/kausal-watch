@@ -196,11 +196,12 @@ section[role='tabpanel'] .help-block:has(> .field-visibility-label) {
   min-height: 2em; /* adding this to make sure things don't change for short texts */
 }
 /* Fix weird inline block issues on, e.g., category list (unfiltered by category type) */
+/*
 .listing .title .title-wrapper,
 .listing .title h2 {
   display: block;
 }
-
+*/
 .screen-reader-only {
   position: absolute !important;
   width: 1px !important;
@@ -250,9 +251,11 @@ with Wagtail's styles but so far these are required.
   a.button {
     text-decoration: none;
   }
+  /*
   .listing .title .title-wrapper a {
     text-decoration: underline;
   }
+  */
 }
 
 /*

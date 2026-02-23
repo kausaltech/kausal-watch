@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.filters import WagtailFilterSet
+from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.messages import validation_error
 from wagtail.admin.panels import (
     FieldPanel,
@@ -30,6 +31,7 @@ from wagtail.admin.views.generic.base import (
     WagtailAdminTemplateMixin,
 )
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+from wagtail.admin.widgets import Button
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.log_actions import log
 from wagtail.snippets import widgets as wagtailsnippets_widgets
@@ -44,7 +46,7 @@ from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 
 from kausal_common.people.chooser import PersonChooser
-from kausal_common.users import user_or_bust
+from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.context_vars import ctx_instance, ctx_request
 
@@ -106,8 +108,6 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
-
-    from aplans.types import WatchAdminRequest
 
     from actions.models.plan import PlanQuerySet
 
@@ -671,20 +671,6 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
     unpublish_url_name: str | None = None
     additional_fields_cache: list[str] | None = None
 
-    def _get_additional_fields(self) -> list[str]:
-        """Get a list of all user-defined additional fields of the feedback form present in the queryset."""
-        if self.additional_fields_cache is not None:
-            return self.additional_fields_cache
-
-        additional_fields = []
-        for feedback in self.get_queryset():
-            if feedback.additional_fields is not None:
-                additional_fields += feedback.additional_fields.keys()
-
-        duplicates_removed = list(dict.fromkeys(additional_fields))
-        self.additional_fields_cache = duplicates_removed
-        return self.additional_fields_cache
-
     def get_list_buttons(self, instance: Plan):
         buttons = super().get_list_buttons(instance)
         # This will now contain a ButtonWithDropdown. Wagtail doesn't expect that this button has no "subbuttons", but
@@ -716,7 +702,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         return reverse(self.unpublish_url_name, kwargs={'pk': quote(instance.pk)})
 
     def publish_button(self, instance: Plan):
-        return wagtailsnippets_widgets.SnippetListingButton(
+        return Button(
             url=self.get_publish_url(instance),
             label=_('Publish'),
             icon_name='upload',
@@ -724,7 +710,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         )
 
     def unpublish_button(self, instance: Plan):
-        return wagtailsnippets_widgets.SnippetListingButton(
+        return Button(
             url=self.get_unpublish_url(instance),
             label=_('Unpublish'),
             icon_name='download',
@@ -748,11 +734,13 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         return buttons
 
 
-def clients_for_request(request: HttpRequest):
-    if request is None or request.user.is_anonymous:
+def clients_for_request(request: HttpRequest | None):
+    if request is None:
         return Client.objects.none()
-    assert isinstance(request.user, User)
-    plans = request.user.get_adminable_plans()
+    user = user_or_none(request.user)
+    if user is None:
+        return Client.objects.none()
+    plans = user.get_adminable_plans()
     clients = Client.objects.filter(id__in=ClientPlan.objects.filter(plan_id__in=plans).values_list('client_id'))
     return clients.order_by('name')
 
@@ -786,7 +774,7 @@ class IsActiveFilter(filters.ChoiceFilter):
 
 class PlanFilter(WagtailFilterSet):
     clients__client = filters.ModelChoiceFilter(
-        queryset=clients_for_request,
+        queryset=clients_for_request,  # pyright: ignore[reportArgumentType]
         label=capfirst(Client._meta.verbose_name),
     )
     is_active = IsActiveFilter()  # only for superusers
@@ -998,7 +986,9 @@ class PlanViewSet(SnippetViewSet[Plan]):
 register_snippet(PlanViewSet)
 
 
-class ActionChangeLogMessageCreateView(BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action]):
+class ActionChangeLogMessageCreateView(
+    BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action, WagtailAdminModelForm[ActionChangeLogMessage]]
+):
     related_field_name = 'action'
     success_url_name = 'actions_action_modeladmin_index'
 
@@ -1160,15 +1150,6 @@ class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChange
 
 
 register_snippet(CategoryChangeLogMessageViewSet)
-
-
-# Monkeypatch Organization to support Wagtail autocomplete
-def org_autocomplete_label(self):
-    return self.distinct_name
-
-
-Organization.autocomplete_search_field = 'distinct_name'  # type: ignore[attr-defined]
-Organization.autocomplete_label = org_autocomplete_label  # type: ignore[attr-defined]
 
 
 # FIXME: This is partly duplicated in content/admin.py.

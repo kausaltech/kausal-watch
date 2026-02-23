@@ -9,9 +9,9 @@ from django.core.exceptions import ValidationError
 from django.urls import URLPattern, path, reverse
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.widgets.button import ListingButton
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail.snippets.widgets import SnippetListingButton
 
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
@@ -20,11 +20,13 @@ from kausal_common.models.permission_policy import ModelPermissionPolicy, Object
 from kausal_common.organizations.forms import NodeForm
 from kausal_common.people.chooser import PersonChooser
 
+from aplans.context_vars import get_admin_cache
+
 from admin_site.utils import admin_req
 from admin_site.wagtail import CondensedInlinePanel
 from users.models import User
 
-from .models import Organization, OrganizationMetadataAdmin
+from .models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from .views import (
     CreateChildNodeView,
     OrganizationCreateView,
@@ -37,6 +39,7 @@ from .views import (
 if TYPE_CHECKING:
     from django.contrib.auth.models import AnonymousUser
     from django.db.models import Q
+    from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
 
@@ -164,7 +167,7 @@ class InvisiblePlanPanel(FieldPanel):
             self.form.initial = modified_initial
 
 
-class OrganizationViewSet(SnippetViewSet):
+class OrganizationViewSet(SnippetViewSet[Organization, OrganizationForm, OrganizationQuerySet]):
     model = Organization
     menu_label = _("Organizations")
     icon = 'kausal-organization'
@@ -236,6 +239,15 @@ class OrganizationViewSet(SnippetViewSet):
     def exclude_organization_from_active_plan_view(self):
         return self.construct_view(SetOrganizationRelatedToActivePlanView, set_related=False)
 
+    def get_queryset(self, request: HttpRequest) -> OrganizationQuerySet | None:
+        plan_cache = get_admin_cache(request)
+        qs = super().get_queryset(request)
+        if qs is None:
+            return None
+        qs = qs.available_for_plan(plan_cache.plan)
+        plan_cache.populate_organizations(qs)
+        return qs
+
     # FIXME: As of writing this the Wagtail version (6.1.X) we use has a bug
     # which only shows the menu item when user has "add", "change" or "delete"
     # permission, while "view" should be enough. (See
@@ -291,8 +303,8 @@ class OrganizationViewSet(SnippetViewSet):
         kwargs['view_set'] = self
         return kwargs
 
-    def _get_edit_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _get_edit_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             _("Edit"),
             url=reverse(self.get_url_name("edit"), args=(quote(instance.pk),)),
             icon_name="edit",
@@ -302,8 +314,8 @@ class OrganizationViewSet(SnippetViewSet):
             priority=10,
         )
 
-    def _get_copy_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _get_copy_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             _("Copy"),
             url=reverse(self.get_url_name("copy"), args=(quote(instance.pk),)),
             icon_name="copy",
@@ -313,8 +325,8 @@ class OrganizationViewSet(SnippetViewSet):
             priority=20,
         )
 
-    def _get_delete_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _get_delete_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             _("Delete"),
             url=reverse(self.get_url_name("delete"), args=(quote(instance.pk),)),
             icon_name="bin",
@@ -324,16 +336,16 @@ class OrganizationViewSet(SnippetViewSet):
             priority=30,
         )
 
-    def _get_add_child_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _get_add_child_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             url=reverse(self.get_url_name(self.add_child_url_name), kwargs={'parent_pk': quote(instance.pk)}),
             label=_("Add suborganization"),
             icon_name='plus',
             attrs={'aria-label': _("Add suborganization")},
         )
 
-    def _include_organization_in_active_plan_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _include_organization_in_active_plan_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             url=reverse(
                 self.get_url_name(self.include_organization_in_active_plan_url_name), kwargs={'pk': quote(instance.pk)}
             ),
@@ -342,8 +354,8 @@ class OrganizationViewSet(SnippetViewSet):
             attrs={'aria-label': _("Include this organization in the active plan")},
         )
 
-    def _exclude_organization_from_active_plan_button(self, instance: Organization) -> SnippetListingButton:
-        return SnippetListingButton(
+    def _exclude_organization_from_active_plan_button(self, instance: Organization) -> ListingButton:
+        return ListingButton(
             url=reverse(
                 self.get_url_name(self.exclude_organization_from_active_plan_url_name), kwargs={'pk': quote(instance.pk)}
             ),

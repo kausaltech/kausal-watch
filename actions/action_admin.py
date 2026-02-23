@@ -11,11 +11,12 @@ from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import BaseModelFormSet
-from django.urls import URLPattern, path, re_path, reverse
+from django.urls import path, re_path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django.views.generic.detail import SingleObjectMixin
 from modelcluster.forms import childformset_factory
+from wagtail import hooks
 from wagtail.admin.forms.models import WagtailAdminModelForm, formfield_for_dbfield
 from wagtail.admin.panels import (
     FieldPanel,
@@ -71,20 +72,24 @@ from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
-from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask, ModelWithRole
+from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
     from django.db.models import Model
     from django.http import HttpRequest
+    from django.urls import URLPattern
     from django.utils.functional import Promise
     from django.utils.safestring import SafeString
     from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
+    from wagtail.snippets.action_menu import ActionMenuItem
 
     from actions.attributes import DraftAttributes
     from users.models import User
+
+    from .models.action import ModelWithRole
 
 
 logger = logging.getLogger(__name__)
@@ -729,7 +734,7 @@ class ActionCreateView(InitializeFormWithInitialPlanMixin[Action], AplansCreateV
 
     def get_success_url(self):
         url = change_log_message_url_or_none(self.instance)
-        return url if url else super().get_success_url()
+        return url or super().get_success_url()
 
 
 class ActionButtonHelper(AplansButtonHelper):
@@ -989,8 +994,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
             if self.permission_helper.user_can_edit_obj(user, obj):
                 url = self.url_helper.get_action_url('edit', obj.pk)
                 return format_html('<a href="{}">{}</a>', url, obj.name)
-            else:
-                return obj.name
+            return obj.name
 
         self.name_link = name_link
 
@@ -1401,3 +1405,133 @@ class ActionAdmin(AplansModelAdmin[Action]):
             heading=_('Responsible parties'),
             get_editable_roles_method='get_editable_responsible_party_roles',
         )
+
+
+@hooks.register('construct_snippet_action_menu')
+def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: HttpRequest, context: dict[str, Any]):  # noqa: C901
+    from wagtail.models import DraftStateMixin, LockableMixin, WorkflowMixin
+    from wagtail.snippets import action_menu
+
+    from actions.models.action import Action
+
+    if context['model'] != Action:
+        return
+
+    model: type[Action] = context['model']
+
+    class RestartWorkflowMenuItem(action_menu.RestartWorkflowMenuItem):
+        label = _("Resubmit for moderation")
+
+    class CancelWorkflowMenuItem(action_menu.CancelWorkflowMenuItem):
+        label = _("Cancel moderation")
+
+    class PublishMenuItem(action_menu.PublishMenuItem):
+        def is_shown(self, context) -> bool:
+            user = user_or_bust(context['request'].user)
+            instance = context['instance']
+            return (super().is_shown(context)
+                    and user.can_publish_action(instance)
+                    and not instance.workflow_in_progress)  # If a workflow is in progress, use "approve" instead
+
+    class SubmitForModerationMenuItem(action_menu.SubmitForModerationMenuItem):
+        def is_shown(self, context) -> bool:
+            if not super().is_shown(context):
+                return False
+
+            instance = context['instance']
+            workflow_state = instance.current_workflow_state if instance else None
+            in_moderation = workflow_state and workflow_state.status == workflow_state.STATUS_NEEDS_CHANGES
+
+            workflow = instance.get_workflow()
+            if workflow.tasks.count() > 1:
+                """
+                In multiple-task workflows, there needs to be a way for
+                the moderator to initiate the workflow because otherwise
+                the moderator has no way to pass the object along the
+                workflow to the next moderation task.
+
+                FIXME: optimally there would be a way for a moderator to
+                start the workflow immediately from the second task if the
+                editor hasn't initiated the first task. Now the moderator
+                has to first submit, then approve if nobody has originally
+                submitted.
+                """
+                return True
+
+            if in_moderation:
+                # Don't show "Resubmit" because then "Restart workflow" is what we probably want as it sends notifications to the
+                # reviewers again.
+                # FIXME: handle this in the multiple-task workflow case
+                return False
+
+            user = context['request'].user
+            if user.can_approve_action(instance):
+                # In one-task workflows, sending for moderation is redundant because they can publish immediately.
+                return False
+            return True
+
+    class DeleteMenuItem(action_menu.ActionMenuItem):
+        name = "action-delete"
+        label = _("Delete")
+        icon_name = "bin"
+
+        def is_shown(self, context) -> bool:
+            from wagtail.snippets.permissions import get_permission_name
+
+            delete_permission = get_permission_name("delete", context["model"])
+
+            return (
+                context["view"] == "edit"
+                and context["request"].user.has_perm(delete_permission)
+                and not context.get("locked_for_user")
+            )
+
+        def get_url(self, context) -> str | None:
+            instance = context["instance"]
+            url_name = instance.snippet_viewset.get_url_name("delete")
+            return reverse(url_name, args=[quote(instance.pk)])
+
+    for menu_item in list(menu_items):
+        if type(menu_item) not in (
+            action_menu.SaveMenuItem,
+            action_menu.PublishMenuItem,
+            action_menu.SubmitForModerationMenuItem,
+            action_menu.RestartWorkflowMenuItem,
+            action_menu.CancelWorkflowMenuItem,
+            action_menu.UnpublishMenuItem,
+        ):
+            continue
+        menu_items.remove(menu_item)
+
+    # WorkflowMenuItem instances are inserted with order 100
+    menu_items += [
+        # SaveMenuItem(order=101),  # We want "Publish" (below) or "Approve" (100) as the default action (if shown)
+        # FIXME: The previous line would cause "SaveMenuItem" to be not the first item, so the first item would
+        # probably be a workflow-related item. This causes a problem because Wagtail in `workflow-action.js`
+        # only appends hidden input elements to the form if the "more actions" dropdown is expanded. That is,
+        # the default button must not be workflow-related. Otherwise Wagtail wouldn't handle the workflow
+        # action properly. This should better be fixed in the Wagtail code, but until we find a good
+        # solution, let's just live with a suboptimal menu item order.
+        action_menu.SaveMenuItem(order=0),
+        DeleteMenuItem(order=102),
+    ]
+    if issubclass(model, DraftStateMixin):
+        menu_items += [
+            # UnpublishMenuItem(order=20),
+            # PublishMenuItem(order=30),
+            PublishMenuItem(order=5),
+        ]
+    if issubclass(model, WorkflowMixin):
+        menu_items += [
+            SubmitForModerationMenuItem(order=40),
+            RestartWorkflowMenuItem(order=50),
+            CancelWorkflowMenuItem(order=60),
+        ]
+    if issubclass(model, LockableMixin):
+        menu_items.append(action_menu.LockedMenuItem(order=10000))
+
+    for menu_item in list(menu_items):
+        if not menu_item.is_shown(context):
+            menu_items.remove(menu_item)
+    menu_items.sort(key=lambda x: x.order)
+    return
