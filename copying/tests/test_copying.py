@@ -415,21 +415,24 @@ def test_original_action_revision_is_unchanged(plan_with_pages, action, user):
     assert original_rev_obj.uuid == action.uuid
 
 
-def test_model_with_deserializable_revision_skipped_gracefully(plan_with_pages):
+def test_non_clusterable_model_revision_is_copied(plan_with_pages):
     """
-    Verify that copy_revisions skips models with incompatible revision deserialization.
+    Verify that revisions are copied for non-ClusterableModel RevisionMixin models.
 
-    RevisionMixin models whose i18n default_language_field traverses a regular ForeignKey (not ParentalKey) fail to
-    deserialize via as_object() due to a modeltrans/modelcluster incompatibility.
+    These models have i18n default_language_field that traverses a regular ForeignKey
+    (not ParentalKey), e.g., 'plan__primary_language_lowercase'.
     """
     action_status = ActionStatusFactory.create(plan=plan_with_pages, name='On time')
     action_status.save_revision()
     original_rev = action_status.latest_revision
-    # Should not crash — the revision is skipped with a warning
     plan_copy = copy_plan(plan_with_pages)
     status_copy = plan_copy.action_statuses.get(name='On time')
-    # Revision is not copied because as_object() fails for this model
-    assert status_copy.latest_revision is None
+    # Revision is copied and points to the copy's plan
+    assert status_copy.latest_revision is not None
+    assert status_copy.latest_revision != original_rev
+    rev_obj = status_copy.latest_revision.as_object()
+    assert rev_obj.pk == status_copy.pk
+    assert rev_obj.plan_id == plan_copy.pk
     # The original's revision is unchanged
     action_status.refresh_from_db()
     assert action_status.latest_revision == original_rev
