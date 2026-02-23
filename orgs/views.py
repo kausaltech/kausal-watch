@@ -44,7 +44,6 @@ class OrganizationDeleteView(BaseOrganizationDeleteView):
     pass
 
 class OrganizationIndexView(BaseOrganizationIndexView):
-
     def get_list_more_buttons(self, instance: Organization):
         assert self.view_set is not None
         user = admin_req(self.request).user

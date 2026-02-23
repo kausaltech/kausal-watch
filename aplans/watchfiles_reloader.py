@@ -22,6 +22,8 @@ class DjangoPythonFilter(watchfiles.PythonFilter):
             if dirname in dirs:
                 dirs.remove(dirname)
 
+        dirs.append('e2e-tests')
+
         self.ignore_dirs = dirs
         super().__init__(ignore_paths=ignore_paths, extra_extensions=extra_extensions)
 

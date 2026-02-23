@@ -24,6 +24,8 @@ from kausal_common.storage import storage_settings_from_s3_url
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
 
+    from kausal_common.logging.init import LogFormat
+
 
 # TODO: Rename to `watch`. But then we need to also rename the `aplans` directory and references.
 PROJECT_NAME = 'aplans'
@@ -189,8 +191,8 @@ DEPLOY_YAML_FILE_PATH = env('DEPLOY_YAML_FILE_PATH')
 WATCH_BACKEND_REGION_URLS = env('WATCH_BACKEND_REGION_URLS')
 
 def parse_redirect_hostnames(redirect_hostnames: list[str]) -> tuple[tuple[str, str], ...]:
-    return tuple(  # type: ignore[reportReturnType]
-        tuple(item.split(':', 1)) for item in redirect_hostnames if ':' in item  # type: ignore[misc]
+    return tuple(
+        cast('tuple[str, str]', tuple(item.split(':', 1))) for item in redirect_hostnames if ':' in item
     )
 
 # Hostname redirect configuration for HostnameRedirectMiddleware
@@ -206,11 +208,11 @@ def parse_redirect_hostnames(redirect_hostnames: list[str]) -> tuple[tuple[str, 
 REDIRECT_HOSTNAMES = None
 REDIRECT_UI_HOSTNAMES = None
 
-_redirect_hostnames_raw = env.list('REDIRECT_HOSTNAMES', default=[])
+_redirect_hostnames_raw = cast('list[str]', env.list('REDIRECT_HOSTNAMES', default=[]))  # pyright: ignore[reportArgumentType]
 if _redirect_hostnames_raw:
     REDIRECT_HOSTNAMES = parse_redirect_hostnames(_redirect_hostnames_raw)
 
-_redirect_ui_hostnames_raw = env.list('REDIRECT_UI_HOSTNAMES', default=[])
+_redirect_ui_hostnames_raw = env.list('REDIRECT_UI_HOSTNAMES', default=[])  # pyright: ignore[reportArgumentType]
 if _redirect_ui_hostnames_raw:
     REDIRECT_UI_HOSTNAMES = parse_redirect_hostnames(_redirect_ui_hostnames_raw)
 
@@ -360,7 +362,7 @@ STORAGES: dict[str, dict[str, Any]] = {
 if 'pytest' in sys.modules:
     STORAGES['default']['BACKEND'] = 'django.core.files.storage.InMemoryStorage'
 else:
-    media_storage_url: ParseResult = cast('ParseResult', env.url('S3_MEDIA_STORAGE_URL'))
+    media_storage_url: ParseResult = env.url('S3_MEDIA_STORAGE_URL')
     if media_storage_url.scheme:
         if media_storage_url.scheme != 's3':
             raise ImproperlyConfigured('S3_MEDIA_STORAGE_URL only supports s3 scheme')
@@ -899,7 +901,7 @@ COMMON_CATEGORIES_COLLECTION = 'Common Categories'
 local_settings = Path(BASE_DIR) / Path("local_settings.py")
 if local_settings.exists():
     import types
-    module_name = "%s.local_settings" % ROOT_URLCONF.split('.')[0]
+    module_name = "%s.local_settings" % ROOT_URLCONF.split('.', maxsplit=1)[0]
     module = types.ModuleType(module_name)
     module.__file__ = str(local_settings)
     sys.modules[module_name] = module
@@ -941,13 +943,16 @@ LOG_GRAPHQL_QUERIES = cast('bool', env('LOG_GRAPHQL_QUERIES') and DEBUG)
 # Logging
 LOGGING = None
 if env('CONFIGURE_LOGGING'):
-    from kausal_common.logging.init import LogFormat, UserLoggingOptions, init_logging_django
+    from kausal_common.logging.init import UserLoggingOptions, init_logging_django
 
-    kube_mode = cast('bool', env.bool('KUBERNETES_MODE'))
-    kube_logging = cast('bool', env.bool('KUBERNETES_LOGGING', default=False))  # pyright: ignore[reportArgumentType]
+    kube_mode = env.bool('KUBERNETES_MODE')
+    kube_logging = env.bool('KUBERNETES_LOGGING', default=False)
     enable_kube_logging = kube_mode or kube_logging
+
+    debug_or_dev_pytest = DEBUG or (('pytest' in sys.modules) and not os.getenv('CI'))
+
     log_format: LogFormat | None
-    if not enable_kube_logging and DEBUG:
+    if not enable_kube_logging and debug_or_dev_pytest:
         # If logfmt hasn't been explicitly selected and DEBUG is on, fall back to autodetection.
         log_format = None
     else:
@@ -999,6 +1004,9 @@ if DEBUG:
     MIDDLEWARE.insert(
         0, f'{PROJECT_NAME}.middleware.PrintQueryCountMiddleware',
     )
+    if env.bool('ENABLE_ZEAL', default=False):
+        MIDDLEWARE.insert(0, 'zeal.middleware.zeal_middleware')
+        INSTALLED_APPS.append('zeal')
 
 
 if env('DISABLE_WAGTAIL_EDITING_SESSION_PING'):

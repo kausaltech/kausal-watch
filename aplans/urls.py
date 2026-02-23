@@ -11,9 +11,11 @@ from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.i18n import JavaScriptCatalog
-from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.admin.views.pages import search
-from wagtail.documents import urls as wagtaildocs_urls
+from wagtail.admin import urls as wagtailadmin_urls  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+from wagtail.admin.views.pages import search  # type: ignore[attr-defined]
+from wagtail.documents import (
+    urls as wagtaildocs_urls,  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
+)
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
@@ -177,7 +179,12 @@ urlpatterns = [
 
 if settings.DEBUG:
     from django.contrib.staticfiles.views import serve as serve_static
-    urlpatterns.append(re_path(r"^static/(?P<path>.*)$", serve_static))
+    from django.db.transaction import non_atomic_requests
+
+    from asgiref.sync import sync_to_async
+    static_serve_view = non_atomic_requests(sync_to_async(serve_static))
+
+    urlpatterns.append(re_path(r"^static/(?P<path>.*)$", static_serve_view))
 
 
 if kwe_urls:

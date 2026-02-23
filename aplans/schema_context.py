@@ -245,13 +245,12 @@ class ActivatePlanContextExtension(WatchSchemaExtension):
         # scope.set_tag('plan_uuid', str(plan.uuid))
 
     @contextmanager
-    def instance_context(self, operation: OperationDefinitionNode):
+    def instance_context(self, _operation: OperationDefinitionNode):
         ctx = self.get_context()
         assert ctx.graphql_query_language is not None
         with ExitStack() as stack:
             stack.enter_context(self.activate_language(ctx.graphql_query_language))
             yield
-
 
     def on_execute(self) -> Generator[None]:
         doc = self.execution_context.graphql_document
