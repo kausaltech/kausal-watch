@@ -34,3 +34,15 @@ def get_admin_cache(request: HttpRequest) -> PlanSpecificCache:
 def get_watch_cache() -> WatchObjectCache:
     request = ctx_request.get()
     return getattr(request, 'watch_cache')  # noqa: B009
+
+
+def has_admin_cache(request: HttpRequest) -> bool:
+    return hasattr(request, 'admin_cache')
+
+
+def get_admin_cache_from_context() -> PlanSpecificCache | None:
+    if not ctx_request.is_set():
+        return None
+    request = ctx_request.get()
+    cache = getattr(request, 'admin_cache', None)
+    return cache

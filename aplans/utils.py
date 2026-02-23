@@ -8,16 +8,16 @@ import re
 import typing
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
     Protocol,
     Self,
-    Sequence,
     TypedDict,
+    TypeVar,
     cast,
 )
-from typing_extensions import TypeVar
 
 from django import forms, http
 from django.conf import settings
@@ -27,6 +27,7 @@ from django.core import checks
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import Model, QuerySet
 from django.utils.translation import get_language, gettext_lazy as _
 from modelcluster.forms import BaseChildFormSet
 from wagtail.fields import StreamField
@@ -40,10 +41,10 @@ from autoslug.fields import AutoSlugField
 from tinycss2.color3 import parse_color
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
     from datetime import datetime, timedelta
 
-    from django.db.models import Model, QuerySet
+    from django.db.models import Manager, Model
     from django.http import HttpRequest
     from django.utils.choices import _Choices
     from modeltrans.fields import TranslationField
@@ -51,11 +52,12 @@ if typing.TYPE_CHECKING:
 
     from kausal_common.users import UserOrAnon
 
-    from actions.models.plan import Plan
+    from actions.models.plan import Plan, PlanQuerySet
     from users.models import User
 
 
 logger = logging.getLogger(__name__)
+
 
 try:
     libvoikko.VoikkoLibrary.open()
@@ -79,7 +81,7 @@ def hyphenate_fi(s):
             out += t.tokenText
             continue
 
-        cached = _hyphenation_cache.get(t.tokenText, None)
+        cached = _hyphenation_cache.get(t.tokenText)
         if cached is not None:
             out += cached
         else:
@@ -164,7 +166,7 @@ class DateFormatOptions(models.TextChoices):
     MONTH_YEAR = 'MONTH_YEAR', _('Month and year (12.2020)')
     YEAR = 'YEAR', _('Year (2020)')
 
-class DateFormatField(models.CharField):
+class DateFormatField[T: str | None = str](models.CharField[T, T]):
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 16
         kwargs['choices'] = DateFormatOptions.choices
@@ -240,7 +242,7 @@ class OrderedModel(models.Model):
             return qs.aggregate(Max(self.sort_order_field))['sort_order__max'] or 0
         ```
         """
-        mgr = cast('models.Manager', getattr(type(self), 'objects'))  # noqa: B009
+        mgr = type(self)._default_manager
         qs = mgr.all()
         if not getattr(self.filter_siblings, '__isabstractmethod__', False):
             qs = self.filter_siblings(qs)
@@ -280,6 +282,18 @@ class OrderedModelChildFormSet(BaseChildFormSet):
                 form.instance.order = i
                 form.instance.save()
         return saved_instances
+
+
+class PlanRelatedModelQuerySet[M: Model](QuerySet[M]):
+    def in_plan_qs(self, plan_qs: PlanQuerySet) -> Self:
+        return self.filter(plan__in=plan_qs)
+
+    def in_plan(self, plan: Plan) -> Self:
+        return self.filter(plan=plan)
+
+    if TYPE_CHECKING:
+        @classmethod
+        def as_manager(cls) -> Manager[Any]: ...
 
 
 class PlanRelatedModel(models.Model):
@@ -502,7 +516,13 @@ class InstancesVisibleForMixin(models.Model):
         assert False, f"Unexpected value for instances_visible_for: {self.instances_visible_for}"  # noqa: B011, PT015
 
 
-class ReferenceIndexedModelMixin:
+if TYPE_CHECKING:
+    class ModelMixinBase(models.Model): ...  # noqa: DJ008
+else:
+    class ModelMixinBase: ...
+
+
+class ReferenceIndexedModelMixin(ModelMixinBase):
     def delete(self, *args, **kwargs):
         """Remove referencing StreamField blocks before deleting."""
 
@@ -515,6 +535,7 @@ class ReferenceIndexedModelMixin:
             page = model_class.objects.get(id=ref.object_id)
             if isinstance(page, Page) and isinstance(ref.source_field, StreamField):
                 stream_value = ref.source_field.value_from_object(page)
+                assert stream_value is not None
                 model_field, block_id, block_field = ref.content_path.split('.')
                 assert getattr(page, model_field) == stream_value
                 block = next(iter(b for b in stream_value if b.id == block_id))
@@ -529,7 +550,7 @@ class ReferenceIndexedModelMixin:
         super().delete(*args, **kwargs)  # type: ignore
 
 
-class ChoiceArrayField[ST](ArrayField[ST, ST]):  # pyright: ignore
+class ChoiceArrayField[ST](ArrayField[ST, ST]):
     """
     A field that allows us to store an array of choices.
 
@@ -588,7 +609,7 @@ class TranslatedModelMixin:
         if language is None:
             language = get_language()
         key = '%s_%s' % (field_name, language)
-        val = cast('dict', self.i18n).get(key)
+        val = cast('dict[str, str]', self.i18n).get(key)  # pyright: ignore[reportInvalidCast]
         if val:
             return val
         return getattr(self, field_name)
@@ -840,7 +861,7 @@ def get_hostname_redirect_response(
         return None
 
     # Log to application logs
-    logger.info(f'Redirecting hostname \'{hostname}\' to \'{url}\'')
+    logger.info(f"Redirecting hostname '{hostname}' to '{url}'")
 
     # Send to Sentry for monitoring
     sentry_sdk.capture_message(

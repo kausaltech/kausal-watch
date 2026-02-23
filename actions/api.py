@@ -24,7 +24,7 @@ from rest_framework_nested import routers
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
-from kausal_common.api.utils import RegisteredAPIView, register_view_helper
+from kausal_common.api.utils import register_view_helper
 from kausal_common.model_images import (
     ModelWithImageSerializerMixin,
     ModelWithImageViewMixin,
@@ -37,13 +37,13 @@ from aplans.permissions import AnonReadOnly, WatchObjectPermissions
 from aplans.rest_api import PlanRelatedModelSerializer, get_plan_from_view
 from aplans.utils import generate_identifier, public_fields
 
-from actions.models.action import ActionContactPerson, ActionImplementationPhase, ActionQuerySet
-from actions.models.attributes import Attribute, AttributeType, ModelWithAttributes, SetAttributeReturn
+from actions.models.action import ActionContactPerson, ActionImplementationPhase, ContactPersonDict
+from actions.models.attributes import AttributeType, ModelWithAttributes
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.utils import BulkActionModelList
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
-from people.models import Person, PersonQuerySet
+from people.models import Person
 
 from .deferred_ops import DeferredDatabaseOperationsMixin
 from .models import (
@@ -71,10 +71,15 @@ if TYPE_CHECKING:
     from rest_framework.routers import BaseRouter
     from rest_framework.views import APIView
 
+    from kausal_common.api.utils import RegisteredAPIView
+
     from aplans.types import WatchAdminRequest, WatchAPIRequest
 
     from actions.attributes import AttributeType as AttributeTypeWrapper, AttributeValue
+    from actions.models.action import ActionQuerySet
+    from actions.models.attributes import Attribute, SetAttributeReturn
     from actions.models.plan import PlanQuerySet
+    from people.models import PersonQuerySet
     from users.models import User
 
     class ModelSerializerMixin[M: Model](serializers.ModelSerializer[M]): ...
@@ -167,6 +172,8 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet[Plan]):
         if queryset is None:
             queryset = Plan.objects.get_queryset()
             assert queryset is not None
+
+        queryset = queryset.select_related('organization')
 
         if user is not None:
             return queryset.live() | queryset.filter(id__in=user.get_adminable_plans())
@@ -457,7 +464,7 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer[Person])
         return cache['persons_by_id'][pk]
 
     def set_instance_values(self, instance: Action, data: list[dict[str, Any]]):
-        instance.set_contact_persons(data)
+        instance.set_contact_persons([ContactPersonDict(person=d['person'], role=d['role']) for d in data])
 
     def get_multiple_error(self):
         return _('Person occurs multiple times as contact person')

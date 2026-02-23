@@ -8,8 +8,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.documents.models import AbstractDocument, Document as WagtailDocument
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import PlanRelatedModelWithRevision
 from kausal_common.models.types import ModelManager
+from kausal_common.models.wagtail import ignore_wagtail_reference_index
+
+from aplans.utils import PlanRelatedModelWithRevision
 
 from users.models import User
 
@@ -21,22 +23,25 @@ class AplansDocumentQuerySet(SearchableQuerySetMixin, models.QuerySet['AplansDoc
     pass
 
 
-_AplansDocumentManager = models.Manager.from_queryset(AplansDocumentQuerySet)
-class AplansDocumentManager(ModelManager['AplansDocument', AplansDocumentQuerySet], _AplansDocumentManager): ...
-del _AplansDocumentManager
+if TYPE_CHECKING:
+
+    class AplansDocumentManager(ModelManager['AplansDocument', AplansDocumentQuerySet]): ...
+else:
+    AplansDocumentManager = ModelManager.from_queryset(AplansDocumentQuerySet)
 
 
+@ignore_wagtail_reference_index(['uploaded_by_user'])
 class AplansDocument(AbstractDocument, PlanRelatedModelWithRevision):
-    admin_form_fields = WagtailDocument.admin_form_fields
     uploaded_by_user: FK[User | None] = models.ForeignKey(
         User,
-        verbose_name=_("uploaded by user"),
+        verbose_name=_('uploaded by user'),
         null=True,
         blank=True,
         editable=False,
         on_delete=models.SET_NULL,
     )
-    uploaded_by_user.wagtail_reference_index_ignore = True  # type: ignore[attr-defined]
+
+    admin_form_fields = WagtailDocument.admin_form_fields
 
     objects: ClassVar[AplansDocumentManager] = AplansDocumentManager()  # type: ignore[assignment]
 

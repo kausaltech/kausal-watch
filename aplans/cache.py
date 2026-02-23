@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 class PlanSpecificCache:
     plan: Plan
     organizations: dict[int, Organization] = field(default_factory=dict)
+    organizations_by_path: dict[str, Organization] = field(default_factory=dict)
     persons: dict[int, Person] = field(default_factory=dict)
     organization_action_count_cache: OrganizationActionCountCache | None = None
     schemas_by_model: dict[type[Model], DatasetSchemaQuerySet] = field(default_factory=dict)
@@ -166,6 +167,7 @@ class PlanSpecificCache:
         """Add the organizations from a queryset to the cache, keeping any organizations that might already be in the cache."""
         for org in list(organizations):
             self.organizations[org.pk] = org
+            self.organizations_by_path[org.path] = org
 
     def populate_persons(self, persons: PersonQuerySet) -> None:
         """Add the persons from a queryset to the cache, keeping any persons that might already be in the cache."""

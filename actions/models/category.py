@@ -483,6 +483,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     actions: RevManyToManyQS[Action, ActionCategoryThrough, ActionQuerySet]
     indicators: RevMany[Indicator]
     category_pages: RevMany[CategoryPage]
+    indicator_relationships: RevMany[IndicatorCategoryRelationship]
     parent_id: int | None
     children: RevMany[Self]
     icons: RevMany[CategoryIcon]

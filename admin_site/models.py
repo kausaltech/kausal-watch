@@ -98,7 +98,7 @@ class Client(ClusterableModel):
 
 
 class ClientPlan(OrderedModel):
-    client = ParentalKey(
+    client = ParentalKey[Client](
         Client,
         on_delete=models.CASCADE,
         null=False,

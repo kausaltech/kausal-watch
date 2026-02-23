@@ -80,12 +80,17 @@ class SingleTenantSpecificEntraAuth(AzureADAuth):
         key_id = get_unverified_header(id_token)["kid"]
 
         try:
+            from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
+
             # retrieve certificate for key_id
             certificate = self.get_certificate(key_id)
-
+            public_key = certificate.public_key()
+            assert isinstance(
+                public_key, (rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed25519.Ed25519PublicKey)
+            )
             return jwt_decode(
                 id_token,
-                key=certificate.public_key(),  # type: ignore[reportArgumentType]
+                key=public_key,
                 algorithms=["RS256"],
                 audience=settings.SINGLE_TENANT_SPECIFIC_ENTRA_KEY,
             )
@@ -103,12 +108,14 @@ class ADFSOpenIDConnectAuth(OpenIdConnectAuth):
     OIDC_ENDPOINT = settings.SOCIAL_AUTH_ADFS_OPENIDCONNECT_API_URL
 
     def user_data(self, access_token, *args, **kwargs):
-        # This method has been overridden because it is difficult to get the userinfo endpoint for ADFS working, and additionally the
-        # endpoint isn't even needed. We already get all the relevant data in the id token.
+        # This method has been overridden because it is difficult to get the userinfo endpoint for ADFS working, and
+        # additionally the endpoint isn't even needed. We already get all the relevant data in the id token.
+        assert self.id_token is not None
         return {
             'username': self.id_token['unique_name'],
             'email': self.id_token['upn'],
         }
 
     def get_user_id(self, details, response):
+        assert self.id_token is not None
         return self.id_token['sub']
