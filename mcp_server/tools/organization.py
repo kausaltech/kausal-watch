@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated
 
-from fastmcp.exceptions import ToolError
+from mcp_server.__generated__.schema import CreateOrganization, ListOrganizations, OrganizationInput
 
-from mcp_server.__generated__.schema import MCPCreateOrganization, MCPListOrganizations, OrganizationInput
-
-from .helpers import execute_operation
+from .helpers import check_operation_result, execute_operation
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
+
+    from mcp_server.__generated__.schema import OrganizationBrief
 
 
 async def list_organizations(
@@ -17,7 +17,7 @@ async def list_organizations(
     parent: Annotated[str | None, "Parent organization ID to filter children"] = None,
     depth: Annotated[int | None, "Maximum depth in organization hierarchy to return"] = None,
     contains: Annotated[str | None, "Filter organizations by name substring"] = None,
-) -> MCPListOrganizations:
+) -> ListOrganizations:
     """
     List organizations with optional filtering.
 
@@ -25,9 +25,9 @@ async def list_organizations(
     by depth to limit hierarchy traversal, or by name substring.
     """
     result = await execute_operation(
-        MCPListOrganizations,
-        MCPListOrganizations.Arguments(plan=plan, parent=parent, depth=depth, contains=contains),
-    )  # type: ignore[type-var]
+        ListOrganizations,
+        ListOrganizations.Arguments(plan=plan, parent=parent, depth=depth, contains=contains),
+    )
 
     return result
 
@@ -37,23 +37,20 @@ async def create_organization(
     abbreviation: Annotated[str | None, "Short abbreviation (e.g. 'NASA', 'YM')"] = None,
     parent_id: Annotated[str | None, "ID of the parent organization. Omit for a root organization."] = None,
     primary_language: Annotated[str, "Primary language code (ISO 639-1, e.g. 'en-US', 'fi', 'de-CH')"] = 'en-US',
-) -> MCPCreateOrganization:
+) -> OrganizationBrief:
     """
     Create a new organization.
 
     Organizations can be nested hierarchically. Use list_organizations to find parent IDs.
     """
     result = await execute_operation(
-        MCPCreateOrganization,
-        MCPCreateOrganization.Arguments(
+        CreateOrganization,
+        CreateOrganization.Arguments(
             input=OrganizationInput(name=name, abbreviation=abbreviation, parentId=parent_id, primaryLanguage=primary_language)
         ),
-    )  # type: ignore[type-var]
+    )
 
-    if result.organization is None:
-        raise ToolError("Failed to create organization")
-
-    return result
+    return check_operation_result(result.organization.create_organization)
 
 
 def register_organization_tools(mcp: FastMCP) -> None:

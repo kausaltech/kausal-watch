@@ -8,7 +8,7 @@ projects:
         options:
           allow_population_by_field_name: true
         object_bases:
-          - mcp_server.generated_base.OperationModel
+          - mcp_server.generated_base.ObjectBaseModel
         plugins: # path for plugin configuration
           - type: turms.plugins.enums.EnumsPlugin
           - type: turms.plugins.inputs.InputsPlugin
@@ -19,9 +19,14 @@ projects:
             arguments_allow_population_by_field_name: true
             arguments_bases:
               - mcp_server.generated_base.ArgumentsModel
+            query_bases:
+              - mcp_server.generated_base.QueryModel
+            mutation_bases:
+              - mcp_server.generated_base.MutationModel
           - type: turms.plugins.funcs.FuncsPlugin
         stylers:
           - type: turms.stylers.snake_case.SnakeCaseStyler
+          - type: mcp_server.turms_plugins.RenamerStyler
         # processors:
         #   - type: turms.processors.black.BlackProcessor
         #   - type: turms.processors.isort.IsortProcessor

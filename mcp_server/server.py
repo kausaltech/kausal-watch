@@ -29,9 +29,9 @@ register_user_tools(mcp)
 @mcp.resource('schema://action-fields', description='GraphQL fields available on Action type for use with query_actions')
 def get_action_fields_schema() -> str:
     """Return the Action fields from MCPGetActions as a schema reference."""
-    from mcp_server.__generated__.schema import MCPGetActions
+    from mcp_server.__generated__.schema import GetActions
 
-    return MCPGetActions.Meta.document
+    return GetActions.Meta.document
 
 
 @mcp.resource(

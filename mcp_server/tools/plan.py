@@ -5,28 +5,37 @@ from typing import TYPE_CHECKING, Annotated
 from fastmcp.exceptions import ToolError
 
 from mcp_server.__generated__.schema import (
+    AddRelatedOrganization,
     AddRelatedOrganizationInput,
-    AttributeTypeFormat,
     AttributeTypeInput,
     CategoryInput,
     CategoryTypeInput,
     ChoiceOptionInput,
-    MCPAddRelatedOrganization,
-    MCPCreateAttributeType,
-    MCPCreateCategory,
-    MCPCreateCategoryType,
-    MCPCreatePlan,
-    MCPDeletePlan,
-    MCPGetPlan,
-    MCPListPlans,
+    CreateAttributeType,
+    CreateCategory,
+    CreateCategoryType,
+    CreatePlan,
+    DeletePlan,
+    GetPlan,
+    ListPlans,
     PlanFeaturesInput,
     PlanInput,
 )
 
-from .helpers import execute_operation
+from .helpers import check_operation_result, execute_operation
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
+
+    from mcp_server.__generated__.schema import (
+        AttributeTypeDetails,
+        AttributeTypeFormat,
+        CategoryDetails,
+        CategoryTypeDetails,
+        CategoryTypeSelectWidget,
+        PlanConcise,
+        PlanDetails,
+    )
 
 
 async def list_plans() -> str:
@@ -36,7 +45,7 @@ async def list_plans() -> str:
     Returns a compact list of plans with identifier, name, and the owner organization and id.
     Use get_plan(identifier) for full details on a specific plan.
     """
-    result = await execute_operation(MCPListPlans, MCPListPlans.Arguments())  # type: ignore[type-var]
+    result = await execute_operation(ListPlans, ListPlans.Arguments())
     if result.plans is None:
         raise ToolError('No plans found')
 
@@ -55,28 +64,29 @@ async def list_plans() -> str:
 
 async def get_plan(
     identifier: Annotated[str, "The unique identifier of the plan (e.g., 'sunnydale', 'tampere-ilmasto')"],
-) -> MCPGetPlan:
+) -> PlanDetails:
     """Get detailed information about a specific action plan."""
-    result = await execute_operation(MCPGetPlan, MCPGetPlan.Arguments(identifier=identifier))  # type: ignore[type-var]
+    result = await execute_operation(GetPlan, GetPlan.Arguments(identifier=identifier))
 
     if result.plan is None:
         raise ToolError(f"Plan '{identifier}' not found")
 
-    return result
+    return result.plan
 
 
-async def create_plan(
+async def create_plan(  # noqa: PLR0913
     identifier: Annotated[str, 'Unique identifier for the plan (lowercase, dashes). Becomes part of the URL.'],
     name: Annotated[str, 'The official plan name in full form'],
     organization_id: Annotated[str, 'The ID (pk) of the owner organization'],
     primary_language: Annotated[str, "Primary language code (e.g. 'en', 'fi', 'de')"],
+    country: Annotated[str, "ISO 3166-1 country code (e.g. 'FI', 'DE', 'US')"],
     short_name: Annotated[str | None, 'A shorter version of the plan name'] = None,
     other_languages: Annotated[list[str] | None, 'Additional language codes'] = None,
     theme_identifier: Annotated[str | None, 'Theme identifier for the plan UI'] = None,
     has_action_identifiers: Annotated[bool | None, 'Whether actions have meaningful identifiers'] = None,
     has_action_official_name: Annotated[bool | None, 'Whether to use the official name field'] = None,
     has_action_primary_orgs: Annotated[bool | None, 'Whether actions have a primary organization'] = None,
-) -> MCPCreatePlan:
+) -> PlanDetails:
     """
     Create a new action plan.
 
@@ -92,8 +102,8 @@ async def create_plan(
         )
 
     result = await execute_operation(
-        MCPCreatePlan,
-        MCPCreatePlan.Arguments(
+        CreatePlan,
+        CreatePlan.Arguments(
             input=PlanInput(
                 identifier=identifier,
                 name=name,
@@ -103,11 +113,12 @@ async def create_plan(
                 otherLanguages=other_languages or [],
                 themeIdentifier=theme_identifier,
                 features=features,
+                country=country,
             )
         ),
-    )  # type: ignore[type-var]
+    )
 
-    return result
+    return check_operation_result(result.plan.create_plan)
 
 
 async def create_category_type(
@@ -116,14 +127,16 @@ async def create_category_type(
     name: Annotated[str, 'Display name of the category type'],
     usable_for_actions: Annotated[bool, 'Whether this category type can be used for actions'] = True,
     usable_for_indicators: Annotated[bool, 'Whether this category type can be used for indicators'] = False,
-    select_widget: Annotated[str | None, "Selection widget: 'single' (default) or 'multiple'"] = None,
+    select_widget: Annotated[
+        CategoryTypeSelectWidget | None, 'Can multiple categories of this type apply to a single target or just one?'
+    ] = None,
     hide_category_identifiers: Annotated[bool | None, "Set true if categories don't have meaningful identifiers"] = None,
     primary_action_classification: Annotated[
         bool,
         'Whether this category type is the primary action classification. '
         'NOTE: A Plan must have exactly one primary action classification.',
     ] = False,
-) -> MCPCreateCategoryType:
+) -> CategoryTypeDetails:
     """
     Create a new category type for a plan.
 
@@ -131,8 +144,8 @@ async def create_category_type(
     A plan can have several category types.
     """
     result = await execute_operation(
-        MCPCreateCategoryType,
-        MCPCreateCategoryType.Arguments(
+        CreateCategoryType,
+        CreateCategoryType.Arguments(
             input=CategoryTypeInput(
                 planId=plan_id,
                 identifier=identifier,
@@ -144,9 +157,9 @@ async def create_category_type(
                 primaryActionClassification=primary_action_classification,
             )
         ),
-    )  # type: ignore[type-var]
+    )
 
-    return result
+    return check_operation_result(result.plan.create_category_type)
 
 
 async def create_category(
@@ -155,15 +168,15 @@ async def create_category(
     name: Annotated[str, 'Display name of the category'],
     parent_id: Annotated[str | None, 'ID of the parent category for nested hierarchies'] = None,
     order: Annotated[int | None, 'Sort order (0-based)'] = None,
-) -> MCPCreateCategory:
+) -> CategoryDetails:
     """
     Create a new category within a category type.
 
     Categories organize actions (e.g. themes, sectors). Use get_plan to find category type IDs.
     """
     result = await execute_operation(
-        MCPCreateCategory,
-        MCPCreateCategory.Arguments(
+        CreateCategory,
+        CreateCategory.Arguments(
             input=CategoryInput(
                 typeId=type_id,
                 identifier=identifier,
@@ -172,9 +185,9 @@ async def create_category(
                 order=order,
             )
         ),
-    )  # type: ignore[type-var]
+    )
 
-    return result
+    return check_operation_result(result.plan.create_category)
 
 
 async def create_attribute_type(
@@ -193,7 +206,7 @@ async def create_attribute_type(
         "List of choice options, each with 'identifier' (str), 'name' (str),"
         " and 'order' (int). Required for choice-type formats.",
     ] = None,
-) -> MCPCreateAttributeType:
+) -> AttributeTypeDetails:
     """
     Create a new attribute type for actions in a plan.
 
@@ -208,8 +221,8 @@ async def create_attribute_type(
         ]
 
     result = await execute_operation(
-        MCPCreateAttributeType,
-        MCPCreateAttributeType.Arguments(
+        CreateAttributeType,
+        CreateAttributeType.Arguments(
             input=AttributeTypeInput(
                 planId=plan_id,
                 identifier=identifier,
@@ -220,9 +233,9 @@ async def create_attribute_type(
                 choiceOptions=options,
             )
         ),
-    )  # type: ignore[type-var]
+    )
 
-    return result
+    return check_operation_result(result.plan.create_attribute_type)
 
 
 async def delete_plan(
@@ -235,20 +248,18 @@ async def delete_plan(
     This is intended for cleaning up test plans.
     """
     result = await execute_operation(
-        MCPDeletePlan,
-        MCPDeletePlan.Arguments(id=id),
-    )  # type: ignore[type-var]
+        DeletePlan,
+        DeletePlan.Arguments(id=id),
+    )
 
-    if result.plan is None or not result.plan.delete_plan:
-        raise ToolError(f"Failed to delete plan '{id}'")
-
+    check_operation_result(result.plan.delete_plan)
     return f"Plan '{id}' deleted successfully."
 
 
 async def add_related_organization(
     plan_id: Annotated[str, 'The ID (pk) or identifier of the plan to add the organization to'],
     organization_id: Annotated[str, 'The ID of the organization to add as a related organization'],
-) -> MCPAddRelatedOrganization:
+) -> PlanConcise:
     """
     Add a related organization to a plan.
 
@@ -256,14 +267,11 @@ async def add_related_organization(
     their parent is not.
     """
     result = await execute_operation(
-        MCPAddRelatedOrganization,
-        MCPAddRelatedOrganization.Arguments(input=AddRelatedOrganizationInput(planId=plan_id, organizationId=organization_id)),
-    )  # type: ignore[type-var]
+        AddRelatedOrganization,
+        AddRelatedOrganization.Arguments(input=AddRelatedOrganizationInput(planId=plan_id, organizationId=organization_id)),
+    )
 
-    if result.plan is None:
-        raise ToolError('Failed to add related organization')
-
-    return result
+    return check_operation_result(result.plan.add_related_organization)
 
 
 def register_plan_tools(mcp: FastMCP) -> None:

@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import ConfigDict, Field
 
-from mcp_server.generated_base import ArgumentsModel, InputTypeModel, OperationModel
+from mcp_server.generated_base import ArgumentsModel, InputTypeModel, MutationModel, ObjectBaseModel, QueryModel
 
 
 class ActionContactPersonRole(StrEnum):
@@ -112,11 +112,30 @@ class AttributeTypeFormat(StrEnum):
     'Category'
 
 
+class CategoryTypeSelectWidget(StrEnum):
+    """An enumeration."""
+
+    SINGLE = 'SINGLE'
+    'Single'
+    MULTIPLE = 'MULTIPLE'
+    'Multiple'
+
+
 class Comparison(StrEnum):
     """An enumeration."""
 
     LTE = 'LTE'
     GT = 'GT'
+
+
+class OperationMessageKind(StrEnum):
+    """No documentation."""
+
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+    PERMISSION = 'PERMISSION'
+    VALIDATION = 'VALIDATION'
 
 
 class PlanFeaturesContactPersonsPublicData(StrEnum):
@@ -165,9 +184,9 @@ class AddRelatedOrganizationInput(InputTypeModel):
     """No documentation."""
 
     plan_id: str = Field(alias='planId')
-    'The pk or identifier of the plan.'
+    'The PK or identifier of the plan'
     organization_id: str = Field(alias='organizationId')
-    'The pk of the organization.'
+    'The PK of the organization'
 
 
 class AttributeTypeInput(InputTypeModel):
@@ -177,7 +196,7 @@ class AttributeTypeInput(InputTypeModel):
     identifier: str
     name: str
     format: AttributeTypeFormat
-    'The format of the attributes with this type.'
+    'The format of the attributes with this type'
     help_text: str | None = Field(alias='helpText', default=None)
     unit_id: str | None = Field(alias='unitId', default=None)
     choice_options: list['ChoiceOptionInput'] | None = Field(alias='choiceOptions', default=None)
@@ -204,10 +223,12 @@ class CategoryTypeInput(InputTypeModel):
     plan_id: str = Field(alias='planId')
     identifier: str
     name: str
-    select_widget: str | None = Field(alias='selectWidget', default=None)
+    select_widget: CategoryTypeSelectWidget | None = Field(alias='selectWidget', default=None)
     'Choose "Multiple" only if more than one category can be selected at a time, otherwise choose "Single" which is the default.'
     usable_for_actions: bool | None = Field(alias='usableForActions', default=None)
     usable_for_indicators: bool | None = Field(alias='usableForIndicators', default=None)
+    synchronize_with_pages: bool | None = Field(alias='synchronizeWithPages', default=None)
+    'Should a content page hierarchy be automatically generated for the categories. If not set, defaults to the value of `primaryActionClassification`.'
     hide_category_identifiers: bool | None = Field(alias='hideCategoryIdentifiers', default=None)
     'Set if the categories do not have meaningful identifiers'
     primary_action_classification: bool = Field(alias='primaryActionClassification')
@@ -226,11 +247,11 @@ class OrganizationInput(InputTypeModel):
     """No documentation."""
 
     name: str
-    'The official name of the organization.'
+    'The official name of the organization'
     abbreviation: str | None = None
-    'Short abbreviation (e.g. "NASA", "YM").'
+    'Short abbreviation (e.g. "NASA", "YM")'
     parent_id: str | None = Field(alias='parentId', default=None)
-    'ID of the parent organization. Omit for a root organization.'
+    'ID of the parent organization; omit for a root organization'
     primary_language: str = Field(alias='primaryLanguage')
     'Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH").'
 
@@ -261,47 +282,48 @@ class PlanInput(InputTypeModel):
     'A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes.'
     organization_id: str = Field(alias='organizationId')
     'The main organization for the plan'
-    primary_language: str = Field(alias='primaryLanguage')
-    'Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH").'
     short_name: str | None = Field(alias='shortName', default=None)
     'A shorter version of the plan name'
+    country: str
+    'ISO 3166-1 country code (e.g. FI, DE, US)'
+    primary_language: str = Field(alias='primaryLanguage')
+    'Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH")'
     other_languages: list[str] = Field(alias='otherLanguages')
-    'Additional language codes (ISO 639-1).'
+    'Additional language codes (ISO 639-1)'
     theme_identifier: str | None = Field(alias='themeIdentifier', default=None)
     features: PlanFeaturesInput | None = None
 
 
-class MCPUserDetailsMe(OperationModel):
-    """A user of the system."""
+class OpInfoMessages(ObjectBaseModel):
+    """No documentation."""
 
-    typename: Literal['User'] = Field(alias='__typename', default='User')
-    id: str
-    uuid: str
-    email: str
-    first_name: str = Field(alias='firstName')
-    last_name: str = Field(alias='lastName')
-    is_superuser: bool = Field(alias='isSuperuser')
-    'Designates that this user has all permissions without explicitly assigning them.'
+    typename: Literal['OperationMessage'] = Field(alias='__typename', default='OperationMessage')
+    kind: OperationMessageKind
+    'The kind of this message.'
+    message: str
+    'The error message.'
+    field: str | None = Field(default=None)
+    "The field that caused the error, or `null` if it isn't associated with any particular field."
+    code: str | None = Field(default=None)
+    'The error code, or `null` if no error code was set.'
 
 
-class MCPUserDetails(OperationModel):
-    """No documentation found for this operation."""
+class OpInfo(ObjectBaseModel):
+    """No documentation."""
 
-    me: MCPUserDetailsMe | None = Field(default=None)
-    'The current user'
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPUserDetails."""
-
-        model_config = ConfigDict(populate_by_name=True)
+    typename: Literal['OperationInfo'] = Field(alias='__typename', default='OperationInfo')
+    messages: list[OpInfoMessages]
+    'List of messages returned by the operation.'
 
     class Meta:
-        """Meta class for MCPUserDetails."""
+        """Meta class for OpInfo."""
 
-        document = 'query MCPUserDetails {\n  me {\n    id\n    uuid\n    email\n    firstName\n    lastName\n    isSuperuser\n    __typename\n  }\n}'
+        document = 'fragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}'
+        name = 'OpInfo'
+        type = 'OperationInfo'
 
 
-class MCPListPlansPlansOrganization(OperationModel):
+class PlanConciseOrganization(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
@@ -310,7 +332,7 @@ class MCPListPlansPlansOrganization(OperationModel):
     'Full name of the organization'
 
 
-class MCPListPlansPlans(OperationModel):
+class PlanConcise(ObjectBaseModel):
     """
     The Action Plan under monitoring.
 
@@ -331,158 +353,18 @@ class MCPListPlansPlans(OperationModel):
     other_languages: list[str] = Field(alias='otherLanguages')
     published_at: datetime | None = Field(default=None, alias='publishedAt')
     view_url: str | None = Field(default=None, alias='viewUrl')
-    organization: MCPListPlansPlansOrganization
+    organization: PlanConciseOrganization
     'The main organization for the plan'
 
-
-class MCPListPlans(OperationModel):
-    """No documentation found for this operation."""
-
-    plans: list[MCPListPlansPlans] | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPListPlans."""
-
-        model_config = ConfigDict(populate_by_name=True)
-
     class Meta:
-        """Meta class for MCPListPlans."""
+        """Meta class for PlanConcise."""
 
-        document = 'query MCPListPlans {\n  plans {\n    id\n    identifier\n    name\n    shortName\n    versionName\n    primaryLanguage\n    otherLanguages\n    publishedAt\n    viewUrl\n    organization {\n      id\n      name\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPListActionsPlanactionsStatus(OperationModel):
-    """The current status for the action ("on time", "late", "completed", etc.)."""
-
-    typename: Literal['ActionStatus'] = Field(alias='__typename', default='ActionStatus')
-    id: str
-    identifier: str
-    name: str
-    is_completed: bool = Field(alias='isCompleted')
+        document = 'fragment PlanConcise on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  organization {\n    id\n    name\n    __typename\n  }\n  __typename\n}'
+        name = 'PlanConcise'
+        type = 'Plan'
 
 
-class MCPListActionsPlanactionsImplementationphase(OperationModel):
-    """No documentation."""
-
-    typename: Literal['ActionImplementationPhase'] = Field(alias='__typename', default='ActionImplementationPhase')
-    id: str
-    identifier: str
-    name: str
-
-
-class MCPListActionsPlanactionsStatussummary(OperationModel):
-    """No documentation."""
-
-    typename: Literal['ActionStatusSummary'] = Field(alias='__typename', default='ActionStatusSummary')
-    identifier: ActionStatusSummaryIdentifier
-    label: str
-    sentiment: Sentiment
-    is_active: bool = Field(alias='isActive')
-    is_completed: bool = Field(alias='isCompleted')
-
-
-class MCPListActionsPlanactionsResponsiblepartiesOrganization(OperationModel):
-    """No documentation."""
-
-    typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
-    id: str
-    name: str
-    'Full name of the organization'
-    abbreviation: str | None = Field(default=None)
-    'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
-
-
-class MCPListActionsPlanactionsResponsibleparties(OperationModel):
-    """No documentation."""
-
-    typename: Literal['ActionResponsibleParty'] = Field(alias='__typename', default='ActionResponsibleParty')
-    id: str
-    organization: MCPListActionsPlanactionsResponsiblepartiesOrganization
-
-
-class MCPListActionsPlanactionsPrimaryorg(OperationModel):
-    """No documentation."""
-
-    typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
-    id: str
-    name: str
-    'Full name of the organization'
-    abbreviation: str | None = Field(default=None)
-    'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
-
-
-class MCPListActionsPlanactionsCategoriesType(OperationModel):
-    """
-    Type of the categories.
-
-    Is used to group categories together. One action plan can have several
-    category types.
-    """
-
-    typename: Literal['CategoryType'] = Field(alias='__typename', default='CategoryType')
-    id: str
-    identifier: str
-    name: str
-
-
-class MCPListActionsPlanactionsCategories(OperationModel):
-    """A category for actions and indicators."""
-
-    typename: Literal['Category'] = Field(alias='__typename', default='Category')
-    id: str
-    identifier: str
-    name: str
-    type: MCPListActionsPlanactionsCategoriesType
-
-
-class MCPListActionsPlanactions(OperationModel):
-    """One action/measure tracked in an action plan."""
-
-    typename: Literal['Action'] = Field(alias='__typename', default='Action')
-    id: str
-    identifier: str
-    'The identifier for this action (e.g. number)'
-    name: str
-    official_name: str | None = Field(default=None, alias='officialName')
-    'The name as approved by an official party'
-    completion: int | None = Field(default=None)
-    'The completion percentage for this action'
-    schedule_continuous: bool = Field(alias='scheduleContinuous')
-    'Set if the action does not have a start or an end date'
-    start_date: str | None = Field(default=None, alias='startDate')
-    'The date when implementation of this action starts'
-    end_date: str | None = Field(default=None, alias='endDate')
-    'The date when implementation of this action ends'
-    updated_at: datetime = Field(alias='updatedAt')
-    status: MCPListActionsPlanactionsStatus | None = Field(default=None)
-    implementation_phase: MCPListActionsPlanactionsImplementationphase | None = Field(default=None, alias='implementationPhase')
-    status_summary: MCPListActionsPlanactionsStatussummary = Field(alias='statusSummary')
-    responsible_parties: list[MCPListActionsPlanactionsResponsibleparties] = Field(alias='responsibleParties')
-    primary_org: MCPListActionsPlanactionsPrimaryorg | None = Field(default=None, alias='primaryOrg')
-    categories: list[MCPListActionsPlanactionsCategories]
-
-
-class MCPListActions(OperationModel):
-    """No documentation found for this operation."""
-
-    plan_actions: list[MCPListActionsPlanactions] | None = Field(default=None, alias='planActions')
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPListActions."""
-
-        plan: str
-        category: str | None = Field(default=None)
-        first: int | None = Field(default=None)
-        order_by: str | None = Field(alias='orderBy', default=None)
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPListActions."""
-
-        document = 'query MCPListActions($plan: ID!, $category: ID, $first: Int, $orderBy: String) @context(input: {identifier: $plan}) {\n  planActions(plan: $plan, category: $category, first: $first, orderBy: $orderBy) {\n    id\n    identifier\n    name\n    officialName\n    completion\n    scheduleContinuous\n    startDate\n    endDate\n    updatedAt\n    status {\n      id\n      identifier\n      name\n      isCompleted\n      __typename\n    }\n    implementationPhase {\n      id\n      identifier\n      name\n      __typename\n    }\n    statusSummary {\n      identifier\n      label\n      sentiment\n      isActive\n      isCompleted\n      __typename\n    }\n    responsibleParties {\n      id\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    primaryOrg {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    categories {\n      id\n      identifier\n      name\n      type {\n        id\n        identifier\n        name\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPGetPlanPlanFeatures(OperationModel):
+class PlanDetailsFeatures(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['PlanFeatures'] = Field(alias='__typename', default='PlanFeatures')
@@ -505,7 +387,7 @@ class MCPGetPlanPlanFeatures(OperationModel):
     'Choose which information about contact persons is visible in the public UI'
 
 
-class MCPGetPlanPlanCategorytypes(OperationModel):
+class PlanDetailsCategorytypes(ObjectBaseModel):
     """
     Type of the categories.
 
@@ -521,7 +403,7 @@ class MCPGetPlanPlanCategorytypes(OperationModel):
     usable_for_indicators: bool = Field(alias='usableForIndicators')
 
 
-class MCPGetPlanPlanActionstatussummaries(OperationModel):
+class PlanDetailsActionstatussummaries(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionStatusSummary'] = Field(alias='__typename', default='ActionStatusSummary')
@@ -532,7 +414,7 @@ class MCPGetPlanPlanActionstatussummaries(OperationModel):
     sentiment: Sentiment
 
 
-class MCPGetPlanPlanActionattributetypesUnit(OperationModel):
+class PlanDetailsActionattributetypesUnit(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Unit'] = Field(alias='__typename', default='Unit')
@@ -540,7 +422,7 @@ class MCPGetPlanPlanActionattributetypesUnit(OperationModel):
     short_name: str | None = Field(default=None, alias='shortName')
 
 
-class MCPGetPlanPlanActionattributetypesChoiceoptions(OperationModel):
+class PlanDetailsActionattributetypesChoiceoptions(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeTypeChoiceOption'] = Field(alias='__typename', default='AttributeTypeChoiceOption')
@@ -549,7 +431,7 @@ class MCPGetPlanPlanActionattributetypesChoiceoptions(OperationModel):
     name: str
 
 
-class MCPGetPlanPlanActionattributetypes(OperationModel):
+class PlanDetailsActionattributetypes(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeType'] = Field(alias='__typename', default='AttributeType')
@@ -557,11 +439,11 @@ class MCPGetPlanPlanActionattributetypes(OperationModel):
     identifier: str
     name: str
     format: AttributeTypeFormat
-    unit: MCPGetPlanPlanActionattributetypesUnit | None = Field(default=None)
-    choice_options: list[MCPGetPlanPlanActionattributetypesChoiceoptions] = Field(alias='choiceOptions')
+    unit: PlanDetailsActionattributetypesUnit | None = Field(default=None)
+    choice_options: list[PlanDetailsActionattributetypesChoiceoptions] = Field(alias='choiceOptions')
 
 
-class MCPGetPlanPlan(OperationModel):
+class PlanDetails(ObjectBaseModel):
     """
     The Action Plan under monitoring.
 
@@ -585,37 +467,27 @@ class MCPGetPlanPlan(OperationModel):
     accessibility_statement_url: str | None = Field(default=None, alias='accessibilityStatementUrl')
     external_feedback_url: str | None = Field(default=None, alias='externalFeedbackUrl')
     "If not empty, the system's built-in user feedback feature will be replaced by a link to an external feedback form available at this web address."
-    features: MCPGetPlanPlanFeatures
-    category_types: list[MCPGetPlanPlanCategorytypes] = Field(alias='categoryTypes')
-    action_status_summaries: list[MCPGetPlanPlanActionstatussummaries] = Field(alias='actionStatusSummaries')
-    action_attribute_types: list[MCPGetPlanPlanActionattributetypes] = Field(alias='actionAttributeTypes')
-
-
-class MCPGetPlan(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPGetPlanPlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPGetPlan."""
-
-        identifier: str
-        model_config = ConfigDict(populate_by_name=True)
+    features: PlanDetailsFeatures
+    category_types: list[PlanDetailsCategorytypes] = Field(alias='categoryTypes')
+    action_status_summaries: list[PlanDetailsActionstatussummaries] = Field(alias='actionStatusSummaries')
+    action_attribute_types: list[PlanDetailsActionattributetypes] = Field(alias='actionAttributeTypes')
 
     class Meta:
-        """Meta class for MCPGetPlan."""
+        """Meta class for PlanDetails."""
 
-        document = 'query MCPGetPlan($identifier: ID!) @context(input: {identifier: $identifier}) {\n  plan(id: $identifier) {\n    id\n    identifier\n    name\n    shortName\n    versionName\n    primaryLanguage\n    otherLanguages\n    publishedAt\n    viewUrl\n    accessibilityStatementUrl\n    externalFeedbackUrl\n    features {\n      publicContactPersons\n      hasActionIdentifiers\n      hasActionOfficialName\n      hasActionLeadParagraph\n      hasActionPrimaryOrgs\n      enableSearch\n      enableIndicatorComparison\n      minimalStatuses\n      contactPersonsPublicData\n      __typename\n    }\n    categoryTypes {\n      id\n      identifier\n      name\n      usableForActions\n      usableForIndicators\n      __typename\n    }\n    actionStatusSummaries {\n      identifier\n      label\n      isActive\n      isCompleted\n      sentiment\n      __typename\n    }\n    actionAttributeTypes {\n      id\n      identifier\n      name\n      format\n      unit {\n        id\n        shortName\n        __typename\n      }\n      choiceOptions {\n        id\n        identifier\n        name\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
+        document = 'fragment PlanDetails on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  accessibilityStatementUrl\n  externalFeedbackUrl\n  features {\n    publicContactPersons\n    hasActionIdentifiers\n    hasActionOfficialName\n    hasActionLeadParagraph\n    hasActionPrimaryOrgs\n    enableSearch\n    enableIndicatorComparison\n    minimalStatuses\n    contactPersonsPublicData\n    __typename\n  }\n  categoryTypes {\n    id\n    identifier\n    name\n    usableForActions\n    usableForIndicators\n    __typename\n  }\n  actionStatusSummaries {\n    identifier\n    label\n    isActive\n    isCompleted\n    sentiment\n    __typename\n  }\n  actionAttributeTypes {\n    id\n    identifier\n    name\n    format\n    unit {\n      id\n      shortName\n      __typename\n    }\n    choiceOptions {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  __typename\n}'
+        name = 'PlanDetails'
+        type = 'Plan'
 
 
-class MCPListOrganizationsAdminOrganizationsParent(OperationModel):
+class OrganizationBriefParent(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
     id: str
 
 
-class MCPListOrganizationsAdminOrganizations(OperationModel):
+class OrganizationBrief(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
@@ -624,425 +496,63 @@ class MCPListOrganizationsAdminOrganizations(OperationModel):
     'Full name of the organization'
     abbreviation: str | None = Field(default=None)
     'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
-    parent: MCPListOrganizationsAdminOrganizationsParent | None = Field(default=None)
-
-
-class MCPListOrganizationsAdmin(OperationModel):
-    """No documentation."""
-
-    typename: Literal['AdminQuery'] = Field(alias='__typename', default='AdminQuery')
-    organizations: list[MCPListOrganizationsAdminOrganizations]
-    'List of all organizations'
-
-
-class MCPListOrganizations(OperationModel):
-    """No documentation found for this operation."""
-
-    admin: MCPListOrganizationsAdmin
-    'Admin query namespace'
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPListOrganizations."""
-
-        plan: str | None = Field(default=None)
-        parent: str | None = Field(default=None)
-        depth: int | None = Field(default=None)
-        contains: str | None = Field(default=None)
-        model_config = ConfigDict(populate_by_name=True)
+    parent: OrganizationBriefParent | None = Field(default=None)
 
     class Meta:
-        """Meta class for MCPListOrganizations."""
+        """Meta class for OrganizationBrief."""
 
-        document = 'query MCPListOrganizations($plan: ID, $parent: ID, $depth: Int, $contains: String) {\n  admin {\n    organizations(plan: $plan, parent: $parent, depth: $depth, contains: $contains) {\n      id\n      name\n      abbreviation\n      parent {\n        id\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPCreateOrganizationOrganizationCreateorganizationParent(OperationModel):
-    """No documentation."""
-
-    typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
-    id: str
+        document = 'fragment OrganizationBrief on Organization {\n  id\n  name\n  abbreviation\n  parent {\n    id\n    __typename\n  }\n  __typename\n}'
+        name = 'OrganizationBrief'
+        type = 'Organization'
 
 
-class MCPCreateOrganizationOrganizationCreateorganization(OperationModel):
-    """No documentation."""
-
-    typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
-    id: str
-    name: str
-    'Full name of the organization'
-    abbreviation: str | None = Field(default=None)
-    'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
-    parent: MCPCreateOrganizationOrganizationCreateorganizationParent | None = Field(default=None)
-
-
-class MCPCreateOrganizationOrganization(OperationModel):
-    """No documentation."""
-
-    typename: Literal['OrganizationMutations'] = Field(alias='__typename', default='OrganizationMutations')
-    create_organization: MCPCreateOrganizationOrganizationCreateorganization = Field(alias='createOrganization')
-    'Create a new organization'
-
-
-class MCPCreateOrganization(OperationModel):
-    """No documentation found for this operation."""
-
-    organization: MCPCreateOrganizationOrganization | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreateOrganization."""
-
-        input: OrganizationInput
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPCreateOrganization."""
-
-        document = 'mutation MCPCreateOrganization($input: OrganizationInput!) {\n  organization {\n    createOrganization(input: $input) {\n      id\n      name\n      abbreviation\n      parent {\n        id\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPCreatePlanPlanCreateplan(OperationModel):
+class CategoryLevelDetails(ObjectBaseModel):
     """
-    The Action Plan under monitoring.
+    Hierarchy level within a CategoryType.
 
-    Most information in this service is linked to a Plan.
+    Root level has order=0, first child level order=1 and so on.
     """
 
-    typename: Literal['Plan'] = Field(alias='__typename', default='Plan')
-    id: str
-    identifier: str
-    'A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes.'
-    name: str
-    'The official plan name in full form'
-    short_name: str | None = Field(default=None, alias='shortName')
-    'A shorter version of the plan name'
-    version_name: str = Field(alias='versionName')
-    'If this plan has multiple versions, name of this version'
-    primary_language: str = Field(alias='primaryLanguage')
-    other_languages: list[str] = Field(alias='otherLanguages')
-
-
-class MCPCreatePlanPlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    create_plan: MCPCreatePlanPlanCreateplan = Field(alias='createPlan')
-    'Create a new plan. Returns the newly created plan.'
-
-
-class MCPCreatePlan(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPCreatePlanPlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreatePlan."""
-
-        input: PlanInput
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPCreatePlan."""
-
-        document = 'mutation MCPCreatePlan($input: PlanInput!) {\n  plan {\n    createPlan(input: $input) {\n      id\n      identifier\n      name\n      shortName\n      versionName\n      primaryLanguage\n      otherLanguages\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPAddRelatedOrganizationPlanAddrelatedorganization(OperationModel):
-    """
-    The Action Plan under monitoring.
-
-    Most information in this service is linked to a Plan.
-    """
-
-    typename: Literal['Plan'] = Field(alias='__typename', default='Plan')
-    id: str
-    identifier: str
-    'A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes.'
-    name: str
-    'The official plan name in full form'
-
-
-class MCPAddRelatedOrganizationPlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    add_related_organization: MCPAddRelatedOrganizationPlanAddrelatedorganization = Field(alias='addRelatedOrganization')
-    'Add a related organization to a plan'
-
-
-class MCPAddRelatedOrganization(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPAddRelatedOrganizationPlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPAddRelatedOrganization."""
-
-        input: AddRelatedOrganizationInput
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPAddRelatedOrganization."""
-
-        document = 'mutation MCPAddRelatedOrganization($input: AddRelatedOrganizationInput!) {\n  plan {\n    addRelatedOrganization(input: $input) {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPDeletePlanPlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    delete_plan: bool = Field(alias='deletePlan')
-    'Delete a recently created plan (must be < 2 days old)'
-
-
-class MCPDeletePlan(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPDeletePlanPlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPDeletePlan."""
-
-        id: str
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPDeletePlan."""
-
-        document = 'mutation MCPDeletePlan($id: ID!) {\n  plan {\n    deletePlan(id: $id)\n    __typename\n  }\n}'
-
-
-class MCPCreateActionActionCreateactionPrimaryorg(OperationModel):
-    """No documentation."""
-
-    typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
+    typename: Literal['CategoryLevel'] = Field(alias='__typename', default='CategoryLevel')
     id: str
     name: str
-    'Full name of the organization'
-
-
-class MCPCreateActionActionCreateactionCategoriesType(OperationModel):
-    """
-    Type of the categories.
-
-    Is used to group categories together. One action plan can have several
-    category types.
-    """
-
-    typename: Literal['CategoryType'] = Field(alias='__typename', default='CategoryType')
-    identifier: str
-
-
-class MCPCreateActionActionCreateactionCategories(OperationModel):
-    """A category for actions and indicators."""
-
-    typename: Literal['Category'] = Field(alias='__typename', default='Category')
-    id: str
-    identifier: str
-    name: str
-    type: MCPCreateActionActionCreateactionCategoriesType
-
-
-class MCPCreateActionActionCreateactionAttributesType(OperationModel):
-    """No documentation."""
-
-    typename: Literal['AttributeType'] = Field(alias='__typename', default='AttributeType')
-    identifier: str
-
-
-class MCPCreateActionActionCreateactionAttributesChoice(OperationModel):
-    """No documentation."""
-
-    typename: Literal['AttributeTypeChoiceOption'] = Field(alias='__typename', default='AttributeTypeChoiceOption')
-    identifier: str
-    name: str
-
-
-class MCPCreateActionActionCreateactionAttributesBase(OperationModel):
-    """No documentation."""
-
-
-class MCPCreateActionActionCreateactionAttributesBaseAttributeCategoryChoice(
-    MCPCreateActionActionCreateactionAttributesBase, OperationModel
-):
-    """No documentation."""
-
-    typename: Literal['AttributeCategoryChoice'] = Field(alias='__typename', default='AttributeCategoryChoice')
-
-
-class MCPCreateActionActionCreateactionAttributesBaseAttributeChoice(
-    MCPCreateActionActionCreateactionAttributesBase, OperationModel
-):
-    """No documentation."""
-
-    typename: Literal['AttributeChoice'] = Field(alias='__typename', default='AttributeChoice')
-    type: MCPCreateActionActionCreateactionAttributesType
-    choice: MCPCreateActionActionCreateactionAttributesChoice | None = Field(default=None)
-
-
-class MCPCreateActionActionCreateactionAttributesBaseAttributeNumericValue(
-    MCPCreateActionActionCreateactionAttributesBase, OperationModel
-):
-    """No documentation."""
-
-    typename: Literal['AttributeNumericValue'] = Field(alias='__typename', default='AttributeNumericValue')
-
-
-class MCPCreateActionActionCreateactionAttributesBaseAttributeRichText(
-    MCPCreateActionActionCreateactionAttributesBase, OperationModel
-):
-    """No documentation."""
-
-    typename: Literal['AttributeRichText'] = Field(alias='__typename', default='AttributeRichText')
-
-
-class MCPCreateActionActionCreateactionAttributesBaseAttributeText(
-    MCPCreateActionActionCreateactionAttributesBase, OperationModel
-):
-    """No documentation."""
-
-    typename: Literal['AttributeText'] = Field(alias='__typename', default='AttributeText')
-
-
-class MCPCreateActionActionCreateactionAttributesBaseCatchAll(MCPCreateActionActionCreateactionAttributesBase, OperationModel):
-    """Catch all class for MCPCreateActionActionCreateactionAttributesBase."""
-
-    typename: str = Field(alias='__typename')
-
-
-class MCPCreateActionActionCreateaction(OperationModel):
-    """One action/measure tracked in an action plan."""
-
-    typename: Literal['Action'] = Field(alias='__typename', default='Action')
-    id: str
-    identifier: str
-    'The identifier for this action (e.g. number)'
-    name: str
-    description: str | None = Field(default=None)
-    'What does this action involve in more detail?'
-    primary_org: MCPCreateActionActionCreateactionPrimaryorg | None = Field(default=None, alias='primaryOrg')
-    categories: list[MCPCreateActionActionCreateactionCategories]
-    attributes: list[
-        Annotated[
-            MCPCreateActionActionCreateactionAttributesBaseAttributeCategoryChoice
-            | MCPCreateActionActionCreateactionAttributesBaseAttributeChoice
-            | MCPCreateActionActionCreateactionAttributesBaseAttributeNumericValue
-            | MCPCreateActionActionCreateactionAttributesBaseAttributeRichText
-            | MCPCreateActionActionCreateactionAttributesBaseAttributeText,
-            Field(discriminator='typename'),
-        ]
-        | MCPCreateActionActionCreateactionAttributesBaseCatchAll
-    ]
-
-
-class MCPCreateActionAction(OperationModel):
-    """No documentation."""
-
-    typename: Literal['ActionMutations'] = Field(alias='__typename', default='ActionMutations')
-    create_action: MCPCreateActionActionCreateaction = Field(alias='createAction')
-
-
-class MCPCreateAction(OperationModel):
-    """No documentation found for this operation."""
-
-    action: MCPCreateActionAction | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreateAction."""
-
-        input: ActionInput
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPCreateAction."""
-
-        document = 'mutation MCPCreateAction($input: ActionInput!) {\n  action {\n    createAction(input: $input) {\n      id\n      identifier\n      name\n      description\n      primaryOrg {\n        id\n        name\n        __typename\n      }\n      categories {\n        id\n        identifier\n        name\n        type {\n          identifier\n          __typename\n        }\n        __typename\n      }\n      attributes {\n        ... on AttributeChoice {\n          type {\n            identifier\n          }\n          choice {\n            identifier\n            name\n          }\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPCreateCategoryTypePlanCreatecategorytype(OperationModel):
-    """
-    Type of the categories.
-
-    Is used to group categories together. One action plan can have several
-    category types.
-    """
-
-    typename: Literal['CategoryType'] = Field(alias='__typename', default='CategoryType')
-    id: str
-    identifier: str
-    name: str
-    usable_for_actions: bool = Field(alias='usableForActions')
-    usable_for_indicators: bool = Field(alias='usableForIndicators')
-
-
-class MCPCreateCategoryTypePlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    create_category_type: MCPCreateCategoryTypePlanCreatecategorytype = Field(alias='createCategoryType')
-    'Create a new category type. Returns the newly created category type.'
-
-
-class MCPCreateCategoryType(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPCreateCategoryTypePlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreateCategoryType."""
-
-        input: CategoryTypeInput
-        model_config = ConfigDict(populate_by_name=True)
-
-    class Meta:
-        """Meta class for MCPCreateCategoryType."""
-
-        document = 'mutation MCPCreateCategoryType($input: CategoryTypeInput!) {\n  plan {\n    createCategoryType(input: $input) {\n      id\n      identifier\n      name\n      usableForActions\n      usableForIndicators\n      __typename\n    }\n    __typename\n  }\n}'
-
-
-class MCPCreateCategoryPlanCreatecategoryParent(OperationModel):
-    """A category for actions and indicators."""
-
-    typename: Literal['Category'] = Field(alias='__typename', default='Category')
-    id: str
-
-
-class MCPCreateCategoryPlanCreatecategory(OperationModel):
-    """A category for actions and indicators."""
-
-    typename: Literal['Category'] = Field(alias='__typename', default='Category')
-    id: str
-    identifier: str
-    name: str
-    parent: MCPCreateCategoryPlanCreatecategoryParent | None = Field(default=None)
+    name_plural: str | None = Field(default=None, alias='namePlural')
     order: int
 
+    class Meta:
+        """Meta class for CategoryLevelDetails."""
 
-class MCPCreateCategoryPlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    create_category: MCPCreateCategoryPlanCreatecategory = Field(alias='createCategory')
-    'Create a new category. Returns the newly created category.'
+        document = 'fragment CategoryLevelDetails on CategoryLevel {\n  id\n  name\n  namePlural\n  order\n  __typename\n}'
+        name = 'CategoryLevelDetails'
+        type = 'CategoryLevel'
 
 
-class MCPCreateCategory(OperationModel):
-    """No documentation found for this operation."""
+class CategoryDetailsParent(ObjectBaseModel):
+    """A category for actions and indicators."""
 
-    plan: MCPCreateCategoryPlan | None = Field(default=None)
+    typename: Literal['Category'] = Field(alias='__typename', default='Category')
+    id: str
 
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreateCategory."""
 
-        input: CategoryInput
-        model_config = ConfigDict(populate_by_name=True)
+class CategoryDetails(ObjectBaseModel):
+    """A category for actions and indicators."""
+
+    typename: Literal['Category'] = Field(alias='__typename', default='Category')
+    id: str
+    identifier: str
+    name: str
+    parent: CategoryDetailsParent | None = Field(default=None)
+    order: int
 
     class Meta:
-        """Meta class for MCPCreateCategory."""
+        """Meta class for CategoryDetails."""
 
-        document = 'mutation MCPCreateCategory($input: CategoryInput!) {\n  plan {\n    createCategory(input: $input) {\n      id\n      identifier\n      name\n      parent {\n        id\n        __typename\n      }\n      order\n      __typename\n    }\n    __typename\n  }\n}'
+        document = 'fragment CategoryDetails on Category {\n  id\n  identifier\n  name\n  parent {\n    id\n    __typename\n  }\n  order\n  __typename\n}'
+        name = 'CategoryDetails'
+        type = 'Category'
 
 
-class MCPCreateAttributeTypePlanCreateattributetypeUnit(OperationModel):
+class AttributeTypeDetailsUnit(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Unit'] = Field(alias='__typename', default='Unit')
@@ -1050,7 +560,7 @@ class MCPCreateAttributeTypePlanCreateattributetypeUnit(OperationModel):
     short_name: str | None = Field(default=None, alias='shortName')
 
 
-class MCPCreateAttributeTypePlanCreateattributetypeChoiceoptions(OperationModel):
+class AttributeTypeDetailsChoiceoptions(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeTypeChoiceOption'] = Field(alias='__typename', default='AttributeTypeChoiceOption')
@@ -1059,7 +569,7 @@ class MCPCreateAttributeTypePlanCreateattributetypeChoiceoptions(OperationModel)
     name: str
 
 
-class MCPCreateAttributeTypePlanCreateattributetype(OperationModel):
+class AttributeTypeDetails(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeType'] = Field(alias='__typename', default='AttributeType')
@@ -1068,35 +578,18 @@ class MCPCreateAttributeTypePlanCreateattributetype(OperationModel):
     name: str
     format: AttributeTypeFormat
     help_text: str = Field(alias='helpText')
-    unit: MCPCreateAttributeTypePlanCreateattributetypeUnit | None = Field(default=None)
-    choice_options: list[MCPCreateAttributeTypePlanCreateattributetypeChoiceoptions] = Field(alias='choiceOptions')
-
-
-class MCPCreateAttributeTypePlan(OperationModel):
-    """No documentation."""
-
-    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
-    create_attribute_type: MCPCreateAttributeTypePlanCreateattributetype = Field(alias='createAttributeType')
-
-
-class MCPCreateAttributeType(OperationModel):
-    """No documentation found for this operation."""
-
-    plan: MCPCreateAttributeTypePlan | None = Field(default=None)
-
-    class Arguments(ArgumentsModel):
-        """Arguments for MCPCreateAttributeType."""
-
-        input: AttributeTypeInput
-        model_config = ConfigDict(populate_by_name=True)
+    unit: AttributeTypeDetailsUnit | None = Field(default=None)
+    choice_options: list[AttributeTypeDetailsChoiceoptions] = Field(alias='choiceOptions')
 
     class Meta:
-        """Meta class for MCPCreateAttributeType."""
+        """Meta class for AttributeTypeDetails."""
 
-        document = 'mutation MCPCreateAttributeType($input: AttributeTypeInput!) {\n  plan {\n    createAttributeType(input: $input) {\n      id\n      identifier\n      name\n      format\n      helpText\n      unit {\n        id\n        shortName\n        __typename\n      }\n      choiceOptions {\n        id\n        identifier\n        name\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
+        document = 'fragment AttributeTypeDetails on AttributeType {\n  id\n  identifier\n  name\n  format\n  helpText\n  unit {\n    id\n    shortName\n    __typename\n  }\n  choiceOptions {\n    id\n    identifier\n    name\n    __typename\n  }\n  __typename\n}'
+        name = 'AttributeTypeDetails'
+        type = 'AttributeType'
 
 
-class MCPGetActionsAdminActionsStatus(OperationModel):
+class ActionDetailsStatus(ObjectBaseModel):
     """The current status for the action ("on time", "late", "completed", etc.)."""
 
     typename: Literal['ActionStatus'] = Field(alias='__typename', default='ActionStatus')
@@ -1106,7 +599,7 @@ class MCPGetActionsAdminActionsStatus(OperationModel):
     is_completed: bool = Field(alias='isCompleted')
 
 
-class MCPGetActionsAdminActionsImplementationphase(OperationModel):
+class ActionDetailsImplementationphase(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionImplementationPhase'] = Field(alias='__typename', default='ActionImplementationPhase')
@@ -1115,7 +608,7 @@ class MCPGetActionsAdminActionsImplementationphase(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsStatussummary(OperationModel):
+class ActionDetailsStatussummary(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionStatusSummary'] = Field(alias='__typename', default='ActionStatusSummary')
@@ -1126,7 +619,7 @@ class MCPGetActionsAdminActionsStatussummary(OperationModel):
     is_completed: bool = Field(alias='isCompleted')
 
 
-class MCPGetActionsAdminActionsTimeliness(OperationModel):
+class ActionDetailsTimeliness(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionTimeliness'] = Field(alias='__typename', default='ActionTimeliness')
@@ -1135,7 +628,7 @@ class MCPGetActionsAdminActionsTimeliness(OperationModel):
     days: int
 
 
-class MCPGetActionsAdminActionsImpact(OperationModel):
+class ActionDetailsImpact(ObjectBaseModel):
     """An impact classification for an action in an action plan."""
 
     typename: Literal['ActionImpact'] = Field(alias='__typename', default='ActionImpact')
@@ -1144,7 +637,7 @@ class MCPGetActionsAdminActionsImpact(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsPrimaryorg(OperationModel):
+class ActionDetailsPrimaryorg(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
@@ -1155,7 +648,7 @@ class MCPGetActionsAdminActionsPrimaryorg(OperationModel):
     'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
 
 
-class MCPGetActionsAdminActionsResponsiblepartiesOrganization(OperationModel):
+class ActionDetailsResponsiblepartiesOrganization(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
@@ -1166,7 +659,7 @@ class MCPGetActionsAdminActionsResponsiblepartiesOrganization(OperationModel):
     'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
 
 
-class MCPGetActionsAdminActionsResponsibleparties(OperationModel):
+class ActionDetailsResponsibleparties(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionResponsibleParty'] = Field(alias='__typename', default='ActionResponsibleParty')
@@ -1174,10 +667,10 @@ class MCPGetActionsAdminActionsResponsibleparties(OperationModel):
     role: ActionResponsiblePartyRole | None = Field(default=None)
     specifier: str
     'The responsibility domain for the organization'
-    organization: MCPGetActionsAdminActionsResponsiblepartiesOrganization
+    organization: ActionDetailsResponsiblepartiesOrganization
 
 
-class MCPGetActionsAdminActionsCategoriesType(OperationModel):
+class ActionDetailsCategoriesType(ObjectBaseModel):
     """
     Type of the categories.
 
@@ -1191,17 +684,17 @@ class MCPGetActionsAdminActionsCategoriesType(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsCategories(OperationModel):
+class ActionDetailsCategories(ObjectBaseModel):
     """A category for actions and indicators."""
 
     typename: Literal['Category'] = Field(alias='__typename', default='Category')
     id: str
     identifier: str
     name: str
-    type: MCPGetActionsAdminActionsCategoriesType
+    type: ActionDetailsCategoriesType
 
 
-class MCPGetActionsAdminActionsContactpersonsPersonOrganization(OperationModel):
+class ActionDetailsContactpersonsPersonOrganization(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Organization'] = Field(alias='__typename', default='Organization')
@@ -1212,7 +705,7 @@ class MCPGetActionsAdminActionsContactpersonsPersonOrganization(OperationModel):
     'Short version or abbreviation of the organization name to be displayed when it is not necessary to show the full name'
 
 
-class MCPGetActionsAdminActionsContactpersonsPerson(OperationModel):
+class ActionDetailsContactpersonsPerson(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Person'] = Field(alias='__typename', default='Person')
@@ -1222,10 +715,10 @@ class MCPGetActionsAdminActionsContactpersonsPerson(OperationModel):
     title: str | None = Field(default=None)
     'Job title or role of this person'
     email: str
-    organization: MCPGetActionsAdminActionsContactpersonsPersonOrganization
+    organization: ActionDetailsContactpersonsPersonOrganization
 
 
-class MCPGetActionsAdminActionsContactpersons(OperationModel):
+class ActionDetailsContactpersons(ObjectBaseModel):
     """A Person acting as a contact for an action."""
 
     typename: Literal['ActionContactPerson'] = Field(alias='__typename', default='ActionContactPerson')
@@ -1233,10 +726,10 @@ class MCPGetActionsAdminActionsContactpersons(OperationModel):
     role: ActionContactPersonRole
     primary_contact: bool = Field(alias='primaryContact')
     'Is this person the primary contact person for the action?'
-    person: MCPGetActionsAdminActionsContactpersonsPerson
+    person: ActionDetailsContactpersonsPerson
 
 
-class MCPGetActionsAdminActionsTasks(OperationModel):
+class ActionDetailsTasks(ObjectBaseModel):
     """
     A task that should be completed during the execution of an action.
 
@@ -1254,7 +747,7 @@ class MCPGetActionsAdminActionsTasks(OperationModel):
     comment: str | None = Field(default=None)
 
 
-class MCPGetActionsAdminActionsRelatedindicatorsIndicatorUnit(OperationModel):
+class ActionDetailsRelatedindicatorsIndicatorUnit(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Unit'] = Field(alias='__typename', default='Unit')
@@ -1263,7 +756,7 @@ class MCPGetActionsAdminActionsRelatedindicatorsIndicatorUnit(OperationModel):
     short_name: str | None = Field(default=None, alias='shortName')
 
 
-class MCPGetActionsAdminActionsRelatedindicatorsIndicatorLatestvalue(OperationModel):
+class ActionDetailsRelatedindicatorsIndicatorLatestvalue(ObjectBaseModel):
     """One measurement of an indicator for a certain date/month/year."""
 
     typename: Literal['IndicatorValue'] = Field(alias='__typename', default='IndicatorValue')
@@ -1272,18 +765,18 @@ class MCPGetActionsAdminActionsRelatedindicatorsIndicatorLatestvalue(OperationMo
     value: float
 
 
-class MCPGetActionsAdminActionsRelatedindicatorsIndicator(OperationModel):
+class ActionDetailsRelatedindicatorsIndicator(ObjectBaseModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     typename: Literal['Indicator'] = Field(alias='__typename', default='Indicator')
     id: str
     identifier: str | None = Field(default=None)
     name: str
-    unit: MCPGetActionsAdminActionsRelatedindicatorsIndicatorUnit
-    latest_value: MCPGetActionsAdminActionsRelatedindicatorsIndicatorLatestvalue | None = Field(default=None, alias='latestValue')
+    unit: ActionDetailsRelatedindicatorsIndicatorUnit
+    latest_value: ActionDetailsRelatedindicatorsIndicatorLatestvalue | None = Field(default=None, alias='latestValue')
 
 
-class MCPGetActionsAdminActionsRelatedindicators(OperationModel):
+class ActionDetailsRelatedindicators(ObjectBaseModel):
     """Link between an action and an indicator."""
 
     typename: Literal['ActionIndicator'] = Field(alias='__typename', default='ActionIndicator')
@@ -1292,10 +785,10 @@ class MCPGetActionsAdminActionsRelatedindicators(OperationModel):
     'What type of effect should the action cause?'
     indicates_action_progress: bool = Field(alias='indicatesActionProgress')
     'Set if the indicator should be used to determine action progress'
-    indicator: MCPGetActionsAdminActionsRelatedindicatorsIndicator
+    indicator: ActionDetailsRelatedindicatorsIndicator
 
 
-class MCPGetActionsAdminActionsLinks(OperationModel):
+class ActionDetailsLinks(ObjectBaseModel):
     """A link related to an action."""
 
     typename: Literal['ActionLink'] = Field(alias='__typename', default='ActionLink')
@@ -1304,7 +797,7 @@ class MCPGetActionsAdminActionsLinks(OperationModel):
     title: str
 
 
-class MCPGetActionsAdminActionsStatusupdatesAuthor(OperationModel):
+class ActionDetailsStatusupdatesAuthor(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Person'] = Field(alias='__typename', default='Person')
@@ -1313,7 +806,7 @@ class MCPGetActionsAdminActionsStatusupdatesAuthor(OperationModel):
     last_name: str = Field(alias='lastName')
 
 
-class MCPGetActionsAdminActionsStatusupdates(OperationModel):
+class ActionDetailsStatusupdates(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionStatusUpdate'] = Field(alias='__typename', default='ActionStatusUpdate')
@@ -1321,10 +814,10 @@ class MCPGetActionsAdminActionsStatusupdates(OperationModel):
     title: str
     date: str
     content: str
-    author: MCPGetActionsAdminActionsStatusupdatesAuthor | None = Field(default=None)
+    author: ActionDetailsStatusupdatesAuthor | None = Field(default=None)
 
 
-class MCPGetActionsAdminActionsRelatedactions(OperationModel):
+class ActionDetailsRelatedactions(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1334,7 +827,7 @@ class MCPGetActionsAdminActionsRelatedactions(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsMergedwith(OperationModel):
+class ActionDetailsMergedwith(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1344,7 +837,7 @@ class MCPGetActionsAdminActionsMergedwith(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsMergedactions(OperationModel):
+class ActionDetailsMergedactions(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1354,7 +847,7 @@ class MCPGetActionsAdminActionsMergedactions(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsSupersededby(OperationModel):
+class ActionDetailsSupersededby(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1364,7 +857,7 @@ class MCPGetActionsAdminActionsSupersededby(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsSupersededactions(OperationModel):
+class ActionDetailsSupersededactions(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1374,7 +867,7 @@ class MCPGetActionsAdminActionsSupersededactions(OperationModel):
     name: str
 
 
-class MCPGetActionsAdminActionsAlldependencyrelationshipsPreceding(OperationModel):
+class ActionDetailsAlldependencyrelationshipsPreceding(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1384,7 +877,7 @@ class MCPGetActionsAdminActionsAlldependencyrelationshipsPreceding(OperationMode
     name: str
 
 
-class MCPGetActionsAdminActionsAlldependencyrelationshipsDependent(OperationModel):
+class ActionDetailsAlldependencyrelationshipsDependent(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1394,31 +887,31 @@ class MCPGetActionsAdminActionsAlldependencyrelationshipsDependent(OperationMode
     name: str
 
 
-class MCPGetActionsAdminActionsAlldependencyrelationships(OperationModel):
+class ActionDetailsAlldependencyrelationships(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['ActionDependencyRelationship'] = Field(alias='__typename', default='ActionDependencyRelationship')
-    preceding: MCPGetActionsAdminActionsAlldependencyrelationshipsPreceding
-    dependent: MCPGetActionsAdminActionsAlldependencyrelationshipsDependent
+    preceding: ActionDetailsAlldependencyrelationshipsPreceding
+    dependent: ActionDetailsAlldependencyrelationshipsDependent
 
 
-class MCPGetActionsAdminActionsAttributesTypeUnit(OperationModel):
+class ActionDetailsAttributesTypeUnit(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['Unit'] = Field(alias='__typename', default='Unit')
     short_name: str | None = Field(default=None, alias='shortName')
 
 
-class MCPGetActionsAdminActionsAttributesType(OperationModel):
+class ActionDetailsAttributesType(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeType'] = Field(alias='__typename', default='AttributeType')
     identifier: str
     name: str
-    unit: MCPGetActionsAdminActionsAttributesTypeUnit | None = Field(default=None)
+    unit: ActionDetailsAttributesTypeUnit | None = Field(default=None)
 
 
-class MCPGetActionsAdminActionsAttributesCategoriesType(OperationModel):
+class ActionDetailsAttributesCategoriesType(ObjectBaseModel):
     """
     Type of the categories.
 
@@ -1430,70 +923,70 @@ class MCPGetActionsAdminActionsAttributesCategoriesType(OperationModel):
     identifier: str
 
 
-class MCPGetActionsAdminActionsAttributesCategories(OperationModel):
+class ActionDetailsAttributesCategories(ObjectBaseModel):
     """A category for actions and indicators."""
 
     typename: Literal['Category'] = Field(alias='__typename', default='Category')
     identifier: str
-    type: MCPGetActionsAdminActionsAttributesCategoriesType
+    type: ActionDetailsAttributesCategoriesType
 
 
-class MCPGetActionsAdminActionsAttributesChoice(OperationModel):
+class ActionDetailsAttributesChoice(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeTypeChoiceOption'] = Field(alias='__typename', default='AttributeTypeChoiceOption')
     identifier: str
 
 
-class MCPGetActionsAdminActionsAttributesBase(OperationModel):
+class ActionDetailsAttributesBase(ObjectBaseModel):
     """No documentation."""
 
-    type: MCPGetActionsAdminActionsAttributesType
+    type: ActionDetailsAttributesType
     key_identifier: str = Field(alias='keyIdentifier')
 
 
-class MCPGetActionsAdminActionsAttributesBaseAttributeCategoryChoice(MCPGetActionsAdminActionsAttributesBase, OperationModel):
+class ActionDetailsAttributesBaseAttributeCategoryChoice(ActionDetailsAttributesBase, ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeCategoryChoice'] = Field(alias='__typename', default='AttributeCategoryChoice')
-    categories: list[MCPGetActionsAdminActionsAttributesCategories]
+    categories: list[ActionDetailsAttributesCategories]
 
 
-class MCPGetActionsAdminActionsAttributesBaseAttributeChoice(MCPGetActionsAdminActionsAttributesBase, OperationModel):
+class ActionDetailsAttributesBaseAttributeChoice(ActionDetailsAttributesBase, ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeChoice'] = Field(alias='__typename', default='AttributeChoice')
-    choice: MCPGetActionsAdminActionsAttributesChoice | None = Field(default=None)
+    choice: ActionDetailsAttributesChoice | None = Field(default=None)
 
 
-class MCPGetActionsAdminActionsAttributesBaseAttributeNumericValue(MCPGetActionsAdminActionsAttributesBase, OperationModel):
+class ActionDetailsAttributesBaseAttributeNumericValue(ActionDetailsAttributesBase, ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeNumericValue'] = Field(alias='__typename', default='AttributeNumericValue')
     numeric_value: float = Field(alias='numericValue')
 
 
-class MCPGetActionsAdminActionsAttributesBaseAttributeRichText(MCPGetActionsAdminActionsAttributesBase, OperationModel):
+class ActionDetailsAttributesBaseAttributeRichText(ActionDetailsAttributesBase, ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeRichText'] = Field(alias='__typename', default='AttributeRichText')
     rich_text_value: str = Field(alias='richTextValue')
 
 
-class MCPGetActionsAdminActionsAttributesBaseAttributeText(MCPGetActionsAdminActionsAttributesBase, OperationModel):
+class ActionDetailsAttributesBaseAttributeText(ActionDetailsAttributesBase, ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AttributeText'] = Field(alias='__typename', default='AttributeText')
     text_value: str = Field(alias='textValue')
 
 
-class MCPGetActionsAdminActionsAttributesBaseCatchAll(MCPGetActionsAdminActionsAttributesBase, OperationModel):
-    """Catch all class for MCPGetActionsAdminActionsAttributesBase."""
+class ActionDetailsAttributesBaseCatchAll(ActionDetailsAttributesBase, ObjectBaseModel):
+    """Catch all class for ActionDetailsAttributesBase."""
 
     typename: str = Field(alias='__typename')
 
 
-class MCPGetActionsAdminActions(OperationModel):
+class ActionDetails(ObjectBaseModel):
     """One action/measure tracked in an action plan."""
 
     typename: Literal['Action'] = Field(alias='__typename', default='Action')
@@ -1520,62 +1013,500 @@ class MCPGetActionsAdminActions(OperationModel):
     'The completion percentage for this action'
     manual_status_reason: str | None = Field(default=None, alias='manualStatusReason')
     'Describe the reason why this action has this status'
-    status: MCPGetActionsAdminActionsStatus | None = Field(default=None)
-    implementation_phase: MCPGetActionsAdminActionsImplementationphase | None = Field(default=None, alias='implementationPhase')
-    status_summary: MCPGetActionsAdminActionsStatussummary = Field(alias='statusSummary')
-    timeliness: MCPGetActionsAdminActionsTimeliness
+    status: ActionDetailsStatus | None = Field(default=None)
+    implementation_phase: ActionDetailsImplementationphase | None = Field(default=None, alias='implementationPhase')
+    status_summary: ActionDetailsStatussummary = Field(alias='statusSummary')
+    timeliness: ActionDetailsTimeliness
     color: str | None = Field(default=None)
-    impact: MCPGetActionsAdminActionsImpact | None = Field(default=None)
+    impact: ActionDetailsImpact | None = Field(default=None)
     'The impact of this action'
-    primary_org: MCPGetActionsAdminActionsPrimaryorg | None = Field(default=None, alias='primaryOrg')
-    responsible_parties: list[MCPGetActionsAdminActionsResponsibleparties] = Field(alias='responsibleParties')
-    categories: list[MCPGetActionsAdminActionsCategories]
-    contact_persons: list[MCPGetActionsAdminActionsContactpersons] = Field(alias='contactPersons')
+    primary_org: ActionDetailsPrimaryorg | None = Field(default=None, alias='primaryOrg')
+    responsible_parties: list[ActionDetailsResponsibleparties] = Field(alias='responsibleParties')
+    categories: list[ActionDetailsCategories]
+    contact_persons: list[ActionDetailsContactpersons] = Field(alias='contactPersons')
     "Contact persons for this action. Results may be empty or redacted for unauthenticated requests depending on the plan's public contact person settings (see PlanFeatures.publicContactPersons)."
-    tasks: list[MCPGetActionsAdminActionsTasks]
-    related_indicators: list[MCPGetActionsAdminActionsRelatedindicators] = Field(alias='relatedIndicators')
-    links: list[MCPGetActionsAdminActionsLinks]
-    status_updates: list[MCPGetActionsAdminActionsStatusupdates] = Field(alias='statusUpdates')
-    related_actions: list[MCPGetActionsAdminActionsRelatedactions] = Field(alias='relatedActions')
-    merged_with: MCPGetActionsAdminActionsMergedwith | None = Field(default=None, alias='mergedWith')
+    tasks: list[ActionDetailsTasks]
+    related_indicators: list[ActionDetailsRelatedindicators] = Field(alias='relatedIndicators')
+    links: list[ActionDetailsLinks]
+    status_updates: list[ActionDetailsStatusupdates] = Field(alias='statusUpdates')
+    related_actions: list[ActionDetailsRelatedactions] = Field(alias='relatedActions')
+    merged_with: ActionDetailsMergedwith | None = Field(default=None, alias='mergedWith')
     'Set if this action is merged with another action'
-    merged_actions: list[MCPGetActionsAdminActionsMergedactions] = Field(alias='mergedActions')
+    merged_actions: list[ActionDetailsMergedactions] = Field(alias='mergedActions')
     'Set if this action is merged with another action'
-    superseded_by: MCPGetActionsAdminActionsSupersededby | None = Field(default=None, alias='supersededBy')
+    superseded_by: ActionDetailsSupersededby | None = Field(default=None, alias='supersededBy')
     'Set if this action is superseded by another action'
-    superseded_actions: list[MCPGetActionsAdminActionsSupersededactions] = Field(alias='supersededActions')
+    superseded_actions: list[ActionDetailsSupersededactions] = Field(alias='supersededActions')
     'Set if this action is superseded by another action'
-    all_dependency_relationships: list[MCPGetActionsAdminActionsAlldependencyrelationships] = Field(
-        alias='allDependencyRelationships'
-    )
+    all_dependency_relationships: list[ActionDetailsAlldependencyrelationships] = Field(alias='allDependencyRelationships')
     attributes: list[
         Annotated[
-            MCPGetActionsAdminActionsAttributesBaseAttributeCategoryChoice
-            | MCPGetActionsAdminActionsAttributesBaseAttributeChoice
-            | MCPGetActionsAdminActionsAttributesBaseAttributeNumericValue
-            | MCPGetActionsAdminActionsAttributesBaseAttributeRichText
-            | MCPGetActionsAdminActionsAttributesBaseAttributeText,
+            ActionDetailsAttributesBaseAttributeCategoryChoice
+            | ActionDetailsAttributesBaseAttributeChoice
+            | ActionDetailsAttributesBaseAttributeNumericValue
+            | ActionDetailsAttributesBaseAttributeRichText
+            | ActionDetailsAttributesBaseAttributeText,
             Field(discriminator='typename'),
         ]
-        | MCPGetActionsAdminActionsAttributesBaseCatchAll
+        | ActionDetailsAttributesBaseCatchAll
     ]
     visibility: ActionVisibility
     order: int
     view_url: str = Field(alias='viewUrl')
 
+    class Meta:
+        """Meta class for ActionDetails."""
 
-class MCPGetActionsAdmin(OperationModel):
+        document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}'
+        name = 'ActionDetails'
+        type = 'Action'
+
+
+class CategoryTypeDetails(ObjectBaseModel):
+    """
+    Type of the categories.
+
+    Is used to group categories together. One action plan can have several
+    category types.
+    """
+
+    typename: Literal['CategoryType'] = Field(alias='__typename', default='CategoryType')
+    id: str
+    identifier: str
+    name: str
+    usable_for_actions: bool = Field(alias='usableForActions')
+    usable_for_indicators: bool = Field(alias='usableForIndicators')
+    selection_type: CategoryTypeSelectWidget = Field(alias='selectionType')
+    'Choose "Multiple" only if more than one category can be selected at a time, otherwise choose "Single" which is the default.'
+    hide_category_identifiers: bool = Field(alias='hideCategoryIdentifiers')
+    'Set if the categories do not have meaningful identifiers'
+    editable_for_actions: bool = Field(alias='editableForActions')
+    editable_for_indicators: bool = Field(alias='editableForIndicators')
+    attribute_types: list[AttributeTypeDetails] = Field(alias='attributeTypes')
+    categories: list[CategoryDetails]
+    levels: list[CategoryLevelDetails]
+    lead_paragraph: str | None = Field(default=None, alias='leadParagraph')
+    help_text: str = Field(alias='helpText')
+
+    class Meta:
+        """Meta class for CategoryTypeDetails."""
+
+        document = 'fragment AttributeTypeDetails on AttributeType {\n  id\n  identifier\n  name\n  format\n  helpText\n  unit {\n    id\n    shortName\n    __typename\n  }\n  choiceOptions {\n    id\n    identifier\n    name\n    __typename\n  }\n  __typename\n}\n\nfragment CategoryDetails on Category {\n  id\n  identifier\n  name\n  parent {\n    id\n    __typename\n  }\n  order\n  __typename\n}\n\nfragment CategoryLevelDetails on CategoryLevel {\n  id\n  name\n  namePlural\n  order\n  __typename\n}\n\nfragment CategoryTypeDetails on CategoryType {\n  id\n  identifier\n  name\n  usableForActions\n  usableForIndicators\n  selectionType\n  hideCategoryIdentifiers\n  editableForActions\n  editableForIndicators\n  attributeTypes {\n    ...AttributeTypeDetails\n    __typename\n  }\n  categories {\n    ...CategoryDetails\n    __typename\n  }\n  levels {\n    ...CategoryLevelDetails\n    __typename\n  }\n  leadParagraph\n  helpText\n  __typename\n}'
+        name = 'CategoryTypeDetails'
+        type = 'CategoryType'
+
+
+class UserDetailsMe(ObjectBaseModel):
+    """A user of the system."""
+
+    typename: Literal['User'] = Field(alias='__typename', default='User')
+    id: str
+    uuid: str
+    email: str
+    first_name: str = Field(alias='firstName')
+    last_name: str = Field(alias='lastName')
+    is_superuser: bool = Field(alias='isSuperuser')
+    'Designates that this user has all permissions without explicitly assigning them.'
+
+
+class UserDetails(QueryModel):
+    """No documentation found for this operation."""
+
+    me: UserDetailsMe | None = Field(default=None)
+    'The current user'
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPUserDetails."""
+
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPUserDetails."""
+
+        document = 'query MCPUserDetails {\n  me {\n    id\n    uuid\n    email\n    firstName\n    lastName\n    isSuperuser\n    __typename\n  }\n}'
+
+
+class ListPlans(QueryModel):
+    """No documentation found for this operation."""
+
+    plans: list[PlanConcise] | None = Field(default=None)
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPListPlans."""
+
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPListPlans."""
+
+        document = 'fragment PlanConcise on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  organization {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n\nquery MCPListPlans {\n  plans {\n    ...PlanConcise\n    __typename\n  }\n}'
+
+
+class ListActionsPlanactionsStatus(ObjectBaseModel):
+    """The current status for the action ("on time", "late", "completed", etc.)."""
+
+    typename: Literal['ActionStatus'] = Field(alias='__typename', default='ActionStatus')
+    id: str
+    identifier: str
+    name: str
+    is_completed: bool = Field(alias='isCompleted')
+
+
+class ListActionsPlanactionsImplementationphase(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionImplementationPhase'] = Field(alias='__typename', default='ActionImplementationPhase')
+    id: str
+    identifier: str
+    name: str
+
+
+class ListActionsPlanactionsStatussummary(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionStatusSummary'] = Field(alias='__typename', default='ActionStatusSummary')
+    identifier: ActionStatusSummaryIdentifier
+    label: str
+    sentiment: Sentiment
+    is_active: bool = Field(alias='isActive')
+    is_completed: bool = Field(alias='isCompleted')
+
+
+class ListActionsPlanactionsResponsibleparties(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionResponsibleParty'] = Field(alias='__typename', default='ActionResponsibleParty')
+    id: str
+    organization: OrganizationBrief
+
+
+class ListActionsPlanactionsCategoriesType(ObjectBaseModel):
+    """
+    Type of the categories.
+
+    Is used to group categories together. One action plan can have several
+    category types.
+    """
+
+    typename: Literal['CategoryType'] = Field(alias='__typename', default='CategoryType')
+    id: str
+    identifier: str
+    name: str
+
+
+class ListActionsPlanactionsCategories(ObjectBaseModel):
+    """A category for actions and indicators."""
+
+    typename: Literal['Category'] = Field(alias='__typename', default='Category')
+    id: str
+    identifier: str
+    name: str
+    type: ListActionsPlanactionsCategoriesType
+
+
+class ListActionsPlanactions(ObjectBaseModel):
+    """One action/measure tracked in an action plan."""
+
+    typename: Literal['Action'] = Field(alias='__typename', default='Action')
+    id: str
+    identifier: str
+    'The identifier for this action (e.g. number)'
+    name: str
+    official_name: str | None = Field(default=None, alias='officialName')
+    'The name as approved by an official party'
+    completion: int | None = Field(default=None)
+    'The completion percentage for this action'
+    schedule_continuous: bool = Field(alias='scheduleContinuous')
+    'Set if the action does not have a start or an end date'
+    start_date: str | None = Field(default=None, alias='startDate')
+    'The date when implementation of this action starts'
+    end_date: str | None = Field(default=None, alias='endDate')
+    'The date when implementation of this action ends'
+    updated_at: datetime = Field(alias='updatedAt')
+    status: ListActionsPlanactionsStatus | None = Field(default=None)
+    implementation_phase: ListActionsPlanactionsImplementationphase | None = Field(default=None, alias='implementationPhase')
+    status_summary: ListActionsPlanactionsStatussummary = Field(alias='statusSummary')
+    responsible_parties: list[ListActionsPlanactionsResponsibleparties] = Field(alias='responsibleParties')
+    primary_org: OrganizationBrief | None = Field(default=None, alias='primaryOrg')
+    categories: list[ListActionsPlanactionsCategories]
+
+
+class ListActions(QueryModel):
+    """No documentation found for this operation."""
+
+    plan_actions: list[ListActionsPlanactions] | None = Field(default=None, alias='planActions')
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPListActions."""
+
+        plan: str
+        category: str | None = Field(default=None)
+        first: int | None = Field(default=None)
+        order_by: str | None = Field(alias='orderBy', default=None)
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPListActions."""
+
+        document = 'fragment OrganizationBrief on Organization {\n  id\n  name\n  abbreviation\n  parent {\n    id\n    __typename\n  }\n  __typename\n}\n\nquery MCPListActions($plan: ID!, $category: ID, $first: Int, $orderBy: String) @context(input: {identifier: $plan}) {\n  planActions(plan: $plan, category: $category, first: $first, orderBy: $orderBy) {\n    id\n    identifier\n    name\n    officialName\n    completion\n    scheduleContinuous\n    startDate\n    endDate\n    updatedAt\n    status {\n      id\n      identifier\n      name\n      isCompleted\n      __typename\n    }\n    implementationPhase {\n      id\n      identifier\n      name\n      __typename\n    }\n    statusSummary {\n      identifier\n      label\n      sentiment\n      isActive\n      isCompleted\n      __typename\n    }\n    responsibleParties {\n      id\n      organization {\n        ...OrganizationBrief\n        __typename\n      }\n      __typename\n    }\n    primaryOrg {\n      ...OrganizationBrief\n      __typename\n    }\n    categories {\n      id\n      identifier\n      name\n      type {\n        id\n        identifier\n        name\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class GetPlan(QueryModel):
+    """No documentation found for this operation."""
+
+    plan: PlanDetails | None = Field(default=None)
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPGetPlan."""
+
+        identifier: str
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPGetPlan."""
+
+        document = 'fragment PlanDetails on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  accessibilityStatementUrl\n  externalFeedbackUrl\n  features {\n    publicContactPersons\n    hasActionIdentifiers\n    hasActionOfficialName\n    hasActionLeadParagraph\n    hasActionPrimaryOrgs\n    enableSearch\n    enableIndicatorComparison\n    minimalStatuses\n    contactPersonsPublicData\n    __typename\n  }\n  categoryTypes {\n    id\n    identifier\n    name\n    usableForActions\n    usableForIndicators\n    __typename\n  }\n  actionStatusSummaries {\n    identifier\n    label\n    isActive\n    isCompleted\n    sentiment\n    __typename\n  }\n  actionAttributeTypes {\n    id\n    identifier\n    name\n    format\n    unit {\n      id\n      shortName\n      __typename\n    }\n    choiceOptions {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery MCPGetPlan($identifier: ID!) @context(input: {identifier: $identifier}) {\n  plan(id: $identifier) {\n    ...PlanDetails\n    __typename\n  }\n}'
+
+
+class ListOrganizationsAdmin(ObjectBaseModel):
     """No documentation."""
 
     typename: Literal['AdminQuery'] = Field(alias='__typename', default='AdminQuery')
-    actions: list[MCPGetActionsAdminActions]
+    organizations: list[OrganizationBrief]
+    'List of all organizations'
+
+
+class ListOrganizations(QueryModel):
+    """No documentation found for this operation."""
+
+    admin: ListOrganizationsAdmin
+    'Admin query namespace'
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPListOrganizations."""
+
+        plan: str | None = Field(default=None)
+        parent: str | None = Field(default=None)
+        depth: int | None = Field(default=None)
+        contains: str | None = Field(default=None)
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPListOrganizations."""
+
+        document = 'fragment OrganizationBrief on Organization {\n  id\n  name\n  abbreviation\n  parent {\n    id\n    __typename\n  }\n  __typename\n}\n\nquery MCPListOrganizations($plan: ID, $parent: ID, $depth: Int, $contains: String) {\n  admin {\n    organizations(plan: $plan, parent: $parent, depth: $depth, contains: $contains) {\n      ...OrganizationBrief\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreateOrganizationOrganization(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['OrganizationMutations'] = Field(alias='__typename', default='OrganizationMutations')
+    create_organization: OrganizationBrief = Field(alias='createOrganization')
+    'Create a new organization'
+
+
+class CreateOrganization(MutationModel):
+    """No documentation found for this operation."""
+
+    organization: CreateOrganizationOrganization
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreateOrganization."""
+
+        input: OrganizationInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreateOrganization."""
+
+        document = 'fragment OrganizationBrief on Organization {\n  id\n  name\n  abbreviation\n  parent {\n    id\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateOrganization($input: OrganizationInput!) {\n  organization {\n    createOrganization(input: $input) {\n      ...OrganizationBrief\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreatePlanPlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    create_plan: PlanDetails | OpInfo = Field(alias='createPlan')
+    'Create a new plan; returns the newly created plan'
+
+
+class CreatePlan(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: CreatePlanPlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreatePlan."""
+
+        input: PlanInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreatePlan."""
+
+        document = 'fragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nfragment PlanDetails on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  accessibilityStatementUrl\n  externalFeedbackUrl\n  features {\n    publicContactPersons\n    hasActionIdentifiers\n    hasActionOfficialName\n    hasActionLeadParagraph\n    hasActionPrimaryOrgs\n    enableSearch\n    enableIndicatorComparison\n    minimalStatuses\n    contactPersonsPublicData\n    __typename\n  }\n  categoryTypes {\n    id\n    identifier\n    name\n    usableForActions\n    usableForIndicators\n    __typename\n  }\n  actionStatusSummaries {\n    identifier\n    label\n    isActive\n    isCompleted\n    sentiment\n    __typename\n  }\n  actionAttributeTypes {\n    id\n    identifier\n    name\n    format\n    unit {\n      id\n      shortName\n      __typename\n    }\n    choiceOptions {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreatePlan($input: PlanInput!) {\n  plan {\n    createPlan(input: $input) {\n      ...PlanDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class AddRelatedOrganizationPlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    add_related_organization: PlanConcise | OpInfo = Field(alias='addRelatedOrganization')
+    'Add a related organization to a plan'
+
+
+class AddRelatedOrganization(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: AddRelatedOrganizationPlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPAddRelatedOrganization."""
+
+        input: AddRelatedOrganizationInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPAddRelatedOrganization."""
+
+        document = 'fragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nfragment PlanConcise on Plan {\n  id\n  identifier\n  name\n  shortName\n  versionName\n  primaryLanguage\n  otherLanguages\n  publishedAt\n  viewUrl\n  organization {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n\nmutation MCPAddRelatedOrganization($input: AddRelatedOrganizationInput!) {\n  plan {\n    addRelatedOrganization(input: $input) {\n      ...PlanConcise\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class DeletePlanPlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    delete_plan: OpInfo | None = Field(default=None, alias='deletePlan')
+    'Delete a recently created plan (must be < 2 days old)'
+
+
+class DeletePlan(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: DeletePlanPlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPDeletePlan."""
+
+        id: str
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPDeletePlan."""
+
+        document = 'fragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPDeletePlan($id: ID!) {\n  plan {\n    deletePlan(id: $id) {\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreateActionAction(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionMutations'] = Field(alias='__typename', default='ActionMutations')
+    create_action: ActionDetails | OpInfo = Field(alias='createAction')
+
+
+class CreateAction(MutationModel):
+    """No documentation found for this operation."""
+
+    action: CreateActionAction
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreateAction."""
+
+        input: ActionInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreateAction."""
+
+        document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateAction($input: ActionInput!) {\n  action {\n    createAction(input: $input) {\n      ...ActionDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreateCategoryTypePlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    create_category_type: CategoryTypeDetails | OpInfo = Field(alias='createCategoryType')
+    'Create a new category type; returns the newly created category type'
+
+
+class CreateCategoryType(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: CreateCategoryTypePlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreateCategoryType."""
+
+        input: CategoryTypeInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreateCategoryType."""
+
+        document = 'fragment AttributeTypeDetails on AttributeType {\n  id\n  identifier\n  name\n  format\n  helpText\n  unit {\n    id\n    shortName\n    __typename\n  }\n  choiceOptions {\n    id\n    identifier\n    name\n    __typename\n  }\n  __typename\n}\n\nfragment CategoryDetails on Category {\n  id\n  identifier\n  name\n  parent {\n    id\n    __typename\n  }\n  order\n  __typename\n}\n\nfragment CategoryLevelDetails on CategoryLevel {\n  id\n  name\n  namePlural\n  order\n  __typename\n}\n\nfragment CategoryTypeDetails on CategoryType {\n  id\n  identifier\n  name\n  usableForActions\n  usableForIndicators\n  selectionType\n  hideCategoryIdentifiers\n  editableForActions\n  editableForIndicators\n  attributeTypes {\n    ...AttributeTypeDetails\n    __typename\n  }\n  categories {\n    ...CategoryDetails\n    __typename\n  }\n  levels {\n    ...CategoryLevelDetails\n    __typename\n  }\n  leadParagraph\n  helpText\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateCategoryType($input: CategoryTypeInput!) {\n  plan {\n    createCategoryType(input: $input) {\n      ...CategoryTypeDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreateCategoryPlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    create_category: CategoryDetails | OpInfo = Field(alias='createCategory')
+    'Create a new category; returns the newly created category'
+
+
+class CreateCategory(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: CreateCategoryPlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreateCategory."""
+
+        input: CategoryInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreateCategory."""
+
+        document = 'fragment CategoryDetails on Category {\n  id\n  identifier\n  name\n  parent {\n    id\n    __typename\n  }\n  order\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateCategory($input: CategoryInput!) {\n  plan {\n    createCategory(input: $input) {\n      ...CategoryDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class CreateAttributeTypePlan(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['PlanMutations'] = Field(alias='__typename', default='PlanMutations')
+    create_attribute_type: AttributeTypeDetails | OpInfo = Field(alias='createAttributeType')
+
+
+class CreateAttributeType(MutationModel):
+    """No documentation found for this operation."""
+
+    plan: CreateAttributeTypePlan
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPCreateAttributeType."""
+
+        input: AttributeTypeInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPCreateAttributeType."""
+
+        document = 'fragment AttributeTypeDetails on AttributeType {\n  id\n  identifier\n  name\n  format\n  helpText\n  unit {\n    id\n    shortName\n    __typename\n  }\n  choiceOptions {\n    id\n    identifier\n    name\n    __typename\n  }\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateAttributeType($input: AttributeTypeInput!) {\n  plan {\n    createAttributeType(input: $input) {\n      ...AttributeTypeDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class GetActionsAdmin(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['AdminQuery'] = Field(alias='__typename', default='AdminQuery')
+    actions: list[ActionDetails]
     'Get actions by their IDs'
 
 
-class MCPGetActions(OperationModel):
+class GetActions(QueryModel):
     """No documentation found for this operation."""
 
-    admin: MCPGetActionsAdmin
+    admin: GetActionsAdmin
     'Admin query namespace'
 
     class Arguments(ArgumentsModel):
@@ -1587,7 +1518,7 @@ class MCPGetActions(OperationModel):
     class Meta:
         """Meta class for MCPGetActions."""
 
-        document = 'query MCPGetActions($ids: [ID!]!) {\n  admin {\n    actions(ids: $ids) {\n      id\n      uuid\n      identifier\n      name\n      officialName\n      leadParagraph\n      description\n      startDate\n      endDate\n      scheduleContinuous\n      dateFormat\n      updatedAt\n      completion\n      manualStatusReason\n      status {\n        id\n        identifier\n        name\n        isCompleted\n        __typename\n      }\n      implementationPhase {\n        id\n        identifier\n        name\n        __typename\n      }\n      statusSummary {\n        identifier\n        label\n        sentiment\n        isActive\n        isCompleted\n        __typename\n      }\n      timeliness {\n        identifier\n        comparison\n        days\n        __typename\n      }\n      color\n      impact {\n        id\n        identifier\n        name\n        __typename\n      }\n      primaryOrg {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      responsibleParties {\n        id\n        role\n        specifier\n        organization {\n          id\n          name\n          abbreviation\n          __typename\n        }\n        __typename\n      }\n      categories {\n        id\n        identifier\n        name\n        type {\n          id\n          identifier\n          name\n          __typename\n        }\n        __typename\n      }\n      contactPersons {\n        id\n        role\n        primaryContact\n        person {\n          id\n          firstName\n          lastName\n          title\n          email\n          organization {\n            id\n            name\n            abbreviation\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      tasks {\n        id\n        name\n        state\n        dueAt\n        completedAt\n        comment\n        __typename\n      }\n      relatedIndicators {\n        id\n        effectType\n        indicatesActionProgress\n        indicator {\n          id\n          identifier\n          name\n          unit {\n            id\n            name\n            shortName\n            __typename\n          }\n          latestValue {\n            id\n            date\n            value\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      links {\n        id\n        url\n        title\n        __typename\n      }\n      statusUpdates {\n        id\n        title\n        date\n        content\n        author {\n          id\n          firstName\n          lastName\n          __typename\n        }\n        __typename\n      }\n      relatedActions {\n        id\n        identifier\n        name\n        __typename\n      }\n      mergedWith {\n        id\n        identifier\n        name\n        __typename\n      }\n      mergedActions {\n        id\n        identifier\n        name\n        __typename\n      }\n      supersededBy {\n        id\n        identifier\n        name\n        __typename\n      }\n      supersededActions {\n        id\n        identifier\n        name\n        __typename\n      }\n      allDependencyRelationships {\n        preceding {\n          id\n          identifier\n          name\n          __typename\n        }\n        dependent {\n          id\n          identifier\n          name\n          __typename\n        }\n        __typename\n      }\n      attributes {\n        __typename\n        type {\n          identifier\n          name\n          unit {\n            shortName\n            __typename\n          }\n          __typename\n        }\n        keyIdentifier\n        ... on AttributeText {\n          textValue: value\n        }\n        ... on AttributeRichText {\n          richTextValue: value\n        }\n        ... on AttributeCategoryChoice {\n          categories {\n            identifier\n            type {\n              identifier\n            }\n          }\n        }\n        ... on AttributeNumericValue {\n          numericValue: value\n        }\n        ... on AttributeChoice {\n          choice {\n            identifier\n          }\n        }\n      }\n      visibility\n      order\n      viewUrl\n      __typename\n    }\n    __typename\n  }\n}'
+        document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}\n\nquery MCPGetActions($ids: [ID!]!) {\n  admin {\n    actions(ids: $ids) {\n      ...ActionDetails\n      __typename\n    }\n    __typename\n  }\n}'
 
 
 AttributeTypeInput.model_rebuild()

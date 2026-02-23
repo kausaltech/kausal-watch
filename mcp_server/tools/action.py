@@ -7,16 +7,19 @@ from fastmcp.exceptions import ToolError
 from mcp_server.__generated__.schema import (
     ActionAttributeValueInput,
     ActionInput,
-    MCPCreateAction,
-    MCPGetActions,
-    MCPGetActionsAdminActions,
-    MCPListActions,
+    CreateAction,
+    GetActions,
+    ListActions,
 )
 
-from .helpers import execute_operation, execute_schema_query
+from .helpers import check_operation_result, execute_operation, execute_schema_query
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
+
+    from mcp_server.__generated__.schema import (
+        ActionDetails,
+    )
 
 
 async def list_actions(
@@ -32,8 +35,8 @@ async def list_actions(
     Use get_actions(ids) for full details on specific actions.
     """
     result = await execute_operation(
-        MCPListActions,  # type: ignore[type-var]
-        MCPListActions.Arguments(plan=plan, category=category, first=first, orderBy=order_by),
+        ListActions,
+        ListActions.Arguments(plan=plan, category=category, first=first, orderBy=order_by),
     )
 
     if result.plan_actions is None:
@@ -59,14 +62,14 @@ async def list_actions(
 
 async def get_actions(
     ids: Annotated[list[str], 'List of action IDs to fetch'],
-) -> list[MCPGetActionsAdminActions]:
+) -> list[ActionDetails]:
     """
     Get detailed information about multiple actions by their IDs.
 
     Returns comprehensive action details including status, organizations,
     tasks, indicators, and more. Use list_actions to discover action IDs first.
     """
-    result = await execute_operation(MCPGetActions, MCPGetActions.Arguments(ids=ids))  # type: ignore[type-var]
+    result = await execute_operation(GetActions, GetActions.Arguments(ids=ids))
     return result.admin.actions
 
 
@@ -169,7 +172,7 @@ async def create_action(
         list[dict[str, str]] | None,
         "List of attribute values, each with 'attribute_type_id' and 'choice_id'",
     ] = None,
-) -> MCPCreateAction:
+) -> ActionDetails:
     """
     Create a new action in a plan.
 
@@ -187,8 +190,8 @@ async def create_action(
         ]
 
     result = await execute_operation(
-        MCPCreateAction,
-        MCPCreateAction.Arguments(
+        CreateAction,
+        CreateAction.Arguments(
             input=ActionInput(
                 planId=plan_id,
                 name=name,
@@ -199,9 +202,9 @@ async def create_action(
                 attributeValues=attr_inputs,
             )
         ),
-    )  # type: ignore[type-var]
+    )
 
-    return result
+    return check_operation_result(result.action.create_action)
 
 
 def register_action_tools(mcp: FastMCP) -> None:

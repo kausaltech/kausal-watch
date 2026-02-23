@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, Self, cast
-
-from pydantic import BaseModel
+from typing import TYPE_CHECKING, Any, cast
 
 from asgiref.sync import sync_to_async
+from fastmcp.exceptions import ToolError
 
 from kausal_common.strawberry.views import get_base_context
 
 from aplans.schema_context import WatchGraphQLContext
 
+from mcp_server.__generated__.schema import OpInfo
+
+from ..generated_base import ObjectBaseModel, OperationModel
+
 if TYPE_CHECKING:
+    from pydantic import BaseModel
     from strawberry.types import ExecutionResult
 
     from starlette.requests import Request as StarletteRequest
@@ -33,29 +37,7 @@ async def execute_schema_query(query: str, variables: dict[str, Any] | None = No
     return res
 
 
-class OperationMeta(Protocol):
-    document: str
-
-
-class Operation[ArgT: BaseModel, MetaT: OperationMeta](Protocol):
-    Arguments: ArgT
-    Meta: type[MetaT]
-
-    @classmethod
-    def model_validate(
-        cls,
-        obj: Any,
-        *,
-        strict: bool | None = None,
-        from_attributes: bool | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        by_name: bool | None = None,
-    ) -> Self: ...
-
-
-
-async def execute_operation[T: Operation[Any, Any]](operation_class: type[T], args: BaseModel | None = None) -> T:
+async def execute_operation[T: OperationModel](operation_class: type[T], args: BaseModel | None = None) -> T:
     """
     Execute a turms-generated GraphQL operation and return the validated result.
 
@@ -88,4 +70,12 @@ async def execute_operation[T: Operation[Any, Any]](operation_class: type[T], ar
         raise RuntimeError(f"GraphQL errors: {error_msgs}")
 
     # Validate and return the result
-    return operation_class.model_validate(result.data)
+    return cast('T', operation_class.model_validate(result.data))
+
+
+def check_operation_result[ResT: ObjectBaseModel | None](result: ResT | OpInfo) -> ResT:
+    if isinstance(result, OpInfo):
+        msg_str = '\n'.join(msg.message for msg in result.messages)
+        raise ToolError('Tool call failed:\n' + msg_str)
+    return result
+
