@@ -782,22 +782,21 @@ def copy_root_pages(
 def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
     for action in Action.objects.filter(plan=plan_copy, latest_revision__isnull=False).select_related('latest_revision'):
-        if action.latest_revision:
-            assert isinstance(action.latest_revision, Revision)
-            rev_obj = action.latest_revision.as_object()
-            # The PK of `rev_obj` is that of the original from which `action` was copied
-            rev_obj.pk = action.pk
-            rev_obj.uuid = action.uuid
-            assert action.copy_of
-            rev_obj.copy_of = action.copy_of
-            # Update but don't save `rev_obj`. (Otherwise we'd overwrite published actions with drafts. We just want to
-            # create a revision out of `rev_obj` and save that.
-            update_references_visitor.update_instance(rev_obj, save=False)
-            if rev_obj.draft_attributes:
-                rev_obj.draft_attributes.replace_references(clone_visitor)
-            new_rev = rev_obj.save_revision(changed=False)
-            action.latest_revision = new_rev
-            action.save(update_fields=['latest_revision'])
+        assert isinstance(action.latest_revision, Revision)
+        rev_obj = action.latest_revision.as_object()
+        # The PK of `rev_obj` is that of the original from which `action` was copied
+        rev_obj.pk = action.pk
+        rev_obj.uuid = action.uuid
+        assert action.copy_of
+        rev_obj.copy_of = action.copy_of
+        # Update but don't save `rev_obj`. (Otherwise we'd overwrite published actions with drafts. We just want to
+        # create a revision out of `rev_obj` and save that.
+        update_references_visitor.update_instance(rev_obj, save=False)
+        if rev_obj.draft_attributes:
+            rev_obj.draft_attributes.replace_references(clone_visitor)
+        new_rev = rev_obj.save_revision(changed=False)
+        action.latest_revision = new_rev
+        action.save(update_fields=['latest_revision'])
 
 
 def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVisitor):
