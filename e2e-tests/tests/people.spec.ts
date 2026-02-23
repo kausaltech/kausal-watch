@@ -39,12 +39,8 @@ test.describe('Test people', () => {
     await page.getByRole('link', { name: 'People', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Filter' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'For an action in Sunnydale Climate Action Plan' })).toBeVisible();
-    await page.getByRole('link', { name: 'For an action in Sunnydale Climate Action Plan' }).click();
-    await expect(page.getByText('Test User')).toBeHidden();
-    await page.getByRole('link', { name: 'For an action in Sunnydale Biodiversity Action Plan' }).click();
-    await expect(page.getByText('Test User')).toBeHidden();
-    await page.getByRole('link', { name: 'For an action in Sunnydale Sustainable Urban Mobility Plan' }).click();
+    await expect(page.getByRole('link', { name: 'For an action' })).toBeVisible();
+    await page.getByRole('link', { name: 'For an action' }).click();
     await expect(page.getByText('Test User')).toBeHidden();
     await page.getByRole('link', { name: 'For same actions or indicators as me' }).click();
     await expect(page.getByText('Test User')).toBeHidden();

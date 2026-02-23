@@ -134,15 +134,6 @@ class User(AbstractUser):
     selected_admin_plan: FK[Plan | None] = models.ForeignKey(
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL,
     )
-    deactivated_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-    deactivated_by = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-    )
 
     objects: ClassVar[UserManager] = UserManager()  # type: ignore[assignment]
 

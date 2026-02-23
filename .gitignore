@@ -38,3 +38,11 @@ requirements-local.txt
 *.egg-info/
 /schema.graphql
 /.claude/*.local*
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

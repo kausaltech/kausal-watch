@@ -32,6 +32,7 @@ root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),
+    ENABLE_TEST_MODE=(bool, False),
     DEPLOYMENT_TYPE=(str, 'development'),
     KUBERNETES_MODE=(bool, False),
     ENABLE_WAGTAIL_STYLEGUIDE=(bool, False),
@@ -132,6 +133,7 @@ for directory in cast('list[str]', env('MOUNTED_SECRET_PATHS')):
 
 DEBUG = cast('bool', env('DEBUG'))
 DEPLOYMENT_TYPE = cast('str', env('DEPLOYMENT_TYPE'))
+ENABLE_TEST_MODE = cast('bool', env('ENABLE_TEST_MODE'))
 ALLOWED_HOSTS = cast('list[str]', env('ALLOWED_HOSTS'))
 INTERNAL_IPS = env.list('INTERNAL_IPS',
                         default=(['127.0.0.1'] if DEBUG else []))  # pyright: ignore
@@ -231,6 +233,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'social_django',
     'django_extensions',
     'modeltrans',

@@ -1,6 +1,7 @@
 import {
   expect,
   test,
+  type Page,
 } from '@playwright/test';
 
 const listOrganizationsPath = '/admin/snippets/orgs/organization/';
@@ -9,12 +10,18 @@ const testData = {
   organization1: 'E2E test data: Test organization 1',
   organization2: 'E2E test data: Test organization 2',
   suborganization1: 'E2E test data: Suborganization 1',
-  deleteOrganization: 'E2E test data: Delete this organization',
   organization1Person: 'E2E test data: Organization 1 person',
-  editOrganization: 'E2E test data: Edit this organization'
 }
 
 test.describe('Test organization admin', () => {
+  test.describe.configure({ mode: 'serial', timeout: 15000 });
+
+  const newOrgIdentifier = crypto.randomUUID();
+  const newOrgName = `Test root organization ${newOrgIdentifier}`;
+  const newOrg2Name = `Test root organization 2 ${newOrgIdentifier}`;
+  const newSubOrgName = `Test suborganization ${newOrgIdentifier}`;
+  const newSubOrg2Name = `Test suborganization 2 ${newOrgIdentifier}`;
+
   test('Organizations appear in menu', async ({ page }) => {
     await page.goto('/admin/');
     const link = await page.getByRole('link', { name: 'Organizations' }).getAttribute('href');
@@ -46,45 +53,73 @@ test.describe('Test organization admin', () => {
     await expect(page.getByText(testData.suborganization1)).toBeHidden();
   });
 
-  test('Adding an organization', async ({ page }) => {
+  async function addOrganization(page: Page, name: string, parentName?: string) {
     await page.goto(listOrganizationsPath);
     await expect(page.getByRole('table')).toBeVisible();
-    await expect(page.getByRole('table').getByText('Added organization')).toBeHidden();
+    await expect(page.getByRole('table').getByText(name)).toBeHidden();
 
-    await page.getByRole('link', { name: 'Add organization' }).click();
-    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill('Added organization');
-    await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('table').getByText('Added organization')).toBeVisible();
+    if (parentName) {
+      await page.getByRole('button', { name: `More options for '${parentName}'` }).click();
+      await page.getByRole('link', { name: 'Add suborganization' }).click();
+      await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(name);
+      await page.getByRole('button', { name: 'Save' }).click();
+      await expect(page.getByRole('table').getByText(name)).toBeVisible();
+
+      // Test that the suborganization was added to the correct parent
+      // organization by toggling the parent organization's suborganization
+      // visibility
+      await page.getByRole('cell', { name: parentName }).getByText('▼').click();
+      await expect(page.getByRole('table').getByText(name)).toBeHidden();
+    } else {
+      await page.getByRole('link', { name: 'Add organization' }).click();
+      await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(name);
+      await page.getByRole('button', { name: 'Save' }).click();
+      await expect(page.getByRole('table').getByText(name)).toBeVisible();
+    }
+  }
+
+  test('Adding root organizations', async ({ page }) => {
+    await addOrganization(page, newOrgName);
+    await addOrganization(page, newOrg2Name);
   });
 
-  test('Adding a suborganization', async ({ page }) => {
+  test('Adding suborganizations', async ({ page }) => {
+    await addOrganization(page, newSubOrgName, newOrgName);
+    await addOrganization(page, newSubOrg2Name, newOrgName);
+    return;
     await page.goto(listOrganizationsPath);
     await expect(page.getByRole('table')).toBeVisible();
-    await expect(page.getByRole('table').getByText('Added suborganization')).toBeHidden();
+    await expect(page.getByRole('table').getByText(newSubOrgName)).toBeHidden();
 
-    await page.getByRole('button', { name: `More options for '${testData.organization1}'` }).click();
+    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeHidden();
+
+    await page.getByRole('button', { name: `More options for '${newOrgName}'` }).click();
     await page.getByRole('link', { name: 'Add suborganization' }).click();
-    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill('Added suborganization');
+    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(newSubOrg2Name);
     await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('table').getByText('Added suborganization')).toBeVisible();
+    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeVisible();
 
     // Test that the suborganization was added to the correct parent
     // organization by toggling the parent organization's suborganization
     // visibility
-    await page.getByRole('cell', { name: testData.organization1 }).getByText('▼').click();
-    await expect(page.getByRole('table').getByText('Added suborganization')).toBeHidden();
+    await page.getByRole('cell', { name: newOrgName }).getByText('▼').click();
+    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeHidden();
   });
 
-  test('Deleting an organization', async ({ page }) => {
+  async function deleteOrganization(page: Page, name: string) {
     await page.goto(listOrganizationsPath);
-    await expect(page.getByRole('table').getByText(testData.deleteOrganization)).toBeVisible();
-
-    await page.getByRole('button', { name: `More options for '${testData.deleteOrganization}'` }).click();
+    await expect(page.getByRole('table').getByText(name)).toBeVisible();
+    await page.getByRole('button', { name: `More options for '${name}'` }).click();
     await page.getByRole('link', { name: 'Delete', exact: true }).click();
     await page.getByRole('button', { name: 'Yes, delete' }).click();
     await page.waitForURL(listOrganizationsPath);
-    await expect(page.getByRole('table')).toBeVisible();
-    await expect(page.getByRole('table').getByText(testData.deleteOrganization)).toBeHidden();
+    const orgTable = page.getByRole('table');
+    await expect(orgTable).toBeVisible();
+    await expect(orgTable.getByText(name)).toBeHidden();
+  }
+
+  test('Deleting an organization', async ({ page }) => {
+    await deleteOrganization(page, newSubOrgName);
   });
 
   test('Including/excluding an organization from active plan', async ({ page }) => {
@@ -114,20 +149,22 @@ test.describe('Test organization admin', () => {
 
   test('Including/excluding from active plan is not available for suborganizations', async ({ page }) => {
     await page.goto(listOrganizationsPath);
-    await page.getByRole('button', { name: `More options for '${testData.suborganization1}'` }).click();
+    await page.getByRole('button', { name: `More options for '${newSubOrg2Name}'` }).click();
     await expect(page.getByRole('link', { name: 'Include in active plan' })).toBeHidden();
     await expect(page.getByRole('link', { name: 'Exclude from active plan' })).toBeHidden();
   });
 
   test('Editing an organization', async ({ page }) => {
     await page.goto(listOrganizationsPath);
-    await page.getByRole('link', { name: testData.editOrganization }).click();
-    await expect(page.getByRole('heading', { name: testData.editOrganization })).toBeVisible();
+    await page.getByRole('link', { name: `${newOrgName}` }).click();
+    await expect(page.getByRole('heading', { name: `${newOrgName}` })).toBeVisible();
 
-    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill('Name (EN) edited');
-    await page.getByRole('textbox', { name: 'Name (FI)', exact: true }).fill('Name (FI) edited');
-    await page.locator('#id_parent').selectOption(testData.organization1);
+    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(`${newOrgName} edited`);
+    await page.getByRole('textbox', { name: 'Name (FI)', exact: true }).fill(`${newOrgName} edited`);
+    await page.locator('#id_parent').selectOption(newOrg2Name);
+
     // TODO: Edit logo
+
     await page.getByRole('textbox', { name: 'Short name (EN)'}).fill('Short name (EN) edited');
     await page.getByRole('textbox', { name: 'Short name (FI)' }).fill('Short name (FI) edited');
     await page.getByRole('textbox', { name: 'Internal abbreviation' }).fill('Internal abbreviation edited');
@@ -139,12 +176,12 @@ test.describe('Test organization admin', () => {
 
     await page.getByRole('button', { name: 'Save' }).click();
     await page.waitForURL(listOrganizationsPath);
-    await expect(page.getByRole('link', { name: 'Name (EN) edited' })).toBeVisible();
+    await expect(page.getByRole('link', { name: `${newOrgName} edited` })).toBeVisible();
   });
 
   test('Adding a plan admin to an organization', async ({ page }) => {
     await page.goto(listOrganizationsPath);
-    await page.getByRole('link', { name: testData.organization1 }).click();
+    await page.getByRole('link', { name: newOrgName }).click();
     await page.getByRole('tab', { name: 'Permissions' }).click();
     await page.getByRole('button', { name: 'Add plan admin' }).click();
     await page.getByRole('button', { name: 'Choose a person' }).click();
@@ -157,7 +194,7 @@ test.describe('Test organization admin', () => {
 
   test('Adding a metadata admin to an organization', async ({ page }) => {
     await page.goto(listOrganizationsPath);
-    await page.getByRole('link', { name: testData.organization1 }).click();
+    await page.getByRole('link', { name: newOrgName }).click();
     await page.getByRole('tab', { name: 'Permissions' }).click();
     await page.getByRole('button', { name: 'Add metadata admin' }).click();
     await page.getByRole('button', { name: 'Choose a person' }).click();
@@ -166,5 +203,11 @@ test.describe('Test organization admin', () => {
     await page.getByRole('button', { name: 'Save' }).click();
     await page.waitForURL(listOrganizationsPath);
     // TODO: A proper check that the metadata admin is taken into account
+  });
+
+  test('Delete created organizations', async ({ page }) => {
+    await deleteOrganization(page, newSubOrg2Name);
+    await deleteOrganization(page, `${newOrgName} edited`);
+    await deleteOrganization(page, newOrg2Name);
   });
 })

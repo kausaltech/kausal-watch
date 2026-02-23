@@ -45,6 +45,16 @@ def username_to_uuid(username: str):
 class AbstractUser(DjangoAbstractUser):
     uuid = models.UUIDField(unique=True)
     department_name = models.CharField(max_length=50, null=True, blank=True)
+    deactivated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+    deactivated_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     social_auth: RevMany[UserSocialAuth]
 

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import graphene
 import strawberry as sb
+from django.conf import settings
 from django.db.models import Count, Q
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
@@ -54,6 +55,7 @@ from pages import schema as pages_schema
 from people import schema as people_schema
 from reports import schema as reports_schema
 from search import schema as search_schema
+from users import schema as users_schema
 
 from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, WorkflowStateEnum, get_plan_from_context
@@ -225,6 +227,12 @@ class Mutation(
     graphene.ObjectType[Any],
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
+    if settings.ENABLE_TEST_MODE:
+        test_mode = graphene.Field(graphene.NonNull(users_schema.TestMode))
+
+        @staticmethod
+        def resolve_test_mode(root, info: GQLInfo) -> users_schema.TestMode:
+            return users_schema.TestMode()
 
 
 @sb.directive(
