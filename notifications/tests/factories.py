@@ -6,7 +6,7 @@ import factory
 from factory.declarations import SubFactory
 from factory.django import DjangoModelFactory
 
-from actions.tests.factories import PlanFactory
+from actions.tests.factories import PlanFactory, mute_signals
 from notifications.models import (
     AutomaticNotificationTemplate,
     BaseTemplate,
@@ -52,7 +52,7 @@ class ManuallyScheduledNotificationTemplateFactory(DjangoModelFactory[ManuallySc
     send_to_organization_admins = True
 
 
-@factory.django.mute_signals(post_save)
+@mute_signals(post_save)
 class NotificationSettingsFactory(DjangoModelFactory[NotificationSettings]):
     class Meta:
         model = 'notifications.NotificationSettings'

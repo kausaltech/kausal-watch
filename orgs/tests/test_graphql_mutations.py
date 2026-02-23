@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from kausal_common.strawberry.mutations import OP_INFO_FRAGMENT
+from kausal_common.testing.graphql import OperationMessage, assert_operation_errors
+
 from orgs.models import Organization
 
 if TYPE_CHECKING:
@@ -18,14 +21,17 @@ CREATE_ORGANIZATION = """
     mutation($input: OrganizationInput!) {
         organization {
             createOrganization(input: $input) {
-                id
-                name
-                abbreviation
-                parent { id }
+                ... on Organization {
+                    id
+                    name
+                    abbreviation
+                    parent { id }
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 
 # -- Permission tests --------------------------------------------------------
@@ -95,4 +101,10 @@ class TestCreateOrganization:
                 'parentId': '999999',
             }},
         )
-        assert 'errors' in response
+        data = response['data']['organization']['createOrganization']
+        assert_operation_errors(data, [
+            OperationMessage(
+                kind='VALIDATION',
+                message='Parent organization with ID 999999 not found.',
+            )
+        ])

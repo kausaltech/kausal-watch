@@ -89,6 +89,9 @@ class PlanFactory(ModelFactory[Plan]):
     )
     kausal_paths_instance_uuid = 'paths_uuid'
 
+    class Meta:
+        skip_postgeneration_save = True
+
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Plan:
         Locale.objects.get_or_create(language_code=kwargs['primary_language'])
@@ -217,6 +220,7 @@ class CategoryFactory(ModelFactory[Category]):
 class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):
     class Meta:
         exclude = ['content_object']
+        skip_postgeneration_save = True
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.CATEGORY_CHOICE)
     content_object = SubFactory(CategoryFactory)
@@ -225,12 +229,13 @@ class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):
 
     @post_generation
     @staticmethod
-    def categories(obj: AttributeCategoryChoice, create, extracted, **kwargs) -> None:
+    def categories(obj: AttributeCategoryChoice, create: bool, extracted: list[Category]) -> None:
         if not create:
             return
         if extracted:
             for category in extracted:
                 obj.categories.add(category)
+            obj.save()
 
 
 class AttributeTextFactory(ModelFactory[AttributeText]):
@@ -342,26 +347,32 @@ class ActionFactory(ModelFactory[Action]):
     manual_status_reason = "Because this is a test."
     completion = 99
 
+    class Meta:
+        skip_postgeneration_save = True
+
     @post_generation
     @staticmethod
-    def categories(obj: Action, create, extracted, **kwargs) -> None:
+    def categories(obj: Action, create: bool, extracted: list[Category]) -> None:
         if create and extracted:
             for category in extracted:
                 obj.categories.add(category)
+            obj.save()
 
     @post_generation
     @staticmethod
-    def monitoring_quality_points(obj: Action, create, extracted, **kwargs) -> None:
+    def monitoring_quality_points(obj: Action, create: bool, extracted: list[MonitoringQualityPoint]) -> None:
         if create and extracted:
             for monitoring_quality_point in extracted:
                 obj.monitoring_quality_points.add(monitoring_quality_point)
+            obj.save()
 
     @post_generation
     @staticmethod
-    def schedule(obj: Action, create, extracted, **kwargs) -> None:
+    def schedule(obj: Action, create: bool, extracted: list[ActionSchedule]) -> None:
         if create and extracted:
             for schedule in extracted:
                 obj.schedule.add(schedule)
+            obj.save()
 
 
 class ActionTaskFactory(ModelFactory[ActionTask]):
@@ -473,6 +484,9 @@ class PledgeFactory(ModelFactory[Pledge]):
     impact_statement = "We save 100kg CO₂e each year."
     local_equivalency = "That's equivalent to 10 round trips."
 
+    class Meta:
+        skip_postgeneration_save = True
+
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Pledge:
         # OrderedModel.save() auto-assigns order unless order_on_create is set
@@ -482,7 +496,8 @@ class PledgeFactory(ModelFactory[Pledge]):
 
     @post_generation
     @staticmethod
-    def actions(obj: Pledge, create, extracted, **kwargs) -> None:
+    def actions(obj: Pledge, create: bool, extracted: list[Action]) -> None:
         if create and extracted:
             for action in extracted:
                 obj.actions.add(action)
+            obj.save()

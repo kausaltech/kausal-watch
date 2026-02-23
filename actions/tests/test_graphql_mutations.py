@@ -8,12 +8,16 @@ from django.utils import timezone
 
 import pytest
 
+from kausal_common.strawberry.mutations import OP_INFO_FRAGMENT
+from kausal_common.testing.graphql import OperationMessage, assert_operation_errors
+
 from actions.models import Action, AttributeType, Category, CategoryType, Plan
 from actions.models.attributes import AttributeChoice, AttributeTypeChoiceOption
 from actions.tests.factories import AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 from orgs.tests.factories import OrganizationFactory
 
 if TYPE_CHECKING:
+    from orgs.models import Organization
     from users.models import User
 
 pytestmark = pytest.mark.django_db
@@ -21,123 +25,147 @@ pytestmark = pytest.mark.django_db
 
 # -- Mutation query strings --------------------------------------------------
 
+
 CREATE_PLAN = """
     mutation($input: PlanInput!) {
         plan {
             createPlan(input: $input) {
-                id
-                identifier
-                name
-                shortName
-                primaryLanguage
-                otherLanguages
+                ... on Plan {
+                    id
+                    identifier
+                    name
+                    shortName
+                    primaryLanguage
+                    otherLanguages
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 DELETE_PLAN = """
     mutation($id: ID!) {
         plan {
-            deletePlan(id: $id)
+            deletePlan(id: $id) {
+                ...OpInfo
+            }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 CREATE_ACTION = """
     mutation($input: ActionInput!) {
         action {
             createAction(input: $input) {
-                id
-                identifier
-                name
-                description
+                ... on Action {
+                    id
+                    identifier
+                    name
+                    description
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 CREATE_ACTION_WITH_METADATA = """
     mutation($input: ActionInput!) {
         action {
             createAction(input: $input) {
-                id
-                identifier
-                name
-                categories {
+                ... on Action {
                     id
                     identifier
-                    type { identifier }
-                }
-                attributes {
-                    ... on AttributeChoice {
+                    name
+                    categories {
+                        id
+                        identifier
                         type { identifier }
-                        choice { identifier name }
+                    }
+                    attributes {
+                        ... on AttributeChoice {
+                            type { identifier }
+                            choice { identifier name }
+                        }
                     }
                 }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 CREATE_CATEGORY_TYPE = """
     mutation($input: CategoryTypeInput!) {
         plan {
             createCategoryType(input: $input) {
-                id
-                identifier
-                name
-                usableForActions
-                usableForIndicators
+                ... on CategoryType {
+                    id
+                    identifier
+                    name
+                    usableForActions
+                    usableForIndicators
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 CREATE_CATEGORY = """
     mutation($input: CategoryInput!) {
         plan {
             createCategory(input: $input) {
-                id
-                identifier
-                name
-                order
-                parent { id }
+                ... on Category {
+                    id
+                    identifier
+                    name
+                    order
+                    parent { id }
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 CREATE_ATTRIBUTE_TYPE = """
     mutation($input: AttributeTypeInput!) {
         plan {
             createAttributeType(input: $input) {
-                id
-                identifier
-                name
-                format
-                helpText
-                choiceOptions {
+                ... on AttributeType {
                     id
                     identifier
                     name
+                    format
+                    helpText
+                    choiceOptions {
+                        id
+                        identifier
+                        name
+                    }
                 }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 ADD_RELATED_ORGANIZATION = """
     mutation($input: AddRelatedOrganizationInput!) {
         plan {
             addRelatedOrganization(input: $input) {
-                id
-                identifier
-                name
+                ... on Plan {
+                    id
+                    identifier
+                    name
+                }
+                ... OpInfo
             }
         }
     }
-"""
+""" + OP_INFO_FRAGMENT
 
 
 # -- Permission tests ---------------------------------------------------------
@@ -189,6 +217,30 @@ class TestCreatePlan:
         assert result['primaryLanguage'] == 'en'
         assert Plan.objects.filter(identifier='test-new-plan').exists()
 
+    def test_create_plan_with_duplicate_identifier(
+        self, graphql_client_query, client, plan: Plan, organization: Organization, superuser: User
+    ):
+        client.force_login(superuser)
+        response = graphql_client_query(
+            CREATE_PLAN,
+            variables={'input': {
+                'identifier': plan.identifier,
+                'name': 'Plan With Duplicate Identifier',
+                'primaryLanguage': 'en',
+                'organizationId': str(organization.pk),
+            }},
+        )
+        assert 'errors' not in response
+        messages = response['data']['plan']['createPlan']['messages']
+        assert len(messages) == 1
+        assert messages[0] == {
+            'kind': 'VALIDATION',
+            'message': 'Plan with this Identifier already exists.',
+            'field': 'identifier',
+            'code': 'unique',
+        }
+        assert 'id' not in response['data']['plan']['createPlan']
+
     def test_create_plan_with_features(self, graphql_client_query_data, client, superuser: User):
         client.force_login(superuser)
         org = OrganizationFactory.create()
@@ -234,7 +286,7 @@ class TestDeletePlan:
         plan_pk = plan.pk
 
         data = graphql_client_query_data(DELETE_PLAN, variables={'id': str(plan_pk)})
-        assert data['plan']['deletePlan'] is True
+        assert data['plan']['deletePlan'] is None
         assert not Plan.objects.filter(pk=plan_pk).exists()
 
     def test_delete_plan_by_identifier(self, graphql_client_query_data, client, superuser: User):
@@ -242,7 +294,7 @@ class TestDeletePlan:
         plan = self._create_deletable_plan(identifier='delete-by-ident')
 
         data = graphql_client_query_data(DELETE_PLAN, variables={'id': 'delete-by-ident'})
-        assert data['plan']['deletePlan'] is True
+        assert data['plan']['deletePlan'] is None
         assert not Plan.objects.filter(pk=plan.pk).exists()
 
     def test_delete_plan_too_old(self, graphql_client_query, client, superuser: User):
@@ -317,7 +369,12 @@ class TestCreateAction:
                 'identifier': '',
             }},
         )
-        assert 'errors' in response
+        data = response['data']['action']['createAction']
+        assert 'errors' not in response
+        assert 'messages' in data
+        assert len(data['messages']) == 1
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert data['messages'][0]['message'] == 'Action identifier required for this plan.'
 
     def test_create_action_on_locked_plan(self, graphql_client_query, client, superuser: User):
         client.force_login(superuser)
@@ -534,7 +591,12 @@ class TestCreateCategory:
                 'name': 'Nope',
             }},
         )
-        assert 'errors' in response
+        data = response['data']['plan']['createCategory']
+        assert 'errors' not in response
+        assert 'messages' in data
+        assert len(data['messages']) == 1
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert data['messages'][0]['message'] == 'Categories of this type are not editable.'
 
 
 # -- create_attribute_type -----------------------------------------------------
@@ -600,7 +662,19 @@ class TestCreateAttributeType:
                 # Missing choiceOptions
             }},
         )
-        assert 'errors' in response
+        data = response['data']['plan']['createAttributeType']
+        assert_operation_errors(
+            data,
+            [
+                OperationMessage(
+                    kind='VALIDATION',
+                    message=(
+                        'Choice options are required for ordered choice, unordered choice, '
+                        'and optional choice with optional text attributes.'
+                    )
+                )
+            ],
+        )
 
     def test_create_text_attribute_type_rejects_choice_options(
         self, graphql_client_query, client, superuser: User, plan: Plan,
@@ -618,7 +692,19 @@ class TestCreateAttributeType:
                 ],
             }},
         )
-        assert 'errors' in response
+        data = response['data']['plan']['createAttributeType']
+        assert_operation_errors(
+            data,
+            [
+                OperationMessage(
+                    kind='VALIDATION',
+                    message=(
+                        'Choice options are only allowed for ordered choice, unordered choice, '
+                        'and optional choice with optional text attributes.'
+                    )
+                )
+            ],
+        )
 
 
 # -- add_related_organization --------------------------------------------------

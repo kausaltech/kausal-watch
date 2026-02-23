@@ -1,4 +1,5 @@
 import datetime
+from typing import TYPE_CHECKING
 
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import ListBlockFactory, StructBlockFactory
@@ -7,8 +8,8 @@ from factory.declarations import SelfAttribute, Sequence, SubFactory
 from factory.django import DjangoModelFactory
 from factory.helpers import post_generation
 
-import indicators
 from actions.tests.factories import ActionFactory, PlanFactory
+from indicators.blocks import IndicatorBlock, IndicatorGroupBlock, IndicatorShowcaseBlock
 from indicators.models import (
     ActionIndicator,
     CommonIndicator,
@@ -30,6 +31,9 @@ from indicators.models.dimensions import PlanDimension
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
+
+if TYPE_CHECKING:
+    from actions.models import Plan
 
 
 class UnitFactory(DjangoModelFactory[Unit]):
@@ -74,6 +78,7 @@ class CommonIndicatorNormalizatorFactory(DjangoModelFactory[CommonIndicatorNorma
 class IndicatorFactory(DjangoModelFactory[Indicator]):
     class Meta:
         model = 'indicators.Indicator'
+        skip_postgeneration_save = True
 
     organization = SubFactory(OrganizationFactory)
     identifier = Sequence(lambda i: f"indicator{i}")
@@ -98,10 +103,11 @@ class IndicatorFactory(DjangoModelFactory[Indicator]):
 
     @post_generation
     @staticmethod
-    def plans(obj: Indicator, create, extracted, **kwargs) -> None:
+    def plans(obj: Indicator, create: bool, extracted: list[Plan]) -> None:
         if create and extracted:
             for plan in extracted:
                 obj.plans.add(plan)
+            obj.save()
 
 class IndicatorLevelFactory(DjangoModelFactory[IndicatorLevel]):
     class Meta:
@@ -132,7 +138,7 @@ class IndicatorGraphFactory(DjangoModelFactory[IndicatorGraph]):
 
 class IndicatorBlockFactory(StructBlockFactory):
     class Meta:
-        model = indicators.blocks.IndicatorBlock
+        model = IndicatorBlock
 
     indicator = SubFactory(IndicatorFactory)
     style = 'graph'
@@ -140,7 +146,7 @@ class IndicatorBlockFactory(StructBlockFactory):
 
 class IndicatorGroupBlockFactory(StructBlockFactory):
     class Meta:
-        model = indicators.blocks.IndicatorGroupBlock
+        model = IndicatorGroupBlock
 
     title = "Indicator group block title"
     indicators = ListBlockFactory(IndicatorBlockFactory)
@@ -148,7 +154,7 @@ class IndicatorGroupBlockFactory(StructBlockFactory):
 
 class IndicatorShowcaseBlockFactory(StructBlockFactory):
     class Meta:
-        model = indicators.blocks.IndicatorShowcaseBlock
+        model = IndicatorShowcaseBlock
 
     title = "Indicator showcase block title"
     body = RichText("<p>Indicator showcase block body</p>")
@@ -200,6 +206,7 @@ class PlanDimensionFactory(DjangoModelFactory[PlanDimension]):
 class IndicatorValueFactory(DjangoModelFactory[IndicatorValue]):
     class Meta:
         model = 'indicators.IndicatorValue'
+        skip_postgeneration_save = True
 
     indicator = SubFactory(IndicatorFactory)
     value = 1.23
@@ -207,10 +214,11 @@ class IndicatorValueFactory(DjangoModelFactory[IndicatorValue]):
 
     @post_generation
     @staticmethod
-    def categories(obj: IndicatorValue, create, extracted, **kwargs) -> None:
+    def categories(obj: IndicatorValue, create: bool, extracted: list[DimensionCategory]) -> None:
         if create and extracted:
             for category in extracted:
                 obj.categories.add(category)
+            obj.save()
 
 
 class IndicatorGoalFactory(DjangoModelFactory[IndicatorGoal]):

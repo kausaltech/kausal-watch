@@ -232,7 +232,7 @@ def _disable_search_autoupdate(settings) -> None:
 
 
 class ModelAdminEditTest(Protocol):
-    def __call__(  # noqa: PLR0913
+    def __call__(
         self, admin_class: type[ModelAdmin], instance: Model, user: User,
         post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...  # noqa: B006
 
@@ -297,7 +297,7 @@ common_kwargs = dict(
 i = 0
 
 
-def _attribute_type_name(format):
+def _attribute_type_name(format) -> str:
     global i
     i += 1
     return f'Action attribute type {i} [{format}]'
@@ -309,6 +309,7 @@ for format in AttributeType.AttributeFormat:
         f'action_attribute_type__{format.value}',
         name=_attribute_type_name(format),
         format=format,
+        _caller_locals=None,
         **common_kwargs,
     )
 
