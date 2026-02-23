@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kausal-watch"
-requires-python = ">= 3.13"
+requires-python = ">= 3.14"
 version = "1.0.0"
 dependencies = [
     "asgi-cors",
@@ -44,7 +44,7 @@ dependencies = [
     "elasticsearch",
     "elasticsearch-dsl",
     "factory-boy",
-    "fastmcp==3.0.0b1",
+    "fastmcp==3.0",
     "graphene-django",
     "graphene-django-optimizer",
     "graphene-pydantic",
@@ -169,8 +169,8 @@ always_false = ['IS_PATHS']
 [[tool.mypy.overrides]]
 module = [
   "anymail.*",
-  "colored.*",
   "channels.*",
+  "colored.*",
   "dal_admin_filters.*",
   "dal.*",
   "debug_toolbar.*",
@@ -186,13 +186,16 @@ module = [
   "graphene_django.*",
   "grapple.*",
   "gunicorn.*",
+  "ipdb.*",
   "laces.*",
   "modelcluster.*",
+  "modelsearch.*",
   "modeltrans.*",
   "nanoid.*",
   "networkx.*",
   "oauth2_provider.*",
   "opentelemetry.*",
+  "pdbr.*",
   "permissionedforms.*",
   "pint_pandas.*",
   "pint.*",
@@ -206,6 +209,7 @@ module = [
   "taggit.*",
   "tinycss2.*",
   "traitlets.*",
+  "turms.*",
   "uwsgidecorators.*",
   "viztracer.*",
   "wagtail_localize.*",
@@ -278,6 +282,9 @@ django_settings_module = "aplans.settings"
 include-package-data = false
 py-modules = []
 
+[tool.ty.environment]
+extra-paths = ['kausal_common/typings']
+
 [tool.uv]
 environments = [
   "python_full_version >= '3.13' and sys_platform == 'linux' and platform_machine == 'x86_64'",
@@ -303,10 +310,12 @@ dev = [
     "basedpyright>=1.32.1",
     "daphne",
     "django-debug-toolbar",
+    "django-zeal>=2.0.4",
     "ipdb",
     "ipython",
-    "pdbpp",
+    "pdbr>=0.9.7",
     "prek>=0.2.12",
+    "turms>=0.10.1",
     "uv",
     "virtualenvwrapper>=6.1.1",
     "viztracer",
@@ -328,6 +337,7 @@ lint = [
     "types-oauthlib",
     "types-psutil",
     "types-python-dateutil",
+    "types-requests>=2.32.4.20260107",
     "types-uwsgi",
 ]
 prod = [
