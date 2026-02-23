@@ -26,6 +26,7 @@ from kausal_common.strawberry.schema import Schema as UnifiedSchema
 from kausal_common.users import user_or_none
 from kausal_common.users.schema import UserNode
 
+from aplans import gql  # noqa: TC002
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.schema_context import WatchGraphQLContext
@@ -55,7 +56,7 @@ from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, SBInfo, WorkflowStateEnum, get_plan_from_context
+from .graphql_types import DjangoNode, WorkflowStateEnum, get_plan_from_context
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -112,9 +113,9 @@ class Query(
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True), plan=graphene.ID(required=True))
     me = graphene.Field(UserNode, required=False, description="The current user")
 
-    @sb.field(description="Admin query namespace")
     @staticmethod
-    def admin(root, info: SBInfo) -> Annotated[AdminQuery, sb.lazy('actions.graphql_admin_schema')]:
+    @sb.field(description="Admin query namespace")
+    def admin(root, info: gql.Info) -> Annotated[AdminQuery, sb.lazy('actions.graphql_admin_schema')]:
         user = user_or_none(info.context.user)
         if user is None or not user.is_superuser:
             raise PermissionError("Admin namespace requires authenticated access")
@@ -220,9 +221,7 @@ class Query(
 @sb.type
 class Mutation(
     actions_schema.Mutation,
-    indicators_schema.Mutation,
     orgs_schema.Mutation,
-    people_schema.Mutation,
     graphene.ObjectType[Any],
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
@@ -233,7 +232,7 @@ class Mutation(
     name='auth',
     description="Provide authentication data",
 )
-def auth_directive(info: SBInfo, uuid: str, token: str):
+def auth_directive(info: gql.Info, uuid: str, token: str):  # pyright: ignore[reportUnusedParameter]
     return
 
 graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
@@ -274,7 +273,7 @@ class InstanceContextInput:
     name='context',
     description="Paths instance context, including the selected locale",
 )
-def context_directive(info: SBInfo, input: InstanceContextInput):
+def context_directive(info: gql.Info, input: InstanceContextInput):  # pyright: ignore[reportUnusedParameter]
     return
 
 
@@ -290,8 +289,8 @@ def context_directive(info: SBInfo, input: InstanceContextInput):
     ),
 )
 def workflow_directive(
-    info: SBInfo,
-    state: Annotated[
+    info: gql.Info,  # pyright: ignore[reportUnusedParameter]
+    state: Annotated[  # pyright: ignore[reportUnusedParameter]
         WorkflowStateEnum,
         sb.argument(
             description="State of content to show",
@@ -326,13 +325,13 @@ class WatchSchema(UnifiedSchema):
 def _validate_type_registry(types: set[type]) -> None:
     registered_names = set()
     for type_ in types:
-        if has_object_definition(type_):
+        meta = get_graphene_meta(type_)
+        if meta is not None:
+            name = meta.name
+        elif has_object_definition(type_):
             name = type_.__strawberry_definition__.name
         else:
-            meta = get_graphene_meta(type_)
-            if meta is None:
-                raise TypeError(f"Type {type_} is not a valid Strawberry nor a Graphene type")
-            name = meta.name
+            raise TypeError(f"Type {type_} is not a valid Strawberry nor a Graphene type")
         if name in registered_names:
             raise ValueError(f"Type {type_} has name {name} which is already registered")
         registered_names.add(name)

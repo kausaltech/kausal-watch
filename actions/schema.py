@@ -32,16 +32,16 @@ from grapple.registry import registry as grapple_registry
 from grapple.types.interfaces import get_page_interface
 
 from kausal_common.datasets.models import Dataset
-from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from kausal_common.graphene.grapple import make_grapple_streamfield
 from kausal_common.graphene.registry import register_graphene_node
+from kausal_common.strawberry.errors import PermissionDeniedError
 from kausal_common.users import is_authenticated, user_or_none
 
+from aplans import gql  # noqa: TC002
 from aplans.cache import SerializedDictWithRelatedObjectCache
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
     DjangoNode,
-    SBInfo,
     WorkflowStateDescription,
     WorkflowStateEnum,
     get_plan_from_context,
@@ -811,10 +811,15 @@ class ResolveShortDescriptionFromLeadParagraphShim:
         return root.lead_paragraph
 
 
+CategoryTypeSelectWidget = django_choices_to_graphene(CategoryType._meta.get_field('select_widget'))  # pyright: ignore[reportArgumentType]
+
+
 @register_django_node
 class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[CategoryType]):
     attribute_types = graphene.List(graphene.NonNull(AttributeTypeNode), required=True)
-    selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
+    selection_type = graphene.NonNull(
+        CategoryTypeSelectWidget, description=str(CategoryType._meta.get_field('select_widget').help_text)  # pyright: ignore[reportAttributeAccessIssue]
+    )
     categories = graphene.List(
         graphene.NonNull('actions.schema.CategoryNode'),
         only_root=graphene.Boolean(default_value=False),
@@ -2277,30 +2282,6 @@ class Query:
         )
 
 
-class ActionResponsiblePartyForm(ModelForm[ActionResponsibleParty]):
-    # TODO: Eventually we will want to allow updating things other than organization
-    class Meta:
-        model = ActionResponsibleParty
-        fields = ['organization']
-
-
-class UpdateActionResponsiblePartyMutation(UpdateModelInstanceMutation):
-    class Meta:
-        form_class = ActionResponsiblePartyForm
-
-
-class PlanForm(ModelForm[Plan]):
-    # TODO: Eventually we will want to allow updating things other than organization
-    class Meta:
-        model = Plan
-        fields = ['organization']
-
-
-class UpdatePlanMutation(UpdateModelInstanceMutation):
-    class Meta:
-        form_class = PlanForm
-
-
 class RegisterPledgeUserPayload(graphene.ObjectType[Any]):
     """Payload returned after registering a pledge user."""
 
@@ -2425,28 +2406,27 @@ def get_action_mutation_namespace():
 
 
 class Mutation(graphene.ObjectType[Any]):
-    update_plan = UpdatePlanMutation.Field()
-    update_action_responsible_party = UpdateActionResponsiblePartyMutation.Field()
     pledge = graphene.Field(PledgeMutations, required=True)
 
     @staticmethod
     def resolve_pledge(root, info: GQLInfo) -> PledgeMutations:
         return PledgeMutations()
-    plan = graphene.Field(get_plan_mutation_namespace)
-    action = graphene.Field(get_action_mutation_namespace)
+
+    plan = graphene.Field(graphene.NonNull(get_plan_mutation_namespace))
+    action = graphene.Field(graphene.NonNull(get_action_mutation_namespace))
 
     @staticmethod
     def resolve_plan(root, info: GQLInfo):
         user = user_or_none(info.context.user)
         if user is None or not user.is_superuser:
-            raise PermissionError("Superuser required for this operation.")
+            raise PermissionDeniedError(info, "Superuser required for this operation.")
         return get_plan_mutation_namespace()()
 
     @staticmethod
     def resolve_action(root, info: GQLInfo):
         user = user_or_none(info.context.user)
         if user is None or not user.is_superuser:
-            raise PermissionError("Superuser required for this operation.")
+            raise PermissionDeniedError(info, "Superuser required for this operation.")
         return get_action_mutation_namespace()()
 
 
@@ -2459,7 +2439,7 @@ class PlanUpdate:
 @sb.type
 class Subscription:
     @sb.subscription
-    async def plan_cache_invalidations(self, info: SBInfo) -> AsyncGenerator[list[PlanUpdate]]:
+    async def plan_cache_invalidations(self, info: gql.Info) -> AsyncGenerator[list[PlanUpdate]]:
         ws = info.context.get_ws_consumer()
         channel_layer = ws.channel_layer
         if channel_layer is None:

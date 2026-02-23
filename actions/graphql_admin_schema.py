@@ -7,17 +7,15 @@ import strawberry_django
 
 from kausal_common.users import user_or_bust, user_or_none
 
+from aplans import gql  # noqa: TC002
+
 from actions.models import Action, Plan
 from admin_site.models import Client
 from orgs.models import Organization
 from orgs.schema import OrganizationNode
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from django.db.models import QuerySet
-
-    from aplans.graphql_types import SBInfo
 
     from actions.schema import ActionNode
 
@@ -30,7 +28,7 @@ class ClientNode:
     url: str
 
     @classmethod
-    def get_queryset(cls, qs: QuerySet[Client], info: SBInfo) -> QuerySet[Client]:
+    def get_queryset(cls, qs: QuerySet[Client], info: gql.Info) -> QuerySet[Client]:
         user = user_or_none(info.context.user)
         if user is None or not user.is_superuser:
             return qs.none()
@@ -40,18 +38,18 @@ class ClientNode:
 @sb.type
 class AdminQuery:
     @strawberry_django.field(description='List of all clients', graphql_type=list[ClientNode])
-    def clients(self) -> Iterable[Client]:
-        return Client.objects.all().order_by('name')
+    def clients(self) -> list[Client]:
+        return list(Client.objects.all().order_by('name'))
 
     @strawberry_django.field(description='List of all organizations', graphql_type=list[OrganizationNode])
     def organizations(
         self,
-        info: SBInfo,
+        info: gql.Info,
         plan: Annotated[sb.ID | None, 'The plan identifier to filter organizations by'] = None,
         parent: Annotated[sb.ID | None, 'The parent organization ID'] = None,
         depth: Annotated[int, 'Number of descendant levels to include'] = 0,
         contains: Annotated[str | None, 'Search string to filter organizations by name (case-insensitive)'] = None,
-    ) -> Iterable[Organization]:
+    ) -> list[Organization]:
         user = user_or_bust(info.context.user)
         all_orgs = Organization.objects.qs.editable_by_user(user)
         depth += 1
@@ -69,15 +67,15 @@ class AdminQuery:
         all_orgs = all_orgs.filter(depth__lte=depth)
         if contains:
             all_orgs = all_orgs.filter(name__icontains=contains)
-        return all_orgs.order_by('path')
+        return list(all_orgs.order_by('path'))
 
     @strawberry_django.field(
         description='Get actions by their IDs', graphql_type=list[Annotated['ActionNode', sb.lazy('.schema')]]
     )
     def actions(
         self,
-        info: SBInfo,
+        info: gql.Info,
         ids: Annotated[list[sb.ID], 'List of action IDs to fetch'],
-    ) -> Iterable[Action]:
+    ) -> list[Action]:
         user = user_or_bust(info.context.user)
-        return Action.objects.qs.visible_for_user(user).filter(pk__in=ids)
+        return list(Action.objects.qs.visible_for_user(user).filter(pk__in=ids))

@@ -48,7 +48,6 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organ
         graphene.NonNull('actions.schema.PlanNode'), except_plan=graphene.ID(required=False), required=True,
     )
 
-
     @staticmethod
     @gql_optimizer.resolver_hints(
         only=tuple(),
@@ -107,7 +106,7 @@ class Query:
     organization = graphene.Field(OrganizationNode, id=graphene.ID(required=True))
 
     @staticmethod
-    def resolve_organization(root, info, id: str) -> Organization:
+    def resolve_organization(root, info: GQLInfo, id: str) -> Organization:
         return Organization.objects.get(id=id)
 
 
@@ -118,7 +117,7 @@ def _get_organization_mutation_namespace() -> type:
 
 
 class Mutation(graphene.ObjectType[Any]):
-    organization = graphene.Field(_get_organization_mutation_namespace)
+    organization = graphene.Field(graphene.NonNull(_get_organization_mutation_namespace))
 
     @staticmethod
     def resolve_organization(root, info: GQLInfo) -> Any:

@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
+from django.forms import ValidationError
 import strawberry as sb
 
-from kausal_common.users import user_or_none
+from kausal_common.strawberry.permissions import SuperuserOnly
+from kausal_common.users import user_or_bust
+
+from aplans import gql
 
 from orgs.models import Organization
-from orgs.schema import OrganizationNode  # noqa: TC001
-
-if TYPE_CHECKING:
-    from aplans.graphql_types import SBInfo
+from orgs.schema import OrganizationNode
 
 
 @sb.input
@@ -30,30 +31,16 @@ class OrganizationInput:
     )
 
 
-class ValidationError(Exception):
-    pass
-
-
 @sb.type
 class OrganizationMutations:
-    @sb.mutation(description="Create a new organization")
-    def create_organization(self, info: SBInfo, input: OrganizationInput) -> OrganizationNode:
-        user = user_or_none(info.context.user)
-        if user is None:
-            raise PermissionError("Authentication required for this operation.")
-        if not user.is_superuser:
-            raise PermissionError("Superuser required for this operation.")
-
-        org = Organization(
-            name=input.name,
-            abbreviation=input.abbreviation or '',
-            primary_language=input.primary_language,
-        )
-
+    @gql.mutation(description="Create a new organization", permission_classes=[SuperuserOnly])
+    def create_organization(self, info: gql.Info, input: OrganizationInput) -> OrganizationNode:
+        org, _, _ = gql.prepare_create_update(info, Organization, input)
+        user = user_or_bust(info.context.user)
         if input.parent_id:
-            parent = Organization.objects.filter(pk=input.parent_id).first()
+            parent = Organization.get_parent_choices(user=user).filter(pk=input.parent_id).first()
             if parent is None:
-                raise ValidationError(f"Parent organization with ID {input.parent_id} not found.")
+                raise ValidationError({'parent_id':f"Parent organization with ID {input.parent_id} not found."})
             org = parent.add_child(instance=org)
         else:
             org = Organization.add_root(instance=org)

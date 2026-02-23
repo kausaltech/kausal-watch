@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import graphene
 from django.forms import ModelForm
@@ -8,8 +8,6 @@ from graphql.error import GraphQLError
 from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
-
-from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import RestrictedVisibilityModel, public_fields
@@ -39,14 +37,15 @@ from indicators.models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from django.db.models.query import QuerySet
 
     from aplans.graphql_types import GQLInfo
 
-    from actions.models.action import ActionQuerySet, BaseChangeLogMessage
+    from actions.models.action import ActionQuerySet
     from actions.models.plan import Plan, PlanQuerySet
+    from admin_site.models import BaseChangeLogMessage
 
 
 class UnitNode(DjangoNode[Unit]):
@@ -494,12 +493,3 @@ class DashboardIndicatorChartSeries(graphene.ObjectType[Any]):
 
     dimension_category = graphene.types.Field(DimensionCategoryNode)
     values = graphene.types.List(IndicatorValueNode, required=True)
-
-
-class UpdateIndicatorMutation(UpdateModelInstanceMutation):
-    class Meta:
-        form_class = IndicatorForm
-
-
-class Mutation(graphene.ObjectType[Any]):
-    update_indicator = UpdateIndicatorMutation.Field()

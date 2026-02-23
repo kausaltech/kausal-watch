@@ -120,6 +120,12 @@ extend = "./kausal_common/configs/ruff.toml"
 extend-exclude = ["./paths_integration/_generated_", "./mcp_server/__generated__"]
 
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-decorators = [
+  "aplans.gql.mutation",
+  "strawberry_django.input",
+]
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "aplans.settings"
 norecursedirs = [

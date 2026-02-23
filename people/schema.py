@@ -3,7 +3,6 @@ from __future__ import annotations
 import graphene
 from django.forms import ModelForm
 
-from kausal_common.graphene.graphql_helpers import UpdateModelInstanceMutation
 from kausal_common.people.schema import PersonNode as BasePersonNode
 
 from aplans.graphql_types import DjangoNode, get_plan_from_context, register_django_node
@@ -37,12 +36,3 @@ class PersonForm(ModelForm[Person]):
     class Meta:
         model = Person
         fields = ['organization']
-
-
-class UpdatePersonMutation(UpdateModelInstanceMutation):
-    class Meta:
-        form_class = PersonForm
-
-
-class Mutation(graphene.ObjectType):
-    update_person = UpdatePersonMutation.Field()

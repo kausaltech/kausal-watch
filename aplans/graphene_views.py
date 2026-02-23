@@ -29,7 +29,6 @@ from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
 
 from kausal_common.deployment import env_bool
-from kausal_common.graphene.graphql_helpers import AuthenticatedUserNode
 
 from aplans.types import WatchAPIRequest
 
@@ -103,18 +102,12 @@ class APITokenMiddleware:
         info.context.user = user
 
     def resolve(self, next, root, info: GraphQLResolveInfo, **kwargs):
-        context = info.context
-
         if root is None:
             operation = info.operation
             for directive in operation.directives:
                 if directive.name.value == 'auth':
                     self.process_auth_directive(info, directive)
 
-        rt = info.return_type
-        gt = getattr(rt, 'graphene_type', None)
-        if gt and issubclass(gt, AuthenticatedUserNode) and not getattr(context, 'user', None):
-            raise GraphQLAuthRequiredError("Authentication required")
         ret = next(root, info, **kwargs)
         return ret
 
