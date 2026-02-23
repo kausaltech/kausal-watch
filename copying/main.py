@@ -19,7 +19,7 @@ from django.db.models import Count, Field, ForeignKey, Manager, ManyToOneRel, Mo
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Page, Revision, Site
+from wagtail.models import Page, Revision, RevisionMixin, Site
 from wagtail.models.i18n import Locale
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
@@ -779,24 +779,48 @@ def copy_root_pages(
     return copies
 
 
-def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
+def _copy_instance_revision(
+    instance: RevisionMixin, clone_visitor: CloneVisitor, update_references_visitor: UpdateReferencesVisitor,
+) -> None:
+    try:
+        rev_obj = instance.latest_revision.as_object()
+    except Exception:
+        # Some non-ClusterableModel models with i18n fields that reference FKs
+        # (e.g., default_language_field='plan__primary_language_lowercase') cannot be
+        # deserialized from revision content because the FK isn't in the serialized data.
+        # Clear the stale reference to the original's revision.
+        model_name = type(instance).__name__
+        logger.warning(f'Failed to deserialize revision for {model_name} pk={instance.pk}, skipping')
+        instance.latest_revision = None
+        instance.save(update_fields=['latest_revision'])
+        return
+    # as_object() sets pk from the revision's content_object (the original), so fix it to the copy's pk
+    rev_obj.pk = instance.pk
+    if hasattr(rev_obj, 'uuid'):
+        rev_obj.uuid = instance.uuid
+    if hasattr(rev_obj, 'copy_of'):
+        rev_obj.copy_of = instance.copy_of
+    # Update but don't save `rev_obj`. (Otherwise we'd overwrite published instances with drafts. We just want to
+    # create a revision out of `rev_obj` and save that.)
+    update_references_visitor.update_instance(rev_obj, save=False)
+    draft_attributes = getattr(rev_obj, 'draft_attributes', None)
+    if draft_attributes:
+        draft_attributes.replace_references(clone_visitor)
+    new_rev = rev_obj.save_revision(changed=False)
+    instance.latest_revision = new_rev
+    instance.save(update_fields=['latest_revision'])
+
+
+def copy_revisions(clone_visitor: CloneVisitor):
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
-    for action in Action.objects.filter(plan=plan_copy, latest_revision__isnull=False).select_related('latest_revision'):
-        assert isinstance(action.latest_revision, Revision)
-        rev_obj = action.latest_revision.as_object()
-        # The PK of `rev_obj` is that of the original from which `action` was copied
-        rev_obj.pk = action.pk
-        rev_obj.uuid = action.uuid
-        assert action.copy_of
-        rev_obj.copy_of = action.copy_of
-        # Update but don't save `rev_obj`. (Otherwise we'd overwrite published actions with drafts. We just want to
-        # create a revision out of `rev_obj` and save that.
-        update_references_visitor.update_instance(rev_obj, save=False)
-        if rev_obj.draft_attributes:
-            rev_obj.draft_attributes.replace_references(clone_visitor)
-        new_rev = rev_obj.save_revision(changed=False)
-        action.latest_revision = new_rev
-        action.save(update_fields=['latest_revision'])
+    for instance in clone_visitor.copies.values():
+        if not isinstance(instance, RevisionMixin):
+            continue
+        if isinstance(instance, Page):
+            continue  # Page revisions handled by UpdateReferencesVisitor.update_page_draft()
+        if instance.latest_revision is None:
+            continue
+        _copy_instance_revision(instance, clone_visitor, update_references_visitor)
 
 
 def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVisitor):
@@ -982,11 +1006,11 @@ def _clone_plan_objects(
     plan_copy.site.root_page = root_page_copy
     plan_copy.site.save(update_fields=['root_page'])
 
-    # Action revisions have not been copied yet. (`Action.revisions` is not a reverse accessor, so we can't include
+    # Revisions have not been copied yet. (`Action.revisions` is not a reverse accessor, so we can't include action
     # revisions in the clone hierarchy.)
-    # We decided that, when copying an action, we start with a clean slate revision-wise, except for the latest
-    # revision, which may be the current, yet unpublished, draft.
-    copy_action_drafts(plan_copy, clone_visitor)
+    # We decided that, when copying, we start with a clean slate revision-wise, except for the latest revision, which
+    # may be the current, yet unpublished, draft.
+    copy_revisions(clone_visitor)
 
     if copy_indicators:
         indicators = list(plan.indicators.all())

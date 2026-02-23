@@ -5,7 +5,12 @@ from wagtail.rich_text import RichText
 
 import pytest
 
-from actions.tests.factories import ActionContactFactory, PlanFactory, WorkflowFactory
+from actions.tests.factories import (
+    ActionContactFactory,
+    ActionStatusFactory,
+    PlanFactory,
+    WorkflowFactory,
+)
 from copying.main import _new_site_hostname, _validate_copy_plan_args, copy_plan
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
@@ -372,3 +377,67 @@ def test_rich_text_field_indicator_references(plan_with_pages):
     assert indicator2 != indicator2_copy
     assert indicator1_copy.description == indicator1.description
     assert indicator2_copy.description == html_with_references([indicator1_copy])
+
+
+def test_action_revision_is_copied(plan_with_pages, action, user):
+    action.save_revision(user=user)
+    plan_copy = copy_plan(plan_with_pages)
+    action_copy = plan_copy.actions.get()
+    assert isinstance(action_copy.latest_revision, Revision)
+    assert action_copy.latest_revision != action.latest_revision
+    rev_obj = action_copy.latest_revision.as_object()
+    assert rev_obj.pk == action_copy.pk
+    assert rev_obj.uuid == action_copy.uuid
+    assert rev_obj.name == action.name
+
+
+def test_action_revision_references_are_updated(plan_with_pages, action, user):
+    """The revision content should reference the copied plan, not the original."""
+    action.save_revision(user=user)
+    plan_copy = copy_plan(plan_with_pages)
+    action_copy = plan_copy.actions.get()
+    rev_obj = action_copy.latest_revision.as_object()
+    assert rev_obj.plan_id == plan_copy.pk
+
+
+def test_original_action_revision_is_unchanged(plan_with_pages, action, user):
+    """Copying a plan must not modify the original action's revision."""
+    action.save_revision(user=user)
+    original_rev_pk = action.latest_revision.pk
+    copy_plan(plan_with_pages)
+    action.refresh_from_db()
+    # The original action still points to the same revision
+    assert action.latest_revision_id == original_rev_pk
+    # The revision content is unchanged (references still point to the original plan)
+    original_rev_obj = action.latest_revision.as_object()
+    assert original_rev_obj.plan_id == plan_with_pages.pk
+    assert original_rev_obj.pk == action.pk
+    assert original_rev_obj.uuid == action.uuid
+
+
+def test_model_with_deserializable_revision_skipped_gracefully(plan_with_pages):
+    """
+    Verify that copy_revisions skips models with incompatible revision deserialization.
+
+    RevisionMixin models whose i18n default_language_field traverses a regular ForeignKey (not ParentalKey) fail to
+    deserialize via as_object() due to a modeltrans/modelcluster incompatibility.
+    """
+    action_status = ActionStatusFactory.create(plan=plan_with_pages, name='On time')
+    action_status.save_revision()
+    original_rev = action_status.latest_revision
+    # Should not crash — the revision is skipped with a warning
+    plan_copy = copy_plan(plan_with_pages)
+    status_copy = plan_copy.action_statuses.get(name='On time')
+    # Revision is not copied because as_object() fails for this model
+    assert status_copy.latest_revision is None
+    # The original's revision is unchanged
+    action_status.refresh_from_db()
+    assert action_status.latest_revision == original_rev
+
+
+def test_model_without_revision_is_not_affected(plan_with_pages, action):
+    """Models without a latest_revision should not get a revision created by copying."""
+    assert action.latest_revision is None
+    plan_copy = copy_plan(plan_with_pages)
+    action_copy = plan_copy.actions.get()
+    assert action_copy.latest_revision is None
