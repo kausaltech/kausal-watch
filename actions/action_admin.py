@@ -45,6 +45,7 @@ from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
 
 from actions.chooser import ActionChooser
+from actions.models.action import _renormalize_pks_for_unique_constraint
 from actions.models.plan import Plan
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.utils import FieldLabelRenderer
@@ -248,8 +249,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
-        obj: Action = super().save(commit)
-
+        # Extract role-based formsets BEFORE calling super().save() to prevent double processing
+        role_based_formsets_by_relation = {}
         for _cls, relation_name, __, ___ in MODELS_WITH_ROLES:
             formsets = {}
             # There is a corresponding formset for a role if and only if we can edit objects of that role.
@@ -257,6 +258,13 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                 formset = cast('dict', self.formsets).pop(f'{relation_name}_{role}', None)
                 if formset:
                     formsets[role] = formset
+            if formsets:
+                role_based_formsets_by_relation[relation_name] = (_cls, formsets)
+
+        obj: Action = super().save(commit)
+
+        # Now handle the role-based formsets with renormalization logic
+        for relation_name, (_cls, formsets) in role_based_formsets_by_relation.items():
             manager = getattr(obj, relation_name)
             original_objects = manager.get_object_list().copy()
             self.save_related_objects_with_role(manager, formsets, original_objects, commit)
@@ -285,6 +293,47 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         for attribute_type in attribute_types:
             attribute_type.on_form_save(obj, self.cleaned_data, commit=commit)
         return obj
+
+    def _renormalize_pks_for_swaps(
+        self,
+        db_objects: list[ModelWithRole],
+        saved_objects: list[ModelWithRole],
+        wrapped_attr: str
+    ) -> None:
+        """
+        Renormalize PKs in formset objects to avoid swap conflicts.
+
+        When organizations/persons are swapped between roles, reassign PKs to ensure
+        each wrapped object (org/person) is assigned to the DB record that currently
+        has that wrapped object. This prevents IntegrityError from unique_together.
+
+        Args:
+            db_objects: List of original objects from the database
+            saved_objects: List of instances from formsets (may have swapped wrapped objects)
+            wrapped_attr: Name of the FK field ('organization' or 'person')
+
+        """
+        # Define accessors for model instances
+        def get_pk_model(item) -> int | None:
+            return item.pk
+
+        def set_pk_model(item, pk: int | None) -> None:
+            item.pk = pk
+            item.id = pk
+
+        def get_wrapped_id_model(item) -> int | None:
+            return getattr(item, f'{wrapped_attr}_id')
+
+        # Call generic renormalization (both db and target items are model instances)
+        _renormalize_pks_for_unique_constraint(
+            db_items=db_objects,
+            target_items=saved_objects,
+            get_pk_db=get_pk_model,
+            get_wrapped_id_db=get_wrapped_id_model,
+            get_pk_target=get_pk_model,
+            set_pk_target=set_pk_model,
+            get_wrapped_id_target=get_wrapped_id_model,
+        )
 
     def save_related_objects_with_role(self, manager, formsets, original_objects, commit=True):
         """
@@ -336,6 +385,19 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         # The formsets have only been called with commit=False so far, so if we really should commit, we need to save
         # the instances with commit=True.
         if commit:
+            # Check if we need special handling for organization/person swaps
+            # wrapped_object_attr is the 4th element in MODELS_WITH_ROLES tuple
+            wrapped_attr = None
+            for _cls, _relation_name, _wrapped_model, _wrapped_attr in MODELS_WITH_ROLES:
+                if manager.model == _cls:
+                    wrapped_attr = _wrapped_attr
+                    break
+
+            # Renormalize PKs to avoid swap conflicts
+            if wrapped_attr:
+                self._renormalize_pks_for_swaps(original_objects, saved_objects, wrapped_attr)
+
+            # Now commit with renormalized PKs
             manager.commit()
 
 

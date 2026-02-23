@@ -378,3 +378,387 @@ class TestCategoryAdminButtonHelper:
 
         assert result is not None
         assert f'category_type={category_type.id}' in result['url']
+
+
+def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, client):
+    """
+    Test that swapping organizations between ActionResponsibleParty instances works correctly.
+
+    When swapping organizations between different roles (e.g., org A moves from primary
+    to collaborator, org B moves from collaborator to primary), the final state has
+    each organization appearing only once, so this should be a valid operation.
+
+    This test currently FAILS due to a bug where Django's ORM saves formsets sequentially,
+    causing a temporary duplicate violation of the unique_together constraint.
+    After the fix, the swap should succeed without errors.
+    """
+    from actions.action_admin import ActionAdmin
+    from actions.models import ActionResponsibleParty
+    from actions.tests.factories import ActionResponsiblePartyFactory
+    from admin_site.tests.factories import ClientPlanFactory
+    from orgs.tests.factories import OrganizationFactory
+
+    # Setup: Create the plan's client association
+    ClientPlanFactory.create(plan=action.plan)
+
+    # Create two organizations
+    org_a = OrganizationFactory.create()
+    org_b = OrganizationFactory.create()
+
+    # Create two ActionResponsibleParty records with different organizations and roles
+    # Initial state: org_a is PRIMARY, org_b is COLLABORATOR
+    arp_primary = ActionResponsiblePartyFactory.create(
+        action=action,
+        organization=org_a,
+        role=ActionResponsibleParty.Role.PRIMARY,
+    )
+    arp_collaborator = ActionResponsiblePartyFactory.create(
+        action=action,
+        organization=org_b,
+        role=ActionResponsibleParty.Role.COLLABORATOR,
+    )
+
+    # Get the edit URL for the action
+    admin = ActionAdmin()
+    edit_url_name = admin.url_helper.get_action_url_name('edit')
+    edit_url = reverse(edit_url_name, kwargs={'instance_pk': action.pk})
+
+    # Login as plan admin
+    client.force_login(plan_admin_user)
+
+    # Construct POST data that swaps the organizations between the two roles
+    # Desired state: org_b is PRIMARY, org_a is COLLABORATOR
+    post_data = {
+        # Required action fields
+        'identifier': action.identifier,
+        'name': action.name,
+        'visibility': 'public',  # Required field
+        # Primary responsible parties formset - swap to org B
+        'responsible_parties_primary-TOTAL_FORMS': '1',
+        'responsible_parties_primary-INITIAL_FORMS': '1',
+        'responsible_parties_primary-MIN_NUM_FORMS': '0',
+        'responsible_parties_primary-MAX_NUM_FORMS': '1000',
+        'responsible_parties_primary-0-id': arp_primary.pk,
+        'responsible_parties_primary-0-organization': org_b.pk,  # Swapped from org_a
+        'responsible_parties_primary-0-ORDER': '1',
+        # Collaborator responsible parties formset - swap to org A
+        'responsible_parties_collaborator-TOTAL_FORMS': '1',
+        'responsible_parties_collaborator-INITIAL_FORMS': '1',
+        'responsible_parties_collaborator-MIN_NUM_FORMS': '0',
+        'responsible_parties_collaborator-MAX_NUM_FORMS': '1000',
+        'responsible_parties_collaborator-0-id': arp_collaborator.pk,
+        'responsible_parties_collaborator-0-organization': org_a.pk,  # Swapped from org_b
+        'responsible_parties_collaborator-0-ORDER': '1',
+        # Empty formsets for other relations (required for form validation)
+        'tasks-TOTAL_FORMS': '0',
+        'tasks-INITIAL_FORMS': '0',
+        'links-TOTAL_FORMS': '0',
+        'links-INITIAL_FORMS': '0',
+        'contact_persons_editor-TOTAL_FORMS': '0',
+        'contact_persons_editor-INITIAL_FORMS': '0',
+        'contact_persons_moderator-TOTAL_FORMS': '0',
+        'contact_persons_moderator-INITIAL_FORMS': '0',
+    }
+
+    # Execute the POST request - this should succeed with a redirect
+    response = client.post(edit_url, data=post_data)
+
+    # Verify successful save (redirect to the action list or detail page)
+    assert response.status_code == 302, f"Expected redirect, got {response.status_code}"
+
+    # Query for the responsible parties after the swap
+    # Note: The delete-recreate approach means the old PKs no longer exist,
+    # so we need to query by organization
+    responsible_parties = ActionResponsibleParty.objects.filter(action=action)
+    assert responsible_parties.count() == 2, "Should have exactly 2 responsible parties"
+
+    # Find the parties by organization
+    party_with_org_a = responsible_parties.get(organization=org_a)
+    party_with_org_b = responsible_parties.get(organization=org_b)
+
+    # Verify the organizations have been swapped to the correct roles
+    assert party_with_org_b.role == ActionResponsibleParty.Role.PRIMARY, \
+        f"org_b should now be PRIMARY, but has role {party_with_org_b.role}"
+
+    assert party_with_org_a.role == ActionResponsibleParty.Role.COLLABORATOR, \
+        f"org_a should now be COLLABORATOR, but has role {party_with_org_a.role}"
+
+
+def test_action_responsible_party_swap_on_publish_draft(plan, organization_factory, action_factory):
+    """
+    Test that publishing a Wagtail draft revision with swapped responsible parties succeeds.
+
+    This tests the code path where Wagtail deserializes a revision (via revision.as_object())
+    and then saves it (via Action.save()). The deserialized action will have child objects
+    with existing PKs but swapped organizations, which would cause an IntegrityError without
+    the fix in Action.save().
+    """
+    from actions.models import ActionResponsibleParty
+
+    # Create two organizations
+    org_a = organization_factory()
+    org_b = organization_factory()
+
+    # Create an action with two responsible parties in initial state
+    action = action_factory(plan=plan)
+    ActionResponsibleParty.objects.create(
+        action=action,
+        organization=org_a,
+        role=ActionResponsibleParty.Role.PRIMARY,
+        order=0,
+    )
+    ActionResponsibleParty.objects.create(
+        action=action,
+        organization=org_b,
+        role=ActionResponsibleParty.Role.COLLABORATOR,
+        order=1,
+    )
+
+    # Create an initial revision (don't publish yet - we'll test publishing the swapped one)
+    initial_revision = action.save_revision()
+
+    # Now manually create a revision with swapped responsible parties
+    # Get the revision content and modify it to have the swap
+    # Note: Use initial_revision.content (dict) not content_json (string)
+    revision_content = initial_revision.content.copy()
+
+    # Ensure attributes key exists (required by Action.publish())
+    # This is needed because Action.publish() expects it
+    if 'attributes' not in revision_content:
+        revision_content['attributes'] = {}
+
+    # Find the responsible_parties in the revision content
+    # The structure is: revision_content['responsible_parties'] = [list of dicts]
+    # Each dict has keys: 'pk', 'order', 'action', 'organization', 'role', 'specifier'
+    responsible_parties = revision_content.get('responsible_parties', [])
+
+    # Swap the organizations while keeping the PKs
+    for rp in responsible_parties:
+        if rp.get('organization') == org_a.pk:
+            # This was org_a (PRIMARY), swap to org_b
+            rp['organization'] = org_b.pk
+        elif rp.get('organization') == org_b.pk:
+            # This was org_b (COLLABORATOR), swap to org_a
+            rp['organization'] = org_a.pk
+
+    # Create a new revision with the swapped content
+    from wagtail.models import Revision
+    swapped_revision: Revision = Revision(
+        content_type=initial_revision.content_type,
+        base_content_type=initial_revision.base_content_type,
+        object_id=action.pk,
+    )
+    swapped_revision.content = revision_content
+    swapped_revision.save()
+
+    # Verify current published state is still the original (before swap)
+    action.refresh_from_db()
+    parties_before = ActionResponsibleParty.objects.filter(action=action)
+    assert parties_before.count() == 2
+    assert parties_before.get(organization=org_a).role == ActionResponsibleParty.Role.PRIMARY
+    assert parties_before.get(organization=org_b).role == ActionResponsibleParty.Role.COLLABORATOR
+
+    # Now publish the revision with swapped responsible parties
+    # This should NOT raise IntegrityError
+    swapped_revision.publish()
+
+    # Verify the swap was applied successfully
+    action.refresh_from_db()
+    parties_after = ActionResponsibleParty.objects.filter(action=action)
+    assert parties_after.count() == 2
+
+    party_a_after = parties_after.get(organization=org_a)
+    party_b_after = parties_after.get(organization=org_b)
+
+    # Verify the organizations have been swapped to the correct roles
+    assert party_b_after.role == ActionResponsibleParty.Role.PRIMARY
+    assert party_a_after.role == ActionResponsibleParty.Role.COLLABORATOR
+
+
+def test_action_contact_person_swap_should_succeed(plan_admin_user, action, client):
+    """
+    Test that swapping persons between ActionContactPerson instances works correctly.
+
+    When swapping persons between different roles (e.g., person A moves from editor
+    to moderator, person B moves from moderator to editor), the final state has
+    each person appearing only once, so this should be a valid operation.
+
+    This tests the renormalization logic in ActionAdminForm._renormalize_pks_for_swaps().
+    """
+    from actions.action_admin import ActionAdmin
+    from actions.models import ActionContactPerson
+    from actions.tests.factories import ActionContactFactory
+    from admin_site.tests.factories import ClientPlanFactory
+    from people.tests.factories import PersonFactory
+
+    # Setup: Create the plan's client association
+    ClientPlanFactory.create(plan=action.plan)
+
+    # Create two persons
+    person_a = PersonFactory.create()
+    person_b = PersonFactory.create()
+
+    # Create two ActionContactPerson records with different persons and roles
+    # Initial state: person_a is EDITOR, person_b is MODERATOR
+    acp_editor = ActionContactFactory.create(
+        action=action,
+        person=person_a,
+        role=ActionContactPerson.Role.EDITOR,
+    )
+    acp_moderator = ActionContactFactory.create(
+        action=action,
+        person=person_b,
+        role=ActionContactPerson.Role.MODERATOR,
+    )
+
+    # Get the edit URL for the action
+    admin = ActionAdmin()
+    edit_url_name = admin.url_helper.get_action_url_name('edit')
+    edit_url = reverse(edit_url_name, kwargs={'instance_pk': action.pk})
+
+    # Login as plan admin
+    client.force_login(plan_admin_user)
+
+    # Construct POST data that swaps the persons between the two roles
+    # Desired state: person_b is EDITOR, person_a is MODERATOR
+    post_data = {
+        # Required action fields
+        'identifier': action.identifier,
+        'name': action.name,
+        'visibility': 'public',  # Required field
+        # Editor contact persons formset - swap to person B
+        'contact_persons_editor-TOTAL_FORMS': '1',
+        'contact_persons_editor-INITIAL_FORMS': '1',
+        'contact_persons_editor-MIN_NUM_FORMS': '0',
+        'contact_persons_editor-MAX_NUM_FORMS': '1000',
+        'contact_persons_editor-0-id': acp_editor.pk,
+        'contact_persons_editor-0-person': person_b.pk,  # Swapped from person_a
+        'contact_persons_editor-0-ORDER': '1',
+        # Moderator contact persons formset - swap to person A
+        'contact_persons_moderator-TOTAL_FORMS': '1',
+        'contact_persons_moderator-INITIAL_FORMS': '1',
+        'contact_persons_moderator-MIN_NUM_FORMS': '0',
+        'contact_persons_moderator-MAX_NUM_FORMS': '1000',
+        'contact_persons_moderator-0-id': acp_moderator.pk,
+        'contact_persons_moderator-0-person': person_a.pk,  # Swapped from person_b
+        'contact_persons_moderator-0-ORDER': '1',
+        # Empty formsets for other relations (required for form validation)
+        'tasks-TOTAL_FORMS': '0',
+        'tasks-INITIAL_FORMS': '0',
+        'links-TOTAL_FORMS': '0',
+        'links-INITIAL_FORMS': '0',
+        'responsible_parties_primary-TOTAL_FORMS': '0',
+        'responsible_parties_primary-INITIAL_FORMS': '0',
+        'responsible_parties_collaborator-TOTAL_FORMS': '0',
+        'responsible_parties_collaborator-INITIAL_FORMS': '0',
+    }
+
+    # Execute the POST request - this should succeed with a redirect
+    response = client.post(edit_url, data=post_data)
+
+    # Verify successful save (redirect to the action list or detail page)
+    assert response.status_code == 302, f"Expected redirect, got {response.status_code}"
+
+    # Query for the contact persons after the swap
+    contact_persons = ActionContactPerson.objects.filter(action=action)
+    assert contact_persons.count() == 2, "Should have exactly 2 contact persons"
+
+    # Find the contacts by person
+    contact_with_person_a = contact_persons.get(person=person_a)
+    contact_with_person_b = contact_persons.get(person=person_b)
+
+    # Verify the persons have been swapped to the correct roles
+    assert contact_with_person_b.role == ActionContactPerson.Role.EDITOR, \
+        f"person_b should now be EDITOR, but has role {contact_with_person_b.role}"
+
+    assert contact_with_person_a.role == ActionContactPerson.Role.MODERATOR, \
+        f"person_a should now be MODERATOR, but has role {contact_with_person_a.role}"
+
+
+def test_action_contact_person_swap_on_publish_draft(plan, person_factory, action_factory):
+    """
+    Test that publishing a Wagtail draft revision with swapped contact persons succeeds.
+
+    This tests the code path where Wagtail deserializes a revision (via revision.as_object())
+    and then publishes it (via Action.publish()). The deserialized action will have child objects
+    with existing PKs but swapped persons, which would cause an IntegrityError without
+    the fix in Action._renormalize_revision_items().
+    """
+    from actions.models import ActionContactPerson
+
+    # Create two persons
+    person_a = person_factory()
+    person_b = person_factory()
+
+    # Create an action with two contact persons in initial state
+    action = action_factory(plan=plan)
+    ActionContactPerson.objects.create(
+        action=action,
+        person=person_a,
+        role=ActionContactPerson.Role.EDITOR,
+        order=0,
+    )
+    ActionContactPerson.objects.create(
+        action=action,
+        person=person_b,
+        role=ActionContactPerson.Role.MODERATOR,
+        order=1,
+    )
+
+    # Create an initial revision (don't publish yet - we'll test publishing the swapped one)
+    initial_revision = action.save_revision()
+
+    # Now manually create a revision with swapped contact persons
+    # Get the revision content and modify it to have the swap
+    revision_content = initial_revision.content.copy()
+
+    # Ensure attributes key exists (required by Action.publish())
+    if 'attributes' not in revision_content:
+        revision_content['attributes'] = {}
+
+    # Find the contact_persons in the revision content
+    # The structure is: revision_content['contact_persons'] = [list of dicts]
+    # Each dict has keys: 'pk', 'order', 'action', 'person', 'role', 'primary_contact'
+    contact_persons = revision_content.get('contact_persons', [])
+
+    # Swap the persons while keeping the PKs
+    for cp in contact_persons:
+        if cp.get('person') == person_a.pk:
+            # This was person_a (EDITOR), swap to person_b
+            cp['person'] = person_b.pk
+        elif cp.get('person') == person_b.pk:
+            # This was person_b (MODERATOR), swap to person_a
+            cp['person'] = person_a.pk
+
+    # Create a new revision with the swapped content
+    from wagtail.models import Revision
+    swapped_revision: Revision = Revision(
+        content_type=initial_revision.content_type,
+        base_content_type=initial_revision.base_content_type,
+        object_id=action.pk,
+    )
+    swapped_revision.content = revision_content
+    swapped_revision.save()
+
+    # Verify current published state is still the original (before swap)
+    action.refresh_from_db()
+    contacts_before = ActionContactPerson.objects.filter(action=action)
+    assert contacts_before.count() == 2
+    assert contacts_before.get(person=person_a).role == ActionContactPerson.Role.EDITOR
+    assert contacts_before.get(person=person_b).role == ActionContactPerson.Role.MODERATOR
+
+    # Now publish the revision with swapped contact persons
+    # This should NOT raise IntegrityError
+    swapped_revision.publish()
+
+    # Verify the swap was applied successfully
+    action.refresh_from_db()
+    contacts_after = ActionContactPerson.objects.filter(action=action)
+    assert contacts_after.count() == 2
+
+    contact_a_after = contacts_after.get(person=person_a)
+    contact_b_after = contacts_after.get(person=person_b)
+
+    # Verify the persons have been swapped to the correct roles
+    assert contact_b_after.role == ActionContactPerson.Role.EDITOR
+    assert contact_a_after.role == ActionContactPerson.Role.MODERATOR

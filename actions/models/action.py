@@ -72,7 +72,7 @@ from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from .features import PlanFeatures
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from django.db.models.expressions import Combinable
     from django.db.models.options import Options
@@ -226,6 +226,78 @@ ACTION_FIELDS_TO_ADD_TO_REVERSION = ModelWithAttributes.REVERSION_FOLLOW + [
     'related_indicators',
     'action_category_through',
 ]
+
+
+def _renormalize_pks_for_unique_constraint(
+    db_items: list,
+    target_items: list,
+    get_pk_db: Callable[[Any], int | None],
+    get_wrapped_id_db: Callable[[Any], int | None],
+    get_pk_target: Callable[[Any], int | None],
+    set_pk_target: Callable[[Any, int | None], None],
+    get_wrapped_id_target: Callable[[Any], int | None],
+) -> None:
+    """
+    Renormalize PKs to prevent unique constraint violations during swaps.
+
+    When items with a unique constraint on (parent, wrapped_foreign_key) are being
+    swapped, this function renormalizes PKs so each item updates the DB record that
+    currently has the same wrapped_foreign_key value.
+
+    This is used for ActionContactPerson and ActionResponsibleParty objects (wrappers)
+    that wrap inside them Persons and Organizations.
+
+    Args:
+        db_items: Current database state (models or dicts)
+        target_items: Desired state to save (models or dicts) - MODIFIED IN PLACE
+        get_pk_db: Function to extract PK from a db_item
+        get_wrapped_id_db: Function to extract wrapped FK ID from a db_item
+        get_pk_target: Function to extract PK from a target_item
+        set_pk_target: Function to set PK on a target_item
+        get_wrapped_id_target: Function to extract wrapped FK ID from a target_item
+
+    Example:
+        DB:     pk=1: org_a, PRIMARY    pk=2: org_b, COLLABORATOR
+        Target: pk=1: org_b, PRIMARY    pk=2: org_a, COLLABORATOR
+        After:  pk=2: org_b, PRIMARY    pk=1: org_a, COLLABORATOR  (PKs swapped)
+
+    """
+    if not target_items:
+        return
+
+    # Build mapping: wrapped_id -> current DB pk
+    wrapped_to_pk_db = {
+        get_wrapped_id_db(item): get_pk_db(item)
+        for item in db_items
+        if get_pk_db(item) is not None
+    }
+
+    # Detect if any wrapped ID is moving to a different PK
+    needs_renormalization = False
+    for item in target_items:
+        pk = get_pk_target(item)
+        if pk is None:
+            continue
+        wrapped_id = get_wrapped_id_target(item)
+        current_pk_for_wrapped = wrapped_to_pk_db.get(wrapped_id)
+        if current_pk_for_wrapped is not None and current_pk_for_wrapped != pk:
+            needs_renormalization = True
+            break
+
+    if not needs_renormalization:
+        return
+
+    # Renormalize: assign each wrapped ID to its current DB pk
+    for item in target_items:
+        wrapped_id = get_wrapped_id_target(item)
+        if wrapped_id is None:
+            continue
+        current_pk = wrapped_to_pk_db.get(wrapped_id)
+        if current_pk is not None:
+            set_pk_target(item, current_pk)
+        else:
+            # New item being added, set pk=None for INSERT
+            set_pk_target(item, None)
 
 
 @reversion.register(follow=ACTION_FIELDS_TO_ADD_TO_REVERSION)
@@ -543,8 +615,65 @@ class Action(
             else:
                 attribute_type.commit_attribute(self, attribute_value)
 
+    def _renormalize_revision_items(
+        self,
+        revision: Revision[Self],
+        content_key: str,
+        wrapped_attr: str,
+    ) -> None:
+        """
+        Renormalize PKs in revision content to avoid unique constraint violations.
+
+        Args:
+            revision: The revision being published
+            content_key: Key in revision.content ('responsible_parties' or 'contact_persons')
+            wrapped_attr: FK field name ('organization' or 'person')
+
+        """
+        # Get items from revision content
+        revision_items = revision.content.get(content_key, [])
+        if not revision_items:
+            return
+
+        # Get current DB state
+        db_items: Iterable[ActionResponsibleParty | ActionContactPerson]
+        if content_key == 'responsible_parties':
+            db_items = list(ActionResponsibleParty.objects.filter(action=self))
+        else:  # contact_persons
+            db_items = list(ActionContactPerson.objects.filter(action=self))
+
+        # Define accessors for model instances (used for db_items)
+        def get_pk_model(item) -> int | None:
+            return item.pk
+
+        def get_wrapped_id_model(item) -> int | None:
+            return getattr(item, f'{wrapped_attr}_id')
+
+        # Define accessors for dicts (used for target_items)
+        def get_pk_dict(item: dict) -> int | None:
+            return item.get('pk')
+
+        def set_pk_dict(item: dict, pk: int | None) -> None:
+            item['pk'] = pk
+
+        def get_wrapped_id_dict(item: dict) -> int | None:
+            return item.get(wrapped_attr)
+
+        # Call generic renormalization
+        _renormalize_pks_for_unique_constraint(
+            db_items=db_items,
+            target_items=revision_items,
+            get_pk_db=get_pk_model,
+            get_wrapped_id_db=get_wrapped_id_model,
+            get_pk_target=get_pk_dict,
+            set_pk_target=set_pk_dict,
+            get_wrapped_id_target=get_wrapped_id_dict,
+        )
+
     def publish(self, revision: Revision[Self], user: User | None = None, **kwargs) -> None:  # type: ignore[override]
         attributes = revision.content.pop('attributes')
+        self._renormalize_revision_items(revision, 'responsible_parties', 'organization')
+        self._renormalize_revision_items(revision, 'contact_persons', 'person')
         super().publish(revision, user=user, **kwargs)
         self.commit_attributes(attributes, user)
 
