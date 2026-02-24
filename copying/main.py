@@ -493,8 +493,13 @@ class UpdateReferencesVisitor(AbstractVisitor):
                         updated = True
         return updated
 
-    def update_cluster_related_object(self, parent: Model, cro: Model) -> bool:
-        updated = False
+    def _remap_cluster_object_pk(self, parent: Model, cro: Model) -> bool:
+        """
+        Remap the primary key of a cluster-related object from its original value to the copy's value.
+
+        Returns True if the PK was changed (or cleared), False if no remapping was needed because the
+        object is already a copy.
+        """
         try:
             cro_copy = self.clone_visitor.get_copy(cro)
         except KeyError:
@@ -506,18 +511,20 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     f"copy for {type(cro).__name__} {cro.pk}: {cro}"
                 )
                 cro.pk = None
-                updated = True
-        else:
-            assert cro.pk != cro_copy.pk
-            cro.pk = cro_copy.pk
-            updated = True
-            logger.trace(
-                f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set primary key "
-                f"of {type(cro).__name__} {cro.pk} to: {cro_copy.pk}"
-            )
+                return True
+            return False
+        assert cro.pk != cro_copy.pk
+        cro.pk = cro_copy.pk
+        logger.trace(
+            f"In cluster related objects of {type(parent).__name__} {parent.pk}: Set primary key "
+            f"of {type(cro).__name__} {cro.pk} to: {cro_copy.pk}"
+        )
+        return True
 
-        updated_extractable_refs = self.update_extractable_references(cro)
-        if updated_extractable_refs:
+    def update_cluster_related_object(self, parent: Model, cro: Model) -> bool:
+        updated = self._remap_cluster_object_pk(parent, cro)
+
+        if self.update_extractable_references(cro):
             updated = True
 
         for fk in self.get_references(cro):
