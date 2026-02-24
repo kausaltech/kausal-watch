@@ -15,7 +15,18 @@ from actions.tests.factories import (
     PlanFactory,
     WorkflowFactory,
 )
-from copying.main import _new_site_hostname, _validate_copy_plan_args, copy_plan
+from django.db import transaction
+from wagtail.models.reference_index import ReferenceIndex
+
+from copying.main import (
+    CloneVisitor,
+    UpdateReferencesVisitor,
+    _clone_plan_objects,
+    _new_site_hostname,
+    _update_reference_index_immediately_ctx,
+    _validate_copy_plan_args,
+    copy_plan,
+)
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
 from images.models import AplansImage
@@ -485,3 +496,67 @@ def test_report_type_category_field_references_are_updated(plan_with_pages):
     category_type_copy = category_field_copy.value['category_type']
     assert category_type_copy.pk != category_type.pk
     assert category_type_copy.plan == plan_copy
+
+
+class TestUpdateReferenceIndexImmediately:
+    def test_forces_immediate_indexing(self, plan_with_pages, static_page):
+        doc = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
+        # StaticPage is tracked by Wagtail's reference index.
+        # Without the context manager, the index update is deferred to transaction commit,
+        # which never happens in test transactions — so the index stays empty.
+        static_page.body = [('paragraph', RichText(html_with_references([doc])))]
+        static_page.save()
+        assert list(ReferenceIndex.get_references_for_object(static_page)) == []
+
+        # With the context manager, enqueue_on_commit=False causes the index to be updated immediately.
+        with _update_reference_index_immediately_ctx():
+            static_page.save()
+        refs = list(ReferenceIndex.get_references_for_object(static_page))
+        assert any(str(ref.to_object_id) == str(doc.pk) for ref in refs)
+
+    def test_update_indexed_references_uses_immediate_index(self, plan_with_pages, static_page):
+        doc = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
+        # doc_copy uses the same title so html_with_references produces the same text content.
+        doc_copy = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
+
+        static_page.body = [('paragraph', RichText(html_with_references([doc])))]
+
+        clone_visitor = CloneVisitor(site_hostname='copy.example.com')
+        clone_visitor.register_copy(doc, doc_copy)
+        # Register static_page as a "copy" so _update_stream_field_reference allows modifying it.
+        fake_original = StaticPage(pk=static_page.pk + 999999)
+        clone_visitor.register_copy(fake_original, static_page)
+
+        # Save within the context manager so the reference index is updated immediately.
+        with _update_reference_index_immediately_ctx():
+            static_page.save()
+
+        fields = UpdateReferencesVisitor(clone_visitor).update_indexed_references(static_page)
+        assert 'body' in fields
+        assert static_page.body[0].value.source == html_with_references([doc_copy])
+
+    def test_without_decorator_leaves_stale_rich_text_references(self, plan_with_pages, static_page):
+        doc = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
+        static_page.body = [('paragraph', RichText(html_with_references([doc])))]
+        static_page.save()
+
+        new_plan_identifier = plan_with_pages.default_identifier_for_copying()
+        new_plan_name = plan_with_pages.default_name_for_copying()
+        new_site_hostname = _new_site_hostname(plan_with_pages, new_plan_identifier)
+        clone_visitor = CloneVisitor(
+            site_hostname=new_site_hostname,
+            plan_identifier=new_plan_identifier,
+            plan_name=new_plan_name,
+        )
+
+        # Call _clone_plan_objects directly without the @update_reference_index_immediately decorator.
+        with transaction.atomic():
+            plan_copy = _clone_plan_objects(plan_with_pages, clone_visitor, None, copy_indicators=False)
+
+        page_copy = plan_copy.root_page.get_children().type(StaticPage).get().specific
+        assert isinstance(page_copy, StaticPage)
+        doc_copy = AplansDocument.objects.get(collection=plan_copy.root_collection, title=doc.title)
+        # Without the decorator, update_indexed_references() finds nothing in the un-updated index.
+        # The page copy's body still references the original doc pk (stale reference).
+        assert page_copy.body[0].value.source == html_with_references([doc])
+        assert page_copy.body[0].value.source != html_with_references([doc_copy])
