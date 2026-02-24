@@ -388,9 +388,6 @@ def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, c
     to collaborator, org B moves from collaborator to primary), the final state has
     each organization appearing only once, so this should be a valid operation.
 
-    This test currently FAILS due to a bug where Django's ORM saves formsets sequentially,
-    causing a temporary duplicate violation of the unique_together constraint.
-    After the fix, the swap should succeed without errors.
     """
     from actions.action_admin import ActionAdmin
     from actions.models import ActionResponsibleParty
@@ -484,23 +481,25 @@ def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, c
         f"org_a should now be COLLABORATOR, but has role {party_with_org_a.role}"
 
 
-def test_action_responsible_party_swap_on_publish_draft(plan, organization_factory, action_factory):
+def test_action_responsible_party_swap_on_publish_draft(plan):
     """
     Test that publishing a Wagtail draft revision with swapped responsible parties succeeds.
 
     This tests the code path where Wagtail deserializes a revision (via revision.as_object())
-    and then saves it (via Action.save()). The deserialized action will have child objects
+    and then saves it (via Action.publish()). The deserialized action will have child objects
     with existing PKs but swapped organizations, which would cause an IntegrityError without
-    the fix in Action.save().
+    the fix in Action._renormalize_revision_items().
     """
     from actions.models import ActionResponsibleParty
+    from actions.tests.factories import ActionFactory
+    from orgs.tests.factories import OrganizationFactory
 
     # Create two organizations
-    org_a = organization_factory()
-    org_b = organization_factory()
+    org_a = OrganizationFactory.create()
+    org_b = OrganizationFactory.create()
 
     # Create an action with two responsible parties in initial state
-    action = action_factory(plan=plan)
+    action = ActionFactory.create(plan=plan)
     ActionResponsibleParty.objects.create(
         action=action,
         organization=org_a,
@@ -675,7 +674,7 @@ def test_action_contact_person_swap_should_succeed(plan_admin_user, action, clie
         f"person_a should now be MODERATOR, but has role {contact_with_person_a.role}"
 
 
-def test_action_contact_person_swap_on_publish_draft(plan, person_factory, action_factory):
+def test_action_contact_person_swap_on_publish_draft(plan):
     """
     Test that publishing a Wagtail draft revision with swapped contact persons succeeds.
 
@@ -685,13 +684,15 @@ def test_action_contact_person_swap_on_publish_draft(plan, person_factory, actio
     the fix in Action._renormalize_revision_items().
     """
     from actions.models import ActionContactPerson
+    from actions.tests.factories import ActionFactory
+    from people.tests.factories import PersonFactory
 
     # Create two persons
-    person_a = person_factory()
-    person_b = person_factory()
+    person_a = PersonFactory.create()
+    person_b = PersonFactory.create()
 
     # Create an action with two contact persons in initial state
-    action = action_factory(plan=plan)
+    action = ActionFactory.create(plan=plan)
     ActionContactPerson.objects.create(
         action=action,
         person=person_a,
