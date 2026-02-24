@@ -169,6 +169,11 @@ MODELS_NOT_COPIED = [
 ]
 
 
+def _is_excluded_model(model: type[Model]) -> bool:
+    """Return True if the model is deliberately excluded from plan copying."""
+    return model in MODELS_NOT_COPIED
+
+
 class CloneVisitor(AbstractVisitor):
     """Visit a tree node and create a copy of its instance, keeping track of which copy belongs to which instance."""
 
@@ -448,7 +453,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         if exclude_fields is None:
             exclude_fields = []
         for fk in get_foreign_keys(instance):
-            if fk.name not in exclude_fields and fk.related_model not in MODELS_NOT_COPIED:
+            if fk.name not in exclude_fields and not _is_excluded_model(fk.related_model):
                 yield fk
         for gfk in get_generic_foreign_keys(instance):
             if gfk.name not in exclude_fields:
@@ -552,7 +557,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
             assert hasattr(fk, 'name')
             related_object = getattr(instance, fk.name)
             if related_object:
-                if related_object._meta.model in MODELS_NOT_COPIED:
+                if _is_excluded_model(related_object._meta.model):
                     continue
                 try:
                     copy = self.clone_visitor.get_copy(related_object)
@@ -584,7 +589,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         Returns true if and only if the instance was updated.
         """
 
-        if to_object._meta.model in MODELS_NOT_COPIED:
+        if _is_excluded_model(to_object._meta.model):
             return False
 
         try:
