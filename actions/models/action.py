@@ -618,8 +618,8 @@ class Action(
     def _renormalize_revision_items(
         self,
         revision: Revision[Self],
-        content_key: str,
-        wrapped_attr: str,
+        content_key: Literal['responsible_parties', 'contact_persons'],
+        wrapped_attr: Literal['organization', 'person'],
     ) -> None:
         """
         Renormalize PKs in revision content to avoid unique constraint violations.
@@ -639,7 +639,8 @@ class Action(
         db_items: Iterable[ActionResponsibleParty | ActionContactPerson]
         if content_key == 'responsible_parties':
             db_items = list(ActionResponsibleParty.objects.filter(action=self))
-        else:  # contact_persons
+        else:
+            assert content_key == 'contact_persons'
             db_items = list(ActionContactPerson.objects.filter(action=self))
 
         # Define accessors for model instances (used for db_items)
