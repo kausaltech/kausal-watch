@@ -765,7 +765,7 @@ def copy_root_pages(
     assert root_page_copy.translation_key != root_page.translation_key
     # When copying the translations of `root_page`, reuse this translation key
     for page in root_page.get_translations():
-        assert isinstance(page, PlanRootPage)
+        assert isinstance(page, (PlanRootPage, DocumentationRootPage))
         update_attrs = {
             'translation_key': new_translation_key,
             'title': page.title + title_suffix,
