@@ -102,10 +102,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'plan_common_category_types_through': {},
     'plan_related_organizations_through': {},
     'public_site_viewers': {},
-    # Do not copy report types because they contain attribute type
-    # references in the streamfield json which are not handled properly
-    # at the moment
-    #'report_types': {
+    'report_types': {
         # Deliberately don't copy reports because (a) the contained action snapshots refer to instances from the
         # original plan within the serialized data, and (b) it might be justifiable for many use cases to skip copying
         # reports. We could do something about (a) by meddling with the serialized data, but it's going to be an
@@ -113,7 +110,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         # 'reports': {
         #     'action_snapshots': {},  # As we don't copy `action_version`, original action will be linked to snapshot
         # },
-    #},
+    },
     'scenarios': {},
     # Note that `Dimension` instances are copied separately when `copy_indicators` is true.
     'dimensions': {},  # copies through model (`PlanDimension`) instances, not `Dimension` instances

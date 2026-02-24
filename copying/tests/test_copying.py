@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from django.contrib.contenttypes.models import ContentType
 from wagtail.models import Revision
 from wagtail.rich_text import RichText
 
 import pytest
 
+from actions.models.action import Action
 from actions.tests.factories import (
     ActionContactFactory,
     ActionStatusFactory,
+    AttributeTypeFactory,
+    CategoryTypeFactory,
     PlanFactory,
     WorkflowFactory,
 )
@@ -28,6 +32,7 @@ from indicators.tests.factories import (
 )
 from pages.models import StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory
+from reports.tests.factories import ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -444,3 +449,39 @@ def test_model_without_revision_is_not_affected(plan_with_pages, action):
     plan_copy = copy_plan(plan_with_pages)
     action_copy = plan_copy.actions.get()
     assert action_copy.latest_revision is None
+
+
+def test_report_type_attribute_field_references_are_updated(plan_with_pages):
+    """When copying a plan, attribute_type references in ReportType.fields are updated to the copy."""
+    action_ct = ContentType.objects.get_for_model(Action)
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=action_ct,
+    )
+    ReportTypeFactory.create(
+        plan=plan_with_pages,
+        fields__0__attribute__attribute_type=attribute_type,
+    )
+    plan_copy = copy_plan(plan_with_pages)
+    report_type_copy = plan_copy.report_types.get()
+    attribute_field_copy = report_type_copy.fields[0]
+    assert attribute_field_copy.block_type == 'attribute'
+    attribute_type_copy = attribute_field_copy.value['attribute_type']
+    assert attribute_type_copy.pk != attribute_type.pk
+    assert attribute_type_copy.scope_id == plan_copy.pk
+
+
+def test_report_type_category_field_references_are_updated(plan_with_pages):
+    """When copying a plan, category_type references in ReportType.fields are updated to the copy."""
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    ReportTypeFactory.create(
+        plan=plan_with_pages,
+        fields__0__categories__category_type=category_type,
+    )
+    plan_copy = copy_plan(plan_with_pages)
+    report_type_copy = plan_copy.report_types.get()
+    category_field_copy = report_type_copy.fields[0]
+    assert category_field_copy.block_type == 'categories'
+    category_type_copy = category_field_copy.value['category_type']
+    assert category_type_copy.pk != category_type.pk
+    assert category_type_copy.plan == plan_copy
