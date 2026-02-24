@@ -395,6 +395,35 @@ def test_rich_text_field_indicator_references(plan_with_pages):
     assert indicator2_copy.description == html_with_references([indicator1_copy])
 
 
+@pytest.mark.parametrize('indicator__common', [None])
+def test_indicator_reference_in_action_description_updated_when_copying_indicators(
+    plan_with_pages, action, indicator,
+):
+    """When copying a plan with indicators, indicator references in action descriptions should be updated."""
+    action.description = html_with_references([indicator])
+    action.save(update_fields=['description'])
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    action_copy = plan_copy.actions.get()
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    assert action_copy.description == html_with_references([indicator_copy])
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_indicator_reference_in_action_draft_updated_when_copying_indicators(
+    plan_with_pages, action, indicator, user,
+):
+    """When copying a plan with indicators, indicator references in action draft descriptions should be updated."""
+    action.description = html_with_references([indicator])
+    action.save(update_fields=['description'])
+    action.save_revision(user=user)
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    action_copy = plan_copy.actions.get()
+    assert action_copy.latest_revision is not None
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    draft_obj = action_copy.latest_revision.as_object()
+    assert draft_obj.description == html_with_references([indicator_copy])
+
+
 def test_action_revision_is_copied(plan_with_pages, action, user):
     action.save_revision(user=user)
     plan_copy = copy_plan(plan_with_pages)

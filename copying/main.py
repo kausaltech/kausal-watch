@@ -834,6 +834,13 @@ def _copy_instance_revision(
     # Update but don't save `rev_obj`. (Otherwise we'd overwrite published instances with drafts. We just want to
     # create a revision out of `rev_obj` and save that.)
     update_references_visitor.update_instance(rev_obj, save=False)
+    # `update_instance` handles fields with extract_references (e.g., RichTextField) via `update_indexed_references`,
+    # but only for models registered in Wagtail's ReferenceIndex. Models with a ParentalKey (like Action) are not
+    # directly indexed because Wagtail expects references to be tracked at the parent level. However, since Plan has
+    # `wagtail_reference_index_ignore=True`, Action's references are never tracked. We therefore call
+    # `update_extractable_references` directly on rev_obj to update any embedded references (e.g., indicator
+    # references in action description drafts).
+    update_references_visitor.update_extractable_references(rev_obj)
     draft_attributes = getattr(rev_obj, 'draft_attributes', None)
     if draft_attributes:
         draft_attributes.replace_references(clone_visitor)
@@ -1088,13 +1095,15 @@ def _clone_plan_objects(
     plan_copy.site.root_page = root_page_copy
     plan_copy.site.save(update_fields=['root_page'])
 
+    indicators = _copy_indicators(plan, clone_visitor) if copy_indicators else []
+
     # Revisions have not been copied yet. (`Action.revisions` is not a reverse accessor, so we can't include action
     # revisions in the clone hierarchy.)
     # We decided that, when copying, we start with a clean slate revision-wise, except for the latest revision, which
     # may be the current, yet unpublished, draft.
+    # Note: copy_revisions runs after _copy_indicators so that indicator copies exist in clone_visitor when
+    # updating references in action drafts.
     copy_revisions(clone_visitor)
-
-    indicators = _copy_indicators(plan, clone_visitor) if copy_indicators else []
 
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
