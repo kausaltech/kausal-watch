@@ -126,14 +126,12 @@ Each Django app follows consistent naming conventions for different functionalit
   ```
 - For type-only imports, use `TYPE_CHECKING` block:
   ```python
-  from __future__ import annotations
   from typing import TYPE_CHECKING
 
   if TYPE_CHECKING:
       from django.db.models import QuerySet
       from some.module import ComplexType
   ```
-- Always include `from __future__ import annotations` at the top of files.
 
 ### Code Style Conventions
 - For user-facing strings, use double quotes; for strings not visible to users, use single quotes.
