@@ -1,21 +1,24 @@
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.sessions.models import Session
-from django.core.management import CommandError
+from django.core.management import CommandError, call_command
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from django.db.models.signals import post_delete
+from django.db import ProgrammingError, connection, transaction
+from django.db.models.signals import post_delete, post_save
 from reversion.models import Revision as ReversionRevision
 from wagtail.models import ModelLogEntry, PageLogEntry, Revision as WagtailRevision
 
 import factory
 from easy_thumbnails.models import Source, Thumbnail
+from taggit.models import Tag
 
 from actions.models.plan import Plan
 from admin_site.models import Client
+from images.models import AplansRendition
 from orgs.models import Organization
 from request_log.models import LoggedRequest
 from users.models import User
@@ -121,16 +124,15 @@ class Command(BaseCommand):
             if confirmation != 'y':
                 self.stdout.write(self.style.WARNING('Aborted by user.'))
                 return
-        with factory.django.mute_signals(post_delete):
+        with factory.django.mute_signals(post_delete, post_save):
             self.delete_data(
                 plans_to_delete,
                 orgs_to_delete,
                 clients_to_keep=options['exclude_client'],
                 thorough=options['thorough'],
             )
-        self.stdout.write('You may also want to run the following management commands now:')
-        self.stdout.write('- `wagtail_update_image_renditions --purge-only` to remove all renditions')
-        self.stdout.write('- `rebuild_references_index` to get rid of broken references')
+        self.stdout.write("Rebuilding Wagtail's reference index...")
+        call_command('rebuild_references_index')
 
     def delete_all(self, model: type[Model]) -> None:
         self.stdout.write(f'Deleting {model.__name__} instances...')
@@ -143,6 +145,7 @@ class Command(BaseCommand):
         from oauth2_provider.models import RefreshToken
         from social_django.models import Association, Code, Nonce, Partial
 
+        from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
         from kausal_watch_extensions.models import AuthIDToken
         from notifications.models import SentNotification
 
@@ -152,6 +155,8 @@ class Command(BaseCommand):
         self.delete_all(WagtailRevision)
         # Delete Wagtail model log entries without users
         self.delete_all(ModelLogEntry)
+        self.delete_all(PlanScopedModelLogEntry)
+        self.delete_all(PlanScopedPageLogEntry)
         # Delete Wagtail page log entries
         self.delete_all(PageLogEntry)
         self.delete_all(LogEntry)
@@ -163,6 +168,10 @@ class Command(BaseCommand):
         self.delete_all(SentNotification)
         self.delete_all(AuthIDToken)
         self.delete_all(RefreshToken)
+        self.delete_all(Tag)
+
+        with connection.cursor() as cursor, contextlib.suppress(ProgrammingError):
+            cursor.execute("DELETE FROM postgres_search_indexentry;")
 
     @transaction.atomic
     def delete_data(
@@ -213,9 +222,11 @@ class Command(BaseCommand):
         # Delete sessions
         self.delete_all(Session)
 
+        # Delete all renditions
+        self.delete_all(AplansRendition)
+
         if thorough:
             self.delete_thoroughly()
-
 
     def print_deleted_instances_by_model(self, by_type):
         for model_name, n in by_type.items():
