@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from django.forms import ValidationError
 import strawberry as sb
+from django.forms import ValidationError
 
 from kausal_common.strawberry.permissions import SuperuserOnly
 from kausal_common.users import user_or_bust
