@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable, Generator, Iterable
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from copy import copy as shallow_copy
 from functools import singledispatchmethod, wraps
 from itertools import chain
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import wagtail.signal_handlers
@@ -56,9 +56,6 @@ from users.models import User
 if TYPE_CHECKING:
     from wagtail.documents.models import AbstractDocument
     from wagtail.images.models import AbstractImage
-
-P = ParamSpec('P')
-R = TypeVar('R')
 
 type CloneStructure = dict[str, CloneStructure]
 
@@ -855,27 +852,33 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
     return new_site_hostname
 
 
-def update_reference_index_immediately(f: Callable[P, R]) -> Callable[P, R]:
+@contextmanager
+def _update_reference_index_immediately_ctx() -> Generator[None]:
     """
-    Force immediate update of Wagtail's reference index when saving model instances within a call to `f`.
+    Force immediate update of Wagtail's reference index for the duration of this context.
 
     When a model instance is saved, Wagtail enqueues a task to update the reference index. By default, this task is
     executed when the current transaction is committed. This may cause problems if the code within the transaction not
     only saves some model instances but also relies on the reference index being kept up to date before the transaction
     ends.
 
-    When this decorator is used on a function `f`, this behavior is changed during the call to `f` in such a way that
-    the reference index is updated immediately when a model instance is saved.
+    Within this context, the reference index is updated immediately when a model instance is saved.
     """
+    original_task = wagtail.signal_handlers.update_reference_index_task  # type: ignore[attr-defined]
+    tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
+    wagtail.signal_handlers.update_reference_index_task = tmp_task  # type: ignore[attr-defined]
+    try:
+        yield
+    finally:
+        wagtail.signal_handlers.update_reference_index_task = original_task  # type: ignore[attr-defined]
+
+
+def update_reference_index_immediately[**P, R](f: Callable[P, R]) -> Callable[P, R]:
+    """Force immediate reference index updates within a call to `f`."""
     @wraps(f)
-    def wrapped(*args, **kwargs) -> R:
-        original_task = wagtail.signal_handlers.update_reference_index_task  # type: ignore[attr-defined]
-        tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
-        try:
-            wagtail.signal_handlers.update_reference_index_task = tmp_task  # type: ignore[attr-defined]
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+        with _update_reference_index_immediately_ctx():
             return f(*args, **kwargs)
-        finally:
-            wagtail.signal_handlers.update_reference_index_task = original_task  # type: ignore[attr-defined]
 
     return wrapped
 
