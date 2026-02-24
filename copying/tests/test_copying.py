@@ -7,9 +7,15 @@ from wagtail.rich_text import RichText
 import pytest
 
 from actions.models.action import Action
+from actions.models.attributes import AttributeType
+from actions.models.plan import Plan
 from actions.tests.factories import (
     ActionContactFactory,
     ActionStatusFactory,
+    ActionTaskFactory,
+    AttributeChoiceWithTextFactory,
+    AttributeRichTextFactory,
+    AttributeTypeChoiceOptionFactory,
     AttributeTypeFactory,
     CategoryTypeFactory,
     PlanFactory,
@@ -422,6 +428,69 @@ def test_indicator_reference_in_action_draft_updated_when_copying_indicators(
     indicator_copy = plan_copy.indicators.get(name=indicator.name)
     draft_obj = action_copy.latest_revision.as_object()
     assert draft_obj.description == html_with_references([indicator_copy])
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_indicator_reference_in_action_task_comment_updated_when_copying_indicators(
+    plan_with_pages, action, indicator,
+):
+    """When copying a plan with indicators, indicator references in action task comments should be updated."""
+    task = ActionTaskFactory.create(action=action, comment=html_with_references([indicator]))
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    action_copy = plan_copy.actions.get()
+    task_copy = action_copy.tasks.get(name=task.name)
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    assert task_copy.comment == html_with_references([indicator_copy])
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_indicator_reference_in_attribute_rich_text_updated_when_copying_indicators(
+    plan_with_pages, action, indicator,
+):
+    """When copying a plan with indicators, indicator references in AttributeRichText.text should be updated."""
+    action_ct = ContentType.objects.get_for_model(Action)
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=action_ct,
+        format=AttributeType.AttributeFormat.RICH_TEXT,
+    )
+    AttributeRichTextFactory.create(
+        type=attribute_type,
+        content_object=action,
+        text=html_with_references([indicator]),
+    )
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    at_copy = AttributeType.objects.get(scope_content_type=plan_ct, scope_id=plan_copy.pk, name=attribute_type.name)
+    rich_text_attr_copy = at_copy.rich_text_attributes.get()
+    assert rich_text_attr_copy.text == html_with_references([indicator_copy])
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_indicator_reference_in_attribute_choice_with_text_updated_when_copying_indicators(
+    plan_with_pages, action, indicator,
+):
+    """When copying a plan with indicators, indicator references in AttributeChoiceWithText.text should be updated."""
+    action_ct = ContentType.objects.get_for_model(Action)
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=action_ct,
+        format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+    )
+    choice_option = AttributeTypeChoiceOptionFactory.create(type=attribute_type)
+    AttributeChoiceWithTextFactory.create(
+        type=attribute_type,
+        content_object=action,
+        choice=choice_option,
+        text=html_with_references([indicator]),
+    )
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    at_copy = AttributeType.objects.get(scope_content_type=plan_ct, scope_id=plan_copy.pk, name=attribute_type.name)
+    choice_with_text_attr_copy = at_copy.choice_with_text_attributes.get()
+    assert choice_with_text_attr_copy.text == html_with_references([indicator_copy])
 
 
 def test_action_revision_is_copied(plan_with_pages, action, user):
