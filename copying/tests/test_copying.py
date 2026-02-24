@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from django.contrib.contenttypes.models import ContentType
-from wagtail.models import Revision
+from wagtail.models import Page, Revision
 from wagtail.rich_text import RichText
 
 import pytest
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
+from actions.models.category import CategoryType
 from actions.models.plan import Plan
 from actions.tests.factories import (
     ActionContactFactory,
@@ -21,6 +22,7 @@ from actions.tests.factories import (
     PlanFactory,
     WorkflowFactory,
 )
+from documentation.models import DocumentationRootPage
 from django.db import transaction
 from wagtail.models.reference_index import ReferenceIndex
 
@@ -594,6 +596,59 @@ def test_report_type_category_field_references_are_updated(plan_with_pages):
     category_type_copy = category_field_copy.value['category_type']
     assert category_type_copy.pk != category_type.pk
     assert category_type_copy.plan == plan_copy
+
+
+def test_documentation_pages_are_copied(plan_with_pages):
+    global_root = Page.get_first_root_node()
+    assert global_root is not None
+    doc_root = DocumentationRootPage(title='Documentation', plan=plan_with_pages, slug='docs')
+    global_root.add_child(instance=doc_root)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert plan_copy.documentation_root_pages.count() == 1
+    doc_root_copy = plan_copy.documentation_root_pages.get()
+    assert doc_root_copy.pk != doc_root.pk
+    assert doc_root_copy.plan == plan_copy
+
+
+def test_documentation_pages_original_is_unchanged(plan_with_pages):
+    global_root = Page.get_first_root_node()
+    assert global_root is not None
+    doc_root = DocumentationRootPage(title='Documentation', plan=plan_with_pages, slug='docs')
+    global_root.add_child(instance=doc_root)
+
+    copy_plan(plan_with_pages)
+
+    doc_root.refresh_from_db()
+    assert doc_root.plan == plan_with_pages
+    assert plan_with_pages.documentation_root_pages.count() == 1
+
+
+def test_copy_attribute_types_excludes_other_plans_category_type_scoped_attribute_types(plan_with_pages):
+    # AttributeType uses a generic foreign key for its scope, so _copy_attribute_types must filter by
+    # scope_id__in=plan.category_types.all() to avoid accidentally copying attribute types that belong
+    # to another plan's category types. A regression in that filter could silently copy foreign attribute
+    # types into the plan copy, corrupting the copied plan's data.
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    attribute_type = AttributeTypeFactory.create(scope=category_type)
+
+    other_plan = PlanFactory.create()
+    other_category_type = CategoryTypeFactory.create(plan=other_plan)
+    other_attribute_type = AttributeTypeFactory.create(scope=other_category_type)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    category_type_ct = ContentType.objects.get_for_model(CategoryType)
+    category_type_copy = plan_copy.category_types.get()
+    copied_ats = AttributeType.objects.filter(scope_content_type=category_type_ct, scope_id=category_type_copy.pk)
+    assert copied_ats.count() == 1
+    assert copied_ats.get().pk != attribute_type.pk
+
+    # The other plan's attribute type must not be copied or modified
+    other_ats = AttributeType.objects.filter(scope_content_type=category_type_ct, scope_id=other_category_type.pk)
+    assert other_ats.count() == 1
+    assert other_ats.get() == other_attribute_type
 
 
 class TestUpdateReferenceIndexImmediately:
