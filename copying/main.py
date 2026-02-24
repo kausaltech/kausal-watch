@@ -25,7 +25,7 @@ from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
 from loguru import logger
-from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator, TreeNode, clone  # type: ignore
+from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator, TreeNode  # type: ignore
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
@@ -833,9 +833,9 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
         AplansImage.objects.filter(collection_id=collection.pk),
         AplansDocument.objects.filter(collection_id=collection.pk),
     )
-    clone(collection, {}, clone_visitor)
+    visit_tree(collection, {}, clone_visitor)
     for image_or_document in images_or_documents:
-        clone(image_or_document, {}, clone_visitor)
+        visit_tree(image_or_document, {}, clone_visitor)
         image_or_document.collection = collection
         file = image_or_document.file
         try:
@@ -952,12 +952,12 @@ def _clone_plan_objects(
 
     Returns the copy of the plan.
     """
-    # Work on fresh `Plan` objects because `clone` changes its first argument. We just want to get stuff into the
-    # visitor's copy cache (and the DB of course).
+    # Work on fresh `Plan` objects because `visit_tree` changes its first argument. We just want to get stuff into
+    # the visitor's copy cache (and the DB of course).
     root_collection = Plan.objects.get(pk=plan.pk).root_collection
     if root_collection:
         copy_collection_with_contents(root_collection, clone_visitor)
-    clone(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
+    visit_tree(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
     assert plan.site
     assert isinstance(plan.site.root_page.specific, PlanRootPage)
     root_page_copies = copy_root_pages(
@@ -980,7 +980,7 @@ def _clone_plan_objects(
             signals.post_save, create_site_general_content, Plan, 'create_site_general_content'
         ))
         # We leave the signal update_plan_domain_deploy_info enabled
-        clone(plan_copy, PLAN_CLONE_STRUCTURE, clone_visitor)
+        visit_tree(plan_copy, PLAN_CLONE_STRUCTURE, clone_visitor)
 
     # Copy documentation page hierarchy
     for documentation_root_page in plan.documentation_root_pages.all():
@@ -1004,7 +1004,7 @@ def _clone_plan_objects(
         | (Q(scope_content_type=category_type_ct) & Q(scope_id__in=plan.category_types.all()))
     ))
     for at in attribute_types:
-        clone(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
+        visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
 
     # Update root page (`plan_copy.site` should now be the site copy)
     assert plan_copy.site
@@ -1020,9 +1020,9 @@ def _clone_plan_objects(
     if copy_indicators:
         indicators = list(plan.indicators.all())
         for indicator in indicators:
-            clone(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
+            visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
         for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
-            clone(dimension, DIMENSION_CLONE_STRUCTURE, clone_visitor)
+            visit_tree(dimension, DIMENSION_CLONE_STRUCTURE, clone_visitor)
     else:
         indicators = []
 
