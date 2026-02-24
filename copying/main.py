@@ -944,16 +944,16 @@ def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, new_site_host
         raise ValueError("Cannot copy indicators as some are instances of a common indicator")
 
 
-def _clone_plan_objects(
+def _copy_collection_site_and_pages(
     plan: Plan,
     clone_visitor: CloneVisitor,
     root_page_title_suffix: str | None,
-    copy_indicators: bool,
-) -> Plan:
+) -> tuple[Plan, Page]:
     """
-    Perform the actual cloning of all plan objects within a transaction.
+    Copy the collection, site, and plan root pages.
 
-    Returns the copy of the plan.
+    Returns a (plan_copy, root_page_copy) tuple where plan_copy is a fresh Plan instance
+    with the original plan's PK (not yet cloned itself) and root_page_copy is the copied root page.
     """
     # Work on fresh `Plan` objects because `visit_tree` changes its first argument. We just want to get stuff into
     # the visitor's copy cache (and the DB of course).
@@ -973,8 +973,11 @@ def _clone_plan_objects(
     plan_copy = Plan.objects.get(pk=plan.pk)
     # Hack to avoid site (and root page) initialization in Plan.save()  # noqa: FIX004
     plan_copy._site_created = True
+    return plan_copy, root_page_copy
 
-    # Copy plan
+
+def _copy_plan_with_structure(plan_copy: Plan, clone_visitor: CloneVisitor) -> None:
+    """Copy the plan and all related objects defined in PLAN_CLONE_STRUCTURE, with signals temporarily disabled."""
     with ExitStack() as stack:
         # Disconnect signals to prevent creating related model instances when saving the plan
         stack.enter_context(temp_disconnect_signal(signals.post_save, create_notification_settings, Plan))
@@ -985,7 +988,14 @@ def _clone_plan_objects(
         # We leave the signal update_plan_domain_deploy_info enabled
         visit_tree(plan_copy, PLAN_CLONE_STRUCTURE, clone_visitor)
 
-    # Copy documentation page hierarchy
+
+def _copy_documentation_pages(
+    plan: Plan,
+    plan_copy: Plan,
+    root_page_title_suffix: str | None,
+    clone_visitor: CloneVisitor,
+) -> None:
+    """Copy all documentation page hierarchies and link them to the plan copy."""
     for documentation_root_page in plan.documentation_root_pages.all():
         doc_page_copies = copy_root_pages(
             root_page=documentation_root_page,
@@ -998,16 +1008,51 @@ def _clone_plan_objects(
         doc_root_page_copy.plan = plan_copy
         doc_root_page_copy.save(update_fields=['plan'])
 
-    # Attribute types use generic foreign keys, so we need to copy them ourselves
+
+def _copy_attribute_types(plan: Plan, clone_visitor: CloneVisitor) -> list[AttributeType]:
+    """
+    Copy all attribute types scoped to the plan or its category types.
+
+    Attribute types use generic foreign keys, so we need to copy them separately rather than through the
+    relation tree. Returns the list of original attribute type instances (not the copies).
+    """
     plan_ct = ContentType.objects.get_for_model(Plan)
     category_type_ct = ContentType.objects.get_for_model(CategoryType)
-    # Materialize attribute types in list because we'll update them in place
+    # Materialize in a list because we'll update them in place
     attribute_types = list(AttributeType.objects.filter(
         (Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
         | (Q(scope_content_type=category_type_ct) & Q(scope_id__in=plan.category_types.all()))
     ))
     for at in attribute_types:
         visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
+    return attribute_types
+
+
+def _copy_indicators(plan: Plan, clone_visitor: CloneVisitor) -> list[Indicator]:
+    """Copy all indicators and dimensions of the plan. Returns the list of copied indicator instances."""
+    indicators = list(plan.indicators.all())
+    for indicator in indicators:
+        visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
+    for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
+        visit_tree(dimension, DIMENSION_CLONE_STRUCTURE, clone_visitor)
+    return indicators
+
+
+def _clone_plan_objects(
+    plan: Plan,
+    clone_visitor: CloneVisitor,
+    root_page_title_suffix: str | None,
+    copy_indicators: bool,
+) -> Plan:
+    """
+    Perform the actual cloning of all plan objects within a transaction.
+
+    Returns the copy of the plan.
+    """
+    plan_copy, root_page_copy = _copy_collection_site_and_pages(plan, clone_visitor, root_page_title_suffix)
+    _copy_plan_with_structure(plan_copy, clone_visitor)
+    _copy_documentation_pages(plan, plan_copy, root_page_title_suffix, clone_visitor)
+    attribute_types = _copy_attribute_types(plan, clone_visitor)
 
     # Update root page (`plan_copy.site` should now be the site copy)
     assert plan_copy.site
@@ -1020,14 +1065,7 @@ def _clone_plan_objects(
     # may be the current, yet unpublished, draft.
     copy_revisions(clone_visitor)
 
-    if copy_indicators:
-        indicators = list(plan.indicators.all())
-        for indicator in indicators:
-            visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, clone_visitor)
-        for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
-            visit_tree(dimension, DIMENSION_CLONE_STRUCTURE, clone_visitor)
-    else:
-        indicators = []
+    indicators = _copy_indicators(plan, clone_visitor) if copy_indicators else []
 
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
