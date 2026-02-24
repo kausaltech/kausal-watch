@@ -205,7 +205,7 @@ class ActionIdentifierSearchMixin(index.BaseField):
     def get_value(self, obj: Action):
         # If the plan doesn't have meaningful action identifiers,
         # do not index them.
-        if has_identifier := getattr(obj, '_plan_has_action_identifiers', None) is None:
+        if (has_identifier := getattr(obj, '_plan_has_action_identifiers', None)) is None:
             has_identifier = obj.plan.features.has_action_identifiers
         if not has_identifier:
             return None

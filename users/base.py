@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 from uuid import UUID
 
 from django.contrib.auth.models import AbstractUser as DjangoAbstractUser
@@ -11,7 +11,7 @@ from django.db import models
 if TYPE_CHECKING:
     from social_django.models import UserSocialAuth
 
-    from kausal_common.models.types import RevMany
+    from kausal_common.models.types import FK, RevMany
 
 
 def uuid_to_username(uuid: UUID | str):
@@ -49,7 +49,7 @@ class AbstractUser(DjangoAbstractUser):
         null=True,
         blank=True,
     )
-    deactivated_by = models.ForeignKey(
+    deactivated_by: FK[Self | None] = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
         null=True,
