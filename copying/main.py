@@ -586,13 +586,106 @@ class UpdateReferencesVisitor(AbstractVisitor):
                     update_fields.append(fk.name)
         return update_fields
 
+    def _update_stream_field_reference(
+        self, from_object: Model, to_object: Model, copy: Model, source_field: Field, content_path: str,
+    ) -> bool:
+        """Update a reference that lives inside a StreamField block."""
+        # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
+        # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
+        # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
+        # `content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
+        # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
+        # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
+        # propagate changes to its value to the StreamField's value.
+        field_name, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
+        assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
+        update_streamfield_block(from_object, field_name, content_path_rest, to_object, copy)
+        return True
+
+    def _update_many_to_one_rel_reference(
+        self, from_object: Model, to_object: Model, copy: Model, source_field: ManyToOneRel, content_path: str,
+    ) -> bool:
+        """
+        Update a reference held by a cluster-related child object of a ClusterableModel parent.
+
+        For ClusterableModels (Pages, Organizations, etc.) owning cluster-related objects, we can't rely
+        on the clone structure to update references because copying these models uses special logic
+        (Wagtail's Page.copy() for pages, or cluster-related object handling for other ClusterableModels).
+        Additionally, Wagtail's reference index stores references from cluster-related child objects
+        at the parent level. For example, if an Indicator (child) has a reference in its description field,
+        Wagtail stores this in the reference index at the Organization (parent) level with a content path
+        like "indicators.123.description.". So we need to handle these references here by traversing into
+        the child objects.
+        """
+        if not isinstance(from_object, ClusterableModel):
+            # In this case, we will update the reference elsewhere using the clone structure. (I hope!)
+            return False
+        # `from_object` is the parent of an object that references
+        # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
+        # The referencing object is of type `source_field.related_model`.
+        field_name, id, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        assert field_name == source_field.related_name
+        manager = getattr(from_object, field_name)
+        assert isinstance(manager, Manager)
+        # Create `from_object._cluster_related_objects`
+        manager.get_object_list()  # type: ignore[attr-defined]
+        referencing_object = manager.get(id=id)
+        # Make sure we only update copies
+        assert self.clone_visitor.is_copy(referencing_object)
+        child_field_name, *child_content_path = content_path_rest
+        child_field = referencing_object._meta.get_field(child_field_name)
+        if isinstance(child_field, StreamField):
+            update_streamfield_block(referencing_object, child_field_name, child_content_path, to_object, copy)
+            assert field_name in from_object._cluster_related_objects  # type: ignore[attr-defined]
+        elif isinstance(child_field, RichTextField):
+            assert child_content_path == ['']
+            update_rich_text_reference_in_field(
+                instance=referencing_object,
+                field_name=child_field_name,
+                old_referenced_object=to_object,
+                new_referenced_object=copy,
+            )
+        else:
+            # Not sure if there are other cases, but I haven't accounted for any others...
+            assert isinstance(child_field, (ForeignKey, GenericForeignKey))
+            setattr(referencing_object, child_field_name, copy)
+        return True
+
+    def _update_foreign_key_reference(
+        self, from_object: Model, to_object: Model, copy: Model, source_field: ForeignKey, content_path: str,
+    ) -> bool:
+        """Verify that a ForeignKey reference has already been updated by update_foreign_keys()."""
+        assert source_field.name == content_path
+        # Foreign keys should have been already taken care of in a previous call to `self.update_foreign_keys()`
+        assert getattr(from_object, source_field.name) is copy
+        return False
+
+    def _update_rich_text_reference(
+        self, from_object: Model, to_object: Model, copy: Model, source_field: RichTextField, content_path: str,
+    ) -> bool:
+        """Update a reference embedded in a RichTextField."""
+        field_name, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        assert content_path_rest == ['']
+        # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
+        assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
+        update_rich_text_reference_in_field(
+            instance=from_object,
+            field_name=field_name,
+            old_referenced_object=to_object,
+            new_referenced_object=copy,
+        )
+        return True
+
     def update_reference(self, from_object: Model, to_object: Model, source_field: Field, content_path: str) -> bool:
         """
         Update the reference to `to_object` in the field `source_field` of `from_object` at `content_path`.
 
         Returns true if and only if the instance was updated.
         """
-
         if _is_excluded_model(to_object._meta.model):
             return False
 
@@ -612,84 +705,13 @@ class UpdateReferencesVisitor(AbstractVisitor):
             return False
 
         if isinstance(source_field, StreamField):
-            # We can't use apply_changes_to_raw_data from wagtail.blocks.migrations.utils because the block paths it
-            # uses target blocks by their type names, so if there are two sibling blocks of the same type, there is no
-            # way to target just one of them. In contrast to `ref.model_path`, this is taken into account by
-            # `content_path`, which identifies StreamBlock children by UUID instead of their type, so we should use
-            # this one instead. Unfortunately there is no easy way to quickly change a value with a given content path.
-            # There is `StreamField.get_blockby_content_path()`, but this returns a `BoundBlock`, which does not
-            # propagate changes to its value to the StreamField's value.
-            field_name, *content_path_rest = content_path.split('.')
-            assert field_name == source_field.name
-            # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
-            assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
-            update_streamfield_block(from_object, field_name, content_path_rest, to_object, copy)
-            return True
-
+            return self._update_stream_field_reference(from_object, to_object, copy, source_field, content_path)
         if isinstance(source_field, ManyToOneRel):
-            if not isinstance(from_object, ClusterableModel):
-                # In this case, we will update the reference elsewhere using the clone structure. (I hope!)
-                return False
-            # For ClusterableModels (Pages, Organizations, etc.) owning cluster-related objects, we can't rely
-            # on the clone structure to update references because copying these models uses special logic
-            # (Wagtail's Page.copy() for pages, or cluster-related object handling for other ClusterableModels).
-            # Additionally, Wagtail's reference index stores references from cluster-related child objects
-            # at the parent level. For example, if an Indicator (child) has a reference in its description field,
-            # Wagtail stores this in the reference index at the Organization (parent) level with a content path
-            # like "indicators.123.description.". So we need to handle these references here by traversing into
-            # the child objects.
-            # `from_object` is the parent of an object that references
-            # `ref.to_content_type.get_object_for_this_type(id=ref.to_object_id)`.
-            # The referencing object is of type `source_field.related_model`.
-            field_name, id, *content_path_rest = content_path.split('.')
-            assert field_name == source_field.name
-            assert field_name == source_field.related_name
-            manager = getattr(from_object, field_name)
-            assert isinstance(manager, Manager)
-            # Create `from_object._cluster_related_objects`
-            manager.get_object_list()  # type: ignore[attr-defined]
-            referencing_object = manager.get(id=id)
-            # Make sure we only update copies
-            assert self.clone_visitor.is_copy(referencing_object)
-            child_field_name, *child_content_path = content_path_rest
-            child_field = referencing_object._meta.get_field(child_field_name)
-            if isinstance(child_field, StreamField):
-                update_streamfield_block(referencing_object, child_field_name, child_content_path, to_object, copy)
-                assert field_name in from_object._cluster_related_objects
-            elif isinstance(child_field, RichTextField):
-                assert child_content_path == ['']
-                update_rich_text_reference_in_field(
-                    instance=referencing_object,
-                    field_name=child_field_name,
-                    old_referenced_object=to_object,
-                    new_referenced_object=copy,
-                )
-            else:
-                # Not sure if there are other cases, but I haven't accounted for any others...
-                assert isinstance(child_field, (ForeignKey, GenericForeignKey))
-                setattr(referencing_object, child_field_name, copy)
-            return True
-
+            return self._update_many_to_one_rel_reference(from_object, to_object, copy, source_field, content_path)
         if isinstance(source_field, ForeignKey):
-            assert source_field.name == content_path
-            # Foreign keys should have been already taken care of in a previous call to `self.update_foreign_keys()`
-            assert getattr(from_object, source_field.name) is copy
-            return False
-
+            return self._update_foreign_key_reference(from_object, to_object, copy, source_field, content_path)
         if isinstance(source_field, RichTextField):
-            field_name, *content_path_rest = content_path.split('.')
-            assert field_name == source_field.name
-            assert content_path_rest == ['']
-            # Make sure we only update copies (pk is None for draft-only objects deserialized from revisions)
-            assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
-            update_rich_text_reference_in_field(
-                instance=from_object,
-                field_name=field_name,
-                old_referenced_object=to_object,
-                new_referenced_object=self.clone_visitor.get_copy(to_object),
-            )
-            return True
-
+            return self._update_rich_text_reference(from_object, to_object, copy, source_field, content_path)
         raise TypeError("Unexpected source field type")
 
     def update_indexed_references(
