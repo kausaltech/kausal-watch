@@ -1,0 +1,140 @@
+name: Admin E2E Tests
+
+on:
+  workflow_call:
+    inputs:
+      backend_image:
+        description: 'Backend Docker image (full path with tag)'
+        required: true
+        type: string
+      build_id:
+        description: 'Unique ID for the build'
+        required: true
+        type: string
+      s3_endpoint:
+        description: 'S3 endpoint URL where to upload test artifacts'
+        required: false
+        type: string
+      s3_bucket:
+        description: 'S3 bucket'
+        required: false
+        type: string
+
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+
+    outputs:
+      test_report_url:
+        description: 'URL to E2E test report'
+        value: ${{ jobs.run-e2e-tests.outputs.test_report_url }}
+
+env:
+  POSTGRES_PASSWORD: abcd
+  POSTGRES_USER: app
+  POSTGRES_DATABASE: app
+
+jobs:
+  run-e2e-tests:
+    name: Run admin E2E tests
+    runs-on: runner-prod
+
+    outputs:
+      test_report_url: ${{ steps.upload.outputs.test_report_url }}
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_DATABASE: ${{ env.POSTGRES_DATABASE }}
+
+      redis:
+        image: redis:7-alpine
+
+      backend:
+        image: ${{ inputs.backend_image }}
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DATABASE }}
+          DEPLOYMENT_TYPE: ci
+          REDIS_URL: redis://localhost
+          DB_ENDPOINT: localhost:5432
+          ALLOWED_HOSTS: localhost
+          KUBERNETES_LOGGING: 1
+          ENABLE_TEST_MODE: 1
+          CI: 1
+          SECRET_KEY: abcd
+
+    container:
+      image: harbor.kausal.tech/library/playwright:v1.54.1
+
+    env:
+      CI: "1"
+      TEST_BASE_URL: http://localhost:8000
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Wait for backend
+        run: wait-for-it.sh -t 180 localhost:8000
+
+      - name: Restore database dump from S3
+        continue-on-error: true
+        run: |
+          apt-get update && apt-get install -y postgresql-client
+          S3_ENDPOINT="${{ inputs.s3_endpoint || vars.BUILD_S3_ENDPOINT }}"
+          S3_BUCKET="${{ inputs.s3_bucket || vars.BUILD_S3_BUCKET }}"
+          DUMP_URL="https://${S3_ENDPOINT}/${S3_BUCKET}/e2e-test-database.sql.gz"
+          echo "Downloading database dump from ${DUMP_URL}"
+          if curl -sf -o /tmp/e2e-test-database.sql.gz "${DUMP_URL}"; then
+            echo "Restoring database dump..."
+            gunzip -c /tmp/e2e-test-database.sql.gz | psql "postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DATABASE }}"
+            echo "Database dump restored successfully"
+          else
+            echo "No database dump found at ${DUMP_URL}, skipping restore"
+          fi
+        shell: bash
+
+      - name: Install Playwright dependencies
+        run: corepack enable pnpm && pnpm install --frozen-lockfile
+        working-directory: ./e2e-tests
+
+      - name: Run Playwright tests
+        id: playwright_test
+        run: node_modules/.bin/playwright test --reporter=html,json
+        working-directory: ./e2e-tests
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results.json
+
+      - name: Upload test report to S3
+        id: upload
+        if: always()
+        run: |
+          S3_ENDPOINT="${{ inputs.s3_endpoint || vars.BUILD_S3_ENDPOINT }}"
+          S3_BUCKET="${{ inputs.s3_bucket || vars.BUILD_S3_BUCKET }}"
+          s3cmd --host "${S3_ENDPOINT}" --host-bucket "${S3_ENDPOINT}" \
+            put --no-mime-magic --guess-mime-type --recursive playwright-report \
+              "s3://${S3_BUCKET}/${{ inputs.build_id }}/"
+          TEST_REPORT_URL="https://${S3_ENDPOINT}/${S3_BUCKET}/${{ inputs.build_id }}/playwright-report/index.html"
+          echo "test_report_url=${TEST_REPORT_URL}" >> $GITHUB_OUTPUT
+          test_report="🔗 [Test report](${TEST_REPORT_URL})"
+          if [ "${{ steps.playwright_test.outcome == 'success' }}" = "true" ] ; then
+            echo "✅ Admin E2E tests succeeded. $test_report" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Admin E2E tests failed. $test_report" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        working-directory: ./e2e-tests
+        shell: bash
+
+      - uses: daun/playwright-report-summary@v3
+        if: always()
+        with:
+          report-file: ./e2e-tests/test-results.json
+          report-url: ${{ steps.upload.outputs.test_report_url }}

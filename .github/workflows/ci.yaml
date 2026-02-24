@@ -24,8 +24,20 @@ jobs:
       docker_image_tag: ${{ needs.build.outputs.image_tag }}
       build_id: ${{ needs.build.outputs.build_id }}
 
+  admin-e2e-test:
+    needs: [build]
+    uses: ./.github/workflows/admin-e2e-tests.yaml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    with:
+      backend_image: "${{ needs.build.outputs.image }}:${{ needs.build.outputs.image_tag }}"
+      build_id: ${{ needs.build.outputs.build_id }}
+      s3_endpoint: ${{ vars.BUILD_S3_ENDPOINT }}
+      s3_bucket: ${{ vars.BUILD_S3_BUCKET }}
+
   deploy:
-    needs: [build, test]
+    needs: [build, test, admin-e2e-test]
     uses: kausaltech/github-actions/.github/workflows/deploy.yaml@main
     secrets:
       gitops_ssh_key: ${{ secrets.GITOPS_SSH_KEY }}
