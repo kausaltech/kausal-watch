@@ -781,13 +781,16 @@ def _copy_instance_revision(
 ) -> None:
     try:
         rev_obj = instance.latest_revision.as_object()
-    except Exception:
+    except Exception as exc:
         # Some non-ClusterableModel models with i18n fields that reference FKs
         # (e.g., default_language_field='plan__primary_language_lowercase') cannot be
         # deserialized from revision content because the FK isn't in the serialized data.
         # Clear the stale reference to the original's revision.
         model_name = type(instance).__name__
-        logger.warning(f'Failed to deserialize revision for {model_name} pk={instance.pk}, skipping')
+        logger.opt(exception=True).warning(
+            f'Failed to deserialize revision for {model_name} pk={instance.pk}, skipping '
+            f'({type(exc).__name__}: {exc})'
+        )
         instance.latest_revision = None
         instance.save(update_fields=['latest_revision'])
         return
