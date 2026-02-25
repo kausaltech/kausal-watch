@@ -957,7 +957,7 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
 
 
 def may_copy_indicators(plan: Plan) -> bool:
-    return not plan.shared_indicators().exists()
+    return not plan.shared_indicators().exists() and not plan.indicators.filter(common__isnull=False).exists()
 
 
 def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, new_site_hostname: str, copy_indicators: bool) -> None:
@@ -974,12 +974,15 @@ def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, new_site_host
     if not copy_indicators:
         return
 
-    if not may_copy_indicators(plan):
+    if plan.shared_indicators().exists():
+        assert not may_copy_indicators(plan)
         raise ValueError("Cannot copy indicators as the plan shares indicators with another plan")
     # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
     # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
     if plan.indicators.filter(common__isnull=False).exists():
+        assert not may_copy_indicators(plan)
         raise ValueError("Cannot copy indicators as some are instances of a common indicator")
+    assert may_copy_indicators(plan)
 
 
 def _copy_collection_site_and_pages(

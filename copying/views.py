@@ -66,7 +66,8 @@ class PlanCopyForm(forms.Form):
             label=_("Copy indicators"),
             help_text=_(
                 "Set if indicators should be copied instead of being shared with the original plan. "
-                "This is only allowed if the plan has no shared indicators yet."
+                "Indicators can only be copied if no indicator is shared with another plan or is an instance of a common "
+                "indicator."
             ),
             initial=False,
             required=False,
