@@ -190,7 +190,7 @@ class PlanMutations:
     )
     def create_category_type(self, info: gql.Info, input: CategoryTypeInput) -> CategoryTypeNode:
         # Get the plan
-        plan = get_or_error(info, Plan, input.plan_id)
+        plan = gql.get_plan_or_error(info, input.plan_id)
 
         if input.primary_action_classification and plan.primary_action_classification is not None:
             raise ValidationError('A plan can only have one primary action classification.')
@@ -249,9 +249,9 @@ class PlanMutations:
         data = gql.parse_input(info, input)
 
         # Get the plan
-        user = user_or_bust(info.context.user)
-        qs = Plan.objects.qs.visible_for_user(user).by_id_or_identifier(data.pop('plan_id'))
-        plan = get_or_error(info, qs)
+        plan = gql.get_plan_or_error(info, data.pop('plan_id'))
+
+        # FIXME: Check permissions after AttributeType gets a PermissionPolicy
 
         # Get content types
         action_ct = ContentType.objects.get_for_model(Action)
@@ -405,11 +405,12 @@ class ActionMutations:
 
     @gql.mutation(permission_classes=[SuperuserOnly])
     def create_action(self, info: gql.Info, input: ActionInput) -> ActionNode:
-        from actions.models import Action, Plan
+        from actions.models import Action
         from orgs.models import Organization
 
         # Get the plan
-        plan = Plan.objects.get(pk=input.plan_id)
+        plan = gql.get_plan_or_error(info, input.plan_id)
+        # FIXME: Check permissions after Action gets a PermissionPolicy
 
         if plan.actions_locked:
             raise PermissionDeniedError(info, 'Actions are locked for this plan.')

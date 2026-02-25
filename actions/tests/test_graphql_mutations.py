@@ -321,7 +321,7 @@ class TestCreateAction:
         data = graphql_client_query_data(
             CREATE_ACTION,
             variables={'input': {
-                'planId': str(plan.pk),
+                'planId': plan.identifier,
                 'name': 'New Climate Action',
                 'identifier': 'new-action-1',
                 'description': 'A test action',
@@ -514,7 +514,7 @@ class TestCreateCategoryType:
         data = graphql_client_query_data(
             CREATE_CATEGORY_TYPE,
             variables={'input': {
-                'planId': str(plan.pk),
+                'planId': plan.identifier,
                 'identifier': 'theme',
                 'name': 'Theme',
                 'usableForActions': True,
@@ -607,7 +607,7 @@ class TestCreateAttributeType:
         data = graphql_client_query_data(
             CREATE_ATTRIBUTE_TYPE,
             variables={'input': {
-                'planId': str(plan.pk),
+                'planId': plan.identifier,
                 'identifier': 'notes',
                 'name': 'Notes',
                 'format': 'TEXT',
