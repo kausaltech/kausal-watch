@@ -190,7 +190,7 @@ class AddRelatedOrganizationInput(InputTypeModel):
 
 
 class AttributeTypeInput(InputTypeModel):
-    """AttributeType(id, latest_revision, order, instances_editable_by, instances_visible_for, primary_language_lowercase, object_content_type, scope_content_type, scope_id, name, identifier, help_text, format, unit, attribute_category_type, show_choice_names, has_zero_option, max_length, show_in_reporting_tab, primary_language, other_languages, i18n)."""
+    """Input type for creating a new attribute type."""
 
     plan_id: str = Field(alias='planId')
     identifier: str
@@ -199,11 +199,11 @@ class AttributeTypeInput(InputTypeModel):
     'The format of the attributes with this type'
     help_text: str | None = Field(alias='helpText', default=None)
     unit_id: str | None = Field(alias='unitId', default=None)
-    choice_options: list['ChoiceOptionInput'] | None = Field(alias='choiceOptions', default=None)
+    choice_options: list[ChoiceOptionInput] | None = Field(alias='choiceOptions', default=None)
 
 
 class CategoryInput(InputTypeModel):
-    """A category for actions and indicators."""
+    """Input type for creating a new category."""
 
     type_id: str = Field(alias='typeId')
     identifier: str

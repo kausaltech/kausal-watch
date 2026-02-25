@@ -4,16 +4,15 @@ from typing import TYPE_CHECKING
 
 from fastmcp.exceptions import ToolError
 
-from mcp_server.__generated__.schema import UserDetails
+from mcp_server.__generated__.schema import UserDetails, UserDetailsMe
 
-from .helpers import execute_operation
+from .helpers import execute_operation, register_tool
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-    from mcp_server.__generated__.schema import UserDetailsMe
 
-
+@register_tool
 async def user_details() -> UserDetailsMe:
     """
     Get details about the currently authenticated user.
@@ -28,7 +27,6 @@ async def user_details() -> UserDetailsMe:
     return result.me
 
 
-def register_user_tools(mcp: FastMCP) -> None:
+def register_user_tools(_mcp: FastMCP) -> None:
     """Register all user-related MCP tools."""
-
-    mcp.tool(user_details)
+    pass

@@ -1,27 +1,23 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Annotated, Any
 
 from fastmcp.exceptions import ToolError
 
 from mcp_server.__generated__.schema import (
     ActionAttributeValueInput,
+    ActionDetails,
     ActionInput,
     CreateAction,
     GetActions,
     ListActions,
 )
 
-from .helpers import check_operation_result, execute_operation, execute_schema_query
+from .helpers import check_operation_result, execute_operation, execute_schema_query, register_tool
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-    from mcp_server.__generated__.schema import (
-        ActionDetails,
-    )
 
-
+@register_tool
 async def list_actions(
     plan: Annotated[str, "The plan identifier (e.g., 'sunnydale', 'tampere-ilmasto')"],
     category: Annotated[str | None, 'Filter by category ID (includes descendants)'] = None,
@@ -60,6 +56,7 @@ async def list_actions(
     return "\n".join(lines)
 
 
+@register_tool
 async def get_actions(
     ids: Annotated[list[str], 'List of action IDs to fetch'],
 ) -> list[ActionDetails]:
@@ -101,6 +98,7 @@ def parse_and_validate_action_query(query: str):
     return document
 
 
+@register_tool
 async def query_actions(
     plan: Annotated[str, "The plan identifier (e.g., 'sunnydale', 'bremen-klima-copy1')"],
     fields: Annotated[
@@ -161,6 +159,7 @@ async def query_actions(
     return result.data.get('planActions', [])
 
 
+@register_tool
 async def create_action(
     plan_id: Annotated[str, "The ID (pk) of the plan to create the action in"],
     name: Annotated[str, "Name of the action"],
@@ -207,10 +206,6 @@ async def create_action(
     return check_operation_result(result.action.create_action)
 
 
-def register_action_tools(mcp: FastMCP) -> None:
+def register_action_tools(_mcp: FastMCP) -> None:
     """Register all action-related MCP tools."""
-
-    mcp.tool(list_actions)
-    mcp.tool(get_actions)
-    mcp.tool(query_actions)
-    mcp.tool(create_action)
+    pass

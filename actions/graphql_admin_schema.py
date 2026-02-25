@@ -7,7 +7,7 @@ import strawberry_django
 
 from kausal_common.users import user_or_bust, user_or_none
 
-from aplans import gql  # noqa: TC002
+from aplans import gql
 
 from actions.models import Action, Plan
 from admin_site.models import Client

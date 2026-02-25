@@ -7,6 +7,7 @@ from fastmcp import FastMCP
 from kausal_common.deployment import get_deployment_build_id
 
 from .tools import register_action_tools, register_organization_tools, register_plan_tools, register_user_tools
+from .tools.helpers import tool_registry
 
 # Create FastMCP without built-in auth - we handle auth ourselves via MCPAuthMiddleware
 mcp = FastMCP(
@@ -17,12 +18,6 @@ mcp = FastMCP(
     """,
     version=get_deployment_build_id() or '0.1.0-dev',
 )
-
-# Register tools from separate modules
-register_plan_tools(mcp)
-register_action_tools(mcp)
-register_organization_tools(mcp)
-register_user_tools(mcp)
 
 
 # Register resources
@@ -42,3 +37,15 @@ def get_action_fields_schema() -> str:
 def get_plan_metadata_instructions() -> str:
     with Path('./docs/architecture/plan-metadata.md').open('r') as file:
         return file.read()
+
+def register_tools():
+    # Register tools from separate modules
+    register_plan_tools(mcp)
+    register_action_tools(mcp)
+    register_organization_tools(mcp)
+    register_user_tools(mcp)
+
+    for tool in tool_registry:
+        mcp.tool(tool)
+
+register_tools()

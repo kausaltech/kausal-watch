@@ -116,7 +116,7 @@ class CategoryTypeInput:
     )
 
 
-@strawberry_django.input(Category)
+@strawberry_django.input(Category, description='Input type for creating a new category')
 class CategoryInput:
     type_id: sb.ID
     identifier: sb.auto
@@ -125,7 +125,7 @@ class CategoryInput:
     order: sb.auto
 
 
-@strawberry_django.input(AttributeType)
+@strawberry_django.input(AttributeType, description='Input type for creating a new attribute type')
 class AttributeTypeInput:
     plan_id: sb.ID
     identifier: sb.auto

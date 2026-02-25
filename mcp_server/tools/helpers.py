@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, cast
 
 from asgiref.sync import sync_to_async
@@ -7,17 +8,30 @@ from fastmcp.exceptions import ToolError
 
 from kausal_common.strawberry.views import get_base_context
 
+from aplans.schema import schema
 from aplans.schema_context import WatchGraphQLContext
 
 from mcp_server.__generated__.schema import OpInfo
 
-from ..generated_base import ObjectBaseModel, OperationModel
+from ..generated_base import MutationModel, ObjectBaseModel, QueryModel
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
     from strawberry.types import ExecutionResult
 
     from starlette.requests import Request as StarletteRequest
+
+
+type ToolFunc = Callable[..., Awaitable[Any]]
+
+
+tool_registry: list[ToolFunc] = []
+
+def register_tool[F: ToolFunc](func: F) -> F:
+    if func in tool_registry:
+        raise ValueError(f"Tool {func.__name__} already registered")
+    tool_registry.append(func)
+    return func
 
 
 def get_schema_execution_context():
@@ -31,13 +45,12 @@ def get_schema_execution_context():
 
 
 async def execute_schema_query(query: str, variables: dict[str, Any] | None = None) -> ExecutionResult:
-    from aplans.schema import schema
     schema_ctx = get_schema_execution_context()
     res = await sync_to_async(schema.execute_sync)(query, context_value=schema_ctx, variable_values=variables)
     return res
 
 
-async def execute_operation[T: OperationModel](operation_class: type[T], args: BaseModel | None = None) -> T:
+async def execute_operation[T: QueryModel | MutationModel](operation_class: type[T], args: BaseModel | None = None) -> T:
     """
     Execute a turms-generated GraphQL operation and return the validated result.
 
@@ -67,7 +80,8 @@ async def execute_operation[T: OperationModel](operation_class: type[T], args: B
 
     if result.errors:
         error_msgs = '; '.join(str(e) for e in result.errors)
-        raise RuntimeError(f"GraphQL errors: {error_msgs}")
+        msg = f"GraphQL errors: {error_msgs}"
+        raise RuntimeError(msg)
 
     # Validate and return the result
     return cast('T', operation_class.model_validate(result.data))

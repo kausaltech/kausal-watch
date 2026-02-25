@@ -7,9 +7,14 @@ from fastmcp.exceptions import ToolError
 from mcp_server.__generated__.schema import (
     AddRelatedOrganization,
     AddRelatedOrganizationInput,
+    AttributeTypeDetails,
+    AttributeTypeFormat,
     AttributeTypeInput,
+    CategoryDetails,
     CategoryInput,
+    CategoryTypeDetails,
     CategoryTypeInput,
+    CategoryTypeSelectWidget,
     ChoiceOptionInput,
     CreateAttributeType,
     CreateCategory,
@@ -18,6 +23,8 @@ from mcp_server.__generated__.schema import (
     DeletePlan,
     GetPlan,
     ListPlans,
+    PlanConcise,
+    PlanDetails,
     PlanFeaturesInput,
     PlanInput,
 )
@@ -27,17 +34,10 @@ from .helpers import check_operation_result, execute_operation
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
-    from mcp_server.__generated__.schema import (
-        AttributeTypeDetails,
-        AttributeTypeFormat,
-        CategoryDetails,
-        CategoryTypeDetails,
-        CategoryTypeSelectWidget,
-        PlanConcise,
-        PlanDetails,
-    )
+from .helpers import register_tool
 
 
+@register_tool
 async def list_plans() -> str:
     """
     List accessible plans.
@@ -62,6 +62,7 @@ async def list_plans() -> str:
     return '\n'.join(lines)
 
 
+@register_tool
 async def get_plan(
     identifier: Annotated[str, "The unique identifier of the plan (e.g., 'sunnydale', 'tampere-ilmasto')"],
 ) -> PlanDetails:
@@ -69,11 +70,13 @@ async def get_plan(
     result = await execute_operation(GetPlan, GetPlan.Arguments(identifier=identifier))
 
     if result.plan is None:
-        raise ToolError(f"Plan '{identifier}' not found")
+        msg = f"Plan '{identifier}' not found"
+        raise ToolError(msg)
 
     return result.plan
 
 
+@register_tool
 async def create_plan(  # noqa: PLR0913
     identifier: Annotated[str, 'Unique identifier for the plan (lowercase, dashes). Becomes part of the URL.'],
     name: Annotated[str, 'The official plan name in full form'],
@@ -121,6 +124,7 @@ async def create_plan(  # noqa: PLR0913
     return check_operation_result(result.plan.create_plan)
 
 
+@register_tool
 async def create_category_type(
     plan_id: Annotated[str, 'The ID (pk) of the plan'],
     identifier: Annotated[str, 'Unique identifier for the category type'],
@@ -162,6 +166,7 @@ async def create_category_type(
     return check_operation_result(result.plan.create_category_type)
 
 
+@register_tool
 async def create_category(
     type_id: Annotated[str, 'The ID (pk) of the category type this category belongs to'],
     identifier: Annotated[str, 'Unique identifier for the category within its type'],
@@ -190,6 +195,7 @@ async def create_category(
     return check_operation_result(result.plan.create_category)
 
 
+@register_tool
 async def create_attribute_type(
     plan_id: Annotated[str, 'The ID (pk) of the plan'],
     identifier: Annotated[str, 'Unique identifier for the attribute type'],
@@ -238,6 +244,7 @@ async def create_attribute_type(
     return check_operation_result(result.plan.create_attribute_type)
 
 
+@register_tool
 async def delete_plan(
     id: Annotated[str, 'The ID (pk) or identifier of the plan to delete'],
 ) -> str:
@@ -256,6 +263,7 @@ async def delete_plan(
     return f"Plan '{id}' deleted successfully."
 
 
+@register_tool
 async def add_related_organization(
     plan_id: Annotated[str, 'The ID (pk) or identifier of the plan to add the organization to'],
     organization_id: Annotated[str, 'The ID of the organization to add as a related organization'],
@@ -274,14 +282,6 @@ async def add_related_organization(
     return check_operation_result(result.plan.add_related_organization)
 
 
-def register_plan_tools(mcp: FastMCP) -> None:
+def register_plan_tools(_mcp: FastMCP) -> None:
     """Register all plan-related MCP tools."""
-
-    mcp.tool(list_plans)
-    mcp.tool(get_plan)
-    mcp.tool(create_plan)
-    mcp.tool(delete_plan)
-    mcp.tool(add_related_organization)
-    mcp.tool(create_category_type)
-    mcp.tool(create_category)
-    mcp.tool(create_attribute_type)
+    pass

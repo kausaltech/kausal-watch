@@ -27,7 +27,7 @@ from kausal_common.strawberry.schema import Schema as UnifiedSchema
 from kausal_common.users import user_or_none
 from kausal_common.users.schema import UserNode
 
-from aplans import gql  # noqa: TC002
+from aplans import gql
 from aplans.cache import OrganizationActionCountCache
 from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.schema_context import WatchGraphQLContext
@@ -44,6 +44,7 @@ if True:  # so that import re-ordering won't touch these
     from images import schema as images_schema  # noqa: F401
 
 from actions import schema as actions_schema
+from actions.graphql_admin_schema import AdminQuery
 from actions.models.action import Action
 from content.models import SiteGeneralContent
 from datasets import schema as datasets_schema
@@ -65,7 +66,6 @@ if TYPE_CHECKING:
 
     from aplans.graphql_types import GQLInfo
 
-    from actions.graphql_admin_schema import AdminQuery
     from actions.models import Plan
     from users.models import User
 
@@ -115,8 +115,8 @@ class Query(
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True), plan=graphene.ID(required=True))
     me = graphene.Field(UserNode, required=False, description="The current user")
 
-    @staticmethod
     @sb.field(description="Admin query namespace")
+    @staticmethod
     def admin(root, info: gql.Info) -> Annotated[AdminQuery, sb.lazy('actions.graphql_admin_schema')]:
         user = user_or_none(info.context.user)
         if user is None or not user.is_superuser:
