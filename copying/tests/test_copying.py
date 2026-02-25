@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from wagtail.models import Page, Revision
+from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
 
 import pytest
@@ -22,10 +24,6 @@ from actions.tests.factories import (
     PlanFactory,
     WorkflowFactory,
 )
-from documentation.models import DocumentationRootPage
-from django.db import transaction
-from wagtail.models.reference_index import ReferenceIndex
-
 from copying.main import (
     CloneVisitor,
     UpdateReferencesVisitor,
@@ -35,6 +33,7 @@ from copying.main import (
     _validate_copy_plan_args,
     copy_plan,
 )
+from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
 from images.models import AplansImage
@@ -512,6 +511,7 @@ def test_action_revision_references_are_updated(plan_with_pages, action, user):
     action.save_revision(user=user)
     plan_copy = copy_plan(plan_with_pages)
     action_copy = plan_copy.actions.get()
+    assert action_copy.latest_revision is not None
     rev_obj = action_copy.latest_revision.as_object()
     assert rev_obj.plan_id == plan_copy.pk
 
@@ -711,5 +711,9 @@ class TestUpdateReferenceIndexImmediately:
         doc_copy = AplansDocument.objects.get(collection=plan_copy.root_collection, title=doc.title)
         # Without the decorator, update_indexed_references() finds nothing in the un-updated index.
         # The page copy's body still references the original doc pk (stale reference).
-        assert page_copy.body[0].value.source == html_with_references([doc])
-        assert page_copy.body[0].value.source != html_with_references([doc_copy])
+        body = page_copy.body
+        assert body is not None
+        body_value = body[0].value
+        assert body_value is not None
+        assert body_value.source == html_with_references([doc])
+        assert body_value.source != html_with_references([doc_copy])

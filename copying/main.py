@@ -15,7 +15,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Count, Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
+from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
@@ -46,7 +46,7 @@ from documents.models import AplansDocument
 from images.models import AplansImage
 from indicators.models.common_indicator import CommonIndicator
 from indicators.models.dimensions import Dimension
-from indicators.models.indicator import Indicator, IndicatorLevel
+from indicators.models.indicator import Indicator
 from indicators.models.metadata import Quantity, Unit
 from orgs.models import Organization
 from pages.models import PlanRootPage
@@ -450,7 +450,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         if exclude_fields is None:
             exclude_fields = []
         for fk in get_foreign_keys(instance):
-            if fk.name not in exclude_fields and not _is_excluded_model(fk.related_model):
+            if fk.name not in exclude_fields and isinstance(fk.related_model, type) and not _is_excluded_model(fk.related_model):
                 yield fk
         for gfk in get_generic_foreign_keys(instance):
             if gfk.name not in exclude_fields:
@@ -811,6 +811,8 @@ def _copy_instance_revision(
     instance: RevisionMixin, clone_visitor: CloneVisitor, update_references_visitor: UpdateReferencesVisitor,
 ) -> None:
     try:
+        if instance.latest_revision is None:
+            return
         rev_obj = instance.latest_revision.as_object()
     except Exception as exc:
         # Some non-ClusterableModel models with i18n fields that reference FKs
@@ -828,9 +830,9 @@ def _copy_instance_revision(
     # as_object() sets pk from the revision's content_object (the original), so fix it to the copy's pk
     rev_obj.pk = instance.pk
     if hasattr(rev_obj, 'uuid'):
-        rev_obj.uuid = instance.uuid
+        rev_obj.uuid = instance.uuid  # type: ignore[attr-defined]
     if hasattr(rev_obj, 'copy_of'):
-        rev_obj.copy_of = instance.copy_of
+        rev_obj.copy_of = instance.copy_of  # type: ignore[attr-defined]
     # Update but don't save `rev_obj`. (Otherwise we'd overwrite published instances with drafts. We just want to
     # create a revision out of `rev_obj` and save that.)
     update_references_visitor.update_instance(rev_obj, save=False)
@@ -996,11 +998,12 @@ def _copy_collection_site_and_pages(
     root_collection = Plan.objects.get(pk=plan.pk).root_collection
     if root_collection:
         copy_collection_with_contents(root_collection, clone_visitor)
-    visit_tree(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
-    assert plan.site
-    assert isinstance(plan.site.root_page.specific, PlanRootPage)
+    site = Plan.objects.get(pk=plan.pk).site
+    assert site
+    visit_tree(site, {}, clone_visitor)
+    assert isinstance(site.root_page.specific, PlanRootPage)
     root_page_copies = copy_root_pages(
-        root_page=plan.site.root_page.specific,
+        root_page=site.root_page.specific,
         title_suffix=root_page_title_suffix,
     )
     for original_root, root_copy in root_page_copies:
