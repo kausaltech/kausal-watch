@@ -1,0 +1,6 @@
+services:
+  app:
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1

@@ -9,6 +9,32 @@ The service was first used to implement monitoring for the [Carbon-neutral Helsi
 
 ## Installation
 
+### Run in Docker locally
+
+Build the Docker containers first with:
+
+```shell
+docker compose build
+```
+
+Then start them with:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d app
+```
+
+This should start an HTTP server on `localhost`, port `8000`. To be able to log in,
+you'll need to create a user together with some test data:
+
+```shell
+docker compose exec app ./manage.py create_superuser_with_defaults \
+  --email superuser@example.com --organization "Test org" \
+  --first-name Super --last-name User
+```
+
+After the command above finishes, you can point your browser at [localhost:8000](http://localhost:8000)
+and log in using the password you provided.
+
 ### Development
 
 #### Installation
