@@ -1753,7 +1753,7 @@ class Migration(migrations.Migration):
                         {},
                     ),
                     57: (
-                        "kausal_watch_extensions.blocks.CartographyProviderCredentialsChooserBlock",
+                        "pages.blocks.CartographyProviderCredentialsChooserBlock",
                         (),
                         {"label": "Map provider credentials"},
                     ),

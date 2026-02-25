@@ -1611,7 +1611,7 @@ class Migration(migrations.Migration):
                     ),
                     53: ("pages.blocks.RawVisualizationBlock", (), {}),
                     54: (
-                        "kausal_watch_extensions.blocks.CartographyProviderCredentialsChooserBlock",
+                        "pages.blocks.CartographyProviderCredentialsChooserBlock",
                         (),
                         {"label": "Map provider credentials"},
                     ),

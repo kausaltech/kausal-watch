@@ -330,3 +330,7 @@ class LargeImageBlock(blocks.StructBlock):
         GraphQLImage('image'),
         GraphQLString('width'),
     ]
+
+
+class CartographyProviderCredentialsChooserBlock(blocks.FieldBlock[Any]):
+    pass
