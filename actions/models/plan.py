@@ -5,7 +5,7 @@ import re
 import zoneinfo
 from datetime import UTC, datetime, timedelta
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 from urllib.parse import urlparse
 
 import reversion
@@ -18,7 +18,7 @@ from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.db.models.aggregates import Max
 from django.db.models.functions import Cast, Length, Substr
 from django.utils import timezone, translation
@@ -1071,6 +1071,13 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):  # ty
         visible_indicators = Indicator.objects.qs.filter(levels__in=visible_levels)
         return RelatedIndicator.objects.filter(Q(causal_indicator__in=visible_indicators) &
                                                Q(effect_indicator__in=visible_indicators)).exists()
+
+    def shared_indicators(self) -> models.QuerySet[IndicatorLevel, dict[str, Any]]:
+        """Return the indicators of this plan that are also linked to some other plan."""
+        return (
+            IndicatorLevel.objects.filter(indicator__in=self.indicators.all())
+            .values('indicator').annotate(num_plans=Count('plan')).filter(num_plans__gt=1)
+        )
 
     def default_identifier_for_copying(self) -> str:
         """Get an identifier a copy of this plan should have by default."""

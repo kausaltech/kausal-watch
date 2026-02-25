@@ -15,6 +15,7 @@ def copy_plan(
     version_name: str,
     supersede_original_plan: bool,
     supersede_original_actions: bool,
+    copy_indicators: bool,
 ):
     plan = Plan.objects.get(id=plan_id)
     copy_plan_implementation(
@@ -24,4 +25,5 @@ def copy_plan(
         version_name=version_name,
         supersede_original_plan=supersede_original_plan,
         supersede_original_actions=supersede_original_actions,
+        copy_indicators=copy_indicators,
     )

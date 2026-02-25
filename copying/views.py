@@ -15,6 +15,7 @@ from celery.contrib.django.task import DjangoTask
 from loguru import logger
 
 from actions.models.plan import Plan
+from copying.main import may_copy_indicators
 from copying.tasks import copy_plan
 
 if TYPE_CHECKING:
@@ -60,6 +61,16 @@ class PlanCopyForm(forms.Form):
             help_text=_("Set if copies of actions should supersede their original"),
             initial=False,
             required=False,
+        )
+        self.fields['copy_indicators'] = forms.BooleanField(
+            label=_("Copy indicators"),
+            help_text=_(
+                "Set if indicators should be copied instead of being shared with the original plan. "
+                "This is only allowed if the plan has no shared indicators yet."
+            ),
+            initial=False,
+            required=False,
+            disabled=not may_copy_indicators(self.plan),
         )
 
     def clean_identifier(self) -> str:
@@ -131,6 +142,7 @@ class PlanCopyView(WagtailAdminTemplateMixin, FormView):
             version_name=form.cleaned_data['version_name'],
             supersede_original_plan=form.cleaned_data['supersede_original_plan'],
             supersede_original_actions=form.cleaned_data['supersede_original_actions'],
+            copy_indicators=form.cleaned_data['copy_indicators'],
         )
         messages.success(self.request, _(
             "The copy will be created in the background. This may take a few minutes. The copy will appear in the list "
