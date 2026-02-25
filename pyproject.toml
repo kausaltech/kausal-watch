@@ -294,7 +294,7 @@ authenticate = "always"
 
 [tool.uv.sources]
 graphene-django-optimizer = { url = "https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip" }
-django-modeltrans = { url = "https://github.com/kausaltech/django-modeltrans/archive/a734040c3f38c2e404a61dc0be2c017874a9ea45.zip" }
+django-modeltrans = { url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" }
 kausal-paths-extensions = { index = "kausal"}
 
 [dependency-groups]

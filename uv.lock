@@ -746,15 +746,15 @@ wheels = [
 
 [[package]]
 name = "django-modeltrans"
-version = "0.7.5"
-source = { url = "https://github.com/kausaltech/django-modeltrans/archive/a734040c3f38c2e404a61dc0be2c017874a9ea45.zip" }
+version = "0.9.0"
+source = { url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" }
 dependencies = [
     { name = "django", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
 ]
-sdist = { hash = "sha256:4bc9c5feb7fb675ac6a23980e7f616207d68d76fc346b4ba6b0511871c9980c0" }
+sdist = { hash = "sha256:36c83d5c370efe0afbf6a7b3121d1a74e2a6e6345aa9960b07bd7d5bd4582c74" }
 
 [package.metadata]
-requires-dist = [{ name = "django", specifier = ">=3.2" }]
+requires-dist = [{ name = "django", specifier = ">=4.2" }]
 
 [[package]]
 name = "django-npm"
@@ -1822,7 +1822,7 @@ requires-dist = [
     { name = "django-filter" },
     { name = "django-hijack" },
     { name = "django-image-cropping" },
-    { name = "django-modeltrans", url = "https://github.com/kausaltech/django-modeltrans/archive/a734040c3f38c2e404a61dc0be2c017874a9ea45.zip" },
+    { name = "django-modeltrans", url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" },
     { name = "django-npm" },
     { name = "django-oauth-toolkit" },
     { name = "django-parler" },
