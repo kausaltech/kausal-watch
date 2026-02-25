@@ -136,6 +136,10 @@ for directory in cast('list[str]', env('MOUNTED_SECRET_PATHS')):
 DEBUG = cast('bool', env('DEBUG'))
 DEPLOYMENT_TYPE = cast('str', env('DEPLOYMENT_TYPE'))
 ENABLE_TEST_MODE = cast('bool', env('ENABLE_TEST_MODE'))
+
+if DEPLOYMENT_TYPE == 'production' and ENABLE_TEST_MODE:
+    raise ImproperlyConfigured('Test mode cannot be enabled in production')
+
 ALLOWED_HOSTS = cast('list[str]', env('ALLOWED_HOSTS'))
 INTERNAL_IPS = env.list('INTERNAL_IPS',
                         default=(['127.0.0.1'] if DEBUG else []))  # pyright: ignore
