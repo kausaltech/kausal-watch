@@ -363,7 +363,7 @@ def get_dataset_buttons(
     if classnames_add is None:
         classnames_add = []
     if find_spec('kausal_watch_extensions') is not None:
-        from kausal_watch_extensions.dataset_editor import DatasetViewSet
+        from kausal_watch_extensions.dataset_editor import DatasetViewSet  # type: ignore[import-not-found]
     else:
         return buttons
 

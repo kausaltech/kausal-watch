@@ -1847,6 +1847,7 @@ lint = [
     { name = "mypy-baseline", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "ondivi", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "ruff", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+    { name = "types-jwcrypto", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "types-oauthlib", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "types-psutil", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
     { name = "types-python-dateutil", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
@@ -1995,6 +1996,7 @@ lint = [
     { name = "mypy-baseline" },
     { name = "ondivi" },
     { name = "ruff" },
+    { name = "types-jwcrypto", specifier = ">=1.5.0.20251102" },
     { name = "types-oauthlib" },
     { name = "types-psutil" },
     { name = "types-python-dateutil" },
@@ -2010,11 +2012,11 @@ prod = [
 
 [[package]]
 name = "kausal-watch-extensions"
-version = "0.1.170"
+version = "0.1.171"
 source = { registry = "https://pypi.kausal.tech/" }
-sdist = { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.170.tar.gz", hash = "sha256:6ed09d307eb9d34a1ccf00027dd5164b2fd644485be236b34f68233174a39ecc" }
+sdist = { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.171.tar.gz", hash = "sha256:47fabe2791d0c349bb17fd97c13600b83a435b3be73fd08222fdd690bb761582" }
 wheels = [
-    { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.170-py3-none-any.whl", hash = "sha256:3dcb7022e52c30cedfb70b79a657269bc7bbc55d2dfdcdf5029b70cd2e45821b" },
+    { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.171-py3-none-any.whl", hash = "sha256:f911ed671877cbfaeeca708c33ed2b391dbc4ed10bc8f4eb2c0559bad6793f41" },
 ]
 
 [[package]]
@@ -3756,6 +3758,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7f/67/ea9c9ddbaa3e0b4d53c91f8778a33e42045be352dc7200ed2b9aaa7dc229/txaio-25.12.2.tar.gz", hash = "sha256:9f232c21e12aa1ff52690e365b5a0ecfd42cc27a6ec86e1b92ece88f763f4b78", size = 117393, upload-time = "2025-12-09T15:03:26.527Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/50/05/bdb6318120cac9bf97779674f49035e0595d894b42d4c43b60637bafdb1f/txaio-25.12.2-py3-none-any.whl", hash = "sha256:5f6cd6c6b397fc3305790d15efd46a2d5b91cdbefa96543b4f8666aeb56ba026", size = 31208, upload-time = "2025-12-09T04:30:27.811Z" },
+]
+
+[[package]]
+name = "types-jwcrypto"
+version = "1.5.0.20251102"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/08/a7/103a4b02c6fb8718994252d5840b11d770f090d4100aa460194cc009bc62/types_jwcrypto-1.5.0.20251102.tar.gz", hash = "sha256:c3b93a85d130a1c16999d2a3c435e5bd6a9b394754239190c5fe49cedcc0a98f", size = 11637, upload-time = "2025-11-02T03:07:38.388Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cf/15/e305c0ae6aaca68842c73fee5080eadd51a702a1562f05d9653d6e9b5a94/types_jwcrypto-1.5.0.20251102-py3-none-any.whl", hash = "sha256:506c93a09c6a988fc5a56bfe92f0cf80b31a0acee98bd6e807277bb0c6f8c1d0", size = 12978, upload-time = "2025-11-02T03:07:37.398Z" },
 ]
 
 [[package]]

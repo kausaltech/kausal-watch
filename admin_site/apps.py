@@ -93,5 +93,5 @@ class AdminSiteStatic(AppConfig):
 
 
 if find_spec('kausal_watch_extensions') is not None:
-    from kausal_watch_extensions import perform_early_init
+    from kausal_watch_extensions import perform_early_init  # type: ignore[import-not-found]
     perform_early_init()

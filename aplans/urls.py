@@ -56,8 +56,8 @@ if typing.TYPE_CHECKING:
 extensions_api_views = []
 kwe_urls: ModuleType | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
-    from kausal_watch_extensions import urls
-    from kausal_watch_extensions.api import all_views
+    from kausal_watch_extensions import urls  # type: ignore[import-not-found,attr-defined]
+    from kausal_watch_extensions.api import all_views  # type: ignore[import-not-found]
     extensions_api_views = all_views
     kwe_urls = urls
 

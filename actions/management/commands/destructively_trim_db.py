@@ -146,8 +146,11 @@ class Command(BaseCommand):
         from social_django.models import Association, Code, Nonce, Partial
 
         from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
-        from kausal_watch_extensions.models import AuthIDToken
         from notifications.models import SentNotification
+        try:
+            from kausal_watch_extensions.models import AuthIDToken  # type: ignore[import-not-found]
+        except ImportError:
+            AuthIDToken = None  # type: ignore[misc,assignment]
 
         # Delete Reversion revisions without users
         self.delete_all(ReversionRevision)
@@ -166,9 +169,10 @@ class Command(BaseCommand):
         self.delete_all(Code)
         self.delete_all(Partial)
         self.delete_all(SentNotification)
-        self.delete_all(AuthIDToken)
         self.delete_all(RefreshToken)
         self.delete_all(Tag)
+        if AuthIDToken is not None:
+            self.delete_all(AuthIDToken)
 
         with connection.cursor() as cursor, contextlib.suppress(ProgrammingError):
             cursor.execute("DELETE FROM postgres_search_indexentry;")

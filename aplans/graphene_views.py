@@ -173,7 +173,7 @@ class LocaleMiddleware:
 
 IDTokenAuthentication: type[TokenAuthentication] | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
-    from kausal_watch_extensions.auth.authentication import IDTokenAuthentication
+    from kausal_watch_extensions.auth.authentication import IDTokenAuthentication  # type: ignore[no-redef,import-not-found]
     id_token_authentication_found = True
 
 
