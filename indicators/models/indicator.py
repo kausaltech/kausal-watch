@@ -513,7 +513,11 @@ class Indicator(
         return self.latest_value_id is not None
 
     def get_notification_context(self, plan, request=None):
-        edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
+        from django.conf import settings
+        if 'kausal_watch_extensions' in settings.INSTALLED_APPS:
+            edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
+        else:
+            edit_values_url = None
         return {
             'id': self.id,
             'name': self.name,
