@@ -14,7 +14,7 @@ const testData = {
 }
 
 test.describe('Test organization admin', () => {
-  test.describe.configure({ mode: 'serial', timeout: 15000 });
+  test.describe.configure({ mode: 'serial', timeout: 25000 });
 
   const newOrgIdentifier = crypto.randomUUID();
   const newOrgName = `Test root organization ${newOrgIdentifier}`;

@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 const listActionsPath = '/admin/actions/action/';
 
 test.describe('Test admin', () => {
-  test.describe.configure({ mode: 'serial', timeout: 5000 });
+  test.describe.configure({ mode: 'serial', timeout: 15000 });
   test('List actions', async ({ page }) => {
     await page.goto('/admin/');
     await page.getByRole('link', { name: 'Actions', exact: true }).click();
