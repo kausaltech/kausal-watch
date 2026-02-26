@@ -224,6 +224,8 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         model_field='domains',
     )
     def resolve_domain(root: Plan, info, hostname=None) -> PlanDomain | None:
+        from actions.models.plan import get_canonical_wildcard_hostname
+
         context_hostname = getattr(info.context, '_plan_hostname', None)
         if not hostname:
             hostname = context_hostname
@@ -236,7 +238,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         implicit_domain = PlanDomain(
             plan=root,
             hostname=hostname,
-            redirect_to_hostname=None,
+            redirect_to_hostname=get_canonical_wildcard_hostname(hostname, root, request=info.context),
             base_path='',
             redirect_aliases=[],
         )
