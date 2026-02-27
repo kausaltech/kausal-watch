@@ -31,14 +31,14 @@ test.describe('Test data sources', () => {
     await page.getByRole('textbox', { name: 'Authority' }).fill('Test authority');
     await page.getByRole('textbox', { name: 'Description' }).fill('Test description');
     await page.getByRole('textbox', { name: 'URL' }).fill('https://test-url.com');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listDataSourcesPath);
     await expect(page.getByRole('link', { name: `${dsName}, Test authority Test edition` })).toBeVisible();
   });
 
   test('Adding a data source without a name leads to an error', async ({ page }) => {
     await page.goto(addDataSourcePath);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('The Data source could not be created due to errors.')).toBeVisible();
     await expect(page.locator('#panel-child-name-errors').getByText('This field is required.')).toBeVisible();
   });
@@ -52,7 +52,7 @@ test.describe('Test data sources', () => {
     await page.getByRole('textbox', { name: 'Authority' }).fill('Edited Test authority');
     await page.getByRole('textbox', { name: 'Description' }).fill('Edited Test description');
     await page.getByRole('textbox', { name: 'URL' }).fill('https://edited-test-url.com');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listDataSourcesPath);
     await expect(page.getByRole('link', { name: `Edited ${dsName}, Edited Test authority Edited Test edition` })).toBeVisible();
   });

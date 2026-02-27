@@ -62,7 +62,7 @@ test.describe('Test organization admin', () => {
       await page.getByRole('button', { name: `More options for '${parentName}'` }).click();
       await page.getByRole('link', { name: 'Add suborganization' }).click();
       await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(name);
-      await page.getByRole('button', { name: 'Save' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await expect(page.getByRole('table').getByText(name)).toBeVisible();
 
       // Test that the suborganization was added to the correct parent
@@ -73,7 +73,7 @@ test.describe('Test organization admin', () => {
     } else {
       await page.getByRole('link', { name: 'Add organization' }).click();
       await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(name);
-      await page.getByRole('button', { name: 'Save' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await expect(page.getByRole('table').getByText(name)).toBeVisible();
     }
   }
@@ -96,7 +96,7 @@ test.describe('Test organization admin', () => {
     await page.getByRole('button', { name: `More options for '${newOrgName}'` }).click();
     await page.getByRole('link', { name: 'Add suborganization' }).click();
     await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(newSubOrg2Name);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeVisible();
 
     // Test that the suborganization was added to the correct parent
@@ -174,7 +174,7 @@ test.describe('Test organization admin', () => {
     await expect(page.getByRole('textbox', { name: 'Primary language' })).not.toBeEditable();
     // Skip editing location, it behaves strangely in Playwright
 
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listOrganizationsPath);
     await expect(page.getByRole('link', { name: `${newOrgName} edited` })).toBeVisible();
   });
@@ -187,7 +187,7 @@ test.describe('Test organization admin', () => {
     await page.getByRole('button', { name: 'Choose a person' }).click();
     await page.getByRole('textbox', { name: 'Search term' }).fill(testData.organization1Person);
     await page.getByRole('link', { name: testData.organization1Person }).click();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listOrganizationsPath);
     // TODO: A proper check that the plan admin is taken into account
   });
@@ -200,7 +200,7 @@ test.describe('Test organization admin', () => {
     await page.getByRole('button', { name: 'Choose a person' }).click();
     await page.getByRole('textbox', { name: 'Search term' }).fill(testData.organization1Person);
     await page.getByRole('link', { name: testData.organization1Person }).click();
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listOrganizationsPath);
     // TODO: A proper check that the metadata admin is taken into account
   });

@@ -22,7 +22,7 @@ test.describe('Test admin', () => {
     await page.getByRole('textbox', { name: 'Name' }).fill(`Test action ${identifier}`);
     const descBox = page.getByRole('region', { name: 'Description' }).getByRole('textbox');
     await descBox.fill(`Test action ${identifier} description`);
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await page.waitForURL(listActionsPath);
     const messages = page.locator('#main .messages');
     await expect(messages).toBeVisible();
