@@ -137,8 +137,8 @@ DEBUG = cast('bool', env('DEBUG'))
 DEPLOYMENT_TYPE = cast('str', env('DEPLOYMENT_TYPE'))
 ENABLE_TEST_MODE = cast('bool', env('ENABLE_TEST_MODE'))
 
-if DEPLOYMENT_TYPE == 'production' and ENABLE_TEST_MODE:
-    raise ImproperlyConfigured('Test mode cannot be enabled in production')
+if DEPLOYMENT_TYPE in ('production', 'staging') and ENABLE_TEST_MODE:
+    raise ImproperlyConfigured('Test mode cannot be enabled in production or staging')
 
 ALLOWED_HOSTS = cast('list[str]', env('ALLOWED_HOSTS'))
 INTERNAL_IPS = env.list('INTERNAL_IPS',
