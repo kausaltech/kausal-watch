@@ -156,6 +156,16 @@ def use_wildcard_pattern_hostname(settings):
     settings.HOSTNAME_PLAN_DOMAINS = [WILDCARD_PATTERN_DOMAIN]
 
 
+@pytest.fixture(params=['settings', 'header'], ids=['via_settings', 'via_header'])
+def wildcard_via(request, settings):
+    """Provide wildcard pattern domain either via Django settings or via x-wildcard-domains request header."""
+    if request.param == 'settings':
+        settings.HOSTNAME_PLAN_DOMAINS = [WILDCARD_PATTERN_DOMAIN]
+        return {}
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    return {'headers': {'x-wildcard-domains': WILDCARD_PATTERN_DOMAIN}}
+
+
 @pytest.mark.parametrize("delta_minutes", [-5, 5, None])
 @pytest.mark.parametrize(argnames="expose_flag", argvalues=[True, False])
 def test_plans_for_hostname_without_domains(graphql_client_query_data,
@@ -183,14 +193,15 @@ def test_plans_for_hostname_without_domains(graphql_client_query_data,
 
 
 def test_wildcard_pattern_resolves_plan(graphql_client_query_data,
-                                        use_wildcard_pattern_hostname,
+                                        wildcard_via,
                                         plan_factory):
-    """Plan resolved via identifier.fi.dummy.io when HOSTNAME_PLAN_DOMAINS=['*.dummy.io']."""
+    """Plan resolved via identifier.fi.dummy.io when wildcard domain *.dummy.io is configured."""
     plan = plan_factory(country='FI')
     hostname = f'{plan.identifier}.fi.{DUMMY_DOMAIN}'
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
         variables={'hostname': hostname},
+        **wildcard_via,
     )
     plans = data['plansForHostname']
     assert len(plans) == 1
@@ -198,16 +209,18 @@ def test_wildcard_pattern_resolves_plan(graphql_client_query_data,
 
 
 def test_wildcard_pattern_and_exact_domain_coexist(graphql_client_query_data,
+                                                    wildcard_via,
                                                     settings,
                                                     plan_factory):
     """Both pattern and exact domain entries work when configured together."""
-    settings.HOSTNAME_PLAN_DOMAINS = [WILDCARD_PATTERN_DOMAIN, 'exact.example.com']
+    settings.HOSTNAME_PLAN_DOMAINS = settings.HOSTNAME_PLAN_DOMAINS + ['exact.example.com']
     plan = plan_factory(country='FI')
 
     # Via pattern
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
         variables={'hostname': f'{plan.identifier}.fi.{DUMMY_DOMAIN}'},
+        **wildcard_via,
     )
     assert len(data['plansForHostname']) == 1
     assert data['plansForHostname'][0]['identifier'] == plan.identifier
@@ -216,6 +229,7 @@ def test_wildcard_pattern_and_exact_domain_coexist(graphql_client_query_data,
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
         variables={'hostname': f'{plan.identifier}.exact.example.com'},
+        **wildcard_via,
     )
     assert len(data['plansForHostname']) == 1
     assert data['plansForHostname'][0]['identifier'] == plan.identifier
@@ -236,7 +250,7 @@ def test_exact_domain_still_works_with_no_patterns(graphql_client_query_data,
 
 
 def test_cross_region_redirect(graphql_client_query_data,
-                                use_wildcard_pattern_hostname,
+                                wildcard_via,
                                 plan_factory):
     """Finnish plan accessed via *.de.dummy.io gets redirect to fi.dummy.io."""
     plan = plan_factory(country='FI')
@@ -244,6 +258,7 @@ def test_cross_region_redirect(graphql_client_query_data,
     data = graphql_client_query_data(
         GET_PLAN_DOMAIN_QUERY,
         variables={'hostname': hostname},
+        **wildcard_via,
     )
     plans = data['plansForHostname']
     assert len(plans) == 1
@@ -252,7 +267,7 @@ def test_cross_region_redirect(graphql_client_query_data,
 
 
 def test_correct_region_no_redirect(graphql_client_query_data,
-                                     use_wildcard_pattern_hostname,
+                                     wildcard_via,
                                      plan_factory):
     """Finnish plan accessed via *.fi.dummy.io has no redirect."""
     plan = plan_factory(country='FI')
@@ -260,6 +275,7 @@ def test_correct_region_no_redirect(graphql_client_query_data,
     data = graphql_client_query_data(
         GET_PLAN_DOMAIN_QUERY,
         variables={'hostname': hostname},
+        **wildcard_via,
     )
     plans = data['plansForHostname']
     assert len(plans) == 1
