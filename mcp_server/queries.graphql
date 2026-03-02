@@ -455,7 +455,7 @@ fragment ActionDetails on Action {
     state
     dueAt
     completedAt
-    comment
+    details
   }
 
   # Indicators

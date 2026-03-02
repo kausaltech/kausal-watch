@@ -918,7 +918,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         CustomizableBuiltInFieldPanel('date_format'),
         CustomizableBuiltInFieldPanel('state'),
         CustomizableBuiltInFieldPanel('completed_at'),
-        CustomizableBuiltInFieldPanel('comment'),
+        CustomizableBuiltInFieldPanel('details'),
     ]
 
     task_header_from_js = """

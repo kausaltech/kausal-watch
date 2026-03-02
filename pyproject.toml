@@ -112,7 +112,7 @@ dependencies = [
 
 [project.optional-dependencies]
 kausal = [
-    "kausal-watch-extensions>=0.1.169",
+    "kausal-watch-extensions>=0.1.173",
 ]
 
 [tool.ruff]

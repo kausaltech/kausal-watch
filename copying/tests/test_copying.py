@@ -432,16 +432,16 @@ def test_indicator_reference_in_action_draft_updated_when_copying_indicators(
 
 
 @pytest.mark.parametrize('indicator__common', [None])
-def test_indicator_reference_in_action_task_comment_updated_when_copying_indicators(
+def test_indicator_reference_in_action_task_details_updated_when_copying_indicators(
     plan_with_pages, action, indicator,
 ):
-    """When copying a plan with indicators, indicator references in action task comments should be updated."""
-    task = ActionTaskFactory.create(action=action, comment=html_with_references([indicator]))
+    """When copying a plan with indicators, indicator references in action task details should be updated."""
+    task = ActionTaskFactory.create(action=action, details=html_with_references([indicator]))
     plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
     action_copy = plan_copy.actions.get()
     task_copy = action_copy.tasks.get(name=task.name)
     indicator_copy = plan_copy.indicators.get(name=indicator.name)
-    assert task_copy.comment == html_with_references([indicator_copy])
+    assert task_copy.details == html_with_references([indicator_copy])
 
 
 @pytest.mark.parametrize('indicator__common', [None])

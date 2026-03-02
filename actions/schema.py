@@ -1274,17 +1274,26 @@ class ActionTaskNode(DjangoNode[ActionTask]):
         model = ActionTask
         fields = public_fields(ActionTask)
 
+    comment = graphene.String(deprecation_reason='Use "details" instead')
+
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='comment',
+        model_field='details',
     )
-    def resolve_comment(root: ActionTask, _info: GQLInfo):
+    def resolve_details(root: ActionTask, _info: GQLInfo):
         root.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer  # noqa: B018
-        comment = root.comment_i18n
-        if comment is None:
+        details = root.details_i18n
+        if details is None:
             return None
 
-        return RichText(comment)
+        return RichText(details)
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='details',
+    )
+    def resolve_comment(root: ActionTask, info: GQLInfo):
+        return ActionTaskNode.resolve_details(root, info)
 
 
 ActionStatusSummaryIdentifierNode = graphene.Enum.from_enum(ActionStatusSummaryIdentifier)

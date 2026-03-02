@@ -1233,7 +1233,7 @@ def test_action_task_node(graphql_client_query_data):
               }
               name
               state
-              comment
+              details
               dueAt
               completedAt
               createdAt
@@ -1257,7 +1257,7 @@ def test_action_task_node(graphql_client_query_data):
                         'name': action_task.name,
                         # graphene_django puts choices into upper case in converter.convert_choice_name()
                         'state': action_task.state.upper(),
-                        'comment': action_task.comment,
+                        'details': action_task.details,
                         'dueAt': action_task.due_at.isoformat(),
                         'completedAt': None,
                         # 'completedBy': action_task.completed_by,

@@ -1914,7 +1914,7 @@ requires-dist = [
     { name = "httpx" },
     { name = "humanize" },
     { name = "jinja2" },
-    { name = "kausal-watch-extensions", marker = "extra == 'kausal'", specifier = ">=0.1.169" },
+    { name = "kausal-watch-extensions", marker = "extra == 'kausal'", specifier = ">=0.1.173" },
     { name = "libvoikko" },
     { name = "logfmter" },
     { name = "loguru" },

@@ -736,7 +736,7 @@ class Action(
             'tasks',
             [
                 TranslatedSearchField('name'),
-                TranslatedSearchField('comment'),
+                TranslatedSearchField('details'),
             ],
         ),
         index.FilterField('plan'),
@@ -1925,7 +1925,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
     )
     name = models.CharField(max_length=250, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
-    comment = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('comment'))
+    details = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('details'))
     due_at = models.DateField(
         verbose_name=_('due date'),
         help_text=_('The date by which the task should be completed (deadline)'),
@@ -1960,9 +1960,9 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
 
-    i18n = TranslationField(fields=('name', 'comment'), default_language_field='action__plan__primary_language_lowercase')
+    i18n = TranslationField(fields=('name', 'details'), default_language_field='action__plan__primary_language_lowercase')
     name_i18n: str
-    comment_i18n: str | None
+    details_i18n: str | None
 
     objects = ActionTaskManager()
 
@@ -1973,7 +1973,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
         'action',
         'name',
         'state',
-        'comment',
+        'details',
         'due_at',
         'date_format',
         'completed_at',
