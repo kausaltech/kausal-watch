@@ -69,7 +69,7 @@ jobs:
           SECRET_KEY: abcd
 
     container:
-      image: harbor.kausal.tech/library/playwright:v1.54.1
+      image: harbor.kausal.tech/library/playwright:v1.58.1
 
     env:
       CI: "1"

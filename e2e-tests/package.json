@@ -7,7 +7,7 @@
   "author": "",
   "license": "AGPL-3.0-only",
   "devDependencies": {
-    "@playwright/test": "1.54.1",
+    "@playwright/test": "1.58.1",
     "@types/node": "^25.3.0"
   },
   "packageManager": "pnpm@10.30.1",
