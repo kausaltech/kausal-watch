@@ -86,24 +86,6 @@ test.describe('Test organization admin', () => {
   test('Adding suborganizations', async ({ page }) => {
     await addOrganization(page, newSubOrgName, newOrgName);
     await addOrganization(page, newSubOrg2Name, newOrgName);
-    return;
-    await page.goto(listOrganizationsPath);
-    await expect(page.getByRole('table')).toBeVisible();
-    await expect(page.getByRole('table').getByText(newSubOrgName)).toBeHidden();
-
-    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeHidden();
-
-    await page.getByRole('button', { name: `More options for '${newOrgName}'` }).click();
-    await page.getByRole('link', { name: 'Add suborganization' }).click();
-    await page.getByRole('textbox', { name: 'Name (EN)*' }).fill(newSubOrg2Name);
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeVisible();
-
-    // Test that the suborganization was added to the correct parent
-    // organization by toggling the parent organization's suborganization
-    // visibility
-    await page.getByRole('cell', { name: newOrgName }).getByText('▼').click();
-    await expect(page.getByRole('table').getByText(newSubOrg2Name)).toBeHidden();
   });
 
   async function deleteOrganization(page: Page, name: string) {
