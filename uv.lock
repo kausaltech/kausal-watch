@@ -289,6 +289,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/92/88/b8527e1b00c1811db
 wheels = [
     { url = "https://files.pythonhosted.org/packages/69/ca/a08fdc7efdcc24e6a6131a93c85be1f204d41c58f474c42b0670af8c016b/caio-0.9.25-cp314-cp314-macosx_10_15_universal2.whl", hash = "sha256:fab6078b9348e883c80a5e14b382e6ad6aabbc4429ca034e76e730cf464269db", size = 36978, upload-time = "2025-12-26T15:21:41.055Z" },
     { url = "https://files.pythonhosted.org/packages/5e/6c/d4d24f65e690213c097174d26eda6831f45f4734d9d036d81790a27e7b78/caio-0.9.25-cp314-cp314-manylinux2010_x86_64.manylinux2014_x86_64.manylinux_2_12_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:44a6b58e52d488c75cfaa5ecaa404b2b41cc965e6c417e03251e868ecd5b6d77", size = 81832, upload-time = "2025-12-26T15:22:22.757Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/ed/bf81aeac1d290017e5e5ac3e880fd56ee15e50a6d0353986799d1bc5cfd5/caio-0.9.25-cp314-cp314-manylinux_2_34_x86_64.whl", hash = "sha256:0ba16aa605ccb174665357fc729cf500679c2d94d5f1458a6f0d5ca48f2060a7", size = 80071, upload-time = "2026-03-04T22:08:28.751Z" },
     { url = "https://files.pythonhosted.org/packages/86/93/1f76c8d1bafe3b0614e06b2195784a3765bbf7b0a067661af9e2dd47fc33/caio-0.9.25-py3-none-any.whl", hash = "sha256:06c0bb02d6b929119b1cfbe1ca403c768b2013a369e2db46bfa2a5761cf82e40", size = 19087, upload-time = "2025-12-26T15:22:00.221Z" },
 ]
 
@@ -1910,7 +1911,7 @@ requires-dist = [
     { name = "httpx" },
     { name = "humanize" },
     { name = "jinja2" },
-    { name = "kausal-watch-extensions", marker = "extra == 'kausal'", specifier = ">=0.1.169" },
+    { name = "kausal-watch-extensions", marker = "extra == 'kausal'", specifier = ">=0.1.172" },
     { name = "libvoikko" },
     { name = "logfmter" },
     { name = "loguru" },
@@ -2012,11 +2013,11 @@ prod = [
 
 [[package]]
 name = "kausal-watch-extensions"
-version = "0.1.171"
+version = "0.1.172"
 source = { registry = "https://pypi.kausal.tech/" }
-sdist = { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.171.tar.gz", hash = "sha256:47fabe2791d0c349bb17fd97c13600b83a435b3be73fd08222fdd690bb761582" }
+sdist = { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.172.tar.gz", hash = "sha256:434d5ee239bfef7bbec34bbbc46fdfe0e96a31d0e447aee343504cd7d1219edb" }
 wheels = [
-    { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.171-py3-none-any.whl", hash = "sha256:f911ed671877cbfaeeca708c33ed2b391dbc4ed10bc8f4eb2c0559bad6793f41" },
+    { url = "https://pypi.kausal.tech/packages/kausal_watch_extensions-0.1.172-py3-none-any.whl", hash = "sha256:8a60b65d3bc4b4c1734d8bb9ad019d8ea0524d7c258c984157e5d7cb23264def" },
 ]
 
 [[package]]
