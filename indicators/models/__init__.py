@@ -7,6 +7,11 @@ from indicators.models.action_links import (
     ActionIndicatorQuerySet,
 )
 
+# Computation models
+from indicators.models.computation import (
+    DatasetMetricComputation,
+)
+
 # Common indicator models
 from indicators.models.common_indicator import (
     CommonIndicator,
@@ -69,6 +74,7 @@ __all__ = [
     'ActionIndicator',
     'ActionIndicatorManager',
     'ActionIndicatorQuerySet',
+    'DatasetMetricComputation',
     'CommonIndicator',
     'CommonIndicatorDimension',
     'CommonIndicatorNormalizator',
