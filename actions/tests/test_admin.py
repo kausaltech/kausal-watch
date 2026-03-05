@@ -763,3 +763,45 @@ def test_action_contact_person_swap_on_publish_draft(plan):
     # Verify the persons have been swapped to the correct roles
     assert contact_b_after.role == ActionContactPerson.Role.EDITOR
     assert contact_a_after.role == ActionContactPerson.Role.MODERATOR
+
+
+def test_publish_does_not_overwrite_order(plan):
+    """
+    Publishing a revision must not revert the action's order to the value stored in the revision.
+
+    The order field is managed outside the revision workflow (e.g. via
+    drag-and-drop reordering) and must be preserved.
+    """
+    from wagtail.models import Revision
+
+    from actions.models import Action
+    from actions.tests.factories import ActionFactory
+
+    action = ActionFactory.create(plan=plan)
+    action.order = 5
+    action.save()
+
+    # Create a revision that captures order=5.
+    # save_revision() auto-publishes on non-workflow plans, which mutates
+    # revision.content in-place (pops 'attributes' and 'order'), so we
+    # need to reconstruct the content for our test revision.
+    initial_revision = action.save_revision()
+    revision_content = initial_revision.content.copy()
+    revision_content.setdefault('attributes', {})
+    revision_content['order'] = 5
+
+    # Simulate an order change that happened after the revision was created
+    Action.objects.filter(pk=action.pk).update(order=42)
+
+    # Create a new revision from the old content and publish it
+    new_revision: Revision = Revision(
+        content_type=initial_revision.content_type,
+        base_content_type=initial_revision.base_content_type,
+        object_id=action.pk,
+    )
+    new_revision.content = revision_content
+    new_revision.save()
+    new_revision.publish()
+
+    action.refresh_from_db()
+    assert action.order == 42

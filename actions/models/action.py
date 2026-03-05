@@ -681,6 +681,8 @@ class Action(
 
     def publish(self, revision: Revision[Self], user: User | None = None, **kwargs) -> None:  # type: ignore[override]
         attributes = revision.content.pop('attributes')
+        self.refresh_from_db(fields=['order'])
+        revision.content['order'] = self.order
         self._renormalize_revision_items(revision, 'responsible_parties', 'organization')
         self._renormalize_revision_items(revision, 'contact_persons', 'person')
         super().publish(revision, user=user, **kwargs)
