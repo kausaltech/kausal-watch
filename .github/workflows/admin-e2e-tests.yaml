@@ -65,12 +65,20 @@ jobs:
           DEPLOYMENT_TYPE: ci
           REDIS_URL: redis://localhost
           DB_ENDPOINT: localhost:5432
+          DB_USER: ${{ env.POSTGRES_USER }}
+          DB_NAME: ${{ env.POSTGRES_DATABASE }}
           ALLOWED_HOSTS: localhost
           KUBERNETES_LOGGING: 1
+          TEST_MODE: 1
           ENABLE_TEST_MODE: 1
           CI: 1
           SECRET_KEY: abcd
           SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          TEST_DB_FILE: e2e-test-database.sql.gz
+          TEST_DB_S3_BUCKET: ${{ inputs.s3_bucket }}
+          TEST_DB_S3_ENDPOINT: ${{ inputs.s3_endpoint }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
     container:
       image: harbor.kausal.tech/library/playwright:v1.58.1
@@ -86,21 +94,9 @@ jobs:
       - name: Wait for backend
         run: wait-for-it.sh -t 180 localhost:8000
 
-      - name: Restore database dump from S3
-        continue-on-error: true
+      - name: Install dependencies
         run: |
-          apt-get update && apt-get install -y postgresql-client jq
-          S3_ENDPOINT="${{ inputs.s3_endpoint || vars.BUILD_S3_ENDPOINT }}"
-          S3_BUCKET="${{ inputs.s3_bucket || vars.BUILD_S3_BUCKET }}"
-          DUMP_URL="https://${S3_ENDPOINT}/${S3_BUCKET}/e2e-test-database.sql.gz"
-          echo "Downloading database dump from ${DUMP_URL}"
-          if curl -sf -o /tmp/e2e-test-database.sql.gz "${DUMP_URL}"; then
-            echo "Restoring database dump..."
-            gunzip -c /tmp/e2e-test-database.sql.gz | psql "postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DATABASE }}"
-            echo "Database dump restored successfully"
-          else
-            echo "No database dump found at ${DUMP_URL}, skipping restore"
-          fi
+          apt-get update && apt-get install -y jq
         shell: bash
 
       - name: Install Playwright dependencies
