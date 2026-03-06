@@ -14,6 +14,7 @@ from datasets.tests.factories import (
     DimensionFactory,
     DimensionScopeFactory,
 )
+from indicators.models.computation import DatasetMetricComputation
 
 if typing.TYPE_CHECKING:
     from actions.models.action import Action
@@ -608,6 +609,43 @@ def test_dataset_metric_node(graphql_client_query_data, plan, category):
     assert data == expected
 
 
+def test_metric_is_computed(graphql_client_query_data, plan, category):
+    schema = DatasetSchemaFactory.create()
+    metric_a = DatasetMetricFactory.create(schema=schema, label='Input A')
+    metric_b = DatasetMetricFactory.create(schema=schema, label='Input B')
+    metric_c = DatasetMetricFactory.create(schema=schema, label='Computed')
+    DatasetMetricComputation.objects.create(
+        schema=schema,
+        target_metric=metric_c,
+        operation='add',
+        operand_a=metric_a,
+        operand_b=metric_b,
+    )
+    DatasetFactory.create(scope=category, schema=schema)
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            datasets {
+              schema {
+                metrics {
+                  label
+                  isComputed
+                }
+              }
+            }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+    metrics = data['planCategories'][0]['datasets'][0]['schema']['metrics']
+    by_label = {m['label']: m['isComputed'] for m in metrics}
+    assert by_label['Input A'] is False
+    assert by_label['Input B'] is False
+    assert by_label['Computed'] is True
+
+
 def test_dimension_node_categories(graphql_client_query_data, plan, category):
     dimension = DimensionFactory.create()
     dim_category = DimensionCategoryFactory.create(dimension=dimension)
@@ -693,6 +731,50 @@ def test_dimension_category_dimension_field(graphql_client_query_data, plan, cat
     }
 
 
+def test_computed_data_points(graphql_client_query_data, plan, category):
+    schema = DatasetSchemaFactory.create()
+    metric_a = DatasetMetricFactory.create(schema=schema, label='A')
+    metric_b = DatasetMetricFactory.create(schema=schema, label='B')
+    metric_c = DatasetMetricFactory.create(schema=schema, label='C')
+    DatasetMetricComputation.objects.create(
+        schema=schema,
+        target_metric=metric_c,
+        operation='multiply',
+        operand_a=metric_a,
+        operand_b=metric_b,
+    )
+    dataset = DatasetFactory.create(scope=category, schema=schema)
+    DataPointFactory.create(dataset=dataset, metric=metric_a, date=date(2024, 1, 1), value=3.0)
+    DataPointFactory.create(dataset=dataset, metric=metric_b, date=date(2024, 1, 1), value=5.0)
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            datasets {
+              computedDataPoints {
+                date
+                value
+                metric {
+                  label
+                }
+                dimensionCategories {
+                  uuid
+                }
+              }
+            }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+    computed = data['planCategories'][0]['datasets'][0]['computedDataPoints']
+    assert len(computed) == 1
+    assert computed[0]['date'] == '2024-01-01'
+    assert computed[0]['value'] == 15.0
+    assert computed[0]['metric']['label'] == 'C'
+    assert computed[0]['dimensionCategories'] == []
+
+
 def test_dataset_schema_dimension_order_and_schema(graphql_client_query_data, plan, category):
     schema = DatasetSchemaFactory.create()
     dimension = DimensionFactory.create()
@@ -736,6 +818,28 @@ def test_dataset_schema_dimension_order_and_schema(graphql_client_query_data, pl
         }],
     }
     assert data == expected
+
+
+def test_computed_data_points_empty(graphql_client_query_data, plan, category):
+    dataset = DatasetFactory.create(scope=category)
+    DataPointFactory.create(dataset=dataset, date=date(2024, 1, 1), value=10.0)
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            datasets {
+              computedDataPoints {
+                date
+                value
+              }
+            }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+    computed = data['planCategories'][0]['datasets'][0]['computedDataPoints']
+    assert computed == []
 
 
 def test_dimension_scope_plan_type(graphql_client_query_data, plan, category):

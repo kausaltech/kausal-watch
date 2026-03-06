@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import TYPE_CHECKING, Annotated, cast
 
 import strawberry
@@ -106,6 +107,10 @@ class DatasetMetricNode:
     unit: auto
     order: auto
 
+    @strawberry_django.field
+    def is_computed(self: DatasetMetric) -> bool:
+        return self.computed_by.exists()
+
 
 @register_strawberry_type
 @strawberry_django.type(DatasetSchema, name='DatasetSchema')
@@ -125,6 +130,14 @@ class DatasetSchemaNode:
 grapple_registry.django_models[DatasetSchema] = DatasetSchemaNode
 
 
+@strawberry.type
+class ComputedDataPointNode:
+    date: date
+    value: float | None
+    metric: DatasetMetricNode
+    dimension_categories: list[DimensionCategoryNode]
+
+
 @register_strawberry_type
 @strawberry_django.type(Dataset, name='Dataset')
 class DatasetNode:
@@ -135,6 +148,20 @@ class DatasetNode:
     @strawberry_django.field
     def scope(self: Dataset) -> DatasetScopeType | None:
         return cast('DatasetScopeType', self.scope)
+
+    @strawberry_django.field
+    def computed_data_points(self: Dataset) -> list[ComputedDataPointNode]:
+        from indicators.computation import compute_dataset_values
+
+        return [
+            ComputedDataPointNode(
+                date=cv.date,
+                value=float(cv.value) if cv.value is not None else None,
+                metric=cast('DatasetMetricNode', cv.metric),
+                dimension_categories=cast('list[DimensionCategoryNode]', cv.dimension_categories),
+            )
+            for cv in compute_dataset_values(self)
+        ]
 
 
 class Query:
