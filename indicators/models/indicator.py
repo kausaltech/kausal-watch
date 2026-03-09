@@ -42,6 +42,7 @@ from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 from search.models import SearchableModel
 
 if typing.TYPE_CHECKING:
+    from kausal_common.datasets.models import DatasetSchema
     from kausal_common.models.types import FK, M2M, OneToOne, RevMany
     from kausal_common.users import UserOrAnon
 
@@ -238,6 +239,15 @@ class Indicator(
         'indicators.Dataset',
         blank=True,
         verbose_name=_('datasets'),
+    )
+    dataset_schema: OneToOne[DatasetSchema | None] = models.OneToOneField(
+        'datasets.DatasetSchema',
+        null=True,
+        blank=True,
+        related_name='indicator',
+        verbose_name=_('dataset schema'),
+        help_text=_('If set, this indicator uses the dataset system instead of legacy indicator values'),
+        on_delete=models.SET_NULL,
     )
 
     # summaries = models.JSONField(null=True)

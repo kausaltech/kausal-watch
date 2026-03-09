@@ -24,6 +24,7 @@ from actions.models import (
     Plan,
 )
 from actions.models.category import Category
+from indicators.models import Indicator, IndicatorLevel
 from pages.models import ActionListPage, IndicatorListPage
 from reports.models import Report
 
@@ -117,6 +118,10 @@ class PlanSpecificCache:
         return DatasetSchema.objects.get_queryset().for_scope(self.plan)
 
     @cached_property
+    def indicator_dataset_schemas(self) -> DatasetSchemaQuerySet:
+        return DatasetSchema.objects.get_queryset().for_scope(self.plan)
+
+    @cached_property
     def category_type_dataset_schemas_by_id(self) -> dict[int, list[DatasetSchema]]:
         ct_content_type = ContentType.objects.get_for_model(CategoryType)
         plan_category_type_ids = set(self.plan.category_types.values_list('id', flat=True))
@@ -139,6 +144,9 @@ class PlanSpecificCache:
             assert instance.plan_id == self.plan.id
             return list(self.action_dataset_schemas)
 
+        if isinstance(instance, Indicator):
+            return list(self.indicator_dataset_schemas)
+
         assert isinstance(instance, Category)
         schemas = self.category_type_dataset_schemas_by_id.get(instance.type_id, [])
         return schemas
@@ -147,13 +155,24 @@ class PlanSpecificCache:
     def datasets_by_scope_by_schema(self) -> dict[str, dict[int, dict[str, Dataset]]]:
         result: dict[str, dict[int, dict[str, Dataset]]] = {}
         plan_content_type = ContentType.objects.get_for_model(Plan)
+        action_content_type = ContentType.objects.get_for_model(Action)
         category_type_content_type = ContentType.objects.get_for_model(CategoryType)
+        indicator_content_type = ContentType.objects.get_for_model(Indicator)
         action_datasets = Dataset.objects.filter(
-            schema__scopes__scope_content_type=plan_content_type, schema__scopes__scope_id=self.plan.pk,
+            schema__scopes__scope_content_type=plan_content_type,
+            schema__scopes__scope_id=self.plan.pk,
+            scope_content_type=action_content_type,
         )
         category_type_ids = self.plan.category_types.values_list('id', flat=True)
         category_datasets = Dataset.objects.filter(
             schema__scopes__scope_content_type=category_type_content_type, schema__scopes__scope_id__in=category_type_ids,
+        )
+        indicator_ids = IndicatorLevel.objects.filter(plan=self.plan).values_list('indicator_id', flat=True)
+        indicator_datasets = Dataset.objects.filter(
+            schema__scopes__scope_content_type=plan_content_type,
+            schema__scopes__scope_id=self.plan.pk,
+            scope_content_type=indicator_content_type,
+            scope_id__in=indicator_ids,
         )
         for ds in action_datasets:
             if ds.scope_id is not None and ds.schema is not None:
@@ -161,6 +180,9 @@ class PlanSpecificCache:
         for ds in category_datasets:
             if ds.scope_id is not None and ds.schema is not None:
                 result.setdefault('actions.Category', {}).setdefault(ds.scope_id, {})[str(ds.schema.uuid)] = ds
+        for ds in indicator_datasets:
+            if ds.scope_id is not None and ds.schema is not None:
+                result.setdefault('indicators.Indicator', {}).setdefault(ds.scope_id, {})[str(ds.schema.uuid)] = ds
         return result
 
     def populate_organizations(self, organizations: OrganizationQuerySet) -> None:

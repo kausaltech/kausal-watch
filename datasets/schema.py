@@ -31,6 +31,7 @@ from kausal_common.datasets.schema import (
 from aplans.graphql_types import DjangoNode, register_django_node
 
 from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
+from indicators.schema import IndicatorNode
 
 
 class DimensionNode(BaseDimensionNode, DjangoNode[Dimension]):
@@ -85,7 +86,7 @@ class DatasetSchemaScopeTypeNode(BaseDatasetSchemaScopeTypeNode):
 class DatasetScopeTypeNode(BaseDatasetScopeTypeNode):
     class Meta:
         types = (
-            ActionNode, CategoryNode,
+            ActionNode, CategoryNode, IndicatorNode,
         )
 
 class DatasetSchemaDimensionNode(BaseDatasetSchemaDimensionNode, DjangoNode[DatasetSchemaDimension]):
