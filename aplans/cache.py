@@ -114,11 +114,7 @@ class PlanSpecificCache:
         return cast('list[AplansPage]', visible_pages)
 
     @cached_property
-    def action_dataset_schemas(self) -> DatasetSchemaQuerySet:
-        return DatasetSchema.objects.get_queryset().for_scope(self.plan)
-
-    @cached_property
-    def indicator_dataset_schemas(self) -> DatasetSchemaQuerySet:
+    def plan_dataset_schemas(self) -> DatasetSchemaQuerySet:
         return DatasetSchema.objects.get_queryset().for_scope(self.plan)
 
     @cached_property
@@ -139,17 +135,29 @@ class PlanSpecificCache:
                     by_id.setdefault(scope.scope_id, []).append(ds)
         return by_id
 
-    def get_dataset_schemas_for_object(self, instance: DatasetScopeType) -> list[DatasetSchema]:
+    def get_dataset_schemas_for_object(self, instance: DatasetScopeType) -> list[tuple[DatasetSchema, Dataset | None]]:
+        """
+        Return all schemas applicable to the given instance, paired with that instance's dataset (or None).
+
+        The pairing lets callers distinguish which schemas already have data for the specific
+        instance (dataset is not None) from those that do not (dataset is None), without a
+        separate lookup into datasets_by_scope_by_schema.
+        """
         if isinstance(instance, Action):
             assert instance.plan_id == self.plan.id
-            return list(self.action_dataset_schemas)
+            schemas = list(self.plan_dataset_schemas)
+            datasets_by_schema = self.datasets_by_scope_by_schema.get('actions.Action', {}).get(instance.id, {})
+            return [(s, datasets_by_schema.get(str(s.uuid))) for s in schemas]
 
         if isinstance(instance, Indicator):
-            return list(self.indicator_dataset_schemas)
+            schemas = list(self.plan_dataset_schemas)
+            datasets_by_schema = self.datasets_by_scope_by_schema.get('indicators.Indicator', {}).get(instance.id, {})
+            return [(s, datasets_by_schema.get(str(s.uuid))) for s in schemas]
 
         assert isinstance(instance, Category)
         schemas = self.category_type_dataset_schemas_by_id.get(instance.type_id, [])
-        return schemas
+        datasets_by_schema = self.datasets_by_scope_by_schema.get('actions.Category', {}).get(instance.id, {})
+        return [(s, datasets_by_schema.get(str(s.uuid))) for s in schemas]
 
     @cached_property
     def datasets_by_scope_by_schema(self) -> dict[str, dict[int, dict[str, Dataset]]]:

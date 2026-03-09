@@ -372,23 +372,7 @@ def get_dataset_buttons(
 
     cache = cache or getattr(self.request, 'admin_cache')  # noqa: B009
     assert cache is not None
-    schemas = cache.get_dataset_schemas_for_object(obj)
-    for schema in schemas:
-        dataset_cache = cache.datasets_by_scope_by_schema
-        matching_dataset = (
-            dataset_cache.get(
-                self.model._meta.label,
-                {},
-            )
-            .get(
-                obj.pk,
-                {},
-            )
-            .get(
-                str(schema.uuid),
-                None,
-            )
-        )
+    for schema, matching_dataset in cache.get_dataset_schemas_for_object(obj):
         classname = self.finalise_classname(
             classnames_add=classnames_add,
             classnames_exclude=classnames_exclude,

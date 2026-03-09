@@ -16,42 +16,38 @@ class TestCategoryTypeDatasetSchemaLookup:
 
     def test_get_dataset_schemas_for_category_with_category_type_scope(self, plan):
         """Test that schemas scoped to a CategoryType are returned for categories of that type."""
-        # Create a CategoryType linked to the plan
         category_type = CategoryTypeFactory.create(plan=plan)
         category = CategoryFactory.create(type=category_type)
 
-        # Create a schema scoped to the category's CategoryType
         schema = DatasetSchemaFactory.create()
         DatasetSchemaScopeFactory.create(schema=schema, scope=category_type)
 
         cache = PlanSpecificCache(plan)
-        schemas = cache.get_dataset_schemas_for_object(category)
+        results = cache.get_dataset_schemas_for_object(category)
 
-        assert len(schemas) == 1
-        assert schemas[0] == schema
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset is None
 
     def test_get_dataset_schemas_for_category_returns_empty_for_other_category_type(self, plan):
         """Test that schemas scoped to a different CategoryType are not returned."""
-        # Create two CategoryTypes in the same plan
         category_type1 = CategoryTypeFactory.create(plan=plan)
         category_type2 = CategoryTypeFactory.create(plan=plan)
         category1 = CategoryFactory.create(type=category_type1)
         category2 = CategoryFactory.create(type=category_type2)
 
-        # Create a schema scoped to category_type1 only
         schema = DatasetSchemaFactory.create()
         DatasetSchemaScopeFactory.create(schema=schema, scope=category_type1)
 
         cache = PlanSpecificCache(plan)
 
-        # The schema should be found for category1
-        schemas_for_cat1 = cache.get_dataset_schemas_for_object(category1)
-        assert len(schemas_for_cat1) == 1
-        assert schemas_for_cat1[0] == schema
+        results_for_cat1 = cache.get_dataset_schemas_for_object(category1)
+        assert len(results_for_cat1) == 1
+        assert results_for_cat1[0][0] == schema
 
-        # But not for category2 (different CategoryType)
-        schemas_for_cat2 = cache.get_dataset_schemas_for_object(category2)
-        assert len(schemas_for_cat2) == 0
+        results_for_cat2 = cache.get_dataset_schemas_for_object(category2)
+        assert len(results_for_cat2) == 0
 
     def test_get_dataset_schemas_for_category_multiple_schemas_same_type(self, plan):
         """Test that multiple schemas scoped to the same CategoryType are all returned."""
@@ -64,10 +60,10 @@ class TestCategoryTypeDatasetSchemaLookup:
         DatasetSchemaScopeFactory.create(schema=schema2, scope=category_type)
 
         cache = PlanSpecificCache(plan)
-        schemas = cache.get_dataset_schemas_for_object(category)
+        results = cache.get_dataset_schemas_for_object(category)
 
-        assert len(schemas) == 2
-        assert set(schemas) == {schema1, schema2}
+        assert len(results) == 2
+        assert {s for s, _ in results} == {schema1, schema2}
 
 
 class TestDatasetsByScopeBySchemaCached:
