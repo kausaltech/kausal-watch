@@ -38,6 +38,12 @@ if typing.TYPE_CHECKING:
     from wagtail_modeladmin.options import ModelAdmin
 
     from users.models import User
+else:
+    # Make factory classes support generic syntax (e.g., SubFactory[X, Y]) at runtime
+    for _kls in (factory.Factory, SubFactory):
+        if not hasattr(_kls, '__class_getitem__'):
+            _kls.__class_getitem__ = classmethod(lambda cls, *_args, **_kwargs: cls)  # type: ignore
+
 
 import logging
 
