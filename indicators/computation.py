@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import date
     from decimal import Decimal
+    from typing import Any
+
+    from django.db.models import QuerySet
 
     from kausal_common.datasets.models import Dataset
 
@@ -71,32 +74,24 @@ def _compute_metric_values(
     return results
 
 
-def compute_dataset_values(dataset: Dataset) -> list[ComputedValue]:
-    """
-    Compute metric values for a dataset.
-
-    Fetches data points, applies computations, and returns resolved
-    ComputedValue instances.
-    """
-    computations = list(
-        DatasetMetricComputation.objects.filter(schema=dataset.schema).select_related(
-            'target_metric', 'operand_a', 'operand_b',
-        )
-    )
-    if not computations:
-        return []
-
-    data_points = dataset.data_points.prefetch_related('dimension_categories').all()  # type: ignore[attr-defined]
+def _build_values_lookup(
+    data_points: QuerySet[Any],
+) -> dict[tuple[date, frozenset[int], int], Decimal | None]:
+    """Build a lookup dict from data points keyed by (date, dim_cat_ids, metric_id)."""
     values: dict[tuple[date, frozenset[int], int], Decimal | None] = {}
     for dp in data_points:
         dim_cat_ids = frozenset(dc.id for dc in dp.dimension_categories.all())
         values[(dp.date, dim_cat_ids, dp.metric_id)] = dp.value
+    return values
 
-    raw = _compute_metric_values(values, computations)
+
+def _resolve_computed_values(
+    raw: list[tuple[date, frozenset[int], int, Decimal | None]],
+) -> list[ComputedValue]:
+    """Bulk-fetch ORM instances and build ComputedValue objects from raw tuples."""
     if not raw:
         return []
 
-    # Bulk-fetch referenced metrics and dimension categories
     metric_ids = {r[2] for r in raw}
     all_dim_cat_ids: set[int] = set()
     for _, dims, _, _ in raw:
@@ -118,3 +113,41 @@ def compute_dataset_values(dataset: Dataset) -> list[ComputedValue]:
         )
         for d, dims, metric_id, val in raw
     ]
+
+
+def _compute_for_queryset(
+    dataset: Dataset,
+    data_points: QuerySet[Any],
+) -> list[ComputedValue]:
+    """Shared logic for computing metric values from a data point queryset."""
+    computations = list(
+        DatasetMetricComputation.objects.filter(schema=dataset.schema).select_related(
+            'target_metric', 'operand_a', 'operand_b',
+        )
+    )
+    if not computations:
+        return []
+
+    values = _build_values_lookup(data_points.prefetch_related('dimension_categories'))
+    raw = _compute_metric_values(values, computations)
+    return _resolve_computed_values(raw)
+
+
+def compute_dataset_values(dataset: Dataset) -> list[ComputedValue]:
+    """
+    Compute metric values for a dataset's actual data points.
+
+    Fetches data points, applies computations, and returns resolved
+    ComputedValue instances.
+    """
+    return _compute_for_queryset(dataset, dataset.data_points.all())  # type: ignore[attr-defined]
+
+
+def compute_dataset_goal_values(dataset: Dataset) -> list[ComputedValue]:
+    """
+    Compute metric values for a dataset's goal data points.
+
+    Same as ``compute_dataset_values`` but operates on
+    ``IndicatorGoalDataPoint`` rows instead of ``DataPoint`` rows.
+    """
+    return _compute_for_queryset(dataset, dataset.goal_data_points.all())  # type: ignore[attr-defined]

@@ -7,11 +7,6 @@ from indicators.models.action_links import (
     ActionIndicatorQuerySet,
 )
 
-# Computation models
-from indicators.models.computation import (
-    DatasetMetricComputation,
-)
-
 # Common indicator models
 from indicators.models.common_indicator import (
     CommonIndicator,
@@ -19,6 +14,11 @@ from indicators.models.common_indicator import (
     FrameworkIndicator,
     PlanCommonIndicator,
     RelatedCommonIndicator,
+)
+
+# Computation models
+from indicators.models.computation import (
+    DatasetMetricComputation,
 )
 
 # Contact person models
@@ -33,6 +33,12 @@ from indicators.models.dimensions import (
     DimensionCategory,
     IndicatorDimension,
     PlanDimension,
+)
+
+# Goal data point models
+from indicators.models.goal_data_point import (
+    IndicatorGoalDataPoint,
+    IndicatorGoalDimensionCategory,
 )
 
 # Main indicator models
@@ -74,12 +80,12 @@ __all__ = [
     'ActionIndicator',
     'ActionIndicatorManager',
     'ActionIndicatorQuerySet',
-    'DatasetMetricComputation',
     'CommonIndicator',
     'CommonIndicatorDimension',
     'CommonIndicatorNormalizator',
     'Dataset',
     'DatasetLicense',
+    'DatasetMetricComputation',
     'Dimension',
     'DimensionCategory',
     'Framework',
@@ -89,6 +95,8 @@ __all__ = [
     'IndicatorContactPerson',
     'IndicatorDimension',
     'IndicatorGoal',
+    'IndicatorGoalDataPoint',
+    'IndicatorGoalDimensionCategory',
     'IndicatorGraph',
     'IndicatorLevel',
     'IndicatorLevelManager',
