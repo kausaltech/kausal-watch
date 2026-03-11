@@ -114,6 +114,10 @@ class PlanSpecificCache:
         return cast('list[AplansPage]', visible_pages)
 
     @cached_property
+    def plan_indicator_ids(self) -> frozenset[int]:
+        return frozenset(IndicatorLevel.objects.filter(plan=self.plan).values_list('indicator_id', flat=True))
+
+    @cached_property
     def plan_dataset_schemas(self) -> DatasetSchemaQuerySet:
         return DatasetSchema.objects.get_queryset().for_scope(self.plan)
 
@@ -150,6 +154,7 @@ class PlanSpecificCache:
             return [(s, datasets_by_schema.get(str(s.uuid))) for s in schemas]
 
         if isinstance(instance, Indicator):
+            assert instance.id in self.plan_indicator_ids
             schemas = list(self.plan_dataset_schemas)
             datasets_by_schema = self.datasets_by_scope_by_schema.get('indicators.Indicator', {}).get(instance.id, {})
             return [(s, datasets_by_schema.get(str(s.uuid))) for s in schemas]
