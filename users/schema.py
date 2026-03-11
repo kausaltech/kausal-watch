@@ -3,6 +3,7 @@ from typing import cast
 
 import strawberry as sb
 
+from kausal_common.testing.schema import TestModeMutation
 from kausal_common.users.schema import UserNode
 
 from aplans import gql
@@ -35,7 +36,7 @@ class TestUserInput:
 
 
 @sb.type
-class TestMode:
+class TestMode(TestModeMutation):
     @gql.mutation
     def create_test_user(self, info: gql.Info, input: TestUserInput) -> UserNode:
         user = User(email=input.email, is_superuser=input.is_superuser)

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Annotated, Any, cast
 
 import graphene
 import strawberry as sb
-from django.conf import settings
 from django.db.models import Count, Q
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
@@ -20,6 +19,7 @@ import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 from treebeard.mp_tree import MP_NodeQuerySet
 
+from kausal_common.deployment import test_mode_enabled
 from kausal_common.graphene.utils import get_graphene_meta
 from kausal_common.models.types import copy_signature
 from kausal_common.strawberry.extensions import LoggingTracingExtension
@@ -227,12 +227,17 @@ class Mutation(
     graphene.ObjectType[Any],
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
-    if settings.ENABLE_TEST_MODE:
-        test_mode = graphene.Field(graphene.NonNull(users_schema.TestMode))
 
-        @staticmethod
-        def resolve_test_mode(root, info: GQLInfo) -> users_schema.TestMode:
-            return users_schema.TestMode()
+
+@sb.type
+class WatchTestModeMutations:
+    @sb.field
+    def test_mode(self) -> users_schema.TestMode:
+        from django.conf import settings
+
+        if not test_mode_enabled() and not settings.ENABLE_TEST_MODE:
+            raise PermissionError('Test mode is not enabled')
+        return users_schema.TestMode()
 
 
 @sb.directive(
@@ -358,9 +363,16 @@ def generate_strawberry_schema() -> sb.Schema:
 
     _validate_type_registry(all_types)
 
+    from django.conf import settings
+
+    mutation_types: list[type] = [Mutation]
+    if test_mode_enabled() or settings.ENABLE_TEST_MODE:
+        mutation_types.append(WatchTestModeMutations)
+    FinalMutation = merge_types('Mutation', tuple(mutation_types))
+
     schema = WatchSchema(
         query=Query,
-        mutation=Mutation,
+        mutation=FinalMutation,
         subscription=Subscription,
         types=all_types,
         directives=[context_directive, workflow_directive, auth_directive],

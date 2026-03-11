@@ -65,8 +65,6 @@ jobs:
           DEPLOYMENT_TYPE: ci
           REDIS_URL: redis://localhost
           DB_ENDPOINT: localhost:5432
-          DB_USER: ${{ env.POSTGRES_USER }}
-          DB_NAME: ${{ env.POSTGRES_DATABASE }}
           ALLOWED_HOSTS: localhost
           KUBERNETES_LOGGING: 1
           TEST_MODE: 1
