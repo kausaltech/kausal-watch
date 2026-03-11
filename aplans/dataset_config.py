@@ -31,6 +31,6 @@ SCHEMA_DEFAULT_SCOPE_FUNCTION: Callable[[], Model] | None = schema_default_scope
 SHOW_DATASETS_IN_MENU: bool = False
 SHOW_SCHEMAS_IN_MENU: bool = False
 SCHEMA_PERMISSION_POLICY = 'datasets.permission_policy.DatasetSchemaPermissionPolicy'
-DATASET_PERMISSION_POLICY = 'datasets.permission_policy.ActionOrCategoryInheritedDatasetPermissionPolicy'
+DATASET_PERMISSION_POLICY = 'datasets.permission_policy.ScopeInheritedDatasetPermissionPolicy'
 DATA_POINT_PERMISSION_POLICY = 'datasets.permission_policy.DataPointPermissionPolicy'
 DATA_SOURCE_PERMISSION_POLICY = 'datasets.permission_policy.DataSourcePermissionPolicy'

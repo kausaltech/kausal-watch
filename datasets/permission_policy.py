@@ -8,21 +8,24 @@ from django.http import HttpRequest
 
 from kausal_common.datasets.models import (
     DataPoint,
-    DataSource,
     Dataset,
     DatasetQuerySet,
     DatasetSchema,
+    DataSource,
 )
-from kausal_common.models.permission_policy import ModelPermissionPolicy, ObjectSpecificAction
+from kausal_common.models.permission_policy import ModelPermissionPolicy
 
 from actions.models import Action, Category, Plan
+from indicators.models import Indicator
 
 if TYPE_CHECKING:
+    from kausal_common.models.permission_policy import ObjectSpecificAction
+
     from users.models import User
 
 
-class ActionOrCategoryInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dataset, HttpRequest, DatasetQuerySet]):
-    """Permission policy for datasets that inherits permissions from connected actions or categories."""
+class ScopeInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dataset, HttpRequest, DatasetQuerySet]):
+    """Permission policy for datasets that inherits permissions from the dataset's scope object."""
 
     def __init__(self):
         from kausal_common.datasets.models import Dataset
@@ -34,15 +37,24 @@ class ActionOrCategoryInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dat
 
         action_ct = ContentType.objects.get_for_model(Action)
         category_ct = ContentType.objects.get_for_model(Category)
+        indicator_ct = ContentType.objects.get_for_model(Indicator)
+
+        adminable_plans = user.get_adminable_plans()
 
         editable_actions = Action.objects.filter(Q(contact_persons__person_id=user.pk) |
-                                                Q(plan__in=user.get_adminable_plans()))
+                                                Q(plan__in=adminable_plans))
 
-        editable_categories = Category.objects.filter(type__plan__in=user.get_adminable_plans())
+        editable_categories = Category.objects.filter(type__plan__in=adminable_plans)
+
+        editable_indicators = Indicator.objects.filter(
+            Q(plans__in=adminable_plans) |
+            Q(contact_persons__person_id=user.pk)
+        ).distinct()
 
         return Q(
             Q(scope_content_type=action_ct, scope_id__in=editable_actions) |
-            Q(scope_content_type=category_ct, scope_id__in=editable_categories)
+            Q(scope_content_type=category_ct, scope_id__in=editable_categories) |
+            Q(scope_content_type=indicator_ct, scope_id__in=editable_indicators)
         )
 
     def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:
@@ -57,12 +69,14 @@ class ActionOrCategoryInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dat
         if obj.scope is None:
             return False
 
-        # Get the type of the scope object (action or category)
         if isinstance(obj.scope, Action):
             return user.can_modify_action(obj.scope)
 
         if isinstance(obj.scope, Category):
             return obj.scope.type.plan in user.get_adminable_plans()
+
+        if isinstance(obj.scope, Indicator):
+            return user.can_modify_indicator(obj.scope)
 
         return False
 
@@ -74,9 +88,9 @@ class ActionOrCategoryInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dat
         """
         Check if user can create a new dataset.
 
-        Since datasets are always connected to actions or categories,
-        a user can create a dataset if they can edit the action/category
-        the dataset will be connected to
+        Since datasets are always connected to a scope object,
+        a user can create a dataset if they can edit the scope object
+        the dataset will be connected to.
         """
         if user.is_superuser:
             return True
@@ -105,6 +119,13 @@ class ActionOrCategoryInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dat
                 return False
             return user.can_modify_category(category)
 
+        if model == 'indicators.Indicator':
+            try:
+                indicator = Indicator.objects.get(pk=object_id)
+            except Indicator.DoesNotExist:
+                return False
+            return user.can_modify_indicator(indicator)
+
         return False
 
 
@@ -121,7 +142,7 @@ class DataPointPermissionPolicy(ModelPermissionPolicy[DataPoint, None, QuerySet[
             return Q()
 
         # Use the dataset permission policy to determine which datasets the user can access
-        dataset_policy = ActionOrCategoryInheritedDatasetPermissionPolicy()
+        dataset_policy = ScopeInheritedDatasetPermissionPolicy()
 
         # Get datasets the user can view or edit based on the requested action
         if action == 'view':
@@ -134,7 +155,7 @@ class DataPointPermissionPolicy(ModelPermissionPolicy[DataPoint, None, QuerySet[
     def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:
         """Anonymous users can only view data points if they can view the parent dataset."""
         if action == 'view':
-            dataset_policy = ActionOrCategoryInheritedDatasetPermissionPolicy()
+            dataset_policy = ScopeInheritedDatasetPermissionPolicy()
             viewable_datasets = Dataset.objects.filter(dataset_policy.construct_perm_q_anon('view'))
             return Q(dataset__in=viewable_datasets)
         return None
@@ -144,7 +165,7 @@ class DataPointPermissionPolicy(ModelPermissionPolicy[DataPoint, None, QuerySet[
         if user.is_superuser:
             return True
 
-        dataset_policy = ActionOrCategoryInheritedDatasetPermissionPolicy()
+        dataset_policy = ScopeInheritedDatasetPermissionPolicy()
 
         # For viewing, check if user can view the dataset
         if action == 'view':
@@ -158,7 +179,7 @@ class DataPointPermissionPolicy(ModelPermissionPolicy[DataPoint, None, QuerySet[
         if action != 'view':
             return False
 
-        dataset_policy = ActionOrCategoryInheritedDatasetPermissionPolicy()
+        dataset_policy = ScopeInheritedDatasetPermissionPolicy()
         return dataset_policy.anon_has_perm('view', obj.dataset)
 
     def user_can_create(self, user: User, context: None) -> bool:
@@ -169,7 +190,7 @@ class DataPointPermissionPolicy(ModelPermissionPolicy[DataPoint, None, QuerySet[
         """
         if user.is_superuser:
             return True
-        dataset_policy = ActionOrCategoryInheritedDatasetPermissionPolicy()
+        dataset_policy = ScopeInheritedDatasetPermissionPolicy()
 
         # Check if user can edit any datasets
         return Dataset.objects.filter(
