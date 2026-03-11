@@ -39,12 +39,8 @@ class ScopeInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dataset, HttpR
         category_ct = ContentType.objects.get_for_model(Category)
         indicator_ct = ContentType.objects.get_for_model(Indicator)
 
-        adminable_plans = user.get_adminable_plans()
-
         editable_actions = Action.objects.qs.modifiable_by(user)
-
-        editable_categories = Category.objects.filter(type__plan__in=adminable_plans)
-
+        editable_categories = Category.objects.filter(type__plan__in=user.get_adminable_plans())
         editable_indicators = Indicator.objects.qs.modifiable_by(user)
 
         return Q(
