@@ -182,12 +182,11 @@ class PlanSpecificCache:
         category_datasets = Dataset.objects.filter(
             schema__scopes__scope_content_type=category_type_content_type, schema__scopes__scope_id__in=category_type_ids,
         )
-        indicator_ids = IndicatorLevel.objects.filter(plan=self.plan).values_list('indicator_id', flat=True)
         indicator_datasets = Dataset.objects.filter(
             schema__scopes__scope_content_type=plan_content_type,
             schema__scopes__scope_id=self.plan.pk,
             scope_content_type=indicator_content_type,
-            scope_id__in=indicator_ids,
+            scope_id__in=self.plan_indicator_ids,
         )
         for ds in action_datasets:
             if ds.scope_id is not None and ds.schema is not None:
