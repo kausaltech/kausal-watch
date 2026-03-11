@@ -182,9 +182,12 @@ class PlanSpecificCache:
             schema__scopes__scope_id=self.plan.pk,
             scope_content_type=action_content_type,
         )
+        category_content_type = ContentType.objects.get_for_model(Category)
         category_type_ids = self.plan.category_types.values_list('id', flat=True)
         category_datasets = Dataset.objects.filter(
-            schema__scopes__scope_content_type=category_type_content_type, schema__scopes__scope_id__in=category_type_ids,
+            schema__scopes__scope_content_type=category_type_content_type,
+            schema__scopes__scope_id__in=category_type_ids,
+            scope_content_type=category_content_type,
         )
         indicator_datasets = Dataset.objects.filter(
             schema__scopes__scope_content_type=plan_content_type,

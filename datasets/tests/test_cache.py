@@ -35,6 +35,135 @@ class TestGetDatasetSchemasForObjectOutOfPlan:
         assert cache.get_dataset_schemas_for_object(indicator) == []
 
 
+class TestGetDatasetSchemasForObjectInPlan:
+    """Tests that get_dataset_schemas_for_object pairs schemas with their datasets for in-plan objects."""
+
+    def test_action_in_plan_no_dataset_returns_schema_none(self, plan):
+        """Action in plan with no dataset returns [(schema, None)] for each schema."""
+        action = ActionFactory.create(plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(action)
+
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset is None
+
+    def test_action_in_plan_with_dataset_returns_schema_dataset(self, plan):
+        """Action in plan with a matching dataset returns [(schema, dataset)]."""
+        action = ActionFactory.create(plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        ds = DatasetFactory.create(schema=schema, scope=action)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(action)
+
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset == ds
+
+    def test_action_in_plan_multiple_schemas_paired_correctly(self, plan):
+        """Action in plan with two schemas: one has a dataset, the other does not."""
+        action = ActionFactory.create(plan=plan)
+        schema_with_ds = DatasetSchemaFactory.create()
+        schema_without_ds = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema_with_ds, scope=plan)
+        DatasetSchemaScopeFactory.create(schema=schema_without_ds, scope=plan)
+        ds = DatasetFactory.create(schema=schema_with_ds, scope=action)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(action)
+
+        assert len(results) == 2
+        result_map = dict(results)
+        assert result_map[schema_with_ds] == ds
+        assert result_map[schema_without_ds] is None
+
+    def test_indicator_in_plan_no_dataset_returns_schema_none(self, plan):
+        """Indicator linked to plan via IndicatorLevel with no dataset returns [(schema, None)]."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(indicator)
+
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset is None
+
+    def test_indicator_in_plan_with_dataset_returns_schema_dataset(self, plan):
+        """Indicator linked to plan with a matching dataset returns [(schema, dataset)]."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        ds = DatasetFactory.create(schema=schema, scope=indicator)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(indicator)
+
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset == ds
+
+    def test_category_with_dataset_returns_schema_dataset(self, plan):
+        """Category with an existing dataset returns [(schema, dataset)] not [(schema, None)]."""
+        category_type = CategoryTypeFactory.create(plan=plan)
+        category = CategoryFactory.create(type=category_type)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=category_type)
+        ds = DatasetFactory.create(schema=schema, scope=category)
+
+        cache = PlanSpecificCache(plan)
+        results = cache.get_dataset_schemas_for_object(category)
+
+        assert len(results) == 1
+        result_schema, result_dataset = results[0]
+        assert result_schema == schema
+        assert result_dataset == ds
+
+
+class TestPlanIndicatorIds:
+    """Tests for PlanSpecificCache.plan_indicator_ids."""
+
+    def test_empty_when_no_indicators_in_plan(self, plan):
+        """Returns empty frozenset when no indicators are linked to the plan."""
+        cache = PlanSpecificCache(plan)
+        assert cache.plan_indicator_ids == frozenset()
+
+    def test_returns_ids_of_plan_indicators(self, plan):
+        """Returns frozenset containing the IDs of all indicators linked to the plan."""
+        indicator1 = IndicatorFactory.create()
+        indicator2 = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator1, plan=plan)
+        IndicatorLevelFactory.create(indicator=indicator2, plan=plan)
+
+        cache = PlanSpecificCache(plan)
+        assert cache.plan_indicator_ids == frozenset({indicator1.id, indicator2.id})
+
+    def test_does_not_include_indicators_from_other_plans(self, plan):
+        """Indicators linked only to other plans are not included."""
+        from actions.tests.factories import PlanFactory
+        other_plan = PlanFactory.create()
+        indicator_in_plan = IndicatorFactory.create()
+        indicator_other_plan = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator_in_plan, plan=plan)
+        IndicatorLevelFactory.create(indicator=indicator_other_plan, plan=other_plan)
+
+        cache = PlanSpecificCache(plan)
+        assert indicator_in_plan.id in cache.plan_indicator_ids
+        assert indicator_other_plan.id not in cache.plan_indicator_ids
+
+
 class TestCategoryTypeDatasetSchemaLookup:
     """Tests for looking up DatasetSchemas scoped to CategoryTypes via PlanSpecificCache."""
 
@@ -156,6 +285,24 @@ class TestDatasetsByScopeBySchemaCached:
         assert 'actions.Category' in result
         assert category.id in result['actions.Category']
         assert result['actions.Category'][category.id][str(schema.uuid)] == ds
+
+    def test_non_category_dataset_with_category_type_schema_scope_not_indexed_as_category(self, plan):
+        """
+        Non-category dataset with a CategoryType schema scope is not indexed as category.
+
+        A dataset scoped to an Action whose schema is scoped to a CategoryType
+        must not appear under 'actions.Category'.
+        """
+        category_type = CategoryTypeFactory.create(plan=plan)
+        action = ActionFactory.create(plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=category_type)
+        DatasetFactory.create(schema=schema, scope=action)
+
+        cache = PlanSpecificCache(plan)
+        result = cache.datasets_by_scope_by_schema
+
+        assert 'actions.Category' not in result
 
     def test_category_dataset_not_returned_for_other_plans_category_type(self, plan):
         """Category dataset scoped to a CategoryType from a different plan is not returned."""
