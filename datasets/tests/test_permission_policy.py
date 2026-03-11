@@ -105,6 +105,9 @@ class TestUserHasPermCategoryScoped:
 # ---------------------------------------------------------------------------
 
 class TestUserHasPermIndicatorScoped:
+    def test_superuser(self, policy, superuser, indicator_dataset):
+        assert policy.user_has_perm(superuser, 'change', indicator_dataset) is True
+
     def test_plan_admin(self, policy, plan_admin_user, indicator_dataset):
         assert policy.user_has_perm(plan_admin_user, 'change', indicator_dataset) is True
 
@@ -270,3 +273,23 @@ class TestUserCanCreate:
     def test_unknown_model_returns_false(self, policy, plan_admin_user, action):
         request = self._request(model='unknown.Model', object_id=action.pk)
         assert policy.user_can_create(plan_admin_user, context=request) is False
+
+    def test_action_contact_person_can_create_dataset_for_their_action(
+        self, policy, action_contact_person_user, action
+    ):
+        request = self._request(model='actions.Action', object_id=action.pk)
+        assert policy.user_can_create(action_contact_person_user, context=request) is True
+
+    def test_action_contact_person_cannot_create_dataset_for_other_action(
+        self, policy, action_contact_person_user, plan
+    ):
+        from actions.tests.factories import ActionFactory
+        other_action = ActionFactory.create(plan=plan)
+        request = self._request(model='actions.Action', object_id=other_action.pk)
+        assert policy.user_can_create(action_contact_person_user, context=request) is False
+
+    def test_indicator_contact_person_can_create_dataset_for_their_indicator(
+        self, policy, indicator_contact_user, indicator
+    ):
+        request = self._request(model='indicators.Indicator', object_id=indicator.pk)
+        assert policy.user_can_create(indicator_contact_user, context=request) is True
