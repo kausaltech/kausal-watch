@@ -185,6 +185,22 @@ class TestConstructPermQ:
         assert action_dataset in qs
         assert other_category_dataset not in qs
 
+    def test_action_contact_sees_own_action_dataset_via_perm_q(
+        self, policy, action_contact_person_user, action_dataset
+    ):
+        q = policy.construct_perm_q(action_contact_person_user, 'change')
+        assert q is not None
+        qs = Dataset.objects.filter(q)
+        assert action_dataset in qs
+
+    def test_indicator_contact_sees_own_indicator_dataset(
+        self, policy, indicator_contact_user, indicator_dataset
+    ):
+        q = policy.construct_perm_q(indicator_contact_user, 'change')
+        assert q is not None
+        qs = Dataset.objects.filter(q)
+        assert indicator_dataset in qs
+
     def test_unrelated_user_sees_nothing(
         self, policy, user, action_dataset, category_dataset, indicator_dataset
     ):

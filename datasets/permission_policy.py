@@ -41,15 +41,11 @@ class ScopeInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dataset, HttpR
 
         adminable_plans = user.get_adminable_plans()
 
-        editable_actions = Action.objects.filter(Q(contact_persons__person_id=user.pk) |
-                                                Q(plan__in=adminable_plans))
+        editable_actions = Action.objects.qs.modifiable_by(user)
 
         editable_categories = Category.objects.filter(type__plan__in=adminable_plans)
 
-        editable_indicators = Indicator.objects.filter(
-            Q(plans__in=adminable_plans) |
-            Q(contact_persons__person_id=user.pk)
-        ).distinct()
+        editable_indicators = Indicator.objects.qs.modifiable_by(user)
 
         return Q(
             Q(scope_content_type=action_ct, scope_id__in=editable_actions) |
