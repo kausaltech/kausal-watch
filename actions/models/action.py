@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypedDict, cast
 
 import reversion
+import strawberry as sb
 from django.contrib import admin
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
@@ -195,6 +196,12 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
     def annotate_has_dependency_relationships(self) -> Self:
         dep_qs = ActionDependencyRelationship.objects.filter(Q(preceding=OuterRef('pk')) | Q(dependent=OuterRef('pk')))
         return self.annotate(has_dependencies=Exists(dep_qs))
+
+    def by_id_or_identifier(self, id_or_identifier: str) -> Self:
+        """Get an action by id or identifier."""
+        if id_or_identifier.isnumeric():
+            return self.filter(pk=id_or_identifier)
+        return self.filter(identifier=id_or_identifier)
 
 
 if TYPE_CHECKING:
@@ -830,6 +837,8 @@ class Action(
             other = self.merged_with
             if other.merged_with == self:
                 raise ValidationError({'merged_with': _('Other action is merged with this one')})
+        if self.lead_paragraph and not self.plan.features.has_action_lead_paragraph:
+            raise ValidationError({'lead_paragraph': _('Lead paragraph is not allowed for actions in this plan')})
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
         # same action plan.
 
@@ -1513,6 +1522,7 @@ class ModelWithRole[ModelRole: 'ModelWithRole.Role']:  # pyright: ignore
 
 @reversion.register()
 class ActionResponsibleParty(OrderedModel, ModelWithRole['ActionResponsibleParty.Role']):  # pyright: ignore
+    @sb.enum(name='ActionResponsiblePartyRole', description='Role of an organization in implementing an action')
     class Role(ModelWithRole.Role):
         PRIMARY = 'primary', _('Primary responsible party')
         COLLABORATOR = 'collaborator', _('Collaborator')

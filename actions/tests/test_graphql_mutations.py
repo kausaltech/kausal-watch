@@ -12,8 +12,14 @@ from kausal_common.strawberry.mutations import OP_INFO_FRAGMENT
 from kausal_common.testing.graphql import OperationMessage, assert_operation_errors
 
 from actions.models import Action, AttributeType, Category, CategoryType, Plan
-from actions.models.attributes import AttributeChoice, AttributeTypeChoiceOption
-from actions.tests.factories import AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+from actions.models.attributes import (
+    AttributeChoice,
+    AttributeChoiceWithText,
+    AttributeRichText,
+    AttributeText,
+    AttributeTypeChoiceOption,
+)
+from actions.tests.factories import ActionFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 from orgs.tests.factories import OrganizationFactory
 
 if TYPE_CHECKING:
@@ -160,6 +166,20 @@ ADD_RELATED_ORGANIZATION = """
                     id
                     identifier
                     name
+                }
+                ... OpInfo
+            }
+        }
+    }
+""" + OP_INFO_FRAGMENT
+
+UPDATE_ACTIONS = """
+    mutation($planId: ID!, $actions: [ActionUpdateInput!]!) {
+        action {
+            updateActions(planId: $planId, actions: $actions) {
+                ... on BulkUpdateActionsResult {
+                    count
+                    ids
                 }
                 ... OpInfo
             }
@@ -435,7 +455,7 @@ class TestCreateAction:
                 'name': 'Action with attributes',
                 'identifier': 'attr-action',
                 'attributeValues': [
-                    {'attributeTypeId': str(attr_type.pk), 'choiceId': str(opt.pk)},
+                    {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt.pk)}}},
                 ],
             }},
         )
@@ -475,7 +495,7 @@ class TestCreateAction:
                 'identifier': 'full-action',
                 'categoryIds': [str(cat.pk)],
                 'attributeValues': [
-                    {'attributeTypeId': str(attr_type.pk), 'choiceId': str(opt.pk)},
+                    {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt.pk)}}},
                 ],
             }},
         )
@@ -741,3 +761,701 @@ class TestAddRelatedOrganization:
         result = data['plan']['addRelatedOrganization']
         assert result['identifier'] == plan.identifier
         assert plan.related_organizations.filter(pk=org.pk).exists()
+
+
+# -- update_actions ------------------------------------------------------------
+
+class TestUpdateActions:
+    @staticmethod
+    def _create_action(plan: Plan, identifier: str, name: str) -> Action:
+        return ActionFactory.create(plan=plan, identifier=identifier, name=name)
+
+    def test_update_description(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        a1 = self._create_action(plan, 'upd-1', 'Action 1')
+        a2 = self._create_action(plan, 'upd-2', 'Action 2')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {'id': str(a1.pk), 'description': '<p>New desc 1</p>'},
+                    {'id': str(a2.pk), 'description': '<p>New desc 2</p>'},
+                ]
+            },
+        )
+        result = data['action']['updateActions']
+        assert result['count'] == 2
+        assert str(a1.pk) in result['ids']
+        assert str(a2.pk) in result['ids']
+
+        a1.refresh_from_db()
+        a2.refresh_from_db()
+        assert a1.description == '<p>New desc 1</p>'
+        assert a2.description == '<p>New desc 2</p>'
+
+    def test_update_lead_paragraph(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-lp', 'Action LP')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {'id': str(action.pk), 'leadParagraph': 'A short summary'},
+                ],
+            },
+        )
+        result = data['action']['updateActions']
+        assert result['count'] == 1
+
+        action.refresh_from_db()
+        assert action.lead_paragraph == 'A short summary'
+
+    def test_update_choice_attributes(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-ca', 'Action CA')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        opt_low = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='low', name='Low', order=0)
+        opt_high = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='high', name='High', order=1)
+
+        # Set initial value
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {
+                        'id': str(action.pk),
+                        'attributeValues': [
+                            {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt_low.pk)}}},
+                        ],
+                    }
+                ],
+            },
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        action_ct = ContentType.objects.get_for_model(Action)
+        choice = AttributeChoice.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert choice.choice == opt_low
+
+        # Update to different value — should replace, not duplicate
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{
+                    'id': str(action.pk), 'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt_high.pk)}}},
+                    ]},
+                ],
+            },
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        choices = AttributeChoice.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert choices.count() == 1
+        assert choices.get().choice == opt_high
+
+    def test_update_rich_text_attributes(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-rt', 'Action RT')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.RICH_TEXT,
+        )
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'richText':'<p>Rich text content</p>'}},
+                    ]
+                }],
+            },
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        action_ct = ContentType.objects.get_for_model(Action)
+        rt = AttributeRichText.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert rt.text == '<p>Rich text content</p>'
+
+        # Update — should replace
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{
+                    'id': str(action.pk), 'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'richText':'<p>Updated content</p>'}},
+                    ]
+                }],
+            },
+        )
+        rts = AttributeRichText.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert rts.count() == 1
+        assert rts.get().text == '<p>Updated content</p>'
+
+    def test_update_responsible_parties(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-rp', 'Action RP')
+        org1 = OrganizationFactory.create(name='Org Primary')
+        org2 = OrganizationFactory.create(name='Org Collab')
+        plan.related_organizations.add(org1)
+        plan.related_organizations.add(org2)
+        plan.save()
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{
+                    'id': str(action.pk), 'responsibleParties': [
+                        {'organizationId': str(org1.pk), 'role': 'PRIMARY'},
+                        {'organizationId': str(org2.pk), 'role': 'COLLABORATOR'},
+                    ]
+                },
+            ]},
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        parties = action.responsible_parties.all().order_by('order')
+        assert parties.count() == 2
+        assert parties[0].organization == org1
+        assert parties[0].role == 'primary'
+        assert parties[1].organization == org2
+        assert parties[1].role == 'collaborator'
+
+    def test_update_links(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-lk', 'Action LK')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{
+                    'id': str(action.pk),
+                    'links': [
+                        {'url': 'https://example.com/doc1', 'title': 'Document 1'},
+                        {'url': 'https://example.com/doc2', 'title': 'Document 2'},
+                    ],
+                }],
+            },
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        from actions.models.action import ActionLink
+        links = ActionLink.objects.filter(action=action).order_by('order')
+        assert links.count() == 2
+        assert links[0].url == 'https://example.com/doc1'
+        assert links[0].title == 'Document 1'
+        assert links[1].url == 'https://example.com/doc2'
+
+    def test_update_nonexistent_action(self, graphql_client_query, client, superuser: User):
+        client.force_login(superuser)
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': '999999',
+                'actions': [
+                    {'id': '999999', 'description': 'nope'},
+                ],
+            },
+        )
+        assert 'errors' in response
+
+    def test_update_requires_superuser(self, graphql_client_query, client, user: User, plan: Plan):
+        client.force_login(user)
+        action = self._create_action(plan, 'upd-perm', 'Action Perm')
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {'id': str(action.pk), 'description': 'should fail'},
+                ],
+            },
+        )
+        assert 'errors' in response
+
+
+# -- update_action (singular) --------------------------------------------------
+
+UPDATE_ACTION = """
+    mutation($planId: ID!, $input: ActionUpdateInput!) {
+        action {
+            updateAction(planId: $planId, input: $input) {
+                ... on Action {
+                    id
+                    identifier
+                    name
+                    description
+                    leadParagraph
+                    categories {
+                        id
+                        identifier
+                        type { identifier }
+                    }
+                    attributes {
+                        ... on AttributeChoice {
+                            type { identifier }
+                            choice { identifier name }
+                            text
+                        }
+                        ... on AttributeRichText {
+                            type { identifier }
+                            richTextValue: value
+                        }
+                        ... on AttributeText {
+                            type { identifier }
+                            textValue: value
+                        }
+                    }
+                    responsibleParties {
+                        organization { id name }
+                        role
+                    }
+                    links {
+                        url
+                        title
+                    }
+                }
+                ... OpInfo
+            }
+        }
+    }
+""" + OP_INFO_FRAGMENT
+
+
+class TestUpdateAction:
+    @staticmethod
+    def _create_action(plan: Plan, identifier: str, name: str, **kwargs) -> Action:
+        return ActionFactory.create(plan=plan, identifier=identifier, name=name, **kwargs)
+
+    def test_update_description(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-desc', 'Action Desc')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk), 'description': '<p>Updated description</p>'},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['description'] == '<p>Updated description</p>'
+
+        action.refresh_from_db()
+        assert action.description == '<p>Updated description</p>'
+
+    def test_update_lead_paragraph(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-lp', 'Action LP')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk), 'leadParagraph': 'A summary'},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['leadParagraph'] == 'A summary'
+
+        action.refresh_from_db()
+        assert action.lead_paragraph == 'A summary'
+
+    def test_lookup_by_identifier(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        """update_action should accept an action identifier in the id field."""
+        client.force_login(superuser)
+        _action = self._create_action(plan, 'ua-ident', 'Action By Ident')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': 'ua-ident', 'description': '<p>Found by identifier</p>'},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['identifier'] == 'ua-ident'
+        assert result['description'] == '<p>Found by identifier</p>'
+
+    def test_lookup_plan_by_identifier(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        """PlanId should accept a plan identifier string."""
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-plan-ident', 'Action Plan Ident')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': plan.identifier,
+                'input': {'id': str(action.pk), 'description': '<p>Plan by ident</p>'},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['description'] == '<p>Plan by ident</p>'
+
+    def test_update_choice_attribute(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-choice', 'Action Choice')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        opt_low = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='low', name='Low', order=0)
+        opt_high = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='high', name='High', order=1)
+
+        # Set initial value
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt_low.pk)}}},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        choice_attrs = [a for a in result['attributes'] if a.get('choice')]
+        assert len(choice_attrs) == 1
+        assert choice_attrs[0]['choice']['identifier'] == 'low'
+
+        # Update to different value — should replace, not duplicate
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt_high.pk)}}},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        choice_attrs = [a for a in result['attributes'] if a.get('choice')]
+        assert len(choice_attrs) == 1
+        assert choice_attrs[0]['choice']['identifier'] == 'high'
+
+        action_ct = ContentType.objects.get_for_model(Action)
+        assert AttributeChoice.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk).count() == 1
+
+    def test_update_rich_text_attribute(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-rt', 'Action RT')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.RICH_TEXT,
+        )
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'richText': '<p>Some rich text</p>'}},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        rt_attrs = [a for a in result['attributes'] if 'richTextValue' in a]
+        assert len(rt_attrs) == 1
+        assert rt_attrs[0]['richTextValue'] == '<p>Some rich text</p>'
+
+        # Update — should replace
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'richText': '<p>Updated rich text</p>'}},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        rt_attrs = [a for a in result['attributes'] if 'richTextValue' in a]
+        assert len(rt_attrs) == 1
+        assert rt_attrs[0]['richTextValue'] == '<p>Updated rich text</p>'
+
+        action_ct = ContentType.objects.get_for_model(Action)
+        assert AttributeRichText.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk).count() == 1
+
+    def test_update_text_attribute(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-txt', 'Action Text')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.TEXT,
+        )
+
+        _data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'text': 'Plain text value'}},
+                    ],
+                },
+            },
+        )
+        action_ct = ContentType.objects.get_for_model(Action)
+        txt = AttributeText.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert txt.text == 'Plain text value'
+
+    def test_update_optional_choice_with_text_attribute(
+        self, graphql_client_query_data, client, superuser: User, plan: Plan,
+    ):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-cwt', 'Action CWT')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+        )
+        opt = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='option-a', name='Option A', order=0)
+
+        # Set with choice + text
+        _data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {
+                            'attributeTypeId': str(attr_type.pk),
+                            'value': {'choice': {'choiceId': str(opt.pk), 'text': 'Rationale text'}},
+                        },
+                    ],
+                },
+            },
+        )
+        action_ct = ContentType.objects.get_for_model(Action)
+        cwt = AttributeChoiceWithText.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert cwt.choice == opt
+        assert cwt.text == 'Rationale text'
+
+        # Update with null choice (text only)
+        _data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {
+                            'attributeTypeId': str(attr_type.pk),
+                            'value': {'choice': {'choiceId': None, 'text': 'No choice, just text'}},
+                        },
+                    ],
+                },
+            },
+        )
+        cwt.refresh_from_db()
+        assert cwt.choice is None
+        assert cwt.text == 'No choice, just text'
+
+    def test_update_categories(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-cat', 'Action Cat')
+        ct = CategoryTypeFactory.create(plan=plan, editable_for_actions=True, select_widget=CategoryType.SelectWidget.MULTIPLE)
+        cat1 = CategoryFactory.create(type=ct, identifier='cat-a', name='Cat A')
+        cat2 = CategoryFactory.create(type=ct, identifier='cat-b', name='Cat B')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'categoryIds': [str(cat1.pk), str(cat2.pk)],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        cat_identifiers = {c['identifier'] for c in result['categories']}
+        assert cat_identifiers == {'cat-a', 'cat-b'}
+
+        # Replace with just one category
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'categoryIds': [str(cat1.pk)],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        cat_identifiers = {c['identifier'] for c in result['categories']}
+        assert cat_identifiers == {'cat-a'}
+
+    def test_update_responsible_parties(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-rp', 'Action RP')
+        org1 = OrganizationFactory.create(name='Org Primary')
+        org2 = OrganizationFactory.create(name='Org Collab')
+        plan.related_organizations.add(org1, org2)
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'responsibleParties': [
+                        {'organizationId': str(org1.pk), 'role': 'PRIMARY'},
+                        {'organizationId': str(org2.pk), 'role': 'COLLABORATOR'},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        assert len(result['responsibleParties']) == 2
+        assert result['responsibleParties'][0]['organization']['name'] == 'Org Primary'
+        assert result['responsibleParties'][0]['role'] == 'PRIMARY'
+        assert result['responsibleParties'][1]['organization']['name'] == 'Org Collab'
+        assert result['responsibleParties'][1]['role'] == 'COLLABORATOR'
+
+    def test_update_links(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-lk', 'Action Links')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'links': [
+                        {'url': 'https://example.com/a', 'title': 'Link A'},
+                        {'url': 'https://example.com/b', 'title': 'Link B'},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        assert len(result['links']) == 2
+        assert result['links'][0]['url'] == 'https://example.com/a'
+        assert result['links'][1]['title'] == 'Link B'
+
+        # Replace links
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'links': [{'url': 'https://example.com/c', 'title': 'Link C'}],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        assert len(result['links']) == 1
+        assert result['links'][0]['url'] == 'https://example.com/c'
+
+    def test_update_multiple_fields_at_once(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        """Updating description, attributes, categories, and links in a single call."""
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-multi', 'Action Multi')
+        ct = CategoryTypeFactory.create(plan=plan, editable_for_actions=True)
+        cat = CategoryFactory.create(type=ct, identifier='theme-x', name='Theme X')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        opt = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='medium', name='Medium', order=0)
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'description': '<p>Full update</p>',
+                    'leadParagraph': 'Summary',
+                    'categoryIds': [str(cat.pk)],
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt.pk)}}},
+                    ],
+                    'links': [{'url': 'https://example.com', 'title': 'Example'}],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['description'] == '<p>Full update</p>'
+        assert result['leadParagraph'] == 'Summary'
+        assert len(result['categories']) == 1
+        assert result['categories'][0]['identifier'] == 'theme-x'
+        assert len(result['attributes']) == 1
+        assert len(result['links']) == 1
+
+    def test_update_nonexistent_action(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': '999999', 'description': 'nope'},
+            },
+        )
+        assert 'errors' in response
+
+    def test_update_requires_superuser(self, graphql_client_query, client, user: User, plan: Plan):
+        client.force_login(user)
+        action = self._create_action(plan, 'ua-perm', 'Action Perm')
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk), 'description': 'should fail'},
+            },
+        )
+        assert 'errors' in response
+
+    def test_no_change_returns_action(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        """Sending an update with no fields should still return the action."""
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-noop', 'Action Noop', description='original')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk)},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['id'] == str(action.pk)
+        assert result['description'] == 'original'

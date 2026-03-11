@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated
 
+from mcp.types import ToolAnnotations
+
 from mcp_server.__generated__.schema import CreateOrganization, ListOrganizations, OrganizationBrief, OrganizationInput
 
 from .helpers import check_operation_result, execute_operation, register_tool
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
 
 
 
-@register_tool
+@register_tool(annotations=ToolAnnotations(title='List organizations', readOnlyHint=True, openWorldHint=False))
 async def list_organizations(
     plan: Annotated[str | None, "Plan identifier to filter organizations by"] = None,
     parent: Annotated[str | None, "Parent organization ID to filter children"] = None,
@@ -32,7 +34,7 @@ async def list_organizations(
     return result
 
 
-@register_tool
+@register_tool(annotations=ToolAnnotations(title='Create a new organization'))
 async def create_organization(
     name: Annotated[str, "The official name of the organization"],
     abbreviation: Annotated[str | None, "Short abbreviation (e.g. 'NASA', 'YM')"] = None,

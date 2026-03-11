@@ -24,7 +24,7 @@ mcp_server/
 │   ├── __init__.py          # Exports register functions
 │   ├── helpers.py           # Shared utilities (execute_operation, check_operation_result)
 │   ├── plan.py              # Plan tools (list/get/create/delete plans, category types, etc.)
-│   ├── action.py            # Action tools (list/get/query/create actions)
+│   ├── action.py            # Action tools (list/get/query/create/update actions)
 │   ├── organization.py      # Organization tools (list/create organizations)
 │   └── user.py              # User-related tools (user_details)
 └── __generated__/           # Auto-generated GraphQL client code (DO NOT EDIT)
@@ -301,6 +301,9 @@ All write tools require superuser access unless noted otherwise.
 | `create_category` | Create a category within a category type |
 | `create_attribute_type` | Create an attribute type for actions in a plan |
 | `create_action` | Create a new action in a plan |
+| `update_actions` | Bulk update multiple actions' core fields (description, categories, responsible parties, links) |
+| `update_action` | Update a single action's core fields and return it |
+| `update_action_attribute` | Set a single attribute value on an action (preferred for rich text / choice attributes) |
 | `create_organization` | Create a new organization |
 
 ### Flexible Queries with `query_actions`
@@ -350,7 +353,6 @@ des Senats"), allowing the AI to filter and prioritize in context.
 | `list_indicators` | List indicators with optional filtering |
 | `get_indicator` | Get indicator with historical values |
 | `get_category_tree` | Hierarchical category structure |
-| `update_action` | Update action status, details, and metadata |
 
 ## Future Considerations
 

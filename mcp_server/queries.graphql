@@ -240,6 +240,27 @@ mutation MCPCreateAction($input: ActionInput!) {
   }
 }
 
+mutation MCPUpdateActions($planId: ID!, $actions: [ActionUpdateInput!]!) {
+  action {
+    updateActions(planId: $planId, actions: $actions) {
+      ... on BulkUpdateActionsResult {
+        count
+        ids
+      }
+      ... OpInfo
+    }
+  }
+}
+
+mutation MCPUpdateAction($planId: ID!, $input: ActionUpdateInput!) {
+  action {
+    updateAction(planId: $planId, input: $input) {
+      ... ActionDetails
+      ... OpInfo
+    }
+  }
+}
+
 fragment CategoryLevelDetails on CategoryLevel {
   id
   name

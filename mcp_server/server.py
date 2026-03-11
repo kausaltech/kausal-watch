@@ -45,7 +45,7 @@ def register_tools():
     register_organization_tools(mcp)
     register_user_tools(mcp)
 
-    for tool in tool_registry:
-        mcp.tool(tool)
+    for tool, tool_annotations in tool_registry:
+        mcp.tool(tool, annotations=tool_annotations)
 
 register_tools()

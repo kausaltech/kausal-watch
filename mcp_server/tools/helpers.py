@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from asgiref.sync import sync_to_async
 from fastmcp.exceptions import ToolError
+from mcp.types import ToolAnnotations
 
 from kausal_common.strawberry.views import get_base_context
 
@@ -24,14 +25,27 @@ if TYPE_CHECKING:
 
 type ToolFunc = Callable[..., Awaitable[Any]]
 
+READONLY_ANNOTATIONS = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
-tool_registry: list[ToolFunc] = []
+tool_registry: list[tuple[ToolFunc, ToolAnnotations | None]] = []
 
-def register_tool[F: ToolFunc](func: F) -> F:
-    if func in tool_registry:
-        raise ValueError(f"Tool {func.__name__} already registered")
-    tool_registry.append(func)
-    return func
+@overload
+def register_tool[F: ToolFunc](func: F) -> F: ...
+
+@overload
+def register_tool[F: ToolFunc](*, annotations: ToolAnnotations | None = None) -> Callable[[F], F]: ...
+
+def register_tool[F: ToolFunc](func: F | None = None, *, annotations: ToolAnnotations | None = None) -> F | Callable[[F], F]:
+    def decorator(f: F) -> F:
+        for existing_func, _ in tool_registry:
+            if existing_func is f:
+                raise ValueError(f"Tool {f.__name__} already registered")
+        tool_registry.append((f, annotations))
+        return f
+
+    if func is not None:
+        return decorator(func)
+    return decorator
 
 
 def get_schema_execution_context():
@@ -92,4 +106,3 @@ def check_operation_result[ResT: ObjectBaseModel | None](result: ResT | OpInfo) 
         msg_str = '\n'.join(msg.message for msg in result.messages)
         raise ToolError('Tool call failed:\n' + msg_str)
     return result
-

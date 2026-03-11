@@ -41,7 +41,7 @@ from wagtail_localize.operations import TranslationCreator
 from kausal_common.i18n.helpers import get_default_language, get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.permissions import PermissionedModel
-from kausal_common.models.types import MLModelManager, OneToOne, RevManyQS, RevManyToMany
+from kausal_common.models.types import MLModelManager
 
 from aplans.utils import (
     ChoiceArrayField,
@@ -51,7 +51,7 @@ from aplans.utils import (
 )
 
 from actions.permission_policy import PlanPermissionPolicy
-from indicators.models import Indicator, IndicatorDimension, IndicatorLevel, IndicatorLevelQuerySet, RelatedIndicator
+from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
 from search.models import SearchableModel
@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 
     from rich.repr import RichReprResult
 
-    from kausal_common.models.types import FK, M2M, RevMany, RevOne
+    from kausal_common.models.types import FK, M2M, OneToOne, RevMany, RevManyQS, RevManyToMany, RevOne
     from kausal_common.users import UserOrAnon
 
     from aplans.graphql_types import WorkflowStateEnum
@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from content.models import SiteGeneralContent
     from documentation.models import DocumentationRootPage
     from feedback.models import UserFeedback
+    from indicators.models import IndicatorDimension, IndicatorLevelQuerySet
     from notifications.models import BaseTemplate, NotificationSettings
     from orgs.models import OrganizationPlanAdmin
     from pages.models import PlanLink

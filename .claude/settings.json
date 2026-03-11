@@ -18,17 +18,22 @@
   "hooks": {},
   "permissions": {
     "allow": [
-      "WebFetch",
-      "Bash(grep:*)",
-      "Bash(mkdir:*)",
-      "Bash(uv:*)",
+      "Bash(bash kausal_common/development/tools/generate-mcp-schema.sh)",
       "Bash(find:*)",
-      "Bash(mv:*)",
-      "Bash(ls:*)",
-      "Bash(uvx turms:*)",
-      "mcp__sentry__update_issue",
+      "Bash(grep:*)",
       "Bash(kausal_common/development/tools/generate-mcp-schema.sh:*)",
-      "Bash(python -m pytest:*)"
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python manage.py export_schema aplans.schema)",
+      "Bash(uv:*)",
+      "Bash(uvx turms:*)",
+      "mcp__kwlocal__create_organization",
+      "mcp__kwlocal__update_action_attribute",
+      "mcp__kwlocal__update_actions",
+      "mcp__sentry__update_issue",
+      "WebFetch"
     ]
   }
 }

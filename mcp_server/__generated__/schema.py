@@ -37,14 +37,10 @@ class ActionIndicatorEffectType(StrEnum):
 
 
 class ActionResponsiblePartyRole(StrEnum):
-    """An enumeration."""
+    """Role of an organization in implementing an action."""
 
-    NONE = 'NONE'
-    'Unspecified'
     PRIMARY = 'PRIMARY'
-    'Primary responsible party'
     COLLABORATOR = 'COLLABORATOR'
-    'Collaborator'
 
 
 class ActionStatusSummaryIdentifier(StrEnum):
@@ -159,25 +155,79 @@ class Sentiment(StrEnum):
     NEUTRAL = 'NEUTRAL'
 
 
-class ActionAttributeValueInput(InputTypeModel):
+class ActionAttributeUpdateInput(InputTypeModel):
     """No documentation."""
 
     attribute_type_id: str = Field(alias='attributeTypeId')
-    choice_id: str = Field(alias='choiceId')
+    'ID (PK or identifier) of the attribute type'
+    value: ActionAttributeValueInput
+
+
+class ActionAttributeValueInput(InputTypeModel):
+    """Value for an attribute (choose one based on attribute type format)."""
+
+    choice: AttributeValueChoiceInput | None = None
+    'Choice value (pk + optional rich text explanation) for an attribute'
+    rich_text: str | None = Field(alias='richText', default=None)
+    'HTML rich text value for an attribute'
+    text: str | None = None
+    'Plain text value for an attribute'
+    category_choices: list[str] | None = Field(alias='categoryChoices', default=None)
+    'Category choice values (pks) for an attribute'
 
 
 class ActionInput(InputTypeModel):
     """One action/measure tracked in an action plan."""
 
-    name: str
     plan_id: str = Field(alias='planId')
+    name: str
     identifier: str
     'The identifier for this action (e.g. number)'
+    lead_paragraph: str | None = Field(alias='leadParagraph', default=None)
     description: str | None = None
     'What does this action involve in more detail?'
     primary_org_id: str | None = Field(alias='primaryOrgId', default=None)
     category_ids: list[str] | None = Field(alias='categoryIds', default=None)
-    attribute_values: list[ActionAttributeValueInput] | None = Field(alias='attributeValues', default=None)
+    responsible_parties: list[ActionResponsiblePartyInput] | None = Field(alias='responsibleParties', default=None)
+    links: list[ActionLinkInput] | None = None
+    attribute_values: list[ActionAttributeUpdateInput] | None = Field(alias='attributeValues', default=None)
+
+
+class ActionLinkInput(InputTypeModel):
+    """Link to associate with an action."""
+
+    url: str
+    'URL of the link'
+    title: str
+    'Display title for the link'
+
+
+class ActionResponsiblePartyInput(InputTypeModel):
+    """Responsible party assignment for an action."""
+
+    organization_id: str = Field(alias='organizationId')
+    'ID of the organization'
+    role: ActionResponsiblePartyRole | None = None
+    'Role of this organization in implementing the action.'
+
+
+class ActionUpdateInput(InputTypeModel):
+    """Update input for a single action in a bulk update."""
+
+    plan_id: str | None = Field(alias='planId', default=None)
+    name: str | None = None
+    identifier: str | None = None
+    'The identifier for this action (e.g. number)'
+    lead_paragraph: str | None = Field(alias='leadParagraph', default=None)
+    description: str | None = None
+    'What does this action involve in more detail?'
+    primary_org_id: str | None = Field(alias='primaryOrgId', default=None)
+    category_ids: list[str] | None = Field(alias='categoryIds', default=None)
+    responsible_parties: list[ActionResponsiblePartyInput] | None = Field(alias='responsibleParties', default=None)
+    links: list[ActionLinkInput] | None = None
+    attribute_values: list[ActionAttributeUpdateInput] | None = Field(alias='attributeValues', default=None)
+    id: str
+    'The action ID (pk)'
 
 
 class AddRelatedOrganizationInput(InputTypeModel):
@@ -196,10 +246,17 @@ class AttributeTypeInput(InputTypeModel):
     identifier: str
     name: str
     format: AttributeTypeFormat
-    'The format of the attributes with this type'
+    'The format of the fields with this type'
     help_text: str | None = Field(alias='helpText', default=None)
     unit_id: str | None = Field(alias='unitId', default=None)
     choice_options: list[ChoiceOptionInput] | None = Field(alias='choiceOptions', default=None)
+
+
+class AttributeValueChoiceInput(InputTypeModel):
+    """No documentation."""
+
+    choice_id: str | None = Field(alias='choiceId', default=None)
+    text: str | None = None
 
 
 class CategoryInput(InputTypeModel):
@@ -1421,6 +1478,66 @@ class CreateAction(MutationModel):
         document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPCreateAction($input: ActionInput!) {\n  action {\n    createAction(input: $input) {\n      ...ActionDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
 
 
+class UpdateActionsActionBulkUpdateActionsResultInlineFragment(ObjectBaseModel):
+    typename: Literal['BulkUpdateActionsResult'] = Field(alias='__typename', default='BulkUpdateActionsResult')
+    count: int
+    'Number of actions updated'
+    ids: list[str]
+    'IDs of updated actions'
+
+
+class UpdateActionsAction(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionMutations'] = Field(alias='__typename', default='ActionMutations')
+    update_actions: UpdateActionsActionBulkUpdateActionsResultInlineFragment | OpInfo = Field(alias='updateActions')
+    'Bulk update multiple actions. Returns the count and IDs of updated actions.'
+
+
+class UpdateActions(MutationModel):
+    """No documentation found for this operation."""
+
+    action: UpdateActionsAction
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPUpdateActions."""
+
+        plan_id: str = Field(alias='planId')
+        actions: list[ActionUpdateInput]
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPUpdateActions."""
+
+        document = 'fragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPUpdateActions($planId: ID!, $actions: [ActionUpdateInput!]!) {\n  action {\n    updateActions(planId: $planId, actions: $actions) {\n      ... on BulkUpdateActionsResult {\n        count\n        ids\n      }\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
+class UpdateActionAction(ObjectBaseModel):
+    """No documentation."""
+
+    typename: Literal['ActionMutations'] = Field(alias='__typename', default='ActionMutations')
+    update_action: ActionDetails | OpInfo = Field(alias='updateAction')
+    'Update one action. Returns the action.'
+
+
+class UpdateAction(MutationModel):
+    """No documentation found for this operation."""
+
+    action: UpdateActionAction
+
+    class Arguments(ArgumentsModel):
+        """Arguments for MCPUpdateAction."""
+
+        plan_id: str = Field(alias='planId')
+        input: ActionUpdateInput
+        model_config = ConfigDict(populate_by_name=True)
+
+    class Meta:
+        """Meta class for MCPUpdateAction."""
+
+        document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}\n\nfragment OpInfo on OperationInfo {\n  messages {\n    kind\n    message\n    field\n    code\n    __typename\n  }\n  __typename\n}\n\nmutation MCPUpdateAction($planId: ID!, $input: ActionUpdateInput!) {\n  action {\n    updateAction(planId: $planId, input: $input) {\n      ...ActionDetails\n      ...OpInfo\n      __typename\n    }\n    __typename\n  }\n}'
+
+
 class CreateCategoryTypePlan(ObjectBaseModel):
     """No documentation."""
 
@@ -1521,4 +1638,7 @@ class GetActions(QueryModel):
         document = 'fragment ActionDetails on Action {\n  id\n  uuid\n  identifier\n  name\n  officialName\n  leadParagraph\n  description\n  startDate\n  endDate\n  scheduleContinuous\n  dateFormat\n  updatedAt\n  completion\n  manualStatusReason\n  status {\n    id\n    identifier\n    name\n    isCompleted\n    __typename\n  }\n  implementationPhase {\n    id\n    identifier\n    name\n    __typename\n  }\n  statusSummary {\n    identifier\n    label\n    sentiment\n    isActive\n    isCompleted\n    __typename\n  }\n  timeliness {\n    identifier\n    comparison\n    days\n    __typename\n  }\n  color\n  impact {\n    id\n    identifier\n    name\n    __typename\n  }\n  primaryOrg {\n    id\n    name\n    abbreviation\n    __typename\n  }\n  responsibleParties {\n    id\n    role\n    specifier\n    organization {\n      id\n      name\n      abbreviation\n      __typename\n    }\n    __typename\n  }\n  categories {\n    id\n    identifier\n    name\n    type {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  contactPersons {\n    id\n    role\n    primaryContact\n    person {\n      id\n      firstName\n      lastName\n      title\n      email\n      organization {\n        id\n        name\n        abbreviation\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  tasks {\n    id\n    name\n    state\n    dueAt\n    completedAt\n    comment\n    __typename\n  }\n  relatedIndicators {\n    id\n    effectType\n    indicatesActionProgress\n    indicator {\n      id\n      identifier\n      name\n      unit {\n        id\n        name\n        shortName\n        __typename\n      }\n      latestValue {\n        id\n        date\n        value\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  links {\n    id\n    url\n    title\n    __typename\n  }\n  statusUpdates {\n    id\n    title\n    date\n    content\n    author {\n      id\n      firstName\n      lastName\n      __typename\n    }\n    __typename\n  }\n  relatedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedWith {\n    id\n    identifier\n    name\n    __typename\n  }\n  mergedActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededBy {\n    id\n    identifier\n    name\n    __typename\n  }\n  supersededActions {\n    id\n    identifier\n    name\n    __typename\n  }\n  allDependencyRelationships {\n    preceding {\n      id\n      identifier\n      name\n      __typename\n    }\n    dependent {\n      id\n      identifier\n      name\n      __typename\n    }\n    __typename\n  }\n  attributes {\n    __typename\n    type {\n      identifier\n      name\n      unit {\n        shortName\n        __typename\n      }\n      __typename\n    }\n    keyIdentifier\n    ... on AttributeText {\n      textValue: value\n    }\n    ... on AttributeRichText {\n      richTextValue: value\n    }\n    ... on AttributeCategoryChoice {\n      categories {\n        identifier\n        type {\n          identifier\n        }\n      }\n    }\n    ... on AttributeNumericValue {\n      numericValue: value\n    }\n    ... on AttributeChoice {\n      choice {\n        identifier\n      }\n    }\n  }\n  visibility\n  order\n  viewUrl\n  __typename\n}\n\nquery MCPGetActions($ids: [ID!]!) {\n  admin {\n    actions(ids: $ids) {\n      ...ActionDetails\n      __typename\n    }\n    __typename\n  }\n}'
 
 
+ActionAttributeUpdateInput.model_rebuild()
+ActionAttributeValueInput.model_rebuild()
+ActionInput.model_rebuild()
 AttributeTypeInput.model_rebuild()

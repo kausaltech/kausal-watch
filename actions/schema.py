@@ -15,15 +15,13 @@ import strawberry as sb
 import strawberry_django
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
-from django.forms import ModelForm
+from django.db.models import Prefetch, Q, prefetch_related_objects
 from django.urls import reverse
 from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
-from strawberry import auto
-from wagtail.models import Page, Revision, WorkflowState
+from wagtail.models import Revision, WorkflowState
 from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
@@ -37,7 +35,7 @@ from kausal_common.graphene.registry import register_graphene_node
 from kausal_common.strawberry.errors import PermissionDeniedError
 from kausal_common.users import is_authenticated, user_or_none
 
-from aplans import gql  # noqa: TC002
+from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
@@ -97,7 +95,7 @@ from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
 from actions.models.category import IndicatorCategoryRelationshipType  # noqa: TC001
-from orgs.models import Organization, OrganizationQuerySet
+from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorListPage, PageChangeLogMessage
 from people.models import Person
@@ -113,10 +111,13 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable, Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
     from django.db import models
+    from django.db.models import QuerySet
     from django_stubs_ext import StrOrPromise
+    from strawberry import auto
+    from wagtail.models import Page
 
     from aplans.cache import PlanSpecificCache
     from aplans.graphql_types import GQLInfo
@@ -127,6 +128,7 @@ if TYPE_CHECKING:
     from admin_site.models import BaseChangeLogMessage
     from indicators.models import ActionIndicator, IndicatorLevelQuerySet
     from indicators.schema import IndicatorNode
+    from orgs.models import OrganizationQuerySet
     from users.models import User
 
 
@@ -773,7 +775,6 @@ class CategoryLevelNode(DjangoNode[CategoryLevel]):
 
 
 def django_choices_to_graphene(field: models.Field[Any, Any]):
-    from graphene_django.converter import convert_django_field_with_choices
     from graphene_django.registry import get_global_registry
     registry = get_global_registry()
     graphene_type = convert_django_field_with_choices(field, registry=registry, convert_choices_to_enum=True)
@@ -1813,6 +1814,7 @@ class ActionImplementationPhaseNode(DjangoNode[ActionImplementationPhase]):
 
 class ActionResponsiblePartyNode(DjangoNode[ActionResponsibleParty]):
     has_contact_person = graphene.Boolean(required=True)
+    role = graphene.Field(ActionResponsibleParty.Role, required=False)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -2403,7 +2405,7 @@ def get_plan_mutation_namespace():
 
 
 def get_action_mutation_namespace():
-    from .mutations import ActionMutations
+    from .mutations_action import ActionMutations
 
     return ActionMutations
 

@@ -6,11 +6,10 @@ import strawberry as sb
 import strawberry_django
 from django.contrib.contenttypes.models import ContentType
 from django.forms import ValidationError
-from graphql import GraphQLError
 from strawberry import auto
 from strawberry_django.fields.types import OperationInfo
 
-from kausal_common.strawberry.errors import NotFoundError, PermissionDeniedError
+from kausal_common.strawberry.errors import PermissionDeniedError
 from kausal_common.strawberry.helpers import get_or_error
 from kausal_common.strawberry.permissions import SuperuserOnly
 from kausal_common.users import user_or_bust
@@ -18,11 +17,10 @@ from kausal_common.users import user_or_bust
 from aplans import gql
 
 from actions.models import Action, Plan
-from actions.models.attributes import AttributeChoice, AttributeType, AttributeTypeChoiceOption
+from actions.models.attributes import AttributeType, AttributeTypeChoiceOption
 from actions.models.category import Category, CategoryType
 from actions.models.features import PlanFeatures
 from actions.schema import (
-    ActionNode,
     AttributeTypeFormat,
     AttributeTypeNode,
     CategoryNode,
@@ -60,21 +58,6 @@ class PlanInput:
     features: PlanFeaturesInput | None = None
 
 
-@sb.input
-class ActionAttributeValueInput:
-    attribute_type_id: sb.ID
-    choice_id: sb.ID
-
-
-@strawberry_django.input(Action)
-class ActionInput:
-    name: sb.auto
-    plan_id: sb.auto
-    identifier: sb.auto
-    description: sb.auto
-    primary_org_id: sb.auto
-    category_ids: list[sb.ID] | None = None
-    attribute_values: list[ActionAttributeValueInput] | None = None
 
 
 @sb.input
@@ -196,8 +179,9 @@ class PlanMutations:
             raise ValidationError('A plan can only have one primary action classification.')
 
         category_type, create_args, _ = gql.prepare_create_update(
-            info=info, model_or_instance=CategoryType(plan=plan), data=input
+            info=info, model_or_instance=CategoryType, data=input
         )
+        category_type.plan = plan
         if 'synchronize_with_pages' not in create_args:
             category_type.synchronize_with_pages = input.primary_action_classification
         category_type.editable_for_actions = category_type.usable_for_actions
@@ -242,7 +226,6 @@ class PlanMutations:
 
     @gql.mutation(permission_classes=[SuperuserOnly])
     def create_attribute_type(self, info: gql.Info, input: AttributeTypeInput) -> AttributeTypeNode:
-        from django.contrib.contenttypes.models import ContentType
 
         from indicators.models import Unit
 
@@ -348,100 +331,3 @@ class PlanMutations:
 
         return cast('PlanNode', plan)  # pyright: ignore[reportInvalidCast]
 
-
-@sb.type
-class ActionMutations:
-    def _set_action_categories(self, info: gql.Info, action: Action, category_ids: list[sb.ID]) -> None:
-        plan = action.plan
-        ct_qs = plan.category_types.filter(editable_for_actions=True)
-        cts_by_id = {ct.id: ct for ct in ct_qs}
-        cats_by_id = {cat.id: cat for cat in Category.objects.filter(type__in=ct_qs)}
-        for cat in cats_by_id.values():
-            cat.type = cts_by_id[cat.type_id]
-
-        cats_by_type: dict[CategoryType, list[Category]] = {}
-        for cat_id in category_ids:
-            cat_obj = cats_by_id.get(int(cat_id))
-            if cat_obj is None:
-                raise NotFoundError(info, f'Category {cat_id} does not belong to plan {plan.identifier}.')
-            cats_by_type.setdefault(cat_obj.type, []).append(cat_obj)
-
-        for cat_type, cats in cats_by_type.items():
-            if cat_type.select_widget == cat_type.SelectWidget.SINGLE and len(cats) > 1:
-                raise ValidationError(
-                    f'Only one category can be assigned to a single-select category type (identifier: {cat_type.identifier}).',
-                )
-            action.set_categories(cat_type, list[Category | int](cats))
-
-    def _set_action_choice_attributes(
-        self, info: gql.Info, action: Action, attribute_values: list[ActionAttributeValueInput]
-    ) -> None:
-        action_ct = ContentType.objects.get_for_model(Action)
-        plan = action.plan
-        for attr_val in attribute_values:
-            attr_type = plan.action_attribute_types.filter(pk=attr_val.attribute_type_id).first()
-            if attr_type is None:
-                raise GraphQLError(
-                    f'Attribute type {attr_val.attribute_type_id} does not belong to plan {plan.identifier} or '
-                    'is not usable for actions.',
-                    nodes=info.field_nodes,
-                )
-            choice = AttributeTypeChoiceOption.objects.get(pk=attr_val.choice_id, type=attr_type)
-            AttributeChoice.objects.create(
-                type=attr_type,
-                content_type=action_ct,
-                object_id=action.pk,
-                choice=choice,
-            )
-
-    def _create_action_m2m(self, info: gql.Info, action: Action, input: ActionInput) -> None:
-        # Assign categories
-        if input.category_ids:
-            self._set_action_categories(info, action, input.category_ids)
-
-        # Assign choice attributes
-        if input.attribute_values:
-            self._set_action_choice_attributes(info, action, input.attribute_values)
-
-    @gql.mutation(permission_classes=[SuperuserOnly])
-    def create_action(self, info: gql.Info, input: ActionInput) -> ActionNode:
-        from actions.models import Action
-        from orgs.models import Organization
-
-        # Get the plan
-        plan = gql.get_plan_or_error(info, input.plan_id)
-        # FIXME: Check permissions after Action gets a PermissionPolicy
-
-        if plan.actions_locked:
-            raise PermissionDeniedError(info, 'Actions are locked for this plan.')
-
-        # Get primary org if provided
-        primary_org: Organization | None = None
-        if input.primary_org_id:
-            primary_org = get_or_error(info, Organization, pk=input.primary_org_id)
-
-        # Create action
-        action = Action(
-            plan=plan,
-            name=input.name,
-            description=input.description or '',
-            primary_org=primary_org,
-        )
-
-        # Generate or use provided identifier
-        if input.identifier:
-            if not plan.features.has_action_identifiers:
-                raise ValidationError('Action identifiers are not enabled for this plan.')
-            action.identifier = input.identifier
-        else:
-            if plan.features.has_action_identifiers:
-                raise ValidationError('Action identifier required for this plan.')
-            action.generate_identifier()
-
-        action.full_clean()
-        action.save()
-
-        self._create_action_m2m(info, action, input)
-
-        action = Action.objects.get(pk=action.pk)
-        return cast('ActionNode', action)  # pyright: ignore[reportInvalidCast]
