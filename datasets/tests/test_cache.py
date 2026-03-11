@@ -11,6 +11,30 @@ from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
 pytestmark = pytest.mark.django_db
 
 
+class TestGetDatasetSchemasForObjectOutOfPlan:
+    """Tests that get_dataset_schemas_for_object returns [] for objects outside the active plan."""
+
+    def test_action_from_other_plan_returns_empty(self, plan):
+        """Action belonging to a different plan returns empty list instead of crashing."""
+        other_plan = PlanFactory.create()
+        action = ActionFactory.create(plan=other_plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+
+        cache = PlanSpecificCache(plan)
+        assert cache.get_dataset_schemas_for_object(action) == []
+
+    def test_indicator_not_in_plan_returns_empty(self, plan):
+        """Indicator with no IndicatorLevel for the plan returns empty list instead of crashing."""
+        indicator = IndicatorFactory.create()
+        # No IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+
+        cache = PlanSpecificCache(plan)
+        assert cache.get_dataset_schemas_for_object(indicator) == []
+
+
 class TestCategoryTypeDatasetSchemaLookup:
     """Tests for looking up DatasetSchemas scoped to CategoryTypes via PlanSpecificCache."""
 
