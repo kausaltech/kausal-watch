@@ -224,8 +224,11 @@ async def create_action(
 async def update_action(
     plan_id: Annotated[str, 'The ID (pk or identifier) of the plan'],
     id: Annotated[str, 'The action ID (pk) or identifier'],
+    name: Annotated[str | None, 'Action name'] = None,
+    identifier: Annotated[str | None, 'Action identifier (only for plans with action identifiers enabled)'] = None,
     description: Annotated[str | None, 'HTML description of the action'] = None,
     lead_paragraph: Annotated[str | None, 'Plain text lead paragraph'] = None,
+    primary_org_id: Annotated[str | None, 'ID of the primary responsible organization'] = None,
     category_ids: Annotated[list[str] | None, 'List of category IDs to assign (replaces existing)'] = None,
     responsible_parties: Annotated[
         list[ActionResponsiblePartyInput] | None, 'List of responsible parties (replaces existing)'
@@ -252,10 +255,16 @@ async def update_action(
     await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='update_action', ctx=ctx)
 
     input_kwargs: dict[str, Any] = {'id': id}
+    if name is not None:
+        input_kwargs['name'] = name
+    if identifier is not None:
+        input_kwargs['identifier'] = identifier
     if description is not None:
         input_kwargs['description'] = description
     if lead_paragraph is not None:
         input_kwargs['leadParagraph'] = lead_paragraph
+    if primary_org_id is not None:
+        input_kwargs['primaryOrgId'] = primary_org_id
     if category_ids is not None:
         input_kwargs['categoryIds'] = category_ids
     if responsible_parties is not None:

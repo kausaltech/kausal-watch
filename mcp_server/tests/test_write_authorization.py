@@ -13,6 +13,7 @@ from mcp.server.elicitation import CancelledElicitation, DeclinedElicitation
 
 from actions.tests.factories import PlanFactory
 from mcp_server.tools import helpers
+from mcp_server.tools import plan as plan_tools
 from users.models import MCPPlanWriteAuthorizationGrant
 from users.tests.factories import UserFactory
 
@@ -110,3 +111,37 @@ def test_grants_are_scoped_by_user_and_plan(monkeypatch):
 
     assert MCPPlanWriteAuthorizationGrant.objects.filter(user=user, plan=plan).exists()
     assert ctx.calls == 1
+
+
+def test_authorize_plan_edits_requires_explicit_elicitation(monkeypatch):
+    user = UserFactory.create(is_superuser=True)
+    plan = PlanFactory.create()
+    monkeypatch.setattr(helpers, 'resolve_current_user', lambda: user)
+    ctx = FakeContext(AcceptedElicitation[str](data='24h'))
+
+    result = async_to_sync(plan_tools.authorize_plan_edits)(
+        plan_id=str(plan.id),
+        duration='24h',
+        ctx=cast('Context', ctx),
+    )
+
+    grant = MCPPlanWriteAuthorizationGrant.objects.get(user=user, plan=plan)
+    assert ctx.calls == 1
+    assert grant.granted_by_tool == 'authorize_plan_edits'
+    assert "Write access authorized for plan" in result
+
+
+def test_authorize_plan_edits_decline_does_not_create_grant(monkeypatch):
+    user = UserFactory.create(is_superuser=True)
+    plan = PlanFactory.create()
+    monkeypatch.setattr(helpers, 'resolve_current_user', lambda: user)
+    ctx = FakeContext(DeclinedElicitation())
+
+    with pytest.raises(ToolError, match='was not granted'):
+        async_to_sync(plan_tools.authorize_plan_edits)(
+            plan_id=str(plan.id),
+            duration='1h',
+            ctx=cast('Context', ctx),
+        )
+
+    assert not MCPPlanWriteAuthorizationGrant.objects.filter(user=user, plan=plan).exists()

@@ -127,17 +127,25 @@ async def _has_active_write_authorization_grant(plan_ref: str) -> bool:
     return grant.is_active()
 
 
-async def require_mcp_plan_write_authorization(plan_ref: str, tool_name: str, ctx: Context) -> None:
-    if await _has_active_write_authorization_grant(plan_ref):
-        return
-
+async def prompt_mcp_plan_write_authorization(
+    plan_ref: str,
+    tool_name: str,
+    ctx: Context,
+    duration_choices: list[str] | None = None,
+) -> str:
     plan = await resolve_plan_by_id_or_identifier(plan_ref)
+    choices = duration_choices or WRITE_AUTH_DURATION_CHOICES
+    if len(choices) == 1:
+        duration_prompt = f"Confirm the {choices[0]} authorization duration."
+    else:
+        duration_prompt = "Choose how long this authorization should remain valid."
+
     response = await ctx.elicit(
         (
             f"Authorize write access for plan {plan.name} ({plan.identifier}) using tool '{tool_name}'. "
-            "Choose how long this authorization should remain valid."
+            f'{duration_prompt}'
         ),
-        WRITE_AUTH_DURATION_CHOICES,  # type: ignore[arg-type]
+        choices,  # type: ignore[arg-type]
     )
     if isinstance(response, (DeclinedElicitation, CancelledElicitation)):
         raise ToolError(f"Write authorization for plan '{plan.identifier}' was not granted.")
@@ -145,7 +153,15 @@ async def require_mcp_plan_write_authorization(plan_ref: str, tool_name: str, ct
     duration_key = response.data
     if duration_key not in WRITE_AUTH_DURATION_MAP:
         raise ToolError(f'Invalid authorization duration: {duration_key}')
-    await _persist_write_authorization_grant(plan_ref=plan_ref, granted_by_tool=tool_name, duration_key=duration_key)  # type: ignore[arg-type]
+    return duration_key  # type: ignore[return-value]
+
+
+async def require_mcp_plan_write_authorization(plan_ref: str, tool_name: str, ctx: Context) -> None:
+    if await _has_active_write_authorization_grant(plan_ref):
+        return
+
+    duration_key = await prompt_mcp_plan_write_authorization(plan_ref=plan_ref, tool_name=tool_name, ctx=ctx)
+    await _persist_write_authorization_grant(plan_ref=plan_ref, granted_by_tool=tool_name, duration_key=duration_key)
 
 
 async def authorize_mcp_plan_write_access(plan_ref: str, duration_key: str, granted_by_tool: str) -> str:

@@ -100,8 +100,17 @@ class ActionInput:
 @strawberry_django.input(
     Action, description='Update input for a single action in a bulk update', partial=True
 )
-class ActionUpdateInput(ActionInput):
+class ActionUpdateInput:
     id: sb.ID = sb.field(description='The action ID (pk)')
+    name: sb.auto
+    identifier: sb.auto
+    description: sb.auto
+    lead_paragraph: sb.auto
+    primary_org_id: sb.auto
+    category_ids: list[sb.ID] | None
+    responsible_parties: list[ActionResponsiblePartyInput] | None
+    links: list[ActionLinkInput] | None
+    attribute_values: list[ActionAttributeUpdateInput] | None
 
 
 @sb.type
@@ -136,11 +145,16 @@ class ActionMutations:
         for_create: bool = False,
     ) -> None:
         plan = action.plan
+        attr_types = list(plan.action_attribute_types.all())
+        attr_types_by_id = {str(attr_type.id): attr_type for attr_type in attr_types}
+        attr_types_by_identifier = {attr_type.identifier: attr_type for attr_type in attr_types}
+
         for attr_input in attribute_values:
-            attr_type = plan.action_attribute_types.filter(pk=attr_input.attribute_type_id).first()
+            attr_ref = str(attr_input.attribute_type_id)
+            attr_type = attr_types_by_id.get(attr_ref) or attr_types_by_identifier.get(attr_ref)
             if attr_type is None:
                 raise NotFoundError(
-                    info, f'Attribute type {attr_input.attribute_type_id} does not exist in plan {plan.identifier}.'
+                    info, f'Attribute type {attr_ref} does not exist in plan {plan.identifier}.'
                 )
 
             self._set_action_attribute(info, action, attr_type, attr_input.value, for_create=for_create)
@@ -265,7 +279,7 @@ class ActionMutations:
             else:
                 ac_obj = AttributeChoice(**kwargs)
             if not choice_obj:
-                raise ValidationError('Choice is required for attribute type {attribute_type.identifier}.')
+                raise ValidationError(f'Choice is required for attribute type {attribute_type.identifier}.')
             ac_obj.choice = choice_obj
             obj = ac_obj
         obj.full_clean()
@@ -360,11 +374,25 @@ class ActionMutations:
 
     def _update_action(self, info: gql.Info, action: Action, input: ActionUpdateInput) -> bool:
         updated = False
+        if input.name is not sb.UNSET:
+            action.name = input.name
+            updated = True
+        if input.identifier is not sb.UNSET:
+            if not action.plan.features.has_action_identifiers:
+                raise ValidationError('Action identifiers are not enabled for this plan.')
+            action.identifier = input.identifier
+            updated = True
         if input.description is not sb.UNSET:
             action.description = input.description
             updated = True
         if input.lead_paragraph is not sb.UNSET:
             action.lead_paragraph = input.lead_paragraph
+            updated = True
+        if input.primary_org_id is not sb.UNSET:
+            if input.primary_org_id is None:
+                action.primary_org = None
+            else:
+                action.primary_org = get_or_error(info, Organization, pk=input.primary_org_id)
             updated = True
 
         # Update m2m
@@ -399,9 +427,10 @@ class ActionMutations:
 
         updated_ids: list[sb.ID] = []
         for update in actions:
-            action = plan_actions_by_id.get(update.id) or plan_actions_by_identifier.get(update.identifier)
+            action_ref = str(update.id)
+            action = plan_actions_by_id.get(action_ref) or plan_actions_by_identifier.get(action_ref)
             if action is None:
-                raise NotFoundError(info, f'Action with ID {update.id} not found.')
+                raise NotFoundError(info, f'Action with ID {action_ref} not found.')
 
             updated = self._update_action(info, action, update)
             if not updated:

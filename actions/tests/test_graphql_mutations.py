@@ -814,6 +814,26 @@ class TestUpdateActions:
         action.refresh_from_db()
         assert action.lead_paragraph == 'A short summary'
 
+    def test_lookup_by_identifier_in_id_field(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-ident', 'Action Ident')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {'id': 'upd-ident', 'description': '<p>Updated by identifier</p>'},
+                ],
+            },
+        )
+        result = data['action']['updateActions']
+        assert result['count'] == 1
+        assert result['ids'] == [str(action.pk)]
+
+        action.refresh_from_db()
+        assert action.description == '<p>Updated by identifier</p>'
+
     def test_update_choice_attributes(self, graphql_client_query_data, client, superuser: User, plan: Plan):
         client.force_login(superuser)
         action = self._create_action(plan, 'upd-ca', 'Action CA')
@@ -1061,6 +1081,34 @@ class TestUpdateAction:
         action.refresh_from_db()
         assert action.description == '<p>Updated description</p>'
 
+    def test_update_name_identifier_and_primary_org(
+        self, graphql_client_query_data, client, superuser: User, plan: Plan,
+    ):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-editable', 'Original Name')
+        org = OrganizationFactory.create(name='Primary Org')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'name': 'Updated Name',
+                    'identifier': 'ua-editable-updated',
+                    'primaryOrgId': str(org.pk),
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['name'] == 'Updated Name'
+        assert result['identifier'] == 'ua-editable-updated'
+
+        action.refresh_from_db()
+        assert action.name == 'Updated Name'
+        assert action.identifier == 'ua-editable-updated'
+        assert action.primary_org == org
+
     def test_update_lead_paragraph(self, graphql_client_query_data, client, superuser: User, plan: Plan):
         client.force_login(superuser)
         action = self._create_action(plan, 'ua-lp', 'Action LP')
@@ -1230,6 +1278,32 @@ class TestUpdateAction:
         action_ct = ContentType.objects.get_for_model(Action)
         txt = AttributeText.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
         assert txt.text == 'Plain text value'
+
+    def test_update_attribute_by_identifier(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-attr-ident', 'Action Attr Ident')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            identifier='plain-notes',
+            format=AttributeType.AttributeFormat.TEXT,
+        )
+
+        _data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': attr_type.identifier, 'value': {'text': 'Resolved by identifier'}},
+                    ],
+                },
+            },
+        )
+        action_ct = ContentType.objects.get_for_model(Action)
+        txt = AttributeText.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert txt.text == 'Resolved by identifier'
 
     def test_update_optional_choice_with_text_attribute(
         self, graphql_client_query_data, client, superuser: User, plan: Plan,
@@ -1459,3 +1533,20 @@ class TestUpdateAction:
         result = data['action']['updateAction']
         assert result['id'] == str(action.pk)
         assert result['description'] == 'original'
+
+    def test_update_rejects_unsupported_plan_id_field(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-bad-field', 'Action Bad Field')
+
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'planId': str(plan.pk),
+                },
+            },
+        )
+
+        assert 'errors' in response

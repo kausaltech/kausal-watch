@@ -36,6 +36,7 @@ from .helpers import (
     authorize_mcp_plan_write_access,
     check_operation_result,
     execute_operation,
+    prompt_mcp_plan_write_authorization,
     require_mcp_plan_write_authorization,
     resolve_plan_by_id_or_identifier,
     resolve_plan_ref_from_category_type,
@@ -325,18 +326,27 @@ async def authorize_plan_edits(
         Literal['15m', '1h', '8h', '24h'],
         "Authorization duration. Allowed values: '15m', '1h', '8h', '24h'.",
     ],
+    ctx: Context | None = None,
 ) -> str:
     """
     Authorize MCP write operations for a plan for a limited time.
 
     This tool is useful for pre-authorizing a set of write operations before issuing mutations.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
     if duration not in WRITE_AUTH_DURATION_CHOICES:
         raise ToolError(f'Invalid duration: {duration}')
     plan = await resolve_plan_by_id_or_identifier(plan_id)
+    duration_key = await prompt_mcp_plan_write_authorization(
+        plan_ref=str(plan.id),
+        tool_name='authorize_plan_edits',
+        ctx=ctx,
+        duration_choices=[duration],
+    )
     return await authorize_mcp_plan_write_access(
         plan_ref=str(plan.id),
-        duration_key=duration,
+        duration_key=duration_key,
         granted_by_tool='authorize_plan_edits',
     )
 

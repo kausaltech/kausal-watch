@@ -214,20 +214,19 @@ class ActionResponsiblePartyInput(InputTypeModel):
 class ActionUpdateInput(InputTypeModel):
     """Update input for a single action in a bulk update."""
 
-    plan_id: str | None = Field(alias='planId', default=None)
+    id: str
+    'The action ID (pk)'
     name: str | None = None
     identifier: str | None = None
     'The identifier for this action (e.g. number)'
-    lead_paragraph: str | None = Field(alias='leadParagraph', default=None)
     description: str | None = None
     'What does this action involve in more detail?'
+    lead_paragraph: str | None = Field(alias='leadParagraph', default=None)
     primary_org_id: str | None = Field(alias='primaryOrgId', default=None)
     category_ids: list[str] | None = Field(alias='categoryIds', default=None)
     responsible_parties: list[ActionResponsiblePartyInput] | None = Field(alias='responsibleParties', default=None)
     links: list[ActionLinkInput] | None = None
     attribute_values: list[ActionAttributeUpdateInput] | None = Field(alias='attributeValues', default=None)
-    id: str
-    'The action ID (pk)'
 
 
 class AddRelatedOrganizationInput(InputTypeModel):
