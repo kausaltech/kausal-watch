@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any, cast, overload
+
+from django.utils import timezone
 
 from asgiref.sync import sync_to_async
 from fastmcp.exceptions import ToolError
+from mcp.server.elicitation import CancelledElicitation, DeclinedElicitation
 from mcp.types import ToolAnnotations
 
 from kausal_common.strawberry.views import get_base_context
+from kausal_common.users import user_or_bust
 
 from aplans.schema import schema
 from aplans.schema_context import WatchGraphQLContext
@@ -20,7 +25,10 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
     from strawberry.types import ExecutionResult
 
+    from fastmcp import Context
     from starlette.requests import Request as StarletteRequest
+
+    from users.models import User
 
 
 type ToolFunc = Callable[..., Awaitable[Any]]
@@ -28,6 +36,13 @@ type ToolFunc = Callable[..., Awaitable[Any]]
 READONLY_ANNOTATIONS = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 
 tool_registry: list[tuple[ToolFunc, ToolAnnotations | None]] = []
+WRITE_AUTH_DURATION_CHOICES = ['15m', '1h', '8h', '24h']
+WRITE_AUTH_DURATION_MAP: dict[str, timedelta] = {
+    '15m': timedelta(minutes=15),
+    '1h': timedelta(hours=1),
+    '8h': timedelta(hours=8),
+    '24h': timedelta(hours=24),
+}
 
 @overload
 def register_tool[F: ToolFunc](func: F) -> F: ...
@@ -56,6 +71,93 @@ def get_schema_execution_context():
     base_ctx = get_base_context(req, None)
     schema_ctx = WatchGraphQLContext(**base_ctx)
     return schema_ctx
+
+
+def resolve_current_user() -> User:
+    schema_ctx = get_schema_execution_context()
+    return user_or_bust(schema_ctx.user)
+
+
+async def resolve_plan_by_id_or_identifier(plan_ref: str):
+    from actions.models import Plan
+
+    user = resolve_current_user()
+    plan = await sync_to_async(lambda: Plan.objects.qs.visible_for_user(user).by_id_or_identifier(plan_ref).first())()
+    if plan is None:
+        raise ToolError(f"Plan '{plan_ref}' not found or not accessible")
+    return plan
+
+
+async def resolve_plan_ref_from_category_type(type_id: str) -> str:
+    from actions.models import CategoryType
+
+    category_type = await sync_to_async(lambda: CategoryType.objects.filter(pk=type_id).select_related('plan').first())()
+    if category_type is None:
+        raise ToolError(f"Category type '{type_id}' not found")
+    return str(category_type.plan.pk)
+
+
+async def _persist_write_authorization_grant(plan_ref: str, granted_by_tool: str, duration_key: str) -> tuple[Any, Any]:
+    from users.models import MCPPlanWriteAuthorizationGrant
+
+    user = resolve_current_user()
+    plan = await resolve_plan_by_id_or_identifier(plan_ref)
+    now = timezone.now()
+    expires_at = now + WRITE_AUTH_DURATION_MAP[duration_key]
+    await sync_to_async(MCPPlanWriteAuthorizationGrant.objects.update_or_create)(
+        user=user,
+        plan=plan,
+        defaults={
+            'expires_at': expires_at,
+            'granted_by_tool': granted_by_tool,
+            'granted_at': now,
+        },
+    )
+    return plan, expires_at
+
+
+async def _has_active_write_authorization_grant(plan_ref: str) -> bool:
+    from users.models import MCPPlanWriteAuthorizationGrant
+
+    user = resolve_current_user()
+    plan = await resolve_plan_by_id_or_identifier(plan_ref)
+    grant = await sync_to_async(lambda: MCPPlanWriteAuthorizationGrant.objects.filter(user=user, plan=plan).first())()
+    if grant is None:
+        return False
+    return grant.is_active()
+
+
+async def require_mcp_plan_write_authorization(plan_ref: str, tool_name: str, ctx: Context) -> None:
+    if await _has_active_write_authorization_grant(plan_ref):
+        return
+
+    plan = await resolve_plan_by_id_or_identifier(plan_ref)
+    response = await ctx.elicit(
+        (
+            f"Authorize write access for plan {plan.name} ({plan.identifier}) using tool '{tool_name}'. "
+            "Choose how long this authorization should remain valid."
+        ),
+        WRITE_AUTH_DURATION_CHOICES,  # type: ignore[arg-type]
+    )
+    if isinstance(response, (DeclinedElicitation, CancelledElicitation)):
+        raise ToolError(f"Write authorization for plan '{plan.identifier}' was not granted.")
+
+    duration_key = response.data
+    if duration_key not in WRITE_AUTH_DURATION_MAP:
+        raise ToolError(f'Invalid authorization duration: {duration_key}')
+    await _persist_write_authorization_grant(plan_ref=plan_ref, granted_by_tool=tool_name, duration_key=duration_key)  # type: ignore[arg-type]
+
+
+async def authorize_mcp_plan_write_access(plan_ref: str, duration_key: str, granted_by_tool: str) -> str:
+    plan, expires_at = await _persist_write_authorization_grant(
+        plan_ref=plan_ref,
+        granted_by_tool=granted_by_tool,
+        duration_key=duration_key,
+    )
+    return (
+        f"Write access authorized for plan '{plan.identifier}' until "
+        f'{timezone.localtime(expires_at).isoformat()}.'
+    )
 
 
 async def execute_schema_query(query: str, variables: dict[str, Any] | None = None) -> ExecutionResult:

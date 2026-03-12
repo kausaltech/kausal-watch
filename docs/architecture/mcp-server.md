@@ -305,6 +305,30 @@ All write tools require superuser access unless noted otherwise.
 | `update_action` | Update a single action's core fields and return it |
 | `update_action_attribute` | Set a single attribute value on an action (preferred for rich text / choice attributes) |
 | `create_organization` | Create a new organization |
+| `authorize_plan_edits` | Pre-authorize MCP write operations for a specific plan |
+
+### Timed Plan Write Authorization
+
+Plan-scoped write tools are additionally protected by an MCP authorization grant.
+This grant is separate from GraphQL permission checks and must be accepted by the user.
+
+- Grants are scoped to `(user, plan)` and persisted in the database.
+- Grants have an expiry (`expires_at`) and are reused across MCP sessions until they expire.
+- When no active grant exists, tools request a duration via FastMCP elicitation.
+- Supported durations are `15m`, `1h`, `8h`, and `24h`.
+- If the user declines or cancels elicitation, the tool call is rejected.
+
+The following tools require an active plan grant:
+
+- `create_action`
+- `update_action`
+- `update_action_attribute`
+- `update_actions`
+- `create_category_type`
+- `create_category`
+- `create_attribute_type`
+- `add_related_organization`
+- `delete_plan`
 
 ### Flexible Queries with `query_actions`
 

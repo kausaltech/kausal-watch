@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Annotated, Any
 
+from fastmcp import Context
 from fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
@@ -19,7 +20,13 @@ from mcp_server.__generated__.schema import (
     UpdateActions,
 )
 
-from .helpers import check_operation_result, execute_operation, execute_schema_query, register_tool
+from .helpers import (
+    check_operation_result,
+    execute_operation,
+    execute_schema_query,
+    register_tool,
+    require_mcp_plan_write_authorization,
+)
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -183,6 +190,7 @@ async def create_action(
     attribute_values: Annotated[
         list[ActionAttributeUpdateInput] | None, 'List of attribute values to assign to the action'
     ] = None,
+    ctx: Context | None = None,
 ) -> ActionDetails:
     """
     Create a new action in a plan.
@@ -190,6 +198,10 @@ async def create_action(
     Use get_plan to check if the plan requires action identifiers (hasActionIdentifiers feature).
     Use list_organizations to find organization IDs for primary_org_id.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='create_action', ctx=ctx)
+
     result = await execute_operation(
         CreateAction,
         CreateAction.Arguments(
@@ -219,6 +231,7 @@ async def update_action(
         list[ActionResponsiblePartyInput] | None, 'List of responsible parties (replaces existing)'
     ] = None,
     links: Annotated[list[ActionLinkInput] | None, 'List of links (replaces existing)'] = None,
+    ctx: Context | None = None,
 ) -> ActionDetails:
     """
     Update a single action's core fields and return its full details.
@@ -234,6 +247,10 @@ async def update_action(
     Use list_actions to discover action IDs, and get_plan to find attribute type IDs and
     choice option IDs.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='update_action', ctx=ctx)
+
     input_kwargs: dict[str, Any] = {'id': id}
     if description is not None:
         input_kwargs['description'] = description
@@ -266,6 +283,7 @@ async def update_action_attribute(
     rich_text: Annotated[str | None, 'HTML rich text value (for RICH_TEXT attributes)'] = None,
     choice_id: Annotated[str | None, 'Choice option ID (for ORDERED_CHOICE / UNORDERED_CHOICE attributes)'] = None,
     text: Annotated[str | None, 'Plain text value (for TEXT attributes)'] = None,
+    ctx: Context | None = None,
 ) -> str:
     """
     Set a single attribute value on an action.
@@ -278,6 +296,10 @@ async def update_action_attribute(
 
     Use get_plan to discover attribute type IDs, formats, and choice option IDs.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='update_action_attribute', ctx=ctx)
+
     value_kwargs: dict[str, Any] = {}
     provided = sum(x is not None for x in (rich_text, choice_id, text))
     if provided != 1:
@@ -310,6 +332,7 @@ async def update_action_attribute(
 async def update_actions(
     plan_id: Annotated[str, 'The ID (pk or identifier) of the plan to update the actions in'],
     actions: Annotated[list[ActionUpdateInput], 'List of updates to perform'],
+    ctx: Context | None = None,
 ) -> str:
     """
     Bulk update multiple actions' core fields (description, categories, responsible parties, links).
@@ -325,6 +348,10 @@ async def update_actions(
     Use list_actions to discover action IDs, and get_plan to find attribute type IDs and
     choice option IDs.
     """
+
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='update_actions', ctx=ctx)
 
     result = await execute_operation(
         UpdateActions,

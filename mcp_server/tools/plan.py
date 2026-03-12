@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Literal
 
+from fastmcp import Context
 from fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
@@ -30,7 +31,15 @@ from mcp_server.__generated__.schema import (
     PlanInput,
 )
 
-from .helpers import check_operation_result, execute_operation
+from .helpers import (
+    WRITE_AUTH_DURATION_CHOICES,
+    authorize_mcp_plan_write_access,
+    check_operation_result,
+    execute_operation,
+    require_mcp_plan_write_authorization,
+    resolve_plan_by_id_or_identifier,
+    resolve_plan_ref_from_category_type,
+)
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -141,6 +150,7 @@ async def create_category_type(
         'Whether this category type is the primary action classification. '
         'NOTE: A Plan must have exactly one primary action classification.',
     ] = False,
+    ctx: Context | None = None,
 ) -> CategoryTypeDetails:
     """
     Create a new category type for a plan.
@@ -148,6 +158,10 @@ async def create_category_type(
     Category types group categories together (e.g. 'Theme', 'Sector', 'Strategy').
     A plan can have several category types.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='create_category_type', ctx=ctx)
+
     result = await execute_operation(
         CreateCategoryType,
         CreateCategoryType.Arguments(
@@ -174,12 +188,18 @@ async def create_category(
     name: Annotated[str, 'Display name of the category'],
     parent_id: Annotated[str | None, 'ID of the parent category for nested hierarchies'] = None,
     order: Annotated[int | None, 'Sort order (0-based)'] = None,
+    ctx: Context | None = None,
 ) -> CategoryDetails:
     """
     Create a new category within a category type.
 
     Categories organize actions (e.g. themes, sectors). Use get_plan to find category type IDs.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    plan_ref = await resolve_plan_ref_from_category_type(type_id)
+    await require_mcp_plan_write_authorization(plan_ref=plan_ref, tool_name='create_category', ctx=ctx)
+
     result = await execute_operation(
         CreateCategory,
         CreateCategory.Arguments(
@@ -213,6 +233,7 @@ async def create_attribute_type(
         "List of choice options, each with 'identifier' (str), 'name' (str),"
         " and 'order' (int). Required for choice-type formats.",
     ] = None,
+    ctx: Context | None = None,
 ) -> AttributeTypeDetails:
     """
     Create a new attribute type for actions in a plan.
@@ -220,6 +241,10 @@ async def create_attribute_type(
     Attribute types define dynamic fields on actions (e.g. priority level, cost estimate).
     For choice-based formats, you must provide choice_options.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='create_attribute_type', ctx=ctx)
+
     options: list[ChoiceOptionInput] | None = None
     if choice_options:
         options = [
@@ -248,6 +273,7 @@ async def create_attribute_type(
 @register_tool(annotations=ToolAnnotations(destructiveHint=True, title='Delete an action plan'))
 async def delete_plan(
     id: Annotated[str, 'The ID (pk) or identifier of the plan to delete'],
+    ctx: Context | None = None,
 ) -> str:
     """
     Delete a recently created plan.
@@ -255,6 +281,10 @@ async def delete_plan(
     Safety check: the plan must have been created within the last 2 days.
     This is intended for cleaning up test plans.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=id, tool_name='delete_plan', ctx=ctx)
+
     result = await execute_operation(
         DeletePlan,
         DeletePlan.Arguments(id=id),
@@ -268,6 +298,7 @@ async def delete_plan(
 async def add_related_organization(
     plan_id: Annotated[str, 'The ID (pk) or identifier of the plan to add the organization to'],
     organization_id: Annotated[str, 'The ID of the organization to add as a related organization'],
+    ctx: Context | None = None,
 ) -> PlanConcise:
     """
     Add a related organization to a plan.
@@ -275,12 +306,39 @@ async def add_related_organization(
     This is useful for fixing orphaned organization hierarchies where child organizations are related to a plan but
     their parent is not.
     """
+    if ctx is None:
+        raise ToolError('Context is required for write authorization.')
+    await require_mcp_plan_write_authorization(plan_ref=plan_id, tool_name='add_related_organization', ctx=ctx)
+
     result = await execute_operation(
         AddRelatedOrganization,
         AddRelatedOrganization.Arguments(input=AddRelatedOrganizationInput(planId=plan_id, organizationId=organization_id)),
     )
 
     return check_operation_result(result.plan.add_related_organization)
+
+
+@register_tool(annotations=ToolAnnotations(title='Authorize plan edits for MCP tools', idempotentHint=True))
+async def authorize_plan_edits(
+    plan_id: Annotated[str, 'The ID (pk) or identifier of the plan to authorize'],
+    duration: Annotated[
+        Literal['15m', '1h', '8h', '24h'],
+        "Authorization duration. Allowed values: '15m', '1h', '8h', '24h'.",
+    ],
+) -> str:
+    """
+    Authorize MCP write operations for a plan for a limited time.
+
+    This tool is useful for pre-authorizing a set of write operations before issuing mutations.
+    """
+    if duration not in WRITE_AUTH_DURATION_CHOICES:
+        raise ToolError(f'Invalid duration: {duration}')
+    plan = await resolve_plan_by_id_or_identifier(plan_id)
+    return await authorize_mcp_plan_write_access(
+        plan_ref=str(plan.id),
+        duration_key=duration,
+        granted_by_tool='authorize_plan_edits',
+    )
 
 
 def register_plan_tools(_mcp: FastMCP) -> None:

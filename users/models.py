@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, overload
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -19,6 +19,7 @@ from .base import AbstractUser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+    from datetime import datetime
 
     from rest_framework.authtoken.models import Token
 
@@ -630,3 +631,27 @@ class User(AbstractUser):
         if '_cache' in statedict:
             del statedict['_cache']
         return statedict
+
+
+class MCPPlanWriteAuthorizationGrant(models.Model):
+    user: FK[User] = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mcp_plan_write_grants')
+    plan: FK[Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='mcp_write_authorization_grants')
+    expires_at = models.DateTimeField()
+    granted_at = models.DateTimeField(auto_now=True)
+    granted_by_tool = models.CharField(max_length=128, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects: ClassVar[models.Manager[Self]] = models.Manager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'plan'], name='users_mcp_plan_write_grant_user_plan_unique'),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.user.email} -> {self.plan.identifier} (until {self.expires_at.isoformat()})'
+
+    def is_active(self, now: datetime | None = None) -> bool:
+        current_time = now or timezone.now()
+        return self.expires_at > current_time
