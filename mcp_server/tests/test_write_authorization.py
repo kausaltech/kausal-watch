@@ -12,8 +12,7 @@ from fastmcp.server.elicitation import AcceptedElicitation
 from mcp.server.elicitation import CancelledElicitation, DeclinedElicitation
 
 from actions.tests.factories import PlanFactory
-from mcp_server.tools import helpers
-from mcp_server.tools import plan as plan_tools
+from mcp_server.tools import helpers, plan as plan_tools
 from users.models import MCPPlanWriteAuthorizationGrant
 from users.tests.factories import UserFactory
 
@@ -56,6 +55,7 @@ def test_existing_active_grant_skips_elicitation(monkeypatch):
     )
 
 
+@pytest.mark.skip(reason='Elicitation is disabled until client support is reliable')
 def test_missing_grant_prompts_and_persists_authorization(monkeypatch):
     user = UserFactory.create(is_superuser=True)
     plan = PlanFactory.create()
@@ -81,7 +81,7 @@ def test_declined_or_cancelled_elicitation_blocks_write(monkeypatch, result):
     monkeypatch.setattr(helpers, 'resolve_current_user', lambda: user)
     ctx = FakeContext(result)
 
-    with pytest.raises(ToolError, match='was not granted'):
+    with pytest.raises(ToolError, match='No active write authorization'):
         async_to_sync(helpers.require_mcp_plan_write_authorization)(
             plan_ref=str(plan.id),
             tool_name='update_action',
@@ -94,6 +94,7 @@ def test_grants_are_scoped_by_user_and_plan(monkeypatch):
     user = UserFactory.create(is_superuser=True)
     other_user = UserFactory.create(is_superuser=True)
     plan = PlanFactory.create()
+    other_plan = PlanFactory.create()
     MCPPlanWriteAuthorizationGrant.objects.create(
         user=other_user,
         plan=plan,
@@ -103,14 +104,25 @@ def test_grants_are_scoped_by_user_and_plan(monkeypatch):
 
     monkeypatch.setattr(helpers, 'resolve_current_user', lambda: user)
     ctx = FakeContext(AcceptedElicitation[str](data='15m'))
-    async_to_sync(helpers.require_mcp_plan_write_authorization)(
-        plan_ref=str(plan.id),
-        tool_name='create_category_type',
-        ctx=cast('Context', ctx),
-    )
+    with pytest.raises(ToolError, match='No active write authorization'):
+        async_to_sync(helpers.require_mcp_plan_write_authorization)(
+            plan_ref=str(plan.id),
+            tool_name='create_category_type',
+            ctx=cast('Context', ctx),
+        )
 
-    assert MCPPlanWriteAuthorizationGrant.objects.filter(user=user, plan=plan).exists()
-    assert ctx.calls == 1
+    MCPPlanWriteAuthorizationGrant.objects.create(
+        user=user,
+        plan=plan,
+        expires_at=timezone.now() + timedelta(hours=1),
+        granted_by_tool='other_user',
+    )
+    with pytest.raises(ToolError, match='No active write authorization'):
+        async_to_sync(helpers.require_mcp_plan_write_authorization)(
+            plan_ref=str(other_plan.id),
+            tool_name='create_category_type',
+            ctx=cast('Context', ctx),
+        )
 
 
 def test_authorize_plan_edits_requires_explicit_elicitation(monkeypatch):
@@ -126,11 +138,11 @@ def test_authorize_plan_edits_requires_explicit_elicitation(monkeypatch):
     )
 
     grant = MCPPlanWriteAuthorizationGrant.objects.get(user=user, plan=plan)
-    assert ctx.calls == 1
     assert grant.granted_by_tool == 'authorize_plan_edits'
     assert "Write access authorized for plan" in result
 
 
+@pytest.mark.skip(reason='Elicitation is disabled until client support is reliable')
 def test_authorize_plan_edits_decline_does_not_create_grant(monkeypatch):
     user = UserFactory.create(is_superuser=True)
     plan = PlanFactory.create()

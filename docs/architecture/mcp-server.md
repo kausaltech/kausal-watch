@@ -314,9 +314,9 @@ This grant is separate from GraphQL permission checks and must be accepted by th
 
 - Grants are scoped to `(user, plan)` and persisted in the database.
 - Grants have an expiry (`expires_at`) and are reused across MCP sessions until they expire.
-- When no active grant exists, tools request a duration via FastMCP elicitation.
-- Supported durations are `15m`, `1h`, `8h`, and `24h`.
-- If the user declines or cancels elicitation, the tool call is rejected.
+- When no active grant exists, write tools return an error instructing callers to run `authorize_plan_edits` first.
+- Supported durations are `15m`, `1h`, `8h`, and `24h` (set explicitly in `authorize_plan_edits`).
+- The previous elicitation-based grant flow is temporarily disabled in code (commented out in the helper) until client support is reliable.
 
 The following tools require an active plan grant:
 

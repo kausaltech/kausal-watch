@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from asgiref.sync import sync_to_async
 from fastmcp.exceptions import ToolError
-from mcp.server.elicitation import CancelledElicitation, DeclinedElicitation
+from fastmcp.server.elicitation import CancelledElicitation, DeclinedElicitation
 from mcp.types import ToolAnnotations
 
 from kausal_common.strawberry.views import get_base_context
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
     from strawberry.types import ExecutionResult
 
-    from fastmcp import Context
+    from fastmcp.server.context import Context
     from starlette.requests import Request as StarletteRequest
 
     from users.models import User
@@ -160,8 +160,16 @@ async def require_mcp_plan_write_authorization(plan_ref: str, tool_name: str, ct
     if await _has_active_write_authorization_grant(plan_ref):
         return
 
-    duration_key = await prompt_mcp_plan_write_authorization(plan_ref=plan_ref, tool_name=tool_name, ctx=ctx)
-    await _persist_write_authorization_grant(plan_ref=plan_ref, granted_by_tool=tool_name, duration_key=duration_key)
+    plan = await resolve_plan_by_id_or_identifier(plan_ref)
+    # Elicitation can be re-enabled when client support is reliable:
+    if False:
+        duration_key = await prompt_mcp_plan_write_authorization(plan_ref=plan_ref, tool_name=tool_name, ctx=ctx)
+        await _persist_write_authorization_grant(plan_ref=plan_ref, granted_by_tool=tool_name, duration_key=duration_key)
+        return
+    raise ToolError(
+        f"No active write authorization for plan '{plan.identifier}' when calling '{tool_name}'. "
+        'Call authorize_plan_edits first.'
+    )
 
 
 async def authorize_mcp_plan_write_access(plan_ref: str, duration_key: str, granted_by_tool: str) -> str:

@@ -135,7 +135,7 @@ async def create_plan(  # noqa: PLR0913
     return check_operation_result(result.plan.create_plan)
 
 
-@register_tool
+@register_tool(annotations=ToolAnnotations(title='Create a new category type for a plan'))
 async def create_category_type(
     plan_id: Annotated[str, 'The ID (pk) of the plan'],
     identifier: Annotated[str, 'Unique identifier for the category type'],
@@ -182,7 +182,7 @@ async def create_category_type(
     return check_operation_result(result.plan.create_category_type)
 
 
-@register_tool
+@register_tool(annotations=ToolAnnotations(title='Create a new category within a category type'))
 async def create_category(
     type_id: Annotated[str, 'The ID (pk) of the category type this category belongs to'],
     identifier: Annotated[str, 'Unique identifier for the category within its type'],
@@ -217,7 +217,7 @@ async def create_category(
     return check_operation_result(result.plan.create_category)
 
 
-@register_tool
+@register_tool(annotations=ToolAnnotations(title='Create a new attribute type for actions in a plan'))
 async def create_attribute_type(
     plan_id: Annotated[str, 'The ID (pk) of the plan'],
     identifier: Annotated[str, 'Unique identifier for the attribute type'],
@@ -319,7 +319,7 @@ async def add_related_organization(
     return check_operation_result(result.plan.add_related_organization)
 
 
-@register_tool(annotations=ToolAnnotations(title='Authorize plan edits for MCP tools', idempotentHint=True))
+@register_tool(annotations=ToolAnnotations(title='Authorize plan edits for AI tools', idempotentHint=True))
 async def authorize_plan_edits(
     plan_id: Annotated[str, 'The ID (pk) or identifier of the plan to authorize'],
     duration: Annotated[
@@ -338,15 +338,17 @@ async def authorize_plan_edits(
     if duration not in WRITE_AUTH_DURATION_CHOICES:
         raise ToolError(f'Invalid duration: {duration}')
     plan = await resolve_plan_by_id_or_identifier(plan_id)
-    duration_key = await prompt_mcp_plan_write_authorization(
-        plan_ref=str(plan.id),
-        tool_name='authorize_plan_edits',
-        ctx=ctx,
-        duration_choices=[duration],
-    )
+    if False:
+        # Disabled until elicitation works reliably
+        duration = await prompt_mcp_plan_write_authorization(
+            plan_ref=str(plan.id),
+            tool_name='authorize_plan_edits',
+            ctx=ctx,
+            duration_choices=[duration],
+        )
     return await authorize_mcp_plan_write_access(
         plan_ref=str(plan.id),
-        duration_key=duration_key,
+        duration_key=duration,
         granted_by_tool='authorize_plan_edits',
     )
 
