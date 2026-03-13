@@ -3,6 +3,8 @@ from datetime import date
 
 import pytest
 
+from kausal_common.datasets.models import DatasetMetricComputation
+
 from datasets.tests.factories import (
     DataPointFactory,
     DatasetFactory,
@@ -14,7 +16,6 @@ from datasets.tests.factories import (
     DimensionFactory,
     DimensionScopeFactory,
 )
-from indicators.models.computation import DatasetMetricComputation
 
 if typing.TYPE_CHECKING:
     from actions.models.action import Action

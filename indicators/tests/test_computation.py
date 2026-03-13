@@ -5,13 +5,16 @@ from decimal import Decimal
 
 import pytest
 
-from kausal_common.datasets.models import DataPoint, Dataset, DatasetMetric, DatasetSchema
+from kausal_common.datasets.computation import _apply_op, compute_dataset_values, compute_for_queryset
+from kausal_common.datasets.models import DataPoint, Dataset, DatasetMetric, DatasetMetricComputation, DatasetSchema
 
-from indicators.computation import _apply_op, compute_dataset_goal_values, compute_dataset_values
-from indicators.models.computation import DatasetMetricComputation
 from indicators.models.goal_data_point import IndicatorGoalDataPoint
 
 pytestmark = pytest.mark.django_db
+
+
+def compute_dataset_goal_values(dataset):
+    return compute_for_queryset(dataset, dataset.goal_data_points.all())
 
 
 @pytest.mark.parametrize(('op', 'a', 'b', 'expected'), [

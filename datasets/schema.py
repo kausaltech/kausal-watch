@@ -151,7 +151,7 @@ class DatasetNode:
 
     @strawberry_django.field
     def computed_data_points(self: Dataset) -> list[ComputedDataPointNode]:
-        from indicators.computation import compute_dataset_values
+        from kausal_common.datasets.computation import compute_dataset_values
 
         return [
             ComputedDataPointNode(

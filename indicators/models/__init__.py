@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Computation models
+from kausal_common.datasets.models import DatasetMetricComputation
+
 # Action link models
 from indicators.models.action_links import (
     ActionIndicator,
@@ -14,11 +17,6 @@ from indicators.models.common_indicator import (
     FrameworkIndicator,
     PlanCommonIndicator,
     RelatedCommonIndicator,
-)
-
-# Computation models
-from indicators.models.computation import (
-    DatasetMetricComputation,
 )
 
 # Contact person models

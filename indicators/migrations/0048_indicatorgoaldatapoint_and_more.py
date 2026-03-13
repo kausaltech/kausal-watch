@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("datasets", "0021_datapointcomment_is_soft_deleted_and_more"),
-        ("indicators", "0048_add_dataset_metric_computation"),
+        ("indicators", "0047_indicator_dataset_schema_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
