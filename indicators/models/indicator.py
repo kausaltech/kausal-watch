@@ -59,7 +59,7 @@ if typing.TYPE_CHECKING:
     from indicators.models.action_links import ActionIndicator
     from indicators.models.contact_persons import IndicatorContactPerson
     from indicators.models.dimensions import IndicatorDimension
-    from indicators.models.metadata import Dataset, Unit
+    from indicators.models.metadata import ExternalDataset, Unit
     from indicators.models.relationships import RelatedIndicator
     from indicators.models.values import IndicatorGoal
     from paths_integration._generated_.graphql_client.node_values import NodeValuesNodeMetricDim
@@ -235,10 +235,10 @@ class Indicator(
         verbose_name=_('reference value'),
         on_delete=models.SET_NULL,
     )
-    datasets: M2M[Dataset, Any] = models.ManyToManyField(
-        'indicators.Dataset',
+    external_datasets: M2M[ExternalDataset, Any] = models.ManyToManyField(
+        'indicators.ExternalDataset',
         blank=True,
-        verbose_name=_('datasets'),
+        verbose_name=_('external datasets'),
     )
     dataset_schema: OneToOne[DatasetSchema | None] = models.OneToOneField(
         'datasets.DatasetSchema',
@@ -380,7 +380,7 @@ class Indicator(
         'time_resolution',
         'latest_value',
         'latest_graph',
-        'datasets',
+        'external_datasets',
         'updated_at',
         'created_at',
         'values',
@@ -514,9 +514,9 @@ class Indicator(
         now = timezone.now()
         return self.goals.filter(date__gte=now).exists()
 
-    @display(boolean=True, description=_('Has datasets'))
-    def has_datasets(self):
-        return self.datasets.exists()
+    @display(boolean=True, description=_('Has external datasets'))
+    def has_external_datasets(self):
+        return self.external_datasets.exists()
 
     @display(boolean=True, description=_('Has data'))
     def has_data(self):
