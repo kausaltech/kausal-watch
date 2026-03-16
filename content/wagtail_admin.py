@@ -87,6 +87,7 @@ class SiteGeneralContentViewSet(WatchViewSet[SiteGeneralContent]):
             'action_term',
             'action_task_term',
             'organization_term',
+            'indicator_term',
             'sitewide_announcement',
         ]
 

@@ -51,6 +51,19 @@ class SiteGeneralContent(PlanRelatedModelWithRevision):
         OrganizationTerm.DIVISION: _('Divisions'),
     }
 
+    class IndicatorTerm(models.TextChoices):
+        # When changing terms, make sure to also change INDICATOR_TERM_PLURAL below.
+        # Get a printable SiteGeneralContent instance's indicator term with
+        # `instance.get_indicator_term_display()` and, for
+        # plural, `instance.get_indicator_term_display_plural()`.
+        INDICATOR = 'indicator', _('Indicator')
+        MEASURE = 'measure', _('Measure')
+
+    INDICATOR_TERM_PLURAL = {
+        IndicatorTerm.INDICATOR: _('Indicators'),
+        IndicatorTerm.MEASURE: _('Measures')
+    }
+
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
         unique=True,
@@ -83,6 +96,10 @@ class SiteGeneralContent(PlanRelatedModelWithRevision):
         max_length=30, choices=OrganizationTerm.choices, verbose_name=_("Term to use for 'organization'"),
         default=OrganizationTerm.ORGANIZATION,
     )
+    indicator_term = models.CharField(
+        max_length=30, choices=IndicatorTerm.choices, verbose_name=_("Term to use for 'indicator'"),
+        default=IndicatorTerm.INDICATOR,
+    )
     sitewide_announcement = RichTextField[str | None, str | None](
         blank=True,
         null=True,
@@ -101,7 +118,7 @@ class SiteGeneralContent(PlanRelatedModelWithRevision):
     public_fields: ClassVar = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
         'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
-        'action_task_term', 'organization_term', 'sitewide_announcement',
+        'action_task_term', 'organization_term', 'indicator_term', 'sitewide_announcement',
     ]
 
     class Meta:
@@ -123,3 +140,6 @@ class SiteGeneralContent(PlanRelatedModelWithRevision):
 
     def get_organization_term_display_plural(self):
         return SiteGeneralContent.ORGANIZATION_TERM_PLURAL[SiteGeneralContent.OrganizationTerm(self.organization_term)]
+
+    def get_indicator_term_display_plural(self):
+        return SiteGeneralContent.INDICATOR_TERM_PLURAL[SiteGeneralContent.IndicatorTerm(self.indicator_term)]
