@@ -169,7 +169,10 @@ class PlanSpecificCache:
         if isinstance(instance, Indicator):
             if instance.id not in self.plan_indicator_ids:
                 return []
-            return self._pair_schemas_with_datasets(list(self.plan_dataset_schemas), 'indicators.Indicator', instance.id)
+            # Each indicator owns its own schema (1:1), scoped to the indicator
+            if instance.dataset_schema is None:
+                return []
+            return self._pair_schemas_with_datasets([instance.dataset_schema], 'indicators.Indicator', instance.id)
 
         assert isinstance(instance, Category)
         schemas = self.category_type_dataset_schemas_by_id.get(instance.type_id, [])

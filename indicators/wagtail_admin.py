@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Any, cast
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _, ngettext_lazy, pgettext_lazy
@@ -27,6 +29,7 @@ from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 from wagtail_modeladmin.views import DeleteView
 
+from kausal_common.datasets.models import DatasetMetric, DatasetSchema, DatasetSchemaScope
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust
 
@@ -51,6 +54,7 @@ from admin_site.wagtail import (
     get_translation_tabs,
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
+from indicators.panels import IndicatorMetricsInlinePanel
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
@@ -60,6 +64,15 @@ if TYPE_CHECKING:
     from wagtail.admin.panels.base import Panel
 
     from users.models import User
+
+
+MetricsFormSet = inlineformset_factory(
+    DatasetSchema,
+    DatasetMetric,
+    fields=['label', 'unit'],
+    extra=0,
+    can_delete=True,
+)
 
 
 class DisconnectedIndicatorFilter(SimpleListFilter):
@@ -301,6 +314,17 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 # Indicator is not in active plan
                 pass
 
+        # Inject the metrics formset into self.formsets so that
+        # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
+        schema = self.instance.dataset_schema if self.instance.pk else None
+        formset_kwargs: dict[str, Any] = {
+            'instance': schema,
+            'prefix': 'metrics',
+        }
+        if self.data:
+            formset_kwargs['data'] = self.data
+        self.formsets['metrics'] = MetricsFormSet(**formset_kwargs)
+
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
             return None
@@ -339,7 +363,37 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_('Dimensions must be the same as in common indicator'))
 
+        if not self.formsets['metrics'].is_valid():
+            raise ValidationError(_("Please correct the errors in the factors section."))
+
         return self.cleaned_data
+
+    @staticmethod
+    def _has_new_factors(metrics_formset: MetricsFormSet) -> bool:
+        """Check if the factors formset has any new (non-deleted) factors."""
+        if not metrics_formset.is_valid():
+            return False
+        return any(form_data and not form_data.get('DELETE') for form_data in metrics_formset.cleaned_data)
+
+    def _ensure_dataset_schema(self, indicator: Indicator) -> DatasetSchema:
+        """Auto-create a DatasetSchema for the indicator if it doesn't have one."""
+        if indicator.dataset_schema is not None:
+            return indicator.dataset_schema
+
+        schema = DatasetSchema.objects.create(
+            name=indicator.name,
+            time_resolution=DatasetSchema.TimeResolution.YEARLY,
+        )
+        # Scope the schema to the indicator instance (per indicators.md architecture)
+        indicator_ct = ContentType.objects.get_for_model(Indicator)
+        DatasetSchemaScope.objects.create(
+            schema=schema,
+            scope_content_type=indicator_ct,
+            scope_id=indicator.pk,
+        )
+        indicator.dataset_schema = schema
+        indicator.save(update_fields=['dataset_schema'])
+        return schema
 
     def save(self, commit=True):
         initial_plan_id = self.initial_plan_id
@@ -369,6 +423,11 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             self.instance.save()
             self.instance.values.all().delete()
 
+        # Pop the metrics formset before super().save() — ClusterForm.save()
+        # iterates self.formsets and would try to save metrics with the
+        # Indicator as parent, but DatasetMetric.schema expects a DatasetSchema.
+        metrics_formset = self.formsets.pop('metrics', None)
+
         obj = super().save(commit)
         plan = self.plan
         for field_name, field in _get_category_fields(plan, Indicator, obj).items():
@@ -382,6 +441,17 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             # The instance was saved already when we called `super().save()`, but things like the categories may have
             # changed afterwards without being committed.
             obj.save()
+
+        # Save factors formset — auto-create DatasetSchema if needed
+        if metrics_formset is not None and metrics_formset.is_valid():
+            if self._has_new_factors(metrics_formset):
+                schema = self._ensure_dataset_schema(obj)
+                metrics_formset.instance = schema
+                metrics_formset.save()
+            elif obj.dataset_schema is not None:
+                # Save deletions/edits even when no new factors
+                metrics_formset.instance = obj.dataset_schema
+                metrics_formset.save()
 
         return obj
 
@@ -698,10 +768,25 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             ),
         ]
 
+        factors_panels: list[Panel] = [
+            HelpPanel(content=_(
+                'Factors are metrics associated with this indicator for performing calculations. '
+                'Each factor becomes a column in the dataset editor. '
+                'You can configure computations between factors (e.g., activity data x emission factor = emission reductions).'
+            )),
+            IndicatorMetricsInlinePanel(
+                'metrics',
+                panels=[FieldPanel('label'), FieldPanel('unit')],
+                heading=_('Factors'),
+                label=_('factor'),
+            ),
+        ]
+
         panels = [
             FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
             MultiFieldPanel(actions_panels, heading=pgettext_lazy('Action model', 'Actions')),
             MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
+            MultiFieldPanel(factors_panels, heading=_('Factors')),
         ]
 
         return ObjectList(panels, heading=_('Relationships'))

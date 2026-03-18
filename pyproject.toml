@@ -74,6 +74,7 @@ dependencies = [
   "opentelemetry-sdk",
   "orjson",
   "pillow",
+  "pint",
   "polars[xlsx2csv]",
   "psutil",
   "psycopg[binary,pool]",

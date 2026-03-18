@@ -210,16 +210,18 @@ class DatasetSchemaPermissionPolicy(ModelPermissionPolicy[DatasetSchema, None, D
         if user.is_superuser:
             return Q()
 
-        # Get ContentTypes for Plan and Category
         plan_ct = ContentType.objects.get_for_model(Plan)
         category_ct = ContentType.objects.get_for_model(Category)
+        indicator_ct = ContentType.objects.get_for_model(Indicator)
 
         adminable_plans = user.get_adminable_plans()
         adminable_categories = Category.objects.filter(type__plan__in=adminable_plans)
+        editable_indicators = Indicator.objects.qs.modifiable_by(user)
 
         return Q(
-            Q(scopes__scope_content_type=plan_ct, scopes__scope_id__in=adminable_plans)
-            | Q(scopes__scope_content_type=category_ct, scopes__scope_id__in=adminable_categories)
+            Q(scopes__scope_content_type=plan_ct, scopes__scope_id__in=adminable_plans) |
+            Q(scopes__scope_content_type=category_ct, scopes__scope_id__in=adminable_categories) |
+            Q(scopes__scope_content_type=indicator_ct, scopes__scope_id__in=editable_indicators)
         )
 
     def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:
@@ -229,7 +231,10 @@ class DatasetSchemaPermissionPolicy(ModelPermissionPolicy[DatasetSchema, None, D
         """Check if user has permission to perform an action on a dataset schema instance."""
         if user.is_superuser:
             return True
-        return False
+        perm_q = self.construct_perm_q(user, action)
+        if perm_q is None:
+            return False
+        return DatasetSchema.objects.filter(perm_q, pk=obj.pk).exists()
 
     def anon_has_perm(self, action: ObjectSpecificAction, obj: DatasetSchema) -> bool:
         return False
@@ -242,7 +247,7 @@ class DatasetSchemaPermissionPolicy(ModelPermissionPolicy[DatasetSchema, None, D
         """
         if user.is_superuser:
             return True
-        return False
+        return bool(user.get_adminable_plans())
 
 
 class DataSourcePermissionPolicy(ModelPermissionPolicy[DataSource, None, PermissionedQuerySet[DataSource]]):
