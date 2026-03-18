@@ -29,7 +29,7 @@ from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 from wagtail_modeladmin.views import DeleteView
 
-from kausal_common.datasets.models import DatasetMetric, DatasetSchema, DatasetSchemaScope
+from kausal_common.datasets.models import DatasetMetric, DatasetMetricComputation, DatasetSchema, DatasetSchemaScope
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust
 
@@ -54,7 +54,7 @@ from admin_site.wagtail import (
     get_translation_tabs,
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
-from indicators.panels import IndicatorMetricsInlinePanel
+from indicators.panels import IndicatorComputationsInlinePanel, IndicatorMetricsInlinePanel
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
@@ -63,6 +63,8 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from wagtail.admin.panels.base import Panel
 
+    import pint
+
     from users.models import User
 
 
@@ -70,6 +72,86 @@ MetricsFormSet = inlineformset_factory(
     DatasetSchema,
     DatasetMetric,
     fields=['label', 'unit'],
+    extra=0,
+    can_delete=True,
+)
+
+
+class ComputationForm(forms.ModelForm):
+    class Meta:
+        model = DatasetMetricComputation
+        fields = ['operand_a', 'operation', 'operand_b', 'target_metric']
+
+    def __init__(self, *args, schema=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if schema is not None:
+            metrics_qs = DatasetMetric.objects.filter(schema=schema)
+        else:
+            metrics_qs = DatasetMetric.objects.none()
+        for field_name in ('target_metric', 'operand_a', 'operand_b'):
+            self.fields[field_name].queryset = metrics_qs
+
+    def _validate_units(
+        self,
+        operand_a: DatasetMetric,
+        operation: str,
+        operand_b: DatasetMetric,
+        target: DatasetMetric,
+    ) -> None:
+        from aplans.dataset_config import _get_unit_registry
+        ureg = _get_unit_registry()
+
+        def parse_unit(unit_str: str) -> pint.Unit:
+            if not unit_str or not unit_str.strip():
+                return ureg.dimensionless
+            return ureg.parse_expression(unit_str).units
+
+        try:
+            unit_a = parse_unit(operand_a.unit)
+            unit_b = parse_unit(operand_b.unit)
+            target_unit = parse_unit(target.unit)
+        except Exception:
+            return
+
+        if operation in ('multiply', 'divide'):
+            expected = unit_a * unit_b if operation == 'multiply' else unit_a / unit_b
+            if not expected.is_compatible_with(target_unit):
+                self.add_error('target_metric', ValidationError(
+                    _('Target metric unit "%(target)s" is not compatible with the expected unit "%(expected)s".'),
+                    params={'target': target.unit, 'expected': str(expected)},
+                    code='incompatible_unit',
+                ))
+        elif operation in ('add', 'subtract'):
+            if not unit_a.is_compatible_with(unit_b):
+                self.add_error('operand_b', ValidationError(
+                    _('Cannot %(op)s incompatible units "%(a)s" and "%(b)s".'),
+                    params={'op': operation, 'a': operand_a.unit, 'b': operand_b.unit},
+                    code='incompatible_operands',
+                ))
+            elif not unit_a.is_compatible_with(target_unit):
+                self.add_error('target_metric', ValidationError(
+                    _('Target metric unit "%(target)s" is not compatible with operand unit "%(expected)s".'),
+                    params={'target': target.unit, 'expected': operand_a.unit},
+                    code='incompatible_unit',
+                ))
+
+    def clean(self):
+        cleaned = super().clean()
+        operand_a = cleaned.get('operand_a')
+        operand_b = cleaned.get('operand_b')
+        operation = cleaned.get('operation')
+        target = cleaned.get('target_metric')
+        if not all((operand_a, operand_b, operation, target)):
+            return cleaned
+        self._validate_units(operand_a, operation, operand_b, target)
+        return cleaned
+
+
+ComputationsFormSet = inlineformset_factory(
+    DatasetSchema,
+    DatasetMetricComputation,
+    form=ComputationForm,
+    fields=['operand_a', 'operation', 'operand_b', 'target_metric'],
     extra=0,
     can_delete=True,
 )
@@ -325,6 +407,15 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             formset_kwargs['data'] = self.data
         self.formsets['metrics'] = MetricsFormSet(**formset_kwargs)
 
+        comp_kwargs: dict[str, Any] = {
+            'instance': schema,
+            'prefix': 'computations',
+            'form_kwargs': {'schema': schema},
+        }
+        if self.data:
+            comp_kwargs['data'] = self.data
+        self.formsets['computations'] = ComputationsFormSet(**comp_kwargs)
+
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
             return None
@@ -365,6 +456,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
 
         if not self.formsets['metrics'].is_valid():
             raise ValidationError(_("Please correct the errors in the factors section."))
+
+        if not self.formsets['computations'].is_valid():
+            raise ValidationError(_("Please correct the errors in the computations section."))
 
         return self.cleaned_data
 
@@ -423,10 +517,11 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             self.instance.save()
             self.instance.values.all().delete()
 
-        # Pop the metrics formset before super().save() — ClusterForm.save()
-        # iterates self.formsets and would try to save metrics with the
-        # Indicator as parent, but DatasetMetric.schema expects a DatasetSchema.
+        # Pop the metrics and computations formsets before super().save() —
+        # ClusterForm.save() iterates self.formsets and would try to save them
+        # with the Indicator as parent, but they belong to DatasetSchema.
         metrics_formset = self.formsets.pop('metrics', None)
+        computations_formset = self.formsets.pop('computations', None)
 
         obj = super().save(commit)
         plan = self.plan
@@ -452,6 +547,11 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 # Save deletions/edits even when no new factors
                 metrics_formset.instance = obj.dataset_schema
                 metrics_formset.save()
+
+        # Save computations formset
+        if computations_formset is not None and computations_formset.is_valid() and obj.dataset_schema is not None:
+            computations_formset.instance = obj.dataset_schema
+            computations_formset.save()
 
         return obj
 
@@ -779,6 +879,21 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
                 panels=[FieldPanel('label'), FieldPanel('unit')],
                 heading=_('Factors'),
                 label=_('factor'),
+            ),
+            HelpPanel(content=_(
+                'Computations define how a target factor is calculated from two other factors. '
+                'Save the indicator after adding factors so they become available in the dropdowns below.'
+            )),
+            IndicatorComputationsInlinePanel(
+                'computations',
+                panels=[
+                    FieldPanel('operand_a'),
+                    FieldPanel('operation'),
+                    FieldPanel('operand_b'),
+                    FieldPanel('target_metric'),
+                ],
+                heading=_('Computations'),
+                label=_('computation'),
             ),
         ]
 

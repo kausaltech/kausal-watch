@@ -26,3 +26,22 @@ class IndicatorMetricsInlinePanel(InlinePanel):
         # this cross-model relationship. IndicatorForm creates and injects
         # the formset manually.
         return {}
+
+
+class IndicatorComputationsInlinePanel(InlinePanel):
+    """
+    InlinePanel subclass for managing DatasetMetricComputation instances on an indicator's DatasetSchema.
+
+    Identical pattern to IndicatorMetricsInlinePanel: overrides on_model_bound()
+    to point at DatasetSchema's 'computations' relationship, and relies on
+    IndicatorForm injecting the formset into self.formsets['computations'].
+    """
+
+    def on_model_bound(self):
+        manager = getattr(DatasetSchema, self.relation_name)
+        self.db_field = manager.rel
+        if not self.label:
+            self.label = self.db_field.related_model._meta.verbose_name
+
+    def get_form_options(self):
+        return {}
