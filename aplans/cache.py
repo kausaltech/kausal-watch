@@ -198,8 +198,8 @@ class PlanSpecificCache:
             scope_content_type=category_content_type,
         )
         indicator_datasets = Dataset.objects.filter(
-            schema__scopes__scope_content_type=plan_content_type,
-            schema__scopes__scope_id=self.plan.pk,
+            schema__scopes__scope_content_type=indicator_content_type,
+            schema__scopes__scope_id__in=self.plan_indicator_ids,
             scope_content_type=indicator_content_type,
             scope_id__in=self.plan_indicator_ids,
         )
