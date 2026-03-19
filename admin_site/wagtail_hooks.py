@@ -10,18 +10,13 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
-from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.ui.components import Component
-from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import SnippetViewSet
 
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import get_admin_cache
 
 from actions.models import CommonCategoryType
-
-from .models import Client
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -176,26 +171,6 @@ def construct_homepage_panels(request, panels):
 @hooks.register('construct_homepage_summary_items', order=1000)
 def remove_default_site_summary_items(request, items: list[MenuItem]):
     items.clear()
-
-
-class ClientViewSet(SnippetViewSet[Client]):
-    model = Client
-    icon = 'globe'
-    menu_order = 520
-    list_display = ('name',)
-    search_fields = ('name',)
-    add_to_admin_menu = True
-
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('logo'),
-        FieldPanel('auth_backend'),
-        InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
-        InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
-    ]
-
-
-register_snippet(ClientViewSet)
 
 
 @hooks.register('insert_global_admin_css')
