@@ -85,11 +85,10 @@ class TestGetDatasetSchemasForObjectInPlan:
         assert result_map[schema_without_ds] is None
 
     def test_indicator_in_plan_no_dataset_returns_schema_none(self, plan):
-        """Indicator linked to plan via IndicatorLevel with no dataset returns [(schema, None)]."""
-        indicator = IndicatorFactory.create()
-        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        """Indicator linked to plan via IndicatorLevel with own schema but no dataset returns [(schema, None)]."""
         schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        indicator = IndicatorFactory.create(dataset_schema=schema)
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
 
         cache = PlanSpecificCache(plan)
         results = cache.get_dataset_schemas_for_object(indicator)
@@ -100,11 +99,11 @@ class TestGetDatasetSchemasForObjectInPlan:
         assert result_dataset is None
 
     def test_indicator_in_plan_with_dataset_returns_schema_dataset(self, plan):
-        """Indicator linked to plan with a matching dataset returns [(schema, dataset)]."""
-        indicator = IndicatorFactory.create()
-        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        """Indicator linked to plan with own schema and a matching dataset returns [(schema, dataset)]."""
         schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        indicator = IndicatorFactory.create(dataset_schema=schema)
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
         ds = DatasetFactory.create(schema=schema, scope=indicator)
 
         cache = PlanSpecificCache(plan)
@@ -320,11 +319,11 @@ class TestDatasetsByScopeBySchemaCached:
         assert 'actions.Category' not in result
 
     def test_indicator_dataset_indexed_under_indicators_indicator(self, plan):
-        """Indicator dataset with plan-scoped schema and IndicatorLevel is indexed under 'indicators.Indicator'."""
-        indicator = IndicatorFactory.create()
-        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        """Indicator dataset with own 1:1 schema and IndicatorLevel is indexed under 'indicators.Indicator'."""
         schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        indicator = IndicatorFactory.create(dataset_schema=schema)
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
         ds = DatasetFactory.create(schema=schema, scope=indicator)
 
         cache = PlanSpecificCache(plan)
@@ -336,10 +335,10 @@ class TestDatasetsByScopeBySchemaCached:
 
     def test_indicator_dataset_not_returned_when_not_linked_to_plan(self, plan):
         """Indicator dataset is not returned when the indicator has no IndicatorLevel for the plan."""
-        indicator = IndicatorFactory.create()
-        # No IndicatorLevel linking this indicator to the plan
         schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        indicator = IndicatorFactory.create(dataset_schema=schema)
+        DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
+        # No IndicatorLevel linking this indicator to the plan
         DatasetFactory.create(schema=schema, scope=indicator)
 
         cache = PlanSpecificCache(plan)
@@ -349,14 +348,12 @@ class TestDatasetsByScopeBySchemaCached:
 
     def test_indicator_dataset_excluded_from_action_datasets(self, plan):
         """
-        Indicator-scoped dataset whose schema is plan-scoped does not appear under 'actions.Action'.
-
-        This holds even though the action_datasets query is otherwise plan-scoped.
+        Indicator-scoped dataset does not appear under 'actions.Action'.
         """
-        indicator = IndicatorFactory.create()
-        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
         schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=schema, scope=plan)
+        indicator = IndicatorFactory.create(dataset_schema=schema)
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
         DatasetFactory.create(schema=schema, scope=indicator)
 
         cache = PlanSpecificCache(plan)
@@ -369,8 +366,10 @@ class TestDatasetsByScopeBySchemaCached:
         action = ActionFactory.create(plan=plan)
         category_type = CategoryTypeFactory.create(plan=plan)
         category = CategoryFactory.create(type=category_type)
-        indicator = IndicatorFactory.create()
+        indicator_schema = DatasetSchemaFactory.create()
+        indicator = IndicatorFactory.create(dataset_schema=indicator_schema)
         IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        DatasetSchemaScopeFactory.create(schema=indicator_schema, scope=indicator)
 
         action_schema = DatasetSchemaFactory.create()
         DatasetSchemaScopeFactory.create(schema=action_schema, scope=plan)
@@ -380,8 +379,6 @@ class TestDatasetsByScopeBySchemaCached:
         DatasetSchemaScopeFactory.create(schema=category_schema, scope=category_type)
         category_ds = DatasetFactory.create(schema=category_schema, scope=category)
 
-        indicator_schema = DatasetSchemaFactory.create()
-        DatasetSchemaScopeFactory.create(schema=indicator_schema, scope=plan)
         indicator_ds = DatasetFactory.create(schema=indicator_schema, scope=indicator)
 
         cache = PlanSpecificCache(plan)
