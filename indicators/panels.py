@@ -19,7 +19,7 @@ class IndicatorMetricsInlinePanel(InlinePanel):
         manager = getattr(DatasetSchema, self.relation_name)
         self.db_field = manager.rel
         if not self.label:
-            self.label = self.db_field.related_model._meta.verbose_name
+            self.label = self.db_field.related_model._meta.verbose_name  # type: ignore[union-attr, assignment]
 
     def get_form_options(self):
         # Don't return formset options — the ClusterFormMetaclass can't handle
@@ -41,7 +41,7 @@ class IndicatorComputationsInlinePanel(InlinePanel):
         manager = getattr(DatasetSchema, self.relation_name)
         self.db_field = manager.rel
         if not self.label:
-            self.label = self.db_field.related_model._meta.verbose_name
+            self.label = self.db_field.related_model._meta.verbose_name  # type: ignore[union-attr, assignment]
 
     def get_form_options(self):
         return {}

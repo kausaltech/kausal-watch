@@ -54,7 +54,7 @@ from admin_site.wagtail import (
     get_translation_tabs,
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
-from indicators.panels import IndicatorComputationsInlinePanel, IndicatorMetricsInlinePanel
+from indicators.panels import IndicatorMetricsInlinePanel
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
@@ -63,98 +63,123 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from wagtail.admin.panels.base import Panel
 
-    import pint
-
     from users.models import User
 
 
-MetricsFormSet = inlineformset_factory(
-    DatasetSchema,
-    DatasetMetric,
-    fields=['label', 'unit'],
-    extra=0,
-    can_delete=True,
-)
+class UnitSuffixWidget(autocomplete.ListSelect2):
+    """Select2 autocomplete for unit strings with an inline "per X" suffix."""
+
+    def __init__(self, suffix: str = '', **kwargs):
+        kwargs.setdefault('url', 'metric-unit-autocomplete')
+        super().__init__(**kwargs)
+        self.suffix = suffix
+
+    def render(self, name, value, attrs=None, renderer=None):
+        input_html = super().render(name, value, attrs, renderer)
+        if not self.suffix:
+            return input_html
+        from django.utils.html import format_html
+        return format_html(
+            '<div style="display:flex;align-items:center;gap:0.5em">'
+            '{}<span style="white-space:nowrap">per <strong>{}</strong></span>'
+            '</div>',
+            input_html,
+            self.suffix,
+        )
 
 
-class ComputationForm(forms.ModelForm):
+class FactorForm(forms.ModelForm):
+    """
+    Form for a single factor (DatasetMetric) with extra fields for the result metric.
+
+    Each factor implicitly creates a computation: indicator_values x factor = result.
+    The user enters the factor unit as a numerator (e.g. "tCO2e"); the implicit
+    denominator is the indicator's unit ("per vehicle"). The result unit equals
+    the factor's entered unit (since indicator_unit cancels out in the multiplication).
+    """
+
     class Meta:
-        model = DatasetMetricComputation
-        fields = ['operand_a', 'operation', 'operand_b', 'target_metric']
+        model = DatasetMetric
+        fields = ['label', 'unit']
 
-    def __init__(self, *args, schema=None, **kwargs):
+    result_label = forms.CharField(
+        required=True,
+        label=_('Result'),
+        help_text=_(
+            'The name of the computed value (indicator data \u00d7 factor) '
+            'shown in charts, e.g. "Vehicle emissions"'
+        ),
+    )
+
+    def __init__(self, *args, indicator_unit_label: str = '', indicator_unit_short: str = '', **kwargs):
         super().__init__(*args, **kwargs)
-        if schema is not None:
-            metrics_qs = DatasetMetric.objects.filter(schema=schema)
+        self._indicator_unit_label = indicator_unit_label
+        self._indicator_unit_short = indicator_unit_short
+        # Strip the "/{indicator_unit}" denominator for display
+        initial = self.instance.unit if self.instance.pk else ''
+        if initial and indicator_unit_short:
+            suffix = f'/{indicator_unit_short}'
+            initial = initial.removesuffix(suffix)
+        # Replace the model's CharField with a Select2 autocomplete that allows
+        # free-text entry. We must seed the current value as a choice so Select2
+        # can render it, and set it as initial so it's selected on load.
+        choices = [initial] if initial else []
+        unit_field = autocomplete.Select2ListCreateChoiceField(
+            required=False,
+            widget=UnitSuffixWidget(suffix=indicator_unit_label),
+            choice_list=choices,
+        )
+        self.fields['unit'] = unit_field
+        # Force the rendered value — in a ModelForm the value normally comes from
+        # the model instance, but we replaced the field so we need to set initial
+        # (used when the form is unbound).
+        self.initial['unit'] = initial
+        # Pre-fill result_label from existing computation
+        if self.instance.pk:
+            comp = DatasetMetricComputation.objects.filter(
+                operand_b=self.instance, operand_a__isnull=True,
+            ).select_related('target_metric').first()
+            if comp:
+                self.fields['result_label'].initial = comp.target_metric.label
+
+    def save(self, commit=True):
+        # Append "/{indicator_unit}" to form the compound factor unit before saving
+        numerator = self.cleaned_data.get('unit', '').strip()
+        if numerator and self._indicator_unit_short:
+            self.instance.unit = f'{numerator}/{self._indicator_unit_short}'
         else:
-            metrics_qs = DatasetMetric.objects.none()
-        for field_name in ('target_metric', 'operand_a', 'operand_b'):
-            self.fields[field_name].queryset = metrics_qs
-
-    def _validate_units(
-        self,
-        operand_a: DatasetMetric,
-        operation: str,
-        operand_b: DatasetMetric,
-        target: DatasetMetric,
-    ) -> None:
-        from aplans.dataset_config import _get_unit_registry
-        ureg = _get_unit_registry()
-
-        def parse_unit(unit_str: str) -> pint.Unit:
-            if not unit_str or not unit_str.strip():
-                return ureg.dimensionless
-            return ureg.parse_expression(unit_str).units
-
-        try:
-            unit_a = parse_unit(operand_a.unit)
-            unit_b = parse_unit(operand_b.unit)
-            target_unit = parse_unit(target.unit)
-        except Exception:
-            return
-
-        if operation in ('multiply', 'divide'):
-            expected = unit_a * unit_b if operation == 'multiply' else unit_a / unit_b
-            if not expected.is_compatible_with(target_unit):
-                self.add_error('target_metric', ValidationError(
-                    _('Target metric unit "%(target)s" is not compatible with the expected unit "%(expected)s".'),
-                    params={'target': target.unit, 'expected': str(expected)},
-                    code='incompatible_unit',
-                ))
-        elif operation in ('add', 'subtract'):
-            if not unit_a.is_compatible_with(unit_b):
-                self.add_error('operand_b', ValidationError(
-                    _('Cannot %(op)s incompatible units "%(a)s" and "%(b)s".'),
-                    params={'op': operation, 'a': operand_a.unit, 'b': operand_b.unit},
-                    code='incompatible_operands',
-                ))
-            elif not unit_a.is_compatible_with(target_unit):
-                self.add_error('target_metric', ValidationError(
-                    _('Target metric unit "%(target)s" is not compatible with operand unit "%(expected)s".'),
-                    params={'target': target.unit, 'expected': operand_a.unit},
-                    code='incompatible_unit',
-                ))
-
-    def clean(self):
-        cleaned = super().clean()
-        operand_a = cleaned.get('operand_a')
-        operand_b = cleaned.get('operand_b')
-        operation = cleaned.get('operation')
-        target = cleaned.get('target_metric')
-        if not all((operand_a, operand_b, operation, target)):
-            return cleaned
-        self._validate_units(operand_a, operation, operand_b, target)
-        return cleaned
+            self.instance.unit = numerator
+        return super().save(commit=commit)
 
 
-ComputationsFormSet = inlineformset_factory(
-    DatasetSchema,
-    DatasetMetricComputation,
-    form=ComputationForm,
-    fields=['operand_a', 'operation', 'operand_b', 'target_metric'],
-    extra=0,
-    can_delete=True,
-)
+def _make_factor_formset(  # noqa: ANN202
+    schema, indicator_unit_label: str, indicator_unit_short: str, data=None,
+):
+    """Create the factor (DatasetMetric) formset with extra result fields."""
+    FactorFormSet = inlineformset_factory(
+        DatasetSchema,
+        DatasetMetric,
+        form=FactorForm,
+        fields=['label', 'unit'],
+        extra=0,
+        can_delete=True,
+    )
+    kwargs: dict[str, Any] = {
+        'instance': schema,
+        'prefix': 'metrics',
+        'form_kwargs': {
+            'indicator_unit_label': indicator_unit_label,
+            'indicator_unit_short': indicator_unit_short,
+        },
+    }
+    if data:
+        kwargs['data'] = data
+    formset = FactorFormSet(**kwargs)
+    # Exclude computed metrics (auto-created targets) from the queryset so
+    # they don't appear as editable factor rows.
+    if schema is not None:
+        formset.queryset = formset.queryset.filter(computed_by__isnull=True)  # type: ignore[union-attr]
+    return formset
 
 
 class DisconnectedIndicatorFilter(SimpleListFilter):
@@ -399,22 +424,16 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         # Inject the metrics formset into self.formsets so that
         # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
         schema = self.instance.dataset_schema if self.instance.pk else None
-        formset_kwargs: dict[str, Any] = {
-            'instance': schema,
-            'prefix': 'metrics',
-        }
-        if self.data:
-            formset_kwargs['data'] = self.data
-        self.formsets['metrics'] = MetricsFormSet(**formset_kwargs)
-
-        comp_kwargs: dict[str, Any] = {
-            'instance': schema,
-            'prefix': 'computations',
-            'form_kwargs': {'schema': schema},
-        }
-        if self.data:
-            comp_kwargs['data'] = self.data
-        self.formsets['computations'] = ComputationsFormSet(**comp_kwargs)
+        indicator_unit_label = ''
+        indicator_unit_short = ''
+        if self.instance.pk and self.instance.unit:
+            unit = self.instance.unit
+            indicator_unit_label = unit.name or unit.short_name or ''
+            indicator_unit_short = unit.short_name or unit.name or ''
+        self.formsets['metrics'] = _make_factor_formset(  # type: ignore[index]
+            schema, indicator_unit_label, indicator_unit_short,
+            data=self.data or None,
+        )
 
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
@@ -457,13 +476,10 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         if not self.formsets['metrics'].is_valid():
             raise ValidationError(_("Please correct the errors in the factors section."))
 
-        if not self.formsets['computations'].is_valid():
-            raise ValidationError(_("Please correct the errors in the computations section."))
-
         return self.cleaned_data
 
     @staticmethod
-    def _has_new_factors(metrics_formset: MetricsFormSet) -> bool:
+    def _has_new_factors(metrics_formset) -> bool:
         """Check if the factors formset has any new (non-deleted) factors."""
         if not metrics_formset.is_valid():
             return False
@@ -517,11 +533,10 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             self.instance.save()
             self.instance.values.all().delete()
 
-        # Pop the metrics and computations formsets before super().save() —
+        # Pop the metrics formset before super().save() —
         # ClusterForm.save() iterates self.formsets and would try to save them
         # with the Indicator as parent, but they belong to DatasetSchema.
-        metrics_formset = self.formsets.pop('metrics', None)
-        computations_formset = self.formsets.pop('computations', None)
+        metrics_formset = self.formsets.pop('metrics', None)  # type: ignore[attr-defined]
 
         obj = super().save(commit)
         plan = self.plan
@@ -539,6 +554,12 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
 
         # Save factors formset — auto-create DatasetSchema if needed
         if metrics_formset is not None and metrics_formset.is_valid():
+            # Before saving, delete result metrics for factors being removed.
+            # The computation cascade (operand_b FK) only deletes the computation,
+            # not the target_metric, so we must clean it up explicitly.
+            if obj.dataset_schema is not None:
+                self._delete_result_metrics_for_removed_factors(obj.dataset_schema, metrics_formset)
+
             if self._has_new_factors(metrics_formset):
                 schema = self._ensure_dataset_schema(obj)
                 metrics_formset.instance = schema
@@ -548,12 +569,97 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 metrics_formset.instance = obj.dataset_schema
                 metrics_formset.save()
 
-        # Save computations formset
-        if computations_formset is not None and computations_formset.is_valid() and obj.dataset_schema is not None:
-            computations_formset.instance = obj.dataset_schema
-            computations_formset.save()
+            # Auto-create/update computations for each factor
+            if obj.dataset_schema is not None:
+                self._sync_factor_computations(obj.dataset_schema, metrics_formset)
+
+            # If all factors were removed, clean up the now-empty schema and dataset
+            if obj.dataset_schema is not None and not self._has_new_factors(metrics_formset):
+                self._cleanup_empty_schema(obj)
 
         return obj
+
+    @staticmethod
+    def _delete_result_metrics_for_removed_factors(schema: DatasetSchema, metrics_formset) -> None:
+        """Delete result metrics whose factor is being removed."""
+        for form in metrics_formset.forms:
+            if not hasattr(form, 'cleaned_data') or not form.cleaned_data.get('DELETE'):
+                continue
+            factor = form.instance
+            if not factor.pk:
+                continue
+            # Deleting the target_metric cascades to the computation too
+            comps = DatasetMetricComputation.objects.filter(
+                schema=schema, operand_a__isnull=True, operand_b=factor,
+            ).select_related('target_metric')
+            for comp in comps:
+                comp.target_metric.delete()
+
+    @staticmethod
+    def _cleanup_empty_schema(indicator: Indicator) -> None:
+        """Remove schema and dataset if no metrics remain after factor deletion."""
+        schema = indicator.dataset_schema
+        if schema is None:
+            return
+        if schema.metrics.exists():
+            return
+        # Delete associated datasets first, then the schema
+        schema.datasets.all().delete()
+        indicator.dataset_schema = None
+        indicator.save(update_fields=['dataset_schema'])
+        schema.delete()
+
+    def _sync_factor_computations(self, schema: DatasetSchema, metrics_formset) -> None:
+        """
+        Auto-create/update computations for each factor.
+
+        For each saved factor (DatasetMetric), if the user provided a result_label,
+        create or update: NULL x factor = result_metric (operation=multiply).
+        The factor's stored unit is compound (e.g. "tCO2e/mi"), and the result unit
+        is the numerator (e.g. "tCO2e") because the indicator unit cancels out:
+        indicator_unit x numerator/indicator_unit = numerator.
+        """
+        for form in metrics_formset.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+            if form.cleaned_data.get('DELETE'):
+                # Deleting a factor cascades to its computation via operand_b FK
+                continue
+            factor = form.instance
+            if not factor.pk:
+                continue
+            result_label = form.cleaned_data.get('result_label', '').strip()
+            if not result_label:
+                # No result metric requested — clean up any existing computation
+                DatasetMetricComputation.objects.filter(
+                    schema=schema, operand_a__isnull=True, operand_b=factor,
+                ).delete()
+                continue
+
+            # Result unit = numerator of factor's compound unit
+            # (indicator_unit cancels: indicator_unit x numerator/indicator_unit = numerator)
+            result_unit = form.cleaned_data.get('unit', '').strip()
+
+            # Get or create the computation and target metric
+            comp = DatasetMetricComputation.objects.filter(
+                schema=schema, operand_a__isnull=True, operand_b=factor,
+            ).select_related('target_metric').first()
+            if comp:
+                target = comp.target_metric
+                target.label = result_label
+                target.unit = result_unit
+                target.save(update_fields=['label', 'unit'])
+            else:
+                target = DatasetMetric.objects.create(
+                    schema=schema, label=result_label, unit=result_unit,
+                )
+                DatasetMetricComputation.objects.create(
+                    schema=schema,
+                    target_metric=target,
+                    operation=DatasetMetricComputation.Operation.MULTIPLY,
+                    operand_a=None,
+                    operand_b=factor,
+                )
 
     def _save_m2m(self):
         assert self.plan
@@ -870,30 +976,18 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
 
         factors_panels: list[Panel] = [
             HelpPanel(content=_(
-                'Factors are metrics associated with this indicator for performing calculations. '
-                'Each factor becomes a column in the dataset editor. '
-                'You can configure computations between factors (e.g., activity data x emission factor = emission reductions).'
+                "Factors are multiplied with this indicator's values to calculate a derived output, "
+                "such as total emissions or cost. "
+                "Add factor values to the indicator data editor."
             )),
             IndicatorMetricsInlinePanel(
                 'metrics',
-                panels=[FieldPanel('label'), FieldPanel('unit')],
-                heading=_('Factors'),
-                label=_('factor'),
-            ),
-            HelpPanel(content=_(
-                'Computations define how a target factor is calculated from two other factors. '
-                'Save the indicator after adding factors so they become available in the dropdowns below.'
-            )),
-            IndicatorComputationsInlinePanel(
-                'computations',
                 panels=[
-                    FieldPanel('operand_a'),
-                    FieldPanel('operation'),
-                    FieldPanel('operand_b'),
-                    FieldPanel('target_metric'),
+                    FieldPanel('label', heading=_('Name')),
+                    FieldPanel('unit'),
+                    FieldPanel('result_label'),
                 ],
-                heading=_('Computations'),
-                label=_('computation'),
+                label=_('factor'),
             ),
         ]
 

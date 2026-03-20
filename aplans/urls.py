@@ -35,7 +35,13 @@ from admin_site.views import WadminRedirectView
 from admin_site.wagtail_hooks import restrict_chooser_pages_to_plan
 from audit_logging.views import PlanScopedLogEntriesView
 from indicators.api import all_views as indicators_api_views
-from indicators.autocomplete import CommonIndicatorAutocomplete, IndicatorAutocomplete, QuantityAutocomplete, UnitAutocomplete
+from indicators.autocomplete import (
+    CommonIndicatorAutocomplete,
+    IndicatorAutocomplete,
+    MetricUnitAutocomplete,
+    QuantityAutocomplete,
+    UnitAutocomplete,
+)
 from insight.api import all_views as insight_api_views
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
@@ -166,6 +172,7 @@ urlpatterns = [
     re_path(r'^report-type-autocomplete/$', ReportTypeAutocomplete.as_view(), name='report-type-autocomplete'),
     re_path(r'^report-type-field-autocomplete/$', ReportTypeFieldAutocomplete.as_view(), name='report-type-field-autocomplete'),
     re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
+    re_path(r'^metric-unit-autocomplete/$', MetricUnitAutocomplete.as_view(), name='metric-unit-autocomplete'),
     re_path(
         r'^common-indicator-autocomplete/$',
         CommonIndicatorAutocomplete.as_view(),
