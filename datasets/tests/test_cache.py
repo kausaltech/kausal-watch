@@ -347,9 +347,7 @@ class TestDatasetsByScopeBySchemaCached:
         assert 'indicators.Indicator' not in result
 
     def test_indicator_dataset_excluded_from_action_datasets(self, plan):
-        """
-        Indicator-scoped dataset does not appear under 'actions.Action'.
-        """
+        """Indicator-scoped dataset does not appear under 'actions.Action'."""
         schema = DatasetSchemaFactory.create()
         indicator = IndicatorFactory.create(dataset_schema=schema)
         IndicatorLevelFactory.create(indicator=indicator, plan=plan)

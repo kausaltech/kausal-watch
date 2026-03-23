@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, ngettext_lazy, pgettext_lazy
 from wagtail import hooks
 from wagtail.admin.panels import (
@@ -29,7 +30,14 @@ from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
 from wagtail_modeladmin.views import DeleteView
 
-from kausal_common.datasets.models import DatasetMetric, DatasetMetricComputation, DatasetSchema, DatasetSchemaScope
+from kausal_common.datasets.models import (
+    DataPoint,
+    Dataset,
+    DatasetMetric,
+    DatasetMetricComputation,
+    DatasetSchema,
+    DatasetSchemaScope,
+)
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust
 
@@ -58,6 +66,7 @@ from indicators.panels import IndicatorMetricsInlinePanel
 from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+from .models.goal_data_point import IndicatorGoalDataPoint
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -78,7 +87,6 @@ class UnitSuffixWidget(autocomplete.ListSelect2):
         input_html = super().render(name, value, attrs, renderer)
         if not self.suffix:
             return input_html
-        from django.utils.html import format_html
         return format_html(
             '<div style="display:flex;align-items:center;gap:0.5em">'
             '{}<span style="white-space:nowrap">per <strong>{}</strong></span>'
@@ -105,10 +113,7 @@ class FactorForm(forms.ModelForm):
     result_label = forms.CharField(
         required=True,
         label=_('Result'),
-        help_text=_(
-            'The name of the computed value (indicator data \u00d7 factor) '
-            'shown in charts, e.g. "Vehicle emissions"'
-        ),
+        help_text=_('The name of the computed value (indicator data \u00d7 factor) shown in charts, e.g. "Vehicle emissions"'),
     )
 
     def __init__(self, *args, indicator_unit_label: str = '', indicator_unit_short: str = '', **kwargs):
@@ -136,9 +141,14 @@ class FactorForm(forms.ModelForm):
         self.initial['unit'] = initial
         # Pre-fill result_label from existing computation
         if self.instance.pk:
-            comp = DatasetMetricComputation.objects.filter(
-                operand_b=self.instance, operand_a__isnull=True,
-            ).select_related('target_metric').first()
+            comp = (
+                DatasetMetricComputation.objects.filter(
+                    operand_b=self.instance,
+                    operand_a__isnull=True,
+                )
+                .select_related('target_metric')
+                .first()
+            )
             if comp:
                 self.fields['result_label'].initial = comp.target_metric.label
 
@@ -153,7 +163,10 @@ class FactorForm(forms.ModelForm):
 
 
 def _make_factor_formset(  # noqa: ANN202
-    schema, indicator_unit_label: str, indicator_unit_short: str, data=None,
+    schema,
+    indicator_unit_label: str,
+    indicator_unit_short: str,
+    data=None,
 ):
     """Create the factor (DatasetMetric) formset with extra result fields."""
     FactorFormSet = inlineformset_factory(
@@ -431,7 +444,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             indicator_unit_label = unit.name or unit.short_name or ''
             indicator_unit_short = unit.short_name or unit.name or ''
         self.formsets['metrics'] = _make_factor_formset(  # type: ignore[index]
-            schema, indicator_unit_label, indicator_unit_short,
+            schema,
+            indicator_unit_label,
+            indicator_unit_short,
             data=self.data or None,
         )
 
@@ -474,9 +489,32 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 raise ValidationError(_('Dimensions must be the same as in common indicator'))
 
         if not self.formsets['metrics'].is_valid():
-            raise ValidationError(_("Please correct the errors in the factors section."))
+            raise ValidationError(_('Please correct the errors in the factors section.'))
+
+        self._validate_no_data_in_deleted_factors()
 
         return self.cleaned_data
+
+    def _validate_no_data_in_deleted_factors(self) -> None:
+        """Prevent deletion of factors that have data points."""
+        metrics_formset = self.formsets['metrics']
+        for form in metrics_formset.forms:
+            if not hasattr(form, 'cleaned_data') or not form.cleaned_data.get('DELETE'):
+                continue
+            factor = form.instance
+            if not factor.pk:
+                continue
+            has_data = (
+                DataPoint.objects.filter(metric=factor).exists() or IndicatorGoalDataPoint.objects.filter(metric=factor).exists()
+            )
+            if has_data:
+                raise ValidationError(
+                    _(
+                        'The factor "%(label)s" has data and cannot be deleted. '
+                        'Delete its data points first in the dataset editor.'
+                    )
+                    % {'label': factor.label},
+                )
 
     @staticmethod
     def _has_new_factors(metrics_formset) -> bool:
@@ -491,7 +529,7 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             return indicator.dataset_schema
 
         schema = DatasetSchema.objects.create(
-            name=indicator.name,
+            name=str(_('Indicator factors')),
             time_resolution=DatasetSchema.TimeResolution.YEARLY,
         )
         # Scope the schema to the indicator instance (per indicators.md architecture)
@@ -590,7 +628,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 continue
             # Deleting the target_metric cascades to the computation too
             comps = DatasetMetricComputation.objects.filter(
-                schema=schema, operand_a__isnull=True, operand_b=factor,
+                schema=schema,
+                operand_a__isnull=True,
+                operand_b=factor,
             ).select_related('target_metric')
             for comp in comps:
                 comp.target_metric.delete()
@@ -632,7 +672,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             if not result_label:
                 # No result metric requested — clean up any existing computation
                 DatasetMetricComputation.objects.filter(
-                    schema=schema, operand_a__isnull=True, operand_b=factor,
+                    schema=schema,
+                    operand_a__isnull=True,
+                    operand_b=factor,
                 ).delete()
                 continue
 
@@ -641,9 +683,15 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             result_unit = form.cleaned_data.get('unit', '').strip()
 
             # Get or create the computation and target metric
-            comp = DatasetMetricComputation.objects.filter(
-                schema=schema, operand_a__isnull=True, operand_b=factor,
-            ).select_related('target_metric').first()
+            comp = (
+                DatasetMetricComputation.objects.filter(
+                    schema=schema,
+                    operand_a__isnull=True,
+                    operand_b=factor,
+                )
+                .select_related('target_metric')
+                .first()
+            )
             if comp:
                 target = comp.target_metric
                 target.label = result_label
@@ -651,7 +699,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 target.save(update_fields=['label', 'unit'])
             else:
                 target = DatasetMetric.objects.create(
-                    schema=schema, label=result_label, unit=result_unit,
+                    schema=schema,
+                    label=result_label,
+                    unit=result_unit,
                 )
                 DatasetMetricComputation.objects.create(
                     schema=schema,
@@ -872,11 +922,13 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             FieldPanel('sort_key'),
         )
 
-        advanced_panels.extend([
-            FieldPanel('goal_description'),
-            FieldPanel('non_quantified_goal'),
-            FieldPanel('non_quantified_goal_date'),
-        ])
+        advanced_panels.extend(
+            [
+                FieldPanel('goal_description'),
+                FieldPanel('non_quantified_goal'),
+                FieldPanel('non_quantified_goal_date'),
+            ]
+        )
 
         if instance and instance.pk and plan.kausal_paths_instance_uuid:
             advanced_panels.append(FieldPanel('kausal_paths_node_uuid'))
@@ -933,7 +985,28 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         ]
         return ObjectList(panels, heading=_('Reporting'))
 
-    def _get_relationships_tab(self) -> ObjectList:
+    @staticmethod
+    def _get_dataset_editor_link_panel(instance: Indicator | None) -> HelpPanel | None:
+        """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
+        if instance is None or not instance.pk or instance.dataset_schema is None:
+            return None
+        try:
+            from kausal_watch_extensions.dataset_editor import DatasetViewSet as DatasetEditorViewSet
+        except ImportError:
+            return None
+        schema = instance.dataset_schema
+        dataset = Dataset.objects.filter(schema=schema, scope_id=instance.pk).first()
+        editor_vs = DatasetEditorViewSet()
+        if dataset is not None:
+            url = reverse(editor_vs.get_url_name('edit'), args=[dataset.pk])
+            label = _('Edit factor data')
+        else:
+            url = reverse(editor_vs.get_url_name('add'))
+            url += f'?dataset_schema_uuid={schema.uuid}&model=indicators.Indicator&object_id={instance.pk}'
+            label = _('Add factor data')
+        return HelpPanel(content=(f'<a href="{url}" class="button button-small button-secondary">{label}</a>'))
+
+    def _get_relationships_tab(self, instance: Indicator | None = None) -> ObjectList:
         """Get relationships tab for edit view."""
         actions_panels: list[Panel] = [
             InlinePanel(
@@ -974,22 +1047,33 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             ),
         ]
 
-        factors_panels: list[Panel] = [
-            HelpPanel(content=_(
-                "Factors are multiplied with this indicator's values to calculate a derived output, "
-                "such as total emissions or cost. "
-                "Add factor values to the indicator data editor."
-            )),
-            IndicatorMetricsInlinePanel(
-                'metrics',
-                panels=[
-                    FieldPanel('label', heading=_('Name')),
-                    FieldPanel('unit'),
-                    FieldPanel('result_label'),
-                ],
-                label=_('factor'),
-            ),
-        ]
+        has_dimensions = instance is not None and instance.pk and instance.dimensions.exists()
+        if has_dimensions:
+            factors_panels: list[Panel] = [
+                HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
+            ]
+        else:
+            factors_panels = [
+                HelpPanel(
+                    content=_(
+                        "Factors are multiplied with this indicator's values to calculate a derived output, "
+                        'such as total emissions or cost. '
+                        'Add factor values to the indicator data editor.'
+                    )
+                ),
+                IndicatorMetricsInlinePanel(
+                    'metrics',
+                    panels=[
+                        FieldPanel('label', heading=_('Name')),
+                        FieldPanel('unit'),
+                        FieldPanel('result_label'),
+                    ],
+                    label=_('factor'),
+                ),
+            ]
+            dataset_link_panel = self._get_dataset_editor_link_panel(instance)
+            if dataset_link_panel is not None:
+                factors_panels.append(dataset_link_panel)
 
         panels = [
             FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
@@ -1008,7 +1092,7 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             self._get_basic_information_tab(instance, request),
             self._get_contact_persons_tab(),
             self._get_reporting_tab(),
-            self._get_relationships_tab(),
+            self._get_relationships_tab(instance),
             *get_translation_tabs(instance, request),
         ]
 

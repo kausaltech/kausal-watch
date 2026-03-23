@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import typing
 
-from django.utils.translation import gettext_lazy as _
-
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
     from datetime import date
@@ -20,13 +18,12 @@ if typing.TYPE_CHECKING:
 
     from django.db.models import Model
 
-    import pint
-
     from kausal_common.datasets.models import Dataset
 
     from aplans.types import WatchAdminRequest
 
     from indicators.models import Indicator
+
 
 def schema_default_scope():
     # Only call in view contexts where the context has been initialized
@@ -35,54 +32,9 @@ def schema_default_scope():
     request = typing.cast('WatchAdminRequest', ctx_request.get())
     return request.get_active_admin_plan()
 
-_ureg: pint.UnitRegistry | None = None
-
-def _get_unit_registry() -> pint.UnitRegistry:
-    global _ureg  # noqa: PLW0603
-    if _ureg is not None:
-        return _ureg
-    import pint
-    ureg: pint.UnitRegistry = pint.UnitRegistry()
-    # Register domain-specific units common in climate action plans
-    ureg.define('CO2e = [] = CO2_equivalent')
-    ureg.define('tCO2e = metric_ton * CO2e')
-    ureg.define('tCO2 = metric_ton * CO2e')
-    ureg.define('ktCO2e = 1000 * tCO2e')
-    ureg.define('EUR = [] = euro')
-    ureg.define('USD = [] = dollar')
-    _ureg = ureg
-    return _ureg
 
 def validate_unit(unit: str) -> None:
-    """
-    Raise `ValidationError` if `unit` is not a recognized pint unit.
-
-    Empty/blank units are allowed (some metrics are dimensionless counts).
-    """
-    if not unit or not unit.strip():
-        return
-
-    from tokenize import TokenError
-
-    from django.core.exceptions import ValidationError
-
-    import pint
-
-    ureg = _get_unit_registry()
-    try:
-        ureg.parse_expression(unit)
-    except pint.UndefinedUnitError as err:
-        raise ValidationError(
-            _('Unknown unit "%(unit)s". Please use a valid unit (e.g., kg, tCO2e, MWh, EUR).'),
-            params={'unit': unit},
-            code='invalid_unit',
-        ) from err
-    except (pint.errors.DefinitionSyntaxError, AssertionError, TokenError) as err:
-        raise ValidationError(
-            _('Invalid unit syntax "%(unit)s".'),
-            params={'unit': unit},
-            code='invalid_unit_syntax',
-        ) from err
+    """No-op in Watch — unit field allows free-text entry."""
 
 
 def _resolve_indicator_for_dataset(dataset: Dataset) -> Indicator | None:
@@ -104,6 +56,7 @@ def _resolve_indicator_for_dataset(dataset: Dataset) -> Indicator | None:
 
 def _schema_has_null_operand(dataset: Dataset) -> bool:
     from kausal_common.datasets.models import DatasetMetricComputation
+
     return DatasetMetricComputation.objects.filter(
         schema=dataset.schema,
         operand_a__isnull=True,
@@ -127,16 +80,18 @@ def get_virtual_metrics_for_schema(dataset: Dataset) -> list[dict]:
 
     virtual_uuid = str(get_indicator_virtual_metric_uuid(indicator.pk))
     unit_label = indicator.unit.name_i18n if indicator.unit else ''
-    return [{
-        'uuid': virtual_uuid,
-        'schema': str(dataset.schema.uuid),  # type: ignore[union-attr]
-        'label': indicator.name_i18n,
-        'unit': unit_label,
-        'order': -1,
-        'is_computed': False,
-        'is_virtual': True,
-        'computed_by': None,
-    }]
+    return [
+        {
+            'uuid': virtual_uuid,
+            'schema': str(dataset.schema.uuid),  # type: ignore[union-attr]
+            'label': indicator.name_i18n,
+            'unit': unit_label,
+            'order': -1,
+            'is_computed': False,
+            'is_virtual': True,
+            'computed_by': None,
+        }
+    ]
 
 
 def get_virtual_metric_data(dataset: Dataset) -> list[dict]:
@@ -159,20 +114,24 @@ def get_virtual_metric_data(dataset: Dataset) -> list[dict]:
     virtual_metric_uuid = str(get_indicator_virtual_metric_uuid(indicator.pk))
     results: list[dict] = []
     for iv in indicator.values.prefetch_related('categories').all():
-        dim_cat_uuids_str = '.'.join(
-            sorted(str(dc.uuid) for dc in iv.categories.all() if hasattr(dc, 'uuid'))
+        dim_cat_uuids_str = '.'.join(sorted(str(dc.uuid) for dc in iv.categories.all() if hasattr(dc, 'uuid')))
+        dp_uuid = str(
+            get_indicator_virtual_datapoint_uuid(
+                indicator.pk,
+                iv.date.isoformat(),
+                dim_cat_uuids_str,
+            )
         )
-        dp_uuid = str(get_indicator_virtual_datapoint_uuid(
-            indicator.pk, iv.date.isoformat(), dim_cat_uuids_str,
-        ))
-        results.append({
-            'uuid': dp_uuid,
-            'dataset': str(dataset.uuid) if dataset.uuid else None,
-            'date': iv.date.isoformat(),
-            'value': iv.value,
-            'metric': virtual_metric_uuid,
-            'dimension_categories': [],
-        })
+        results.append(
+            {
+                'uuid': dp_uuid,
+                'dataset': str(dataset.uuid) if dataset.uuid else None,
+                'date': iv.date.isoformat(),
+                'value': iv.value,
+                'metric': virtual_metric_uuid,
+                'dimension_categories': [],
+            }
+        )
     return results
 
 
