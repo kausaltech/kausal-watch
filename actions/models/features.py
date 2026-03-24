@@ -123,6 +123,11 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Enable indicator comparison'),
         help_text=_('Set to enable comparing indicators between organizations'),
     )
+    enable_indicator_factors = models.BooleanField(
+        default=False,
+        verbose_name=_('Enable indicator factors'),
+        help_text=_('Enable computed factor values for indicators.'),
+    )
     indicator_ordering = models.CharField(
         max_length=50,
         choices=OrderBy.choices,
@@ -230,4 +235,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_change_log',
         'enable_community_engagement',
         'enable_action_pdf_export_in_public_ui',
+        'enable_indicator_factors',
     ]

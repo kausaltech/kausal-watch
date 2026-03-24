@@ -271,6 +271,9 @@ class IndicatorNode(DjangoNode[Indicator]):
 
     @staticmethod
     def resolve_datasets(root: Indicator, info) -> QuerySet[Dataset]:
+        plan = get_plan_from_context(info)
+        if not plan.features.enable_indicator_factors:
+            return Dataset.objects.none()
         indicator_content_type = ContentType.objects.get_for_model(Indicator)
         return Dataset.objects.filter(
             scope_content_type=indicator_content_type,

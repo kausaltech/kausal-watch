@@ -142,7 +142,8 @@ class FactorForm(forms.ModelForm):
         # Pre-fill result_label from existing computation
         if self.instance.pk:
             comp = (
-                DatasetMetricComputation.objects.filter(
+                DatasetMetricComputation.objects
+                .filter(
                     operand_b=self.instance,
                     operand_a__isnull=True,
                 )
@@ -684,7 +685,8 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
 
             # Get or create the computation and target metric
             comp = (
-                DatasetMetricComputation.objects.filter(
+                DatasetMetricComputation.objects
+                .filter(
                     schema=schema,
                     operand_a__isnull=True,
                     operand_b=factor,
@@ -922,13 +924,11 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             FieldPanel('sort_key'),
         )
 
-        advanced_panels.extend(
-            [
-                FieldPanel('goal_description'),
-                FieldPanel('non_quantified_goal'),
-                FieldPanel('non_quantified_goal_date'),
-            ]
-        )
+        advanced_panels.extend([
+            FieldPanel('goal_description'),
+            FieldPanel('non_quantified_goal'),
+            FieldPanel('non_quantified_goal_date'),
+        ])
 
         if instance and instance.pk and plan.kausal_paths_instance_uuid:
             advanced_panels.append(FieldPanel('kausal_paths_node_uuid'))
@@ -1008,6 +1008,9 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
 
     def _get_relationships_tab(self, instance: Indicator | None = None) -> ObjectList:
         """Get relationships tab for edit view."""
+        request = ctx_request.get()
+        plan = get_admin_cache(request).plan
+
         actions_panels: list[Panel] = [
             InlinePanel(
                 'related_actions',
@@ -1047,40 +1050,41 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             ),
         ]
 
-        has_dimensions = instance is not None and instance.pk and instance.dimensions.exists()
-        if has_dimensions:
-            factors_panels: list[Panel] = [
-                HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
-            ]
-        else:
-            factors_panels = [
-                HelpPanel(
-                    content=_(
-                        "Factors are multiplied with this indicator's values to calculate a derived output, "
-                        'such as total emissions or cost. '
-                        'Add factor values to the indicator data editor.'
-                    )
-                ),
-                IndicatorMetricsInlinePanel(
-                    'metrics',
-                    panels=[
-                        FieldPanel('label', heading=_('Name')),
-                        FieldPanel('unit'),
-                        FieldPanel('result_label'),
-                    ],
-                    label=_('factor'),
-                ),
-            ]
-            dataset_link_panel = self._get_dataset_editor_link_panel(instance)
-            if dataset_link_panel is not None:
-                factors_panels.append(dataset_link_panel)
-
-        panels = [
+        panels: list[Panel] = [
             FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
             MultiFieldPanel(actions_panels, heading=pgettext_lazy('Action model', 'Actions')),
             MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
-            MultiFieldPanel(factors_panels, heading=_('Factors')),
         ]
+
+        if plan.features.enable_indicator_factors:
+            has_dimensions = instance is not None and instance.pk and instance.dimensions.exists()
+            if has_dimensions:
+                factors_panels: list[Panel] = [
+                    HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
+                ]
+            else:
+                factors_panels = [
+                    HelpPanel(
+                        content=_(
+                            "Factors are multiplied with this indicator's values to calculate a derived output, "
+                            'such as total emissions or cost. '
+                            'Add factor values to the indicator data editor.'
+                        )
+                    ),
+                    IndicatorMetricsInlinePanel(
+                        'metrics',
+                        panels=[
+                            FieldPanel('label', heading=_('Name')),
+                            FieldPanel('unit'),
+                            FieldPanel('result_label'),
+                        ],
+                        label=_('factor'),
+                    ),
+                ]
+                dataset_link_panel = self._get_dataset_editor_link_panel(instance)
+                if dataset_link_panel is not None:
+                    factors_panels.append(dataset_link_panel)
+            panels.append(MultiFieldPanel(factors_panels, heading=_('Factors')))
 
         return ObjectList(panels, heading=_('Relationships'))
 

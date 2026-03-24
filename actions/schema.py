@@ -176,6 +176,7 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     public_contact_persons = graphene.Boolean(required=True)
     enable_moderation_workflow = graphene.Boolean(required=True)
     enable_community_engagement = graphene.Boolean(required=True)
+    enable_indicator_factors = graphene.Boolean(required=True)
 
     class Meta:
         model = PlanFeatures
@@ -192,6 +193,10 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     @staticmethod
     def resolve_enable_community_engagement(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.enable_community_engagement
+
+    @staticmethod
+    def resolve_enable_indicator_factors(root: PlanFeatures, _info: GQLInfo) -> bool:
+        return root.enable_indicator_factors
 
 
 def get_action_list_page_node():

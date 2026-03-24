@@ -16,6 +16,7 @@ from datasets.tests.factories import (
     DimensionFactory,
     DimensionScopeFactory,
 )
+from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory, IndicatorValueFactory
 
 if typing.TYPE_CHECKING:
     from actions.models.action import Action
@@ -953,3 +954,231 @@ def test_dataset_schema_scope_plan_type(graphql_client_query_data, plan, categor
     )
     scopes = data['planCategories'][0]['datasets'][0]['schema']['scopes']
     assert scopes == [{'scope': {'__typename': 'Plan', 'id': plan.identifier}}]
+
+
+class TestIndicatorDatasets:
+    """Tests for querying datasets and computed data points through the indicator GraphQL type."""
+
+    @pytest.fixture(autouse=True)
+    def _enable_indicator_factors(self, plan, plan_features):
+        plan_features.enable_indicator_factors = True
+        plan_features.save(update_fields=['enable_indicator_factors'])
+
+    def test_datasets_hidden_when_feature_disabled(self, graphql_client_query_data, plan):
+        plan.features.enable_indicator_factors = False
+        plan.features.save(update_fields=['enable_indicator_factors'])
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        schema = DatasetSchemaFactory.create()
+        DatasetFactory.create(scope=indicator, schema=schema)
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  uuid
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        assert data['planIndicators'][0]['datasets'] == []
+
+    def test_indicator_dataset_node(self, graphql_client_query_data, plan):
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        schema = DatasetSchemaFactory.create()
+        dataset = DatasetFactory.create(scope=indicator, schema=schema)
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  __typename
+                  uuid
+                  schema {
+                    __typename
+                    uuid
+                  }
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        indicators = data['planIndicators']
+        assert len(indicators) == 1
+        datasets = indicators[0]['datasets']
+        assert len(datasets) == 1
+        assert datasets[0]['__typename'] == 'Dataset'
+        assert datasets[0]['uuid'] == str(dataset.uuid)
+        assert datasets[0]['schema']['uuid'] == str(schema.uuid)
+
+    def test_indicator_computed_data_points_with_null_operand(self, graphql_client_query_data, plan):
+        """Null operand_a computation resolves indicator values as virtual input."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        IndicatorValueFactory.create(indicator=indicator, date=date(2024, 1, 1), value=100.0)
+
+        schema = DatasetSchemaFactory.create()
+        factor = DatasetMetricFactory.create(schema=schema, label='Emission factor', unit='tCO2e/vehicle')
+        target = DatasetMetricFactory.create(schema=schema, label='Total emissions', unit='tCO2e')
+        DatasetMetricComputation.objects.create(
+            schema=schema,
+            target_metric=target,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
+        )
+        dataset = DatasetFactory.create(scope=indicator, schema=schema)
+        DataPointFactory.create(dataset=dataset, metric=factor, date=date(2024, 1, 1), value=0.5)
+
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  computedDataPoints {
+                    date
+                    value
+                    metric {
+                      label
+                    }
+                    dimensionCategories {
+                      uuid
+                    }
+                  }
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        indicators = data['planIndicators']
+        assert len(indicators) == 1
+        computed = indicators[0]['datasets'][0]['computedDataPoints']
+        assert len(computed) == 1
+        assert computed[0]['date'] == '2024-01-01'
+        assert computed[0]['value'] == 50.0
+        assert computed[0]['metric']['label'] == 'Total emissions'
+        assert computed[0]['dimensionCategories'] == []
+
+    def test_indicator_null_operand_multiple_dates(self, graphql_client_query_data, plan):
+        """Null operand_a computation works across multiple dates."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        IndicatorValueFactory.create(indicator=indicator, date=date(2024, 1, 1), value=100.0)
+        IndicatorValueFactory.create(indicator=indicator, date=date(2025, 1, 1), value=200.0)
+
+        schema = DatasetSchemaFactory.create()
+        factor = DatasetMetricFactory.create(schema=schema, label='Factor')
+        target = DatasetMetricFactory.create(schema=schema, label='Result')
+        DatasetMetricComputation.objects.create(
+            schema=schema,
+            target_metric=target,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
+        )
+        dataset = DatasetFactory.create(scope=indicator, schema=schema)
+        DataPointFactory.create(dataset=dataset, metric=factor, date=date(2024, 1, 1), value=0.5)
+        DataPointFactory.create(dataset=dataset, metric=factor, date=date(2025, 1, 1), value=0.3)
+
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  computedDataPoints {
+                    date
+                    value
+                    metric {
+                      label
+                    }
+                  }
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        computed = data['planIndicators'][0]['datasets'][0]['computedDataPoints']
+        assert len(computed) == 2
+        by_date = {c['date']: c for c in computed}
+        assert by_date['2024-01-01']['value'] == 50.0
+        assert by_date['2025-01-01']['value'] == 60.0
+
+    def test_indicator_null_operand_no_factor_data(self, graphql_client_query_data, plan):
+        """No computed data points when factor has no data for the date."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        IndicatorValueFactory.create(indicator=indicator, date=date(2024, 1, 1), value=100.0)
+
+        schema = DatasetSchemaFactory.create()
+        factor = DatasetMetricFactory.create(schema=schema, label='Factor')
+        target = DatasetMetricFactory.create(schema=schema, label='Result')
+        DatasetMetricComputation.objects.create(
+            schema=schema,
+            target_metric=target,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
+        )
+        DatasetFactory.create(scope=indicator, schema=schema)
+        # No DataPoint for factor — should produce no results
+
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  computedDataPoints {
+                    date
+                    value
+                  }
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        computed = data['planIndicators'][0]['datasets'][0]['computedDataPoints']
+        assert computed == []
+
+    def test_indicator_null_operand_no_indicator_values(self, graphql_client_query_data, plan):
+        """No computed data points when indicator has no values."""
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        # No IndicatorValue created
+
+        schema = DatasetSchemaFactory.create()
+        factor = DatasetMetricFactory.create(schema=schema, label='Factor')
+        target = DatasetMetricFactory.create(schema=schema, label='Result')
+        DatasetMetricComputation.objects.create(
+            schema=schema,
+            target_metric=target,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
+        )
+        dataset = DatasetFactory.create(scope=indicator, schema=schema)
+        DataPointFactory.create(dataset=dataset, metric=factor, date=date(2024, 1, 1), value=0.5)
+
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+              planIndicators(plan: $plan) {
+                datasets {
+                  computedDataPoints {
+                    date
+                    value
+                  }
+                }
+              }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+        computed = data['planIndicators'][0]['datasets'][0]['computedDataPoints']
+        assert computed == []

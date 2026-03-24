@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import graphene
 from django.core.exceptions import ValidationError
 from django.db.models.enums import TextChoices
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.blocks.struct_block import StructBlockValidationError
+from wagtail.admin.telepath import register as telepath_register
+from wagtail.blocks.struct_block import StructBlockAdapter, StructBlockValidationError
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt
@@ -25,6 +26,8 @@ from kausal_common.blocks.registry import FieldBlockContext, FieldContextConfig,
 from kausal_common.blocks.stream_block import generate_stream_block
 from kausal_common.graphene.grapple import grapple_field
 
+from aplans.context_vars import ctx_request, get_admin_cache, has_admin_cache
+
 from actions.blocks.choosers import CategoryLevelChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.filters import CategoryTypeFilterBlock
 from actions.models.category import CategoryLevel, CategoryType
@@ -33,9 +36,52 @@ from indicators.models import Indicator
 from . import generated
 
 if TYPE_CHECKING:
-    from wagtail.blocks.stream_block import StreamValue
+    from wagtail.blocks.stream_block import StreamBlock, StreamValue
+
+    from actions.models.features import PlanFeatures
+
+    _StreamBlockBase = StreamBlock
+else:
+    _StreamBlockBase = object
 
 indicator_registry: ModelFieldRegistry[Indicator]
+
+
+def _get_plan_features() -> PlanFeatures | None:
+    if not ctx_request.is_set():
+        return None
+    request = ctx_request.get()
+    if not has_admin_cache(request):
+        return None
+    return get_admin_cache(request).plan.features
+
+
+class PlanFeatureGatedStreamBlockMixin(_StreamBlockBase):
+    """
+    Hides child blocks from the admin "add block" menu based on PlanFeatures flags.
+
+    Subclasses define ``feature_gated_blocks`` as a mapping of block names
+    to the PlanFeatures boolean field that must be ``True`` for the block to appear.
+    When the feature is off (or no admin context exists), the block is hidden.
+    """
+
+    feature_gated_blocks: ClassVar[dict[str, str]]
+
+    def sorted_child_blocks(self) -> list[blocks.Block]:
+        sorted_blocks = super().sorted_child_blocks()
+        features = _get_plan_features()
+        if features is None:
+            return sorted_blocks
+        hidden = {name for name, flag in self.feature_gated_blocks.items() if not getattr(features, flag, True)}
+        if not hidden:
+            return sorted_blocks
+        return [b for b in sorted_blocks if b.name not in hidden]
+
+
+class _IndicatorDetailsContentStreamFeatureGateMixin(PlanFeatureGatedStreamBlockMixin):
+    feature_gated_blocks = {
+        'factor_value_summary': 'enable_indicator_factors',
+    }
 
 
 class IndicatorListColumnInterface(DashboardColumnInterface):
@@ -133,6 +179,14 @@ def initialize():
             has_report_block=False,
             has_list_filters_block=False,
             custom_label=_('Causality navigation'),
+        ),
+        Field(
+            field_name='factor_value_summary',
+            custom_label=_('Value summary (by factors)'),
+            has_details_block=True,
+            has_report_block=False,
+            has_list_filters_block=False,
+            has_dashboard_column_block=False,
         ),
         Field(
             field_name='visualization',
@@ -297,6 +351,49 @@ class IndicatorValueSummaryContentBlock(IndicatorContentBlock):
     ]
 
 
+@register_streamfield_block
+class IndicatorFactorValueSummaryContentBlock(IndicatorContentBlock):
+    class Meta:
+        label = _('Value summary (by factors)')
+
+
+@register_streamfield_block
+class IndicatorVisualizationContentBlock(IndicatorContentBlock):
+    show_factor_values = blocks.BooleanBlock(
+        default=False,
+        required=False,
+        label=_('Show calculated values by factors'),
+        help_text=_('Include factor-computed values in the visualization.'),
+    )
+
+    class Meta:
+        label = _('Indicator visualization')
+
+    graphql_fields = [
+        *IndicatorContentBlock.graphql_fields,
+        GraphQLBoolean('show_factor_values'),
+    ]
+
+
+class _IndicatorVisualizationStructBlockAdapter(StructBlockAdapter):
+    feature_gated_fields: ClassVar[dict[str, str]] = {
+        'show_factor_values': 'enable_indicator_factors',
+    }
+
+    def js_args(self, block) -> list[Any]:
+        name, children, meta = super().js_args(block)
+        features = _get_plan_features()
+        if features is None:
+            return [name, children, meta]
+        hidden = {f for f, flag in self.feature_gated_fields.items() if not getattr(features, flag, True)}
+        if not hidden:
+            return [name, children, meta]
+        return [name, tuple(c for c in children if c.name not in hidden), meta]
+
+
+telepath_register(_IndicatorVisualizationStructBlockAdapter(), IndicatorVisualizationContentBlock)
+
+
 CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
     'description',
     'organization',
@@ -305,7 +402,8 @@ CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
     'level',
     'reference',
     ('value_summary', IndicatorValueSummaryContentBlock()),
-    'visualization',
+    ('factor_value_summary', IndicatorFactorValueSummaryContentBlock()),
+    ('visualization', IndicatorVisualizationContentBlock()),
     'connected_actions',
     'causality_nav',
     'goal_description',
@@ -316,6 +414,7 @@ IndicatorAsideContentStream = generate_stream_block(
     fields=CONTENT_BLOCK_FIELDS,
     block_context=FieldBlockContext.DETAILS,
     field_registry=indicator_registry,
+    mixins=(_IndicatorDetailsContentStreamFeatureGateMixin,),
 )
 
 IndicatorMainContentStream = generate_stream_block(
@@ -323,4 +422,5 @@ IndicatorMainContentStream = generate_stream_block(
     fields=CONTENT_BLOCK_FIELDS,
     block_context=FieldBlockContext.DETAILS,
     field_registry=indicator_registry,
+    mixins=(_IndicatorDetailsContentStreamFeatureGateMixin,),
 )
