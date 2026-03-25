@@ -122,16 +122,14 @@ def get_virtual_metric_data(dataset: Dataset) -> list[dict]:
                 dim_cat_uuids_str,
             )
         )
-        results.append(
-            {
-                'uuid': dp_uuid,
-                'dataset': str(dataset.uuid) if dataset.uuid else None,
-                'date': iv.date.isoformat(),
-                'value': iv.value,
-                'metric': virtual_metric_uuid,
-                'dimension_categories': [],
-            }
-        )
+        results.append({
+            'uuid': dp_uuid,
+            'dataset': str(dataset.uuid) if dataset.uuid else None,
+            'date': iv.date.isoformat(),
+            'value': iv.value,
+            'metric': virtual_metric_uuid,
+            'dimension_categories': [],
+        })
     return results
 
 
@@ -151,10 +149,21 @@ def resolve_null_operand_values(
     if indicator is None:
         return {}
 
+    from kausal_common.datasets.models import DatasetSchema
+
+    time_res = dataset.schema.time_resolution if dataset.schema else None
+
+    def _normalize_date(d: date) -> date:
+        if time_res == DatasetSchema.TimeResolution.YEARLY:
+            return d.replace(month=1, day=1)
+        if time_res == DatasetSchema.TimeResolution.MONTHLY:
+            return d.replace(day=1)
+        return d
+
     values: dict[tuple[date, frozenset[int]], Decimal | None] = {}
     for iv in indicator.values.prefetch_related('categories').all():
         dim_cat_ids = frozenset(dc.id for dc in iv.categories.all())
-        values[(iv.date, dim_cat_ids)] = _Decimal(str(iv.value)) if iv.value is not None else None
+        values[(_normalize_date(iv.date), dim_cat_ids)] = _Decimal(str(iv.value)) if iv.value is not None else None
     return values
 
 
