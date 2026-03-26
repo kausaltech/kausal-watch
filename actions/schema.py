@@ -1528,6 +1528,12 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
 
     datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
 
+    export_pdf = graphene.Field(
+        'aplans.graphql_types.ExportPdfRequest',
+        required=False,
+        description='PDF export request details. Null if PDF export is not enabled for this plan.',
+    )
+
     class Meta:
         model = Action
         fields = Action.public_fields
@@ -1659,6 +1665,23 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         url_helper = ActionAdmin().url_helper
         edit_url = url_helper.get_action_url('edit', root.id).lstrip('/')
         return f'{base_url}/{edit_url}'
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field=('plan', 'identifier'),
+    )
+    def resolve_export_pdf(root: Action, info: GQLInfo) -> dict[str, str] | None:
+        plan = root.plan
+        if not plan.features.enable_action_pdf_export_in_public_ui:
+            return None
+        base_url = plan.get_view_url(request=info.context)
+        if not base_url:
+            return None
+        return {
+            'url': '%s/api/export-pdf' % base_url.rstrip('/'),
+            'path': '/actions/%s' % root.identifier,
+            'locale': get_language(),
+        }
 
     @staticmethod
     @gql_optimizer.resolver_hints(

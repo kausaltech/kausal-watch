@@ -119,6 +119,21 @@ class AdminButton(graphene.ObjectType[Any]):
     icon = graphene.String(required=False)
 
 
+class ExportPdfRequest(graphene.ObjectType[Any]):
+    url = graphene.String(
+        required=True,
+        description='The endpoint URL to POST to.',
+    )
+    path = graphene.String(
+        required=True,
+        description='The page path to include in the POST body.',
+    )
+    locale = graphene.String(
+        required=True,
+        description='The locale to include in the POST body.',
+    )
+
+
 @sb.enum(name='WorkflowState')
 class WorkflowStateEnum(Enum):
     PUBLISHED = 'PUBLISHED'
