@@ -562,11 +562,25 @@ class PlanNode(DjangoNode[Plan]):
         return not root.features.has_action_official_name
 
     @staticmethod
-    @gql_optimizer.resolver_hints(
-        select_related=('parent',),
-    )
+    def resolve_parent(root: Plan, info: GQLInfo) -> Plan | None:
+        parent = root.parent
+        if parent is None:
+            return None
+        if not parent.is_visible_for_user(info.context.user):
+            return None
+        return parent
+
+    @staticmethod
     def resolve_all_related_plans(root: Plan, info: GQLInfo) -> PlanQuerySet:
+        # NOTE: The previous select_related=('parent',) optimizer hint was removed
+        # because it conflicts with graphene-django-optimizer's field deferral when
+        # the client doesn't also request `parent` on the same Plan type.
         return root.get_all_related_plans().visible_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_children(root: Plan, info: GQLInfo) -> PlanQuerySet:
+        qs = Plan.objects.qs.filter(parent=root)
+        return qs.visible_for_user(info.context.user)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
