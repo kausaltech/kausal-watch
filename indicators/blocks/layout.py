@@ -394,7 +394,7 @@ class _IndicatorVisualizationStructBlockAdapter(StructBlockAdapter):
 telepath_register(_IndicatorVisualizationStructBlockAdapter(), IndicatorVisualizationContentBlock)
 
 
-CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
+MAIN_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
     'description',
     'organization',
     'updated_at',
@@ -409,9 +409,22 @@ CONTENT_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
     'goal_description',
 )
 
+ASIDE_BLOCK_FIELDS: tuple[str | tuple[str, blocks.Block[Any]], ...] = (
+    'description',
+    'organization',
+    'updated_at',
+    ('category', IndicatorCategoryContentBlock()),
+    'level',
+    'reference',
+    ('value_summary', IndicatorValueSummaryContentBlock()),
+    'connected_actions',
+    'causality_nav',
+    'goal_description',
+)
+
 IndicatorAsideContentStream = generate_stream_block(
     name='IndicatorAsideContentStream',
-    fields=CONTENT_BLOCK_FIELDS,
+    fields=ASIDE_BLOCK_FIELDS,
     block_context=FieldBlockContext.DETAILS,
     field_registry=indicator_registry,
     mixins=(_IndicatorDetailsContentStreamFeatureGateMixin,),
@@ -419,7 +432,7 @@ IndicatorAsideContentStream = generate_stream_block(
 
 IndicatorMainContentStream = generate_stream_block(
     name='IndicatorMainContentStream',
-    fields=CONTENT_BLOCK_FIELDS,
+    fields=MAIN_BLOCK_FIELDS,
     block_context=FieldBlockContext.DETAILS,
     field_registry=indicator_registry,
     mixins=(_IndicatorDetailsContentStreamFeatureGateMixin,),
