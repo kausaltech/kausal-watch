@@ -1669,6 +1669,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field=('plan', 'identifier'),
+        select_related=('plan__features',),
     )
     def resolve_export_pdf(root: Action, info: GQLInfo) -> dict[str, str] | None:
         plan = root.plan
