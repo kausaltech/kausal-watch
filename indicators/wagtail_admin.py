@@ -533,7 +533,6 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             name=str(_('Indicator factors')),
             time_resolution=DatasetSchema.TimeResolution.YEARLY,
         )
-        # Scope the schema to the indicator instance (per indicators.md architecture)
         indicator_ct = ContentType.objects.get_for_model(Indicator)
         DatasetSchemaScope.objects.create(
             schema=schema,
@@ -592,29 +591,31 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             obj.save()
 
         # Save factors formset — auto-create DatasetSchema if needed
-        if metrics_formset is not None and metrics_formset.is_valid():
-            # Before saving, delete result metrics for factors being removed.
-            # The computation cascade (operand_b FK) only deletes the computation,
-            # not the target_metric, so we must clean it up explicitly.
-            if obj.dataset_schema is not None:
-                self._delete_result_metrics_for_removed_factors(obj.dataset_schema, metrics_formset)
+        if metrics_formset is None or not metrics_formset.is_valid():
+            return obj
 
-            if self._has_new_factors(metrics_formset):
-                schema = self._ensure_dataset_schema(obj)
-                metrics_formset.instance = schema
-                metrics_formset.save()
-            elif obj.dataset_schema is not None:
-                # Save deletions/edits even when no new factors
-                metrics_formset.instance = obj.dataset_schema
-                metrics_formset.save()
+        # Before saving, delete result metrics for factors being removed.
+        # The computation cascade (operand_b FK) only deletes the computation,
+        # not the target_metric, so we must clean it up explicitly.
+        if obj.dataset_schema is not None:
+            self._delete_result_metrics_for_removed_factors(obj.dataset_schema, metrics_formset)
 
-            # Auto-create/update computations for each factor
-            if obj.dataset_schema is not None:
-                self._sync_factor_computations(obj.dataset_schema, metrics_formset)
+        if self._has_new_factors(metrics_formset):
+            schema = self._ensure_dataset_schema(obj)
+            metrics_formset.instance = schema
+            metrics_formset.save()
+        elif obj.dataset_schema is not None:
+            # Save deletions/edits even when no new factors
+            metrics_formset.instance = obj.dataset_schema
+            metrics_formset.save()
 
-            # If all factors were removed, clean up the now-empty schema and dataset
-            if obj.dataset_schema is not None and not self._has_new_factors(metrics_formset):
-                self._cleanup_empty_schema(obj)
+        # Auto-create/update computations for each factor
+        if obj.dataset_schema is not None:
+            self._sync_factor_computations(obj.dataset_schema, metrics_formset)
+
+        # If all factors were removed, clean up the now-empty schema and dataset
+        if obj.dataset_schema is not None and not self._has_new_factors(metrics_formset):
+            self._cleanup_empty_schema(obj)
 
         return obj
 
