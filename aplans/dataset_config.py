@@ -10,6 +10,7 @@ dataset_config under the project directory.
 from __future__ import annotations
 
 import typing
+import uuid as uuid_lib
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable
@@ -23,6 +24,19 @@ if typing.TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
 
     from indicators.models import Indicator
+
+# Namespace for generating deterministic UUIDs for virtual indicator metrics
+_VIRTUAL_METRIC_NAMESPACE = uuid_lib.UUID('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+
+
+def _indicator_virtual_metric_uuid(indicator_uuid: uuid_lib.UUID) -> uuid_lib.UUID:
+    """Return a deterministic UUID for an indicator's virtual metric in the dataset editor."""
+    return uuid_lib.uuid5(_VIRTUAL_METRIC_NAMESPACE, f'indicator-values-{indicator_uuid}')
+
+
+def _indicator_virtual_datapoint_uuid(indicator_uuid: uuid_lib.UUID, date_str: str, dim_cat_uuids: str) -> uuid_lib.UUID:
+    """Return a deterministic UUID for a synthetic data point from indicator values."""
+    return uuid_lib.uuid5(_VIRTUAL_METRIC_NAMESPACE, f'indicator-dp-{indicator_uuid}-{date_str}-{dim_cat_uuids}')
 
 
 def schema_default_scope():
@@ -76,9 +90,7 @@ def get_virtual_metrics_for_schema(dataset: Dataset) -> list[dict]:
     if indicator is None:
         return []
 
-    from kausal_common.datasets.computation import get_indicator_virtual_metric_uuid
-
-    virtual_uuid = str(get_indicator_virtual_metric_uuid(indicator.pk))
+    virtual_uuid = str(_indicator_virtual_metric_uuid(indicator.uuid))
     unit_label = indicator.unit.name_i18n if indicator.unit else ''
     return [
         {
@@ -106,18 +118,13 @@ def get_virtual_metric_data(dataset: Dataset) -> list[dict]:
     if indicator is None:
         return []
 
-    from kausal_common.datasets.computation import (
-        get_indicator_virtual_datapoint_uuid,
-        get_indicator_virtual_metric_uuid,
-    )
-
-    virtual_metric_uuid = str(get_indicator_virtual_metric_uuid(indicator.pk))
+    virtual_metric_uuid = str(_indicator_virtual_metric_uuid(indicator.uuid))
     results: list[dict] = []
     for iv in indicator.values.prefetch_related('categories').all():
         dim_cat_uuids_str = '.'.join(sorted(str(dc.uuid) for dc in iv.categories.all() if hasattr(dc, 'uuid')))
         dp_uuid = str(
-            get_indicator_virtual_datapoint_uuid(
-                indicator.pk,
+            _indicator_virtual_datapoint_uuid(
+                indicator.uuid,
                 iv.date.isoformat(),
                 dim_cat_uuids_str,
             )
