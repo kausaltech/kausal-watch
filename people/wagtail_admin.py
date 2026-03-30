@@ -12,7 +12,7 @@ from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
-from django.db.models import F, ManyToManyField, OneToOneRel, Prefetch, Q
+from django.db.models import Case, F, ManyToManyField, OneToOneRel, Prefetch, Q, When
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.forms import BooleanField, ChoiceField, ModelMultipleChoiceField
 from django.urls import re_path
@@ -453,6 +453,13 @@ class PersonAdmin(AplansModelAdmin[Person]):
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
+        if user.is_general_admin_for_plan(plan):
+            qs = qs.annotate(
+                is_plan_admin=Case(
+                    When(id__in=plan.general_admins.all(), then=True),
+                    default=False,
+                )
+            )
         return qs
 
     def get_empty_value_display(self, field=None):
@@ -544,11 +551,10 @@ class PersonAdmin(AplansModelAdmin[Person]):
         setattr(last_logged_in, '_name', 'last_logged_in')  # noqa: B010
 
         if user.is_general_admin_for_plan(plan):
-            plan_admins = set(plan.general_admins.values_list('id', flat=True))
 
-            @admin.display(description=_('Is plan admin'), ordering='is_plan_admin', boolean=True)
+            @admin.display(description=_('Is plan admin'), ordering='-is_plan_admin', boolean=True)
             def is_plan_admin(obj: Person) -> bool:
-                return obj.id in plan_admins
+                return obj.is_plan_admin  # type: ignore[attr-defined]
 
             setattr(is_plan_admin, '_name', 'is_plan_admin')  # noqa: B010
             fields.append(is_plan_admin)
