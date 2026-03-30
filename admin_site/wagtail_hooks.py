@@ -350,3 +350,8 @@ def hack_wagtail_rich_text_fields():
         });
         </script>
         """)
+
+
+# Imported at the end because wagtail.snippets triggers re-entrant hook
+# discovery, and all hooks above must be registered before that happens.
+import admin_site.wagtail_admin  # noqa: E402, F401
