@@ -4,6 +4,7 @@ import re
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, override
 
+from django import forms
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -14,7 +15,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
-from django.utils.translation import gettext_lazy as _, pgettext_lazy
+from django.utils.translation import get_language_info, gettext_lazy as _, pgettext_lazy
 from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.filters import WagtailFilterSet
@@ -39,6 +40,7 @@ from wagtail.log_actions import log
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
+import sentry_sdk
 from dal import autocomplete
 from django_filters import filters
 from wagtail_color_panel.edit_handlers import NativeColorPanel
@@ -82,7 +84,8 @@ from admin_site.wagtail import (
 from copying.views import PlanCopyView
 from indicators.models import Indicator
 from notifications.models import NotificationSettings
-from orgs.chooser import OrganizationChooser
+from orgs.chooser import organization_chooser_viewset
+from orgs.models import Organization
 from pages.models import PlanLink
 
 from . import (
@@ -113,6 +116,33 @@ if TYPE_CHECKING:
 
 
 class PlanForm(AplansAdminModelForm[Plan]):
+    organization_name = forms.CharField(
+        label=_('New organization name'),
+        required=False,
+        help_text=_('Create a new organization with this name'),
+    )
+
+    class Media:
+        js = ('actions/plan-org-toggle.js',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            if 'organization' in self.fields:
+                # We have special handling of a choosing org with chooser vs.
+                # creating a new one with an organization_name field.
+                # We do not want to show the fields as required individually
+                # nor clutter the form with more labels than necessary
+                self.fields['organization'].required = False
+                self.fields['organization'].label = ''
+                self.fields['organization'].widget.is_required = False
+                self.fields['organization_name'].label = ''
+            if 'primary_language' in self.fields:
+                field = self.fields['primary_language']
+                field.initial = ''
+                self.initial['primary_language'] = ''
+                field.choices = [('', '---------')] + [(k, v) for k, v in field.choices if k != '']
+
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
         if self.instance and self.instance.pk and primary_language != self.instance.primary_language:
@@ -156,12 +186,67 @@ class PlanForm(AplansAdminModelForm[Plan]):
                 _("A plan's other language cannot be the same as its primary language"),
                 code='plan-language-duplicate',
             )
+        if self.instance.pk is None:
+            self._clean_new_plan(cleaned_data)
         return cleaned_data
 
+    def _clean_new_plan(self, cleaned_data: dict[str, Any]) -> None:
+        """Handle organization choosing or creation and language specially when creating new plan."""
+        has_org = cleaned_data.get('organization') is not None
+        has_name = bool(cleaned_data.get('organization_name', '').strip())
+        if not has_org and not has_name:
+            raise ValidationError(
+                _('Select an existing organization or enter a name for a new one.'),
+                code='organization-required',
+            )
+        if has_org and has_name:
+            error = ValidationError(
+                _('Cannot both select an existing organization and create a new one.'),
+                code='organization-ambiguous',
+            )
+            # This path should not be reached since form JavaScript should
+            # make it impossible
+            sentry_sdk.capture_exception(error)
+            raise error
+
+        org = cleaned_data.get('organization')
+        plan_language = cleaned_data.get('primary_language')
+
+        if not ctx_request.is_set():
+            # Running in test context
+            return
+
+        if org is None or not plan_language or org.primary_language == plan_language:
+            return
+
+        request = ctx_request.get()
+        try:
+            plan_language_name = get_language_info(plan_language)['name']
+        except KeyError:
+            plan_language_name = plan_language
+        try:
+            org_language_name = get_language_info(org.primary_language)['name']
+        except KeyError:
+            org_language_name = org.primary_language
+        messages.warning(
+            request,
+            _(
+                'The primary language of the plan (%(plan_lang)s) differs from '
+                'the primary language of the organization (%(org_lang)s). '
+                'Please make sure this is intentional.'
+            )
+            % {'plan_lang': plan_language_name, 'org_lang': org_language_name},
+        )
+
+    @transaction.atomic()
     def save(self, *args, **kwargs):
-        creating = False
-        if self.instance.pk is None:
-            creating = True
+        creating = self.instance.pk is None
+        if creating and not self.cleaned_data.get('organization'):
+            org_name = self.cleaned_data['organization_name']
+            primary_language = self.cleaned_data['primary_language']
+            org = Organization(name=org_name, primary_language=primary_language)
+            Organization.add_root(instance=org)
+            self.instance.organization = org
         instance = super().save(*args, **kwargs)
         if creating:
             Plan.apply_defaults(instance)
@@ -324,10 +409,30 @@ class PlanAdmin(AplansModelAdmin[Plan]):
 
         if creating:
             # Accidentally changing a plan organization would be dangerous, so don't show this for existing plans
-            create_panels = [
-                FieldPanel('organization', widget=OrganizationChooser),
-            ]
-            panels = create_panels + [p for p in panels if getattr(p, 'field_name', None) in panels_enabled_when_creating]
+            org_panel = MultiFieldPanel(
+                [
+                    FieldPanel(
+                        'organization',
+                        heading='',
+                        help_text=_('Choose an existing organization'),
+                        widget=organization_chooser_viewset.widget_class(),
+                    ),
+                    FieldPanel(
+                        'organization_name',
+                        heading='',
+                    ),
+                ],
+                heading=_('Main organization'),
+                help_text=_('Select an existing organization or enter a name to create a new one.'),
+            )
+            create_panels = [p for p in panels if getattr(p, 'field_name', None) in panels_enabled_when_creating]
+            # Insert org panel after the identifier field
+            insert_idx = next(
+                (i + 1 for i, p in enumerate(create_panels) if getattr(p, 'field_name', None) == 'identifier'),
+                len(create_panels),
+            )
+            create_panels.insert(insert_idx, org_panel)
+            panels = create_panels
 
         user = user_or_bust(request.user)
         action_status_panels = insert_model_translation_panels(
