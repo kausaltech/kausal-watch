@@ -473,6 +473,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                 InlinePanel(
                     'clients',
                     min_num=1,
+                    label=_('Client'),
                     panels=[
                         FieldPanel('client', widget=ClientChooser),
                     ],
