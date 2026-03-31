@@ -12,11 +12,23 @@ class ImagesConfig(AppConfig):
 
         from wagtail.images import permissions
 
+        # Register custom rich text image embed handler that injects
+        # data-image-credit attributes on <img> tags in rich text.
+        # We force a feature scan first so that Wagtail's default hooks
+        # have already run, then override the 'image' embed type with
+        # ours and clear the rewriter cache.
+        from wagtail.rich_text import features as rich_text_features, get_rewriter
+
         # Register graphql types overrides for grapple
         from . import schema  # noqa: F401
 
         # monkeypatch new permission policy
         from .permissions import permission_policy
+        from .rich_text import ImageEmbedHandler
+
+        rich_text_features.get_embed_types()  # ensure scan has completed
+        rich_text_features.register_embed_type(ImageEmbedHandler)
+        get_rewriter.cache_clear()
 
         permissions.permission_policy = permission_policy
 
