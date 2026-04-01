@@ -1570,17 +1570,21 @@ class OrganizationPermission(WatchObjectPermissions):
 
 class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
     uuid = serializers.UUIDField(required=False)
+    primary_language = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Organization
         list_serializer_class = BulkListSerializer
-        fields: ClassVar = public_fields(Organization)
+        fields: ClassVar = [*public_fields(Organization), 'primary_language']
 
     def create(self, validated_data):
+        plan = self.context.get('plan')
+        if plan is None:
+            request = cast('WatchAdminRequest', self.context.get('request'))
+            plan = request.get_active_admin_plan()
+        if not validated_data.get('primary_language'):
+            validated_data['primary_language'] = plan.primary_language
         instance = super().create(validated_data)
-        # Add instance to active plan's related organizations
-        request = cast('WatchAdminRequest', self.context.get('request'))
-        plan = request.get_active_admin_plan()
         plan.related_organizations.add(instance)
         return instance
 
@@ -1615,11 +1619,39 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
         except Plan.DoesNotExist:
             raise exceptions.NotFound(detail='Plan not found') from None
 
+    def user_is_authorized_for_plan(self, plan: Plan) -> bool:
+        user = user_or_none(self.request.user)
+        return (
+            user is not None
+            and user.is_authenticated
+            and (
+                user.is_general_admin_for_plan(plan)
+                or user.is_contact_person_in_plan(plan)
+                or user.is_organization_admin_in_plan(plan)
+            )
+        )
+
+    def user_is_general_admin_for_plan(self, plan: Plan) -> bool:
+        user = user_or_none(self.request.user)
+        return user is not None and user.is_authenticated and user.is_general_admin_for_plan(plan)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        plan = self.get_plan()
+        if plan is None:
+            return context
+        if not self.user_is_general_admin_for_plan(plan):
+            raise exceptions.PermissionDenied(detail='Not authorized')
+        context['plan'] = plan
+        return context
+
     def get_queryset(self):
         queryset = super().get_queryset().order_by('id')
         plan = self.get_plan()
         if plan is None:
             return queryset
+        if not self.user_is_authorized_for_plan(plan):
+            raise exceptions.PermissionDenied(detail='Not authorized')
         return Organization.objects.qs.available_for_plan(plan).order_by('id')
 
 
