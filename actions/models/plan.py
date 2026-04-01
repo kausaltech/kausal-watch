@@ -155,7 +155,7 @@ class PlanQuerySet(PermissionedQuerySet['Plan'], MultilingualQuerySet['Plan']):
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
 
-    def visible_for_user(self, user: str) -> PlanQuerySet:
+    def visible_for_user(self, user: str) -> Self:
         """Filter by visibility using permission policy."""
         if user is None:
             user = AnonymousUser()
