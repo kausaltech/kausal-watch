@@ -22,12 +22,7 @@ def split_into_draftail_paragraphs(s):
     )
 
 
-def initialize_notification_templates(
-    plan_identifier=None,
-):
-    plan = Plan.objects.get(identifier=plan_identifier)
-    locale = plan.primary_language
-    translation.activate(locale)
+def _create_templates_for_plan(plan) -> None:
     base_template_defaults = {
         'from_name': plan.name,
         'from_address': settings.DEFAULT_FROM_EMAIL,
@@ -79,6 +74,15 @@ def initialize_notification_templates(
             base=base_template,
             defaults={'content': split_into_draftail_paragraphs(default_shared_texts.get(block_type))},
         )
+
+
+def initialize_notification_templates(
+    plan_identifier=None,
+):
+    plan = Plan.objects.get(identifier=plan_identifier)
+    locale = plan.primary_language
+    translation.activate(locale)
+    _create_templates_for_plan(plan)
 
 
 class Command(BaseCommand):
