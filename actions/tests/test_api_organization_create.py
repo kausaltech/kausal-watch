@@ -149,6 +149,38 @@ def test_create_organization_explicit_language_overrides_active_admin_plan(api_c
     assert org.primary_language == 'en'
 
 
+def test_create_organization_rejects_invalid_language_choice(api_client, organization_list_url):
+    plan = PlanFactory.create(primary_language='fi')
+    admin_person = PersonFactory.create(
+        organization=plan.organization,
+        general_admin_plans=[plan],
+    )
+    api_client.force_login(admin_person.user)
+
+    response = api_client.post(
+        organization_list_url,
+        data={'name': 'Bad Lang Org', 'parent': None, 'left_sibling': None, 'primary_language': 'xx-invalid'},
+        QUERY_STRING=f'plan={plan.identifier}',
+    )
+    assert response.status_code == 400
+
+
+def test_create_organization_rejects_too_long_language_code(api_client, organization_list_url):
+    plan = PlanFactory.create(primary_language='fi')
+    admin_person = PersonFactory.create(
+        organization=plan.organization,
+        general_admin_plans=[plan],
+    )
+    api_client.force_login(admin_person.user)
+
+    response = api_client.post(
+        organization_list_url,
+        data={'name': 'Long Lang Org', 'parent': None, 'left_sibling': None, 'primary_language': 'a' * 9},
+        QUERY_STRING=f'plan={plan.identifier}',
+    )
+    assert response.status_code == 400
+
+
 def test_update_organization_preserves_primary_language_when_omitted(api_client, organization_list_url):
     plan = PlanFactory.create(primary_language='fi')
     admin_person = PersonFactory.create(

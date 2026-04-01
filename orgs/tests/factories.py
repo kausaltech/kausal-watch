@@ -34,6 +34,7 @@ class OrganizationFactory(ModelFactory[Organization]):
     classification = SubFactory[Organization, OrganizationClass](OrganizationClassFactory)
     name = Sequence(lambda i: f'Organization {i}')
     abbreviation = Sequence(lambda i: f'org{i}')
+    primary_language = 'en'
     description = RichText('<p>Description</p>')
     url = 'https://example.org'
 

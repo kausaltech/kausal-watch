@@ -1570,12 +1570,16 @@ class OrganizationPermission(WatchObjectPermissions):
 
 class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
     uuid = serializers.UUIDField(required=False)
-    primary_language = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Organization
         list_serializer_class = BulkListSerializer
-        fields: ClassVar = [*public_fields(Organization), 'primary_language']
+        fields: ClassVar = public_fields(Organization)
+        extra_kwargs: ClassVar = {
+            # Allow omitting primary_language since it
+            # can then be taken from the plan
+            'primary_language': {'required': False},
+        }
 
     def create(self, validated_data):
         plan = self.context.get('plan')
