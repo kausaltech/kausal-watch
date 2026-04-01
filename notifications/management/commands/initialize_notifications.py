@@ -81,8 +81,8 @@ def initialize_notification_templates(
 ):
     plan = Plan.objects.get(identifier=plan_identifier)
     locale = plan.primary_language
-    translation.activate(locale)
-    _create_templates_for_plan(plan)
+    with translation.override(locale):
+        _create_templates_for_plan(plan)
 
 
 class Command(BaseCommand):
