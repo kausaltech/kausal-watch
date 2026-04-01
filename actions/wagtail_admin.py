@@ -119,6 +119,7 @@ class PlanForm(AplansAdminModelForm[Plan]):
     organization_name = forms.CharField(
         label=_('New organization name'),
         required=False,
+        max_length=Organization._meta.get_field('name').max_length,
         help_text=_('Create a new organization with this name'),
     )
 
