@@ -551,8 +551,10 @@ LANGUAGES = (
     ('es-US', _('Spanish (United States)')),
     ('fi', _('Finnish')),
     ('lv', _('Latvian')),
+    ('mww', _('Hmong (White)')),
     ('pt', _('Portuguese')),  # Use Brazilian Portuguese only for now
     ('pt-BR', _('Portuguese (Brazil)')),
+    ('so', _('Somali')),
     ('sv', _('Swedish')),
     ('sv-FI', _('Swedish (Finland)')),
 )
@@ -563,6 +565,8 @@ LANGUAGES = (
 LOCAL_LANGUAGE_NAMES = {
     'de-CH': 'Deutsch (Schweiz)',
     'es-US': 'español (Estados Unidos)',
+    'mww': 'Hmoob Dawb',
+    'so': 'Af Soomaali',
     'sv-FI': 'svenska (Finland)',
 }
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
