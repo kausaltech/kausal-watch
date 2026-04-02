@@ -348,8 +348,6 @@ else:
 
 
 class CategoryTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
-    request: HttpRequest
-
     @property
     def index_url(self):
         return append_query_parameter(self.request, super().index_url, 'category_type')
