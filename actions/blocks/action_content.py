@@ -68,6 +68,7 @@ ActionMainContentBlock = generate_stream_block(
         'related_actions',
         'dependencies',
         'related_indicators',
+        'pledges',
         ('contact_form', ActionContactFormBlock(required=True)),
         ('report_comparison', ReportComparisonBlock()),
         ('indicator_causal_chain', IndicatorCausalChainBlock()),

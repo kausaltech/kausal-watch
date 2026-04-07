@@ -785,6 +785,7 @@ class Action(
         'dependent_relationships',
         'dependency_role',
         'visibility',
+        'pledges',
     ]
 
     # type annotations for related objects

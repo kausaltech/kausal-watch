@@ -174,7 +174,7 @@ def initialize():
             has_report_block=False,
         )
     )
-    for field_name in ['contact_persons', 'links', 'related_actions', 'schedule']:
+    for field_name in ['contact_persons', 'links', 'pledges', 'related_actions', 'schedule']:
         register(
             Field(
                 field_name,

@@ -162,6 +162,7 @@ class Pledge(
     actions: M2MQS[Action, PledgeActionThrough, ActionQuerySet] = ParentalManyToManyField(  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]
         'actions.Action',
         through='PledgeActionThrough',
+        related_name='pledges',
         blank=True,
         verbose_name=_('actions'),
         help_text=_('Actions this pledge supports'),
