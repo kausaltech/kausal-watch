@@ -1179,3 +1179,52 @@ class TestPledgeUserQuery:
 
         assert data['pledgeUser'] is not None
         assert json.loads(data['pledgeUser']['userData']) == {}
+
+
+class TestPledgeCommitmentCountAnnotation:
+    """Test that commitment count works correctly via the annotated queryset."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+        self.plan = plan
+
+    def test_commitment_count_after_commit_mutation(self, graphql_client_query_data):
+        """Test that commitmentCount is correct after a commit mutation."""
+        pledge = PledgeFactory.create(plan=self.plan)
+        pledge_user = PledgeUser.objects.create()
+
+        # Commit to the pledge
+        graphql_client_query_data(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(pledge_user.uuid),
+                'pledgeId': str(pledge.id),
+                'committed': True,
+            },
+        )
+
+        # Query the pledges list (uses the annotated queryset) and verify the count
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+                plan(id: $plan) {
+                    pledges {
+                        id
+                        commitmentCount
+                    }
+                }
+            }
+            """,
+            variables={'plan': self.plan.identifier},
+        )

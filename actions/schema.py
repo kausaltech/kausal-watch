@@ -15,7 +15,7 @@ import strawberry as sb
 import strawberry_django
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Prefetch, Q, prefetch_related_objects
+from django.db.models import Count, Prefetch, Q, prefetch_related_objects
 from django.urls import reverse
 from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
@@ -648,7 +648,9 @@ class PlanNode(DjangoNode[Plan]):
         if not root.features.enable_community_engagement:
             return None
 
-        return Pledge.objects.filter(plan=root).order_by('order')
+        return Pledge.objects.filter(plan=root).annotate(
+            _commitment_count=Count('commitments'),
+        ).order_by('order')
 
     class Meta:
         model = Plan
@@ -1188,6 +1190,9 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
 
     @staticmethod
     def resolve_commitment_count(root: Pledge, _info: GQLInfo) -> int:
+        # Use pre-annotated count from resolve_pledges when available to avoid N+1 queries
+        if hasattr(root, '_commitment_count'):
+            return root._commitment_count  # type: ignore[return-value]
         return root.commitments.count()
 
 
