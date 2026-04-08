@@ -252,7 +252,7 @@ class BaseTemplateMenuItem(MenuItem):
         request = admin_req(request)
         link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
-        if hasattr(plan, 'notification_base_template'):
+        if hasattr(plan, 'notification_base_template') and plan.notification_base_template.pk is not None:
             link_menu_item.url = reverse(
                 self.view_set.get_url_name('edit'),
                 kwargs={'pk': plan.notification_base_template.pk},
