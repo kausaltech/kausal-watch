@@ -63,6 +63,7 @@ from admin_site.permissions import (
     PlanSpecificSingletonModelPermissionPolicy,
     PlanSpecificSingletonModelSuperuserPermissionPolicy,
 )
+from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import (
     BaseChangeLogMessageCreateView,
     BaseChangeLogMessageDeleteView,
@@ -674,6 +675,16 @@ class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
 register_snippet(ActivePlanFeaturesViewSet)
 
 
+class NotificationSettingsForm(WatchAdminModelForm[NotificationSettings]):
+    def clean_notifications_enabled(self):
+        notifications_enabled = self.cleaned_data['notifications_enabled']
+        if notifications_enabled and not hasattr(self.instance.plan, 'notification_base_template'):
+            raise ValidationError(
+                _('Notifications cannot be enabled for a plan that does not have a base notification template.')
+            )
+        return notifications_enabled
+
+
 class NotificationSettingsViewSet(WatchViewSet[NotificationSettings]):
     model = NotificationSettings
     icon = 'fontawesome-bell'
@@ -684,6 +695,9 @@ class NotificationSettingsViewSet(WatchViewSet[NotificationSettings]):
         FieldPanel('notifications_enabled'),
         FieldPanel('send_at_time'),
     ]
+
+    def get_edit_handler(self):
+        return ObjectList(self.panels, base_form_class=NotificationSettingsForm).bind_to_model(self.model)
 
     def get_queryset(self, request):
         qs = self.model.objects.get_queryset()
