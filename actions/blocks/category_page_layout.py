@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey
+from grapple.models import GraphQLForeignKey, GraphQLString
 
 from kausal_common.datasets.models import DatasetSchema
 
@@ -75,13 +75,41 @@ class CategoryPageProgressBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
+class PathsNodeSummaryBlock(blocks.StructBlock):
+    heading = blocks.CharBlock(
+        required=False,
+        help_text=_('What heading should be used in the public UI for the Paths node summary?'),
+        default='',
+        label=_('Heading'),
+    )
+    paths_target_node_id = blocks.CharBlock(
+        max_length=200,
+        required=False,
+        verbose_name=_('Kausal Paths target node ID'),
+        help_text=_(
+            'Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used.'
+        ),
+    )
+
+    class Meta:
+        label = _('Paths node summary')
+
+    graphql_fields = [
+        GraphQLString('heading', required=False),
+        GraphQLString('paths_target_node_id', required=False),
+    ]
+
+
+@register_streamfield_block
 class CategoryPageMainTopBlock(blocks.StreamBlock):
     attribute = CategoryPageAttributeTypeBlock()
     progress = CategoryPageProgressBlock()
+    paths_node_summary = PathsNodeSummaryBlock()
 
     graphql_types = [
         CategoryPageAttributeTypeBlock,
         CategoryPageProgressBlock,
+        PathsNodeSummaryBlock,
     ]
 
 
