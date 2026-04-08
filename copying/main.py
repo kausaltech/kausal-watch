@@ -48,7 +48,7 @@ from indicators.models.common_indicator import CommonIndicator
 from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator
 from indicators.models.metadata import Quantity, Unit
-from notifications.models import AutomaticNotificationTemplate, BaseTemplate, ContentBlock
+from notifications.models import AutomaticNotificationTemplate, BaseTemplate, ContentBlock, NotificationSettings
 from orgs.models import Organization
 from pages.models import PlanRootPage
 from people.models import Person
@@ -361,7 +361,7 @@ class CloneVisitor(AbstractVisitor):
         """
         Create a copy of the instance of the given node.
 
-        Behavior can be customized for each instance type using the hooks `pre_visit` and `save_copy`.
+        Behavior can be customized for each instance type using the hooks `pre_visit`, `save_copy` and `post_visit`.
         """
         original_instance = shallow_copy(node.instance)
         self.pre_visit(node.instance)
@@ -519,6 +519,12 @@ class CloneVisitor(AbstractVisitor):
     @save_copy.register
     def _(self, instance: CategoryType) -> None:
         instance.save(skip_page_synchronization=True)
+
+    @save_copy.register
+    def _(self, instance: NotificationSettings) -> None:
+        # Disable notifications for plan copies regardless of the original plan's setting
+        instance.notifications_enabled = False
+        instance.save()
 
     @singledispatchmethod
     def post_visit(self, original, copy) -> None:
@@ -1244,15 +1250,6 @@ def _copy_indicators(plan: Plan, clone_visitor: CloneVisitor) -> list[Indicator]
     return indicators
 
 
-def _post_copying_steps(plan_copy: Plan) -> None:
-    """Perform actions that need to be done after copying."""
-
-    # Force disabling notifications. Most likely the copied plan is under work
-    # or in an archived state where sending notifications makes no sense.
-    plan_copy.notification_settings.notifications_enabled = False
-    plan_copy.notification_settings.save(update_fields=['notifications_enabled'])
-
-
 def _clone_plan_objects(
     plan: Plan,
     clone_visitor: CloneVisitor,
@@ -1287,8 +1284,6 @@ def _clone_plan_objects(
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, indicators, clone_visitor)
-
-    _post_copying_steps(plan_copy)
 
     return plan_copy
 
