@@ -1244,6 +1244,15 @@ def _copy_indicators(plan: Plan, clone_visitor: CloneVisitor) -> list[Indicator]
     return indicators
 
 
+def _post_copying_steps(plan_copy: Plan) -> None:
+    """Perform actions that need to be done after copying."""
+
+    # Force disabling notifications. Most likely the copied plan is under work
+    # or in an archived state where sending notifications makes no sense.
+    plan_copy.notification_settings.notifications_enabled = False
+    plan_copy.notification_settings.save(update_fields=['notifications_enabled'])
+
+
 def _clone_plan_objects(
     plan: Plan,
     clone_visitor: CloneVisitor,
@@ -1278,6 +1287,8 @@ def _clone_plan_objects(
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, indicators, clone_visitor)
+
+    _post_copying_steps(plan_copy)
 
     return plan_copy
 

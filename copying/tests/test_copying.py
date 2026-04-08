@@ -806,3 +806,13 @@ def test_copy_plan_does_not_duplicate_template_specific_content_block(plan_with_
     assert template_block.template == template_copy
     assert template_block.template.base == template_block.base
     assert template_block.identifier == 'intro'
+
+
+def test_copy_plan_disables_notifications(plan_with_pages):
+    """Copied plan always has notifications_enabled=False, even if the original has it enabled."""
+    plan_with_pages.notification_settings.notifications_enabled = True
+    plan_with_pages.notification_settings.save(update_fields=['notifications_enabled'])
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert not plan_copy.notification_settings.notifications_enabled
