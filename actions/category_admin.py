@@ -293,6 +293,15 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm[Catego
         self.initial_plan_id = kwargs.pop('initial_plan_id')
         super().__init__(*args, **kwargs)
 
+    def clean_identifier(self):
+        # Since plan is not a form field, `validate_unique()` will be called with `exclude` containing `plan`, in
+        # which case the unique_together constraint (plan, identifier) will not be checked. We do it manually here.
+        identifier = self.cleaned_data['identifier']
+        plan = self.instance.plan
+        if CategoryType.objects.filter(plan=plan, identifier=identifier).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(_('There is already a category type with this identifier.'))
+        return identifier
+
     def save(self, commit=True):
         obj = super().save(commit)
         initial_plan_id = self.initial_plan_id
