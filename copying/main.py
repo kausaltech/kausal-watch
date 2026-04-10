@@ -115,8 +115,8 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'copies': EXCLUDED,
         'relatedactionsthrough': EXCLUDED,  # reverse of RelatedActionsThrough.to_action; covered via related_actions_through
         'change_log_messages': EXCLUDED,
-        'pledge': EXCLUDED,
-        'pledgeactionthrough': EXCLUDED,
+        'pledgeactionthrough': EXCLUDED,  # reverse of PledgeActionThrough.action; covered via pledges.pledge_action_through
+        'pledges': EXCLUDED,  # reverse M2M; copied as part of Plan.pledges
         'user_feedbacks': EXCLUDED,
     },
     'built_in_field_customizations': {},
@@ -174,7 +174,11 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'superseded_plans': EXCLUDED,
     'copies': EXCLUDED,
     'monitoring_quality_points': EXCLUDED,  # legacy
-    'pledges': EXCLUDED,
+    'pledges': {
+        'commitments': EXCLUDED,  # deliberately don't copy commitments as this should depend on approval of citizens
+        'pledge_action_through': {},
+        'user_feedbacks': EXCLUDED,
+    },
     'documentation_root_pages': EXCLUDED,  # handled separately by _copy_documentation_pages
     'user_feedbacks': EXCLUDED,
     'plan_common_indicator_through': EXCLUDED,  # common indicator assignments are not plan-owned
