@@ -97,6 +97,7 @@ if typing.TYPE_CHECKING:
 
     from actions.attributes import DraftAttributes
     from actions.models.category import CategoryType
+    from actions.models.pledge import Pledge
     from indicators.models import ActionIndicator, ActionIndicatorQuerySet, IndicatorQuerySet
     from people.models import Person
 
@@ -800,6 +801,7 @@ class Action(
     copies: RevMany[Action]
     tasks: RevMany[ActionTask]
     responsible_parties: RevMany[ActionResponsibleParty]
+    pledges: RevMany[Pledge]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
 

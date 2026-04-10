@@ -87,6 +87,19 @@ PLAN_FEATURES_QUERY = """
 """
 
 
+ACTION_PLEDGES_QUERY = """
+    query($actionId: ID!) {
+        action(id: $actionId) {
+            id
+            pledges {
+                id
+                name
+            }
+        }
+    }
+"""
+
+
 class TestPledgeQueryById:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1228,3 +1241,39 @@ class TestPledgeCommitmentCountAnnotation:
             """,
             variables={'plan': self.plan.identifier},
         )
+
+
+class TestActionPledgesFeatureFlag:
+    """Test that pledges on ActionNode are gated behind enable_community_engagement."""
+
+    def test_action_pledges_returned_when_feature_enabled(self, graphql_client_query_data):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+
+        action = ActionFactory.create(plan=plan)
+        pledge = PledgeFactory.create(plan=plan, actions=[action])
+
+        data = graphql_client_query_data(
+            ACTION_PLEDGES_QUERY,
+            variables={'actionId': str(action.id)},
+        )
+
+        pledges = data['action']['pledges']
+        assert len(pledges) == 1
+        assert pledges[0]['id'] == str(pledge.id)
+
+    def test_action_pledges_empty_when_feature_disabled(self, graphql_client_query_data):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = False
+        plan.features.save()
+
+        action = ActionFactory.create(plan=plan)
+        PledgeFactory.create(plan=plan, actions=[action])
+
+        data = graphql_client_query_data(
+            ACTION_PLEDGES_QUERY,
+            variables={'actionId': str(action.id)},
+        )
+
+        assert data['action']['pledges'] == []

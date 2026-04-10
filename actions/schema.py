@@ -1741,6 +1741,12 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
 
     @staticmethod
+    def resolve_pledges(root: Action, info: GQLInfo):
+        if not root.plan.features.enable_community_engagement:
+            return []
+        return root.pledges.all()
+
+    @staticmethod
     def resolve_similar_actions(root: Action, info: GQLInfo) -> list[Action]:
         if not (lang := info.context.graphql_query_language):
             return []

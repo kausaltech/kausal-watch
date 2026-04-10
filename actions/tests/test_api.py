@@ -58,6 +58,24 @@ def test_action_api_get(api_client, action_list_url, action):
     assert obj['plan'] == action.plan_id
 
 
+def test_action_api_excludes_pledges_when_feature_disabled(api_client, action_list_url, action: Action):
+    action.plan.features.enable_community_engagement = False
+    action.plan.features.save()
+
+    response = api_client.get(action_list_url)
+    obj = response.json_data['results'][0]
+    assert 'pledges' not in obj
+
+
+def test_action_api_includes_pledges_when_feature_enabled(api_client, action_list_url, action: Action):
+    action.plan.features.enable_community_engagement = True
+    action.plan.features.save()
+
+    response = api_client.get(action_list_url)
+    obj = response.json_data['results'][0]
+    assert 'pledges' in obj
+
+
 PERSON_COUNT = 10
 
 

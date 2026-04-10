@@ -1022,6 +1022,9 @@ class ActionSerializer(  # type: ignore[misc]
             del fields['internal_notes']
             del fields['internal_admin_notes']
 
+        if not self.plan.features.enable_community_engagement:
+            fields.pop('pledges', None)
+
         if user is not None:
             fields['modifiable_by_user'] = serializers.SerializerMethodField()
 
