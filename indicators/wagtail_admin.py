@@ -437,19 +437,20 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
 
         # Inject the metrics formset into self.formsets so that
         # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
-        schema = self.instance.dataset_schema if self.instance.pk else None
-        indicator_unit_label = ''
-        indicator_unit_short = ''
-        if self.instance.pk and self.instance.unit:
-            unit = self.instance.unit
-            indicator_unit_label = unit.name or unit.short_name or ''
-            indicator_unit_short = unit.short_name or unit.name or ''
-        self.formsets['metrics'] = _make_factor_formset(  # type: ignore[index]
-            schema,
-            indicator_unit_label,
-            indicator_unit_short,
-            data=self.data or None,
-        )
+        if self.plan.features.enable_indicator_factors:
+            schema = self.instance.dataset_schema if self.instance.pk else None
+            indicator_unit_label = ''
+            indicator_unit_short = ''
+            if self.instance.pk and self.instance.unit:
+                unit = self.instance.unit
+                indicator_unit_label = unit.name or unit.short_name or ''
+                indicator_unit_short = unit.short_name or unit.name or ''
+            self.formsets['metrics'] = _make_factor_formset(  # type: ignore[index]
+                schema,
+                indicator_unit_label,
+                indicator_unit_short,
+                data=self.data or None,
+            )
 
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
@@ -489,10 +490,10 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_('Dimensions must be the same as in common indicator'))
 
-        if not self.formsets['metrics'].is_valid():
-            raise ValidationError(_('Please correct the errors in the factors section.'))
-
-        self._validate_no_data_in_deleted_factors()
+        if self.plan.features.enable_indicator_factors:
+            if not self.formsets['metrics'].is_valid():
+                raise ValidationError(_('Please correct the errors in the factors section.'))
+            self._validate_no_data_in_deleted_factors()
 
         return self.cleaned_data
 
