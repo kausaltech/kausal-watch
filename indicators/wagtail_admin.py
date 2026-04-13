@@ -437,7 +437,8 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
 
         # Inject the metrics formset into self.formsets so that
         # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
-        if self.plan.features.enable_indicator_factors:
+        effective_plan = Plan.objects.get(id=self.initial_plan_id) if self.initial_plan_id else self.plan
+        if effective_plan.features.enable_indicator_factors:
             schema = self.instance.dataset_schema if self.instance.pk else None
             indicator_unit_label = ''
             indicator_unit_short = ''
@@ -490,7 +491,8 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_('Dimensions must be the same as in common indicator'))
 
-        if self.plan.features.enable_indicator_factors:
+        effective_plan = Plan.objects.get(id=self.initial_plan_id) if self.initial_plan_id else self.plan
+        if 'metrics' in self.formsets and effective_plan.features.enable_indicator_factors:
             if not self.formsets['metrics'].is_valid():
                 raise ValidationError(_('Please correct the errors in the factors section.'))
             self._validate_no_data_in_deleted_factors()
