@@ -38,6 +38,7 @@ For example, when adding a new model, verify the new model instances are copied 
 - [ ] **Moderation** integration implemented
 - [ ] **Reporting** integration implemented
 - [ ] **Copy plan feature** integration implemented
+- [ ] **Umbrella plan structure** integration implemented
 
 ### Dependencies
 - [ ] **Dependencies are merged** (if applicable. If the change depends on other PRs e.g. kausal_common)
