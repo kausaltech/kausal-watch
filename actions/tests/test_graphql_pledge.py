@@ -1215,7 +1215,7 @@ class TestPledgeCommitmentCountAnnotation:
         )
 
         # Query the pledges list (uses the annotated queryset) and verify the count
-        data = graphql_client_query_data(
+        graphql_client_query_data(
             """
             query($plan: ID!) {
                 plan(id: $plan) {
