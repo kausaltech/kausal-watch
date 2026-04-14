@@ -770,11 +770,26 @@ class IndicatorCreateView(
 class IndicatorEditView(
     InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansEditView[Indicator]
 ):
+    def _get_active_tab(self) -> str:
+        """Get the active tab hash from the form submission (e.g. 'tab-relationships')."""
+        raw = self.request.POST.get('_active_tab', '')
+        return raw.lstrip('#')
+
     def get_success_url(self):
+        active_tab = self._get_active_tab()
+        if active_tab:
+            self.request.session['_active_tab'] = active_tab
+        else:
+            self.request.session.pop('_active_tab', None)
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
             return f'{change_log_create_url}?indicator={self.instance.pk}'
+        # When saving from the Relationships tab, redirect back to the edit page
+        # so the user can immediately access the factor data editor link that
+        # becomes available after saving new factors.
+        if active_tab == 'tab-relationships':
+            return self.url_helper.get_action_url('edit', self.instance.pk) + f'#{active_tab}'
         return super().get_success_url()
 
 
@@ -1088,6 +1103,10 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
                 dataset_link_panel = self._get_dataset_editor_link_panel(instance)
                 if dataset_link_panel is not None:
                     factors_panels.append(dataset_link_panel)
+                else:
+                    factors_panels.append(
+                        HelpPanel(content=_('Save the indicator after adding a factor to enable the data editor.'))
+                    )
             panels.append(MultiFieldPanel(factors_panels, heading=_('Factors')))
 
         return ObjectList(panels, heading=_('Relationships'))

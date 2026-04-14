@@ -352,6 +352,26 @@ def hack_wagtail_rich_text_fields():
         """)
 
 
+@hooks.register('insert_editor_js')
+def preserve_active_tab_on_save():
+    """Copy the active tab hash into a hidden field so the backend can redirect back to it."""
+    return mark_safe("""
+        <script>
+        $(function () {
+            $('form').each(function () {
+                var form = $(this);
+                if (!form.find('input[name="_active_tab"]').length) {
+                    form.append('<input type="hidden" name="_active_tab" value="">');
+                }
+                form.on('submit', function () {
+                    form.find('input[name="_active_tab"]').val(window.location.hash);
+                });
+            });
+        });
+        </script>
+        """)
+
+
 # Imported at the end because wagtail.snippets triggers re-entrant hook
 # discovery, and all hooks above must be registered before that happens.
 import admin_site.wagtail_admin  # noqa: E402, F401
