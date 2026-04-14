@@ -1189,6 +1189,22 @@ class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[Indicat
     related_field_name = 'indicator'
     success_url_name = 'indicators_indicator_modeladmin_index'
 
+    def _get_indicator_edit_url(self) -> str | None:
+        """Redirect to the indicator edit page with the Relationships tab active, or None."""
+        active_tab = self.request.session.get('_active_tab', '')
+        if active_tab != 'tab-relationships':
+            return None
+        related_id = self.get_related_id()
+        if not related_id:
+            return None
+        return reverse('indicators_indicator_modeladmin_edit', args=[related_id]) + f'#{active_tab}'
+
+    def get_success_url(self):
+        return self._get_indicator_edit_url() or super().get_success_url()
+
+    def get_skip_url(self) -> str:
+        return self._get_indicator_edit_url() or super().get_skip_url()
+
     def get_related_object_by_pk(self, pk: str) -> Indicator | None:
         try:
             return Indicator.objects.get(pk=pk)
