@@ -60,3 +60,13 @@ class ActionsConfig(AppConfig):
         from actions.attribute_type_admin import check_attribute_value_models
 
         check_attribute_value_models()
+
+        # Import pledge_admin late (after hook scanning and feature scanning
+        # have completed) and register its snippet.  Importing it during
+        # wagtail_hooks discovery would trigger re-entrant feature scanning
+        # because PledgeAdminForm's metaclass processes RichTextFields eagerly.
+        from wagtail.snippets.models import register_snippet
+
+        from actions.pledge_admin import PledgeViewSet
+
+        register_snippet(PledgeViewSet)

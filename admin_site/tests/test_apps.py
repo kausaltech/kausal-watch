@@ -13,3 +13,20 @@ def test_rich_text_default_features_include_superscript():
     default = features.get_default_features()  # type: ignore[attr-defined]
     assert 'superscript' in default
     assert 'subscript' in default
+
+
+def test_rich_text_default_features_not_duplicated():
+    """
+    Ensure no feature is registered more than once.
+
+    Module-level ModelForm classes whose model has RichTextFields can trigger
+    re-entrant feature scanning during Wagtail hook discovery, doubling every
+    default feature.  This test catches that regression.
+    """
+    from collections import Counter
+
+    from wagtail.rich_text import features
+
+    default = features.get_default_features()  # type: ignore[attr-defined]
+    duplicates = {f: n for f, n in Counter(default).items() if n > 1}
+    assert not duplicates, f'Duplicate default rich-text features: {duplicates}'

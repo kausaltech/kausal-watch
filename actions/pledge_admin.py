@@ -16,7 +16,6 @@ from wagtail.admin.panels import (
 from wagtail.admin.ui.tables import Column
 from wagtail.admin.views.mixins import Echo
 from wagtail.images.widgets import AdminImageChooser
-from wagtail.snippets.models import register_snippet
 
 from dal import autocomplete
 
@@ -81,7 +80,7 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
             'actions': autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
         }
 
-    def clean_slug(self):
+    def clean_slug(self) -> str:
         # Since the plan field is excluded from the form, `validate_unique()` won't check
         # the unique_together = [('plan', 'slug')] constraint. We validate it manually here.
         slug = self.cleaned_data['slug']
@@ -90,7 +89,7 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
             raise ValidationError(_('There is already a pledge with this slug.'))
         return slug
 
-    def save(self, commit=True):
+    def save(self, commit=True) -> Pledge:
         obj = super().save(commit)
         # Get user from the dynamically set _user attribute
         user = getattr(self, '_user', None)
@@ -344,4 +343,5 @@ class PledgeViewSet(WatchViewSet[Pledge]):
         return qs.filter(plan=plan).annotate(commitment_count=Count('commitments'))
 
 
-register_snippet(PledgeViewSet)
+# register_snippet(PledgeViewSet) is called in ActionsConfig.ready() instead
+# of here.  See the comment in actions/wagtail_admin.py for details.

@@ -56,6 +56,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.chooser import ClientChooser
+from admin_site.forms import WatchAdminModelForm
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
@@ -63,7 +64,6 @@ from admin_site.permissions import (
     PlanSpecificSingletonModelPermissionPolicy,
     PlanSpecificSingletonModelSuperuserPermissionPolicy,
 )
-from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import (
     BaseChangeLogMessageCreateView,
     BaseChangeLogMessageDeleteView,
@@ -93,8 +93,13 @@ from . import (
     action_admin,  # noqa: F401
     attribute_type_admin,  # noqa: F401
     category_admin,  # noqa: F401
-    pledge_admin,  # noqa: F401
 )
+
+# pledge_admin is intentionally NOT imported here.  It is imported in
+# ActionsConfig.ready() instead, because its module-level PledgeAdminForm
+# class triggers Wagtail feature scanning at import time (via RichTextField
+# formfield), and importing it during hook discovery causes a re-entrant
+# scan that doubles every default rich-text feature.
 from .models import (
     Action,
     ActionChangeLogMessage,
