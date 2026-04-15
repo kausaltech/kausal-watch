@@ -1190,14 +1190,14 @@ class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[Indicat
     success_url_name = 'indicators_indicator_modeladmin_index'
 
     def _get_indicator_edit_url(self) -> str | None:
-        """Redirect to the indicator edit page with the Relationships tab active, or None."""
+        """Redirect to the indicator edit page's factors panel, or None."""
         active_tab = self.request.session.get('_active_tab', '')
-        if active_tab != 'tab-relationships':
+        if active_tab not in ('tab-relationships', 'panel-child-relationships-factors-section'):
             return None
         related_id = self.get_related_id()
         if not related_id:
             return None
-        return reverse('indicators_indicator_modeladmin_edit', args=[related_id]) + f'#{active_tab}'
+        return reverse('indicators_indicator_modeladmin_edit', args=[related_id]) + '#panel-child-relationships-factors-section'
 
     def get_success_url(self):
         return self._get_indicator_edit_url() or super().get_success_url()
