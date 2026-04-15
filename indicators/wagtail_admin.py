@@ -603,7 +603,14 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         if obj.dataset_schema is not None:
             self._delete_result_metrics_for_removed_factors(obj.dataset_schema, metrics_formset)
 
-        if self._has_new_factors(metrics_formset):
+        has_new = self._has_new_factors(metrics_formset)
+        # Track whether the user added new factor forms (beyond the pre-existing ones).
+        initial_count = metrics_formset.initial_form_count()
+        self._new_factors_were_added = any(
+            form.cleaned_data and not form.cleaned_data.get('DELETE') for form in metrics_formset.forms[initial_count:]
+        )
+
+        if has_new:
             schema = self._ensure_dataset_schema(obj)
             metrics_formset.instance = schema
             metrics_formset.save()
@@ -770,6 +777,10 @@ class IndicatorCreateView(
 class IndicatorEditView(
     InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansEditView[Indicator]
 ):
+    def form_valid(self, form, *args, **kwargs):
+        self._form = form
+        return super().form_valid(form, *args, **kwargs)
+
     def _get_active_tab(self) -> str:
         """Get the active tab hash from the form submission (e.g. 'tab-relationships')."""
         raw = self.request.POST.get('_active_tab', '')
@@ -777,7 +788,12 @@ class IndicatorEditView(
 
     def get_success_url(self):
         active_tab = self._get_active_tab()
-        if active_tab:
+        new_factors = getattr(self._form, '_new_factors_were_added', False)
+        on_relationships_tab = active_tab in ('tab-relationships', 'panel-child-relationships-factors-section')
+        redirect_to_factors = on_relationships_tab and new_factors
+        # Only persist the active tab in the session when we want the
+        # changelog flow to redirect back to the factors panel too.
+        if redirect_to_factors:
             self.request.session['_active_tab'] = active_tab
         else:
             self.request.session.pop('_active_tab', None)
@@ -785,11 +801,9 @@ class IndicatorEditView(
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
             return f'{change_log_create_url}?indicator={self.instance.pk}'
-        # When saving from the Relationships tab, redirect back to the edit page
-        # so the user can immediately access the factor data editor link that
-        # becomes available after saving new factors.
-        if active_tab == 'tab-relationships':
-            return self.url_helper.get_action_url('edit', self.instance.pk) + f'#{active_tab}'
+        # Redirect to the factors panel so the user can access the data editor link.
+        if redirect_to_factors:
+            return self.url_helper.get_action_url('edit', self.instance.pk) + '#panel-child-relationships-factors-section'
         return super().get_success_url()
 
 
