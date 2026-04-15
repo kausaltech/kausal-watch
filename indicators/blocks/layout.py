@@ -8,7 +8,7 @@ from django.db.models.enums import TextChoices
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.admin.telepath import register as telepath_register
-from wagtail.blocks.struct_block import StructBlockAdapter, StructBlockValidationError
+from wagtail.blocks.struct_block import BlockGroup, StructBlockAdapter, StructBlockValidationError  # type: ignore[attr-defined]
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt
@@ -388,7 +388,17 @@ class _IndicatorVisualizationStructBlockAdapter(StructBlockAdapter):
         hidden = {f for f, flag in self.feature_gated_fields.items() if not getattr(features, flag, True)}
         if not hidden:
             return [name, children, meta]
-        return [name, tuple(c for c in children if c.name not in hidden), meta]
+        filtered_children = tuple(c for c in children if c.name not in hidden)
+        form_layout = meta.get('formLayout')
+        if form_layout is not None:
+            meta = {
+                **meta,
+                'formLayout': BlockGroup(
+                    [c for c in form_layout.children if not (isinstance(c, str) and c in hidden)],
+                    settings=[s for s in form_layout.settings if not (isinstance(s, str) and s in hidden)],
+                ),
+            }
+        return [name, filtered_children, meta]
 
 
 telepath_register(_IndicatorVisualizationStructBlockAdapter(), IndicatorVisualizationContentBlock)
