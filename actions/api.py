@@ -17,6 +17,7 @@ from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
 
+from django_countries.serializers import CountryFieldMixin
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
@@ -135,7 +136,7 @@ class ActionImplementationPhaseSerializer(serializers.ModelSerializer[ActionImpl
         fields = public_fields(ActionImplementationPhase)
 
 
-class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer[Plan]):
+class PlanSerializer(CountryFieldMixin, ModelWithImageSerializerMixin, serializers.ModelSerializer[Plan]):
     class Meta:
         model = Plan
         fields = public_fields(
