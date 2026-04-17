@@ -604,12 +604,6 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             self._delete_result_metrics_for_removed_factors(obj.dataset_schema, metrics_formset)
 
         has_new = self._has_new_factors(metrics_formset)
-        # Track whether the user added new factor forms (beyond the pre-existing ones).
-        initial_count = metrics_formset.initial_form_count()
-        self._new_factors_were_added = any(
-            form.cleaned_data and not form.cleaned_data.get('DELETE') for form in metrics_formset.forms[initial_count:]
-        )
-
         if has_new:
             schema = self._ensure_dataset_schema(obj)
             metrics_formset.instance = schema
@@ -618,6 +612,9 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             # Save deletions/edits even when no new factors
             metrics_formset.instance = obj.dataset_schema
             metrics_formset.save()
+
+        if len(getattr(metrics_formset, 'new_objects', [])):
+            self._new_factors_were_added = True
 
         # Auto-create/update computations for each factor
         if obj.dataset_schema is not None:
@@ -628,6 +625,10 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             self._cleanup_empty_schema(obj)
 
         return obj
+
+    @property
+    def new_factors_were_added(self) -> bool:
+        return getattr(self, '_new_factors_were_added', False)
 
     @staticmethod
     def _delete_result_metrics_for_removed_factors(schema: DatasetSchema, metrics_formset) -> None:
@@ -777,7 +778,9 @@ class IndicatorCreateView(
 class IndicatorEditView(
     InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansEditView[Indicator]
 ):
-    def form_valid(self, form, *args, **kwargs):
+    _form: IndicatorForm
+
+    def form_valid(self, form: IndicatorForm, *args, **kwargs):
         self._form = form
         return super().form_valid(form, *args, **kwargs)
 
@@ -788,9 +791,8 @@ class IndicatorEditView(
 
     def get_success_url(self):
         active_tab = self._get_active_tab()
-        new_factors = getattr(self._form, '_new_factors_were_added', False)
         on_relationships_tab = active_tab in ('tab-relationships', 'panel-child-relationships-factors-section')
-        redirect_to_factors = on_relationships_tab and new_factors
+        redirect_to_factors = on_relationships_tab and self._form.new_factors_were_added
         # Only persist the active tab in the session when we want the
         # changelog flow to redirect back to the factors panel too.
         if redirect_to_factors:
