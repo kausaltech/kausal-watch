@@ -739,6 +739,18 @@ WAGTAILEMBEDS_FINDERS = [
         'domain_whitelist': ('map.geo.admin.ch',),
         'title': 'Map',
     },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        # If we leave the provider out, the "default" provider will be used
+        'domain_whitelist': ('solarrechner.eturnity.io',),
+        'title': 'Solarrechner',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        # If we leave the provider out, the "default" provider will be used
+        'domain_whitelist': ('kraftwerk-unterland.ch',),
+        'title': 'Kraftwerk-Unterland',
+    },
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_ENABLE_UPDATE_CHECK = False
