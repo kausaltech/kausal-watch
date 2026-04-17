@@ -102,6 +102,7 @@ def get_virtual_metrics_for_schema(dataset: Dataset) -> list[dict]:
             'is_computed': False,
             'is_virtual': True,
             'computed_by': None,
+            'value_rounding': indicator.value_rounding,
         }
     ]
 
