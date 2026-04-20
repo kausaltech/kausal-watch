@@ -7,9 +7,10 @@ from io import BytesIO
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, IntegerField, OuterRef, Subquery
 from django.http import FileResponse, StreamingHttpResponse
 from django.utils.translation import gettext_lazy as _
+from django.db.models.functions import Coalesce
 from wagtail.admin.panels import (
     FieldPanel,
     MultiFieldPanel,
@@ -31,11 +32,6 @@ from kausal_common.users import user_or_bust
 from admin_site.forms import WatchAdminModelForm
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
-from admin_site.wagtail import (
-    AplansTabbedInterface,
-    get_translation_tabs,
-)
-
 from .models import Pledge
 from .models.pledge import PledgeCommitment
 
@@ -73,16 +69,11 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
 
     class Meta:
         model = Pledge
-        # Exclude auto-generated, relationship, and i18n storage fields
-        # The i18n fields are handled by translation tabs via get_translation_tabs()
+        # Exclude auto-generated and relationship fields
         exclude = [
             'uuid',
             'plan',
             'order',
-            'name_i18n',
-            'description_i18n',
-            'impact_statement_i18n',
-            'local_equivalency_i18n',
         ]
         # Explicitly define widgets to ensure they're used even with dynamic form class creation
         widgets = {
@@ -92,10 +83,13 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
 
     def clean_slug(self):
         # Since the plan field is excluded from the form, `validate_unique()` won't check
-        # the unique_together = [('plan', 'slug')] constraint. We validate it manually here.
+        # the unique_together = [('plan', 'slug', 'locale')] constraint. We validate it manually here.
         slug = self.cleaned_data['slug']
         plan = self.instance.plan
-        if Pledge.objects.filter(plan=plan, slug=slug).exclude(pk=self.instance.pk).exists():
+        locale = self.instance.locale
+        if locale is None:
+            locale = Pledge.get_locale_for_language_code(plan.primary_language)
+        if Pledge.objects.filter(plan=plan, slug=slug, locale=locale).exclude(pk=self.instance.pk).exists():
             raise ValidationError(_('There is already a pledge with this slug.'))
         return slug
 
@@ -171,7 +165,7 @@ class PledgeViewMixin:
             instance = self.model(plan=plan)  # type: ignore[call-arg]
 
         # Get attribute panels
-        main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(user)
+        main_attribute_panels, _i18n_attribute_panels = instance.get_attribute_panels(user)
 
         # Build panels list using ViewSet's panels directly (don't copy to preserve widget config)
         # Insert attribute panels at the position specified by attribute_panel_position
@@ -185,15 +179,6 @@ class PledgeViewMixin:
         # Add remaining panels
         panels.extend(PledgeViewSet.panels[pos:])
 
-        # Get translation tabs
-        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
-
-        # If there are translation tabs, use TabbedInterface; otherwise just ObjectList
-        if i18n_tabs:
-            tabs = [
-                ObjectList(panels, heading=_('Basic information')),
-            ] + i18n_tabs
-            return AplansTabbedInterface(tabs).bind_to_model(self.model)
         return ObjectList(panels).bind_to_model(self.model)
 
 
@@ -209,10 +194,11 @@ class _DropdownLabel(MenuItem, Component):
     """Non-interactive group label rendered inside a dropdown."""
 
     def __init__(self, label: str, priority: int = 0) -> None:
-        super().__init__(label, '', icon_name = '', priority=priority)
+        super().__init__(label, '', icon_name='', priority=priority)
 
     def render_html(self, parent_context=None) -> SafeString:
         from django.utils.html import format_html
+
         return format_html(
             '<div style="padding: 0.5rem 1.5rem 0.25rem; font-size: 0.75rem; font-weight: 600;'
             ' text-transform: uppercase; color: var(--w-color-text-label-menus-default); opacity: 0.7;">{}</div>',
@@ -224,13 +210,12 @@ class _DropdownDivider(MenuItem, Component):
     """Horizontal rule rendered inside a dropdown."""
 
     def __init__(self, priority: int = 0) -> None:
-        super().__init__('', '', icon_name = '', priority=priority)
+        super().__init__('', '', icon_name='', priority=priority)
 
     def render_html(self, parent_context=None) -> SafeString:
         from django.utils.safestring import mark_safe
-        return mark_safe(
-            '<hr style="border: none; border-top: 1px solid var(--w-color-border-furniture); margin: 0.25rem 0;">'
-        )
+
+        return mark_safe('<hr style="border: none; border-top: 1px solid var(--w-color-border-furniture); margin: 0.25rem 0;">')
 
 
 class PledgeIndexView(WatchIndexView[Pledge]):
@@ -269,9 +254,9 @@ class PledgeIndexView(WatchIndexView[Pledge]):
 
         buttons += [
             _DropdownLabel(str(_('Export')), priority=89),
-            Button(_('Export as Excel'),              url=self.get_export_url('xlsx'), icon_name='download', priority=90),
-            Button(_('Export pledges as CSV'),        url=_url('pledges',     'csv'),  icon_name='download', priority=91),
-            Button(_('Export commitments as CSV'),    url=_url('commitments', 'csv'),  icon_name='download', priority=92),
+            Button(_('Export as Excel'), url=self.get_export_url('xlsx'), icon_name='download', priority=90),
+            Button(_('Export pledges as CSV'), url=_url('pledges', 'csv'), icon_name='download', priority=91),
+            Button(_('Export commitments as CSV'), url=_url('commitments', 'csv'), icon_name='download', priority=92),
             _DropdownDivider(priority=93),
         ]
         return sorted(buttons)
@@ -309,9 +294,7 @@ class PledgeIndexView(WatchIndexView[Pledge]):
         ])
 
     def render_to_response(self, context, **response_kwargs):
-        if (self.is_export
-                and self.request.GET.get('export_type') == 'commitments'
-                and self.request.GET.get('export') == 'csv'):
+        if self.is_export and self.request.GET.get('export_type') == 'commitments' and self.request.GET.get('export') == 'csv':
             return self.write_commitments_csv_response(context['object_list'])
         return super().render_to_response(context, **response_kwargs)
 
@@ -469,7 +452,20 @@ class PledgeViewSet(WatchViewSet[Pledge]):
             qs = self.model._default_manager.all()
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
-        return qs.filter(plan=plan).annotate(commitment_count=Count('commitments'))
+        primary_locale = Pledge.get_locale_for_language_code(plan.primary_language)
+        shared_commitment_count = (
+            PledgeCommitment.objects
+            .filter(pledge__translation_key=OuterRef('translation_key'))
+            .values('pledge__translation_key')
+            .annotate(count=Count('id'))
+            .values('count')
+        )
+        return qs.filter(plan=plan, locale=primary_locale).annotate(
+            commitment_count=Coalesce(
+                Subquery(shared_commitment_count[:1], output_field=IntegerField()),
+                0,
+            )
+        )
 
 
 register_snippet(PledgeViewSet)

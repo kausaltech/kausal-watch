@@ -15,13 +15,14 @@ import strawberry as sb
 import strawberry_django
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Count, Prefetch, Q, prefetch_related_objects
+from django.db.models import Count, IntegerField, OuterRef, Prefetch, Q, Subquery, prefetch_related_objects
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
-from wagtail.models import Revision, WorkflowState
+from wagtail.models import Locale, Revision, WorkflowState
 from wagtail.rich_text import RichText
 
 import graphene_django_optimizer as gql_optimizer
@@ -32,6 +33,7 @@ from grapple.types.interfaces import get_page_interface
 from kausal_common.datasets.models import Dataset
 from kausal_common.graphene.grapple import make_grapple_streamfield
 from kausal_common.graphene.registry import register_graphene_node
+from kausal_common.i18n.helpers import convert_language_code
 from kausal_common.strawberry.errors import PermissionDeniedError
 from kausal_common.users import is_authenticated, user_or_none
 
@@ -213,6 +215,40 @@ def get_indicator_list_page_node():
     from pages.models import IndicatorListPage
 
     return registry.pages[IndicatorListPage]
+
+
+def _get_active_wagtail_locale() -> Locale:
+    language = get_language()
+    if not language:
+        return Locale.get_default()
+    try:
+        normalized_language = convert_language_code(language, 'wagtail')
+    except ValueError:
+        return Locale.get_default()
+    normalized_base_language = normalized_language.split('-', maxsplit=1)[0]
+    locale = Locale.objects.filter(language_code__iexact=normalized_language).first()
+    if locale is not None:
+        return locale
+    locale = Locale.objects.filter(language_code__iexact=normalized_base_language).first()
+    if locale is not None:
+        return locale
+    return Locale.get_default()
+
+
+def _annotate_shared_pledge_commitment_count(queryset: QuerySet[Pledge]) -> QuerySet[Pledge]:
+    shared_commitment_count = (
+        PledgeCommitment.objects
+        .filter(pledge__translation_key=OuterRef('translation_key'))
+        .values('pledge__translation_key')
+        .annotate(count=Count('id'))
+        .values('count')
+    )
+    return queryset.annotate(
+        _commitment_count=Coalesce(
+            Subquery(shared_commitment_count[:1], output_field=IntegerField()),
+            0,
+        ),
+    )
 
 
 T = TypeVar('T', bound=Plan)
@@ -652,10 +688,13 @@ class PlanNode(DjangoNode[Plan]):
         if not root.features.enable_community_engagement:
             return None
 
-        qs = Pledge.objects.filter(plan=root)
-
         if id:
-            return qs.filter(id=id).first()
+            pledge = Pledge.objects.filter(plan=root, id=id).first()
+            if pledge is None:
+                return None
+            return pledge.get_translation_for_language(get_language())
+
+        qs = Pledge.objects.filter(plan=root, locale=_get_active_wagtail_locale())
         if slug:
             return qs.filter(slug=slug).first()
         return None
@@ -665,8 +704,8 @@ class PlanNode(DjangoNode[Plan]):
         if not root.features.enable_community_engagement:
             return None
 
-        return Pledge.objects.filter(plan=root).annotate(
-            _commitment_count=Count('commitments'),
+        return _annotate_shared_pledge_commitment_count(
+            Pledge.objects.filter(plan=root, locale=_get_active_wagtail_locale()),
         ).order_by('order')
 
     class Meta:
@@ -1210,7 +1249,7 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
         # Use pre-annotated count from resolve_pledges when available to avoid N+1 queries
         if hasattr(root, '_commitment_count'):
             return root._commitment_count  # type: ignore[return-value]
-        return root.commitments.count()
+        return PledgeCommitment.objects.filter(pledge__translation_key=root.translation_key).count()
 
 
 class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
@@ -1229,7 +1268,8 @@ class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
         pledge = root.pledge
         if not pledge.plan.features.enable_community_engagement:
             return None
-        return pledge
+        primary_pledge = pledge.get_primary_translation()
+        return primary_pledge.get_translation_for_language(get_language())
 
 
 class PledgeUserNode(DjangoNode[PledgeUser]):
@@ -1745,7 +1785,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     def resolve_pledges(root: Action, info: GQLInfo):
         if not root.plan.features.enable_community_engagement:
             return []
-        return root.pledges.all()
+        return root.pledges.filter(locale=_get_active_wagtail_locale())
 
     @staticmethod
     def resolve_similar_actions(root: Action, info: GQLInfo) -> list[Action]:
@@ -2409,16 +2449,18 @@ class CommitToPledgeMutation(graphene.Mutation):
         if not pledge.plan.features.enable_community_engagement:
             raise GraphQLError('Community engagement is not enabled for this plan') from None
 
+        canonical_pledge = pledge.get_primary_translation()
+
         if committed:
             # Create commitment (ignore if already exists)
             PledgeCommitment.objects.get_or_create(
-                pledge=pledge,
+                pledge=canonical_pledge,
                 pledge_user=pledge_user,
             )
         else:
             # Remove commitment if it exists
             PledgeCommitment.objects.filter(
-                pledge=pledge,
+                pledge=canonical_pledge,
                 pledge_user=pledge_user,
             ).delete()
 

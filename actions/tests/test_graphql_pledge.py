@@ -8,6 +8,7 @@ import pytest
 from actions.models import Pledge, PledgeCommitment, PledgeUser
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
+from wagtail.models import Locale
 
 pytestmark = pytest.mark.django_db
 
@@ -94,6 +95,52 @@ ACTION_PLEDGES_QUERY = """
             pledges {
                 id
                 name
+            }
+    }
+}
+"""
+
+PLEDGE_QUERY_WITH_LOCALE = f"""
+    query($plan: ID!, $lang: String!, $id: ID, $slug: String) @locale(lang: $lang) {{
+        plan(id: $plan) {{
+            pledge(id: $id, slug: $slug) {{
+                {PLEDGE_FIELDS}
+            }}
+        }}
+    }}
+"""
+
+PLEDGES_QUERY_WITH_LOCALE = f"""
+    query($plan: ID!, $lang: String!) @locale(lang: $lang) {{
+        plan(id: $plan) {{
+            pledges {{
+                {PLEDGE_FIELDS}
+            }}
+        }}
+    }}
+"""
+
+ACTION_PLEDGES_QUERY_WITH_LOCALE = """
+    query($actionId: ID!, $lang: String!) @locale(lang: $lang) {
+        action(id: $actionId) {
+            id
+            pledges {
+                id
+                name
+            }
+        }
+    }
+"""
+
+PLEDGE_USER_QUERY_WITH_LOCALE = """
+    query($uuid: UUID!, $lang: String!) @locale(lang: $lang) {
+        pledgeUser(uuid: $uuid) {
+            uuid
+            commitments {
+                pledge {
+                    id
+                    name
+                }
             }
         }
     }
@@ -1241,6 +1288,145 @@ class TestPledgeCommitmentCountAnnotation:
             """,
             variables={'plan': self.plan.identifier},
         )
+
+
+class TestPledgeLocaleGraphQL:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create(
+            primary_language='en',
+            other_languages=['fi'],
+        )
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
+        self.action = ActionFactory.create(plan=self.plan)
+        self.primary_pledge = PledgeFactory.create(
+            plan=self.plan,
+            name='English pledge',
+            slug='pledge-locale',
+            actions=[self.action],
+        )
+        fi_locale, _ = Locale.objects.get_or_create(language_code='fi')
+        self.fi_pledge = self.primary_pledge.copy_for_translation(fi_locale)
+        self.fi_pledge.name = 'Suomenkielinen lupaus'
+        self.fi_pledge.actions.set([self.action])
+        self.fi_pledge.uuid = uuid.uuid4()
+        self.fi_pledge.save()
+
+    def test_pledges_query_returns_only_requested_locale_rows(self, graphql_client_query_data):
+        data_fi = graphql_client_query_data(
+            PLEDGES_QUERY_WITH_LOCALE,
+            variables={'plan': self.plan.identifier, 'lang': 'fi'},
+        )
+        assert len(data_fi['plan']['pledges']) == 1
+        assert data_fi['plan']['pledges'][0]['id'] == str(self.fi_pledge.id)
+        assert data_fi['plan']['pledges'][0]['name'] == 'Suomenkielinen lupaus'
+
+        data_en = graphql_client_query_data(
+            PLEDGES_QUERY_WITH_LOCALE,
+            variables={'plan': self.plan.identifier, 'lang': 'en'},
+        )
+        assert len(data_en['plan']['pledges']) == 1
+        assert data_en['plan']['pledges'][0]['id'] == str(self.primary_pledge.id)
+        assert data_en['plan']['pledges'][0]['name'] == 'English pledge'
+
+    def test_pledge_query_by_id_returns_requested_locale_translation(self, graphql_client_query_data):
+        data = graphql_client_query_data(
+            PLEDGE_QUERY_WITH_LOCALE,
+            variables={
+                'plan': self.plan.identifier,
+                'lang': 'fi',
+                'id': str(self.primary_pledge.id),
+            },
+        )
+        assert data['plan']['pledge'] is not None
+        assert data['plan']['pledge']['id'] == str(self.fi_pledge.id)
+        assert data['plan']['pledge']['name'] == 'Suomenkielinen lupaus'
+
+    def test_pledge_query_by_slug_uses_requested_locale(self, graphql_client_query_data):
+        data = graphql_client_query_data(
+            PLEDGE_QUERY_WITH_LOCALE,
+            variables={
+                'plan': self.plan.identifier,
+                'lang': 'fi',
+                'slug': 'pledge-locale',
+            },
+        )
+        assert data['plan']['pledge'] is not None
+        assert data['plan']['pledge']['id'] == str(self.fi_pledge.id)
+        assert data['plan']['pledge']['name'] == 'Suomenkielinen lupaus'
+
+    def test_action_pledges_resolve_requested_locale(self, graphql_client_query_data):
+        data = graphql_client_query_data(
+            ACTION_PLEDGES_QUERY_WITH_LOCALE,
+            variables={'actionId': str(self.action.id), 'lang': 'fi'},
+        )
+        assert len(data['action']['pledges']) == 1
+        assert data['action']['pledges'][0]['id'] == str(self.fi_pledge.id)
+        assert data['action']['pledges'][0]['name'] == 'Suomenkielinen lupaus'
+
+    def test_commit_mutation_with_translated_pledge_id_uses_primary_locale(self, graphql_client_query_data):
+        pledge_user = PledgeUser.objects.create()
+        data = graphql_client_query_data(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(pledge_user.uuid),
+                'pledgeId': str(self.fi_pledge.id),
+                'committed': True,
+            },
+        )
+
+        assert data['pledge']['commitToPledge']['committed'] is True
+        commitment = PledgeCommitment.objects.get(pledge_user=pledge_user)
+        assert commitment.pledge_id == self.primary_pledge.id
+
+    def test_commitment_count_is_shared_between_locale_copies(self, graphql_client_query_data):
+        pledge_user = PledgeUser.objects.create()
+        PledgeCommitment.objects.create(pledge=self.primary_pledge, pledge_user=pledge_user)
+
+        data_fi = graphql_client_query_data(
+            PLEDGE_QUERY_WITH_LOCALE,
+            variables={
+                'plan': self.plan.identifier,
+                'lang': 'fi',
+                'id': str(self.primary_pledge.id),
+            },
+        )
+        assert data_fi['plan']['pledge']['id'] == str(self.fi_pledge.id)
+        assert data_fi['plan']['pledge']['commitmentCount'] == 1
+
+        data_en = graphql_client_query_data(
+            PLEDGE_QUERY_WITH_LOCALE,
+            variables={
+                'plan': self.plan.identifier,
+                'lang': 'en',
+                'id': str(self.primary_pledge.id),
+            },
+        )
+        assert data_en['plan']['pledge']['id'] == str(self.primary_pledge.id)
+        assert data_en['plan']['pledge']['commitmentCount'] == 1
+
+    def test_pledge_user_commitments_resolve_to_requested_locale(self, graphql_client_query_data):
+        pledge_user = PledgeUser.objects.create()
+        PledgeCommitment.objects.create(pledge=self.primary_pledge, pledge_user=pledge_user)
+
+        data = graphql_client_query_data(
+            PLEDGE_USER_QUERY_WITH_LOCALE,
+            variables={'uuid': str(pledge_user.uuid), 'lang': 'fi'},
+        )
+
+        assert data['pledgeUser'] is not None
+        assert len(data['pledgeUser']['commitments']) == 1
+        assert data['pledgeUser']['commitments'][0]['pledge']['id'] == str(self.fi_pledge.id)
+        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Suomenkielinen lupaus'
 
 
 class TestActionPledgesFeatureFlag:

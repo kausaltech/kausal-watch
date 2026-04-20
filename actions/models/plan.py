@@ -18,7 +18,7 @@ from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Min, Q
 from django.db.models.aggregates import Max
 from django.db.models.functions import Cast, Length, Substr
 from django.utils import timezone, translation
@@ -38,7 +38,7 @@ from modelsearch import index
 from wagtail_color_panel.fields import ColorField
 from wagtail_localize.operations import TranslationCreator
 
-from kausal_common.i18n.helpers import get_default_language, get_supported_languages
+from kausal_common.i18n.helpers import convert_language_code, get_default_language, get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.permissions import PermissionedModel, PermissionedQuerySet
 from kausal_common.models.types import MLModelManager
@@ -807,7 +807,46 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         self._site_created = True
         self.site = site
 
+    @staticmethod
+    def _normalize_wagtail_language_codes(language_codes: list[str]) -> set[str]:
+        return {convert_language_code(code, 'wagtail') for code in language_codes if code}
+
+    def _get_plan_wagtail_language_codes(self) -> set[str]:
+        return self._normalize_wagtail_language_codes([self.primary_language, *(self.other_languages or [])])
+
+    def _sync_pledge_locale_copies_for_plan_languages(self) -> None:
+        from actions.models.pledge import Pledge
+
+        primary_locale = Pledge.get_locale_for_language_code(self.primary_language)
+        source_pledges = Pledge.objects.filter(plan=self, locale=primary_locale)
+        if not source_pledges.exists():
+            source_ids = (
+                Pledge.objects
+                .filter(plan=self)
+                .values('translation_key')
+                .annotate(source_id=Min('id'))
+                .values_list('source_id', flat=True)
+            )
+            source_pledges = Pledge.objects.filter(id__in=source_ids)
+
+        for pledge in source_pledges:
+            pledge.ensure_locale_copies()
+
     def save(self, *args, **kwargs):  # noqa: C901, PLR0912
+        previous_language_codes: set[str] | None = None
+        save_update_fields = kwargs.get('update_fields')
+        if self.pk is not None:
+            language_fields = {'primary_language', 'other_languages'}
+            if save_update_fields is None or language_fields.intersection(set(save_update_fields)):
+                previous_language_data = Plan.objects.filter(pk=self.pk).values('primary_language', 'other_languages').first()
+                if previous_language_data is not None:
+                    previous_language_codes = self._normalize_wagtail_language_codes(
+                        [
+                            previous_language_data['primary_language'],
+                            *(previous_language_data['other_languages'] or []),
+                        ],
+                    )
+
         ret = super().save(*args, **kwargs)
 
         update_fields = []
@@ -864,6 +903,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
         if update_fields:
             super().save(update_fields=update_fields)
+
+        if previous_language_codes is not None:
+            current_language_codes = self._get_plan_wagtail_language_codes()
+            if current_language_codes != previous_language_codes:
+                self._sync_pledge_locale_copies_for_plan_languages()
 
         return ret
 

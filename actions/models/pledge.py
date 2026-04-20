@@ -7,14 +7,15 @@ import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
-from modeltrans.fields import TranslationField
-from modeltrans.manager import MultilingualQuerySet
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
 
 from modelsearch import index
+from wagtail.models import TranslatableMixin
+from wagtail.models.i18n import Locale
 
-from kausal_common.models.types import MLModelManager
+from kausal_common.models.types import ModelManager
+from kausal_common.i18n.helpers import convert_language_code
 
 from aplans.utils import PlanRelatedModelQuerySet, PlanRelatedOrderedModel
 
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
     from images.models import AplansImage
 
 
-class PledgeQuerySet(PlanRelatedModelQuerySet['Pledge'], MultilingualQuerySet['Pledge']):
+class PledgeQuerySet(PlanRelatedModelQuerySet['Pledge']):
     def visible_for_user(self, user: UserOrAnon, plan: Plan):
         """Filter pledges visible to the given user for the given plan."""
         qs = self.filter(plan=plan)
@@ -54,12 +55,12 @@ class PledgeQuerySet(PlanRelatedModelQuerySet['Pledge'], MultilingualQuerySet['P
 # Manager configuration
 if TYPE_CHECKING:
 
-    class PledgeManager(MLModelManager['Pledge', PledgeQuerySet]):
+    class PledgeManager(ModelManager['Pledge', PledgeQuerySet]):
         def for_plan(self, plan: Plan) -> PledgeQuerySet: ...
         def visible_for_user(self, user: UserOrAnon, plan: Plan) -> PledgeQuerySet: ...
 
 else:
-    PledgeManager = MLModelManager.from_queryset(PledgeQuerySet)
+    PledgeManager = ModelManager.from_queryset(PledgeQuerySet)
 
 
 @reversion.register(follow=['pledge_action_through'] + ModelWithAttributes.REVERSION_FOLLOW)
@@ -67,6 +68,7 @@ class Pledge(
     PlanRelatedOrderedModel,
     ModelWithAttributes,
     SearchableModel[PledgeQuerySet],
+    TranslatableMixin,
 ):
     """
     A Pledge represents a commitment that community members can make to support climate action.
@@ -174,12 +176,6 @@ class Pledge(
         verbose_name=_('updated at'),
     )
 
-    # Translation configuration
-    i18n = TranslationField(
-        fields=('name', 'description', 'impact_statement', 'local_equivalency'),
-        default_language_field='plan__primary_language_lowercase',
-    )
-
     commitments: RevMany[PledgeCommitment]
 
     objects: ClassVar[PledgeManager] = PledgeManager()
@@ -196,11 +192,62 @@ class Pledge(
     class Meta:
         verbose_name = _('pledge')
         verbose_name_plural = _('pledges')
-        unique_together = [('plan', 'slug')]
+        unique_together = [('plan', 'slug', 'locale'), ('translation_key', 'locale')]
         ordering = ['plan', 'order']
 
     def __str__(self) -> str:
         return self.name
+
+    @staticmethod
+    def get_locale_for_language_code(language_code: str) -> Locale:
+        normalized_code = convert_language_code(language_code, 'wagtail')
+        locale = Locale.objects.filter(language_code__iexact=normalized_code).first()
+        if locale is not None:
+            return locale
+        return Locale.objects.create(language_code=normalized_code)
+
+    def get_translation_for_language(self, language_code: str | None) -> Pledge:
+        if not language_code:
+            return self
+
+        normalized = convert_language_code(language_code, 'wagtail')
+        locale = Locale.objects.filter(language_code__iexact=normalized).first()
+        if locale is None and '-' in normalized:
+            fallback_code = normalized.split('-', maxsplit=1)[0]
+            locale = Locale.objects.filter(language_code__iexact=fallback_code).first()
+        if locale is None:
+            return self
+        return self.get_translation_or_none(locale) or self
+
+    def get_primary_translation(self) -> Pledge:
+        primary_locale = self.get_locale_for_language_code(self.plan.primary_language)
+        return self.get_translation_or_none(primary_locale) or self
+
+    def ensure_locale_copies(self) -> None:
+        """Ensure locale copies exist for all plan languages."""
+        if self.pk is None:
+            return
+
+        existing_locale_ids = set(self.get_translations(inclusive=True).values_list('locale_id', flat=True))
+        action_ids = list(self.actions.values_list('id', flat=True))
+        language_codes = [self.plan.primary_language, *self.plan.other_languages]
+
+        for language_code in language_codes:
+            locale = self.get_locale_for_language_code(language_code)
+            if locale.id in existing_locale_ids:
+                continue
+            translation = self.copy_for_translation(locale)
+            translation.uuid = uuid.uuid4()
+            translation.save()
+            if action_ids:
+                translation.actions.set(action_ids)
+            existing_locale_ids.add(locale.id)
+
+    def handle_admin_save(self, context: dict | None = None) -> None:
+        operation = (context or {}).get('operation')
+        if operation != 'create':
+            return
+        self.ensure_locale_copies()
 
     @classmethod
     def get_attribute_types_for_plan(
