@@ -109,6 +109,16 @@ class EmbedHTMLValue(graphene.ObjectType[Any]):
 
 @register_streamfield_block
 class AdaptiveEmbedBlock(blocks.StructBlock):
+    title: blocks.CharBlock = blocks.CharBlock(
+        label=_('Title'),
+        help_text=_('Helps screen readers describe this embedded content'),
+        required=False,
+    )
+    description: blocks.CharBlock = blocks.CharBlock(
+        label=_('Description'),
+        help_text=_('Helps screen readers understand what this embed shows'),
+        required=False,
+    )
     # Note: Do not try to use Wagtail's EmbedBlock here.
     # It doesn't support dynamic, configurable sizes.
     # The extra inner field is just to enable the custom
@@ -147,6 +157,8 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLField('embed', EmbedHTMLValue),
         GraphQLBoolean('full_width'),
+        GraphQLString('title'),
+        GraphQLString('description'),
     ]
 
 
