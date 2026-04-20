@@ -3,8 +3,10 @@ from __future__ import annotations
 import typing
 from unittest.mock import Mock
 
+from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from wagtail.models import Locale
 
 import pytest
 from pytest_django.asserts import assertContains
@@ -12,11 +14,13 @@ from pytest_django.asserts import assertContains
 from actions.action_admin import ActionAdmin
 from actions.attribute_type_admin import AttributeTypeAdmin
 from actions.models import AttributeType, CategoryType
+from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import (
     ActionFactory,
     AttributeTypeFactory,
     CategoryTypeFactory,
     PlanFactory,
+    PledgeFactory,
 )
 from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
@@ -45,6 +49,15 @@ def get_plan_index_view(rf, client, user, view_set=None) -> PlanIndexView:
     client.force_login(user)
     request = get_request(rf, user)
     index_view = PlanIndexView(**view_set.get_common_view_kwargs(), **view_set.get_index_view_kwargs())
+    index_view.setup(request)
+    return index_view
+
+
+def get_pledge_index_view(rf, user, view_set=None) -> PledgeIndexView:
+    if view_set is None:
+        view_set = PledgeViewSet()
+    request = get_request(rf, user)
+    index_view = PledgeIndexView(**view_set.get_common_view_kwargs(), **view_set.get_index_view_kwargs())
     index_view.setup(request)
     return index_view
 
@@ -85,6 +98,24 @@ def test_plan_edit_button_shown_to_plan_admin(rf, client, plan_admin_user, plan)
 
 def test_plan_edit_button_not_shown_to_action_contact_person(rf, client, action_contact_person_user, plan):
     assert not edit_button_shown(rf, client, action_contact_person_user, plan)
+
+
+def test_pledge_translate_listing_button_hidden(rf, superuser, plan):
+    plan.features.enable_community_engagement = True
+    plan.features.save()
+    Locale.objects.get_or_create(language_code='fi')
+    pledge = PledgeFactory.create(plan=plan)
+
+    view_set = PledgeViewSet()
+    index_view = get_pledge_index_view(rf, superuser, view_set)
+    list_buttons = index_view.get_list_buttons(pledge)
+
+    dropdown_urls = [b.url for button in list_buttons for b in getattr(button, 'dropdown_buttons', [])]
+    translate_url = reverse(
+        'wagtail_localize:submit_snippet_translation',
+        args=[pledge._meta.app_label, pledge._meta.model_name, quote(pledge.pk)],
+    )
+    assert translate_url not in dropdown_urls
 
 
 def test_superuser_can_list_plans(rf, superuser, plan, client):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 import uuid
 
 from django.contrib.auth.models import AnonymousUser
@@ -9,6 +10,7 @@ import pytest
 
 from actions.models import Pledge, PledgeCommitment, PledgeUser
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
+from wagtail.models import Locale
 
 pytestmark = pytest.mark.django_db
 
@@ -86,6 +88,92 @@ class TestPledge:
         self.plan.features.save()
         self.plan.features.refresh_from_db()
         assert self.plan.features.enable_community_engagement is True
+
+
+class TestPledgeLocaleTranslations:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create(
+            primary_language='en',
+            other_languages=['fi', 'sv'],
+        )
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
+
+    def test_slug_can_repeat_across_locales_in_same_plan(self):
+        """Test that the same slug is allowed across locale copies of a pledge."""
+        primary_pledge = PledgeFactory.create(
+            plan=self.plan,
+            slug='shared-slug',
+            name='Primary name',
+        )
+        fi_locale, _ = Locale.objects.get_or_create(language_code='fi')
+        fi_pledge = primary_pledge.copy_for_translation(fi_locale)
+        fi_pledge.name = 'Suomenkielinen nimi'
+        fi_pledge.uuid = uuid.uuid4()
+        fi_pledge.save()
+
+        assert primary_pledge.slug == fi_pledge.slug
+        assert primary_pledge.locale != fi_pledge.locale
+
+    def test_get_primary_translation_returns_primary_locale_instance(self):
+        """Test that get_primary_translation resolves locale copies back to primary locale."""
+        primary_pledge = PledgeFactory.create(plan=self.plan, name='Primary')
+        fi_locale, _ = Locale.objects.get_or_create(language_code='fi')
+        fi_pledge = primary_pledge.copy_for_translation(fi_locale)
+        fi_pledge.name = 'Suomi'
+        fi_pledge.uuid = uuid.uuid4()
+        fi_pledge.save()
+
+        assert fi_pledge.get_primary_translation().id == primary_pledge.id
+
+    def test_get_translation_for_language_returns_requested_translation(self):
+        """Test that get_translation_for_language returns the requested locale translation."""
+        primary_pledge = PledgeFactory.create(plan=self.plan, name='Primary')
+        fi_locale, _ = Locale.objects.get_or_create(language_code='fi')
+        fi_pledge = primary_pledge.copy_for_translation(fi_locale)
+        fi_pledge.name = 'Suomi'
+        fi_pledge.uuid = uuid.uuid4()
+        fi_pledge.save()
+
+        translation = primary_pledge.get_translation_for_language('fi')
+        assert translation.id == fi_pledge.id
+        assert translation.name == 'Suomi'
+
+    def test_get_translation_for_language_falls_back_when_translation_missing(self):
+        """Test that get_translation_for_language falls back to the current pledge when missing."""
+        primary_pledge = PledgeFactory.create(plan=self.plan, name='Primary')
+
+        translation = primary_pledge.get_translation_for_language('de')
+        assert translation.id == primary_pledge.id
+        assert translation.name == 'Primary'
+
+    def test_ensure_locale_copies_creates_missing_plan_language_rows(self):
+        """Test that ensure_locale_copies creates locale copies for all plan languages."""
+        action = ActionFactory.create(plan=self.plan)
+        primary_pledge = PledgeFactory.create(plan=self.plan, actions=[action])
+
+        primary_pledge.ensure_locale_copies()
+
+        locale_codes = sorted(
+            primary_pledge.get_translations(inclusive=True).values_list('locale__language_code', flat=True),
+        )
+        assert locale_codes == ['en', 'fi', 'sv']
+        for translation in primary_pledge.get_translations(inclusive=True):
+            assert list(cast('Pledge', translation).actions.values_list('id', flat=True)) == [action.id]
+
+    def test_plan_language_change_creates_missing_locale_copies_for_existing_pledges(self):
+        """Test that changing plan languages syncs pledge locale copies."""
+        plan = PlanFactory.create(primary_language='en', other_languages=['fi'])
+        primary_pledge = PledgeFactory.create(plan=plan, name='Primary')
+
+        plan.other_languages = ['fi', 'sv']
+        plan.save(update_fields=['other_languages'])
+
+        locale_codes = sorted(
+            primary_pledge.get_translations(inclusive=True).values_list('locale__language_code', flat=True),
+        )
+        assert locale_codes == ['en', 'fi', 'sv']
 
 
 class TestPledgeActionRelationship:

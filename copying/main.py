@@ -31,6 +31,7 @@ from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType
 from actions.models.plan import Plan
+from actions.models.pledge import Pledge
 from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
 from admin_site.models import Client
 from content.apps import create_site_general_content
@@ -322,6 +323,7 @@ class CloneVisitor(AbstractVisitor):
         self._copy_keys: set[tuple[type[Model], Any]] = set()
         self._copy_to_original_pk: dict[tuple[type[Model], Any], Any] = {}
         self.removed_links = {}
+        self._pledge_translation_keys: dict[Any, Any] = {}
         self.supersede_original_plan = supersede_original_plan
         self.supersede_original_actions = supersede_original_actions
 
@@ -500,6 +502,16 @@ class CloneVisitor(AbstractVisitor):
     def _(self, instance: Site) -> None:
         self.prepare_instance_for_copy(instance)
         instance.hostname = self.site_hostname
+
+    @pre_visit.register
+    def _(self, instance: Pledge) -> None:
+        self.prepare_instance_for_copy(instance)
+        translation_key = instance.translation_key
+        copy_translation_key = self._pledge_translation_keys.get(translation_key)
+        if copy_translation_key is None:
+            copy_translation_key = uuid4()
+            self._pledge_translation_keys[translation_key] = copy_translation_key
+        instance.translation_key = copy_translation_key
 
     @singledispatchmethod
     def save_copy(self, instance) -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import uuid
 from io import BytesIO
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,7 @@ import pytest
 from actions.models import Pledge, PledgeCommitment, PledgeUser
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import PlanFactory, PledgeFactory
+from wagtail.models import Locale
 
 if TYPE_CHECKING:
     from django.test import RequestFactory
@@ -306,10 +308,41 @@ class TestCombinedXlsxExport:
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(pledge=pledge, pledge_user=PledgeUser.objects.create())
 
-        view, qs = _get_view_and_queryset(
-            rf, self.user, self.plan, {'export': 'csv', 'export_type': 'commitments'}
-        )
+        view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export': 'csv', 'export_type': 'commitments'})
         response = view.render_to_response({'object_list': qs})
 
         assert isinstance(response, StreamingHttpResponse)
         assert 'text/csv' in response['Content-Type']
+
+
+class TestPledgeIndexLocaleFiltering:
+    @pytest.fixture(autouse=True)
+    def setup(self, plan_admin_user):
+        self.user = plan_admin_user
+        self.plan = self.user.get_active_admin_plan()
+        self.plan.primary_language = 'en'
+        self.plan.other_languages = ['fi']
+        self.plan.features.enable_community_engagement = True
+        self.plan.save(update_fields=['primary_language', 'other_languages'])
+        self.plan.features.save()
+
+    def test_index_queryset_includes_only_primary_locale(self, rf):
+        """Pledge index queryset should include only primary-language pledges."""
+        primary_pledge = PledgeFactory.create(
+            plan=self.plan,
+            name='English pledge',
+            slug='pledge-locale-filter',
+        )
+        fi_locale, _ = Locale.objects.get_or_create(language_code='fi')
+        fi_pledge = primary_pledge.copy_for_translation(fi_locale)
+        fi_pledge.uuid = uuid.uuid4()
+        fi_pledge.name = 'Suomenkielinen lupaus'
+        fi_pledge.save()
+
+        request = rf.get('/admin/')
+        request.user = self.user
+        queryset = PledgeViewSet().get_queryset(request)
+
+        ids = set(queryset.values_list('id', flat=True))
+        assert primary_pledge.id in ids
+        assert fi_pledge.id not in ids

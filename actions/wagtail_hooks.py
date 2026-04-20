@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.contrib.admin.utils import quote
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -82,3 +83,22 @@ def register_documents_search_area():
         icon_name='kausal-action',
         order=200,
     )
+
+
+@hooks.register('construct_snippet_listing_buttons')
+def remove_pledge_translate_listing_button(buttons, instance, _user):
+    """
+    Hide wagtail-localize "Translate" listing action for pledges.
+
+    Pledge translations are managed via locale switching between existing locale copies.
+    """
+    from actions.models import Pledge
+
+    if not isinstance(instance, Pledge):
+        return
+
+    translate_url = reverse(
+        'wagtail_localize:submit_snippet_translation',
+        args=[instance._meta.app_label, instance._meta.model_name, quote(instance.pk)],
+    )
+    buttons[:] = [button for button in buttons if getattr(button, 'url', None) != translate_url]
