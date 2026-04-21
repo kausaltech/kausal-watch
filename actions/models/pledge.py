@@ -201,10 +201,7 @@ class Pledge(
     @staticmethod
     def get_locale_for_language_code(language_code: str) -> Locale:
         normalized_code = convert_language_code(language_code, 'wagtail')
-        locale = Locale.objects.filter(language_code__iexact=normalized_code).first()
-        if locale is not None:
-            return locale
-        return Locale.objects.create(language_code=normalized_code)
+        return Locale.objects.get(language_code__iexact=normalized_code)
 
     def get_translation_for_language(self, language_code: str | None) -> Pledge:
         if not language_code:
