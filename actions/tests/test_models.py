@@ -628,6 +628,8 @@ def test_action_on_form_save_no_commit(
 def test_primary_language_lowercase(attribute_type, common_category_type, plan, organization):
     for instance in (attribute_type, common_category_type, plan, organization):
         for lang_code, _ in settings.LANGUAGES:
+            # The locale is used for the pledge functionality
+            Locale.objects.get_or_create(language_code=lang_code)
             instance.primary_language = lang_code
             instance.save()
             assert instance.primary_language.lower() == instance.primary_language_lowercase
