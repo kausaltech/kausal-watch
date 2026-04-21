@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('actions', '0170_migrate_pledges_to_locale_copies'),
+        ('actions', '0171_migrate_pledges_to_locale_copies'),
     ]
 
     operations = [

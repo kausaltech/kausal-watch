@@ -134,7 +134,7 @@ def migrate_pledges_to_locale_copies(apps, schema_editor):  # noqa: C901
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('actions', '0169_alter_pledge_unique_together_pledge_locale_and_more'),
+        ('actions', '0170_alter_pledge_unique_together_pledge_locale_and_more'),
     ]
 
     operations = [

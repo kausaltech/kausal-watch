@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0171_remove_pledge_i18n"),
+        ("actions", "0172_remove_pledge_i18n"),
     ]
 
     operations = [
