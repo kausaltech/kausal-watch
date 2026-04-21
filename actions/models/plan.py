@@ -33,6 +33,7 @@ from modeltrans.manager import MultilingualQuerySet
 from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 
+import sentry_sdk
 from django_countries.fields import CountryField
 from modelsearch import index
 from wagtail_color_panel.fields import ColorField
@@ -817,7 +818,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def _sync_pledge_locale_copies_for_plan_languages(self) -> None:
         from actions.models.pledge import Pledge
 
-        primary_locale = Pledge.get_locale_for_language_code(self.primary_language)
+        try:
+            primary_locale = Pledge.get_locale_for_language_code(self.primary_language)
+        except Locale.DoesNotExist as e:
+            sentry_sdk.capture_exception(e)
+            return
         source_pledges = Pledge.objects.filter(plan=self, locale=primary_locale)
         if not source_pledges.exists():
             source_ids = (
