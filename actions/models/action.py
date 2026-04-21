@@ -1923,7 +1923,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
         related_name='tasks',
         verbose_name=pgettext_lazy('Action model', 'action'),
     )
-    name = models.CharField(max_length=250, verbose_name=_('name'))
+    name = models.CharField(max_length=500, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
     details = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('details'))
     due_at = models.DateField(
