@@ -983,6 +983,9 @@ class AttributesMixin:
     )
     def resolve_attributes(root: ModelWithAttributes, info: GQLInfo, id: str | None = None):
         request = info.context
+        attr_source = getattr(root, 'get_attributes_source', None)
+        if attr_source is not None:
+            root = attr_source()
 
         plan_identifier = info.variable_values.get('plan')
         if not is_plan_context_active(info):

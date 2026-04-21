@@ -521,7 +521,9 @@ class AttributeType(ABC, Generic[T]):
             from actions.models.pledge import Pledge
 
             assert isinstance(obj, Pledge)
-            assert self.instance.scope == obj.plan
+            source = obj.get_attributes_source()
+            assert self.instance.scope == source.plan
+            return self.attributes.filter(content_type=content_type, object_id=source.id)
         else:
             raise ValueError(f'Invalid content type {content_type.app_label}.{content_type.model} of object {obj}')
         return self.attributes.filter(content_type=content_type, object_id=obj.id)

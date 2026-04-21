@@ -9,13 +9,13 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
-
-from modelsearch import index
 from wagtail.models import TranslatableMixin
 from wagtail.models.i18n import Locale
 
-from kausal_common.models.types import ModelManager
+from modelsearch import index
+
 from kausal_common.i18n.helpers import convert_language_code
+from kausal_common.models.types import ModelManager
 
 from aplans.utils import PlanRelatedModelQuerySet, PlanRelatedOrderedModel
 
@@ -219,6 +219,10 @@ class Pledge(
     def get_primary_translation(self) -> Pledge:
         primary_locale = self.get_locale_for_language_code(self.plan.primary_language)
         return self.get_translation_or_none(primary_locale) or self
+
+    def get_attributes_source(self) -> Pledge:
+        """Return the instance that holds authoritative attribute data (the primary translation)."""
+        return self.get_primary_translation()
 
     def ensure_locale_copies(self) -> None:
         """Ensure locale copies exist for all plan languages."""

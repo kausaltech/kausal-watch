@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import cast
 import uuid
+from typing import cast
 
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
+from wagtail.models import Locale
 
 import pytest
 
 from actions.models import Pledge, PledgeCommitment, PledgeUser
+from actions.models.attributes import AttributeText, AttributeType as AttributeTypeModel
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
-from wagtail.models import Locale
 
 pytestmark = pytest.mark.django_db
 
@@ -440,3 +442,77 @@ class TestPledgeCommitment:
 
         assert str(self.pledge_user.uuid) in str(commitment)
         assert self.pledge.name in str(commitment)
+
+
+class TestPledgeAttributeResolution:
+    """Test that locale copies resolve attributes from the primary translation."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create(
+            primary_language='en',
+            other_languages=['fi'],
+        )
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
+
+    def _create_pledge_with_text_attribute(self):
+        """Create a primary pledge and attach a text attribute to it."""
+        pledge = PledgeFactory.create(plan=self.plan, name='Green commute')
+
+        pledge_ct = ContentType.objects.get_for_model(Pledge)
+        plan_ct = ContentType.objects.get_for_model(self.plan)
+
+        attr_type = AttributeTypeModel.objects.create(
+            object_content_type=pledge_ct,
+            scope_content_type=plan_ct,
+            scope_id=self.plan.id,
+            identifier='pledge-tip',
+            name='Tip',
+            format=AttributeTypeModel.AttributeFormat.TEXT,
+        )
+        AttributeText.objects.create(
+            type=attr_type,
+            content_type=pledge_ct,
+            object_id=pledge.id,
+            text='Take the bus',
+        )
+        return pledge, attr_type
+
+    def test_locale_copy_resolves_text_attribute_from_primary(self):
+        """A non-primary locale copy should see the primary pledge's attributes."""
+        primary_pledge, attr_type = self._create_pledge_with_text_attribute()
+        primary_pledge.ensure_locale_copies()
+
+        fi_locale = Locale.objects.get(language_code='fi')
+        fi_pledge = cast('Pledge', primary_pledge.get_translation(fi_locale))
+        assert fi_pledge.id != primary_pledge.id
+
+        attrs = list(fi_pledge.text_attributes.all())
+        assert len(attrs) == 0, 'Locale copy should not have its own attribute rows'
+
+        from actions.attributes import AttributeType as AttributeTypeWrapper
+
+        wrapper = AttributeTypeWrapper.from_model_instance(attr_type)
+        resolved = list(wrapper.get_attributes(fi_pledge))
+        assert len(resolved) == 1
+        assert resolved[0].text == 'Take the bus'
+
+    def test_locale_copy_generic_relations_resolve_from_primary(self):
+        """
+        GenericRelation traversal on a locale copy should resolve from primary.
+
+        The GraphQL resolver iterates ATTRIBUTE_RELATIONS via getattr(root, rel).all()
+        rather than going through AttributeType.get_attributes(). This test verifies
+        that path also works for locale copies after applying get_attributes_source().
+        """
+        primary_pledge, _attr_type = self._create_pledge_with_text_attribute()
+        primary_pledge.ensure_locale_copies()
+
+        fi_locale = Locale.objects.get(language_code='fi')
+        fi_pledge = cast('Pledge', primary_pledge.get_translation(fi_locale))
+
+        source = fi_pledge.get_attributes_source()
+        attrs = list(source.text_attributes.all())
+        assert len(attrs) == 1
+        assert attrs[0].text == 'Take the bus'
