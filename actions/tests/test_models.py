@@ -514,6 +514,8 @@ LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]
 @pytest.mark.parametrize('primary_language', LANGUAGES_TO_TEST)
 @pytest.mark.parametrize('active_language', LANGUAGES_TO_TEST)
 def test_action_i18n_when_saving(plan, action_factory, primary_language, active_language):
+    # The locale is used for the pledge functionality
+    Locale.objects.get_or_create(language_code=primary_language)
     plan.primary_language = primary_language
     plan.save()
     with translation.override(active_language):
