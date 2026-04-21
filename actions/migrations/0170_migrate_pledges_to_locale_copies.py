@@ -17,14 +17,21 @@ TRANSLATABLE_FIELDS = (
 
 
 def _normalize_language_code(language_code: str) -> str:
-    return language_code.replace('_', '-').lower()
+    """Normalize to Wagtail format: lowercase language, uppercase region, hyphen separator."""
+    code = language_code.replace('_', '-')
+    parts = code.split('-', 1)
+    result = parts[0].lower()
+    if len(parts) > 1:
+        result += f'-{parts[1].upper()}'
+    return result
 
 
 def _get_or_create_locale(locale_model: type[Any], language_code: str) -> Any:
-    locale = locale_model.objects.filter(language_code__iexact=language_code).first()
+    normalized = _normalize_language_code(language_code)
+    locale = locale_model.objects.filter(language_code__iexact=normalized).first()
     if locale is not None:
         return locale
-    return locale_model.objects.create(language_code=language_code)
+    return locale_model.objects.create(language_code=normalized)
 
 
 def _extract_translations(i18n_data: object) -> dict[str, dict[str, Any]]:
