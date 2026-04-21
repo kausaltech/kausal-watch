@@ -1021,8 +1021,8 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         return ObjectList(panels, heading=_('Reporting'))
 
     @staticmethod
-    def _get_dataset_editor_link_panel(instance: Indicator | None) -> HelpPanel | None:
-        """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
+    def _get_dataset_editor_url(instance: Indicator | None) -> str | None:
+        """Return the URL to the dataset editor for this indicator's factors, or None."""
         if instance is None or not instance.pk or instance.dataset_schema is None:
             return None
         try:
@@ -1033,13 +1033,25 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         dataset = Dataset.objects.filter(schema=schema, scope_id=instance.pk).first()
         editor_vs = DatasetEditorViewSet()
         if dataset is not None:
-            url = reverse(editor_vs.get_url_name('edit'), args=[dataset.pk])
-            label = _('Edit factor data')
-        else:
-            url = reverse(editor_vs.get_url_name('add'))
-            url += f'?dataset_schema_uuid={schema.uuid}&model=indicators.Indicator&object_id={instance.pk}'
-            label = _('Add factor data')
-        return HelpPanel(content=(f'<a href="{url}" class="button button-small button-secondary">{label}</a>'))
+            return reverse(editor_vs.get_url_name('edit'), args=[dataset.pk])
+        url = reverse(editor_vs.get_url_name('add'))
+        url += f'?dataset_schema_uuid={schema.uuid}&model=indicators.Indicator&object_id={instance.pk}'
+        return url
+
+    @classmethod
+    def _get_dataset_editor_link_panel(cls, instance: Indicator | None) -> HelpPanel | None:
+        """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
+        url = cls._get_dataset_editor_url(instance)
+        if url is None:
+            return None
+        assert instance is not None
+        schema = instance.dataset_schema
+        assert schema is not None
+        dataset_exists = Dataset.objects.filter(schema=schema, scope_id=instance.pk).exists()
+        label = _('Edit factor data') if dataset_exists else _('Add factor data')
+        return HelpPanel(
+            content=format_html('<a href="{}" class="button button-small button-secondary">{}</a>', url, label),
+        )
 
     def _get_relationships_tab(self, instance: Indicator | None = None) -> ObjectList:
         """Get relationships tab for edit view."""
@@ -1098,14 +1110,26 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
                     HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
                 ]
             else:
+                editor_url = self._get_dataset_editor_url(instance)
+                if editor_url is not None:
+                    help_content = format_html(
+                        str(
+                            _(
+                                "Factors are multiplied with this indicator's values to calculate a derived output, "
+                                'such as total emissions or cost. '
+                                'Add factor values to the {link}.'
+                            )
+                        ),
+                        link=format_html('<a href="{}">{}</a>', editor_url, _('indicator data editor')),
+                    )
+                else:
+                    help_content = _(
+                        "Factors are multiplied with this indicator's values to calculate a derived output, "
+                        'such as total emissions or cost. '
+                        'Add factor values to the indicator data editor.'
+                    )
                 factors_panels = [
-                    HelpPanel(
-                        content=_(
-                            "Factors are multiplied with this indicator's values to calculate a derived output, "
-                            'such as total emissions or cost. '
-                            'Add factor values to the indicator data editor.'
-                        )
-                    ),
+                    HelpPanel(content=help_content),
                     IndicatorMetricsInlinePanel(
                         'metrics',
                         panels=[
