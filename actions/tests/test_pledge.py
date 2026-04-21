@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import cast
+from typing import Any, cast
 
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
@@ -493,7 +493,7 @@ class TestPledgeAttributeResolution:
 
         from actions.attributes import AttributeType as AttributeTypeWrapper
 
-        wrapper = AttributeTypeWrapper.from_model_instance(attr_type)
+        wrapper: AttributeTypeWrapper[Any] = AttributeTypeWrapper.from_model_instance(attr_type)
         resolved = list(wrapper.get_attributes(fi_pledge))
         assert len(resolved) == 1
         assert resolved[0].text == 'Take the bus'
