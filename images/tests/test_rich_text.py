@@ -130,6 +130,13 @@ class TestImageEmbedHandlerRegistration:
         embed_types = features.get_embed_types()
         assert embed_types['image'] is ImageEmbedHandler
 
+    def test_no_duplicate_default_features(self):
+        from wagtail.rich_text import features
+
+        features.get_default_features()
+        duplicates = [f for f in features.default_features if features.default_features.count(f) > 1]  # type: ignore[attr-defined]
+        assert duplicates == [], f'Duplicate default features: {set(duplicates)}'
+
     def test_expand_db_html_uses_custom_handler(self):
         """End-to-end: expand_db_html should produce data-image-credit."""
         from wagtail.rich_text import expand_db_html
