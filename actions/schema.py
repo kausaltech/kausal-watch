@@ -2038,6 +2038,9 @@ def _resolve_published_action(
     plan_identifier: str | None,
     info: GQLInfo,
 ) -> Action | None:
+    if not obj_id and not identifier:
+        raise GraphQLError("You must supply either 'id' or 'identifier' as arguments to 'action'")
+
     qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
     if obj_id:
         qs = qs.filter(id=obj_id)
