@@ -2142,7 +2142,7 @@ class Query:
         return PledgeUser.objects.filter(uuid=uuid).first()
 
     @staticmethod
-    def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None):
+    def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None = None):
         if plan is None:
             return []
         user = user_or_none(info.context.user)
