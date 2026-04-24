@@ -30,7 +30,7 @@ Behavior:
   - HTTP 301 (permanent redirect) is returned when pattern matches
   - Original path, query string, and scheme (http/https) are preserved
   - First matching pattern wins (order matters)
-  - Redirects are logged to application logs and sent to Sentry
+  - Redirects are logged to application logs and sent to Sentry using a stable message with source/target hostnames as tags
 
 # UI-based redirects
 

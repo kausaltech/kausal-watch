@@ -170,7 +170,13 @@ class PlanDomainNode(DjangoNode[PlanDomain]):
             preserve_subdomain=True,
         )
         if hostname:
-            sentry_sdk.capture_message(f'Wildcard hostname UI redirect: {root.hostname} -> {hostname}', level='info')
+            logger.info('Wildcard hostname UI redirect: %s -> %s', root.hostname, hostname)
+            with sentry_sdk.new_scope() as scope:
+                scope.set_tag('redirect.from_hostname', root.hostname)
+                scope.set_tag('redirect.to_hostname', hostname)
+                scope.set_extra('from_hostname', root.hostname)
+                scope.set_extra('to_hostname', hostname)
+                sentry_sdk.capture_message('Wildcard hostname UI redirect', level='info')
         return hostname
 
 

@@ -18,6 +18,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from urllib.parse import urlparse
 
 from django import forms, http
 from django.conf import settings
@@ -916,15 +917,14 @@ def get_hostname_redirect_response(
     # Log to application logs
     logger.info(f"Redirecting hostname '{hostname}' to '{url}'")
 
-    # Send to Sentry for monitoring
-    sentry_sdk.capture_message(
-        f'Hostname redirect: {hostname} -> {url}',
-        level='info',
-        extras={
-            'from_hostname': hostname,
-            'to_url': url,
-        },
-    )
+    redirect_to_hostname = urlparse(url).netloc
+    with sentry_sdk.new_scope() as scope:
+        scope.set_tag('redirect.from_hostname', hostname)
+        scope.set_tag('redirect.to_hostname', redirect_to_hostname)
+        scope.set_extra('from_hostname', hostname)
+        scope.set_extra('to_url', url)
+        sentry_sdk.capture_message('Hostname redirect', level='info')
+
     return http.HttpResponsePermanentRedirect(url)
 
 
