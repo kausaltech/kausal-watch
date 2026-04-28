@@ -8,15 +8,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-17 08:21+0200\n"
-"PO-Revision-Date: 2025-04-02 07:20+0000\n"
+"PO-Revision-Date: 2026-04-28 15:21+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
+"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4.2\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -723,7 +724,7 @@ msgstr "Base"
 #: actions/blocks/category_page_layout.py actions/blocks/filters.py
 #: reports/blocks/action_content.py reports/spreadsheets/excel_report.py
 msgid "Implementation phase"
-msgstr "Fase de aplicación"
+msgstr "Fase de implementación"
 
 #: actions/blocks/category_page_layout.py actions/blocks/filters.py
 #: reports/blocks/action_content.py
@@ -1015,7 +1016,7 @@ msgstr "estado"
 
 #: actions/models/action.py
 msgid "implementation phase"
-msgstr "Fase de aplicación"
+msgstr "Fase de implementación"
 
 #: actions/models/action.py
 msgid "override status manually"
