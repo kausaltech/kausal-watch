@@ -11,6 +11,7 @@ from django.forms import inlineformset_factory
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, ngettext_lazy, pgettext_lazy
 from wagtail import hooks
 from wagtail.admin.panels import (
@@ -1041,12 +1042,14 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
     @classmethod
     def _get_dataset_editor_link_panel(cls, instance: Indicator | None) -> HelpPanel | None:
         """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
+        if instance is None:
+            return None
+        schema = instance.dataset_schema
+        if schema is None:
+            return None
         url = cls._get_dataset_editor_url(instance)
         if url is None:
             return None
-        assert instance is not None
-        schema = instance.dataset_schema
-        assert schema is not None
         dataset_exists = Dataset.objects.filter(schema=schema, scope_id=instance.pk).exists()
         label = _('Edit factor data') if dataset_exists else _('Add factor data')
         return HelpPanel(
@@ -1112,22 +1115,22 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             else:
                 editor_url = self._get_dataset_editor_url(instance)
                 if editor_url is not None:
-                    help_content = format_html(
-                        str(
-                            _(
-                                "Factors are multiplied with this indicator's values to calculate a derived output, "
-                                'such as total emissions or cost. '
-                                'Add factor values to the {link}.'
-                            )
-                        ),
-                        link=format_html('<a href="{}">{}</a>', editor_url, _('indicator data editor')),
-                    )
+                    link_start = format_html('<a href="{}">', editor_url)
+                    link_end = mark_safe('</a>')
                 else:
-                    help_content = _(
-                        "Factors are multiplied with this indicator's values to calculate a derived output, "
-                        'such as total emissions or cost. '
-                        'Add factor values to the indicator data editor.'
-                    )
+                    link_start = ''
+                    link_end = ''
+                help_content = format_html(
+                    str(
+                        _(
+                            "Factors are multiplied with this indicator's values to calculate a derived output, "
+                            'such as total emissions or cost. '
+                            'Add factor values to the {link_start}indicator data editor{link_end}.'
+                        )
+                    ),
+                    link_start=link_start,
+                    link_end=link_end,
+                )
                 factors_panels = [
                     HelpPanel(content=help_content),
                     IndicatorMetricsInlinePanel(
