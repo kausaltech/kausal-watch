@@ -1329,16 +1329,7 @@ class Action(
         return visible_contact_persons
 
     def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
-        if not self.live_revision:
-            return None
-        # When publishing, Wagtail creates a new revision, but the previous revision's id
-        # is stored in the live revision. Currently the change history message is always
-        # connected to that previous version, pre-publishing
-        previous_revision_to_published_revision = self.live_revision.content['latest_revision']
-        try:
-            return ActionChangeLogMessage.objects.get(action=self, revision=previous_revision_to_published_revision)
-        except ActionChangeLogMessage.DoesNotExist:
-            return None
+        return ActionChangeLogMessage.objects.filter(action=self).order_by('-created_at').first()
 
     def get_workflow(self) -> Workflow | None:
         return self.plan.features.moderation_workflow
