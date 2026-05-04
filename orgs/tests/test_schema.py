@@ -22,7 +22,8 @@ def test_resolve_plans_with_action_responsibilities_visibility(
     published_at,
 ):
     """Test plan visibility for unauthenticated users based on publication status."""
-    plan = PlanFactory(published_at=published_at)
+    plan = PlanFactory.create(published_at=published_at)
+    plan.related_organizations.add(organization)
     organization.responsible_for_actions.create(plan=plan)
 
     response = graphql_client_query_data(
@@ -36,6 +37,7 @@ def test_resolve_plans_with_action_responsibilities_visibility(
         }
         """,
         variables={'id': str(organization.id)},
+        headers={'X-Cache-Plan-Identifier': plan.identifier},
     )
 
     expected = {
