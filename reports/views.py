@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -19,6 +19,8 @@ from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
 from .models import ActionSnapshot, Report
+
+ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
 
 
 class MarkActionAsCompleteView(WMABaseView[Action]):
@@ -148,16 +150,25 @@ class MarkReportAsCompleteView(WMABaseView[Report]):
 
 def export_report_view(request, plan_identifier):
     format = request.GET.get('format', 'xlsx')
-    user = request.user
-    plan = Plan.objects.get(identifier=plan_identifier)
+    if format not in ALLOWED_EXPORT_FORMATS:
+        return HttpResponseBadRequest(f'Invalid format. Allowed values: {", ".join(sorted(ALLOWED_EXPORT_FORMATS))}.')
+
+    plan = get_object_or_404(Plan, identifier=plan_identifier)
     if not plan.is_live():
         # TODO: authorization relative to user once plan visibility is merged
         raise Http404
+
     # Possibly restrict which actions are included
-    action_ids = request.GET.get('actions')
-    if action_ids is not None:
-        action_ids = [int(id) for id in action_ids.split(',') if id]  # `if id` is there to handle [] correctly
-    output, filename = export_dashboard_report_for_plan(plan, format, user, action_ids)
+    action_ids_param = request.GET.get('actions')
+    action_ids: list[int] | None = None
+    if action_ids_param is not None:
+        try:
+            # `if id` is there to handle [] correctly
+            action_ids = [int(id) for id in action_ids_param.split(',') if id]
+        except ValueError:
+            return HttpResponseBadRequest('Invalid actions parameter. Must be a comma-separated list of integers.')
+
+    output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids)
     content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if format == 'xlsx' else 'text/csv'
     response = HttpResponse(
         output,
