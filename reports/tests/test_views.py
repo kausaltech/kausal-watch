@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
+from django.contrib.auth.models import AnonymousUser
+from django.http import Http404
+
 import pytest
+
+from actions.tests.factories import PlanFactory
 
 
 def test_mark_action_as_complete_view_accepts_as_view_kwargs():
@@ -59,3 +66,69 @@ def test_mark_report_as_complete_view_accepts_as_view_kwargs():
         if 'invalid keyword' in str(e):
             pytest.fail(f'as_view() rejected a keyword argument: {e}')
         raise
+
+
+@pytest.fixture
+def mock_export():
+    with patch('reports.views.export_dashboard_report_for_plan', return_value=(b'data', 'report.xlsx')) as m:
+        yield m
+
+
+@pytest.mark.django_db
+class TestExportReportView:
+    def _get(self, rf, plan_identifier, **params):
+        from reports.views import export_report_view
+
+        request = rf.get(f'/report_export/{plan_identifier}/', params)
+        request.user = AnonymousUser()
+        return export_report_view(request, plan_identifier=plan_identifier)
+
+    @pytest.mark.parametrize('format', ['pdf', 'json', 'xml'])
+    def test_invalid_format_returns_400(self, rf, plan, format):
+        response = self._get(rf, plan.identifier, format=format)
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        'actions',
+        [
+            "1,2'",  # trailing quote
+            '1,foo,3',  # non-integer token
+            'abc',  # entirely non-numeric
+        ],
+    )
+    def test_invalid_actions_returns_400(self, rf, plan, actions):
+        response = self._get(rf, plan.identifier, actions=actions)
+        assert response.status_code == 400
+
+    def test_nonexistent_plan_raises_404(self, rf):
+        with pytest.raises(Http404):
+            self._get(rf, 'does-not-exist')
+
+    def test_non_live_plan_raises_404(self, rf):
+        plan = PlanFactory.create(published_at=None)
+        with pytest.raises(Http404):
+            self._get(rf, plan.identifier)
+
+    @pytest.mark.parametrize(
+        ('format', 'expected_content_type'),
+        [
+            ('xlsx', 'spreadsheetml'),
+            ('csv', 'text/csv'),
+            (None, 'spreadsheetml'),  # default format is xlsx
+        ],
+    )
+    def test_valid_format_returns_200_with_correct_content_type(self, rf, plan, mock_export, format, expected_content_type):
+        params = {'format': format} if format is not None else {}
+        response = self._get(rf, plan.identifier, **params)
+        assert response.status_code == 200
+        assert expected_content_type in response['Content-Type']
+
+    def test_valid_actions_filter_passes_ids_to_exporter(self, rf, plan, mock_export):
+        response = self._get(rf, plan.identifier, actions='1,2,3')
+        assert response.status_code == 200
+        assert mock_export.call_args[0][3] == [1, 2, 3]
+
+    def test_no_actions_param_passes_none_to_exporter(self, rf, plan, mock_export):
+        response = self._get(rf, plan.identifier)
+        assert response.status_code == 200
+        assert mock_export.call_args[0][3] is None
