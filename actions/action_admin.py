@@ -709,7 +709,9 @@ def change_log_message_url_or_none(action: Action) -> str | None:
     plan = action.plan
     if plan.features.enable_change_log and not plan.features.moderation_workflow:
         change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
-        return f'{change_log_create_url}?action={action.pk}'
+        revision = action.live_revision or action.latest_revision
+        revision_param = f'&revision={revision.pk}' if revision else ''
+        return f'{change_log_create_url}?action={action.pk}{revision_param}'
     return None
 
 
