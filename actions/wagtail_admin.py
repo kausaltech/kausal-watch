@@ -37,6 +37,7 @@ from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.admin.widgets import Button
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.log_actions import log
+from wagtail.models import Revision
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
@@ -56,6 +57,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.chooser import ClientChooser
+from admin_site.forms import WatchAdminModelForm
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
@@ -63,7 +65,6 @@ from admin_site.permissions import (
     PlanSpecificSingletonModelPermissionPolicy,
     PlanSpecificSingletonModelSuperuserPermissionPolicy,
 )
-from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import (
     BaseChangeLogMessageCreateView,
     BaseChangeLogMessageDeleteView,
@@ -1132,20 +1133,28 @@ class ActionChangeLogMessageCreateView(
             return self.request.POST.get('revision')
         return self.request.GET.get('revision')
 
-    def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
+    def get_revision(self) -> Revision | None:
         revision_id = self.get_revision_id()
         if revision_id:
-            from wagtail.models import Revision
+            return Revision.objects.filter(pk=revision_id).first()
+        # For newly created actions, the revision wasn't available yet when
+        # the redirect URL was built, so fall back to the live revision.
+        related_obj = self.get_related_object()
+        if related_obj is not None:
+            return related_obj.live_revision
+        return None
 
-            revision = Revision.objects.filter(pk=revision_id).first()
-            if revision:
-                form.instance.revision = revision
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        revision = self.get_revision()
+        if revision:
+            form.instance.revision = revision
         return form
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['revision_id'] = self.get_revision_id()
+        revision = self.get_revision()
+        context['revision_id'] = revision.pk if revision else None
         return context
 
     def check_related_object_permission(self, related_obj: Action | None) -> bool:
