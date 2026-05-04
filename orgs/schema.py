@@ -118,8 +118,11 @@ class Query:
     organization = graphene.Field(OrganizationNode, id=graphene.ID(required=True))
 
     @staticmethod
-    def resolve_organization(root, info: GQLInfo, id: str) -> Organization | None:
-        return Organization.objects.filter(id=id).first()
+    def resolve_organization(_root, info: GQLInfo, id: str) -> Organization | None:
+        plan = info.context.request_plan
+        if plan is None:
+            return None
+        return Organization.objects.qs.available_for_plan(plan).filter(id=id).first()
 
 
 def _get_organization_mutation_namespace() -> type:
