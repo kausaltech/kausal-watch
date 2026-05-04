@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import typing
+from email.utils import formataddr
 from typing import TYPE_CHECKING, Any, cast
 
 import reversion
@@ -233,7 +234,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
     def get_from_email(self):
         from_address = self.from_address or settings.DEFAULT_FROM_EMAIL
         from_name = self.from_name or settings.DEFAULT_FROM_NAME
-        return f'{from_name} <{from_address}>'
+        return formataddr((from_name, from_address))
 
 
 class NotificationTemplateManager[M: NotificationTemplate](ModelManager[M, QuerySet['NotificationTemplate']]):
