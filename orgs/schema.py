@@ -15,7 +15,7 @@ from kausal_common.organizations.schema import (
 from aplans.graphql_helpers import (
     AdminButtonsMixin,
 )
-from aplans.graphql_types import DjangoNode, register_django_node
+from aplans.graphql_types import DjangoNode, get_plan_from_context, register_django_node
 from aplans.utils import public_fields
 
 from actions.models import Plan
@@ -115,14 +115,23 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organ
 
 
 class Query:
-    organization = graphene.Field(OrganizationNode, id=graphene.ID(required=True))
+    organization = graphene.Field(
+        OrganizationNode,
+        id=graphene.ID(required=True),
+        plan=graphene.ID(required=False),
+    )
 
     @staticmethod
-    def resolve_organization(_root, info: GQLInfo, id: str) -> Organization | None:
-        plan = info.context.request_plan
+    def resolve_organization(_root, info: GQLInfo, id: str, plan: str | None = None) -> Organization | None:
         if plan is None:
+            request_plan = info.context.request_plan
+            if request_plan is None or not request_plan.is_visible_for_user(info.context.user):
+                return None
+            plan = request_plan.identifier
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
             return None
-        return Organization.objects.qs.available_for_plan(plan).filter(id=id).first()
+        return Organization.objects.qs.available_for_plan(plan_obj).filter(id=id).first()
 
 
 def _get_organization_mutation_namespace() -> type:
