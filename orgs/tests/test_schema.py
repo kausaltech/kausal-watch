@@ -100,3 +100,39 @@ def test_resolve_organization_returns_org_in_current_plan(graphql_client_query_d
         headers={'X-Cache-Plan-Identifier': plan.identifier},
     )
     assert response == {'organization': {'id': str(org.id)}}
+
+
+ORGANIZATION_QUERY_WITH_PLAN = """
+    query($id: ID!, $plan: ID!) {
+      organization(id: $id, plan: $plan) {
+        id
+      }
+    }
+"""
+
+
+def test_resolve_organization_with_explicit_plan_arg(graphql_client_query_data):
+    """Passing the plan argument scopes the lookup without relying on the request header."""
+    plan = PlanFactory.create()
+    org = OrganizationFactory.create()
+    plan.related_organizations.add(org)
+
+    response = graphql_client_query_data(
+        ORGANIZATION_QUERY_WITH_PLAN,
+        variables={'id': str(org.id), 'plan': plan.identifier},
+    )
+    assert response == {'organization': {'id': str(org.id)}}
+
+
+def test_resolve_organization_with_explicit_plan_arg_blocks_other_plan_orgs(graphql_client_query_data):
+    """The plan argument enforces scoping even when the header is absent or different."""
+    plan_a = PlanFactory.create()
+    plan_b = PlanFactory.create()
+    org_a = OrganizationFactory.create()
+    plan_a.related_organizations.add(org_a)
+
+    response = graphql_client_query_data(
+        ORGANIZATION_QUERY_WITH_PLAN,
+        variables={'id': str(org_a.id), 'plan': plan_b.identifier},
+    )
+    assert response == {'organization': None}
