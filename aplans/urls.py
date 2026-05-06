@@ -187,7 +187,6 @@ urlpatterns = [
     re_path('^report_export/(?:(?P<plan_identifier>[-a-z0-9]+)/)?$', export_report_view, name='action-report-export'),
     path('auth/', include('social_django.urls', namespace='social')),
     path('logout/', KausalLogoutView.as_view(), name='logout'),
-    path('', include('django_prometheus.urls')),
     path('livez/', liveness_view, name='liveness'),
     path('readyz/', csrf_exempt(readiness_view), name='readiness'),
     path('healthz/', csrf_exempt(readiness_view), name='healthcheck'),
