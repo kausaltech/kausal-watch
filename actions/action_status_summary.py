@@ -98,6 +98,13 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         is_active=True,
         sentiment=Sentiment.POSITIVE,
     )
+    CHANGED = ActionStatusSummary(
+        default_label=_('Changed'),
+        color='yellow050',
+        is_completed=False,
+        is_active=True,
+        sentiment=Sentiment.POSITIVE,
+    )
     NOT_STARTED = ActionStatusSummary(
         default_label=_('Not started'),
         color='green010',
