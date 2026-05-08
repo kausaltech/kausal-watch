@@ -72,6 +72,7 @@ from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
+from .admin_utils import change_log_message_url_or_none
 from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask
 
 if typing.TYPE_CHECKING:
@@ -705,16 +706,6 @@ class ActionEditHandler(
         return form_class
 
 
-def change_log_message_url_or_none(action: Action) -> str | None:
-    plan = action.plan
-    if plan.features.enable_change_log and not plan.features.moderation_workflow:
-        change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
-        revision = action.live_revision or action.latest_revision
-        revision_param = f'&revision={revision.pk}' if revision else ''
-        return f'{change_log_create_url}?action={action.pk}{revision_param}'
-    return None
-
-
 class ActionCreateView(InitializeFormWithInitialPlanMixin[Action], AplansCreateView[Action]):
     def initialize_instance(self, request):
         plan = request.user.get_active_admin_plan()
@@ -733,8 +724,10 @@ class ActionCreateView(InitializeFormWithInitialPlanMixin[Action], AplansCreateV
                 self.instance.primary_org = default_org
 
     def get_success_url(self):
-        url = change_log_message_url_or_none(self.instance)
-        return url or super().get_success_url()
+        if self.instance.plan.features.moderation_workflow is None:
+            url = change_log_message_url_or_none(self.instance, moderation_enabled=False)
+            return url or super().get_success_url()
+        return super().get_success_url()
 
 
 class ActionButtonHelper(AplansButtonHelper):
@@ -798,8 +791,10 @@ class ActionEditView(
     model: type[Action]
 
     def get_success_url(self):
-        url = change_log_message_url_or_none(self.instance)
-        return url or super().get_success_url()
+        if self.instance.plan.features.moderation_workflow is None:
+            url = change_log_message_url_or_none(self.instance, moderation_enabled=False)
+            return url or super().get_success_url()
+        return super().get_success_url()
 
     def get_context_data(self, **kwargs):  # type: ignore[override]
         context = super().get_context_data(**kwargs)

@@ -33,6 +33,7 @@ from wagtail.permissions import ModelPermissionPolicy
 
 from kausal_common.users import user_or_bust
 
+from actions.admin_utils import change_log_message_url_or_none
 from actions.models.action import Action
 
 if TYPE_CHECKING:
@@ -407,13 +408,12 @@ class CreateEditViewOptionalFeaturesMixin[M: Action, FormT: ModelForm[Any]](Crea
                 return redirect(self.get_edit_url())
 
         plan = self.object.plan
-        if plan.features.enable_change_log:
-            change_log_create_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
-            # Get the revision that was just created for this submission
-            revision = self.object.latest_revision
-            revision_param = f'&revision={revision.pk}' if revision else ''
-            return redirect(f'{change_log_create_url}?action={self.object.pk}{revision_param}')
-        return None
+        if not plan.features.enable_change_log:
+            return None
+        url = change_log_message_url_or_none(self.object, moderation_enabled=True)
+        if url is None:
+            return None
+        return redirect(url)
 
     def restart_workflow_action(self):
         assert self.workflow_state is not None
