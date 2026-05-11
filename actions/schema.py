@@ -572,7 +572,13 @@ class PlanNode(DjangoNode[Plan]):
             else:
                 qs = qs.user_has_staff_role_for(user, plan=root)
         if responsible_organization:
-            qs = qs.filter(responsible_organizations=responsible_organization)
+            try:
+                responsible_organization_id = int(responsible_organization)
+            except ValueError:
+                raise GraphQLError(
+                    f"Invalid 'responsibleOrganization' value: {responsible_organization!r}",
+                ) from None
+            qs = qs.filter(responsible_organizations=responsible_organization_id)
 
         if first is not None and first > 0:
             qs = qs[0:first]

@@ -492,6 +492,24 @@ def test_plan_actions_responsible_organization(graphql_client_query_data):
     assert data == expected
 
 
+def test_plan_actions_responsible_organization_invalid_id_returns_graphql_error(graphql_client_query):
+    plan = PlanFactory.create()
+    response = graphql_client_query(
+        """
+        query($plan: ID!, $org: ID!) {
+          plan(id: $plan) {
+            actions(responsibleOrganization: $org) {
+              id
+            }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier, 'org': 'null'},
+    )
+    assert 'errors' in response
+    assert any('responsibleOrganization' in err['message'] for err in response['errors'])
+
+
 def test_attribute_choice_node(
     graphql_client_query_data,
     plan,

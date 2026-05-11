@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import graphene
 from django.db.models.query import Prefetch
+from graphql.error import GraphQLError
 
 import graphene_django_optimizer as gql_optimizer
 
@@ -131,7 +132,11 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
-        return Organization.objects.qs.available_for_plan(plan_obj).filter(id=id).first()
+        try:
+            org_id = int(id)
+        except ValueError:
+            raise GraphQLError(f"Invalid 'id' value: {id!r}") from None
+        return Organization.objects.qs.available_for_plan(plan_obj).filter(id=org_id).first()
 
 
 def _get_organization_mutation_namespace() -> type:
