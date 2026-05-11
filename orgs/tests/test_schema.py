@@ -136,3 +136,14 @@ def test_resolve_organization_with_explicit_plan_arg_blocks_other_plan_orgs(grap
         variables={'id': str(org_a.id), 'plan': plan_b.identifier},
     )
     assert response == {'organization': None}
+
+
+def test_resolve_organization_invalid_id_returns_graphql_error(graphql_client_query):
+    """A non-numeric `id` (e.g., the literal string "null") must return a structured GraphQL error."""
+    plan = PlanFactory.create()
+    response = graphql_client_query(
+        ORGANIZATION_QUERY_WITH_PLAN,
+        variables={'id': 'null', 'plan': plan.identifier},
+    )
+    assert 'errors' in response
+    assert any("'id'" in err['message'] for err in response['errors'])
