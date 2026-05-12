@@ -127,11 +127,11 @@ class Query(
     def resolve_plan_organizations(
         self,
         info: GQLInfo,
-        plan: str | None,
-        with_ancestors: bool,
-        for_responsible_parties: bool,
-        for_contact_persons: bool,
-        include_related_plans: bool,
+        plan: str | None = None,
+        with_ancestors: bool = False,
+        for_responsible_parties: bool = True,
+        for_contact_persons: bool = False,
+        include_related_plans: bool = False,
     ) -> Iterable[Organization]:
         plan_obj: Plan | None = get_plan_from_context(info, plan)
         if plan_obj is None or not plan_obj.is_visible_for_user(info.context.user):
