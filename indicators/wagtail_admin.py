@@ -70,6 +70,7 @@ from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quant
 from .models.goal_data_point import IndicatorGoalDataPoint
 
 if TYPE_CHECKING:
+    from django.forms import ModelChoiceField
     from django.http import HttpRequest
     from wagtail.admin.panels.base import Panel
 
@@ -425,6 +426,15 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         self.plan = kwargs.pop('plan')
         self.initial_plan_id = kwargs.pop('initial_plan_id', None)
         super().__init__(*args, **kwargs)
+
+        if 'grouping_dimension' in self.fields:
+            gd_field = cast('ModelChoiceField[Dimension]', self.fields['grouping_dimension'])
+            if self.instance.pk is not None:
+                gd_field.queryset = Dimension.objects.filter(
+                    instances__indicator=self.instance,
+                )
+            else:
+                gd_field.queryset = Dimension.objects.none()
 
         if self.instance.pk is not None:
             # We are editing an existing indicator. If the indicator is in the
@@ -932,6 +942,10 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
             CustomizableBuiltInFieldPanel('show_trendline'),
             CustomizableBuiltInFieldPanel('desired_trend'),
             CustomizableBuiltInFieldPanel('data_categories_are_stackable'),
+            FieldPanel('visualization_type'),
+            FieldPanel('bar_type'),
+            FieldPanel('grouping_dimension'),
+            FieldPanel('pie_chart_year'),
         ]
         panels.append(
             MultiFieldPanel(

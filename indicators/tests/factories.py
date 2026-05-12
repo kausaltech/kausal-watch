@@ -94,6 +94,10 @@ class IndicatorFactory(DjangoModelFactory[Indicator]):
     show_trendline = False
     desired_trend = 'decreasing'
     show_total_line = False
+    visualization_type = ''
+    bar_type = ''
+    grouping_dimension = None
+    pie_chart_year = None
     time_resolution = Indicator.TIME_RESOLUTIONS[0][0]
     updated_values_due_at: datetime.datetime | None = None
     internal_notes = 'Indicator internal note'

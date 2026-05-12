@@ -35,6 +35,7 @@ from indicators.models import (
     RelatedIndicator,
     Unit,
 )
+from indicators.models.indicator import VisualizationType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -268,6 +269,7 @@ class IndicatorNode(DjangoNode[Indicator]):
     change_log_message = graphene.Field('actions.schema.ChangeLogMessageInterface')
 
     datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
+    default_visualization = graphene.Field(lambda: IndicatorDefaultVisualization)
 
     @staticmethod
     def resolve_datasets(root: Indicator, info) -> QuerySet[Dataset]:
@@ -377,6 +379,55 @@ class IndicatorNode(DjangoNode[Indicator]):
     @staticmethod
     def resolve_change_log_message(root: Indicator, _info: GQLInfo) -> BaseChangeLogMessage | None:
         return root.get_public_change_log_message()
+
+    @staticmethod
+    def resolve_default_visualization(
+        root: Indicator,
+        info: GQLInfo,
+    ) -> (
+        IndicatorDefaultBarChart
+        | IndicatorDefaultLineChart
+        | IndicatorDefaultAreaChart
+        | IndicatorDefaultPieChart
+        | IndicatorDefaultSummary
+        | None
+    ):
+        if not root.visualization_type:
+            return None
+        viz_type = VisualizationType(root.visualization_type)
+        if viz_type == VisualizationType.SUMMARY:
+            return IndicatorDefaultSummary(indicator=root)
+
+        chart_series = compute_chart_series(root, root.grouping_dimension)
+        if viz_type == VisualizationType.BAR_CHART:
+            return IndicatorDefaultBarChart(
+                indicator=root,
+                dimension=root.grouping_dimension,
+                bar_type=root.bar_type or 'stacked',
+                chart_series=chart_series,
+            )
+        if viz_type == VisualizationType.LINE_CHART:
+            return IndicatorDefaultLineChart(
+                indicator=root,
+                dimension=root.grouping_dimension,
+                show_total_line=root.show_total_line,
+                chart_series=chart_series,
+            )
+        if viz_type == VisualizationType.AREA_CHART:
+            return IndicatorDefaultAreaChart(
+                indicator=root,
+                dimension=root.grouping_dimension,
+                show_total_line=root.show_total_line,
+                chart_series=chart_series,
+            )
+        if viz_type == VisualizationType.PIE_CHART:
+            return IndicatorDefaultPieChart(
+                indicator=root,
+                dimension=root.grouping_dimension,
+                year=root.pie_chart_year,
+                chart_series=chart_series,
+            )
+        return None
 
 
 class IndicatorDimensionNode(DjangoNode[IndicatorDimension]):
@@ -529,3 +580,94 @@ class DashboardIndicatorChartSeries(graphene.ObjectType[Any]):
 
     dimension_category = graphene.types.Field(DimensionCategoryNode)
     values = graphene.types.List(IndicatorValueNode, required=True)
+
+
+def compute_chart_series(
+    indicator: Indicator,
+    dimension: Dimension | None,
+) -> list[DashboardIndicatorChartSeries]:
+    categories = dimension.categories.all() if dimension else [None]
+    return [
+        DashboardIndicatorChartSeries(
+            dimension_category=category,
+            values=indicator.values.filter(categories=category),
+        )
+        for category in categories
+    ]
+
+
+IndicatorVisualizationTypeEnum = graphene.Enum.from_enum(VisualizationType)
+
+from indicators.graphql_interfaces import (  # noqa: E402
+    IndicatorAreaChartInterface,
+    IndicatorBarChartInterface,
+    IndicatorLineChartInterface,
+    IndicatorPieChartInterface,
+    IndicatorSummaryInterface,
+)
+
+__all__ = [
+    'IndicatorAreaChartInterface',
+    'IndicatorBarChartInterface',
+    'IndicatorLineChartInterface',
+    'IndicatorPieChartInterface',
+    'IndicatorSummaryInterface',
+]
+
+
+class IndicatorDefaultBarChart(graphene.ObjectType):
+    class Meta:
+        interfaces = (IndicatorBarChartInterface,)
+
+    indicator = graphene.Field(lambda: IndicatorNode, required=True)
+    dimension = graphene.Field(DimensionNode)
+    bar_type = graphene.String()
+    chart_series = graphene.List(graphene.NonNull(DashboardIndicatorChartSeries), required=True)
+
+
+class IndicatorDefaultLineChart(graphene.ObjectType):
+    class Meta:
+        interfaces = (IndicatorLineChartInterface,)
+
+    indicator = graphene.Field(lambda: IndicatorNode, required=True)
+    dimension = graphene.Field(DimensionNode)
+    show_total_line = graphene.Boolean()
+    chart_series = graphene.List(graphene.NonNull(DashboardIndicatorChartSeries), required=True)
+
+
+class IndicatorDefaultAreaChart(graphene.ObjectType):
+    class Meta:
+        interfaces = (IndicatorAreaChartInterface,)
+
+    indicator = graphene.Field(lambda: IndicatorNode, required=True)
+    dimension = graphene.Field(DimensionNode)
+    show_total_line = graphene.Boolean()
+    chart_series = graphene.List(graphene.NonNull(DashboardIndicatorChartSeries), required=True)
+
+
+class IndicatorDefaultPieChart(graphene.ObjectType):
+    class Meta:
+        interfaces = (IndicatorPieChartInterface,)
+
+    indicator = graphene.Field(lambda: IndicatorNode, required=True)
+    dimension = graphene.Field(DimensionNode)
+    year = graphene.Int()
+    chart_series = graphene.List(graphene.NonNull(DashboardIndicatorChartSeries), required=True)
+
+
+class IndicatorDefaultSummary(graphene.ObjectType):
+    class Meta:
+        interfaces = (IndicatorSummaryInterface,)
+
+    indicator = graphene.Field(lambda: IndicatorNode, required=True)
+
+
+class IndicatorDefaultVisualization(graphene.Union):
+    class Meta:
+        types = (
+            IndicatorDefaultBarChart,
+            IndicatorDefaultLineChart,
+            IndicatorDefaultAreaChart,
+            IndicatorDefaultPieChart,
+            IndicatorDefaultSummary,
+        )

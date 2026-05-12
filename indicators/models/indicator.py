@@ -113,6 +113,14 @@ else:
     IndicatorManager = MLModelManager.from_queryset(IndicatorQuerySet)
 
 
+class VisualizationType(models.TextChoices):
+    BAR_CHART = 'bar_chart', _('Bar chart')
+    LINE_CHART = 'line_chart', _('Line chart')
+    AREA_CHART = 'area_chart', _('Area chart')
+    PIE_CHART = 'pie_chart', _('Pie chart')
+    SUMMARY = 'summary', _('Summary')
+
+
 class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
     INCREASE = 'increase', _('Increase')
     DECREASE = 'decrease', _('Decrease')
@@ -317,6 +325,41 @@ class Indicator(
     data_categories_are_stackable = models.BooleanField(
         default=False,
         help_text=_('Data categories can be summed to form a total for the indicator (draw a stacked chart as default)'),
+    )
+
+    visualization_type = models.CharField(
+        max_length=20,
+        choices=VisualizationType.choices,
+        blank=True,
+        default='',
+        verbose_name=_('default visualization type'),
+        help_text=_('Default visualization type for this indicator on dashboards'),
+    )
+    bar_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('stacked', _('Stacked bars')),
+            ('grouped', _('Grouped bars')),
+        ],
+        blank=True,
+        default='',
+        verbose_name=_('bar type'),
+        help_text=_('Kind of bar chart (only meaningful when visualization type is bar chart)'),
+    )
+    grouping_dimension = models.ForeignKey(
+        'indicators.Dimension',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        verbose_name=_('grouping dimension'),
+        help_text=_('Dimension used for grouping in the default visualization'),
+    )
+    pie_chart_year = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_('pie chart year'),
+        help_text=_('Year to display in pie chart visualization'),
     )
 
     non_quantified_goal = models.CharField(
@@ -552,6 +595,15 @@ class Indicator(
             if self.latest_value is not None and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1):
                 raise ValidationError({
                     'updated_values_due_at': _('There is already an indicator value for the year preceding the deadline')
+                })
+
+        if self.grouping_dimension_id is not None:
+            dimension_ids = list(self.dimensions.values_list('dimension_id', flat=True))
+            if self.grouping_dimension_id not in dimension_ids:
+                raise ValidationError({
+                    'grouping_dimension': _(
+                        'The grouping dimension must be one of the dimensions associated with this indicator.'
+                    ),
                 })
 
         if self.common:

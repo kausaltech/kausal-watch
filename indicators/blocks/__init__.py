@@ -23,6 +23,13 @@ from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLField, GraphQLForeignKey, GraphQLInt, GraphQLStreamfield, GraphQLString
 
 from indicators.chooser import DimensionChooser, indicator_chooser_viewset
+from indicators.graphql_interfaces import (
+    IndicatorAreaChartInterface,
+    IndicatorBarChartInterface,
+    IndicatorLineChartInterface,
+    IndicatorPieChartInterface,
+    IndicatorSummaryInterface,
+)
 from indicators.models import Dimension, Indicator
 from pages.blocks import PageLinkBlock
 
@@ -171,20 +178,13 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
     ]
 
     def chart_series(self, info: GQLInfo, values: dict[str, Any]) -> list[DashboardIndicatorChartSeries]:
-        from indicators.schema import DashboardIndicatorChartSeries
+        from indicators.schema import compute_chart_series
 
         indicator = values['indicator']
         assert isinstance(indicator, Indicator)
         dimension = values['dimension']
         assert isinstance(dimension, Dimension | None)
-        categories = dimension.categories.all() if dimension else [None]
-        return [
-            DashboardIndicatorChartSeries(
-                dimension_category=category,
-                values=indicator.values.filter(categories=category),
-            )
-            for category in categories
-        ]
+        return compute_chart_series(indicator, dimension)
 
     def clean(self, value):
         cleaned_value = super().clean(value)
@@ -220,6 +220,7 @@ class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
     graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
         GraphQLString('bar_type'),
     ]
+    graphql_interfaces = [IndicatorBarChartInterface]
 
     class Meta:
         icon = 'fontawesome-chart-simple'
@@ -234,6 +235,7 @@ class DashboardIndicatorLineChartBlock(DashboardIndicatorChartBaseBlock):
     graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
         GraphQLBoolean('show_total_line'),
     ]
+    graphql_interfaces = [IndicatorLineChartInterface]
 
     class Meta:
         icon = 'fontawesome-chart-line'
@@ -248,6 +250,7 @@ class DashboardIndicatorAreaChartBlock(DashboardIndicatorChartBaseBlock):
     graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
         GraphQLBoolean('show_total_line'),
     ]
+    graphql_interfaces = [IndicatorAreaChartInterface]
 
     class Meta:
         icon = 'fontawesome-chart-area'
@@ -265,6 +268,7 @@ class DashboardIndicatorPieChartBlock(DashboardIndicatorChartBaseBlock):
     graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
         GraphQLInt('year'),
     ]
+    graphql_interfaces = [IndicatorPieChartInterface]
 
     class Meta:
         icon = 'fontawesome-chart-pie'
@@ -305,6 +309,7 @@ class DashboardIndicatorSummaryBlock(StructBlock):
     graphql_fields = [
         GraphQLForeignKey('indicator', Indicator),
     ]
+    graphql_interfaces = [IndicatorSummaryInterface]
 
     class Meta:
         icon = 'list-ul'
