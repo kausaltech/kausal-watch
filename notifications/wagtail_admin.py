@@ -52,18 +52,29 @@ class BaseTemplateForm(AplansAdminModelForm):
         super().__init__(*args, **kwargs)
 
     def _clean_manually_scheduled_notification_templates(self, formset: BaseFormSet) -> None:
-        for i, item in enumerate(formset.cleaned_data):
-            plan = self.instance.plan
-            new_date = item['date']
-            local_current_date = plan.now_in_local_timezone().date()
+        formset.is_valid()
+        plan = self.instance.plan
+        local_current_date = plan.now_in_local_timezone().date()
+        for form in formset.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+
+            item = form.cleaned_data
+            if item.get('DELETE'):
+                continue
+
+            new_date = item.get('date')
+            if new_date is None:
+                continue
+
             if item['id'] is None:
                 if new_date < local_current_date:
-                    formset[i].add_error('date', _('Cannot schedule a notification for the past'))
+                    form.add_error('date', _('Cannot schedule a notification for the past'))
                 continue
+
             instance = item['id']
             if new_date != instance.date and new_date < local_current_date:
-                # Rescheduling old notification
-                formset[i].add_error('date', _('Cannot reschedule a notification for the past'))
+                form.add_error('date', _('Cannot reschedule a notification for the past'))
 
     def clean(self):
         formset = self.formsets.get('manually_scheduled_notification_templates', None)
