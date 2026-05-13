@@ -82,13 +82,25 @@ class SetOrganizationRelatedToActivePlanView(
             msg = _('Confirm excluding %(org)s from plan %(plan)s')
         return msg % {'org': self.object.name, 'plan': plan}
 
+    def get_related_descendants(self, plan):
+        return list(plan.related_organizations.filter(pk__in=self.object.get_descendants()))
+
     def confirmation_message(self):
         plan = admin_req(self.request).user.get_active_admin_plan()
         if self.set_related:
             msg = _("Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?")
-        else:
-            msg = _("Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?")
-        return msg % {'org': self.object.name, 'plan': plan}
+            return msg % {'org': self.object.name, 'plan': plan}
+        msg = _("Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?") % {
+            'org': self.object.name,
+            'plan': plan,
+        }
+        descendants = self.get_related_descendants(plan)
+        if not descendants:
+            return msg
+        cascade = _('The following suborganizations will also be excluded: %(names)s.') % {
+            'names': ', '.join(d.name for d in descendants),
+        }
+        return f'{msg} {cascade}'
 
     def add_to_plan(self, plan):
         if self.object.pk in plan.related_organizations.values_list('pk', flat=True):
@@ -98,7 +110,8 @@ class SetOrganizationRelatedToActivePlanView(
     def remove_from_plan(self, plan):
         if self.object.pk not in plan.related_organizations.values_list('pk', flat=True):
             raise ValueError(_('The organization is not included in the plan'))
-        plan.related_organizations.remove(self.object)
+        descendants = self.get_related_descendants(plan)
+        plan.related_organizations.remove(self.object, *descendants)
 
     def post(self, request, *args, **kwargs):
         plan = request.user.get_active_admin_plan()
