@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query_utils import Q
 from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
+from wagtail.models.media import GroupCollectionPermission
 
 from loguru import logger
 from treelib import Tree
@@ -198,15 +199,13 @@ def get_or_create_indicator_contact_person_group(force_perm_sync: bool = False) 
 
 
 def _sync_group_collection_perms(root_collection: Collection, group: Group, perms: Iterable[Permission]) -> None:
-    from wagtail.models.media import GroupCollectionPermission as GCP  # noqa: N817
-
-    current_perms = {obj.permission for obj in GCP.objects.filter(collection=root_collection, group=group)}
+    current_perms = {obj.permission for obj in GroupCollectionPermission.objects.filter(collection=root_collection, group=group)}
     for perm in perms:
         if perm not in current_perms:
-            GCP.objects.create(collection=root_collection, group=group, permission=perm)
+            GroupCollectionPermission.objects.create(collection=root_collection, group=group, permission=perm)
     for perm in current_perms:
         if perm not in perms:
-            GCP.objects.get(collection=root_collection, group=group, permission=perm).delete()
+            GroupCollectionPermission.objects.get(collection=root_collection, group=group, permission=perm).delete()
 
 
 def _sync_group_page_perms(root_pages: Iterable[Page], group: Group) -> None:
@@ -250,7 +249,7 @@ def _sync_contact_person_groups(user: UserModel, model: type[Action | Indicator]
         user.groups.add(*groups_to_add)
 
 
-def add_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
+def add_contact_person_perms(user: UserModel, model: type[Action | Indicator]) -> None:
     if model == Action:
         group = get_or_create_action_contact_person_group()
     else:
@@ -264,7 +263,7 @@ def add_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
     _sync_contact_person_groups(user, model)
 
 
-def remove_contact_person_perms(user: UserModel, model: type[Action | Indicator]):
+def remove_contact_person_perms(user: UserModel, model: type[Action | Indicator]) -> None:
     if model == Action:
         group = get_or_create_action_contact_person_group()
     else:
@@ -364,7 +363,7 @@ def sync_contact_person_group_permissions(plan: Plan, perms: QuerySet[Permission
     _sync_group_collection_perms(plan.root_collection, group, perms)
 
 
-def sync_all_group_permissions_for_plan(plan: Plan):
+def sync_all_group_permissions_for_plan(plan: Plan) -> None:
     sync_plan_admin_group_permissions(plan)
     sync_contact_person_group_permissions(plan)
 
@@ -384,14 +383,14 @@ def sync_group_permissions() -> None:
 
 def _sync_plan_admin_groups(user: UserModel) -> None:
     person = user.get_corresponding_person()
-    if person is None:
-        return
-
-    admin_plans = person.general_admin_plans.all()
+    admin_plans = Plan.objects.none() if person is None else person.general_admin_plans.all()
     groups_to_remove = user.groups.exclude(admin_for_plan__isnull=True).exclude(admin_for_plan__in=admin_plans).distinct()
     if len(groups_to_remove):
         _user_log(user, 'Removing %d plan admin groups' % len(groups_to_remove))
         user.groups.remove(*groups_to_remove)
+
+    if person is None:
+        return
 
     plan_admin_groups = admin_plans.exclude(admin_group__isnull=True).values_list('admin_group', flat=True).distinct()
     groups_to_add = Group.objects.filter(id__in=plan_admin_groups).exclude(id__in=user.groups.all())
@@ -403,9 +402,10 @@ def _sync_plan_admin_groups(user: UserModel) -> None:
 def remove_plan_admin_perms(user: UserModel) -> None:
     group = get_or_create_plan_admin_group()
     user.groups.remove(group)
+    _sync_plan_admin_groups(user)
 
 
-def add_plan_admin_perms(user: UserModel):
+def add_plan_admin_perms(user: UserModel) -> None:
     group = get_or_create_plan_admin_group()
     user.groups.add(group)
 

@@ -1,6 +1,8 @@
 import logging
+from contextlib import suppress
+from typing import Any
 
-from django.db.models.signals import post_delete, post_migrate, post_save
+from django.db.models.signals import m2m_changed, post_delete, post_migrate, post_save, pre_save
 from django.dispatch import receiver
 from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
@@ -10,6 +12,8 @@ from indicators.models import Indicator, IndicatorContactPerson
 from notifications.models import NotificationSettings
 from orgs.models import Organization, OrganizationPlanAdmin
 from people.models import Person
+from users.models import User
+from users.perms import create_permissions
 
 from .mail import (
     ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
@@ -17,7 +21,7 @@ from .mail import (
     WorkflowStateApprovalWithCommentEmailNotifier,
 )
 from .models import Action, ActionContactPerson, ActionResponsibleParty, GeneralPlanAdmin, Plan, PlanFeatures
-from .perms import get_people_with_login_rights, sync_all_group_permissions_for_plan
+from .perms import get_people_with_login_rights, sync_all_group_permissions_for_plan, sync_group_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -103,9 +107,104 @@ for model in MODELS_WHICH_AFFECT_LOGIN_RIGHTS:
     post_delete.connect(clear_login_rights_cache, sender=model)
 
 
-def sync_permissions(sender, **kwargs):
-    from actions.perms import sync_group_permissions
+MODELS_WHICH_AFFECT_USER_GROUPS = (
+    GeneralPlanAdmin,
+    ActionContactPerson,
+    IndicatorContactPerson,
+)
 
+
+def _sync_user_groups_for_person_ids(person_ids: set[int]) -> None:
+    for person in Person.objects.filter(pk__in=person_ids).select_related('user'):
+        user = person.get_corresponding_user()
+        if user is None:
+            continue
+        with suppress(User.DoesNotExist):
+            create_permissions(User.objects.get(pk=user.pk))
+
+
+def remember_old_permission_person(
+    sender: Any,
+    instance: GeneralPlanAdmin | ActionContactPerson | IndicatorContactPerson,
+    **kwargs: object,
+) -> None:
+    if instance.pk is None:
+        return
+
+    # Intentionally get the old value of person_id from the database
+    old_person_id = sender.objects.filter(pk=instance.pk).values_list('person_id', flat=True).first()
+    permission_instance: Any = instance
+    permission_instance._old_person_id = old_person_id
+
+
+def sync_permission_user_groups(
+    sender: type[object],
+    instance: GeneralPlanAdmin | ActionContactPerson | IndicatorContactPerson,
+    **kwargs: object,
+) -> None:
+    person_ids = {instance.person_id}
+    old_person_id = getattr(instance, '_old_person_id', None)
+    if isinstance(old_person_id, int):
+        person_ids.add(old_person_id)
+    _sync_user_groups_for_person_ids(person_ids)
+
+
+def sync_deleted_person_user_groups(sender: type[Person], instance: Person, **kwargs: object) -> None:
+    user = instance.get_corresponding_user()
+    if user is None:
+        return
+
+    with suppress(User.DoesNotExist):
+        create_permissions(User.objects.get(pk=user.pk))
+
+
+for model in MODELS_WHICH_AFFECT_USER_GROUPS:
+    pre_save.connect(remember_old_permission_person, sender=model)
+    post_save.connect(sync_permission_user_groups, sender=model)
+    post_delete.connect(sync_permission_user_groups, sender=model)
+
+
+def sync_general_admin_m2m_user_groups(
+    sender: GeneralPlanAdmin,
+    instance: Plan | Person,
+    action: str,
+    reverse: bool,
+    model: Person | Plan,
+    pk_set: set[int] | None,
+    **kwargs: dict[str, Any],
+) -> None:
+    if action not in {'post_add', 'post_remove', 'pre_clear', 'post_clear'}:
+        return
+
+    if isinstance(instance, Person):
+        assert reverse
+        assert model == Plan
+        if instance.pk is None:
+            return
+        _sync_user_groups_for_person_ids({instance.pk})
+        return
+
+    assert not reverse
+    assert model == Person
+
+    plan: Plan = instance
+    if action == 'pre_clear':
+        plan._cleared_general_admin_person_ids = set(plan.general_admins.values_list('pk', flat=True))
+        return
+    if action == 'post_clear':
+        person_ids: set[int] = getattr(plan, '_cleared_general_admin_person_ids', set())
+    elif pk_set is None:
+        return
+    else:
+        person_ids = set(pk_set)
+    _sync_user_groups_for_person_ids(person_ids)
+
+
+m2m_changed.connect(sync_general_admin_m2m_user_groups, sender=Plan.general_admins.through)
+post_delete.connect(sync_deleted_person_user_groups, sender=Person)
+
+
+def sync_permissions(sender, **kwargs):
     if sender.label != 'actions':
         return
     print('Syncing permissions')

@@ -2,11 +2,19 @@ from __future__ import annotations
 
 from django.contrib.auth.models import Group
 from wagtail.models import GroupPagePermission
+from wagtail.models.media import GroupCollectionPermission
 
 import pytest
 
 from actions.models import Plan
+from actions.models.action import ActionContactPerson
 from actions.perms import get_wagtail_plan_admin_perms
+from actions.tests.factories import ActionFactory
+from indicators.models import IndicatorContactPerson
+from indicators.tests.factories import IndicatorFactory
+from people.tests.factories import PersonFactory
+from users.perms import create_permissions
+from users.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -68,8 +76,6 @@ def test_sync_group_permissions_creates_required_groups_for_plans(organization_f
         assert GroupPagePermission.objects.filter(group=plan2.admin_group, page__in=root_pages).exists()
 
     # Verify the plan admin groups have collection permissions
-    from wagtail.models.media import GroupCollectionPermission
-
     wagtail_perms = get_wagtail_plan_admin_perms()
 
     assert GroupCollectionPermission.objects.filter(
@@ -79,3 +85,129 @@ def test_sync_group_permissions_creates_required_groups_for_plans(organization_f
     assert GroupCollectionPermission.objects.filter(
         group=plan2.admin_group, collection=plan2.root_collection, permission__in=wagtail_perms
     ).exists()
+
+
+def test_plan_admin_group_syncs_immediately_when_assignment_is_removed(organization_factory):
+    """
+    Verify removing general admin rights updates auth groups immediately.
+
+    This exercises the admin-edit path where the GeneralPlanAdmin through model
+    changes, without waiting for the user's next login.
+    """
+    org = organization_factory()
+    plan = Plan.create_with_defaults(
+        identifier='test-plan',
+        name='Test Plan',
+        primary_language='en',
+        organization=org,
+    )
+    assert plan.admin_group is not None
+
+    user = UserFactory.create()
+    person = PersonFactory.create(user=user, email=user.email, general_admin_plans=[plan])
+    create_permissions(user)
+
+    generic_group = Group.objects.get(name='Plan admins')
+    assert user.groups.filter(pk=generic_group.pk).exists()
+    assert user.groups.filter(pk=plan.admin_group.pk).exists()
+
+    person.general_admin_plans.remove(plan)
+
+    assert not user.groups.filter(pk=generic_group.pk).exists()
+    assert not user.groups.filter(pk=plan.admin_group.pk).exists()
+
+
+def test_staff_status_syncs_immediately_when_last_admin_assignment_is_removed(organization_factory):
+    """Verify users stop being staff immediately when their last admin role is removed."""
+    org = organization_factory()
+    plan = Plan.create_with_defaults(
+        identifier='test-plan',
+        name='Test Plan',
+        primary_language='en',
+        organization=org,
+    )
+
+    user = UserFactory.create()
+    person = PersonFactory.create(user=user, email=user.email, general_admin_plans=[plan])
+    create_permissions(user)
+
+    user.refresh_from_db()
+    assert user.is_staff
+
+    person.general_admin_plans.remove(plan)
+
+    user.refresh_from_db()
+
+
+def test_person_delete_removes_plan_admin_groups_immediately(organization_factory):
+    """Verify deleting a Person removes stale auth groups from the corresponding user."""
+    org = organization_factory()
+    plan = Plan.create_with_defaults(
+        identifier='test-plan',
+        name='Test Plan',
+        primary_language='en',
+        organization=org,
+    )
+    assert plan.admin_group is not None
+
+    user = UserFactory.create()
+    person = PersonFactory.create(user=user, email=user.email, general_admin_plans=[plan])
+    create_permissions(user)
+
+    assert user.groups.filter(pk=plan.admin_group.pk).exists()
+
+    person.delete()
+
+    assert not user.groups.filter(pk=plan.admin_group.pk).exists()
+
+
+def test_action_contact_group_syncs_immediately_when_assignment_is_removed(organization_factory):
+    """Verify removing an action contact person updates generic and plan-specific groups immediately."""
+    org = organization_factory()
+    plan = Plan.create_with_defaults(
+        identifier='test-plan',
+        name='Test Plan',
+        primary_language='en',
+        organization=org,
+    )
+    assert plan.contact_person_group is not None
+
+    action = ActionFactory.create(plan=plan)
+    user = UserFactory.create()
+    person = PersonFactory.create(user=user)
+    contact_person = ActionContactPerson.objects.create(action=action, person=person)
+
+    generic_group = Group.objects.get(name='Action contact persons')
+    assert user.groups.filter(pk=generic_group.pk).exists()
+    assert user.groups.filter(pk=plan.contact_person_group.pk).exists()
+
+    contact_person.delete()
+
+    assert not user.groups.filter(pk=generic_group.pk).exists()
+    assert not user.groups.filter(pk=plan.contact_person_group.pk).exists()
+
+
+def test_indicator_contact_group_syncs_immediately_when_assignment_is_removed(organization_factory):
+    """Verify removing an indicator contact person updates generic and plan-specific groups immediately."""
+    org = organization_factory()
+    plan = Plan.create_with_defaults(
+        identifier='test-plan',
+        name='Test Plan',
+        primary_language='en',
+        organization=org,
+    )
+    assert plan.contact_person_group is not None
+
+    indicator = IndicatorFactory.create(organization=org, plans=[plan])
+    user = UserFactory.create()
+    person = PersonFactory.create(user=user)
+    contact_person = IndicatorContactPerson.objects.create(indicator=indicator, person=person)
+
+    generic_group = Group.objects.get(name='Indicator contact persons')
+    assert user.groups.filter(pk=generic_group.pk).exists()
+    assert user.groups.filter(pk=plan.contact_person_group.pk).exists()
+
+    contact_person.delete()
+
+    assert not user.groups.filter(pk=generic_group.pk).exists()
+    assert not user.groups.filter(pk=plan.contact_person_group.pk).exists()
