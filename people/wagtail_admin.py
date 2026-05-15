@@ -467,6 +467,17 @@ class PersonAdmin(AplansModelAdmin[Person]):
             return display_for_value(value=False, empty_value_display='', boolean=True)
         return super().get_empty_value_display(field)
 
+    @staticmethod
+    def _get_orgs_for_listing(plan) -> list[Organization]:
+        all_orgs = list(Organization.objects.get_queryset().available_for_plan(plan))
+        ancestor_paths: set[str] = set()
+        for org in all_orgs:
+            ancestor_paths.update(org.path[:pos] for pos in range(org.steplen, len(org.path), org.steplen))
+        if ancestor_paths:
+            seen = {o.pk for o in all_orgs}
+            all_orgs.extend(Organization.objects.filter(path__in=ancestor_paths).exclude(pk__in=seen))
+        return all_orgs
+
     def get_list_display(self, request: HttpRequest):  # noqa: C901
         # get_list_display() gets called a lot, so we cache the results
         if hasattr(request, '_person_list_display'):
@@ -476,8 +487,10 @@ class PersonAdmin(AplansModelAdmin[Person]):
         plan = user.get_active_admin_plan()
 
         # We use a cached and path-indexed version of all organizations to reduce
-        # SQL queries.
-        all_orgs = list(Organization.objects.get_queryset().available_for_plan(plan))
+        # SQL queries. Ancestors are pulled in so get_fully_qualified_name can
+        # resolve parent paths even when an ancestor isn't itself in
+        # `available_for_plan` (e.g., a suborg is plan-related but its parent isn't).
+        all_orgs = self._get_orgs_for_listing(plan)
         orgs_by_path = Organization.make_orgs_by_path(all_orgs)
         orgs_by_id = {org.id: org for org in all_orgs}
 
