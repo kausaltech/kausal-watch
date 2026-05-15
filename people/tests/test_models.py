@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -157,6 +158,32 @@ def test_person_change_email_to_deactivated_users_email(plan_admin_user: User):
     assert old_user.is_active
     new_user.refresh_from_db()
     assert not new_user.is_active
+
+
+def test_get_avatar_url_returns_none_when_image_file_missing(rf):
+    """
+    Return None silently when the image field references a file that's not in storage.
+
+    Regression test for WATCH-BACKEND-3NR: InvalidImageFormatError used to be
+    raised and reported to Sentry on every PersonAdmin listing render when an
+    environment carried Person.image paths whose underlying files weren't
+    present in the storage backend (e.g. a CI DB snapshot without media).
+    """
+    person = PersonFactory.create()
+    # Bypass the field descriptor's auto-population of image_width/image_height,
+    # which would otherwise try to open the (nonexistent) file on assignment.
+    person.image.name = 'images/person/nonexistent.jpg'
+    person.image_width = 100
+    person.image_height = 100
+
+    assert person.image.storage.exists(person.image.name) is False
+
+    request = rf.get('/admin/people/person/')
+    with patch('people.models.capture_exception') as mock_capture:
+        result = person.get_avatar_url(request, size='50x50')
+
+    assert result is None
+    mock_capture.assert_not_called()
 
 
 @pytest.mark.parametrize('value', [None, True, False])

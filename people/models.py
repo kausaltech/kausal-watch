@@ -214,6 +214,9 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
                 tn_args['focal_point'] = Rect(*[int(x) for x in self.image_cropping.split(',')])
                 tn_args['crop'] = 30
 
+            if not self.image.storage.exists(self.image.name):
+                return None
+
             try:
                 out_image = get_thumbnailer(self.image).get_thumbnail(tn_args)
             except Exception as e:
