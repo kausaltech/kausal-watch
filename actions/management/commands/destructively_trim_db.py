@@ -20,6 +20,7 @@ from actions.models.plan import Plan
 from admin_site.models import Client
 from images.models import AplansRendition
 from orgs.models import Organization
+from people.models import Person
 from request_log.models import LoggedRequest
 from users.models import User
 
@@ -55,6 +56,16 @@ class Command(BaseCommand):
             help='Do not ask for confirmation but delete right away',
         )
         parser.add_argument('--thorough', action='store_true', help='Delete more data, including revision history and audit logs')
+        parser.add_argument(
+            '--strip-media-references',
+            action='store_true',
+            help=(
+                'Null out Person.image paths on surviving rows. Use when the resulting dump will be '
+                'restored into an environment whose media storage will not have the original files '
+                '(e.g. the e2e CI dump). Off by default; when migrating between environments that '
+                'share or sync media separately, leave this off.'
+            ),
+        )
 
     def handle(self, *args, **options):
         if not settings.DEBUG or settings.DEPLOYMENT_TYPE == 'production':
@@ -115,6 +126,8 @@ class Command(BaseCommand):
         #     self.stdout.write("- all entries of Wagtail's model log")
         self.stdout.write('- all thumbnails')
         self.stdout.write('- all sessions')
+        if options['strip_media_references']:
+            self.stdout.write('- avatar image references on remaining Person rows (--strip-media-references)')
         if not options['no_confirm']:
             confirmation = input('Do you want to proceed? [y/N] ').lower()
             if confirmation != 'y':
@@ -126,6 +139,7 @@ class Command(BaseCommand):
                 orgs_to_delete,
                 clients_to_keep=options['exclude_client'],
                 thorough=options['thorough'],
+                strip_media_references=options['strip_media_references'],
             )
         self.stdout.write("Rebuilding Wagtail's reference index...")
         call_command('rebuild_references_index')
@@ -181,6 +195,7 @@ class Command(BaseCommand):
         orgs_to_delete,
         clients_to_keep: list[int] | None = None,
         thorough: bool = False,
+        strip_media_references: bool = False,
     ):
         if clients_to_keep is None:
             clients_to_keep = []
@@ -225,6 +240,14 @@ class Command(BaseCommand):
 
         # Delete all renditions
         self.delete_all(AplansRendition)
+
+        # Optional: clear avatar references on surviving Person rows. The dump
+        # is a pure SQL export; it doesn't bundle the media bucket, so any
+        # Person.image path that survives the trim points at a missing file
+        # once restored into an environment with empty media storage.
+        if strip_media_references:
+            cleared = Person.objects.exclude(image='').update(image='', image_width=None, image_height=None, image_cropping='')
+            self.stdout.write(f'Cleared avatar references on {cleared} Person rows.')
 
         if thorough:
             self.delete_thoroughly()
