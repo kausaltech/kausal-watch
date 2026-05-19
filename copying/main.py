@@ -1068,16 +1068,31 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
     )
     visit_tree(collection, {}, clone_visitor)
     for image_or_document in images_or_documents:
-        visit_tree(image_or_document, {}, clone_visitor)
-        image_or_document.collection = collection
         file = image_or_document.file
         assert file.name is not None
+        # If the source file is missing on storage, don't create a copy row.
+        # Otherwise the new row would point at the (still-missing) source path,
+        # which means source and copy share an S3 key — a duplicate-path
+        # time bomb that would orphan both rows the next time either is deleted.
+        if not file.storage.exists(file.name):
+            logger.warning(
+                f'Skipping copy of collection item {image_or_document}: '
+                f'source file {file.name!r} does not exist on storage'
+            )
+            continue
+        visit_tree(image_or_document, {}, clone_visitor)
+        image_or_document.collection = collection
         try:
             content_file = ContentFile(file.read(), name=file.name)
             filename = file.name.split('/')[-1]
             file.save(filename, content_file)
         except FileNotFoundError as e:
-            logger.warning(f'Could not copy file of collection item {image_or_document}: {e}')
+            # Race: source file disappeared between the existence check and
+            # the read. Roll back the row that visit_tree just created so we
+            # don't leave a duplicate-path time bomb behind.
+            logger.warning(f'File copy failed for collection item {image_or_document}: {e}')
+            image_or_document.delete()
+            continue
         image_or_document.save()
 
 

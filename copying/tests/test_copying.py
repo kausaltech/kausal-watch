@@ -213,6 +213,31 @@ def test_image_copy_in_collection_copy(plan_with_pages):
     assert image_copy.collection == plan_copy.root_collection
 
 
+def test_image_with_missing_source_file_is_not_copied(plan_with_pages):
+    """
+    Regression test for shared-path orphans.
+
+    If the source file is missing on storage, copying it would produce a new
+    row pointing at the still-missing source path — a duplicate-path time bomb
+    that orphans both rows the next time either is deleted. The copy must be
+    skipped entirely.
+    """
+    image = AplansImageFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='image-with-missing-file',
+    )
+    # Simulate external deletion of the underlying file.
+    image.file.storage.delete(image.file.name)
+    assert not image.file.storage.exists(image.file.name)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert not AplansImage.objects.filter(
+        collection=plan_copy.root_collection,
+        title='image-with-missing-file',
+    ).exists()
+
+
 def test_document_copy_in_collection_copy(plan_with_pages):
     doc = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc')
     plan_copy = copy_plan(plan_with_pages)
