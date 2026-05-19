@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 from typing import TYPE_CHECKING
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.sessions.models import Session
 from django.core.management import CommandError, call_command
@@ -10,7 +11,7 @@ from django.core.management.base import BaseCommand
 from django.db import ProgrammingError, connection, transaction
 from django.db.models.signals import post_delete, post_save
 from reversion.models import Revision as ReversionRevision
-from wagtail.models import ModelLogEntry, PageLogEntry, Revision as WagtailRevision
+from wagtail.models import DraftStateMixin, ModelLogEntry, PageLogEntry, Revision as WagtailRevision
 
 import factory
 from easy_thumbnails.models import Source, Thumbnail
@@ -153,6 +154,7 @@ class Command(BaseCommand):
         self.delete_all(ReversionRevision)
         # Delete Wagtail revisions without users
         self.delete_all(WagtailRevision)
+        self.repair_has_unpublished_changes()
         # Delete Wagtail model log entries without users
         self.delete_all(ModelLogEntry)
         self.delete_all(PlanScopedModelLogEntry)
@@ -208,6 +210,7 @@ class Command(BaseCommand):
         # Delete Wagtail revisions without users
         _, by_type = WagtailRevision.objects.filter(user__isnull=True).delete()
         self.print_deleted_instances_by_model(by_type)
+        self.repair_has_unpublished_changes()
         # Delete Wagtail model log entries without users
         _, by_type = ModelLogEntry.objects.filter(user__isnull=True).delete()
         self.print_deleted_instances_by_model(by_type)
@@ -232,3 +235,20 @@ class Command(BaseCommand):
     def print_deleted_instances_by_model(self, by_type):
         for model_name, n in by_type.items():
             self.stdout.write(f'Deleted {n} instances of {model_name}.')
+
+    def repair_has_unpublished_changes(self) -> None:
+        # `latest_revision` is `on_delete=SET_NULL`, so deleting Revision rows leaves
+        # DraftStateMixin instances with `latest_revision=NULL` while `has_unpublished_changes`
+        # stays at whatever it was — possibly producing the impossible state
+        # `has_unpublished_changes=True AND latest_revision IS NULL`. Fix the discrepancy here.
+        for model in apps.get_models():
+            if not issubclass(model, DraftStateMixin):
+                continue
+            updated_count = model._default_manager.filter(
+                latest_revision__isnull=True,
+                has_unpublished_changes=True,
+            ).update(has_unpublished_changes=False)
+            if updated_count:
+                self.stdout.write(
+                    f'Reset has_unpublished_changes on {updated_count} {model.__name__} instances with no latest_revision.'
+                )

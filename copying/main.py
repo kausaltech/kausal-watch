@@ -19,7 +19,7 @@ from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q,
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Page, Revision, RevisionMixin, Site
+from wagtail.models import DraftStateMixin, Page, Revision, RevisionMixin, Site
 from wagtail.models.i18n import Locale
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
@@ -1005,7 +1005,11 @@ def _copy_instance_revision(
             f'Failed to deserialize revision for {model_name} pk={instance.pk}, skipping ({type(exc).__name__}: {exc})'
         )
         instance.latest_revision = None
-        instance.save(update_fields=['latest_revision'])
+        if isinstance(instance, DraftStateMixin):
+            instance.has_unpublished_changes = False
+            instance.save(update_fields=['latest_revision', 'has_unpublished_changes'])
+        else:
+            instance.save(update_fields=['latest_revision'])
         return
     # as_object() sets pk from the revision's content_object (the original), so fix it to the copy's pk
     rev_obj.pk = instance.pk
