@@ -1,3 +1,6 @@
+from unittest.mock import call, patch
+
+from reversion.models import Revision as ReversionRevision
 from wagtail.models import Revision
 
 import pytest
@@ -27,3 +30,13 @@ def test_delete_userless_wagtail_revisions_deletes_orphaned_drafts():
     Command().delete_userless_wagtail_revisions()
 
     assert not Revision.objects.filter(id=revision.id).exists()
+
+
+def test_delete_thoroughly_deletes_all_revision_history():
+    with (
+        patch.object(Command, 'delete_all') as delete_all,
+        patch.object(Command, 'repair_has_unpublished_changes'),
+    ):
+        Command().delete_thoroughly()
+
+    delete_all.assert_has_calls([call(ReversionRevision), call(Revision)], any_order=False)

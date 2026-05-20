@@ -198,10 +198,9 @@ class Command(BaseCommand):
         except ImportError:
             AuthIDToken = None  # type: ignore[misc,assignment]
 
-        # Delete Reversion revisions without users
-        self.delete_userless_reversion_revisions()
-        # Delete Wagtail revisions without users
-        self.delete_userless_wagtail_revisions()
+        # Delete all revision history in thorough mode.
+        self.delete_all(ReversionRevision)
+        self.delete_all(WagtailRevision)
         self.repair_has_unpublished_changes()
         # Delete Wagtail model log entries without users
         self.delete_all(ModelLogEntry)
