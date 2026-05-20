@@ -10,6 +10,8 @@ from django.contrib.sessions.models import Session
 from django.core.management import CommandError, call_command
 from django.core.management.base import BaseCommand
 from django.db import ProgrammingError, connection, transaction
+from django.db.models import Exists, OuterRef
+from django.db.models.functions import Cast
 from django.db.models.signals import post_delete, post_save
 from reversion.models import Revision as ReversionRevision, Version
 from wagtail.models import DraftStateMixin, ModelLogEntry, PageLogEntry, Revision as WagtailRevision
@@ -26,7 +28,7 @@ from request_log.models import LoggedRequest
 from users.models import User
 
 if TYPE_CHECKING:
-    from django.db.models import Model
+    from django.db.models import Field, Model, QuerySet
 
 
 class Command(BaseCommand):
@@ -114,7 +116,6 @@ class Command(BaseCommand):
             self.stdout.write('- all plan-scoped model/page log entries')
             self.stdout.write('- all Wagtail PageLogEntry instances')
         else:
-            self.stdout.write("- orphaned Reversion Revision instances without a corresponding User anymore")
             self.stdout.write("- orphaned Wagtail Revision instances without a corresponding User anymore")
             self.stdout.write("- all Wagtail ModelLogEntry instances that don't have a corresponding User anymore")
         self.stdout.write('- all logged requests')
@@ -144,44 +145,78 @@ class Command(BaseCommand):
         _, by_type = model._default_manager.all().delete()
         self.print_deleted_instances_by_model(by_type)
 
-    def _get_existing_object_ids_by_content_type(self, content_type_id: int, object_ids: list[str]) -> set[str]:
+    def _get_object_id_cast_field(self, model: type[Model]) -> Field:
+        pk_field: Field = model._meta.pk
+        target_field = getattr(pk_field, 'target_field', None)
+        while target_field is not None:
+            pk_field = target_field
+            target_field = getattr(pk_field, 'target_field', None)
+        return pk_field.clone()
+
+    def _get_live_reversion_revision_ids_for_content_type(self, content_type_id: int) -> QuerySet[int]:
         model = ContentType.objects.get_for_id(content_type_id).model_class()
         if model is None:
-            return set()
-        return {str(pk) for pk in model._default_manager.filter(pk__in=object_ids).values_list('pk', flat=True)}
+            return Version.objects.none().values_list('revision_id', flat=True)
+
+        existing_object_subquery = model._default_manager.filter(
+            pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(model))
+        )
+        return (
+            Version.objects.filter(revision__user__isnull=True, content_type_id=content_type_id)
+            .annotate(has_live_object=Exists(existing_object_subquery))
+            .filter(has_live_object=True)
+            .values_list('revision_id', flat=True)
+        )
+
+    def _get_live_wagtail_revision_ids_for_content_type(self, content_type_id: int) -> QuerySet[int]:
+        model = ContentType.objects.get_for_id(content_type_id).model_class()
+        if model is None:
+            return WagtailRevision.objects.none().values_list('id', flat=True)
+
+        existing_object_subquery = model._default_manager.filter(
+            pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(model))
+        )
+        return (
+            WagtailRevision.objects.filter(user__isnull=True, content_type_id=content_type_id)
+            .annotate(has_live_object=Exists(existing_object_subquery))
+            .filter(has_live_object=True)
+            .values_list('id', flat=True)
+        )
 
     def delete_userless_reversion_revisions(self) -> None:
         queryset = ReversionRevision.objects.filter(user__isnull=True)
-        referenced_revision_ids: set[int] = set()
-        for content_type_id in queryset.values_list('version__content_type_id', flat=True).distinct():
+        live_revision_ids: set[int] = set()
+        for content_type_id in Version.objects.filter(revision__user__isnull=True).values_list(
+            'content_type_id', flat=True
+        ).distinct():
             if content_type_id is None:
                 continue
-            version_queryset = Version.objects.filter(revision__user__isnull=True, content_type_id=content_type_id)
-            object_ids = list(version_queryset.values_list('object_id', flat=True).distinct())
-            existing_object_ids = self._get_existing_object_ids_by_content_type(content_type_id, object_ids)
-            if not existing_object_ids:
-                continue
-            referenced_revision_ids.update(
-                version_queryset.filter(object_id__in=existing_object_ids).values_list('revision_id', flat=True)
+            live_revision_ids.update(
+                self._get_live_reversion_revision_ids_for_content_type(content_type_id).iterator(chunk_size=10_000)
             )
 
-        _, by_type = queryset.exclude(id__in=referenced_revision_ids).delete()
+        if not live_revision_ids:
+            _, by_type = queryset.delete()
+            self.print_deleted_instances_by_model(by_type)
+            return
+
+        _, by_type = queryset.exclude(id__in=live_revision_ids).delete()
         self.print_deleted_instances_by_model(by_type)
 
     def delete_userless_wagtail_revisions(self) -> None:
         queryset = WagtailRevision.objects.filter(user__isnull=True)
-        revision_ids_to_keep: set[int] = set()
+        live_revision_ids: set[int] = set()
         for content_type_id in queryset.values_list('content_type_id', flat=True).distinct():
-            content_type_queryset = queryset.filter(content_type_id=content_type_id)
-            object_ids = list(content_type_queryset.values_list('object_id', flat=True).distinct())
-            existing_object_ids = self._get_existing_object_ids_by_content_type(content_type_id, object_ids)
-            if not existing_object_ids:
-                continue
-            revision_ids_to_keep.update(
-                content_type_queryset.filter(object_id__in=existing_object_ids).values_list('id', flat=True)
+            live_revision_ids.update(
+                self._get_live_wagtail_revision_ids_for_content_type(content_type_id).iterator(chunk_size=10_000)
             )
 
-        _, by_type = queryset.exclude(id__in=revision_ids_to_keep).delete()
+        if not live_revision_ids:
+            _, by_type = queryset.delete()
+            self.print_deleted_instances_by_model(by_type)
+            return
+
+        _, by_type = queryset.exclude(id__in=live_revision_ids).delete()
         self.print_deleted_instances_by_model(by_type)
 
     def delete_thoroughly(self):
@@ -251,8 +286,9 @@ class Command(BaseCommand):
         # Delete clients without plans unless excluded
         _, by_type = Client.objects.filter(plans__isnull=True).exclude(id__in=clients_to_keep).delete()
         self.print_deleted_instances_by_model(by_type)
-        # Delete Reversion revisions without users
-        self.delete_userless_reversion_revisions()
+        # Reversion orphan cleanup is intentionally left to thorough mode. Determining
+        # it safely for surviving objects is expensive on large production-sized dumps,
+        # and it is not needed for fixing Wagtail draft-state inconsistencies.
         # Delete Wagtail revisions without users
         self.delete_userless_wagtail_revisions()
         self.repair_has_unpublished_changes()
