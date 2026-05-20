@@ -991,6 +991,17 @@ def _copy_instance_revision(
     clone_visitor: CloneVisitor,
     update_references_visitor: UpdateReferencesVisitor,
 ) -> None:
+    def clear_impossible_draft_state() -> None:
+        update_fields = []
+        if instance.latest_revision is not None:
+            instance.latest_revision = None
+            update_fields.append('latest_revision')
+        if isinstance(instance, DraftStateMixin) and instance.has_unpublished_changes:
+            instance.has_unpublished_changes = False
+            update_fields.append('has_unpublished_changes')
+        if update_fields:
+            instance.save(update_fields=update_fields)
+
     try:
         if instance.latest_revision is None:
             return
@@ -1004,12 +1015,7 @@ def _copy_instance_revision(
         logger.opt(exception=True).warning(
             f'Failed to deserialize revision for {model_name} pk={instance.pk}, skipping ({type(exc).__name__}: {exc})'
         )
-        instance.latest_revision = None
-        if isinstance(instance, DraftStateMixin):
-            instance.has_unpublished_changes = False
-            instance.save(update_fields=['latest_revision', 'has_unpublished_changes'])
-        else:
-            instance.save(update_fields=['latest_revision'])
+        clear_impossible_draft_state()
         return
     # as_object() sets pk from the revision's content_object (the original), so fix it to the copy's pk
     rev_obj.pk = instance.pk
@@ -1043,6 +1049,9 @@ def copy_revisions(clone_visitor: CloneVisitor):
         if isinstance(instance, Page):
             continue  # Page revisions handled by UpdateReferencesVisitor.update_page_draft()
         if instance.latest_revision is None:
+            if isinstance(instance, DraftStateMixin) and instance.has_unpublished_changes:
+                instance.has_unpublished_changes = False
+                instance.save(update_fields=['has_unpublished_changes'])
             continue
         _copy_instance_revision(instance, clone_visitor, update_references_visitor)
 
