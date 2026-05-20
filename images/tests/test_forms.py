@@ -141,14 +141,11 @@ class TestAplansImageFormSave:
             'cleaned up — the guard should only suppress same-path deletes.'
         )
 
-    def test_create_without_original_file_works(self):
+    def test_create_without_original_file_works(self, plan):
         # Building a form without an existing image (no original_file) must
         # still work — the save() override guards against original_file being
         # empty.
-        from wagtail.models import Collection
-
-        collection = Collection.get_first_root_node()
-        assert collection is not None
+        collection = plan.root_collection
 
         ImageForm = get_image_form(AplansImage)
         form = ImageForm(
