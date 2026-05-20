@@ -24,6 +24,7 @@ dependencies = [
   "django-anymail[mailgun,mailjet,sendgrid]",
   "django-autocomplete-light",
   "django-autoslug",
+  "django-choices-field",
   "django-cors-headers",
   "django-countries",
   "django-environ",
