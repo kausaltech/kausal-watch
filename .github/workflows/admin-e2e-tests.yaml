@@ -27,6 +27,8 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+      S3_MEDIA_STORAGE_URL:
+        required: false
 
     outputs:
       test_report_url:
@@ -72,6 +74,7 @@ jobs:
           CI: 1
           SECRET_KEY: abcd
           SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          S3_MEDIA_STORAGE_URL: ${{ secrets.S3_MEDIA_STORAGE_URL }}
           TEST_DB_FILE: e2e-test-database.sql.gz
           TEST_DB_S3_BUCKET: ${{ inputs.s3_bucket }}
           TEST_DB_S3_ENDPOINT: ${{ inputs.s3_endpoint }}
