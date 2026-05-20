@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sessions.models import Session
 from django.core.management import CommandError, call_command
 from django.core.management.base import BaseCommand
 from django.db import ProgrammingError, connection, transaction
 from django.db.models.signals import post_delete, post_save
-from reversion.models import Revision as ReversionRevision
+from reversion.models import Revision as ReversionRevision, Version
 from wagtail.models import DraftStateMixin, ModelLogEntry, PageLogEntry, Revision as WagtailRevision
 
 import factory
@@ -136,6 +137,46 @@ class Command(BaseCommand):
         _, by_type = model._default_manager.all().delete()
         self.print_deleted_instances_by_model(by_type)
 
+    def _get_existing_object_ids_by_content_type(self, content_type_id: int, object_ids: list[str]) -> set[str]:
+        model = ContentType.objects.get_for_id(content_type_id).model_class()
+        if model is None:
+            return set()
+        return {str(pk) for pk in model._default_manager.filter(pk__in=object_ids).values_list('pk', flat=True)}
+
+    def delete_userless_reversion_revisions(self) -> None:
+        queryset = ReversionRevision.objects.filter(user__isnull=True)
+        referenced_revision_ids: set[int] = set()
+        for content_type_id in queryset.values_list('version__content_type_id', flat=True).distinct():
+            if content_type_id is None:
+                continue
+            version_queryset = Version.objects.filter(revision__user__isnull=True, content_type_id=content_type_id)
+            object_ids = list(version_queryset.values_list('object_id', flat=True).distinct())
+            existing_object_ids = self._get_existing_object_ids_by_content_type(content_type_id, object_ids)
+            if not existing_object_ids:
+                continue
+            referenced_revision_ids.update(
+                version_queryset.filter(object_id__in=existing_object_ids).values_list('revision_id', flat=True)
+            )
+
+        _, by_type = queryset.exclude(id__in=referenced_revision_ids).delete()
+        self.print_deleted_instances_by_model(by_type)
+
+    def delete_userless_wagtail_revisions(self) -> None:
+        queryset = WagtailRevision.objects.filter(user__isnull=True)
+        revision_ids_to_keep: set[int] = set()
+        for content_type_id in queryset.values_list('content_type_id', flat=True).distinct():
+            content_type_queryset = queryset.filter(content_type_id=content_type_id)
+            object_ids = list(content_type_queryset.values_list('object_id', flat=True).distinct())
+            existing_object_ids = self._get_existing_object_ids_by_content_type(content_type_id, object_ids)
+            if not existing_object_ids:
+                continue
+            revision_ids_to_keep.update(
+                content_type_queryset.filter(object_id__in=existing_object_ids).values_list('id', flat=True)
+            )
+
+        _, by_type = queryset.exclude(id__in=revision_ids_to_keep).delete()
+        self.print_deleted_instances_by_model(by_type)
+
     def delete_thoroughly(self):
         from django.contrib.admin.models import LogEntry
 
@@ -151,9 +192,9 @@ class Command(BaseCommand):
             AuthIDToken = None  # type: ignore[misc,assignment]
 
         # Delete Reversion revisions without users
-        self.delete_all(ReversionRevision)
+        self.delete_userless_reversion_revisions()
         # Delete Wagtail revisions without users
-        self.delete_all(WagtailRevision)
+        self.delete_userless_wagtail_revisions()
         self.repair_has_unpublished_changes()
         # Delete Wagtail model log entries without users
         self.delete_all(ModelLogEntry)
@@ -205,11 +246,9 @@ class Command(BaseCommand):
         _, by_type = Client.objects.filter(plans__isnull=True).exclude(id__in=clients_to_keep).delete()
         self.print_deleted_instances_by_model(by_type)
         # Delete Reversion revisions without users
-        _, by_type = ReversionRevision.objects.filter(user__isnull=True).delete()
-        self.print_deleted_instances_by_model(by_type)
+        self.delete_userless_reversion_revisions()
         # Delete Wagtail revisions without users
-        _, by_type = WagtailRevision.objects.filter(user__isnull=True).delete()
-        self.print_deleted_instances_by_model(by_type)
+        self.delete_userless_wagtail_revisions()
         self.repair_has_unpublished_changes()
         # Delete Wagtail model log entries without users
         _, by_type = ModelLogEntry.objects.filter(user__isnull=True).delete()
