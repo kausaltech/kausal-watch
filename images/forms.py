@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from wagtail.images.forms import BaseImageForm
-from wagtail.log_actions import log
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -13,6 +12,9 @@ if TYPE_CHECKING:
     from django.db.models.fields.files import FieldFile
 
     from images.models import AplansImage
+
+
+_FORM_USER_ATTR = '_aplans_image_form_user'
 
 
 class _OldFileDeleteGuard:
@@ -60,6 +62,11 @@ class AplansImageForm(BaseImageForm):
         super().__init__(*args, **kwargs)
 
     def save(self, commit=True):
+        # Tag the instance so the post_save signal can log the save regardless
+        # of whether commit=True (model saved here) or commit=False (Wagtail's
+        # multi-upload AddView saves the model itself afterwards).
+        setattr(self.instance, _FORM_USER_ATTR, self.user)
+
         instance: AplansImage
         if 'file' in self.changed_data and self.original_file:
             with _guarded_storage(self.original_file, self.instance):
@@ -67,12 +74,4 @@ class AplansImageForm(BaseImageForm):
         else:
             instance = super().save(commit=commit)
 
-        if commit is False:
-            return instance
-
-        log(
-            instance=instance,
-            action='file.created_or_updated',
-            user=self.user,
-        )
         return instance

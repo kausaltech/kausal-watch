@@ -10,17 +10,18 @@ class ImagesConfig(AppConfig):
 
         monkeypatch_chooser()
 
-        from wagtail.images import permissions
 
+        from wagtail.images import permissions
+        from wagtail.images.forms import BaseImageForm
+
+        # Register post_save signal handler for audit logging.
         # Register graphql types overrides for grapple
-        from . import schema  # noqa: F401
+        from . import schema, signals  # noqa: F401
 
         # monkeypatch new permission policy
         from .permissions import permission_policy
 
         permissions.permission_policy = permission_policy
-
-        from wagtail.images.forms import BaseImageForm
 
         BaseImageForm.permission_policy = permission_policy
 
