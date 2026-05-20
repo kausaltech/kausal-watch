@@ -107,9 +107,16 @@ class Command(BaseCommand):
             client_names = Client.objects.filter(id__in=options['exclude_client']).values_list('name', flat=True)
             client_message += f' and are not among the following: {", ".join(client_names)}'
         self.stdout.write(client_message)
-        self.stdout.write("- all Reversion Revision instances that don't have a corresponding User anymore")
-        self.stdout.write("- all Wagtail Revision instances that don't have a corresponding User anymore")
-        self.stdout.write("- all Wagtail ModelLogEntry instances that don't have a corresponding User anymore")
+        if options['thorough']:
+            self.stdout.write('- all Reversion Revision instances')
+            self.stdout.write('- all Wagtail Revision instances')
+            self.stdout.write('- all Wagtail ModelLogEntry instances')
+            self.stdout.write('- all plan-scoped model/page log entries')
+            self.stdout.write('- all Wagtail PageLogEntry instances')
+        else:
+            self.stdout.write("- orphaned Reversion Revision instances without a corresponding User anymore")
+            self.stdout.write("- orphaned Wagtail Revision instances without a corresponding User anymore")
+            self.stdout.write("- all Wagtail ModelLogEntry instances that don't have a corresponding User anymore")
         self.stdout.write('- all logged requests')
         # if not options['keep_page_log']:
         #     self.stdout.write("- all entries of Wagtail's page log")
