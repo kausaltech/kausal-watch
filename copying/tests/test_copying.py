@@ -585,6 +585,17 @@ def test_model_without_revision_is_not_affected(plan_with_pages, action):
     assert action_copy.latest_revision is None
 
 
+def test_copying_repairs_impossible_draft_state_without_revision(plan_with_pages, action):
+    action.has_unpublished_changes = True
+    action.save(update_fields=['has_unpublished_changes'])
+
+    plan_copy = copy_plan(plan_with_pages)
+    action_copy = plan_copy.actions.get()
+
+    assert action_copy.latest_revision is None
+    assert not action_copy.has_unpublished_changes
+
+
 def test_report_type_attribute_field_references_are_updated(plan_with_pages):
     """When copying a plan, attribute_type references in ReportType.fields are updated to the copy."""
     action_ct = ContentType.objects.get_for_model(Action)
