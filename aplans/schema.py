@@ -7,10 +7,6 @@ import strawberry as sb
 from django.db.models import Count, Q
 from graphql import DirectiveLocation
 from graphql.error import GraphQLError
-from graphql.type import (
-    GraphQLArgument,
-    GraphQLDirective,
-)
 from strawberry.schema import Schema as StrawberrySchema
 from strawberry.tools import merge_types
 from strawberry.types import has_object_definition
@@ -29,7 +25,6 @@ from kausal_common.users.schema import UserNode
 
 from aplans import gql
 from aplans.cache import OrganizationActionCountCache
-from aplans.graphql_types import WorkflowStateGrapheneEnum
 from aplans.schema_context import WatchGraphQLContext
 from aplans.utils import public_fields
 
@@ -261,31 +256,6 @@ def auth_directive(info: gql.Info, uuid: str, token: str):  # pyright: ignore[re
     return
 
 
-graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
-
-
-class WorkflowStateDirective(GraphQLDirective):
-    def __init__(self):
-        super().__init__(
-            name='workflow',
-            description=(
-                'Let the client request retrieving approved/unapproved '
-                'drafts or published versions of plan data (currently individual actions). '
-                'The actual response is dependent on user access rights, for example '
-                'a published version is always returned to unauthenticated users '
-                'or when no draft exists.'
-            ),
-            args={
-                'state': GraphQLArgument(
-                    type_=graphene_enum_type,
-                    description='State of content to show',
-                    default_value=WorkflowStateEnum.PUBLISHED,
-                ),
-            },
-            locations=[DirectiveLocation.QUERY],
-        )
-
-
 @sb.input(name='InstanceContext')
 class InstanceContextInput:
     hostname: str | None
@@ -331,6 +301,7 @@ class WatchSchema(UnifiedSchema):
         from .schema_context import (
             ActivatePlanContextExtension,
             DeterminePlanContextExtension,
+            ProcessWorkflowDirectiveExtension,
             WatchAuthenticationExtension,
             WatchExecutionCacheExtension,
         )
@@ -339,6 +310,7 @@ class WatchSchema(UnifiedSchema):
         extensions.extend([
             LoggingTracingExtension(context_class=WatchGraphQLContext),
             DeterminePlanContextExtension,
+            ProcessWorkflowDirectiveExtension,
             WatchExecutionCacheExtension,
             ActivatePlanContextExtension,
             WatchAuthenticationExtension,
