@@ -1,24 +1,33 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from wagtail.images.forms import BaseImageForm
 from wagtail.log_actions import log
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from django.core.files.storage import Storage
+    from django.db.models.fields.files import FieldFile
 
     from images.models import AplansImage
 
 
 class _OldFileDeleteGuard:
     """
-    Storage proxy that suppresses delete() when the targeted path matches the form instance's current file path.
+    Storage proxy that suppresses delete() on the path where the replacement upload just landed.
 
-    Used to neutralise BaseImageForm.save's commit branch, which unconditionally
-    deletes the original file from storage after upload. If storage.get_available_name
-    reused the original path for the new upload (because the original was missing
-    on storage), that delete destroys the just-uploaded file.
+    ``BaseImageForm.save()`` unconditionally calls
+    ``self.original_file.storage.delete(self.original_file.name)`` after the
+    new upload is written. When ``get_available_name`` returns the original
+    path for the replacement — either because the storage has
+    ``file_overwrite=True`` (typical for S3), or because the original was
+    missing on storage so there was no name conflict — that delete destroys
+    the bytes we just wrote. Wrapping the storage with this guard turns that
+    one delete into a no-op while leaving deletes targeting any other path
+    (the normal rename-to-a-new-path case) intact.
     """
 
     def __init__(self, wrapped: Storage, instance: AplansImage) -> None:
@@ -34,6 +43,16 @@ class _OldFileDeleteGuard:
         return getattr(self._wrapped, name)
 
 
+@contextmanager
+def _guarded_storage(file_obj: FieldFile, instance: AplansImage) -> Iterator[None]:
+    original_storage = file_obj.storage
+    file_obj.storage = _OldFileDeleteGuard(original_storage, instance)  # type: ignore[assignment]  # pyright: ignore[reportAttributeAccessIssue]
+    try:
+        yield
+    finally:
+        file_obj.storage = original_storage
+
+
 class AplansImageForm(BaseImageForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.get('user')
@@ -41,16 +60,12 @@ class AplansImageForm(BaseImageForm):
         super().__init__(*args, **kwargs)
 
     def save(self, commit=True):
-        original_file = self.original_file
-        if original_file is None:
-            instance: AplansImage = super().save(commit=commit)
-        else:
-            unwrapped_storage = original_file.storage
-            original_file.storage = _OldFileDeleteGuard(unwrapped_storage, self.instance)
-            try:
+        instance: AplansImage
+        if 'file' in self.changed_data and self.original_file:
+            with _guarded_storage(self.original_file, self.instance):
                 instance = super().save(commit=commit)
-            finally:
-                original_file.storage = unwrapped_storage
+        else:
+            instance = super().save(commit=commit)
 
         if commit is False:
             return instance

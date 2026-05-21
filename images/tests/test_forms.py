@@ -1,101 +1,174 @@
 from __future__ import annotations
 
 from io import BytesIO
+from typing import TYPE_CHECKING, Any
+from unittest.mock import MagicMock
 
-from django.core.files.images import ImageFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from wagtail.images.forms import get_image_form
 
 import PIL.Image
 import pytest
 
+from images.forms import _OldFileDeleteGuard
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
 
-pytestmark = pytest.mark.django_db
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
 
 
-def _png_bytes() -> bytes:
+_PIL_FORMAT_BY_EXT = {
+    '.png': ('PNG', 'image/png', 'RGBA'),
+    '.jpg': ('JPEG', 'image/jpeg', 'RGB'),
+    '.jpeg': ('JPEG', 'image/jpeg', 'RGB'),
+}
+
+
+def _make_uploaded_image(filename: str) -> SimpleUploadedFile:
+    ext = '.' + filename.rsplit('.', 1)[-1].lower()
+    pil_format, content_type, mode = _PIL_FORMAT_BY_EXT.get(ext, ('PNG', 'image/png', 'RGBA'))
     buf = BytesIO()
-    PIL.Image.new('RGBA', (8, 8), 'white').save(buf, 'PNG')
-    return buf.getvalue()
+    PIL.Image.new(mode, (10, 10), 'white').save(buf, pil_format)
+    return SimpleUploadedFile(filename, buf.getvalue(), content_type=content_type)
 
 
-def _png_upload(filename: str) -> SimpleUploadedFile:
-    return SimpleUploadedFile(filename, _png_bytes(), content_type='image/png')
+def _build_form_data(image: AplansImage) -> dict[str, Any]:
+    return {
+        'title': image.title,
+        'collection': image.collection.pk,
+        'tags': '',
+        'focal_point_x': '',
+        'focal_point_y': '',
+        'focal_point_width': '',
+        'focal_point_height': '',
+        'image_credit': image.image_credit,
+        'alt_text': image.alt_text,
+    }
 
 
-def _png_image_file(filename: str) -> ImageFile:
-    return ImageFile(BytesIO(_png_bytes()), name=filename)
+def _force_same_path_on_save(storage: Storage, monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Simulate S3-with-file_overwrite=True semantics.
+
+    Default Storage.get_available_name adds a random suffix when the file
+    already exists; with file_overwrite=True it returns the requested name
+    unchanged, overwriting the existing object in place.
+    """
+
+    def _passthrough(name: str, max_length: int | None = None) -> str:
+        return name
+
+    monkeypatch.setattr(storage, 'get_available_name', _passthrough)
 
 
-class TestAplansImageFormSelfDeleteTrap:
-    def test_save_preserves_new_file_when_original_was_missing(self, plan_admin_user, plan):
-        """
-        Regression test for the self-delete trap.
+class TestOldFileDeleteGuard:
+    """Unit tests for the storage proxy that protects the just-uploaded file."""
 
-        When the original file is missing on storage at the time of re-upload
-        and the new upload uses the same basename, storage.get_available_name
-        will reuse the original path. BaseImageForm.save's commit branch would
-        then delete what was just uploaded. AplansImageForm.save must prevent
-        this.
-        """
-        image = AplansImageFactory.create(
-            collection=plan.root_collection,
-            file=_png_image_file('ace34991.png'),
-        )
-        storage = image.file.storage
-        original_path = image.file.name
+    def test_delete_suppressed_when_name_matches_instance_file(self):
+        wrapped = MagicMock()
+        instance = MagicMock()
+        instance.file.name = 'original_images/2026-04/sample.png'
+
+        guard = _OldFileDeleteGuard(wrapped, instance)
+        guard.delete('original_images/2026-04/sample.png')
+
+        wrapped.delete.assert_not_called()
+
+    def test_delete_passthrough_when_name_differs(self):
+        wrapped = MagicMock()
+        instance = MagicMock()
+        instance.file.name = 'original_images/2026-04/new.png'
+
+        guard = _OldFileDeleteGuard(wrapped, instance)
+        guard.delete('original_images/2026-04/old.png')
+
+        wrapped.delete.assert_called_once_with('original_images/2026-04/old.png')
+
+
+@pytest.mark.django_db
+class TestAplansImageFormSave:
+    """Integration tests for AplansImageForm.save()."""
+
+    def test_resave_with_same_path_keeps_uploaded_file(self, monkeypatch: pytest.MonkeyPatch):
+        existing = AplansImageFactory.create()
+        original_path = existing.file.name
+        storage = existing.file.storage
         assert storage.exists(original_path)
 
-        # Simulate external deletion of the original file.
-        storage.delete(original_path)
-        assert not storage.exists(original_path)
+        _force_same_path_on_save(storage, monkeypatch)
 
-        # Re-upload using the same basename. get_available_name reuses the path
-        # because the original is missing — so without the fix, BaseImageForm
-        # would delete the file it just uploaded.
-        basename = original_path.rsplit('/', 1)[-1]
-        form_class = get_image_form(AplansImage)
-        form = form_class(
-            data={'title': image.title, 'collection': image.collection_id},
-            files={'file': _png_upload(basename)},
-            instance=image,
-            user=plan_admin_user,
+        upload_name = original_path.rsplit('/', 1)[-1]
+        ImageForm = get_image_form(AplansImage)
+        form = ImageForm(
+            data=_build_form_data(existing),
+            files={'file': _make_uploaded_image(upload_name)},
+            instance=existing,
+            user=None,
         )
+
         assert form.is_valid(), form.errors
-        saved = form.save()
+        instance = form.save()
 
-        assert storage.exists(saved.file.name), (
-            'AplansImageForm.save deleted the file it just uploaded'
+        assert instance.file.name == original_path
+        assert storage.exists(instance.file.name), (
+            'Expected the just-uploaded file to still exist on storage; '
+            'the unconditional delete in BaseImageForm.save would remove it '
+            'without the _OldFileDeleteGuard.'
         )
 
-    def test_save_deletes_old_file_when_path_changes(self, plan_admin_user, plan):
-        """
-        Normal-path behaviour.
-
-        When re-uploading a differently-named file, the old file is deleted
-        and the new file remains. The fix must not regress this.
-        """
-
-        image = AplansImageFactory.create(
-            collection=plan.root_collection,
-            file=_png_image_file('ace34991.png'),
-        )
-        storage = image.file.storage
-        original_path = image.file.name
+    def test_resave_with_different_path_still_deletes_old_file(self):
+        existing = AplansImageFactory.create()
+        original_path = existing.file.name
+        storage = existing.file.storage
         assert storage.exists(original_path)
 
-        form_class = get_image_form(AplansImage)
-        form = form_class(
-            data={'title': image.title, 'collection': image.collection_id},
-            files={'file': _png_upload('different-name.png')},
-            instance=image,
-            user=plan_admin_user,
+        ImageForm = get_image_form(AplansImage)
+        form = ImageForm(
+            data=_build_form_data(existing),
+            files={'file': _make_uploaded_image('different-name.png')},
+            instance=existing,
+            user=None,
         )
-        assert form.is_valid(), form.errors
-        saved = form.save()
 
-        assert saved.file.name != original_path
-        assert storage.exists(saved.file.name)
-        assert not storage.exists(original_path)
+        assert form.is_valid(), form.errors
+        instance = form.save()
+
+        assert instance.file.name != original_path
+        assert storage.exists(instance.file.name)
+        assert not storage.exists(original_path), (
+            'When the upload lands at a new path, the old file must still be '
+            'cleaned up — the guard should only suppress same-path deletes.'
+        )
+
+    def test_create_without_original_file_works(self):
+        # Building a form without an existing image (no original_file) must
+        # still work — the save() override guards against original_file being
+        # empty.
+        from wagtail.models import Collection
+
+        collection = Collection.get_first_root_node()
+        assert collection is not None
+
+        ImageForm = get_image_form(AplansImage)
+        form = ImageForm(
+            data={
+                'title': 'Fresh image',
+                'collection': collection.pk,
+                'tags': '',
+                'focal_point_x': '',
+                'focal_point_y': '',
+                'focal_point_width': '',
+                'focal_point_height': '',
+                'image_credit': '',
+                'alt_text': '',
+            },
+            files={'file': _make_uploaded_image('fresh.png')},
+            user=None,
+        )
+
+        assert form.is_valid(), form.errors
+        instance = form.save()
+
+        assert instance.pk is not None
+        assert instance.file.storage.exists(instance.file.name)
