@@ -26,6 +26,7 @@ from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER
 from actions.models import Plan
 
 from .cache import WatchObjectCache
+from .graphql_types import WorkflowStateEnum
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -231,6 +232,49 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
             return
 
         self.determine_plan_and_locale(op)
+        yield
+
+
+class ProcessWorkflowDirectiveExtension(WatchSchemaExtension):
+    def process_workflow_directive(self, directive: DirectiveNode) -> WorkflowStateEnum:
+        from .schema import workflow_directive  # noqa: PLC0415
+
+        assert workflow_directive.graphql_name is not None
+        exec_ctx = self.execution_context
+        directive_ast = exec_ctx.schema._schema.get_directive(workflow_directive.graphql_name)
+        assert directive_ast is not None
+        args = get_argument_values(directive_ast, directive, exec_ctx.variables)
+        state_raw = args.get('state')
+        if state_raw is None:
+            state = WorkflowStateEnum.PUBLISHED
+        elif isinstance(state_raw, WorkflowStateEnum):
+            state = state_raw
+        else:
+            state = WorkflowStateEnum(state_raw)
+
+        ctx = self.get_context()
+        user = user_or_none(ctx.get_user())
+        if user is None:
+            return WorkflowStateEnum.PUBLISHED
+        return state
+
+    def on_execute(self) -> Generator[None]:
+        doc = self.execution_context.graphql_document
+        if doc:
+            op = get_first_operation(doc)
+        else:
+            op = None
+
+        if not op or self.execution_context.result:
+            yield
+            return
+
+        for directive in op.directives or []:
+            if directive.name.value == 'workflow':
+                state = self.process_workflow_directive(directive)
+                self.get_context().cache.query_workflow_state = state
+                break
+
         yield
 
 

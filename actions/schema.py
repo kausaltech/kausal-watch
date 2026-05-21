@@ -1440,9 +1440,12 @@ def _get_visible_action(root, field_name: str, user: User | None) -> Action | No
         return None
 
 
-def _get_visible_actions(root, field_name: str, user: User | None) -> QuerySet[Action]:
-    actions = getattr(root, field_name)
-    return actions.visible_for_user(user)
+def _get_visible_actions(root, field_name: str, user: User | None) -> QuerySet[Action] | Iterable[Action]:
+    qs = getattr(root, field_name).all()
+    # Draft revision objects have FakeQuerySets without custom manager methods
+    if hasattr(qs, 'visible_for_user'):
+        return qs.visible_for_user(user)
+    return qs
 
 
 class RevisionNode(DjangoNode[Revision[Any]]):
@@ -1646,7 +1649,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         return _get_visible_actions(root, 'superseded_actions', user_or_none(info.context.user))
 
     @staticmethod
-    def resolve_copies(root: Action, info: GQLInfo) -> QuerySet[Action]:
+    def resolve_copies(root: Action, info: GQLInfo) -> QuerySet[Action] | Iterable[Action]:
         return _get_visible_actions(root, 'copies', user_or_none(info.context.user))
 
     @staticmethod
