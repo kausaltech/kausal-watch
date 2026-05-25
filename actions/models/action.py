@@ -1758,7 +1758,7 @@ class ActionStatus(PlanRelatedModelWithRevision):
         related_name='action_statuses',
         verbose_name=_('plan'),
     )
-    name = models.CharField(max_length=50, verbose_name=_('name'))
+    name = models.CharField(max_length=70, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
     # We deliberately don't use ColorField from wagtail_color_panel here because here we expect color keys from the UI
