@@ -6,7 +6,7 @@ from actions.tests.factories import ActionListBlockFactory
 from indicators.blocks import IndicatorBlock
 from indicators.tests.factories import IndicatorGroupBlockFactory
 from pages.blocks import CardBlock, QuestionBlock
-from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFactory
+from pages.tests.factories import CardListBlockFactory, FrontPageHeroAdditionalSettingsBlockFactory, FrontPageHeroBlockFactory, QuestionAnswerBlockFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -95,11 +95,13 @@ def expected_result_multi_use_image_fragment(image_block):
     }
 
 
-def test_front_page_hero_block(graphql_client_query_data, front_page_hero_block, plan_with_pages):
+@pytest.mark.parametrize('layout', ['big_image', 'side_by_side'])
+def test_front_page_hero_block(graphql_client_query_data, plan_with_pages, layout):
     plan = plan_with_pages
     page = plan.root_page
+    block = FrontPageHeroBlockFactory.create(layout=layout)
     page.body = [
-        ('front_page_hero', front_page_hero_block),
+        ('front_page_hero', block),
     ]
     page.save()
     assert_body_block(
@@ -117,11 +119,58 @@ def test_front_page_hero_block(graphql_client_query_data, front_page_hero_block,
         """,
         extra_fragments=[MULTI_USE_IMAGE_FRAGMENT],
         expected={
-            'heading': front_page_hero_block['heading'],
-            'image': expected_result_multi_use_image_fragment(front_page_hero_block['image']),
-            'layout': 'big_image',
-            'lead': str(front_page_hero_block['lead']),
+            'heading': block['heading'],
+            'image': expected_result_multi_use_image_fragment(block['image']),
+            'layout': layout,
+            'lead': str(block['lead']),
         },
+    )
+
+
+@pytest.mark.parametrize('layout', ['small_image', 'side_by_side'])
+@pytest.mark.parametrize('fit_image', [False, True])
+def test_front_page_hero_block_fit_image(graphql_client_query_data, plan_with_pages, layout, fit_image):
+    plan = plan_with_pages
+    page = plan.root_page
+    additional_settings = FrontPageHeroAdditionalSettingsBlockFactory.create(fit_image=fit_image)
+    block = FrontPageHeroBlockFactory.create(layout=layout, additional_settings=additional_settings)
+    page.body = [
+        ('front_page_hero', block),
+    ]
+    page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        page=page,
+        block_fields="""
+            additionalSettings {
+              fitImage
+            }
+        """,
+        expected={
+            'additionalSettings': {'fitImage': fit_image},
+        },
+    )
+
+
+def test_front_page_hero_block_additional_settings_hidden_for_big_image(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
+    page = plan.root_page
+    block = FrontPageHeroBlockFactory.create(layout='big_image')
+    page.body = [
+        ('front_page_hero', block),
+    ]
+    page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        page=page,
+        block_fields="""
+            additionalSettings {
+              fitImage
+            }
+        """,
+        expected={'additionalSettings': None},
     )
 
 

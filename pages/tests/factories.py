@@ -66,6 +66,14 @@ class QuestionAnswerBlockFactory(StructBlockFactory):
     questions = ListBlockFactory(QuestionBlockFactory)
 
 
+class FrontPageHeroAdditionalSettingsBlockFactory(StructBlockFactory):
+    class Meta:
+        model = pages.blocks.FrontPageHeroAdditionalSettingsBlock
+
+    background_colour = ''
+    fit_image = True
+
+
 class FrontPageHeroBlockFactory(StructBlockFactory):
     class Meta:
         model = pages.blocks.FrontPageHeroBlock
@@ -74,6 +82,9 @@ class FrontPageHeroBlockFactory(StructBlockFactory):
     image = SubFactory[pages.blocks.FrontPageHeroBlock, ImageChooserBlock](ImageChooserBlockFactory)
     heading = 'Front page hero block heading'
     lead = RichText('<p>Front page hero block lead</p>')
+    additional_settings = SubFactory[pages.blocks.FrontPageHeroBlock, pages.blocks.FrontPageHeroAdditionalSettingsBlock](
+        FrontPageHeroAdditionalSettingsBlockFactory
+    )
 
 
 class PageLinkBlockFactory(StructBlockFactory):

@@ -25,7 +25,8 @@ from grapple.models import (
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 
-from kausal_common.graphene.grapple import make_grapple_field
+from kausal_common.blocks.conditional_struct_block import ConditionalFieldRule, ConditionalStructBlock
+from kausal_common.graphene.grapple import grapple_field, make_grapple_field
 
 from actions.blocks.choosers import CategoryChooserBlock
 from actions.models.category import Category
@@ -183,25 +184,88 @@ class QuestionAnswerBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
-class FrontPageHeroBlock(blocks.StructBlock):
+class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
+    background_colour = blocks.CharBlock(
+        required=False,
+        label=_('Background colour'),
+        help_text=_('CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)'),
+    )
+    fit_image = blocks.BooleanBlock(
+        required=False,
+        default=True,
+        label=_('Fit image without clipping'),
+        help_text=_('Show the image at its exact scaled dimensions; it will never be cropped'),
+    )
+
+    class Meta:
+        label = _('Additional settings')
+        collapsed = True
+        label_format = ''
+
+    graphql_fields = [
+        GraphQLString('background_colour'),
+        GraphQLBoolean('fit_image'),
+    ]
+
+
+_LAYOUTS_WITH_ADDITIONAL_SETTINGS = {'small_image', 'side_by_side'}
+
+
+def _resolve_hero_additional_settings(root, _info):
+    # Standalone graphene.Field resolvers receive the raw BoundBlock (StreamChild) as root,
+    # not the StructValue — unlike grapple's MethodType-bound resolvers which receive the
+    # StructValue as `instance`. Use getattr to handle both cases.
+    data = getattr(root, 'value', root)
+    if data.get('layout') not in _LAYOUTS_WITH_ADDITIONAL_SETTINGS:
+        return None
+    return data.get('additional_settings')
+
+
+@register_streamfield_block
+class FrontPageHeroBlock(ConditionalStructBlock):
+    conditional_rules = [
+        ConditionalFieldRule(
+            trigger='layout',
+            target='additional_settings',
+            show_for=['small_image', 'side_by_side'],
+        ),
+    ]
+
     layout = blocks.ChoiceBlock(
         choices=[
             ('big_image', _('Big image')),
             ('small_image', _('Small image')),
+            ('side_by_side', _('Side-by-side: image left, content right')),
         ]
     )
     image = ImageChooserBlock(label=_('Image'))
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
+    additional_settings = FrontPageHeroAdditionalSettingsBlock(required=False)
 
     class Meta:
         label = _('Front page hero block')
+
+    def clean(self, value):
+        result = super().clean(value)
+        if result.get('layout') not in _LAYOUTS_WITH_ADDITIONAL_SETTINGS:
+            additional = result.get('additional_settings')
+            if additional is not None:
+                additional['fit_image'] = False
+                additional['background_colour'] = ''
+        return result
 
     graphql_fields = [
         GraphQLString('layout', required=True),
         GraphQLImage('image'),
         GraphQLString('heading'),
         GraphQLString('lead'),
+        grapple_field(
+            'additional_settings',
+            lambda: registry.streamfield_blocks[FrontPageHeroAdditionalSettingsBlock],
+            resolver=_resolve_hero_additional_settings,
+            required=False,
+        ),
     ]
 
 
