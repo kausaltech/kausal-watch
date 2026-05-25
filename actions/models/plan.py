@@ -1233,6 +1233,21 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         return f'{self.identifier}.{default_domain}'
 
     def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
+        """
+        Get all plans that are related to this plan.
+
+        A plan is considered related if it has this plan listed in its ``related_plans``
+        attribute, or if it is connected through an umbrella plan relationship — that
+        is, this plan's parent, its siblings (other children of the same parent), or
+        its own children.
+
+        Args:
+            inclusive (bool): Whether to include this plan in the returned queryset.
+
+        Returns:
+            A queryset of related plans.
+
+        """
         q = Q(related_plans=self)
         if self.parent_id:
             q |= Q(id=self.parent_id)
