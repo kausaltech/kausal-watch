@@ -146,7 +146,7 @@ class ActionChooserMixin(WatchModelChooserBase[Action]):
     def get_unfiltered_object_list(self):
         user = user_or_bust(self.request.user)
         plan = user.get_active_admin_plan()
-        related_plans = Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
+        related_plans = plan.get_all_related_plans(inclusive=True)
         objects = Action.objects.filter(plan__in=related_plans)
         return objects
 
