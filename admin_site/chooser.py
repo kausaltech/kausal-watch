@@ -33,6 +33,16 @@ class ClientForm(forms.ModelForm):
         validators=[HostnameValidator()],
     )
 
+    def clean_default_email_hostname(self):
+        hostname = self.cleaned_data['default_email_hostname']
+        if EmailDomains.objects.filter(domain=hostname).exists():
+            raise forms.ValidationError(
+                _('The email domain "%(domain)s" is already in use by another client.'),
+                params={'domain': hostname},
+                code='unique',
+            )
+        return hostname
+
     def save(self, commit=True):
         hostname = self.cleaned_data['default_email_hostname']
         result = super().save(commit=commit)
