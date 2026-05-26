@@ -10,6 +10,7 @@ import strawberry as sb
 from django.db.models import Model, QuerySet
 from django.utils.translation import gettext_lazy as _
 from graphene.utils.str_converters import to_camel_case, to_snake_case
+from graphql.error import GraphQLError
 
 from grapple.registry import registry as grapple_registry
 
@@ -57,7 +58,7 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> 
     if plan_identifier is None:
         plan = info.context.active_plan
         if not plan:
-            raise Exception('No plan in context')
+            raise GraphQLError('No plan in context')
         assert plan.is_visible_for_user(info.context.user), 'Plan is not visible for user'
         return plan
 
