@@ -56,6 +56,18 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm = WagtailAdminMo
             'plan': admin_req(self.request).user.get_active_admin_plan(),
         }
 
+    def get_context_data(self, **kwargs):
+        # During a successful POST, Wagtail's save_action -> get_success_json calls
+        # render_partials, which invokes get_context_data() without passing a form. Django's
+        # FormMixin then constructs a fresh form via get_form(), and EditView.get_context_data
+        # overwrites self.form with it. The new form is bound but never validated, so its
+        # formset child forms have no cleaned_data, breaking the subsequent
+        # form.get_field_updates_for_resave() call (formset._should_delete_form reads
+        # form.cleaned_data).
+        if 'form' not in kwargs and getattr(self, 'form', None) is not None:
+            kwargs['form'] = self.form
+        return super().get_context_data(**kwargs)
+
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)
