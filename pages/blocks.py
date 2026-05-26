@@ -183,6 +183,11 @@ class QuestionAnswerBlock(blocks.StructBlock):
     ]
 
 
+class FrontPageHeroAdditionalSettingsValue(blocks.StructValue):
+    background_colour: str
+    fit_image: bool
+
+
 @register_streamfield_block
 class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
     background_colour = blocks.CharBlock(
@@ -201,6 +206,7 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
         label = _('Additional settings')
         collapsed = True
         label_format = ''
+        value_class = FrontPageHeroAdditionalSettingsValue
 
     graphql_fields = [
         GraphQLString('background_colour'),
@@ -211,7 +217,7 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
 _LAYOUTS_WITH_ADDITIONAL_SETTINGS = {'small_image', 'side_by_side'}
 
 
-def _resolve_hero_additional_settings(root, _info):
+def _resolve_hero_additional_settings(root, _info) -> FrontPageHeroAdditionalSettingsValue | None:
     # Standalone graphene.Field resolvers receive the raw BoundBlock (StreamChild) as root,
     # not the StructValue — unlike grapple's MethodType-bound resolvers which receive the
     # StructValue as `instance`. Use getattr to handle both cases.

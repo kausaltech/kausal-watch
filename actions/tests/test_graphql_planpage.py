@@ -6,7 +6,12 @@ from actions.tests.factories import ActionListBlockFactory
 from indicators.blocks import IndicatorBlock
 from indicators.tests.factories import IndicatorGroupBlockFactory
 from pages.blocks import CardBlock, QuestionBlock
-from pages.tests.factories import CardListBlockFactory, FrontPageHeroAdditionalSettingsBlockFactory, FrontPageHeroBlockFactory, QuestionAnswerBlockFactory
+from pages.tests.factories import (
+    CardListBlockFactory,
+    FrontPageHeroAdditionalSettingsBlockFactory,
+    FrontPageHeroBlockFactory,
+    QuestionAnswerBlockFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
