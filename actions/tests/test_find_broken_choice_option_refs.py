@@ -20,6 +20,7 @@ import pytest
 from actions.models import (
     Action,
     AttributeChoice,
+    AttributeTypeChoiceOption,
 )
 from actions.tests.factories import (
     ActionFactory,
@@ -27,6 +28,7 @@ from actions.tests.factories import (
     AttributeTypeChoiceOptionFactory,
 )
 from find_broken_choice_option_refs import (
+    reconstruct_from_reversion,
     scan_all,
     scan_live_rows,
     scan_reversion_versions,
@@ -197,3 +199,108 @@ def test_scan_all_returns_empty_when_clean(
     )
     refs = scan_all()
     assert refs == []
+
+
+# =============================================================================
+# Reconstruction from reversion
+# =============================================================================
+
+
+def test_reconstruct_from_reversion_finds_last_save_state(
+    action_attribute_type__ordered_choice: AttributeType,
+    user: User,
+):
+    # Save the option twice with different names so we can assert the
+    # reconstruction picks the most recent revision.
+    with reversion.create_revision():
+        reversion.set_user(user)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Original name',
+            identifier='original-identifier',
+        )
+        reversion.add_to_revision(option)
+
+    with reversion.create_revision():
+        reversion.set_user(user)
+        option.name = 'Renamed before delete'
+        option.save()
+        reversion.add_to_revision(option)
+
+    stale_pk = option.pk
+    type_pk = action_attribute_type__ordered_choice.pk
+    expected_order = option.order
+    option.delete()
+
+    found, needs_backup = reconstruct_from_reversion([stale_pk])
+
+    assert needs_backup == []
+    assert stale_pk in found
+    recovered = found[stale_pk]
+    assert recovered.name == 'Renamed before delete'
+    assert recovered.identifier  # autoslug should have set this
+    assert recovered.type_id == type_pk
+    assert recovered.order == expected_order
+
+
+def test_reconstruct_from_reversion_flags_pks_without_versions(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Create an option *outside* a reversion revision so no Version row is
+    # written. We do this by bypassing the manager entirely via raw create
+    # then immediately taking its pk and deleting the row.
+    option = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Never reversion-ed',
+    )
+    stale_pk = option.pk
+    option.delete()
+
+    # Sanity: there should be no Version row for this PK. The factory does
+    # not wrap creation in reversion.create_revision(), and we deleted the
+    # option without one either.
+    from reversion.models import Version
+
+    ct = ContentType.objects.get_for_model(AttributeTypeChoiceOption)
+    assert not Version.objects.filter(content_type=ct, object_id=str(stale_pk)).exists()
+
+    found, needs_backup = reconstruct_from_reversion([stale_pk])
+
+    assert found == {}
+    assert needs_backup == [stale_pk]
+
+
+def test_reconstruct_from_reversion_handles_mixed_set(
+    action_attribute_type__ordered_choice: AttributeType,
+    user: User,
+):
+    # One option with reversion history, one without.
+    with reversion.create_revision():
+        reversion.set_user(user)
+        recoverable = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Recoverable',
+        )
+        reversion.add_to_revision(recoverable)
+
+    unrecoverable = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Unrecoverable',
+    )
+
+    recoverable_pk = recoverable.pk
+    unrecoverable_pk = unrecoverable.pk
+    recoverable.delete()
+    unrecoverable.delete()
+
+    found, needs_backup = reconstruct_from_reversion([recoverable_pk, unrecoverable_pk])
+
+    assert set(found) == {recoverable_pk}
+    assert found[recoverable_pk].name == 'Recoverable'
+    assert needs_backup == [unrecoverable_pk]
+
+
+def test_reconstruct_from_reversion_with_empty_input():
+    found, needs_backup = reconstruct_from_reversion([])
+    assert found == {}
+    assert needs_backup == []

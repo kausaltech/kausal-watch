@@ -32,6 +32,12 @@ Usage from shell_plus:
 Each scan returns a list of `BrokenRef`s; `print_report` groups them by
 the missing AttributeTypeChoiceOption PK so you can see, for a given
 deleted option, every place that still references it.
+
+Once you have the set of missing PKs, `reconstruct_from_reversion()` reads
+the django-reversion Versions of AttributeTypeChoiceOption itself in the
+live DB to recover each option's last-known name / identifier / type / order.
+PKs without any Version row are returned separately so they can be looked
+up in DB backups.
 """
 
 from __future__ import annotations
@@ -248,6 +254,110 @@ def scan_all() -> list[BrokenRef]:
         *scan_wagtail_revisions(existing),
         *scan_live_rows(existing),
     ]
+
+
+@dataclass
+class ReconstructedOption:
+    pk: int
+    """The (currently missing) AttributeTypeChoiceOption PK."""
+
+    name: str | None
+    identifier: str | None
+    type_id: int | None
+    order: int | None
+
+    source_version_pk: int
+    """The reversion Version row this data was reconstructed from."""
+
+    revision_date: str
+    """ISO timestamp of the Version's revision (for audit)."""
+
+
+def reconstruct_from_reversion(
+    missing_pks: Iterable[int],
+) -> tuple[dict[int, ReconstructedOption], list[int]]:
+    """
+    Recover last-known state of deleted AttributeTypeChoiceOptions from reversion.
+
+    For each PK in `missing_pks`, find the most recent reversion Version of
+    AttributeTypeChoiceOption with that `object_id` and extract its serialized
+    fields.
+
+    Returns `(found, needs_backup)`:
+
+    - `found`: {pk: ReconstructedOption} for PKs that had at least one Version.
+    - `needs_backup`: list of PKs with no Version in the live DB. For these
+      you'll need to query a backup that pre-dates the deletion.
+    """
+    from reversion.models import Version
+
+    pk_set = {int(pk) for pk in missing_pks}
+    if not pk_set:
+        return {}, []
+
+    ct = ContentType.objects.get(app_label='actions', model='attributetypechoiceoption')
+    versions = (
+        Version.objects
+        .filter(content_type=ct, object_id__in=[str(pk) for pk in pk_set])
+        .select_related('revision')
+        .order_by('-revision__date_created')
+    )
+
+    found: dict[int, ReconstructedOption] = {}
+    for version in versions:
+        try:
+            pk = int(version.object_id)
+        except ValueError:
+            continue
+        if pk in found:
+            # We've already captured the most recent Version for this PK.
+            continue
+        try:
+            entries = json.loads(version.serialized_data)
+        except ValueError:
+            continue
+        if not isinstance(entries, list) or not entries:
+            continue
+        fields = entries[0].get('fields') if isinstance(entries[0], dict) else None
+        if not isinstance(fields, dict):
+            continue
+        found[pk] = ReconstructedOption(
+            pk=pk,
+            name=fields.get('name') if isinstance(fields.get('name'), str) else None,
+            identifier=fields.get('identifier') if isinstance(fields.get('identifier'), str) else None,
+            type_id=fields.get('type') if isinstance(fields.get('type'), int) else None,
+            order=fields.get('order') if isinstance(fields.get('order'), int) else None,
+            source_version_pk=version.pk,
+            revision_date=version.revision.date_created.isoformat(),
+        )
+
+    needs_backup = sorted(pk_set - set(found))
+    return found, needs_backup
+
+
+def print_reconstruction(
+    found: dict[int, ReconstructedOption],
+    needs_backup: list[int],
+) -> None:
+    """Pretty-print a reconstruction result."""
+    if found:
+        print(f'Recovered {len(found)} AttributeTypeChoiceOption(s) from reversion:')
+        for pk in sorted(found):
+            opt = found[pk]
+            print(
+                f'  pk={pk}: name={opt.name!r}, identifier={opt.identifier!r}, '
+                f'type_id={opt.type_id}, order={opt.order} '
+                f'(Version pk={opt.source_version_pk}, {opt.revision_date})',
+            )
+        print()
+    if needs_backup:
+        print(
+            f'{len(needs_backup)} PK(s) have no reversion Version and need a backup lookup:',
+        )
+        print(f'  {needs_backup}')
+        print()
+    if not found and not needs_backup:
+        print('Nothing to reconstruct.')
 
 
 def _format_example(ref: BrokenRef) -> str:
