@@ -449,7 +449,7 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         # Inject the metrics formset into self.formsets so that
         # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
         effective_plan = Plan.objects.get(id=self.initial_plan_id) if self.initial_plan_id else self.plan
-        if effective_plan.features.enable_indicator_factors:
+        if self.instance.supports_factors(effective_plan):
             schema = self.instance.dataset_schema if self.instance.pk else None
             indicator_unit_label = ''
             indicator_unit_short = ''
@@ -1128,8 +1128,7 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         ]
 
         if plan.features.enable_indicator_factors:
-            has_dimensions = instance is not None and instance.pk and instance.dimensions.exists()
-            if has_dimensions:
+            if instance is not None and not instance.supports_factors(plan):
                 factors_panels: list[Panel] = [
                     HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
                 ]

@@ -787,6 +787,13 @@ class Indicator(
         qs = qs.select_related('organization').prefetch_related('plans')
         return qs
 
+    def supports_factors(self, plan) -> bool:
+        if not plan.features.enable_indicator_factors:
+            return False
+        if self.pk and self.dimensions.exists():
+            return False
+        return True
+
 
 class IndicatorCategoryThrough(models.Model):
     indicator = models.ForeignKey(
