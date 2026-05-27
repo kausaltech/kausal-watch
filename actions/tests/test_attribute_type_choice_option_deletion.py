@@ -980,3 +980,221 @@ class TestCategoryAttributeDeletion:
 
         # Attribute should be deleted
         assert AttributeChoice.objects.filter(content_type=ct, object_id=category.pk).count() == 0
+
+
+# =============================================================================
+# 6. Archive / Unarchive API
+# =============================================================================
+
+
+class TestArchiveApi:
+    """Tests for AttributeTypeChoiceOption.archive()/unarchive() and is_referenced()."""
+
+    def test_archive_flips_flag_and_preserves_order(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        first = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='First',
+        )
+        second = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Second',
+        )
+        original_order = first.order
+        assert first.is_active
+        assert second.is_active
+
+        first.archive()
+        first.refresh_from_db()
+
+        assert first.is_active is False
+        # Archive does not move the row; the order slot stays reserved so new
+        # active options don't collide with it.
+        assert first.order == original_order
+
+        # The other active option is untouched.
+        second.refresh_from_db()
+        assert second.is_active is True
+
+    def test_archive_is_idempotent(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        attribute_type_choice_option.archive()
+        attribute_type_choice_option.refresh_from_db()
+        order_after_first_archive = attribute_type_choice_option.order
+
+        attribute_type_choice_option.archive()
+        attribute_type_choice_option.refresh_from_db()
+
+        assert attribute_type_choice_option.is_active is False
+        assert attribute_type_choice_option.order == order_after_first_archive
+
+    def test_unarchive_restores_active_flag(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Cycles',
+        )
+        original_order = option.order
+
+        option.archive()
+        option.refresh_from_db()
+        assert option.is_active is False
+
+        option.unarchive()
+        option.refresh_from_db()
+
+        assert option.is_active is True
+        # Unarchive leaves the original order slot in place.
+        assert option.order == original_order
+
+    def test_unarchive_is_idempotent(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        original_order = attribute_type_choice_option.order
+        attribute_type_choice_option.unarchive()
+        attribute_type_choice_option.refresh_from_db()
+
+        assert attribute_type_choice_option.is_active is True
+        assert attribute_type_choice_option.order == original_order
+
+    def test_new_option_does_not_collide_with_archived_order(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # Archiving a row keeps it in the (type, order) unique-constraint
+        # picture. A newly created option must skip that slot.
+        first = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='First',
+        )
+        first.archive()
+        first.refresh_from_db()
+
+        second = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Second',
+        )
+
+        assert second.order != first.order
+
+    def test_active_queryset_excludes_archived(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        gone = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Gone',
+        )
+        gone.archive()
+
+        active = set(
+            AttributeTypeChoiceOption.objects
+            .filter(type=action_attribute_type__ordered_choice)
+            .active()
+            .values_list('pk', flat=True),
+        )
+        archived = set(
+            AttributeTypeChoiceOption.objects
+            .filter(type=action_attribute_type__ordered_choice)
+            .archived()
+            .values_list('pk', flat=True),
+        )
+        assert active == {kept.pk}
+        assert archived == {gone.pk}
+
+    def test_is_referenced_when_live_attribute_choice_exists(
+        self,
+        action_with_choice_attribute: Action,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        del action_with_choice_attribute  # the fixture creates the AttributeChoice
+        assert attribute_type_choice_option.is_referenced() is True
+
+    def test_is_referenced_when_live_attribute_choice_with_text_exists(
+        self,
+        action_with_choice_with_text_attribute: Action,
+        attribute_type_choice_option__optional: AttributeTypeChoiceOption,
+    ):
+        del action_with_choice_with_text_attribute
+        assert attribute_type_choice_option__optional.is_referenced() is True
+
+    def test_is_referenced_when_wagtail_revision_references_option(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        import json
+
+        from wagtail.models import Revision
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Referenced in draft',
+        )
+
+        # Inject a Wagtail revision whose serialized content references this
+        # option. `Revision.content` is a JSONField; the codebase stores it as
+        # serialized text and matches against substrings of that text, so we
+        # do the same here.
+        Revision.objects.create(
+            content_type=ContentType.objects.get_for_model(Action),
+            base_content_type=ContentType.objects.get_for_model(Action),
+            object_id=str(action.pk),
+            content=json.loads(
+                json.dumps({
+                    'attributes': {
+                        'ordered_choice': {
+                            str(action_attribute_type__ordered_choice.pk): option.pk,
+                        },
+                    },
+                })
+            ),
+        )
+
+        assert option.is_referenced() is True
+
+    def test_is_referenced_when_reversion_version_references_option(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+        user: User,
+    ):
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Referenced in reversion',
+        )
+        attr = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+
+        with reversion.create_revision():
+            reversion.set_user(user)
+            reversion.add_to_revision(attr)
+
+        # Hard-delete the live attribute so we know the True comes from the
+        # reversion Version row, not the live FK.
+        attr.delete()
+        assert not AttributeChoice.objects.filter(choice=option).exists()
+
+        assert option.is_referenced() is True
+
+    def test_is_referenced_returns_false_when_unused(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        assert attribute_type_choice_option.is_referenced() is False

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, cast, override
 
 import reversion
@@ -14,7 +15,9 @@ from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager, MultilingualQuerySet
+from reversion.models import Version
 from wagtail.fields import RichTextField
+from wagtail.models import Revision
 
 import sentry_sdk
 from autoslug.fields import AutoSlugField
@@ -301,6 +304,26 @@ class Attribute(models.Model):
         return self.type.is_instance_visible_for(user, plan, action)  # type: ignore[attr-defined]
 
 
+class AttributeTypeChoiceOptionQuerySet(MultilingualQuerySet['AttributeTypeChoiceOption']):
+    def active(self) -> Self:
+        return self.filter(is_active=True)
+
+    def archived(self) -> Self:
+        return self.filter(is_active=False)
+
+
+if TYPE_CHECKING:
+
+    class AttributeTypeChoiceOptionManager(
+        MLModelManager['AttributeTypeChoiceOption', AttributeTypeChoiceOptionQuerySet],
+    ):
+        def active(self) -> AttributeTypeChoiceOptionQuerySet: ...
+        def archived(self) -> AttributeTypeChoiceOptionQuerySet: ...
+
+else:
+    AttributeTypeChoiceOptionManager = MultilingualManager.from_queryset(AttributeTypeChoiceOptionQuerySet)
+
+
 @reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type: PK[AttributeType] = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
@@ -310,13 +333,14 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         populate_from='name',
         unique_with='type',
     )
+    is_active = models.BooleanField(default=True, verbose_name=_('active'))
 
     i18n = TranslationField(
         fields=('name',),
         default_language_field='type__primary_language_lowercase',
     )
 
-    objects: models.Manager[AttributeTypeChoiceOption] = MultilingualManager()
+    objects: ClassVar[AttributeTypeChoiceOptionManager] = AttributeTypeChoiceOptionManager()
 
     public_fields: ClassVar = ['id', 'identifier', 'name']
 
@@ -326,6 +350,9 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
                 fields=['type', 'identifier'],
                 name='unique_identifier_per_type',
             ),
+            # Active rows start at order 0; archived rows are parked at
+            # distinct negative orders (see `archive()`), so they coexist
+            # under this single constraint.
             models.UniqueConstraint(
                 fields=['type', 'order'],
                 name='unique_order_per_type',
@@ -340,8 +367,96 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return self.name
 
     def filter_siblings(self, qs: models.QuerySet[Self]) -> models.QuerySet[Self]:
-        # Used by OrderedModel to make sure order starts at 0 for each attribute type
+        # Used by OrderedModel to make sure order starts at 0 for each
+        # attribute type. Archived rows participate so that their `order`
+        # slot is reserved and active inserts don't collide with them.
         return qs.filter(type=self.type)
+
+    def archive(self) -> None:
+        """Mark this option as archived; existing references continue to resolve."""
+        if not self.is_active:
+            return
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+
+    def unarchive(self) -> None:
+        """Restore this option to the active list."""
+        if self.is_active:
+            return
+        self.is_active = True
+        self.save(update_fields=['is_active'])
+
+    def is_referenced(self) -> bool:
+        """
+        Return True if this option is referenced anywhere that should prevent hard deletion.
+
+        Covers:
+        - Live AttributeChoice / AttributeChoiceWithText rows.
+        - Wagtail revisions on the target model (drafts and historical revisions).
+        - django-reversion versions of AttributeChoice / AttributeChoiceWithText
+          (used by report snapshots).
+        """
+        fmt = self.type.format
+        if fmt == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            attribute_model: type[Attribute] = AttributeChoiceWithText
+            attribute_model_name = 'attributechoicewithtext'
+        elif fmt in (
+            AttributeType.AttributeFormat.ORDERED_CHOICE,
+            AttributeType.AttributeFormat.UNORDERED_CHOICE,
+        ):
+            attribute_model = AttributeChoice
+            attribute_model_name = 'attributechoice'
+        else:
+            # A choice option on a non-choice AttributeType shouldn't exist —
+            # nothing can reference it through the attribute machinery.
+            return False
+
+        if attribute_model.objects.filter(choice=self).exists():
+            return True
+
+        target_ct = self.type.object_content_type
+        type_key = str(self.type_id)
+        pk = self.pk
+        # JSONB structural containment matches only the exact attribute slot,
+        # avoiding the substring false positives a `content__icontains` lookup
+        # would produce (e.g. `"order": 15020` matching PK 1502). A choice
+        # option belongs to one format, so only one containment shape applies.
+        if fmt == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            contains_arg = {'attributes': {str(fmt): {type_key: {'choice': pk}}}}
+        else:
+            contains_arg = {'attributes': {str(fmt): {type_key: pk}}}
+        if Revision.objects.filter(content_type=target_ct, content__contains=contains_arg).exists():
+            return True
+
+        # `serialized_data` is plain text; anchor on `,` / `}` so PK 1502
+        # doesn't match `"choice": 15020`, and narrow by the owning
+        # AttributeType's id so candidates from other types' history are
+        # eliminated up-front. We then JSON-parse each candidate to confirm.
+        type_id = self.type_id
+        candidates = (
+            Version.objects.filter(
+                content_type__app_label='actions',
+                content_type__model=attribute_model_name,
+            )
+            .filter(
+                Q(serialized_data__contains=f'"choice": {pk},') | Q(serialized_data__contains=f'"choice": {pk}}}'),
+            )
+            .filter(
+                Q(serialized_data__contains=f'"type": {type_id},') | Q(serialized_data__contains=f'"type": {type_id}}}'),
+            )
+        )
+
+        for v in candidates.iterator():
+            try:
+                payload = json.loads(v.serialized_data)
+            except TypeError, ValueError:
+                continue
+            if not isinstance(payload, list) or not payload:
+                continue
+            fields = payload[0].get('fields', {})
+            if fields.get('choice') == pk and fields.get('type') == type_id:
+                return True
+        return False
 
 
 @reversion.register(follow=['categories'])
