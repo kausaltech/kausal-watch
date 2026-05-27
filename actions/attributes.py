@@ -8,7 +8,7 @@ from typing import Any, Generic, TypeVar, cast
 
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import ForeignKey
+from django.db.models import ForeignKey, Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, field_panel
@@ -616,7 +616,14 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
             if c:
                 initial_choice = c.choice
 
-        choice_options = self.instance.choice_options.all()
+        # Hide archived options from the picker, but if the current value
+        # points at an archived option, keep it in the dropdown for this form
+        # so existing data isn't silently lost.
+        choice_options = self.instance.choice_options.filter(is_active=True)
+        if initial_choice is not None and not initial_choice.is_active:
+            choice_options = self.instance.choice_options.filter(
+                Q(is_active=True) | Q(pk=initial_choice.pk),
+            )
         field = forms.ModelChoiceField(
             choice_options,
             initial=initial_choice,
@@ -773,7 +780,13 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             initial_choice = draft_attribute.option
         elif committed_attribute:
             initial_choice = committed_attribute.choice
-        choice_options = self.instance.choice_options.all()
+        # Hide archived options from the picker; keep the current value if it
+        # happens to point at an archived option.
+        choice_options = self.instance.choice_options.filter(is_active=True)
+        if initial_choice is not None and not initial_choice.is_active:
+            choice_options = self.instance.choice_options.filter(
+                Q(is_active=True) | Q(pk=initial_choice.pk),
+            )
         choice_field = forms.ModelChoiceField(
             choice_options,
             initial=initial_choice,

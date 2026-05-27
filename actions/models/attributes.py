@@ -17,7 +17,7 @@ from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager, MultilingualQuerySet
 from reversion.models import Version
 from wagtail.fields import RichTextField
-from wagtail.models import Revision
+from wagtail.models import Revision, RevisionMixin
 
 import sentry_sdk
 from autoslug.fields import AutoSlugField
@@ -342,7 +342,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
 
     objects: ClassVar[AttributeTypeChoiceOptionManager] = AttributeTypeChoiceOptionManager()
 
-    public_fields: ClassVar = ['id', 'identifier', 'name']
+    public_fields: ClassVar = ['id', 'identifier', 'name', 'is_active']
 
     class Meta:
         constraints = [
@@ -477,6 +477,76 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
         return '; '.join([str(c) for c in self.categories.all()])
 
 
+def _attribute_choice_is_in_parent_revisions(attribute) -> bool:
+    """
+    Return True if a Wagtail revision of the attribute's parent references
+    this `(type, choice)` pair.
+
+    Used to recognise the publish-from-draft path: a choice option was
+    archived because `is_referenced()` found it in a draft of this very
+    action; publishing that draft now creates a new `AttributeChoice` with
+    the archived choice, and we must allow it instead of treating it as a
+    fresh selection.
+    """
+    content_object = attribute.content_object
+    if content_object is None or not isinstance(content_object, RevisionMixin):
+        return False
+    target_ct = ContentType.objects.get_for_model(type(content_object))
+    type_key = str(attribute.type_id)
+    pk = attribute.choice_id
+    fmt = attribute.type.format
+    if fmt == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+        contains_arg = {'attributes': {str(fmt): {type_key: {'choice': pk}}}}
+    else:
+        contains_arg = {'attributes': {str(fmt): {type_key: pk}}}
+    return Revision.objects.filter(
+        content_type=target_ct,
+        object_id=str(content_object.pk),
+        content__contains=contains_arg,
+    ).exists()
+
+
+def _validate_attribute_choice_is_assignable(attribute) -> None:
+    """
+    Block writes that introduce an archived choice option as a new value.
+
+    Allowed:
+    - choice is None or active.
+    - choice is archived AND the row already has this exact choice (in-place
+      re-save of an unchanged archived value).
+    - choice is archived AND a Wagtail revision of the parent already
+      references this `(type, choice)` pair — the publish-from-draft path
+      legitimately materialises an option that was archived only because
+      it was kept around for the draft.
+
+    Rejected:
+    - choice is archived AND the row is new (and no draft reference exists),
+      or is changing to this option.
+
+    This enforces the "no new selections of archived options" policy at the
+    data layer, so any save path that runs `full_clean()` is covered — not
+    just the Strawberry mutation that explicitly checks up-front.
+    """
+    if attribute.choice_id is None:
+        return
+    is_active = AttributeTypeChoiceOption.objects.filter(pk=attribute.choice_id).values_list('is_active', flat=True).first()
+    if is_active is None or is_active:
+        # Either the option doesn't exist (let FK validation handle it) or it
+        # is still active — nothing to do.
+        return
+    if attribute.pk is not None:
+        previous_choice_id = (
+            type(attribute).objects.filter(pk=attribute.pk).values_list('choice_id', flat=True).first()
+        )
+        if previous_choice_id == attribute.choice_id:
+            return
+    if _attribute_choice_is_in_parent_revisions(attribute):
+        return
+    raise ValidationError(
+        {'choice': _('This choice option is archived and cannot be selected as a new value.')},
+    )
+
+
 @reversion.register(follow=['choice'])
 class AttributeChoice(Attribute):
     type: PK[AttributeType] = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
@@ -505,6 +575,16 @@ class AttributeChoice(Attribute):
             sentry_sdk.capture_exception(e)
             return gettext('Missing value')
         return str(choice)
+
+    def save(self, *args, **kwargs):
+        # DRF and other paths bypass full_clean() and call save() directly.
+        # Enforce the archived-choice rule here so every write is covered.
+        _validate_attribute_choice_is_assignable(self)
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        _validate_attribute_choice_is_assignable(self)
 
 
 @reversion.register(follow=['choice'])
@@ -538,6 +618,14 @@ class AttributeChoiceWithText(Attribute):
         if len(text):
             text = f'; {text}'
         return f'{self.choice}{text}'
+
+    def save(self, *args, **kwargs):
+        _validate_attribute_choice_is_assignable(self)
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        _validate_attribute_choice_is_assignable(self)
 
 
 @reversion.register()
@@ -686,11 +774,18 @@ class ModelWithAttributes(ClusterableModel):
             attribute_value_class = attribute_type.VALUE_CLASS
             attribute_value = attribute_value_class.from_serialized_value(attribute_value_input)
             new_attribute = attribute_value.instantiate_attribute(attribute_type, self)
+            # Validate eagerly: the deferred-operations path used by the bulk
+            # REST endpoint ultimately calls QuerySet.bulk_update() /
+            # bulk_create(), which bypass both save() and full_clean().
+            if isinstance(new_attribute, AttributeChoice | AttributeChoiceWithText):
+                _validate_attribute_choice_is_assignable(new_attribute)
             return ('create', new_attribute)
         if self._value_is_empty(value_parameters):
             return ('delete', existing_attribute)
         for k, v in value_parameters.items():
             setattr(existing_attribute, k, v)
+        if isinstance(existing_attribute, AttributeChoice | AttributeChoiceWithText):
+            _validate_attribute_choice_is_assignable(existing_attribute)
         return ('update', existing_attribute, list(value_parameters.keys()))
 
     def set_category_choice_attribute(self, attribute_type, existing_attribute, category_ids):
