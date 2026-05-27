@@ -28,6 +28,8 @@ from actions.tests.factories import (
     AttributeTypeChoiceOptionFactory,
 )
 from find_broken_choice_option_refs import (
+    ReconstructedOption,
+    insert_reconstructed,
     reconstruct_from_reversion,
     scan_all,
     scan_live_rows,
@@ -304,3 +306,186 @@ def test_reconstruct_from_reversion_with_empty_input():
     found, needs_backup = reconstruct_from_reversion([])
     assert found == {}
     assert needs_backup == []
+
+
+# =============================================================================
+# insert_reconstructed
+# =============================================================================
+
+
+def _reconstructed(
+    pk: int,
+    *,
+    type_id: int,
+    name: str = 'Restored',
+    identifier: str = 'restored',
+    order: int = 1,
+) -> ReconstructedOption:
+    return ReconstructedOption(
+        pk=pk,
+        name=name,
+        identifier=identifier,
+        type_id=type_id,
+        order=order,
+        source_version_pk=0,
+        revision_date='2026-01-01T00:00:00+00:00',
+    )
+
+
+def test_insert_reconstructed_dry_run_does_not_write(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    pk = 99001
+    opt = _reconstructed(pk, type_id=action_attribute_type__ordered_choice.pk)
+
+    results = insert_reconstructed({pk: opt}, dry_run=True)
+
+    assert len(results) == 1
+    assert results[0].status == 'inserted'
+    assert '(dry_run)' in results[0].detail
+    assert not AttributeTypeChoiceOption.objects.filter(pk=pk).exists()
+
+
+def test_insert_reconstructed_writes_archived_row_with_original_pk(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    pk = 99002
+    opt = _reconstructed(
+        pk,
+        type_id=action_attribute_type__ordered_choice.pk,
+        name='Was deleted',
+        identifier='was-deleted',
+    )
+
+    results = insert_reconstructed({pk: opt}, dry_run=False)
+
+    assert results[0].status == 'inserted'
+    row = AttributeTypeChoiceOption.objects.get(pk=pk)
+    assert row.is_active is False
+    assert row.name == 'Was deleted'
+    assert row.identifier == 'was-deleted'
+    assert row.type_id == action_attribute_type__ordered_choice.pk
+
+
+def test_insert_reconstructed_restores_attribute_choice_resolution(
+    plan: Plan,
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Simulate the production scenario: an option is deleted but a reference
+    # remains (we use a constructed AttributeChoice with a synthetic stale
+    # choice_id, mimicking what ActionSnapshot does at render time).
+    pk = 99003
+    opt = _reconstructed(
+        pk,
+        type_id=action_attribute_type__ordered_choice.pk,
+        name='Original label',
+        identifier='original-label',
+    )
+
+    insert_reconstructed({pk: opt}, dry_run=False)
+
+    # The synthetic AttributeChoice with choice_id=pk now resolves cleanly.
+    stale_instance = AttributeChoice(
+        type=action_attribute_type__ordered_choice,
+        content_type=ContentType.objects.get_for_model(Action),
+        object_id=1,
+        choice_id=pk,
+    )
+    assert str(stale_instance) == 'Original label'
+
+
+def test_insert_reconstructed_skips_existing_pk(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    existing = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Already here',
+    )
+    opt = _reconstructed(
+        existing.pk,
+        type_id=action_attribute_type__ordered_choice.pk,
+        name='Stale reconstruction',
+    )
+
+    results = insert_reconstructed({existing.pk: opt}, dry_run=False)
+
+    assert results[0].status == 'skipped-already-exists'
+    existing.refresh_from_db()
+    assert existing.name == 'Already here'
+
+
+def test_insert_reconstructed_skips_when_type_missing(plan: Plan):
+    del plan  # only needed so factories work; the actual type is gone
+    opt = _reconstructed(99004, type_id=999999, name='Orphaned option')
+
+    results = insert_reconstructed({99004: opt}, dry_run=False)
+
+    assert results[0].status == 'skipped-type-missing'
+    assert not AttributeTypeChoiceOption.objects.filter(pk=99004).exists()
+
+
+def test_insert_reconstructed_renames_identifier_on_collision(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # The active option's name is what AutoSlugField will turn into its
+    # identifier (always_update=True overrides any factory-passed value), so
+    # 'Clashing name' → 'clashing-name'.
+    existing = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Clashing name',
+    )
+    assert existing.identifier == 'clashing-name'
+
+    pk = 99005
+    opt = _reconstructed(
+        pk,
+        type_id=action_attribute_type__ordered_choice.pk,
+        name='Restored option',
+        identifier='clashing-name',
+    )
+
+    insert_reconstructed({pk: opt}, dry_run=False)
+
+    row = AttributeTypeChoiceOption.objects.get(pk=pk)
+    assert row.identifier == f'clashing-name-archived-{pk}'
+
+
+def test_insert_reconstructed_orders_above_active_rows(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    existing = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Active',
+    )
+    pk = 99006
+    opt = _reconstructed(
+        pk,
+        type_id=action_attribute_type__ordered_choice.pk,
+        # Original order doesn't matter — we always park archived rows above
+        # the active sequence.
+        order=0,
+    )
+
+    insert_reconstructed({pk: opt}, dry_run=False)
+
+    row = AttributeTypeChoiceOption.objects.get(pk=pk)
+    assert row.order > existing.order
+
+
+def test_insert_reconstructed_skips_missing_fields(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    opt = ReconstructedOption(
+        pk=99007,
+        name=None,
+        identifier=None,
+        type_id=action_attribute_type__ordered_choice.pk,
+        order=None,
+        source_version_pk=0,
+        revision_date='2026-01-01T00:00:00+00:00',
+    )
+
+    results = insert_reconstructed([opt], dry_run=False)
+
+    assert results[0].status == 'skipped-missing-fields'
+    assert not AttributeTypeChoiceOption.objects.filter(pk=99007).exists()

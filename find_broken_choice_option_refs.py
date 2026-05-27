@@ -335,6 +335,146 @@ def reconstruct_from_reversion(
     return found, needs_backup
 
 
+@dataclass
+class InsertResult:
+    pk: int
+    status: str
+    """One of: 'inserted', 'skipped-already-exists', 'skipped-type-missing',
+    'skipped-missing-fields'."""
+
+    detail: str = ''
+
+
+def insert_reconstructed(
+    options: dict[int, ReconstructedOption] | Iterable[ReconstructedOption],
+    *,
+    dry_run: bool = True,
+) -> list[InsertResult]:
+    """
+    Re-insert deleted AttributeTypeChoiceOptions as archived rows.
+
+    Each row is inserted with `is_active=False` and an `order` parked above
+    all existing siblings of the same type, so stale FK references (reversion
+    Versions, Wagtail Revisions, etc.) resolve again. Pickers and the GraphQL
+    listing skip archived options, so end users don't see them — but
+    historical reports render the option's original name instead of
+    "Missing value".
+
+    Skip rules (each row reported in the result with a status):
+
+    - 'skipped-already-exists': a row with that PK is already in the DB
+      (someone may have re-created the option since deletion).
+    - 'skipped-type-missing': the original `type_id` no longer exists, so we
+      can't link the row anywhere.
+    - 'skipped-missing-fields': the reconstructed data lacks one of the
+      required fields (name, identifier, type_id, order).
+
+    If the reconstructed `identifier` is already taken on the same type, a
+    suffix `-archived-<pk>` is appended so the unique constraint holds. The
+    FK from AttributeChoice points at the PK, not the identifier, so renaming
+    is safe.
+
+    The full insert runs in a single transaction. Pass `dry_run=False` to
+    write; the default reports what would happen without touching the DB.
+    """
+    from django.db import transaction
+
+    if isinstance(options, dict):
+        items = list(options.values())
+    else:
+        items = list(options)
+
+    from actions.models import AttributeType
+
+    existing_pks = set(AttributeTypeChoiceOption.objects.values_list('pk', flat=True))
+    type_pks = set(AttributeType.objects.values_list('pk', flat=True))
+
+    results: list[InsertResult] = []
+    to_insert: list[tuple[ReconstructedOption, str, int]] = []
+    for opt in items:
+        if opt.pk in existing_pks:
+            results.append(InsertResult(pk=opt.pk, status='skipped-already-exists'))
+            continue
+        if opt.name is None or opt.identifier is None or opt.type_id is None or opt.order is None:
+            results.append(
+                InsertResult(
+                    pk=opt.pk,
+                    status='skipped-missing-fields',
+                    detail=(f'name={opt.name!r} identifier={opt.identifier!r} type_id={opt.type_id} order={opt.order}'),
+                ),
+            )
+            continue
+        if opt.type_id not in type_pks:
+            results.append(
+                InsertResult(
+                    pk=opt.pk,
+                    status='skipped-type-missing',
+                    detail=f'type_id={opt.type_id} no longer exists',
+                ),
+            )
+            continue
+
+        identifier = _pick_identifier(opt.identifier, opt.type_id, opt.pk)
+        order = _pick_archived_order(opt.type_id)
+        to_insert.append((opt, identifier, order))
+
+    if dry_run:
+        for opt, identifier, order in to_insert:
+            results.append(
+                InsertResult(
+                    pk=opt.pk,
+                    status='inserted',
+                    detail=f'(dry_run) identifier={identifier!r} order={order}',
+                ),
+            )
+        return results
+
+    with transaction.atomic():
+        for opt, identifier, order in to_insert:
+            # `identifier` is an AutoSlugField with always_update=True; it will
+            # be overwritten from `name` on save. Create first, then UPDATE the
+            # identifier directly so the original value is preserved.
+            AttributeTypeChoiceOption.objects.create(
+                pk=opt.pk,
+                name=opt.name,
+                type_id=opt.type_id,
+                order=order,
+                is_active=False,
+            )
+            AttributeTypeChoiceOption.objects.filter(pk=opt.pk).update(identifier=identifier)
+            results.append(
+                InsertResult(
+                    pk=opt.pk,
+                    status='inserted',
+                    detail=f'identifier={identifier!r} order={order}',
+                ),
+            )
+    return results
+
+
+def _pick_identifier(original: str, type_id: int, pk: int) -> str:
+    """Return an identifier that's unique on the type, suffixing if needed."""
+    taken = set(
+        AttributeTypeChoiceOption.objects.filter(type_id=type_id).values_list('identifier', flat=True),
+    )
+    if original not in taken:
+        return original
+    suffixed = f'{original}-archived-{pk}'
+    if suffixed in taken:
+        # Extremely unlikely (would require a previous restoration cycle for
+        # the same PK) but stay defensive.
+        return f'{original}-archived-{pk}-{len(taken)}'
+    return suffixed
+
+
+def _pick_archived_order(type_id: int) -> int:
+    """Return an order value above any existing sibling for the same type."""
+    from django.db.models import Max
+
+    current = AttributeTypeChoiceOption.objects.filter(type_id=type_id).aggregate(m=Max('order'))['m']
+    return (current if current is not None else 0) + 1
+
+
 def print_reconstruction(
     found: dict[int, ReconstructedOption],
     needs_backup: list[int],
