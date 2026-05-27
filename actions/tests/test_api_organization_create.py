@@ -4,7 +4,7 @@ from django.urls import reverse
 
 import pytest
 
-from actions.tests.factories import PlanFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
@@ -55,6 +55,20 @@ def test_organization_list_authorized_user_for_plan_returns_200(api_client, orga
     )
 
     api_client.force_login(admin_person.user)
+    response = api_client.get(organization_list_url, data={'plan': plan.identifier})
+    assert response.status_code == 200
+
+
+def test_organization_list_contact_person_for_plan_returns_200(api_client, organization_list_url):
+    # Contact persons are not general admins but should still be able to read
+    # the plan's related organizations so the action grid can render its
+    # responsible-party columns for them.
+    plan = PlanFactory.create()
+    action = ActionFactory.create(plan=plan)
+    contact_person = PersonFactory.create(organization=plan.organization)
+    ActionContactFactory.create(action=action, person=contact_person)
+
+    api_client.force_login(contact_person.user)
     response = api_client.get(organization_list_url, data={'plan': plan.identifier})
     assert response.status_code == 200
 

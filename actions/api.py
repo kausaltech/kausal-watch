@@ -1645,7 +1645,11 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
         if plan is None:
             return context
         if not self.user_is_general_admin_for_plan(plan):
-            raise exceptions.PermissionDenied(detail='Not authorized')
+            # Non-admin reads are still permitted (get_queryset gates them via
+            # user_is_authorized_for_plan); writes are not.
+            if self.request.method not in permissions.SAFE_METHODS:
+                raise exceptions.PermissionDenied(detail='Not authorized')
+            return context
         context['plan'] = plan
         return context
 
