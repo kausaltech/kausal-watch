@@ -399,6 +399,42 @@ def test_indicator_chart_interfaces_exist(graphql_client_query_data, type_name, 
     assert expected_implementors <= actual_types
 
 
+def test_clean_rejects_grouping_dimension_when_pending_dimensions_exclude_it():
+    """
+    Removing a dimension via formset while it is the grouping_dimension should raise.
+
+    When _pending_dimension_ids is set (simulating formset changes),
+    clean() should validate against the pending list, not the DB.
+    """
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    indicator.grouping_dimension = dimension
+
+    # Simulate formset removing the dimension (empty pending list)
+    indicator._pending_dimension_ids = []
+
+    with pytest.raises(ValidationError):
+        indicator.clean()
+
+
+def test_clean_accepts_grouping_dimension_when_pending_dimensions_include_it():
+    """
+    Adding a new dimension via formset and setting it as grouping_dimension should pass.
+
+    When _pending_dimension_ids is set (simulating formset changes),
+    clean() should validate against the pending list, not the DB.
+    """
+    indicator = IndicatorFactory.create()
+    new_dimension = DimensionFactory.create()
+
+    # No IndicatorDimension in DB, but formset will add it
+    indicator.grouping_dimension = new_dimension
+    indicator._pending_dimension_ids = [new_dimension.id]
+
+    indicator.clean()  # Should not raise
+
+
 def test_bar_chart_interface_fields_queryable(graphql_client_query_data):
     """Fields on IndicatorBarChartInterface should be queryable via fragment spread."""
 

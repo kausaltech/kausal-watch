@@ -484,7 +484,14 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         return organization
 
     def clean(self):
-        super().clean()
+        pending_dimension_ids = self.get_dimension_ids_from_formset()
+        if pending_dimension_ids is not None:
+            self.instance._pending_dimension_ids = pending_dimension_ids
+        try:
+            super().clean()
+        finally:
+            if hasattr(self.instance, '_pending_dimension_ids'):
+                del self.instance._pending_dimension_ids
 
         common = self.cleaned_data.get('common')
         # Dimensions cannot be accessed from self.instance.dimensions yet

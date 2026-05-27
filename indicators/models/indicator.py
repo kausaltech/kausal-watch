@@ -598,7 +598,11 @@ class Indicator(
                 })
 
         if self.grouping_dimension_id is not None:
-            dimension_ids = list(self.dimensions.values_list('dimension_id', flat=True))
+            pending = getattr(self, '_pending_dimension_ids', None)
+            if pending is not None:
+                dimension_ids = pending
+            else:
+                dimension_ids = list(self.dimensions.values_list('dimension_id', flat=True))
             if self.grouping_dimension_id not in dimension_ids:
                 raise ValidationError({
                     'grouping_dimension': _(
