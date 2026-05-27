@@ -39,7 +39,7 @@ from aplans.rest_api import PlanRelatedModelSerializer, get_plan_from_view
 from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ContactPersonDict
-from actions.models.attributes import AttributeType, ModelWithAttributes
+from actions.models.attributes import AttributeType, AttributeTypeChoiceOption, ModelWithAttributes
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.models import PlanScopedModel, PlanScopedModelLogEntry
 from orgs.models import Organization
@@ -604,6 +604,78 @@ class AttributesSerializerMixin[InstanceT: Any](AttributesSerializerMixinBase[In
         raise NotImplementedError
 
 
+def _resolve_target_instance_for_archived_check(serializer) -> Any:
+    """
+    Find the model instance whose existing values to compare against.
+
+    Walks the parent chain so the same logic covers single-instance
+    requests (outer serializer's `instance`) and bulk requests (the
+    BulkSerializerValidationInstanceMixin's per-row `_instance`) without
+    bailing out if a list wrapper sits between the choice serializer and
+    the per-row child.
+    """
+    p = serializer.parent
+    while p is not None:
+        target = getattr(p, '_instance', None)
+        if target is not None and not isinstance(target, QuerySet):
+            return target
+        p = getattr(p, 'parent', None)
+    p = serializer.parent
+    while p is not None:
+        candidate = getattr(p, 'instance', None)
+        if candidate is not None and not isinstance(candidate, QuerySet):
+            return candidate
+        p = getattr(p, 'parent', None)
+    return None
+
+
+def _reject_unassignable_archived_choices(serializer, data, extract_choice) -> None:
+    """
+    Reject incoming choice attribute values that point at archived options.
+
+    Allowed: the serializer's target instance already has this exact option
+    as its current value (in-place re-save of an unchanged archived value).
+
+    Runs during DRF's `is_valid()`, before any save or downstream effect —
+    a fast-failing complement to the model-layer `set_attribute()` /
+    `save()` guards.
+    """
+    if not data:
+        return
+    proposed_pks = {extract_choice(value) for value in data.values()}
+    proposed_pks.discard(None)
+    if not proposed_pks:
+        return
+    archived = set(
+        AttributeTypeChoiceOption.objects.filter(
+            pk__in=proposed_pks,
+            is_active=False,
+        ).values_list('pk', flat=True),
+    )
+    if not archived:
+        return
+
+    target = _resolve_target_instance_for_archived_check(serializer)
+    existing_by_identifier: dict[str, int | None] = {}
+    if target is not None and target.pk is not None:
+        cached = serializer.get_cached_values(instance_pk=target.pk) or []
+        for av in cached:
+            existing_by_identifier[av.type.identifier] = av.choice_id
+
+    errors: dict[str, str] = {}
+    for identifier, value in data.items():
+        choice_id = extract_choice(value)
+        if choice_id is None or choice_id not in archived:
+            continue
+        if existing_by_identifier.get(identifier) == choice_id:
+            continue
+        errors[identifier] = str(
+            _('This choice option is archived and cannot be selected as a new value.'),
+        )
+    if errors:
+        raise serializers.ValidationError(errors)
+
+
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_formats = (AttributeType.AttributeFormat.ORDERED_CHOICE, AttributeType.AttributeFormat.UNORDERED_CHOICE)
 
@@ -613,6 +685,10 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
         return {v.type.identifier: v.choice_id for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
+        return data
+
+    def validate(self, data):
+        _reject_unassignable_archived_choices(self, data, extract_choice=lambda v: v)
         return data
 
     def to_value_parameter(self, item):
@@ -631,6 +707,14 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
         return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
+        return data
+
+    def validate(self, data):
+        _reject_unassignable_archived_choices(
+            self,
+            data,
+            extract_choice=lambda v: v.get('choice') if isinstance(v, dict) else None,
+        )
         return data
 
     def to_value_parameter(self, item):

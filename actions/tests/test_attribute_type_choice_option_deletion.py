@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
 import pytest
 
@@ -1084,6 +1085,148 @@ class TestArchiveApi:
 
         assert second.order != first.order
 
+
+# =============================================================================
+# 7. Picker visibility of archived options
+# =============================================================================
+
+
+class TestPickerVisibility:
+    """Editor pickers and GraphQL listings hide archived options."""
+
+    def _picker_options(
+        self,
+        attribute_type: AttributeType,
+        user: User,
+        plan: Plan,
+        obj: Action | None = None,
+    ):
+        wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(attribute_type)
+        fields = wrapper.get_all_form_fields(user=user, plan=plan, obj=obj)
+        # The choice picker is the field whose django_field is a ModelChoiceField.
+        from django.forms import ModelChoiceField
+
+        choice_fields = [f for f in fields if isinstance(f.django_field, ModelChoiceField)]
+        assert choice_fields, 'expected a ModelChoiceField in the form fields'
+        return list(choice_fields[0].django_field.queryset)
+
+    def test_ordered_choice_picker_excludes_archived_options(
+        self,
+        plan: Plan,
+        user: User,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        gone = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Gone',
+        )
+        gone.archive()
+
+        options = self._picker_options(action_attribute_type__ordered_choice, user, plan)
+        pks = {o.pk for o in options}
+
+        assert kept.pk in pks
+        assert gone.pk not in pks
+
+    def test_picker_keeps_currently_selected_archived_option(
+        self,
+        plan: Plan,
+        user: User,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        archived = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Stale value',
+        )
+        action = ActionFactory.create(plan=plan)
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=archived,
+        )
+        archived.archive()
+
+        options = self._picker_options(
+            action_attribute_type__ordered_choice,
+            user,
+            plan,
+            obj=action,
+        )
+        pks = {o.pk for o in options}
+
+        assert archived.pk in pks, 'archived option must remain selectable so the existing value is preserved'
+
+    def test_optional_choice_with_text_picker_excludes_archived(
+        self,
+        plan: Plan,
+        user: User,
+        action_attribute_type__optional_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__optional_choice,
+            name='Kept',
+        )
+        gone = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__optional_choice,
+            name='Gone',
+        )
+        gone.archive()
+
+        options = self._picker_options(action_attribute_type__optional_choice, user, plan)
+        pks = {o.pk for o in options}
+
+        assert kept.pk in pks
+        assert gone.pk not in pks
+
+    def test_graphql_choice_options_lists_archived_with_is_active_flag(
+        self,
+        graphql_client_query_data,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # GraphQL exposes archived options so REST consumers (e.g. the
+        # spreadsheet table editor) can resolve labels for historical PKs.
+        # Each option carries `isActive` so clients can filter when building
+        # selection UIs.
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        gone = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Gone',
+        )
+        gone.archive()
+
+        data = graphql_client_query_data(
+            """
+            query($plan: ID!) {
+                plan(id: $plan) {
+                    actionAttributeTypes {
+                        name
+                        choiceOptions {
+                            name
+                            isActive
+                        }
+                    }
+                }
+            }
+            """,
+            variables={'plan': plan.identifier},
+        )
+
+        attr_type_data = next(
+            at for at in data['plan']['actionAttributeTypes'] if at['name'] == action_attribute_type__ordered_choice.name
+        )
+
+        by_name = {opt['name']: opt for opt in attr_type_data['choiceOptions']}
+        assert by_name[kept.name]['isActive'] is True
+        assert by_name[gone.name]['isActive'] is False
+
     def test_active_queryset_excludes_archived(
         self,
         action_attribute_type__ordered_choice: AttributeType,
@@ -1198,3 +1341,390 @@ class TestArchiveApi:
         attribute_type_choice_option: AttributeTypeChoiceOption,
     ):
         assert attribute_type_choice_option.is_referenced() is False
+
+    def test_full_clean_rejects_new_attribute_with_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # Defense in depth: any save path that runs full_clean() — REST,
+        # admin forms, anything that calls .clean() — must reject an
+        # archived option being assigned as a new value.
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        option.archive()
+
+        attr = AttributeChoice(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        with pytest.raises(CoreValidationError):
+            attr.full_clean()
+
+    def test_full_clean_allows_resaving_existing_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Once-active',
+        )
+        attr = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        option.archive()
+
+        # Re-saving the same archived option on the existing row must succeed
+        # so admins can save unrelated edits without first picking a new option.
+        attr.full_clean()
+
+    def test_full_clean_rejects_switching_to_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        action = ActionFactory.create(plan=plan)
+        active = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Active',
+        )
+        archived = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        attr = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=active,
+        )
+        archived.archive()
+
+        attr.choice = archived
+        with pytest.raises(CoreValidationError):
+            attr.full_clean()
+
+    def test_save_rejects_new_attribute_with_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # DRF and other paths bypass full_clean() and call .save() directly,
+        # so the rule has to hold at save time too.
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        option.archive()
+
+        attr = AttributeChoice(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        with pytest.raises(CoreValidationError):
+            attr.save()
+        action_ct = ContentType.objects.get_for_model(Action)
+        assert (
+            AttributeChoice.objects.filter(
+                type=action_attribute_type__ordered_choice,
+                content_type=action_ct,
+                object_id=action.pk,
+            ).count()
+            == 0
+        )
+
+    def test_save_allows_resaving_existing_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Once-active',
+        )
+        attr = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        option.archive()
+
+        # No exception — in-place re-save of an unchanged archived value is OK.
+        attr.save()
+
+    def test_save_rejects_switching_to_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        action = ActionFactory.create(plan=plan)
+        active = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Active',
+        )
+        archived = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        attr = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=active,
+        )
+        archived.archive()
+
+        attr.choice = archived
+        with pytest.raises(CoreValidationError):
+            attr.save()
+        attr.refresh_from_db()
+        assert attr.choice_id == active.pk
+
+    def test_set_attribute_rejects_archived_choice_for_rest_bulk_path(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # The REST bulk path queues operations through `set_attribute()` and
+        # later applies them via QuerySet.bulk_update()/bulk_create(), which
+        # bypass both save() and full_clean(). The guard at set_attribute()
+        # rejects archived options before the op reaches the queue.
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        from actions.attributes import AttributeType as AttributeTypeWrapper
+
+        action = ActionFactory.create(plan=plan)
+        archived_opt = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        archived_opt.archive()
+
+        wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(
+            action_attribute_type__ordered_choice,
+        )
+
+        with pytest.raises(CoreValidationError):
+            action.set_attribute(
+                attribute_type=wrapper,
+                existing_attribute=None,
+                value_parameters={'choice_id': archived_opt.pk},
+                attribute_value_input=archived_opt.pk,
+            )
+
+    def test_set_attribute_allows_resaving_existing_archived_choice(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        from actions.attributes import AttributeType as AttributeTypeWrapper
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Once-active',
+        )
+        existing = AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        option.archive()
+
+        wrapper: AttributeTypeWrapper = AttributeTypeWrapper.from_model_instance(
+            action_attribute_type__ordered_choice,
+        )
+
+        # Re-asserting the same archived option as the current value must pass —
+        # this matches the picker's "keep selected archived value editable" UX.
+        op = action.set_attribute(
+            attribute_type=wrapper,
+            existing_attribute=existing,
+            value_parameters={'choice_id': option.pk},
+            attribute_value_input=option.pk,
+        )
+        assert op[0] == 'update'
+
+    def test_save_allows_archived_choice_referenced_in_parent_draft(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # The publish-from-draft path: a draft of this action selected the
+        # option, the option was later archived (kept around solely because
+        # is_referenced() found the draft), and publishing the draft now
+        # creates a new AttributeChoice with the archived choice. The
+        # model-layer validator must allow this — rejecting it would block
+        # users from publishing drafts that pre-date the archive.
+        from wagtail.models import Revision
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Picked in draft, then archived',
+        )
+        Revision.objects.create(
+            content_type=ContentType.objects.get_for_model(Action),
+            base_content_type=ContentType.objects.get_for_model(Action),
+            object_id=str(action.pk),
+            content={
+                'attributes': {
+                    'ordered_choice': {
+                        str(action_attribute_type__ordered_choice.pk): option.pk,
+                    },
+                },
+            },
+        )
+        option.archive()
+
+        # Materialise the choice from the draft — same path that
+        # `Action.commit_attributes()` takes on publish.
+        attr = AttributeChoice(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        attr.save()
+        assert attr.pk is not None
+        assert attr.choice_id == option.pk
+
+    def test_save_still_rejects_archived_choice_without_draft_reference(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # Counterpart to the publish-from-draft case: when no revision of
+        # this action references the choice, the model-layer guard still
+        # rejects a fresh archived selection.
+        from django.core.exceptions import ValidationError as CoreValidationError
+
+        action = ActionFactory.create(plan=plan)
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived without draft',
+        )
+        option.archive()
+
+        attr = AttributeChoice(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+        with pytest.raises(CoreValidationError):
+            attr.save()
+
+    def test_rest_bulk_update_rejects_archived_choice_before_save(
+        self,
+        api_client,
+        plan: Plan,
+        plan_admin_user,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # Reproduce the production bypass: a REST PUT to /v1/plan/<id>/actions/
+        # carrying an archived choice option as a new assignment.
+        # The validation must fire during is_valid(), before the (potentially
+        # expensive) Action save runs — the response should be a 400 with no
+        # AttributeChoice row written.
+        action_ct = ContentType.objects.get_for_model(Action)
+        action = ActionFactory.create(plan=plan)
+        archived_opt = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived',
+        )
+        archived_opt.archive()
+
+        api_client.force_login(plan_admin_user)
+        url = reverse('action-list', args=(plan.pk,))
+        payload = [
+            {
+                'id': action.pk,
+                'identifier': action.identifier,
+                'name': action.name,
+                'choice_attributes': {
+                    action_attribute_type__ordered_choice.identifier: archived_opt.pk,
+                },
+            },
+        ]
+
+        response = api_client.put(url, data=payload)
+
+        assert response.status_code == 400, response.content
+        assert (
+            AttributeChoice.objects.filter(
+                type=action_attribute_type__ordered_choice,
+                content_type=action_ct,
+                object_id=action.pk,
+            ).count()
+            == 0
+        ), 'no AttributeChoice should be written'
+
+    def test_rest_bulk_update_allows_resaving_existing_archived_choice(
+        self,
+        api_client,
+        plan: Plan,
+        plan_admin_user,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # The action already has this option as its current value, and the
+        # option was later archived. A bulk PUT that re-submits the same
+        # archived option (e.g. while editing unrelated fields) must NOT
+        # be rejected — the value isn't changing, only being preserved.
+        # Regression: the bulk path used to bail out of target-instance
+        # resolution and lose track of the existing value entirely.
+        action_ct = ContentType.objects.get_for_model(Action)
+        action = ActionFactory.create(plan=plan)
+        opt = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Stored then archived',
+        )
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=opt,
+        )
+        opt.archive()
+
+        api_client.force_login(plan_admin_user)
+        url = reverse('action-list', args=(plan.pk,))
+        payload = [
+            {
+                'id': action.pk,
+                'identifier': action.identifier,
+                'name': action.name,
+                'choice_attributes': {
+                    action_attribute_type__ordered_choice.identifier: opt.pk,
+                },
+            },
+        ]
+
+        response = api_client.put(url, data=payload)
+
+        assert response.status_code == 200, response.content
+        assert (
+            AttributeChoice.objects.filter(
+                type=action_attribute_type__ordered_choice,
+                content_type=action_ct,
+                object_id=action.pk,
+                choice=opt,
+            ).count()
+            == 1
+        ), 'the existing archived AttributeChoice should still be present'
+
+

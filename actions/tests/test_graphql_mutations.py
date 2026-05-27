@@ -1356,6 +1356,157 @@ class TestUpdateAction:
         action_ct = ContentType.objects.get_for_model(Action)
         assert AttributeChoice.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk).count() == 1
 
+    def test_update_action_rejects_archived_choice_as_new_value(
+        self,
+        graphql_client_query,
+        client,
+        superuser: User,
+        plan: Plan,
+    ):
+        # An archived option is hidden from pickers and the GraphQL choiceOptions
+        # listing, but a client could still send its PK directly. The mutation
+        # must reject the attempt rather than letting the option resurface as a
+        # new selection.
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-arch-new', 'Action Archived New')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        opt = AttributeTypeChoiceOption.objects.create(
+            type=attr_type,
+            identifier='old-option',
+            name='Old Option',
+            order=0,
+        )
+        opt.archive()
+
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt.pk)}}},
+                    ],
+                },
+            },
+        )
+        data = response['data']['action']['updateAction']
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert 'archived' in data['messages'][0]['message']
+
+        action_ct = ContentType.objects.get_for_model(Action)
+        assert AttributeChoice.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk).count() == 0
+
+    def test_update_action_allows_resaving_existing_archived_choice(
+        self,
+        graphql_client_query_data,
+        client,
+        superuser: User,
+        plan: Plan,
+    ):
+        # When the existing attribute value already points at an archived
+        # option, re-submitting that same option must succeed — otherwise the
+        # action editor couldn't save unrelated changes without first picking
+        # a different value.
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-arch-existing', 'Action Archived Existing')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        opt = AttributeTypeChoiceOption.objects.create(
+            type=attr_type,
+            identifier='will-archive',
+            name='Will Archive',
+            order=0,
+        )
+        action_ct = ContentType.objects.get_for_model(Action)
+        AttributeChoice.objects.create(
+            type=attr_type,
+            content_type=action_ct,
+            object_id=action.pk,
+            choice=opt,
+        )
+        opt.archive()
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(opt.pk)}}},
+                    ],
+                },
+            },
+        )
+        result = data['action']['updateAction']
+        choice_attrs = [a for a in result['attributes'] if a.get('choice')]
+        assert len(choice_attrs) == 1
+        assert choice_attrs[0]['choice']['identifier'] == 'will-archive'
+
+    def test_update_action_rejects_switching_to_archived_choice(
+        self,
+        graphql_client_query,
+        client,
+        superuser: User,
+        plan: Plan,
+    ):
+        # Existing value points at an active option; the client tries to switch
+        # to a different option that has been archived. Should be rejected.
+        client.force_login(superuser)
+        action = self._create_action(plan, 'ua-arch-switch', 'Action Archived Switch')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+        )
+        active_opt = AttributeTypeChoiceOption.objects.create(
+            type=attr_type,
+            identifier='active',
+            name='Active',
+            order=0,
+        )
+        archived_opt = AttributeTypeChoiceOption.objects.create(
+            type=attr_type,
+            identifier='archived',
+            name='Archived',
+            order=1,
+        )
+        action_ct = ContentType.objects.get_for_model(Action)
+        AttributeChoice.objects.create(
+            type=attr_type,
+            content_type=action_ct,
+            object_id=action.pk,
+            choice=active_opt,
+        )
+        archived_opt.archive()
+
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {
+                    'id': str(action.pk),
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'choice': {'choiceId': str(archived_opt.pk)}}},
+                    ],
+                },
+            },
+        )
+        data = response['data']['action']['updateAction']
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert 'archived' in data['messages'][0]['message']
+
+        live = AttributeChoice.objects.get(type=attr_type, content_type=action_ct, object_id=action.pk)
+        assert live.choice_id == active_opt.pk, 'existing value must be left intact'
+
     def test_update_rich_text_attribute(self, graphql_client_query_data, client, superuser: User, plan: Plan):
         client.force_login(superuser)
         action = self._create_action(plan, 'ua-rt', 'Action RT')

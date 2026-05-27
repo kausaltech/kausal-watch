@@ -865,6 +865,11 @@ class AttributeTypeNode(DjangoNode[AttributeType]):
     format = graphene.Field(AttributeTypeFormat, required=True)
 
     class Meta:
+        # `choiceOptions` returns ALL options including archived ones. Each
+        # option exposes `isActive` so clients can filter for selection UIs
+        # while still resolving the labels of historical values (e.g. the
+        # spreadsheet table editor receives raw choice PKs via REST and needs
+        # the corresponding names regardless of archive state).
         model = AttributeType
         fields = public_fields(AttributeType)
 

@@ -263,6 +263,7 @@ class ActionMutations:
                 act_obj = existing_act
             else:
                 act_obj = AttributeChoiceWithText(**kwargs)
+            self._reject_inactive_choice(choice_obj, existing_act, attribute_type)
             act_obj.choice = choice_obj
             act_obj.text = value.text.value if value.text is not None else ''
             obj = act_obj
@@ -276,10 +277,37 @@ class ActionMutations:
                 ac_obj = AttributeChoice(**kwargs)
             if not choice_obj:
                 raise ValidationError(f'Choice is required for attribute type {attribute_type.identifier}.')
+            self._reject_inactive_choice(choice_obj, existing_ac, attribute_type)
             ac_obj.choice = choice_obj
             obj = ac_obj
         obj.full_clean()
         obj.save()
+
+    @staticmethod
+    def _reject_inactive_choice(
+        choice_obj: AttributeTypeChoiceOption | None,
+        existing: AttributeChoice | AttributeChoiceWithText | None,
+        attribute_type: AttributeType,
+    ) -> None:
+        """
+        Reject an attempt to set an archived choice option as a new value.
+
+        Archived options are hidden from pickers; GraphQL returns them with
+        `isActive=False` so REST-driven UIs can still resolve labels for
+        historical PKs. Either way, a client could send an archived PK here
+        directly. Allow it only when the action already has this exact
+        archived option as its value (so an in-place re-save of the same
+        value works).
+        """
+        if choice_obj is None or choice_obj.is_active:
+            return
+        current_choice_id = existing.choice_id if existing is not None else None
+        if current_choice_id == choice_obj.pk:
+            return
+        raise ValidationError(
+            f"Choice option '{choice_obj.identifier}' on attribute type "
+            f"'{attribute_type.identifier}' is archived and cannot be selected.",
+        )
 
     def _set_action_responsible_parties(self, info: gql.Info, action: Action, parties: list[ActionResponsiblePartyInput]) -> None:
         plan = action.plan
