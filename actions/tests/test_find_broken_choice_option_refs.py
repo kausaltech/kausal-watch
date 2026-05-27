@@ -472,6 +472,60 @@ def test_insert_reconstructed_orders_above_active_rows(
     assert row.order > existing.order
 
 
+def test_insert_reconstructed_handles_multiple_rows_on_same_type(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Two restorations on the same type must not collide on (type, order)
+    # — this is the regression scenario that produced
+    # `duplicate key value violates unique constraint "unique_order_per_type"`.
+    existing = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Active row',
+    )
+    options = {
+        99010: _reconstructed(99010, type_id=action_attribute_type__ordered_choice.pk, name='First'),
+        99011: _reconstructed(99011, type_id=action_attribute_type__ordered_choice.pk, name='Second'),
+        99012: _reconstructed(99012, type_id=action_attribute_type__ordered_choice.pk, name='Third'),
+    }
+
+    results = insert_reconstructed(options, dry_run=False)
+
+    assert all(r.status == 'inserted' for r in results), results
+    rows = AttributeTypeChoiceOption.objects.filter(pk__in=options).order_by('pk')
+    orders = [row.order for row in rows]
+    assert len(orders) == 3
+    assert len(set(orders)) == 3, 'each restored row must get a distinct order'
+    assert all(order > existing.order for order in orders), 'archived orders sit above active'
+
+
+def test_insert_reconstructed_handles_identifier_collision_within_batch(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Two restorations whose original identifiers were the same must end up
+    # with distinct identifiers.
+    options = {
+        99020: _reconstructed(
+            99020,
+            type_id=action_attribute_type__ordered_choice.pk,
+            name='Same name',
+            identifier='same-id',
+        ),
+        99021: _reconstructed(
+            99021,
+            type_id=action_attribute_type__ordered_choice.pk,
+            name='Same name',
+            identifier='same-id',
+        ),
+    }
+
+    insert_reconstructed(options, dry_run=False)
+
+    identifiers = set(
+        AttributeTypeChoiceOption.objects.filter(pk__in=options).values_list('identifier', flat=True),
+    )
+    assert len(identifiers) == 2, f'expected distinct identifiers, got {identifiers}'
+
+
 def test_insert_reconstructed_skips_missing_fields(
     action_attribute_type__ordered_choice: AttributeType,
 ):

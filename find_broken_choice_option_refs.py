@@ -391,6 +391,11 @@ def insert_reconstructed(
 
     results: list[InsertResult] = []
     to_insert: list[tuple[ReconstructedOption, str, int]] = []
+    # Track per-type values claimed by earlier rows in this batch so that
+    # multiple restorations on the same type don't collide on (type, order)
+    # or (type, identifier) with each other.
+    next_order_by_type: dict[int, int] = {}
+    claimed_identifiers: dict[int, set[str]] = defaultdict(set)
     for opt in items:
         if opt.pk in existing_pks:
             results.append(InsertResult(pk=opt.pk, status='skipped-already-exists'))
@@ -414,8 +419,19 @@ def insert_reconstructed(
             )
             continue
 
-        identifier = _pick_identifier(opt.identifier, opt.type_id, opt.pk)
-        order = _pick_archived_order(opt.type_id)
+        if opt.type_id not in next_order_by_type:
+            next_order_by_type[opt.type_id] = _pick_archived_order(opt.type_id)
+        order = next_order_by_type[opt.type_id]
+        next_order_by_type[opt.type_id] += 1
+
+        identifier = _pick_identifier(
+            opt.identifier,
+            opt.type_id,
+            opt.pk,
+            also_taken=claimed_identifiers[opt.type_id],
+        )
+        claimed_identifiers[opt.type_id].add(identifier)
+
         to_insert.append((opt, identifier, order))
 
     if dry_run:
@@ -452,11 +468,25 @@ def insert_reconstructed(
     return results
 
 
-def _pick_identifier(original: str, type_id: int, pk: int) -> str:
-    """Return an identifier that's unique on the type, suffixing if needed."""
+def _pick_identifier(
+    original: str,
+    type_id: int,
+    pk: int,
+    *,
+    also_taken: set[str] | None = None,
+) -> str:
+    """
+    Return an identifier that's unique on the type, suffixing if needed.
+
+    `also_taken` lets callers pass in identifiers reserved earlier in the
+    same batch (not yet visible in the DB), so two restorations writing
+    the same original identifier don't collide on the second INSERT.
+    """
     taken = set(
         AttributeTypeChoiceOption.objects.filter(type_id=type_id).values_list('identifier', flat=True),
     )
+    if also_taken:
+        taken |= also_taken
     if original not in taken:
         return original
     suffixed = f'{original}-archived-{pk}'
