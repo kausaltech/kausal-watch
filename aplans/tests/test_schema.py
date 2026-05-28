@@ -357,3 +357,19 @@ def test_site_general_content_node(graphql_client_query_data):
     }
     assert data == expected
 """
+
+
+def test_plan_page_invalid_plan_identifier_returns_graphql_error(graphql_client_query):
+    """A bogus plan identifier on planPage must return a structured GraphQL error, not an AssertionError."""
+    response = graphql_client_query(
+        """
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            id
+          }
+        }
+        """,
+        variables={'plan': 'no-such-plan', 'path': '/'},
+    )
+    assert 'errors' in response
+    assert any('no-such-plan' in err['message'] for err in response['errors'])
