@@ -63,6 +63,8 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> 
         return plan
 
     plan_cache = info.context.cache.for_plan_identifier(plan_identifier=plan_identifier)
+    if plan_cache is None:
+        raise GraphQLError(f'Plan "{plan_identifier}" not found')
     plan = plan_cache.plan
     if not plan.is_visible_for_user(info.context.user):
         return None
