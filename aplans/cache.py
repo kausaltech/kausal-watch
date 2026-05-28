@@ -328,11 +328,12 @@ class WatchObjectCache:
             self.plan_caches[plan_id] = plan_cache
         return plan_cache
 
-    def for_plan_identifier(self, plan_identifier: str) -> PlanSpecificCache:
+    def for_plan_identifier(self, plan_identifier: str) -> PlanSpecificCache | None:
         plan_cache = self.plan_caches_by_identifier.get(plan_identifier)
         if plan_cache is None:
             plan_id = Plan.objects.filter(identifier=plan_identifier).values_list('id', flat=True).first()
-            assert plan_id is not None, 'Invalid plan identifier'
+            if plan_id is None:
+                return None
             if plan_id in self.plan_caches:
                 plan_cache = self.plan_caches[plan_id]
             else:
