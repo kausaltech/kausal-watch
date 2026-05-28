@@ -1811,6 +1811,60 @@ class TestArchivableFormset:
         # The other option stays put.
         assert AttributeTypeChoiceOption.objects.filter(pk=kept.pk, is_active=True).exists()
 
+    def test_archive_is_recorded_for_post_save_notification(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        referenced = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Referenced',
+        )
+        action = ActionFactory.create(plan=plan)
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=referenced,
+        )
+
+        formset = self._build_formset(
+            action_attribute_type__ordered_choice,
+            [kept, referenced],
+            delete_pk=referenced.pk,
+        )
+        assert formset.is_valid(), formset.errors
+
+        formset.save(commit=True)
+
+        # The view reads this list to surface a post-save warning to the user.
+        assert [o.pk for o in formset.archived_on_last_save] == [referenced.pk]
+
+    def test_archived_on_last_save_is_empty_when_no_archive_happened(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        unused = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Unused',
+        )
+        formset = self._build_formset(
+            action_attribute_type__ordered_choice,
+            [kept, unused],
+            delete_pk=unused.pk,
+        )
+        assert formset.is_valid(), formset.errors
+        formset.save(commit=True)
+
+        assert formset.archived_on_last_save == []
+
     def test_delete_existing_hard_deletes_unreferenced_option(
         self,
         action_attribute_type__ordered_choice: AttributeType,
@@ -2046,3 +2100,145 @@ class TestArchivePanel:
         )
         bound = self._bound_panel(option)
         assert bound.is_shown() is False
+
+
+# =============================================================================
+# 11. Post-save notification + usage panel wording
+# =============================================================================
+
+
+class TestArchiveNotification:
+    """The edit view warns the user when 'delete' got converted to archive."""
+
+    def test_form_valid_emits_warning_for_each_archived_option(
+        self,
+        rf,
+        plan_admin_user,
+        action_attribute_type__ordered_choice: AttributeType,
+        monkeypatch,
+    ):
+        from types import SimpleNamespace
+
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.http import HttpResponseRedirect
+
+        from actions.attribute_type_admin import AttributeTypeEditView
+
+        first = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='First archived',
+        )
+        second = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Second archived',
+        )
+
+        request = rf.post('/admin/actions/attributetype/edit/1/')
+        request.user = plan_admin_user
+        request.session = SimpleNamespace()
+        request._messages = FallbackStorage(request)
+
+        # The view's super().form_valid would normally trigger model saves and
+        # a redirect; we only care about what our own override layers on top.
+        monkeypatch.setattr(
+            'actions.attribute_type_admin.AplansEditView.form_valid',
+            lambda *_a, **_k: HttpResponseRedirect('/done'),
+        )
+
+        # The view's __init__ requires modeladmin context we don't need to
+        # exercise here; bypass it and set the request directly.
+        view = AttributeTypeEditView.__new__(AttributeTypeEditView)
+        view.request = request
+
+        archived_formset = SimpleNamespace(archived_on_last_save=[first, second])
+        untouched_formset = SimpleNamespace(archived_on_last_save=[])
+        no_attr_formset = SimpleNamespace()
+        form = SimpleNamespace(
+            formsets={
+                'choice_options': archived_formset,
+                'other': untouched_formset,
+                'legacy': no_attr_formset,
+            },
+        )
+
+        response = view.form_valid(form)
+
+        assert response.status_code == 302
+        messages_emitted = [str(m) for m in request._messages]
+        assert any('First archived' in m for m in messages_emitted)
+        assert any('Second archived' in m for m in messages_emitted)
+        # No spurious messages for the formsets without archived items.
+        assert len(messages_emitted) == 2
+
+    def test_form_valid_emits_nothing_when_no_archives_happened(
+        self,
+        rf,
+        plan_admin_user,
+        monkeypatch,
+    ):
+        from types import SimpleNamespace
+
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.http import HttpResponseRedirect
+
+        from actions.attribute_type_admin import AttributeTypeEditView
+
+        request = rf.post('/admin/actions/attributetype/edit/1/')
+        request.user = plan_admin_user
+        request.session = SimpleNamespace()
+        request._messages = FallbackStorage(request)
+        monkeypatch.setattr(
+            'actions.attribute_type_admin.AplansEditView.form_valid',
+            lambda *_a, **_k: HttpResponseRedirect('/done'),
+        )
+
+        # The view's __init__ requires modeladmin context we don't need to
+        # exercise here; bypass it and set the request directly.
+        view = AttributeTypeEditView.__new__(AttributeTypeEditView)
+        view.request = request
+
+        formset = SimpleNamespace(archived_on_last_save=[])
+        form = SimpleNamespace(formsets={'choice_options': formset})
+
+        view.form_valid(form)
+
+        assert list(request._messages) == []
+
+
+class TestUsagePanelWording:
+    """The usage panel explains that deletion becomes archive when in use."""
+
+    def test_panel_mentions_archive_behavior(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        from actions.attribute_type_admin import (
+            ChoiceOptionUsagePanel,
+            _get_choice_option_usage,
+        )
+
+        # Create an option that's referenced by a live action attribute, so
+        # the usage panel surfaces it.
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Used',
+        )
+        action = ActionFactory.create(plan=plan)
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=option,
+        )
+
+        usage = _get_choice_option_usage(action_attribute_type__ordered_choice)
+        assert option.pk in usage
+
+        panel = ChoiceOptionUsagePanel(usage).bind_to_model(AttributeTypeChoiceOption)
+        bound = panel.get_bound_panel(instance=option)
+        html = bound.render_html()
+
+        assert 'archived' in html.lower()
+        # The new wording should not still say "delete in all these objects".
+        assert 'delete' in html.lower()
+        assert 'remove' in html.lower() or 'removed' in html.lower()

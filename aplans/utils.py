@@ -308,6 +308,9 @@ class ArchivableOrderedModelChildFormSet(OrderedModelChildFormSet):
         super().__init__(*args, **kwargs)
         self._pending_archive: list[Any] = []
         self._outer_commit = False
+        #: Populated by `save()` with objects archived during the latest save.
+        #: Inspected by views to surface a post-save notification to the user.
+        self.archived_on_last_save: list[Any] = []
 
     def delete_existing(self, obj, commit=True):
         if obj.pk is not None and obj.is_referenced():
@@ -340,6 +343,9 @@ class ArchivableOrderedModelChildFormSet(OrderedModelChildFormSet):
             saved_instances = super().save(commit)
         finally:
             self._outer_commit = False
+        if commit:
+            self.archived_on_last_save = list(self._pending_archive)
+            self._pending_archive = []
         return saved_instances
 
 

@@ -628,7 +628,21 @@ class AttributeTypeEditView(
     InitializeFormWithPlanMixin,
     AplansEditView,
 ):
-    pass
+    def form_valid(self, form, *args, **kwargs):
+        response = super().form_valid(form, *args, **kwargs)
+        for formset in getattr(form, 'formsets', {}).values():
+            for archived in getattr(formset, 'archived_on_last_save', ()):
+                messages.warning(
+                    self.request,
+                    _(
+                        "Choice option '%(name)s' is still in use, so it was archived rather "
+                        'than deleted. Existing references continue to resolve; the option is '
+                        'hidden from new selections. Use the "Unarchive" button on the option to '
+                        'restore it.'
+                    )
+                    % {'name': archived.name},
+                )
+        return response
 
 
 class AttributeTypeDeleteView(ContentTypeQueryParameterMixin, DeleteView):

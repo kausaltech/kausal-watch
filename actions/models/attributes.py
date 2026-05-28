@@ -382,9 +382,13 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         """
         if not self.is_active:
             return
-        max_order = type(self).objects.filter(type=self.type).aggregate(
-            m=models.Max('order'),
-        )['m']
+        max_order = (
+            type(self)
+            .objects.filter(type=self.type)
+            .aggregate(
+                m=models.Max('order'),
+            )['m']
+        )
         self.is_active = False
         self.order = (max_order if max_order is not None else 0) + 1
         self.save(update_fields=['is_active', 'order'])
@@ -393,9 +397,13 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         """Restore this option to the active list at the end of the order."""
         if self.is_active:
             return
-        max_order = type(self).objects.filter(type=self.type).aggregate(
-            m=models.Max('order'),
-        )['m']
+        max_order = (
+            type(self)
+            .objects.filter(type=self.type)
+            .aggregate(
+                m=models.Max('order'),
+            )['m']
+        )
         self.is_active = True
         self.order = (max_order if max_order is not None else 0) + 1
         self.save(update_fields=['is_active', 'order'])
@@ -448,7 +456,8 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         # eliminated up-front. We then JSON-parse each candidate to confirm.
         type_id = self.type_id
         candidates = (
-            Version.objects.filter(
+            Version.objects
+            .filter(
                 content_type__app_label='actions',
                 content_type__model=attribute_model_name,
             )
