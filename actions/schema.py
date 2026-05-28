@@ -1,7 +1,6 @@
 # ruff: noqa: ANN205
 from __future__ import annotations
 
-import logging
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime
@@ -22,6 +21,7 @@ from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
+from strawberry import auto
 from wagtail.models import Locale, Revision, WorkflowState
 from wagtail.rich_text import RichText
 
@@ -29,6 +29,7 @@ import graphene_django_optimizer as gql_optimizer
 import sentry_sdk
 from grapple.registry import registry as grapple_registry
 from grapple.types.interfaces import get_page_interface
+from loguru import logger
 
 from kausal_common.datasets.models import Dataset
 from kausal_common.graphene.grapple import make_grapple_streamfield
@@ -96,7 +97,7 @@ from actions.models import (
 from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
-from actions.models.category import IndicatorCategoryRelationshipType  # noqa: TC001
+from actions.models.category import IndicatorCategoryRelationshipType
 from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorListPage, PageChangeLogMessage
@@ -118,7 +119,6 @@ if TYPE_CHECKING:
     from django.db import models
     from django.db.models import QuerySet
     from django_stubs_ext import StrOrPromise
-    from strawberry import auto
     from wagtail.models import Page
 
     from aplans.cache import PlanSpecificCache
@@ -129,12 +129,12 @@ if TYPE_CHECKING:
     from actions.models.plan import PlanQuerySet
     from admin_site.models import BaseChangeLogMessage
     from indicators.models import ActionIndicator, IndicatorLevelQuerySet
-    from indicators.schema import IndicatorNode
+    from indicators.schema import IndicatorNode  # noqa: TC004 (strawberry.lazy handles runtime resolution)
     from orgs.models import OrganizationQuerySet
     from users.models import User
 
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name='actions.schema')
 PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
 
 
@@ -170,13 +170,12 @@ class PlanDomainNode(DjangoNode[PlanDomain]):
             preserve_subdomain=True,
         )
         if hostname:
-            logger.info('Wildcard hostname UI redirect: %s -> %s', root.hostname, hostname)
-            with sentry_sdk.new_scope() as scope:
-                scope.set_tag('redirect.from_hostname', root.hostname)
-                scope.set_tag('redirect.to_hostname', hostname)
-                scope.set_extra('from_hostname', root.hostname)
-                scope.set_extra('to_hostname', hostname)
-                sentry_sdk.capture_message('Wildcard hostname UI redirect', level='info')
+            logger.bind(
+                event_type='redirect',
+                redirect_type='wildcard_hostname_ui',
+                from_hostname=root.hostname,
+                to_hostname=hostname,
+            ).info('Wildcard hostname UI redirect: {} -> {}', root.hostname, hostname)
         return hostname
 
 

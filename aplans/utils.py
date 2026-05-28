@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import json
-import logging
 import random
 import re
 import typing
@@ -39,6 +38,7 @@ import humanize
 import libvoikko  # type: ignore
 import sentry_sdk
 from autoslug.fields import AutoSlugField
+from loguru import logger
 from tinycss2.color3 import parse_color
 
 if typing.TYPE_CHECKING:
@@ -57,7 +57,7 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 
-logger = logging.getLogger(__name__)
+logger = logger.bind(name='aplans.utils')
 
 
 try:
@@ -914,16 +914,14 @@ def get_hostname_redirect_response(
     if url is None:
         return None
 
-    # Log to application logs
-    logger.info(f"Redirecting hostname '{hostname}' to '{url}'")
-
     redirect_to_hostname = urlparse(url).netloc
-    with sentry_sdk.new_scope() as scope:
-        scope.set_tag('redirect.from_hostname', hostname)
-        scope.set_tag('redirect.to_hostname', redirect_to_hostname)
-        scope.set_extra('from_hostname', hostname)
-        scope.set_extra('to_url', url)
-        sentry_sdk.capture_message('Hostname redirect', level='info')
+    logger.bind(
+        event_type='redirect',
+        redirect_type='hostname',
+        from_hostname=hostname,
+        to_hostname=redirect_to_hostname,
+        to_url=url,
+    ).info('Hostname redirect: {} -> {}', hostname, redirect_to_hostname)
 
     return http.HttpResponsePermanentRedirect(url)
 
