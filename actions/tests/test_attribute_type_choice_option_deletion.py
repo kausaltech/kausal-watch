@@ -1982,3 +1982,67 @@ class TestUnarchiveView:
         option.refresh_from_db()
         assert option.is_active is False
 
+
+# =============================================================================
+# 10. ChoiceOptionArchivePanel (badge + unarchive button)
+# =============================================================================
+
+
+class TestArchivePanel:
+    """The inline archive panel surfaces archive state and an unarchive button."""
+
+    def _bound_panel(self, option: AttributeTypeChoiceOption):
+        from actions.attribute_type_admin import ChoiceOptionArchivePanel
+
+        panel = ChoiceOptionArchivePanel().bind_to_model(AttributeTypeChoiceOption)
+        return panel.get_bound_panel(instance=option)
+
+    def test_hidden_for_active_option(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        bound = self._bound_panel(attribute_type_choice_option)
+        assert bound.is_shown() is False
+
+    def test_shown_for_archived_option(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        attribute_type_choice_option.archive()
+        attribute_type_choice_option.refresh_from_db()
+
+        bound = self._bound_panel(attribute_type_choice_option)
+        assert bound.is_shown() is True
+
+    def test_renders_badge_and_unarchive_button(
+        self,
+        attribute_type_choice_option: AttributeTypeChoiceOption,
+    ):
+        attribute_type_choice_option.archive()
+        attribute_type_choice_option.refresh_from_db()
+        bound = self._bound_panel(attribute_type_choice_option)
+
+        html = bound.render_html()
+
+        assert 'Archived' in html
+        assert 'Unarchive' in html
+        # The unarchive button must point at the correct admin URL.
+        expected_path = (
+            f'/admin/actions/attributetype/{attribute_type_choice_option.type_id}/'
+            f'unarchive-choice-option/{attribute_type_choice_option.pk}/'
+        )
+        assert expected_path in html
+
+    def test_unsaved_option_is_not_shown(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # An option being added via the inline editor has no pk yet — the
+        # panel must not try to construct an unarchive URL for it.
+        option = AttributeTypeChoiceOption(
+            type=action_attribute_type__ordered_choice,
+            name='Not saved',
+            is_active=False,
+        )
+        bound = self._bound_panel(option)
+        assert bound.is_shown() is False
