@@ -459,6 +459,28 @@ def _get_attribute_type_usage(attribute_type: AttributeType) -> AttributeTypeUsa
     )
 
 
+class ChoiceOptionArchivePanel(Panel):
+    """Renders an 'Archived' badge and an unarchive button on archived choice options."""
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = 'aplans/panels/choice_option_archive_panel.html'
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            option = self.instance
+            self.is_archived = bool(option and option.pk and not option.is_active)
+            if self.is_archived and option.type_id is not None:
+                self.unarchive_url = reverse(
+                    'actions_attributetype_modeladmin_unarchive_choice_option',
+                    args=[option.type_id, option.pk],
+                )
+            else:
+                self.unarchive_url = ''
+
+        def is_shown(self):
+            return self.is_archived
+
+
 class ChoiceOptionUsagePanel(Panel):
     """Panel that warns admins about choice option usage in drafts and reports."""
 
@@ -750,12 +772,15 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin[AttributeType]):
     def get_edit_handler(self):
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(AttributeType)
-        choice_option_panels: list[Panel[Any]] = insert_model_translation_panels(
-            AttributeTypeChoiceOption,
-            self.choice_option_panels,
-            request,
-            instance,
-        )
+        choice_option_panels: list[Panel[Any]] = [
+            ChoiceOptionArchivePanel(),
+            *insert_model_translation_panels(
+                AttributeTypeChoiceOption,
+                self.choice_option_panels,
+                request,
+                instance,
+            ),
+        ]
 
         if instance.pk is not None:
             usage_by_option = _get_choice_option_usage(instance)

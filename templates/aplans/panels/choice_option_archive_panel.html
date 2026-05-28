@@ -1,0 +1,39 @@
+{% load i18n %}
+<div class="help-block help-info" data-kausal-archive-panel>
+    <p>
+        <span class="w-status">{% trans "Archived" %}</span>
+        {% trans "This option is hidden from new selections but kept so existing references continue to resolve." %}
+    </p>
+    <button type="button"
+            class="button button-small"
+            data-kausal-unarchive-url="{{ self.unarchive_url }}"
+            onclick="kausalUnarchiveChoiceOption(this)">
+        {% trans "Unarchive" %}
+    </button>
+</div>
+<script>
+(function () {
+    if (window.kausalUnarchiveChoiceOption) return;
+    window.kausalUnarchiveChoiceOption = function (btn) {
+        var url = btn.getAttribute('data-kausal-unarchive-url');
+        var tokenInput = document.querySelector('input[name=csrfmiddlewaretoken]');
+        if (!url || !tokenInput) return;
+        btn.disabled = true;
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': tokenInput.value },
+        }).then(function (response) {
+            if (response.ok || response.redirected || response.status === 302) {
+                window.location.reload();
+            } else {
+                btn.disabled = false;
+                window.alert('{% trans "Failed to unarchive option." %}');
+            }
+        }).catch(function () {
+            btn.disabled = false;
+            window.alert('{% trans "Failed to unarchive option." %}');
+        });
+    };
+})();
+</script>
