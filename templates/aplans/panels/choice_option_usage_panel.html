@@ -1,8 +1,16 @@
 {% load i18n %}
 <div class="help-block help-warning">
     {% if self.has_usage %}
-    {% trans "This choice option is currently in use. Changing or deleting it will affect the following objects:" %}
-    {% trans "Changing (or deleting) this choice option will change (or delete) the choice in all these objects." as change_tooltip %}
+    <p>
+      {% blocktrans trimmed %}
+        This choice option is in use. If you delete it from the list below, it will be archived
+        instead of removed entirely: the option becomes hidden from new selections, but existing
+        references continue to resolve unchanged. You can restore an archived option later via the
+        "Unarchive" button that appears on it.
+      {% endblocktrans %}
+    </p>
+    <p>{% trans "Currently used by:" %}</p>
+    {% trans "Changing this choice option will change the choice in all these objects." as change_tooltip %}
     <ul>
       {% if self.published_count > 0 %}
         {% include "aplans/_usage_tooltip_item.html" with label=self.published_object_label names=self.published_object_names tooltip_text=change_tooltip %}
@@ -11,7 +19,7 @@
         {% include "aplans/_usage_tooltip_item.html" with label=self.draft_object_label names=self.draft_object_names tooltip_text=change_tooltip %}
       {% endif %}
       {% if self.report_count > 0 %}
-        {% trans "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete." as report_extra_tooltip %}
+        {% trans "If you would like to keep the current value in reports even after changing this choice option, please mark the reports using this choice option as complete." as report_extra_tooltip %}
         {# Technically it would be enough to mark the actions as complete for those reports, but the text is technical enough as it is. #}
         {% include "aplans/_usage_tooltip_item.html" with label=self.report_label names=self.report_names tooltip_text=change_tooltip tooltip_text_extra=report_extra_tooltip %}
       {% endif %}
