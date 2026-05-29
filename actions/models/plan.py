@@ -615,6 +615,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         index.AutocompleteField('identifier', boost=5),
         index.FilterField('organization'),
         index.FilterField('is_active'),
+        index.FilterField('id'),
+        index.FilterField('from_plan_id'),
         index.RelatedFields(
             'organization',
             [
