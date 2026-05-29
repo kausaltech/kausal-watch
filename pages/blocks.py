@@ -253,8 +253,8 @@ class FrontPageHeroBlock(ConditionalStructBlock):
 
     layout = blocks.ChoiceBlock(
         choices=[
-            ('big_image', _('Big image')),
-            ('small_image', _('Small image')),
+            ('big_image', _('Full-width: content over image')),
+            ('small_image', _('Large image: image above, content below')),
             ('side_by_side', _('Side-by-side: image left, content right')),
         ]
     )
