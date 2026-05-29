@@ -4,15 +4,20 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.decorators import display
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.forms import ValidationError
-from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
+from django.views.decorators.http import require_POST
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList, Panel
@@ -27,7 +32,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import OrderedModelChildFormSet, append_query_parameter
+from aplans.utils import ArchivableOrderedModelChildFormSet, append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.chooser import CategoryTypeChooser
@@ -683,7 +688,7 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
 class AttributeTypeEditHandler(AplansTabbedInterface):
     def get_form_options(self):
         options = super().get_form_options()
-        options['formsets']['choice_options']['formset'] = OrderedModelChildFormSet
+        options['formsets']['choice_options']['formset'] = ArchivableOrderedModelChildFormSet
         return options
 
 
@@ -705,6 +710,30 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin[AttributeType]):
     edit_view_class = AttributeTypeEditView
     delete_view_class = AttributeTypeDeleteView
     button_helper_class = AttributeTypeAdminButtonHelper
+
+    def unarchive_choice_option_view(self, request, attribute_type_pk, option_pk):
+        if not self.permission_helper.user_can_edit_obj(
+            request.user,
+            get_object_or_404(AttributeType, pk=attribute_type_pk),
+        ):
+            raise PermissionDenied
+        option = get_object_or_404(
+            AttributeTypeChoiceOption,
+            pk=option_pk,
+            type_id=attribute_type_pk,
+        )
+        option.unarchive()
+        messages.success(request, _("Choice option '%s' has been restored.") % option.name)
+        return HttpResponseRedirect(self.url_helper.get_action_url('edit', attribute_type_pk))
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        unarchive_url = path(
+            f'{self.opts.app_label}/{self.opts.model_name}/<int:attribute_type_pk>/unarchive-choice-option/<int:option_pk>/',
+            require_POST(self.unarchive_choice_option_view),
+            name=self.url_helper.get_action_url_name('unarchive_choice_option'),
+        )
+        return (*urls, unarchive_url)
 
     # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
     # wagtailorderable hasn't accounted for this.

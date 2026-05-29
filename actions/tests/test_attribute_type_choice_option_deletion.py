@@ -991,7 +991,7 @@ class TestCategoryAttributeDeletion:
 class TestArchiveApi:
     """Tests for AttributeTypeChoiceOption.archive()/unarchive() and is_referenced()."""
 
-    def test_archive_flips_flag_and_preserves_order(
+    def test_archive_flips_flag_and_moves_order_out_of_active_range(
         self,
         action_attribute_type__ordered_choice: AttributeType,
     ):
@@ -1003,7 +1003,6 @@ class TestArchiveApi:
             type=action_attribute_type__ordered_choice,
             name='Second',
         )
-        original_order = first.order
         assert first.is_active
         assert second.is_active
 
@@ -1011,13 +1010,10 @@ class TestArchiveApi:
         first.refresh_from_db()
 
         assert first.is_active is False
-        # Archive does not move the row; the order slot stays reserved so new
-        # active options don't collide with it.
-        assert first.order == original_order
-
-        # The other active option is untouched.
+        # Archive bumps the row above all siblings so the inline editor's
+        # renumbering of active rows can't collide with it.
         second.refresh_from_db()
-        assert second.is_active is True
+        assert first.order > second.order
 
     def test_archive_is_idempotent(
         self,
@@ -1037,11 +1033,14 @@ class TestArchiveApi:
         self,
         action_attribute_type__ordered_choice: AttributeType,
     ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Active',
+        )
         option = AttributeTypeChoiceOptionFactory.create(
             type=action_attribute_type__ordered_choice,
             name='Cycles',
         )
-        original_order = option.order
 
         option.archive()
         option.refresh_from_db()
@@ -1049,10 +1048,12 @@ class TestArchiveApi:
 
         option.unarchive()
         option.refresh_from_db()
+        kept.refresh_from_db()
 
         assert option.is_active is True
-        # Unarchive leaves the original order slot in place.
-        assert option.order == original_order
+        # Unarchive places the option at the end of the order so it doesn't
+        # collide with the inline editor's renumbering of other rows.
+        assert option.order > kept.order
 
     def test_unarchive_is_idempotent(
         self,
@@ -1727,4 +1728,257 @@ class TestPickerVisibility:
             == 1
         ), 'the existing archived AttributeChoice should still be present'
 
+
+# =============================================================================
+# 8. Inline formset: archive-on-delete + hard-delete fallback
+# =============================================================================
+
+
+class TestArchivableFormset:
+    """The choice_options inline formset archives referenced options on delete."""
+
+    def _build_formset(
+        self,
+        attribute_type: AttributeType,
+        options: list[AttributeTypeChoiceOption],
+        delete_pk: int,
+    ):
+        from modelcluster.forms import childformset_factory
+
+        from aplans.utils import ArchivableOrderedModelChildFormSet
+
+        FormSet = childformset_factory(
+            AttributeType,
+            AttributeTypeChoiceOption,
+            formset=ArchivableOrderedModelChildFormSet,
+            fields=['name'],
+            can_delete=True,
+            extra=0,
+        )
+
+        prefix = 'choice_options'
+        data = {
+            f'{prefix}-TOTAL_FORMS': str(len(options)),
+            f'{prefix}-INITIAL_FORMS': str(len(options)),
+            f'{prefix}-MIN_NUM_FORMS': '0',
+            f'{prefix}-MAX_NUM_FORMS': '1000',
+        }
+        for i, option in enumerate(options):
+            data[f'{prefix}-{i}-id'] = str(option.pk)
+            data[f'{prefix}-{i}-name'] = option.name
+            data[f'{prefix}-{i}-ORDER'] = str(i)
+            if option.pk == delete_pk:
+                data[f'{prefix}-{i}-DELETE'] = 'on'
+
+        return FormSet(data=data, instance=attribute_type, prefix=prefix)
+
+    def test_delete_existing_archives_referenced_option(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        referenced = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Referenced',
+        )
+        action = ActionFactory.create(plan=plan)
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=referenced,
+        )
+
+        formset = self._build_formset(
+            action_attribute_type__ordered_choice,
+            [kept, referenced],
+            delete_pk=referenced.pk,
+        )
+        assert formset.is_valid(), formset.errors
+
+        formset.save(commit=True)
+
+        # The referenced option is archived, not deleted.
+        referenced.refresh_from_db()
+        assert referenced.is_active is False
+
+        # The live AttributeChoice row that pointed at it is still there.
+        assert AttributeChoice.objects.filter(choice=referenced).exists()
+
+        # The other option stays put.
+        assert AttributeTypeChoiceOption.objects.filter(pk=kept.pk, is_active=True).exists()
+
+    def test_delete_existing_hard_deletes_unreferenced_option(
+        self,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        kept = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Kept',
+        )
+        unused = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Unused',
+        )
+
+        formset = self._build_formset(
+            action_attribute_type__ordered_choice,
+            [kept, unused],
+            delete_pk=unused.pk,
+        )
+        assert formset.is_valid(), formset.errors
+
+        formset.save(commit=True)
+
+        assert not AttributeTypeChoiceOption.objects.filter(pk=unused.pk).exists()
+        assert AttributeTypeChoiceOption.objects.filter(pk=kept.pk, is_active=True).exists()
+
+    def test_archive_a_non_last_referenced_option_does_not_collide_on_order(
+        self,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # If the archived option isn't the last in order, the parent
+        # OrderedModelChildFormSet compacts the remaining rows starting at
+        # order 0. The archived row must be moved out of the active range
+        # *before* that compaction runs — otherwise the freshly compacted
+        # active row collides with the still-unchanged archived row on
+        # (type, order).
+        first = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Archived first',
+        )
+        second = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Second',
+        )
+        action = ActionFactory.create(plan=plan)
+        AttributeChoiceFactory.create(
+            type=action_attribute_type__ordered_choice,
+            content_object=action,
+            choice=first,
+        )
+
+        formset = self._build_formset(
+            action_attribute_type__ordered_choice,
+            [first, second],
+            delete_pk=first.pk,
+        )
+        assert formset.is_valid(), formset.errors
+
+        # Must not raise IntegrityError.
+        formset.save(commit=True)
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        assert first.is_active is False
+        assert second.is_active is True
+        assert first.order != second.order
+
+
+# =============================================================================
+# 9. Unarchive admin view
+# =============================================================================
+
+
+class TestUnarchiveView:
+    """The unarchive admin URL restores an archived option to active."""
+
+    def _unarchive_url(self, attribute_type: AttributeType, option: AttributeTypeChoiceOption) -> str:
+        return f'/admin/actions/attributetype/{attribute_type.pk}/unarchive-choice-option/{option.pk}/'
+
+    def test_post_unarchives_option(
+        self,
+        client,
+        plan_admin_user,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Bring back',
+        )
+        option.archive()
+        option.refresh_from_db()
+        assert option.is_active is False
+
+        client.force_login(plan_admin_user)
+        response = client.post(
+            self._unarchive_url(action_attribute_type__ordered_choice, option),
+        )
+
+        assert response.status_code == 302
+        option.refresh_from_db()
+        assert option.is_active is True
+
+    def test_get_is_rejected(
+        self,
+        client,
+        plan_admin_user,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        # State-changing endpoint should refuse GET.
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Stays archived',
+        )
+        option.archive()
+
+        client.force_login(plan_admin_user)
+        response = client.get(
+            self._unarchive_url(action_attribute_type__ordered_choice, option),
+        )
+
+        assert response.status_code == 405
+        option.refresh_from_db()
+        assert option.is_active is False
+
+    def test_unauthenticated_request_is_redirected_to_login(
+        self,
+        client,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=action_attribute_type__ordered_choice,
+            name='Stays archived',
+        )
+        option.archive()
+
+        response = client.post(
+            self._unarchive_url(action_attribute_type__ordered_choice, option),
+        )
+
+        assert response.status_code in (302, 403)
+        option.refresh_from_db()
+        assert option.is_active is False
+
+    def test_option_for_wrong_attribute_type_returns_404(
+        self,
+        client,
+        plan_admin_user,
+        plan: Plan,
+        action_attribute_type__ordered_choice: AttributeType,
+    ):
+        other_type = AttributeTypeFactory.create(
+            object_content_type=ContentType.objects.get_for_model(Action),
+            scope=plan,
+            format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+            name='Other',
+        )
+        option = AttributeTypeChoiceOptionFactory.create(
+            type=other_type,
+            name='Belongs to other type',
+        )
+        option.archive()
+
+        client.force_login(plan_admin_user)
+        response = client.post(
+            self._unarchive_url(action_attribute_type__ordered_choice, option),
+        )
+
+        assert response.status_code == 404
+        option.refresh_from_db()
+        assert option.is_active is False
 
