@@ -5,6 +5,7 @@ import json
 import random
 import re
 import typing
+from contextlib import suppress
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -287,6 +288,58 @@ class OrderedModelChildFormSet(BaseChildFormSet):
             for i, form in enumerate(self.ordered_forms):
                 form.instance.order = i
                 form.instance.save()
+        return saved_instances
+
+
+class ArchivableOrderedModelChildFormSet(OrderedModelChildFormSet):
+    """
+    Inline-formset variant that archives instead of deleting referenced rows.
+
+    The child model must implement `is_referenced()` and `archive()`. When a
+    form is marked for deletion:
+
+    - If the underlying instance is referenced elsewhere, it is archived
+      (flipped to `is_active=False`) and kept in the modelcluster cluster so
+      modelcluster's commit doesn't strip it from the database.
+    - Otherwise it is hard-deleted as usual.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._pending_archive: list[Any] = []
+        self._outer_commit = False
+
+    def delete_existing(self, obj, commit=True):
+        if obj.pk is not None and obj.is_referenced():
+            if self._outer_commit:
+                # Archive eagerly here so the (type, order) of the archived
+                # row is moved out of the active range BEFORE the parent
+                # compacts remaining rows starting at order 0. Otherwise a
+                # compacted active row gets saved at the same (type, order)
+                # as the still-unchanged archived row, raising IntegrityError
+                # on `unique_order_per_type` — the deferred constraint
+                # doesn't help because the cluster's saves don't all run in
+                # one deferring transaction.
+                obj.archive()
+            self._pending_archive.append(obj)
+            # Pull this object out of `deleted_objects` so modelcluster's
+            # `manager.remove(*self.deleted_objects)` doesn't strip it from
+            # the cluster — which would then delete it on commit().
+            with suppress(ValueError):
+                self.deleted_objects.remove(obj)
+            return
+        super().delete_existing(obj, commit=commit)
+
+    def save(self, commit=True):
+        # `delete_existing()` is called from inside `super().save()` (with
+        # `commit=False`, regardless of the outer commit flag). Track the
+        # outer commit here so the delete hook can decide whether to write
+        # the archive immediately.
+        self._outer_commit = commit
+        try:
+            saved_instances = super().save(commit)
+        finally:
+            self._outer_commit = False
         return saved_instances
 
 

@@ -373,18 +373,32 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return qs.filter(type=self.type)
 
     def archive(self) -> None:
-        """Mark this option as archived; existing references continue to resolve."""
+        """
+        Mark this option as archived; existing references continue to resolve.
+
+        Bumps `order` above all sibling rows so the inline editor's
+        renumbering of active options doesn't collide with this row under
+        the (type, order) unique constraint.
+        """
         if not self.is_active:
             return
+        max_order = type(self).objects.filter(type=self.type).aggregate(
+            m=models.Max('order'),
+        )['m']
         self.is_active = False
-        self.save(update_fields=['is_active'])
+        self.order = (max_order if max_order is not None else 0) + 1
+        self.save(update_fields=['is_active', 'order'])
 
     def unarchive(self) -> None:
-        """Restore this option to the active list."""
+        """Restore this option to the active list at the end of the order."""
         if self.is_active:
             return
+        max_order = type(self).objects.filter(type=self.type).aggregate(
+            m=models.Max('order'),
+        )['m']
         self.is_active = True
-        self.save(update_fields=['is_active'])
+        self.order = (max_order if max_order is not None else 0) + 1
+        self.save(update_fields=['is_active', 'order'])
 
     def is_referenced(self) -> bool:
         """
