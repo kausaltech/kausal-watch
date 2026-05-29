@@ -318,6 +318,19 @@ class DashboardIndicatorSummaryBlock(StructBlock):
 
 
 @register_streamfield_block
+class DashboardHeaderBlock(StructBlock):
+    text = CharBlock(required=True, max_length=100)
+
+    graphql_fields = [
+        GraphQLString('text'),
+    ]
+
+    class Meta:
+        icon = 'title'
+        label = _('Header')
+
+
+@register_streamfield_block
 class DashboardParagraphBlock(StructBlock):
     text = RichTextBlock(required=True)
 
@@ -337,6 +350,7 @@ class DashboardRowBlock(StreamBlock):
     area_chart = DashboardIndicatorAreaChartBlock()
     pie_chart = DashboardIndicatorPieChartBlock()
     indicator_summary = DashboardIndicatorSummaryBlock()
+    header = DashboardHeaderBlock()
     paragraph = DashboardParagraphBlock()
 
     # The following would make DashboardRowBlock work for streamfields that consist only of instances of this block. But
