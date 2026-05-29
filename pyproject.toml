@@ -117,7 +117,7 @@ dependencies = [
   "wagtailgeowidget",
   "xlsxwriter",
 ]
-optional-dependencies.kausal = [ "kausal-watch-extensions>=0.2.13" ]
+optional-dependencies.kausal = [ "kausal-watch-extensions>=0.2.14" ]
 
 [dependency-groups]
 dev = [
