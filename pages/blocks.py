@@ -186,6 +186,7 @@ class QuestionAnswerBlock(blocks.StructBlock):
 class FrontPageHeroAdditionalSettingsValue(blocks.StructValue):
     background_colour: str
     fit_image: bool
+    show_image_accent: bool
 
 
 @register_streamfield_block
@@ -201,6 +202,12 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
         label=_('Fit image without clipping'),
         help_text=_('Show the image at its exact scaled dimensions; it will never be cropped'),
     )
+    show_image_accent = blocks.BooleanBlock(
+        required=False,
+        default=True,
+        label=_('Show image accent'),
+        help_text=_('Display a brand color accent bar below the image'),
+    )
 
     class Meta:
         label = _('Additional settings')
@@ -211,6 +218,7 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('background_colour'),
         GraphQLBoolean('fit_image'),
+        GraphQLBoolean('show_image_accent'),
     ]
 
 
@@ -234,6 +242,12 @@ class FrontPageHeroBlock(ConditionalStructBlock):
             trigger='layout',
             target='additional_settings',
             show_for=['small_image', 'side_by_side'],
+        ),
+        ConditionalFieldRule(
+            trigger='layout',
+            target='show_image_accent',
+            target_path=['additional_settings', 'show_image_accent'],
+            show_for=['small_image'],
         ),
     ]
 
