@@ -168,21 +168,6 @@ class Command(BaseCommand):
             .values_list('revision_id', flat=True)
         )
 
-    def _get_live_wagtail_revision_ids_for_content_type(self, content_type_id: int) -> QuerySet[int]:
-        model = ContentType.objects.get_for_id(content_type_id).model_class()
-        if model is None:
-            return WagtailRevision.objects.none().values_list('id', flat=True)
-
-        existing_object_subquery = model._default_manager.filter(
-            pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(model))
-        )
-        return (
-            WagtailRevision.objects.filter(user__isnull=True, content_type_id=content_type_id)
-            .annotate(has_live_object=Exists(existing_object_subquery))
-            .filter(has_live_object=True)
-            .values_list('id', flat=True)
-        )
-
     def delete_userless_reversion_revisions(self) -> None:
         queryset = ReversionRevision.objects.filter(user__isnull=True)
         live_revision_ids: set[int] = set()
@@ -204,20 +189,34 @@ class Command(BaseCommand):
         self.print_deleted_instances_by_model(by_type)
 
     def delete_userless_wagtail_revisions(self) -> None:
-        queryset = WagtailRevision.objects.filter(user__isnull=True)
-        live_revision_ids: set[int] = set()
-        for content_type_id in queryset.values_list('content_type_id', flat=True).distinct():
-            live_revision_ids.update(
-                self._get_live_wagtail_revision_ids_for_content_type(content_type_id).iterator(chunk_size=10_000)
+        # Per content type with a NOT EXISTS subquery, so we never materialise the live-revision
+        # ID set in Python memory or pass it as a giant IN predicate on production-sized dumps.
+        base_queryset = WagtailRevision.objects.filter(user__isnull=True)
+        content_type_ids = list(base_queryset.values_list('content_type_id', flat=True).distinct())
+        aggregated: dict[str, int] = {}
+
+        for content_type_id in content_type_ids:
+            model = (
+                ContentType.objects.get_for_id(content_type_id).model_class()
+                if content_type_id is not None
+                else None
             )
+            queryset = base_queryset.filter(content_type_id=content_type_id)
+            if model is None:
+                _, by_type = queryset.delete()
+            else:
+                existing_object_subquery = model._default_manager.filter(
+                    pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(model))
+                )
+                _, by_type = (
+                    queryset.annotate(has_live_object=Exists(existing_object_subquery))
+                    .filter(has_live_object=False)
+                    .delete()
+                )
+            for model_name, n in by_type.items():
+                aggregated[model_name] = aggregated.get(model_name, 0) + n
 
-        if not live_revision_ids:
-            _, by_type = queryset.delete()
-            self.print_deleted_instances_by_model(by_type)
-            return
-
-        _, by_type = queryset.exclude(id__in=live_revision_ids).delete()
-        self.print_deleted_instances_by_model(by_type)
+        self.print_deleted_instances_by_model(aggregated)
 
     def delete_thoroughly(self):
         from django.contrib.admin.models import LogEntry
