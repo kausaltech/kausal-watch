@@ -1249,7 +1249,7 @@ class CommonIndicatorAdmin(AplansModelAdmin[CommonIndicator]):
         return unit.short_name or unit.name
 
     def get_edit_handler(self):
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new common indicator
+        instance = ctx_instance.get_as_type(CommonIndicator)  # FIXME: Fails when creating a new common indicator
         basic_panels: list[Panel[Any]] = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator
