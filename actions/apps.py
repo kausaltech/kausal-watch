@@ -52,6 +52,7 @@ class ActionsConfig(AppConfig):
     def ready(self):
         # monkeypatch filtering of Collections
         monkeypatch_image_chooser_viewset()
+        import actions.checks
         import actions.signals
 
         actions.signals.register_signal_handlers()
