@@ -12,43 +12,51 @@ from pages.tests.factories import CategoryTypePageFactory, StaticPageFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_delete_userless_wagtail_revisions_keeps_existing_drafts():
+def test_delete_missing_object_wagtail_revisions_keeps_existing_drafts():
     action = ActionFactory.create()
     revision = action.save_revision(user=None)
 
-    Command().delete_userless_wagtail_revisions()
+    command = Command()
+    command.delete_entries_for_missing_objects(Revision)
+    command.repair_has_unpublished_changes()
 
     action.refresh_from_db()
     assert action.latest_revision_id == revision.id
     assert Revision.objects.filter(id=revision.id).exists()
 
 
-def test_delete_userless_wagtail_revisions_deletes_orphaned_drafts():
+def test_delete_missing_object_wagtail_revisions_deletes_orphaned_drafts():
     action = ActionFactory.create()
     revision = action.save_revision(user=None)
     action.delete()
 
-    Command().delete_userless_wagtail_revisions()
+    command = Command()
+    command.delete_entries_for_missing_objects(Revision)
+    command.repair_has_unpublished_changes()
 
     assert not Revision.objects.filter(id=revision.id).exists()
 
 
-def test_delete_userless_wagtail_revisions_handles_page_subclasses(plan_with_pages):
+def test_delete_missing_object_wagtail_revisions_handles_page_subclasses(plan_with_pages):
     page = StaticPageFactory.create(parent=plan_with_pages.root_page)
     revision = page.save_revision(user=None)
 
-    Command().delete_userless_wagtail_revisions()
+    command = Command()
+    command.delete_entries_for_missing_objects(Revision)
+    command.repair_has_unpublished_changes()
 
     page.refresh_from_db()
     assert page.latest_revision_id == revision.id
     assert Revision.objects.filter(id=revision.id).exists()
 
 
-def test_delete_userless_wagtail_revisions_handles_multi_table_page_subclasses(plan_with_pages, category_type):
+def test_delete_missing_object_wagtail_revisions_handles_multi_table_page_subclasses(plan_with_pages, category_type):
     page = CategoryTypePageFactory.create(parent=plan_with_pages.root_page, category_type=category_type)
     revision = page.save_revision(user=None)
 
-    Command().delete_userless_wagtail_revisions()
+    command = Command()
+    command.delete_entries_for_missing_objects(Revision)
+    command.repair_has_unpublished_changes()
 
     page.refresh_from_db()
     assert page.latest_revision_id == revision.id

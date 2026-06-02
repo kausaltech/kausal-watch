@@ -14,7 +14,7 @@ from django.db.models import Exists, OuterRef
 from django.db.models.functions import Cast
 from django.db.models.signals import post_delete, post_save
 from reversion.models import Revision as ReversionRevision
-from wagtail.models import DraftStateMixin, ModelLogEntry, PageLogEntry, Revision as WagtailRevision
+from wagtail.models import DraftStateMixin, ModelLogEntry, Page, PageLogEntry, Revision as WagtailRevision
 
 import factory
 from easy_thumbnails.models import Source, Thumbnail
@@ -29,6 +29,8 @@ from users.models import User
 
 if TYPE_CHECKING:
     from django.db.models import Field, Model
+
+    from orgs.models import OrganizationQuerySet
 
 
 class Command(BaseCommand):
@@ -60,6 +62,44 @@ class Command(BaseCommand):
         )
         parser.add_argument('--thorough', action='store_true', help='Delete more data, including revision history and audit logs')
 
+    def _validate_exclusions(self, options) -> None:
+        # Validate every --exclude-* argument up front, so a typo can't silently fail open and
+        # delete a plan, organization or client that was meant to be kept.
+        if not options.get('exclude_plan'):
+            options['exclude_plan'] = []
+        all_identifiers = Plan.objects.values_list('identifier', flat=True)
+        for identifier in options['exclude_plan']:
+            if identifier not in all_identifiers:
+                raise CommandError(f"No plan with identifier '{identifier}' exists.")
+
+        exclude_organizations = options.get('exclude_organization') or []
+        if exclude_organizations:
+            all_org_uuids = {str(u) for u in Organization.objects.values_list('uuid', flat=True)}
+            for uuid_str in exclude_organizations:
+                if uuid_str not in all_org_uuids:
+                    raise CommandError(f"No organization with UUID '{uuid_str}' exists.")
+
+        exclude_clients = options.get('exclude_client') or []
+        if exclude_clients:
+            all_client_ids = {str(i) for i in Client.objects.values_list('id', flat=True)}
+            for client_id in exclude_clients:
+                if str(client_id) not in all_client_ids:
+                    raise CommandError(f"No client with ID '{client_id}' exists.")
+
+    def _organizations_to_keep(self, plans_to_keep, exclude_organization) -> OrganizationQuerySet:
+        orgs_to_keep = Organization.objects.qs.available_for_plans(plans_to_keep)
+        # available_for_plans() only returns plan organizations and their descendants. Also keep
+        # their ancestors, or deleting the other organizations would remove a retained plan's
+        # parent/root and corrupt the (treebeard) organization hierarchy.
+        ancestor_ids: set[int] = set()
+        for org in orgs_to_keep:
+            ancestor_ids.update(org.get_ancestors().values_list('id', flat=True))
+        if ancestor_ids:
+            orgs_to_keep |= Organization.objects.filter(id__in=ancestor_ids)
+        if exclude_organization:
+            orgs_to_keep |= Organization.objects.filter(uuid__in=exclude_organization)
+        return orgs_to_keep
+
     def handle(self, *args, **options):
         if not settings.DEBUG or settings.DEPLOYMENT_TYPE == 'production':
             raise CommandError(
@@ -68,12 +108,7 @@ class Command(BaseCommand):
             )
 
         # Determine plans to delete
-        all_identifiers = Plan.objects.values_list('identifier', flat=True)
-        if not options.get('exclude_plan'):
-            options['exclude_plan'] = []
-        for identifier in options['exclude_plan']:
-            if identifier not in all_identifiers:
-                raise CommandError(f"No plan with identifier '{identifier}' exists.")
+        self._validate_exclusions(options)
         plans_to_delete = Plan.objects.qs.exclude(identifier__in=options['exclude_plan'])
         plans_to_keep = Plan.objects.qs.exclude(id__in=plans_to_delete)
         delete_identifiers = plans_to_delete.values_list('identifier', flat=True)
@@ -83,9 +118,7 @@ class Command(BaseCommand):
             self.stdout.write(f'The following plans will be deleted with all related data: {", ".join(delete_identifiers)}')
 
         # Determine organizations to delete
-        orgs_to_keep = Organization.objects.qs.available_for_plans(plans_to_keep)
-        if options['exclude_organization']:
-            orgs_to_keep |= Organization.objects.filter(uuid__in=options['exclude_organization'])
+        orgs_to_keep = self._organizations_to_keep(plans_to_keep, options.get('exclude_organization'))
         orgs_to_delete = Organization.objects.qs.exclude(id__in=orgs_to_keep)
         num_delete_suborgs = {}
         for org in orgs_to_delete.filter(depth=1):
@@ -116,8 +149,9 @@ class Command(BaseCommand):
             self.stdout.write('- all plan-scoped model/page log entries')
             self.stdout.write('- all Wagtail PageLogEntry instances')
         else:
-            self.stdout.write("- orphaned Wagtail Revision instances without a corresponding User anymore")
-            self.stdout.write("- all Wagtail ModelLogEntry instances that don't have a corresponding User anymore")
+            self.stdout.write('- all Wagtail Revision instances whose target object no longer exists')
+            self.stdout.write('- all Wagtail ModelLogEntry instances whose target object no longer exists')
+            self.stdout.write('- all Wagtail PageLogEntry instances whose target page no longer exists')
         self.stdout.write('- all logged requests')
         # if not options['keep_page_log']:
         #     self.stdout.write("- all entries of Wagtail's page log")
@@ -153,25 +187,32 @@ class Command(BaseCommand):
             target_field = getattr(pk_field, 'target_field', None)
         return pk_field.clone()
 
-    def delete_userless_wagtail_revisions(self) -> None:
-        # Per content type with a NOT EXISTS subquery, so we never materialise the live-revision
+    def delete_entries_for_missing_objects(self, model: type[Model]) -> None:
+        # Delete rows of a content_type/object_id-keyed model (Wagtail Revision and ModelLogEntry)
+        # whose referenced object no longer exists. We key on object existence rather than on the
+        # `user` FK: a revision or log entry for a deleted plan/page/object can still have a
+        # surviving author, and it carries serialized object data, so retaining it would leak the
+        # deleted customer's data. Conversely, entries for *kept* objects are always preserved here
+        # (their object still exists), so a kept page never loses its live/latest revision.
+        #
+        # Per content type with a NOT EXISTS subquery, so we never materialise the live-object
         # ID set in Python memory or pass it as a giant IN predicate on production-sized dumps.
-        base_queryset = WagtailRevision.objects.filter(user__isnull=True)
-        content_type_ids = list(base_queryset.values_list('content_type_id', flat=True).distinct())
+        content_type_ids = list(model._default_manager.values_list('content_type_id', flat=True).distinct())
         aggregated: dict[str, int] = {}
 
         for content_type_id in content_type_ids:
-            model = (
+            target = (
                 ContentType.objects.get_for_id(content_type_id).model_class()
                 if content_type_id is not None
                 else None
             )
-            queryset = base_queryset.filter(content_type_id=content_type_id)
-            if model is None:
+            queryset = model._default_manager.filter(content_type_id=content_type_id)
+            if target is None:
+                # Stale content type (model removed from the codebase): the object cannot exist.
                 _, by_type = queryset.delete()
             else:
-                existing_object_subquery = model._default_manager.filter(
-                    pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(model))
+                existing_object_subquery = target._default_manager.filter(
+                    pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(target))
                 )
                 _, by_type = (
                     queryset.annotate(has_live_object=Exists(existing_object_subquery))
@@ -183,10 +224,21 @@ class Command(BaseCommand):
 
         self.print_deleted_instances_by_model(aggregated)
 
+    def delete_page_log_entries_for_missing_pages(self) -> None:
+        # PageLogEntry references its object through a constraint-less `page` FK rather than
+        # content_type/object_id, so it needs its own orphan check. Same rationale as
+        # delete_entries_for_missing_objects: drop entries for pages that no longer exist
+        # (regardless of author), keep entries for surviving pages.
+        live_pages = Page.objects.filter(pk=OuterRef('page_id'))
+        _, by_type = (
+            PageLogEntry.objects.annotate(has_live_page=Exists(live_pages)).filter(has_live_page=False).delete()
+        )
+        self.print_deleted_instances_by_model(by_type)
+
     def delete_thoroughly(self):
         from django.contrib.admin.models import LogEntry
 
-        from oauth2_provider.models import RefreshToken
+        from oauth2_provider.models import AccessToken, RefreshToken
         from social_django.models import Association, Code, Nonce, Partial
 
         from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
@@ -215,6 +267,7 @@ class Command(BaseCommand):
         self.delete_all(Partial)
         self.delete_all(SentNotification)
         self.delete_all(RefreshToken)
+        self.delete_all(AccessToken)
         self.delete_all(Tag)
         if AuthIDToken is not None:
             self.delete_all(AuthIDToken)
@@ -251,15 +304,13 @@ class Command(BaseCommand):
         _, by_type = Client.objects.filter(plans__isnull=True).exclude(id__in=clients_to_keep).delete()
         self.print_deleted_instances_by_model(by_type)
         # Reversion cleanup is intentionally omitted here — thorough mode handles it with a full purge.
-        # Delete Wagtail revisions without users
-        self.delete_userless_wagtail_revisions()
+        # Delete Wagtail revisions for objects that no longer exist (regardless of author), then
+        # repair the draft-state invariant on any kept page whose latest_revision was affected.
+        self.delete_entries_for_missing_objects(WagtailRevision)
         self.repair_has_unpublished_changes()
-        # Delete Wagtail model log entries without users
-        _, by_type = ModelLogEntry.objects.filter(user__isnull=True).delete()
-        self.print_deleted_instances_by_model(by_type)
-        # Delete Wagtail page log entries without users
-        _, by_type = PageLogEntry.objects.filter(user__isnull=True).delete()
-        self.print_deleted_instances_by_model(by_type)
+        # Delete Wagtail model/page log entries for objects that no longer exist
+        self.delete_entries_for_missing_objects(ModelLogEntry)
+        self.delete_page_log_entries_for_missing_pages()
         # Delete all logged requests
         self.delete_all(LoggedRequest)
         # Delete thumbnails
