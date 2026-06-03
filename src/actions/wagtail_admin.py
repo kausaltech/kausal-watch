@@ -386,7 +386,6 @@ class PlanAdmin(AplansModelAdmin[Plan]):
         FieldPanel('short_identifier'),
         FieldPanel('version_name'),
         FieldPanel('actions_locked'),
-        FieldPanel('site_url'),
         FieldPanel('accessibility_statement_url'),
         FieldPanel('access_request_contact_email'),
         FieldPanel('access_request_eligibility_text'),

@@ -261,7 +261,7 @@ class AplansPage(SearchableModel['PageQuerySet'], Page):
         if self.locale.language_code != plan.primary_language:
             url_path = f'/{self.locale.language_code}{url_path}'
 
-        return (plan.site_id, plan.site_url, url_path)
+        return (plan.site_id, f'https://{plan.default_hostname()}', url_path)
 
     # Disable Wagtail's previews because our hacks make them break
     @property

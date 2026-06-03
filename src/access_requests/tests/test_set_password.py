@@ -20,8 +20,9 @@ NEW_PASSWORD = 'correct-horse-battery-staple'  # noqa: S105
 
 
 @pytest.fixture
-def plan():
-    return PlanFactory.create(site_url='https://plan.example.com', features__enable_access_requests=True)
+def plan(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    return PlanFactory.create(identifier='plan', site_url='https://plan.example.com', features__enable_access_requests=True)
 
 
 @pytest.fixture

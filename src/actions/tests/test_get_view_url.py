@@ -10,9 +10,10 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def plan():
+def plan(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
     return PlanFactory.create(
-        site_url='https://myplan.example.com',
+        identifier='myplan',
         primary_language='en',
         other_languages=['fi'],
     )
@@ -31,15 +32,11 @@ def wildcard_domain(request, settings):
 
 @pytest.fixture
 def no_wildcard_domains(settings):
-    settings.HOSTNAME_PLAN_DOMAINS = []
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
 
 
 class TestGetViewUrlNoClientUrl:
-    def test_returns_site_url(self, plan):
-        assert plan.get_view_url() == 'https://myplan.example.com'
-
-    def test_returns_site_url_with_trailing_slash_stripped(self):
-        plan = PlanFactory.create(site_url='https://myplan.example.com/')
+    def test_returns_url_from_default_hostname(self, plan):
         assert plan.get_view_url() == 'https://myplan.example.com'
 
     def test_adds_locale_prefix_for_non_primary_language(self, plan):
@@ -53,10 +50,6 @@ class TestGetViewUrlNoClientUrl:
     def test_no_locale_prefix_for_unknown_language(self, plan):
         url = plan.get_view_url(active_locale='sv')
         assert url == 'https://myplan.example.com'
-
-    def test_site_url_without_scheme_gets_https(self):
-        plan = PlanFactory.create(site_url='myplan.example.com')
-        assert plan.get_view_url() == 'https://myplan.example.com'
 
 
 class TestGetViewUrlWithWildcardDomain:
@@ -126,7 +119,7 @@ class TestGetViewUrlWithPlanDomain:
 
 
 class TestGetViewUrlFallback:
-    """Test get_view_url falls back to site_url when client_url doesn't match anything."""
+    """Test get_view_url falls back to default_hostname URL when client_url doesn't match anything."""
 
     def test_falls_back_when_hostname_not_in_wildcard_or_domains(self, plan, no_wildcard_domains):
         url = plan.get_view_url(client_url='https://unknown.example.org')
@@ -138,9 +131,10 @@ class TestGetViewUrlFallback:
 
 
 @pytest.fixture
-def plan_with_country():
+def plan_with_country(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
     return PlanFactory.create(
-        site_url='https://myplan.example.com',
+        identifier='myplan',
         primary_language='en',
         other_languages=['fi'],
         country='FI',
@@ -259,3 +253,31 @@ class TestGetViewUrlWithSimpleWildcardDomain:
         plan = plan_with_country
         url = plan.get_view_url(client_url='https://anything.de.dummy.io', **simple_wildcard_domain)
         assert url == f'https://{plan.identifier}.de.dummy.io'
+
+
+class TestGetViewUrlLocalhostFallback:
+    """Test get_view_url falls back to localhost domain when it's the only one configured."""
+
+    def test_falls_back_to_localhost_when_only_domain(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+        url = plan.get_view_url()
+        assert url == 'https://myplan.localhost'
+
+    def test_falls_back_to_localhost_with_locale_prefix(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+        url = plan.get_view_url(active_locale='fi')
+        assert url == 'https://myplan.localhost/fi'
+
+    def test_prefers_non_localhost_domain(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost', 'example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+        url = plan.get_view_url()
+        assert url == 'https://myplan.example.com'
+
+
+class TestGetSiteNotificationContext:
+    def test_view_url_uses_get_view_url(self, plan):
+        context = plan.get_site_notification_context()
+        assert context['view_url'] == 'https://myplan.example.com'
