@@ -800,8 +800,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def create_default_site(self, hostname=None):
         if hostname is None:
-            parsed_url = urlparse(self.site_url)
-            hostname = parsed_url.hostname
+            hostname = self.default_hostname()
         if self.site is not None:
             return
         root_page = self.create_default_pages()
@@ -920,7 +919,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def get_site_notification_context(self):
         return dict(
-            view_url=self.site_url,
+            view_url=self.get_view_url(),
             title=self.general_content.site_title,
         )
 
@@ -1134,13 +1133,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             else:
                 port_str = ''
             return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
-        else:  # noqa: RET505
-            assert self.site_url is not None
-            if self.site_url.startswith('http'):
-                url = self.site_url.rstrip('/')
-            else:
-                url = 'https://%s' % self.site_url
-            return f'{url}{locale_prefix}'
+
+        return f'https://{self.default_hostname(include_all_domains=True)}{locale_prefix}'
 
     @classmethod
     def create_with_defaults(
@@ -1151,7 +1145,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         organization: Organization,
         other_languages: list[str] | None = None,
         short_name: str | None = None,
-        base_path: str | None = None,
         hostname: str | None = None,
         client_name: str | None = None,
     ) -> Plan:
@@ -1173,14 +1166,13 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-        return cls.apply_defaults(plan, hostname=hostname, base_path=base_path)
+        return cls.apply_defaults(plan, hostname=hostname)
 
     @classmethod
     @transaction.atomic()
     def apply_defaults(
         cls,
         plan: Plan,
-        base_path: str | None = None,
         hostname: str | None = None,
     ) -> Plan:
         from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
@@ -1188,10 +1180,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         plan.statuses_updated_manually = True
         if not hostname:
             hostname = plan.default_hostname()
-        site_url = f'https://{hostname}'
-        if base_path:
-            site_url += '/' + base_path.strip('/')
-        plan.site_url = site_url
         plan.create_default_site(hostname)
         plan.save()
 
@@ -1220,13 +1208,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
 
-    def default_hostname(self) -> str:
+    def default_hostname(self, include_all_domains: bool = False) -> str:
         """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
         hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
         try:
-            default_domain = next(iter(hostname_plan_domains))
+            default_domain = next(hostname_plan_domains)
         except StopIteration as e:
-            raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
+            if not include_all_domains:
+                raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
+            default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
         if COUNTRY_PLACEHOLDER in default_domain:
             country_code = self.country.code.lower() if self.country else None
             if not country_code:

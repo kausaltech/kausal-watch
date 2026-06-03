@@ -86,7 +86,7 @@ class PlanFactory(ModelFactory[Plan]):
     name = Sequence(lambda i: f'Plan {i}')
     identifier = Sequence(lambda i: f'plan{i}')
     image = SubFactory[Plan, AplansImage](AplansImageFactory)
-    site_url = Sequence(lambda i: f'https://plan{i}.example.com')
+    site_url = Sequence(lambda i: f'https://should-not-be-used-{i}.example.org')
     accessibility_statement_url = 'https://example.com'
     primary_language = 'en'
     other_languages = ['fi']

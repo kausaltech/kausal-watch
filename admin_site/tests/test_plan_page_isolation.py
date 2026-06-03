@@ -34,14 +34,10 @@ pytestmark = pytest.mark.django_db
 # ---------------------------------------------------------------------------
 
 
-def _create_plan_with_site(name: str, identifier: str, hostname: str) -> Plan:
+def _create_plan_with_site(name: str, identifier: str) -> Plan:
     from actions.perms import sync_all_group_permissions_for_plan
 
-    plan = PlanFactory.create(
-        name=name,
-        identifier=identifier,
-        site_url=f'https://{hostname}',
-    )
+    plan = PlanFactory.create(name=name, identifier=identifier)
     plan.create_default_site()
     plan.save()
     sync_all_group_permissions_for_plan(plan)
@@ -50,16 +46,18 @@ def _create_plan_with_site(name: str, identifier: str, hostname: str) -> Plan:
 
 @pytest.fixture
 @factory.django.mute_signals(post_save)
-def plan_a() -> Plan:
+def plan_a(settings) -> Plan:
     """First plan with its own Wagtail site and page tree."""
-    return _create_plan_with_site('Plan A', 'plan-a', 'plan-a.example.com')
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    return _create_plan_with_site('Plan A', 'plan-a')
 
 
 @pytest.fixture
 @factory.django.mute_signals(post_save)
-def plan_b() -> Plan:
+def plan_b(settings) -> Plan:
     """Second plan with its own Wagtail site and page tree."""
-    return _create_plan_with_site('Plan B', 'plan-b', 'plan-b.example.com')
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    return _create_plan_with_site('Plan B', 'plan-b')
 
 
 @pytest.fixture
@@ -122,9 +120,17 @@ class TestPlanSiteIsolation:
     def test_plans_have_distinct_root_pages(self, plan_a: Plan, plan_b: Plan):
         assert plan_a.root_page.pk != plan_b.root_page.pk
 
-    def test_plan_site_hostname_derived_from_site_url(self, plan_a: Plan):
+    def test_plan_site_hostname_derived_from_default_hostname(self, plan_a: Plan):
         assert plan_a.site is not None
         assert plan_a.site.hostname == 'plan-a.example.com'
+
+    def test_create_default_site_uses_default_hostname(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['correct-domain.io']
+        plan = PlanFactory.create(identifier='testplan')
+        plan.create_default_site()
+        plan.save()
+        assert plan.site is not None
+        assert plan.site.hostname == 'testplan.correct-domain.io'
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +273,7 @@ class TestCrossPlanAccessDenied:
 def _request_with_site(site):
     """Create a GET request with ``_wagtail_site`` pre-set."""
     request = RequestFactory().get('/')
-    request._wagtail_site = site
+    request._wagtail_site = site  # type: ignore[attr-defined]
     return request
 
 
@@ -309,7 +315,7 @@ class TestWagtailSiteEffect:
         assert url_parts is not None
         site_id, root_url, _page_path = url_parts
         assert site_id == plan_a.site_id
-        assert root_url == plan_a.site_url
+        assert root_url == f'https://{plan_a.default_hostname()}'
 
     # -- Code path 2: Page.get_url relative vs full URL --
 
@@ -336,7 +342,7 @@ class TestWagtailSiteEffect:
         request = _request_with_site(plan_b.site)
         url = plan_a_child_page.specific.get_url(request=request)
         assert url is not None
-        assert url.startswith(plan_a.site_url)
+        assert url.startswith(f'https://{plan_a.default_hostname()}')
 
     def test_get_url_returns_full_url_when_no_wagtail_site(
         self,
@@ -347,7 +353,7 @@ class TestWagtailSiteEffect:
         request = RequestFactory().get('/')
         url = plan_a_child_page.specific.get_url(request=request)
         assert url is not None
-        assert url.startswith(plan_a.site_url)
+        assert url.startswith(f'https://{plan_a.default_hostname()}')
 
     # -- Code path 3: Page.route_for_request --
 

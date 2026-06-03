@@ -332,7 +332,7 @@ class TestDeletePlan:
     @staticmethod
     def _create_deletable_plan(**kwargs) -> Plan:
         plan = PlanFactory.create(**kwargs)
-        plan.create_default_site()
+        plan.create_default_site(hostname=f'{plan.identifier}.example.com')
         plan.save()
         return plan
 
