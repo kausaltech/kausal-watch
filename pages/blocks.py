@@ -25,7 +25,7 @@ from grapple.models import (
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 
-from kausal_common.blocks.conditional_struct_block import ConditionalFieldRule, ConditionalStructBlock
+from kausal_common.blocks.conditional_struct_block import ConditionalFieldVisibility, ConditionalStructBlock, Match
 from kausal_common.graphene.grapple import grapple_field, make_grapple_field
 
 from actions.blocks.choosers import CategoryChooserBlock
@@ -238,16 +238,13 @@ def _resolve_hero_additional_settings(root, _info) -> FrontPageHeroAdditionalSet
 @register_streamfield_block
 class FrontPageHeroBlock(ConditionalStructBlock):
     conditional_rules = [
-        ConditionalFieldRule(
-            trigger='layout',
-            target='additional_settings',
-            show_for=['small_image', 'side_by_side'],
+        ConditionalFieldVisibility(
+            show='additional_settings',
+            when=Match(layout=('small_image', 'side_by_side')),
         ),
-        ConditionalFieldRule(
-            trigger='layout',
-            target='show_image_accent',
-            target_path=['additional_settings', 'show_image_accent'],
-            show_for=['small_image'],
+        ConditionalFieldVisibility(
+            show=['additional_settings', 'show_image_accent'],
+            when=Match(layout=('small_image',)),
         ),
     ]
 
