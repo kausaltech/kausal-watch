@@ -243,6 +243,12 @@ class IndicatorValueColumn(IndicatorListColumn):
         required=False, label=_('Default year'), help_text=_('Default value year to pick for this column')
     )
     hide_unit = blocks.BooleanBlock(default=False, required=False)
+    highlight_goal_met = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_('Highlight if goal is met'),
+        help_text=_('Show a tick next to the latest value when the indicator has reached its goal.'),
+    )
 
     @staticmethod
     def resolve_default_year(root: StreamValue.StreamChild, info) -> int | None:
@@ -254,6 +260,7 @@ class IndicatorValueColumn(IndicatorListColumn):
         GraphQLInt('reference_year', required=False, deprecation_reason='Use defaultYear instead'),
         grapple_field('default_year', field_type=graphene.Int, resolver=resolve_default_year, required=False),
         GraphQLField('hide_unit', graphene.Boolean, required=True),
+        GraphQLBoolean('highlight_goal_met', required=True),
     ]
 
 
