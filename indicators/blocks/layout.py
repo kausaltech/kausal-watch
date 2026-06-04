@@ -21,6 +21,7 @@ from kausal_common.blocks.base import (
     GeneralFieldBlockBase,
     GeneralFieldBlockInterface,
 )
+from kausal_common.blocks.conditional_struct_block import ConditionalFieldVisibility, ConditionalStructBlock, Match
 from kausal_common.blocks.fields import FieldBlockMetaInterface
 from kausal_common.blocks.registry import FieldBlockContext, FieldContextConfig, ModelFieldProperties, ModelFieldRegistry
 from kausal_common.blocks.stream_block import generate_stream_block
@@ -230,12 +231,16 @@ class IndicatorCategoryColumn(ColumnBlockBase):
 
 
 @register_streamfield_block
-class IndicatorValueColumn(IndicatorListColumn):
+class IndicatorValueColumn(IndicatorListColumn, ConditionalStructBlock):
     class IndicatorColumnValueType(TextChoices):
         LATEST = 'latest', _('Latest value')
         EARLIEST = 'earliest', _('Earliest value')
         REFERENCE = 'reference', _('Reference value')
         GOAL = 'goal', _('Goal value')
+
+    conditional_rules = [
+        ConditionalFieldVisibility(show='highlight_goal_met', when=Match(value_type=(IndicatorColumnValueType.LATEST,))),
+    ]
 
     is_normalized = blocks.BooleanBlock(required=False)
     value_type = blocks.ChoiceBlock(choices=IndicatorColumnValueType.choices, required=True)
@@ -254,13 +259,19 @@ class IndicatorValueColumn(IndicatorListColumn):
     def resolve_default_year(root: StreamValue.StreamChild, info) -> int | None:
         return root.value.get('reference_year', None)
 
+    @staticmethod
+    def resolve_highlight_goal_met(root: StreamValue.StreamChild, info) -> bool:
+        if root.value.get('value_type') != IndicatorValueColumn.IndicatorColumnValueType.LATEST:
+            return False
+        return bool(root.value.get('highlight_goal_met', True))
+
     graphql_fields = IndicatorListColumn.graphql_fields + [
         GraphQLBoolean('is_normalized', required=True),
         GraphQLField('value_type', graphene.Enum.from_enum(IndicatorColumnValueType), required=True),
         GraphQLInt('reference_year', required=False, deprecation_reason='Use defaultYear instead'),
         grapple_field('default_year', field_type=graphene.Int, resolver=resolve_default_year, required=False),
         GraphQLField('hide_unit', graphene.Boolean, required=True),
-        GraphQLBoolean('highlight_goal_met', required=True),
+        grapple_field('highlight_goal_met', field_type=graphene.Boolean, resolver=resolve_highlight_goal_met, required=True),
     ]
 
 
