@@ -73,6 +73,7 @@ class FrontPageHeroAdditionalSettingsBlockFactory(StructBlockFactory):
     background_colour = ''
     fit_image = True
     show_image_accent = True
+    background_covers_full_section = False
 
 
 class FrontPageHeroBlockFactory(StructBlockFactory):

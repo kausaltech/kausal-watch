@@ -187,6 +187,7 @@ class FrontPageHeroAdditionalSettingsValue(blocks.StructValue):
     background_colour: str
     fit_image: bool
     show_image_accent: bool
+    background_covers_full_section: bool
 
 
 @register_streamfield_block
@@ -208,6 +209,12 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
         label=_('Show image accent'),
         help_text=_('Display a brand color accent bar below the image'),
     )
+    background_covers_full_section = blocks.BooleanBlock(
+        required=False,
+        default=False,
+        label=_('Background covers full block'),
+        help_text=_('Extend the background colour to cover the content below the image, not just the image area'),
+    )
 
     class Meta:
         label = _('Additional settings')
@@ -219,6 +226,7 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
         GraphQLString('background_colour'),
         GraphQLBoolean('fit_image'),
         GraphQLBoolean('show_image_accent'),
+        GraphQLBoolean('background_covers_full_section'),
     ]
 
 
@@ -244,6 +252,10 @@ class FrontPageHeroBlock(ConditionalStructBlock):
         ),
         ConditionalFieldVisibility(
             show=['additional_settings', 'show_image_accent'],
+            when=Match(layout=('small_image',)),
+        ),
+        ConditionalFieldVisibility(
+            show=['additional_settings', 'background_covers_full_section'],
             when=Match(layout=('small_image',)),
         ),
     ]
