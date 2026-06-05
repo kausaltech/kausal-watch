@@ -287,18 +287,25 @@ def _renormalize_pks_for_unique_constraint(
     if not target_items:
         return
 
+    # If the target itself contains duplicate wrapped IDs the caller already violates the
+    # unique constraint; bail out so the IntegrityError surfaces instead of silently
+    # collapsing both entries onto the same DB pk during renormalization.
+    target_wrapped_ids = [get_wrapped_id_target(item) for item in target_items]
+    if len(set(target_wrapped_ids)) != len(target_wrapped_ids):
+        return
+
     # Build mapping: wrapped_id -> current DB pk
     wrapped_to_pk_db = {get_wrapped_id_db(item): get_pk_db(item) for item in db_items if get_pk_db(item) is not None}
 
-    # Detect if any wrapped ID is moving to a different PK
+    # Detect if any wrapped ID is moving to a different PK, including from None (new item
+    # targeting a wrapped value already in the DB under another PK).
     needs_renormalization = False
     for item in target_items:
-        pk = get_pk_target(item)
-        if pk is None:
-            continue
         wrapped_id = get_wrapped_id_target(item)
         current_pk_for_wrapped = wrapped_to_pk_db.get(wrapped_id)
-        if current_pk_for_wrapped is not None and current_pk_for_wrapped != pk:
+        if current_pk_for_wrapped is None:
+            continue
+        if get_pk_target(item) != current_pk_for_wrapped:
             needs_renormalization = True
             break
 

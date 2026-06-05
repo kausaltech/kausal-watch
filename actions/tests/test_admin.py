@@ -823,6 +823,153 @@ def test_action_contact_person_swap_on_publish_draft(plan):
     assert contact_a_after.role == ActionContactPerson.Role.MODERATOR
 
 
+def test_publish_with_new_contact_person_already_in_live_db(plan):
+    """
+    Publishing must not violate the unique (action, person) constraint.
+
+    Revision content adds a new contact person (pk=None) for a person who is
+    already a live contact person (under a different pk), and at the same time
+    reassigns that existing pk to a different person. Without renormalization
+    of pk=None items, publishing INSERTs the new row before the existing row's
+    person_id is rewritten, violating the unique constraint.
+    """
+    from wagtail.models import Revision
+
+    from actions.models import ActionContactPerson
+    from actions.tests.factories import ActionFactory
+    from people.tests.factories import PersonFactory
+
+    person_kept = PersonFactory.create()  # stays as moderator
+    person_promoted = PersonFactory.create()  # currently moderator, becomes editor
+    person_new = PersonFactory.create()  # new moderator replacing person_promoted
+
+    action = ActionFactory.create(plan=plan)
+    acp_kept = ActionContactPerson.objects.create(
+        action=action,
+        person=person_kept,
+        role=ActionContactPerson.Role.MODERATOR,
+        order=0,
+    )
+    acp_to_reassign = ActionContactPerson.objects.create(
+        action=action,
+        person=person_promoted,
+        role=ActionContactPerson.Role.MODERATOR,
+        order=1,
+    )
+
+    initial_revision = action.save_revision()
+    revision_content = initial_revision.content.copy()
+    if 'attributes' not in revision_content:
+        revision_content['attributes'] = {}
+
+    revision_content['contact_persons'] = [
+        {
+            'pk': None,
+            'role': 'editor',
+            'order': 0,
+            'action': action.pk,
+            'person': person_promoted.pk,
+            'primary_contact': True,
+        },
+        {
+            'pk': acp_kept.pk,
+            'role': 'moderator',
+            'order': 1,
+            'action': action.pk,
+            'person': person_kept.pk,
+            'primary_contact': False,
+        },
+        {
+            'pk': acp_to_reassign.pk,
+            'role': 'moderator',
+            'order': 2,
+            'action': action.pk,
+            'person': person_new.pk,
+            'primary_contact': False,
+        },
+    ]
+
+    revision: Revision = Revision(
+        content_type=initial_revision.content_type,
+        base_content_type=initial_revision.base_content_type,
+        object_id=action.pk,
+    )
+    revision.content = revision_content
+    revision.save()
+
+    revision.publish()
+
+    action.refresh_from_db()
+    contacts_after = ActionContactPerson.objects.filter(action=action)
+    assert contacts_after.count() == 3
+    assert contacts_after.get(person=person_promoted).role == ActionContactPerson.Role.EDITOR
+    assert contacts_after.get(person=person_kept).role == ActionContactPerson.Role.MODERATOR
+    assert contacts_after.get(person=person_new).role == ActionContactPerson.Role.MODERATOR
+
+
+def test_publish_with_duplicate_contact_person_in_revision_raises(plan):
+    """
+    Renormalization must not collapse duplicate (action, person) entries onto the same pk.
+
+    If revision content contains two entries for the same person, the unique
+    (action, person) constraint is already violated by the payload itself.
+    Renormalization must not silently merge them onto one DB row (which would
+    let one entry's role/order overwrite the other); the IntegrityError must
+    surface so the caller can correct the data.
+    """
+    from django.db import IntegrityError
+    from wagtail.models import Revision
+
+    from actions.models import ActionContactPerson
+    from actions.tests.factories import ActionFactory
+    from people.tests.factories import PersonFactory
+
+    person = PersonFactory.create()
+
+    action = ActionFactory.create(plan=plan)
+    existing = ActionContactPerson.objects.create(
+        action=action,
+        person=person,
+        role=ActionContactPerson.Role.MODERATOR,
+        order=0,
+    )
+
+    initial_revision = action.save_revision()
+    revision_content = initial_revision.content.copy()
+    if 'attributes' not in revision_content:
+        revision_content['attributes'] = {}
+
+    revision_content['contact_persons'] = [
+        {
+            'pk': existing.pk,
+            'role': 'moderator',
+            'order': 0,
+            'action': action.pk,
+            'person': person.pk,
+            'primary_contact': False,
+        },
+        {
+            'pk': None,
+            'role': 'editor',
+            'order': 1,
+            'action': action.pk,
+            'person': person.pk,
+            'primary_contact': True,
+        },
+    ]
+
+    revision: Revision = Revision(
+        content_type=initial_revision.content_type,
+        base_content_type=initial_revision.base_content_type,
+        object_id=action.pk,
+    )
+    revision.content = revision_content
+    revision.save()
+
+    with pytest.raises(IntegrityError):
+        revision.publish()
+
+
 def test_publish_does_not_overwrite_order(plan):
     """
     Publishing a revision must not revert the action's order to the value stored in the revision.
