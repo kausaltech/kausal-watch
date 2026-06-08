@@ -50,7 +50,6 @@ from actions.blocks.action_dashboard import ActionDashboardColumnBlock
 from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
 from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock
 from actions.blocks.category_page_layout import (
-    CategoryPageAsideBlock,
     CategoryPageMainBottomBlock,
     CategoryPageMainTopBlock,
 )
@@ -520,7 +519,6 @@ class CategoryTypePage(StaticPage):
                 ),
                 FieldPanel('layout_main_top'),
                 FieldPanel('layout_main_bottom'),
-                FieldPanel('layout_aside'),
                 FieldPanel('icon_size'),
             ],
         ),
@@ -587,13 +585,6 @@ class CategoryTypePageLevelLayout(ClusterableModel):
         blank=True,
         verbose_name=_('layout main bottom'),
     )
-    # FIXME: Remove this when UI is updated
-    layout_aside = StreamField['StreamValue | None'](
-        block_types=CategoryPageAsideBlock(),
-        null=True,
-        blank=True,
-        verbose_name=_('layout aside'),
-    )
     icon_size = models.CharField(
         max_length=4,
         choices=IconSize.choices,
@@ -604,7 +595,6 @@ class CategoryTypePageLevelLayout(ClusterableModel):
     graphql_fields = [
         category_type_page_level_layout_streamfield_node_getter('layout_main_top'),
         category_type_page_level_layout_streamfield_node_getter('layout_main_bottom'),
-        category_type_page_level_layout_streamfield_node_getter('layout_aside'),
         GraphQLString('icon_size'),
     ]
 
