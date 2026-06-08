@@ -13,6 +13,7 @@ from copying.main import (
     PLAN_CLONE_STRUCTURE,
     Excluded,
     _is_excluded_model,
+    get_unclassified_unique_field_copy_policies,
 )
 from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator
@@ -76,3 +77,6 @@ class TestCloneStructureCoverage:
 
     def test_dimension_clone_structure_coverage(self):
         _check_coverage(Dimension, DIMENSION_CLONE_STRUCTURE, set())
+
+    def test_unique_field_copy_policy_coverage(self):
+        assert get_unclassified_unique_field_copy_policies() == []

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from copy import copy as shallow_copy
+from uuid import uuid4
+
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
@@ -32,8 +35,10 @@ from copying.main import (
     _new_site_hostname,
     _update_reference_index_immediately_ctx,
     _validate_copy_plan_args,
+    _validate_unique_field_copy_policy_applied,
     copy_plan,
 )
+from datasets.tests.factories import DatasetSchemaFactory
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
@@ -502,6 +507,48 @@ def test_copy_indicator_reference_value(plan_with_pages, indicator):
     indicator.refresh_from_db()
     assert indicator.reference_value == value
     assert indicator.latest_value == value
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_unique_field_policy_rejects_unregenerated_value(indicator):
+    original = shallow_copy(indicator)
+    indicator_copy = shallow_copy(indicator)
+
+    with pytest.raises(RuntimeError, match=r'indicators\.Indicator\.uuid.*value was not regenerated'):
+        _validate_unique_field_copy_policy_applied(original, indicator_copy, {})
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_unique_field_policy_rejects_unregistered_restored_value(indicator):
+    value = IndicatorValueFactory.create(indicator=indicator)
+    indicator.reference_value = value
+    indicator.save(update_fields=['reference_value'])
+    original = shallow_copy(indicator)
+    indicator_copy = shallow_copy(indicator)
+    indicator_copy.uuid = uuid4()
+    indicator_copy.reference_value = None
+    indicator_copy.reference_value_id = None
+
+    with pytest.raises(RuntimeError, match=r'indicators\.Indicator\.reference_value.*not registered for restoration'):
+        _validate_unique_field_copy_policy_applied(original, indicator_copy, {})
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_rejects_copy_indicator_with_dataset_schema(plan_with_pages, indicator):
+    indicator.dataset_schema = DatasetSchemaFactory.create()
+    indicator.save(update_fields=['dataset_schema'])
+
+    with pytest.raises(ValueError, match=r'indicators\.Indicator\.dataset_schema'):
+        copy_plan(plan_with_pages, copy_indicators=True)
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_rejects_copy_indicator_with_kausal_paths_node_uuid(plan_with_pages, indicator):
+    indicator.kausal_paths_node_uuid = 'node-uuid'
+    indicator.save(update_fields=['kausal_paths_node_uuid'])
+
+    with pytest.raises(ValueError, match=r'indicators\.Indicator\.kausal_paths_node_uuid'):
+        copy_plan(plan_with_pages, copy_indicators=True)
 
 
 @pytest.mark.parametrize('indicator__common', [None])
