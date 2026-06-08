@@ -4,10 +4,13 @@ from typing import TYPE_CHECKING
 
 from django.db.models import ManyToManyRel, ManyToOneRel
 
+from kausal_common.datasets.models import DatasetSchema
+
 from actions.models.attributes import AttributeType
 from actions.models.plan import Plan
 from copying.main import (
     ATTRIBUTE_TYPE_CLONE_STRUCTURE,
+    DATASET_SCHEMA_CLONE_STRUCTURE,
     DIMENSION_CLONE_STRUCTURE,
     INDICATOR_CLONE_STRUCTURE,
     PLAN_CLONE_STRUCTURE,
@@ -77,6 +80,9 @@ class TestCloneStructureCoverage:
 
     def test_dimension_clone_structure_coverage(self):
         _check_coverage(Dimension, DIMENSION_CLONE_STRUCTURE, set())
+
+    def test_dataset_schema_clone_structure_coverage(self):
+        _check_coverage(DatasetSchema, DATASET_SCHEMA_CLONE_STRUCTURE, set())
 
     def test_unique_field_copy_policy_coverage(self):
         assert get_unclassified_unique_field_copy_policies() == []
