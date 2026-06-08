@@ -131,13 +131,3 @@ class CategoryPageMainBottomBlock(blocks.StreamBlock):
         CategoryTypeDatasetsBlock,
         ChangeLogMessageBlock,
     ]
-
-
-@register_streamfield_block
-class CategoryPageAsideBlock(blocks.StreamBlock):
-    attribute = CategoryPageAttributeTypeBlock()
-    # TODO: CategoryPageSectionBlock
-
-    graphql_types = [
-        CategoryPageAttributeTypeBlock,
-    ]
