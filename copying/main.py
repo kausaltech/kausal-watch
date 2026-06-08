@@ -6,7 +6,7 @@ from contextlib import ExitStack, contextmanager
 from copy import copy as shallow_copy
 from functools import singledispatchmethod, wraps
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 from uuid import uuid4
 
 import wagtail.signal_handlers
@@ -15,7 +15,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, Q, signals
+from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, OneToOneField, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.fields import RichTextField, StreamField
@@ -30,11 +30,13 @@ from relations_iterator import AbstractVisitor, ConfigurableRelationTree, Relati
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType
+from actions.models.features import PlanFeatures
 from actions.models.plan import Plan
 from actions.models.pledge import Pledge
 from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
 from admin_site.models import Client
 from content.apps import create_site_general_content
+from content.models import SiteGeneralContent
 from copying.utils import (
     get_foreign_keys,
     get_generic_foreign_keys,
@@ -277,10 +279,292 @@ MODELS_NOT_COPIED = [
     User,
 ]
 
+UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE = 'cleared_before_save'
+UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED = 'cleared_then_restored'
+UNIQUE_FIELD_POLICY_REGENERATED = 'regenerated'
+UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE = 'replaced_before_save'
+UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET = 'unsupported_if_set'
+
+# Forward unique fields need an explicit policy because the generic clone path saves copied model instances with most
+# field values unchanged. Without a policy, copying an instance can fail with a database uniqueness error before the
+# reference updater has a chance to remap fields.
+UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
+    Action: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    BaseTemplate: {
+        'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    Category: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    Indicator: {
+        'dataset_schema': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
+        'kausal_paths_node_uuid': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
+        'reference_value': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    NotificationSettings: {
+        'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    Plan: {
+        'admin_group': UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE,
+        'contact_person_group': UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE,
+        'identifier': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+        'primary_action_classification': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
+        'root_collection': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+        'secondary_action_classification': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
+        'site': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    PlanFeatures: {
+        'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    Pledge: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    SiteGeneralContent: {
+        'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+}
+
 
 def _is_excluded_model(model: type[Model]) -> bool:
     """Return True if the model is deliberately excluded from plan copying."""
     return model in MODELS_NOT_COPIED
+
+
+def _iter_clone_structure_models(
+    model_class: type[Model],
+    structure: CloneStructure,
+    visited: set[type[Model]] | None = None,
+) -> Generator[type[Model]]:
+    if visited is None:
+        visited = set()
+    if model_class in visited:
+        return
+    visited.add(model_class)
+    yield model_class
+    for relation_name, entry in structure.items():
+        if isinstance(entry, Excluded):
+            continue
+        field = model_class._meta.get_field(relation_name)
+        related_model = field.related_model
+        assert related_model is not None
+        assert not isinstance(related_model, str)
+        related_model = cast('type[Model]', related_model)
+        yield from _iter_clone_structure_models(related_model, entry, visited)
+
+
+def _iter_unique_fields_requiring_copy_policy(model_class: type[Model]) -> Generator[Field]:
+    for field in model_class._meta.fields:
+        if field.primary_key:
+            continue
+        if getattr(field.remote_field, 'parent_link', False):
+            continue
+        if not field.unique and not isinstance(field, OneToOneField):
+            continue
+        yield field
+
+
+def get_unclassified_unique_field_copy_policies() -> list[str]:
+    """
+    Return unique fields in clone structures that do not have an explicit copy policy.
+
+    This is intended for tests and as a defensive runtime check before copying starts.
+    """
+    roots: list[tuple[type[Model], CloneStructure]] = [
+        (cast('type[Model]', Plan), PLAN_CLONE_STRUCTURE),
+        (cast('type[Model]', AttributeType), ATTRIBUTE_TYPE_CLONE_STRUCTURE),
+        (cast('type[Model]', Indicator), INDICATOR_CLONE_STRUCTURE),
+        (cast('type[Model]', Dimension), DIMENSION_CLONE_STRUCTURE),
+    ]
+    missing = []
+    for root_model, structure in roots:
+        for model_class in _iter_clone_structure_models(root_model, structure):
+            policies = UNIQUE_FIELD_COPY_POLICIES.get(model_class, {})
+            for field in _iter_unique_fields_requiring_copy_policy(model_class):
+                if field.name in policies:
+                    continue
+                missing.append(f'{model_class._meta.label}.{field.name}')
+    return sorted(set(missing))
+
+
+def _iter_clone_structure_instances(root: Model, structure: CloneStructure) -> Generator[Model]:
+    tree = ConfigurableRelationTree(root=root, structure=_to_copy_structure(structure))
+    for node in RelationTreeIterator(tree=tree):
+        yield node.instance
+
+
+def _get_attribute_types_for_copying(plan: Plan) -> list[AttributeType]:
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    category_type_ct = ContentType.objects.get_for_model(CategoryType)
+    return list(
+        AttributeType.objects.filter(
+            (Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
+            | (Q(scope_content_type=category_type_ct) & Q(scope_id__in=plan.category_types.all()))
+        )
+    )
+
+
+def _iter_instances_for_unique_field_validation(plan: Plan, copy_indicators: bool) -> Generator[Model]:
+    seen: set[tuple[type[Model], Any]] = set()
+
+    def yield_unseen(instances: Iterable[Model]) -> Generator[Model]:
+        for instance in instances:
+            key = (type(instance), instance.pk)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield instance
+
+    yield from yield_unseen(_iter_clone_structure_instances(plan, PLAN_CLONE_STRUCTURE))
+    for attribute_type in _get_attribute_types_for_copying(plan):
+        yield from yield_unseen(_iter_clone_structure_instances(attribute_type, ATTRIBUTE_TYPE_CLONE_STRUCTURE))
+    if not copy_indicators:
+        return
+    for indicator in plan.indicators.all():
+        yield from yield_unseen(_iter_clone_structure_instances(indicator, INDICATOR_CLONE_STRUCTURE))
+    for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
+        yield from yield_unseen(_iter_clone_structure_instances(dimension, DIMENSION_CLONE_STRUCTURE))
+
+
+def _validate_unique_field_copy_policies(plan: Plan, copy_indicators: bool) -> None:
+    missing = get_unclassified_unique_field_copy_policies()
+    if missing:
+        raise RuntimeError(
+            'Copying has unique fields without copy policies. Add entries to UNIQUE_FIELD_COPY_POLICIES: '
+            + ', '.join(missing)
+        )
+
+    unsupported_fields = []
+    for instance in _iter_instances_for_unique_field_validation(plan, copy_indicators):
+        policies = UNIQUE_FIELD_COPY_POLICIES.get(type(instance), {})
+        for field in _iter_unique_fields_requiring_copy_policy(type(instance)):
+            if policies.get(field.name) != UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET:
+                continue
+            value = getattr(instance, field.attname)
+            if value is None:
+                continue
+            unsupported_fields.append(f'{instance._meta.label}.{field.name} on {type(instance).__name__} {instance.pk}')
+
+    if unsupported_fields:
+        raise ValueError(
+            'Cannot copy plan because some unique fields do not have copy support yet: '
+            + ', '.join(sorted(unsupported_fields))
+        )
+
+
+def _raise_unique_field_policy_error(instance: Model, field: Field, policy: str, message: str) -> NoReturn:
+    raise RuntimeError(
+        f'Unique field copy policy {policy!r} was not applied for {instance._meta.label}.{field.name}: {message}'
+    )
+
+
+def _validate_unsupported_if_set_policy(
+    original: Model,
+    copy: Model,
+    field: Field,
+    original_value: Any,
+    copy_value: Any,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    _raise_unique_field_policy_error(
+        copy, field, UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET, 'preflight validation should reject non-empty values'
+    )
+
+
+def _validate_regenerated_policy(
+    original: Model,
+    copy: Model,
+    field: Field,
+    original_value: Any,
+    copy_value: Any,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    if copy_value == original_value:
+        _raise_unique_field_policy_error(copy, field, UNIQUE_FIELD_POLICY_REGENERATED, 'value was not regenerated')
+
+
+def _validate_cleared_before_save_policy(
+    original: Model,
+    copy: Model,
+    field: Field,
+    original_value: Any,
+    copy_value: Any,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    if copy_value is not None:
+        _raise_unique_field_policy_error(
+            copy, field, UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE, 'value was not cleared before save'
+        )
+
+
+def _validate_cleared_then_restored_policy(
+    original: Model,
+    copy: Model,
+    field: Field,
+    original_value: Any,
+    copy_value: Any,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    if copy_value is not None:
+        _raise_unique_field_policy_error(
+            copy, field, UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED, 'value was not cleared before save'
+        )
+    removed = removed_links.get((type(original), original.pk), {})
+    if field.name not in removed:
+        _raise_unique_field_policy_error(
+            copy, field, UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED, 'value was not registered for restoration'
+        )
+
+
+def _validate_replaced_before_save_policy(
+    original: Model,
+    copy: Model,
+    field: Field,
+    original_value: Any,
+    copy_value: Any,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    if copy_value == original_value:
+        _raise_unique_field_policy_error(
+            copy, field, UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE, 'value was not replaced before save'
+        )
+
+
+type UniqueFieldPolicyValidator = Callable[[Model, Model, Field, Any, Any, dict[tuple[type[Model], Any], dict[str, Model]]], None]
+
+UNIQUE_FIELD_POLICY_VALIDATORS: dict[str, UniqueFieldPolicyValidator] = {
+    UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE: _validate_cleared_before_save_policy,
+    UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED: _validate_cleared_then_restored_policy,
+    UNIQUE_FIELD_POLICY_REGENERATED: _validate_regenerated_policy,
+    UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE: _validate_replaced_before_save_policy,
+    UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET: _validate_unsupported_if_set_policy,
+}
+
+
+def _validate_unique_field_copy_policy_applied(
+    original: Model,
+    copy: Model,
+    removed_links: dict[tuple[type[Model], Any], dict[str, Model]],
+) -> None:
+    policies = UNIQUE_FIELD_COPY_POLICIES.get(type(original), {})
+    if not policies:
+        return
+    for field in _iter_unique_fields_requiring_copy_policy(type(original)):
+        policy = policies.get(field.name)
+        if policy is None:
+            _raise_unique_field_policy_error(copy, field, '<missing>', 'add a policy to UNIQUE_FIELD_COPY_POLICIES')
+
+        original_value = getattr(original, field.attname)
+        copy_value = getattr(copy, field.attname)
+        if original_value is None:
+            continue
+
+        validator = UNIQUE_FIELD_POLICY_VALIDATORS.get(policy)
+        if validator is None:
+            _raise_unique_field_policy_error(copy, field, policy, 'policy is unknown')
+        validator(original, copy, field, original_value, copy_value, removed_links)
 
 
 class CloneVisitor(AbstractVisitor):
@@ -374,6 +658,7 @@ class CloneVisitor(AbstractVisitor):
         if node.parent is not None:
             parent_joining_field, instance_joining_field = node.relation.get_joining_fields()[0]
             setattr(node.instance, instance_joining_field.attname, parent_joining_field.value_from_object(node.parent.instance))
+        _validate_unique_field_copy_policy_applied(original_instance, node.instance, self.removed_links)
         self.save_copy(node.instance)
         logger.info(f'Created {type(node.instance).__name__} {node.instance.pk}: {node.instance}')
         assert isinstance(node.instance, node.model_class)
@@ -1171,18 +1456,18 @@ def _validate_copy_plan_args(plan: Plan, new_plan_identifier: str, new_site_host
     if Site.objects.filter(hostname=new_site_hostname).exists():
         raise ValueError(f"A site with hostname '{new_site_hostname}' already exists")
 
-    if not copy_indicators:
-        return
+    if copy_indicators:
+        if plan.shared_indicators().exists():
+            assert not may_copy_indicators(plan)
+            raise ValueError('Cannot copy indicators as the plan shares indicators with another plan')
+        # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
+        # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
+        if plan.indicators.filter(common__isnull=False).exists():
+            assert not may_copy_indicators(plan)
+            raise ValueError('Cannot copy indicators as some are instances of a common indicator')
+        assert may_copy_indicators(plan)
 
-    if plan.shared_indicators().exists():
-        assert not may_copy_indicators(plan)
-        raise ValueError('Cannot copy indicators as the plan shares indicators with another plan')
-    # We decided not to copy organizations and common indicators. So the unique constraint on `(common_id,
-    # organization_id)` in `Indicator` prevents us from copying indicators that are instances of a common indicator.
-    if plan.indicators.filter(common__isnull=False).exists():
-        assert not may_copy_indicators(plan)
-        raise ValueError('Cannot copy indicators as some are instances of a common indicator')
-    assert may_copy_indicators(plan)
+    _validate_unique_field_copy_policies(plan, copy_indicators)
 
 
 def _copy_collection_site_and_pages(
@@ -1258,15 +1543,8 @@ def _copy_attribute_types(plan: Plan, clone_visitor: CloneVisitor) -> list[Attri
     Attribute types use generic foreign keys, so we need to copy them separately rather than through the
     relation tree. Returns the list of original attribute type instances (not the copies).
     """
-    plan_ct = ContentType.objects.get_for_model(Plan)
-    category_type_ct = ContentType.objects.get_for_model(CategoryType)
     # Materialize in a list because we'll update them in place
-    attribute_types = list(
-        AttributeType.objects.filter(
-            (Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
-            | (Q(scope_content_type=category_type_ct) & Q(scope_id__in=plan.category_types.all()))
-        )
-    )
+    attribute_types = _get_attribute_types_for_copying(plan)
     for at in attribute_types:
         visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
     return attribute_types
