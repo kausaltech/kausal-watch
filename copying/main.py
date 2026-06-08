@@ -27,6 +27,13 @@ from wagtail.models.reference_index import ReferenceIndex
 from loguru import logger
 from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator  # type: ignore
 
+from kausal_common.datasets.models import (
+    DatasetMetric,
+    DatasetMetricComputation,
+    DatasetSchema,
+    Dimension as DatasetDimension,
+)
+
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType
@@ -262,6 +269,20 @@ DIMENSION_CLONE_STRUCTURE: CloneStructure = {
     'common_indicators': EXCLUDED,  # CommonIndicator is not plan-scoped
 }
 
+DATASET_SCHEMA_CLONE_STRUCTURE: CloneStructure = {
+    # Metrics must be copied before computations because DatasetMetricComputation.target_metric is unique and must be
+    # remapped to the copied metric before the computation copy is saved.
+    'metrics': {
+        'computed_by': EXCLUDED,  # DatasetMetricComputation is copied via DatasetSchema → computations
+        'data_points': EXCLUDED,  # actual dataset values are not part of the schema definition
+    },
+    'computations': {},
+    'dimensions': {},  # copies through model instances, not dataset Dimension instances
+    'scopes': {},
+    'datasets': EXCLUDED,  # actual dataset instances are not part of the schema definition
+    'indicator': EXCLUDED,  # Indicator is the copy root that points to the copied DatasetSchema
+}
+
 # Models that are not scoped by a plan and thus deliberately excluded from copying. References to these models are
 # skipped in `UpdateReferencesVisitor.get_references()` and warnings are suppressed in `update_reference()`.
 MODELS_NOT_COPIED = [
@@ -270,6 +291,7 @@ MODELS_NOT_COPIED = [
     CommonCategoryType,
     CommonIndicator,
     ContentType,
+    DatasetDimension,
     Group,
     Locale,
     Organization,
@@ -299,9 +321,18 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
     Indicator: {
-        'dataset_schema': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
+        'dataset_schema': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
         'kausal_paths_node_uuid': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
         'reference_value': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    DatasetMetric: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    DatasetMetricComputation: {
+        'target_metric': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    DatasetSchema: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
     NotificationSettings: {
@@ -377,6 +408,7 @@ def get_unclassified_unique_field_copy_policies() -> list[str]:
         (cast('type[Model]', AttributeType), ATTRIBUTE_TYPE_CLONE_STRUCTURE),
         (cast('type[Model]', Indicator), INDICATOR_CLONE_STRUCTURE),
         (cast('type[Model]', Dimension), DIMENSION_CLONE_STRUCTURE),
+        (cast('type[Model]', DatasetSchema), DATASET_SCHEMA_CLONE_STRUCTURE),
     ]
     missing = []
     for root_model, structure in roots:
@@ -424,6 +456,8 @@ def _iter_instances_for_unique_field_validation(plan: Plan, copy_indicators: boo
         return
     for indicator in plan.indicators.all():
         yield from yield_unseen(_iter_clone_structure_instances(indicator, INDICATOR_CLONE_STRUCTURE))
+        if indicator.dataset_schema is not None:
+            yield from yield_unseen(_iter_clone_structure_instances(indicator.dataset_schema, DATASET_SCHEMA_CLONE_STRUCTURE))
     for dimension in Dimension.objects.filter(id__in=plan.dimensions.values_list('dimension_id')):
         yield from yield_unseen(_iter_clone_structure_instances(dimension, DIMENSION_CLONE_STRUCTURE))
 
@@ -786,7 +820,17 @@ class CloneVisitor(AbstractVisitor):
     @pre_visit.register
     def _(self, instance: Indicator) -> None:
         self.prepare_instance_for_copy(instance)
+        if instance.dataset_schema is not None:
+            original_schema = shallow_copy(instance.dataset_schema)
+            if not self.has_copy(original_schema):
+                visit_tree(instance.dataset_schema, DATASET_SCHEMA_CLONE_STRUCTURE, self)
+            instance.dataset_schema = self.get_copy(original_schema)
         self.remove_link(instance, 'reference_value')
+
+    @pre_visit.register
+    def _(self, instance: DatasetMetricComputation) -> None:
+        self.prepare_instance_for_copy(instance)
+        instance.target_metric = self.get_copy(instance.target_metric)
 
     @pre_visit.register
     def _(self, instance: Site) -> None:
@@ -1720,8 +1764,21 @@ def update_references_in_indicators(indicators: list[Indicator], clone_visitor: 
 
     # Also visit the indicator tree to handle foreign keys and other references
     # in indicators and their related objects (values, goals, dimensions, etc.)
+    dataset_schema_ids = set()
     for indicator in indicators:
         visit_tree(indicator, INDICATOR_CLONE_STRUCTURE, update_references_visitor)
+        if indicator.dataset_schema is not None and indicator.dataset_schema_id not in dataset_schema_ids:
+            _delete_uncopied_dataset_schema_scopes(indicator.dataset_schema, clone_visitor)
+            visit_tree(indicator.dataset_schema, DATASET_SCHEMA_CLONE_STRUCTURE, update_references_visitor)
+            dataset_schema_ids.add(indicator.dataset_schema_id)
+
+
+def _delete_uncopied_dataset_schema_scopes(schema: DatasetSchema, clone_visitor: CloneVisitor) -> None:
+    for scope in schema.scopes.all():
+        scope_target = scope.scope
+        if isinstance(scope_target, Model) and clone_visitor.has_copy(scope_target):
+            continue
+        scope.delete()
 
 
 def _to_copy_structure(structure: CloneStructure) -> dict:
