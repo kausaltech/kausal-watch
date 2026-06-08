@@ -11,6 +11,8 @@ from wagtail.rich_text import RichText
 
 import pytest
 
+from kausal_common.datasets.models import DatasetMetricComputation, DatasetSchema
+
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
@@ -37,7 +39,13 @@ from copying.main import (
     _validate_unique_field_copy_policy_applied,
     copy_plan,
 )
-from datasets.tests.factories import DatasetSchemaFactory
+from datasets.tests.factories import (
+    DatasetMetricFactory,
+    DatasetSchemaDimensionFactory,
+    DatasetSchemaFactory,
+    DatasetSchemaScopeFactory,
+    DimensionFactory as DatasetDimensionFactory,
+)
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
 from documents.tests.factories import AplansDocumentFactory
@@ -423,12 +431,63 @@ def test_unique_field_policy_rejects_unregistered_restored_value(indicator):
 
 
 @pytest.mark.parametrize('indicator__common', [None])
-def test_rejects_copy_indicator_with_dataset_schema(plan_with_pages, indicator):
-    indicator.dataset_schema = DatasetSchemaFactory.create()
+def test_copy_indicator_dataset_schema(plan_with_pages, indicator):
+    schema = DatasetSchemaFactory.create()
+    dimension = DatasetDimensionFactory.create()
+    DatasetSchemaDimensionFactory.create(schema=schema, dimension=dimension)
+    DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
+    operand_a = DatasetMetricFactory.create(schema=schema, label='Operand A')
+    operand_b = DatasetMetricFactory.create(schema=schema, label='Operand B')
+    target_metric = DatasetMetricFactory.create(schema=schema, label='Target')
+    computation = DatasetMetricComputation.objects.create(
+        schema=schema,
+        target_metric=target_metric,
+        operand_a=operand_a,
+        operand_b=operand_b,
+        operation=DatasetMetricComputation.Operation.MULTIPLY,
+    )
+    indicator.dataset_schema = schema
     indicator.save(update_fields=['dataset_schema'])
 
-    with pytest.raises(ValueError, match=r'indicators\.Indicator\.dataset_schema'):
-        copy_plan(plan_with_pages, copy_indicators=True)
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    schema_copy = indicator_copy.dataset_schema
+    assert schema_copy is not None
+    assert schema_copy != schema
+    assert schema_copy.uuid != schema.uuid
+    assert schema_copy.name == schema.name
+    assert schema_copy.dimensions.get().dimension == dimension
+    assert schema_copy.scopes.get().scope == indicator_copy
+
+    metric_copies = {metric.label: metric for metric in schema_copy.metrics.all()}
+    assert set(metric_copies) == {'Operand A', 'Operand B', 'Target'}
+    for metric in metric_copies.values():
+        assert metric.uuid not in {operand_a.uuid, operand_b.uuid, target_metric.uuid}
+
+    computation_copy = schema_copy.computations.get()
+    assert computation_copy != computation
+    assert computation_copy.target_metric == metric_copies['Target']
+    assert computation_copy.operand_a == metric_copies['Operand A']
+    assert computation_copy.operand_b == metric_copies['Operand B']
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_copy_indicator_dataset_schema_does_not_copy_external_scopes(plan_with_pages, indicator):
+    schema = DatasetSchemaFactory.create()
+    other_plan = PlanFactory.create()
+    DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
+    DatasetSchemaScopeFactory.create(schema=schema, scope=other_plan)
+    indicator.dataset_schema = schema
+    indicator.save(update_fields=['dataset_schema'])
+
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    schema_copy = indicator_copy.dataset_schema
+    assert schema_copy is not None
+    assert schema_copy.scopes.get().scope == indicator_copy
+    assert list(DatasetSchema.objects.for_scope(other_plan)) == [schema]
 
 
 @pytest.mark.parametrize('indicator__common', [None])
