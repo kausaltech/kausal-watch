@@ -499,6 +499,11 @@ class CloneVisitor(AbstractVisitor):
         instance.published_at = None
 
     @pre_visit.register
+    def _(self, instance: Indicator) -> None:
+        self.prepare_instance_for_copy(instance)
+        self.remove_link(instance, 'reference_value')
+
+    @pre_visit.register
     def _(self, instance: Site) -> None:
         self.prepare_instance_for_copy(instance)
         instance.hostname = self.site_hostname

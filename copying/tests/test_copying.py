@@ -374,6 +374,26 @@ def test_copy_indicator(  # noqa: PLR0915
 
 
 @pytest.mark.parametrize('indicator__common', [None])
+def test_copy_indicator_reference_value(plan_with_pages, indicator):
+    value = IndicatorValueFactory.create(indicator=indicator)
+    indicator.reference_value = value
+    indicator.latest_value = value
+    indicator.save(update_fields=['reference_value', 'latest_value'])
+
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    value_copy = indicator_copy.values.get()
+    assert value_copy != value
+    assert indicator_copy.reference_value == value_copy
+    assert indicator_copy.latest_value == value_copy
+
+    indicator.refresh_from_db()
+    assert indicator.reference_value == value
+    assert indicator.latest_value == value
+
+
+@pytest.mark.parametrize('indicator__common', [None])
 def test_copy_indicator_keeps_original_indicator_unchanged(plan_with_pages, indicator):
     # Original indicator should still belong to only the original plan
     assert plan_with_pages.indicators.get() == indicator
