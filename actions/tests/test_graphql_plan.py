@@ -283,9 +283,10 @@ def test_plan_root_page_exists(graphql_client_query_data, plan_with_pages):
     assert any(page['__typename'] == 'PlanRootPage' and page['id'] == str(plan.root_page.id) for page in pages)
 
 
-def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_pages):
+@pytest.mark.parametrize('layout', ['big_image', 'side_by_side'])
+def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_pages, layout):
     plan = plan_with_pages
-    hero_data = {'layout': 'big_image', 'heading': 'foo', 'lead': 'bar'}
+    hero_data = {'layout': layout, 'heading': 'foo', 'lead': 'bar'}
     plan.root_page.body = json.dumps([
         {'type': 'front_page_hero', 'value': hero_data},
     ])
