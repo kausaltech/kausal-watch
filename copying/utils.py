@@ -94,6 +94,44 @@ def update_reference_in_raw_data(
     return raw_data
 
 
+def remove_reference_from_raw_data(
+    raw_data: Any,
+    content_path: list[str],
+    old_object: Model,
+) -> Any:
+    """Remove a reference at a certain path in raw streamfield data."""
+    if not content_path:
+        if raw_data == old_object.pk:
+            return None
+        if isinstance(raw_data, str):
+            return remove_reference_from_html(raw_data, old_object)
+        return raw_data
+    path_element, *remaining_elements = content_path
+    if isinstance(raw_data, list):
+        for child in raw_data:
+            if child['id'] == path_element or child['type'] == path_element:
+                child['value'] = remove_reference_from_raw_data(child['value'], remaining_elements, old_object)
+    elif isinstance(raw_data, dict):
+        raw_data[path_element] = remove_reference_from_raw_data(raw_data[path_element], remaining_elements, old_object)
+    else:
+        raise TypeError(f'raw_data has unexpected type {type(raw_data)}')
+    return raw_data
+
+
+def remove_reference_from_streamfield_block(
+    instance: Model,
+    field_name: str,
+    content_path: list[str],
+    old_object: Model,
+) -> None:
+    """Remove a reference to an object at a certain path in a given streamfield."""
+    stream_value = getattr(instance, field_name)
+    raw_data = list(stream_value.raw_data)
+    remove_reference_from_raw_data(raw_data, content_path, old_object)
+    stream_value.raw_data = raw_data
+    setattr(instance, field_name, StreamValue(stream_value.stream_block, stream_value.raw_data, is_lazy=True))
+
+
 def update_streamfield_block(
     instance: Model,
     field_name: str,
@@ -120,6 +158,52 @@ def update_streamfield_block(
     # once the BoundBlock representation has been accessed, any changes to fields within raw data will not
     # propagate back to the BoundBlock
     setattr(instance, field_name, StreamValue(stream_value.stream_block, stream_value.raw_data, is_lazy=True))
+
+
+def _tag_references_object(tag: str, referenced_object: Model) -> bool:
+    return re.search(rf'\bid="{referenced_object.pk}"', tag) is not None
+
+
+def remove_reference_from_html(
+    html: str,
+    referenced_object: Model,
+) -> str:
+    """Remove a reference to an image, document, or indicator from a given HTML string."""
+    if isinstance(referenced_object, AplansDocument):
+        pattern = r'<a\s+[^>]*linktype="document"[^>]*>.*?</a>'
+
+        def replace_document_reference(match: re.Match) -> str:
+            tag = match.group(0)
+            if not _tag_references_object(tag, referenced_object):
+                return tag
+            inner_match = re.match(r'<a\s+[^>]*>(?P<inner>.*?)</a>', tag, flags=re.DOTALL)
+            assert inner_match is not None
+            return inner_match.group('inner')
+
+        return re.sub(pattern, replace_document_reference, html, flags=re.DOTALL)
+    if isinstance(referenced_object, AplansImage):
+        pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
+
+        def replace_image_reference(match: re.Match) -> str:
+            tag = match.group(0)
+            if not _tag_references_object(tag, referenced_object):
+                return tag
+            return ''
+
+        return re.sub(pattern, replace_image_reference, html)
+    if isinstance(referenced_object, Indicator):
+        pattern = r'<a\s+[^>]*linktype="indicator"[^>]*>.*?</a>'
+
+        def replace_indicator_reference(match: re.Match) -> str:
+            tag = match.group(0)
+            if not _tag_references_object(tag, referenced_object):
+                return tag
+            inner_match = re.match(r'<a\s+[^>]*>(?P<inner>.*?)</a>', tag, flags=re.DOTALL)
+            assert inner_match is not None
+            return inner_match.group('inner')
+
+        return re.sub(pattern, replace_indicator_reference, html, flags=re.DOTALL)
+    raise TypeError(f'referenced_object has unexpected type {type(referenced_object)}')
 
 
 def update_reference_in_html(
@@ -186,4 +270,15 @@ def update_rich_text_reference_in_field(
     """Update a reference to an image, document, or indicator in a given rich text field."""
     old_value: str = getattr(instance, field_name)
     new_value = update_reference_in_html(old_value, old_referenced_object, new_referenced_object)
+    setattr(instance, field_name, new_value)
+
+
+def remove_rich_text_reference_from_field(
+    instance: Model,
+    field_name: str,
+    referenced_object: Model,
+) -> None:
+    """Remove a reference to an image, document, or indicator from a given rich text field."""
+    old_value: str = getattr(instance, field_name)
+    new_value = remove_reference_from_html(old_value, referenced_object)
     setattr(instance, field_name, new_value)

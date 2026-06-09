@@ -24,6 +24,7 @@ from wagtail.models.i18n import Locale
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
+import sentry_sdk
 from loguru import logger
 from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator  # type: ignore
 
@@ -38,6 +39,8 @@ from content.apps import create_site_general_content
 from copying.utils import (
     get_foreign_keys,
     get_generic_foreign_keys,
+    remove_reference_from_streamfield_block,
+    remove_rich_text_reference_from_field,
     temp_disconnect_signal,
     update_rich_text_reference_in_field,
     update_streamfield_block,
@@ -322,6 +325,8 @@ class CloneVisitor(AbstractVisitor):
         self.copies = {}
         self._copy_keys: set[tuple[type[Model], Any]] = set()
         self._copy_to_original_pk: dict[tuple[type[Model], Any], Any] = {}
+        self._skipped_reference_targets: set[tuple[type[Model], Any]] = set()
+        self._reference_holders_to_drop: dict[tuple[type[Model], Any], Model] = {}
         self.removed_links = {}
         self._pledge_translation_keys: dict[Any, Any] = {}
         self.supersede_original_plan = supersede_original_plan
@@ -346,6 +351,44 @@ class CloneVisitor(AbstractVisitor):
         """Get the PK of the original instance for the given copy."""
         return self._copy_to_original_pk[(type(copy), copy.pk)]
 
+    def register_skipped_reference_target(self, instance: Model) -> None:
+        """Record that references to the given original instance should be removed from copies."""
+        self._skipped_reference_targets.add((type(instance), instance.pk))
+
+    def register_skipped_reference_target_key(self, model: type[Model], pk: Any) -> None:
+        """Record that references to the given original model and PK should be removed from copies."""
+        self._skipped_reference_targets.add((model, pk))
+
+    def is_skipped_reference_target(self, instance: Model) -> bool:
+        """Return true if references to the original instance should be removed from copies."""
+        return (type(instance), instance.pk) in self._skipped_reference_targets
+
+    def register_reference_holder_to_drop(self, instance: Model) -> None:
+        """Mark a copy for deletion because it holds a non-nullable reference to a skipped target."""
+        self._reference_holders_to_drop[(type(instance), instance.pk)] = instance
+
+    def drop_reference_holders(self) -> None:
+        """
+        Delete copies that hold non-nullable references to skipped targets.
+
+        Such copies cannot be made self-contained (the reference can neither be remapped to a copy nor cleared), so we
+        drop them entirely rather than leave them pointing at the source plan. This runs only after all references have
+        been updated, so that saving a holder's parent (e.g. a category owning a cluster of icons) cannot re-create the
+        row we are about to delete.
+        """
+        for (model, pk), instance in self._reference_holders_to_drop.items():
+            logger.warning(
+                f'Dropping copied {model.__name__} {pk}: it holds a non-nullable reference to an object whose source '
+                f'file was missing, so the copy cannot be made self-contained'
+            )
+            copy_key = (model, pk)
+            if copy_key in self._copy_to_original_pk:
+                original_pk = self._copy_to_original_pk.pop(copy_key)
+                self.copies.pop((model, original_pk), None)
+                self._copy_keys.discard(copy_key)
+            instance.delete()
+        self._reference_holders_to_drop.clear()
+
     def register_copy[M: Model](self, original: M, copy: M):
         """
         Store that `copy` is a copy of `original`.
@@ -360,6 +403,15 @@ class CloneVisitor(AbstractVisitor):
         self.copies[key] = copy
         self._copy_keys.add((type(copy), copy.pk))
         self._copy_to_original_pk[(type(copy), copy.pk)] = original.pk
+
+    def unregister_copy(self, copy: Model) -> None:
+        """Remove copy bookkeeping after a just-created copy row has been deleted."""
+        copy_key = (type(copy), copy.pk)
+        original_pk = self._copy_to_original_pk.pop(copy_key)
+        original_key = (type(copy), original_pk)
+        registered_copy = self.copies.pop(original_key)
+        assert registered_copy is copy
+        self._copy_keys.remove(copy_key)
 
     def visit(self, node: TreeNode):
         """
@@ -713,6 +765,44 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 update_fields.add(field_name)
         return list(update_fields)
 
+    def _drop_or_report_unclearable_reference(self, holder: Model, field_name: str) -> None:
+        """
+        Handle a non-nullable reference from a copy to a skipped target that can be neither remapped nor cleared.
+
+        Persisted copies are registered to be dropped (see `CloneVisitor.drop_reference_holders()`), since a row that
+        cannot exist without the missing reference must not be left pointing at the source plan. Non-persisted holders
+        (e.g. revision drafts, which have no row to delete) keep the reference, which is logged and reported.
+        """
+        if holder.pk is not None and self.clone_visitor.is_copy(holder):
+            self.clone_visitor.register_reference_holder_to_drop(holder)
+            return
+        message = (
+            f"Cannot remove skipped reference in non-nullable field '{field_name}' of "
+            f'{type(holder).__name__} {holder.pk}; leaving cross-plan reference in place'
+        )
+        logger.warning(message)
+        sentry_sdk.capture_message(message, level='warning')
+
+    def _clear_skipped_foreign_key(self, instance: Model, fk: Field | GenericForeignKey) -> list[str]:
+        """
+        Clear a foreign key that points at a deliberately skipped copy target.
+
+        Returns the names of the fields that were modified (empty if the key could not be cleared). A generic foreign
+        key can always be set to None; a plain foreign key only if it is nullable. A non-nullable foreign key cannot be
+        cleared, so the holding copy is dropped instead.
+        """
+        if isinstance(fk, GenericForeignKey):
+            setattr(instance, fk.name, None)
+            logger.trace(f"Cleared skipped generic foreign key '{fk.name}' of {type(instance).__name__} {instance.pk}")
+            return [fk.ct_field, fk.fk_field]
+        assert isinstance(fk, ForeignKey)
+        if fk.null:
+            setattr(instance, fk.name, None)
+            logger.trace(f"Cleared skipped foreign key '{fk.name}' of {type(instance).__name__} {instance.pk}")
+            return [fk.name]
+        self._drop_or_report_unclearable_reference(instance, fk.name)
+        return []
+
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
         for fk in self.get_references(instance):
@@ -724,7 +814,9 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 try:
                     copy = self.clone_visitor.get_copy(related_object)
                 except KeyError:
-                    if self.clone_visitor.is_copy(related_object):
+                    if self.clone_visitor.is_skipped_reference_target(related_object):
+                        update_fields += self._clear_skipped_foreign_key(instance, fk)
+                    elif self.clone_visitor.is_copy(related_object):
                         logger.trace(
                             f"Trying to update foreign key '{fk.name}' of {type(instance).__name__} {instance.pk} "
                             f'that is already a copy: {type(related_object).__name__} {related_object.pk}'
@@ -858,6 +950,91 @@ class UpdateReferencesVisitor(AbstractVisitor):
         )
         return True
 
+    def _remove_stream_field_reference(
+        self,
+        from_object: Model,
+        to_object: Model,
+        source_field: Field,
+        content_path: str,
+    ) -> bool:
+        field_name, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
+        remove_reference_from_streamfield_block(from_object, field_name, content_path_rest, to_object)
+        return True
+
+    def _remove_many_to_one_rel_reference(
+        self,
+        from_object: Model,
+        to_object: Model,
+        source_field: ManyToOneRel,
+        content_path: str,
+    ) -> bool:
+        if not isinstance(from_object, ClusterableModel):
+            return False
+        field_name, id, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        assert field_name == source_field.related_name
+        manager = getattr(from_object, field_name)
+        assert isinstance(manager, Manager)
+        manager.get_object_list()  # type: ignore[attr-defined]
+        referencing_object = manager.get(id=id)
+        assert self.clone_visitor.is_copy(referencing_object)
+        child_field_name, *child_content_path = content_path_rest
+        child_field = referencing_object._meta.get_field(child_field_name)
+        if isinstance(child_field, StreamField):
+            remove_reference_from_streamfield_block(referencing_object, child_field_name, child_content_path, to_object)
+            return True
+        if isinstance(child_field, RichTextField):
+            assert child_content_path == ['']
+            remove_rich_text_reference_from_field(referencing_object, child_field_name, to_object)
+            return True
+        if isinstance(child_field, (ForeignKey, GenericForeignKey)):
+            # A GenericForeignKey has no `null` attribute, but it can always be cleared by setting it to None.
+            if isinstance(child_field, GenericForeignKey) or child_field.null:
+                setattr(referencing_object, child_field_name, None)
+                return True
+            self._drop_or_report_unclearable_reference(referencing_object, child_field_name)
+            return False
+        raise TypeError('Unexpected child field type')
+
+    def _remove_foreign_key_reference(
+        self,
+        from_object: Model,
+        source_field: ForeignKey,
+    ) -> bool:
+        if source_field.null:
+            setattr(from_object, source_field.name, None)
+            return True
+        self._drop_or_report_unclearable_reference(from_object, source_field.name)
+        return False
+
+    def _remove_rich_text_reference(
+        self,
+        from_object: Model,
+        to_object: Model,
+        source_field: RichTextField,
+        content_path: str,
+    ) -> bool:
+        field_name, *content_path_rest = content_path.split('.')
+        assert field_name == source_field.name
+        assert content_path_rest == ['']
+        assert from_object.pk is None or self.clone_visitor.is_copy(from_object)
+        remove_rich_text_reference_from_field(from_object, field_name, to_object)
+        return True
+
+    def remove_reference(self, from_object: Model, to_object: Model, source_field: Field, content_path: str) -> bool:
+        """Remove a reference to an object that was deliberately skipped during copying."""
+        if isinstance(source_field, StreamField):
+            return self._remove_stream_field_reference(from_object, to_object, source_field, content_path)
+        if isinstance(source_field, ManyToOneRel):
+            return self._remove_many_to_one_rel_reference(from_object, to_object, source_field, content_path)
+        if isinstance(source_field, ForeignKey):
+            return self._remove_foreign_key_reference(from_object, source_field)
+        if isinstance(source_field, RichTextField):
+            return self._remove_rich_text_reference(from_object, to_object, source_field, content_path)
+        raise TypeError('Unexpected source field type')
+
     def update_reference(self, from_object: Model, to_object: Model, source_field: Field, content_path: str) -> bool:
         """
         Update the reference to `to_object` in the field `source_field` of `from_object` at `content_path`.
@@ -870,6 +1047,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
         try:
             copy = self.clone_visitor.get_copy(to_object)
         except KeyError:
+            if self.clone_visitor.is_skipped_reference_target(to_object):
+                return self.remove_reference(from_object, to_object, source_field, content_path)
             if self.clone_visitor.is_copy(to_object):
                 logger.trace(
                     f'Trying to update reference in {type(from_object).__name__} {from_object.pk} at path '
@@ -1058,10 +1237,12 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
         # time bomb that would orphan both rows the next time either is deleted.
         if not file.storage.exists(file.name):
             logger.warning(
-                f'Skipping copy of collection item {image_or_document}: '
-                f'source file {file.name!r} does not exist on storage'
+                f'Skipping copy of collection item {image_or_document}: source file {file.name!r} does not exist on storage'
             )
+            clone_visitor.register_skipped_reference_target(image_or_document)
             continue
+        original_model = type(image_or_document)
+        original_pk = image_or_document.pk
         visit_tree(image_or_document, {}, clone_visitor)
         image_or_document.collection = collection
         try:
@@ -1073,6 +1254,8 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
             # the read. Roll back the row that visit_tree just created so we
             # don't leave a duplicate-path time bomb behind.
             logger.warning(f'File copy failed for collection item {image_or_document}: {e}')
+            clone_visitor.unregister_copy(image_or_document)
+            clone_visitor.register_skipped_reference_target_key(original_model, original_pk)
             image_or_document.delete()
             continue
         image_or_document.save()
@@ -1385,6 +1568,9 @@ def update_references(
     for at in attribute_types:
         visit_tree(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, update_references_visitor)
     update_references_in_indicators(indicators, clone_visitor)
+    # Drop copies that hold non-nullable references to skipped targets only now that every reference has been updated,
+    # so that saving a holder's parent earlier in this function cannot re-create the row we are about to delete.
+    clone_visitor.drop_reference_holders()
 
 
 def update_references_in_page_tree_with_translations(root_page: Page, update_references_visitor: UpdateReferencesVisitor):
