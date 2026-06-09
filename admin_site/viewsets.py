@@ -49,6 +49,7 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm = WagtailAdminMo
 ):
     object: ModelT
     model: type[ModelT]
+    partials_template_name = 'admin_site/edit_partials.html'
 
     def get_form_kwargs(self):
         return {

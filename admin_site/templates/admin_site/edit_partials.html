@@ -1,0 +1,5 @@
+{% extends "wagtailadmin/generic/edit_partials.html" %}
+{# Skip the breadcrumbs teleport when items is empty: views using #}
+{# SuccessUrlEditPageMixin render no `header [data-w-breadcrumbs]` target, #}
+{# and the upstream teleport throws on AJAX save. #}
+{% block breadcrumbs %}{% if breadcrumbs_items %}{{ block.super }}{% endif %}{% endblock %}
