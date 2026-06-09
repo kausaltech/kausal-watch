@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.db.models.fields.files import FieldFile
 from wagtail.models import Page, Revision
 from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
@@ -10,7 +11,7 @@ import pytest
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
-from actions.models.category import CategoryType
+from actions.models.category import Category, CategoryIcon, CategoryType
 from actions.models.plan import Plan
 from actions.tests.factories import (
     ActionContactFactory,
@@ -236,6 +237,91 @@ def test_image_with_missing_source_file_is_not_copied(plan_with_pages):
         collection=plan_copy.root_collection,
         title='image-with-missing-file',
     ).exists()
+
+
+def test_references_to_missing_source_file_are_removed_from_copied_content(plan_with_pages, action):
+    image = AplansImageFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='image-with-missing-file',
+    )
+    doc = AplansDocumentFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='document-with-missing-file',
+    )
+    action.description = html_with_references([image, doc])
+    action.save(update_fields=['description'])
+    image.file.storage.delete(image.file.name)
+    doc.file.storage.delete(doc.file.name)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    action_copy = plan_copy.actions.get()
+    assert action_copy.description == f'<p data-block-key="foo">{doc.title}</p>'
+    assert str(image.pk) not in action_copy.description
+    assert str(doc.pk) not in action_copy.description
+    assert not AplansImage.objects.filter(collection=plan_copy.root_collection, title=image.title).exists()
+    assert not AplansDocument.objects.filter(collection=plan_copy.root_collection, title=doc.title).exists()
+
+
+def test_copy_mapping_is_dropped_when_file_disappears_before_read(plan_with_pages, action, monkeypatch):
+    image = AplansImageFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='image-with-racy-file',
+    )
+    action.description = html_with_references([image])
+    action.save(update_fields=['description'])
+    original_open = FieldFile.open
+
+    def raise_for_image(field_file, mode='rb'):
+        if field_file.name == image.file.name:
+            raise FileNotFoundError(image.file.name)
+        return original_open(field_file, mode)
+
+    monkeypatch.setattr(FieldFile, 'open', raise_for_image)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    action_copy = plan_copy.actions.get()
+    assert action_copy.description == '<p data-block-key="foo"></p>'
+    assert str(image.pk) not in action_copy.description
+    assert not AplansImage.objects.filter(collection=plan_copy.root_collection, title=image.title).exists()
+
+
+def test_plain_image_fk_to_missing_source_file_is_cleared(plan_with_pages, action):
+    image = AplansImageFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='image-fk-with-missing-file',
+    )
+    action.image = image
+    action.save(update_fields=['image'])
+    image.file.storage.delete(image.file.name)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    # Re-fetch from the database: the `plan_copy` returned by `copy_plan` carries a relation cache populated during
+    # cloning, so `plan_copy.actions` would otherwise return stale pre-update instances.
+    action_copy = Action.objects.get(plan=plan_copy)
+    assert action_copy.image_id is None
+    assert not AplansImage.objects.filter(collection=plan_copy.root_collection, title=image.title).exists()
+
+
+def test_icon_with_non_nullable_image_fk_to_missing_source_file_is_dropped(plan_with_pages):
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    category = Category.objects.create(type=category_type, identifier='cat-with-icon', name='Category with icon')
+    image = AplansImageFactory.create(
+        collection=plan_with_pages.root_collection,
+        title='icon-image-with-missing-file',
+    )
+    CategoryIcon.objects.create(category=category, image=image, language='en')
+    image.file.storage.delete(image.file.name)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    category_copy = Category.objects.get(type__plan=plan_copy, identifier='cat-with-icon')
+    # The icon's image FK is non-nullable, so the copied icon must be dropped rather than left pointing at the
+    # source plan's image (a CASCADE FK would otherwise couple the clone to the source plan).
+    assert not category_copy.icons.exists()
+    assert not CategoryIcon.objects.filter(image=image).exclude(category=category).exists()
 
 
 def test_document_copy_in_collection_copy(plan_with_pages):
