@@ -1,14 +1,6 @@
 {% load i18n %}
-<div class="help-block help-warning">
+<div class="help-block help-info" data-kausal-choice-option-in-use>
     {% if self.has_usage %}
-    <p>
-      {% blocktrans trimmed %}
-        This choice option is in use. If you delete it from the list below, it will be archived
-        instead of removed entirely: the option becomes hidden from new selections, but existing
-        references continue to resolve unchanged. You can restore an archived option later via the
-        "Unarchive" button that appears on it.
-      {% endblocktrans %}
-    </p>
     <p>{% trans "Currently used by:" %}</p>
     {% trans "Changing this choice option will change the choice in all these objects." as change_tooltip %}
     <ul>
@@ -26,3 +18,34 @@
     </ul>
     {% endif %}
 </div>
+<script>
+(function () {
+    if (window.kausalConfirmChoiceOptionDelete) return;
+
+    {% blocktrans trimmed asvar delete_confirmation_message %}
+        This choice option is still in use. If you save after removing it, it will be archived
+        instead of permanently deleted. Existing references will keep working, and the option will
+        be hidden from new selections.
+    {% endblocktrans %}
+    var message = '{{ delete_confirmation_message|escapejs }}';
+
+    window.kausalConfirmChoiceOptionDelete = function (event) {
+        var target = event.target;
+        if (!target || !target.closest) return;
+
+        var deleteButton = target.closest('button[id$="-DELETE-button"]');
+        if (!deleteButton) return;
+
+        var child = deleteButton.closest('[data-inline-panel-child]');
+        if (!child || !child.querySelector('[data-kausal-choice-option-in-use]')) return;
+
+        if (!window.confirm(message)) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+    };
+
+    document.addEventListener('click', window.kausalConfirmChoiceOptionDelete, true);
+})();
+</script>

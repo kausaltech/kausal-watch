@@ -2208,9 +2208,9 @@ class TestArchiveNotification:
 
 
 class TestUsagePanelWording:
-    """The usage panel explains that deletion becomes archive when in use."""
+    """The usage panel keeps delete-specific copy behind a delete confirmation."""
 
-    def test_panel_mentions_archive_behavior(
+    def test_panel_shows_usage_and_defers_archive_behavior_to_delete_confirmation(
         self,
         plan: Plan,
         action_attribute_type__ordered_choice: AttributeType,
@@ -2240,7 +2240,9 @@ class TestUsagePanelWording:
         bound = panel.get_bound_panel(instance=option)
         html = bound.render_html()
 
+        assert 'Currently used by:' in html
+        assert 'Changing this choice option will change the choice' in html
+        assert 'kausalConfirmChoiceOptionDelete' in html
+        assert 'archived instead of permanently deleted' in html
         assert 'archived' in html.lower()
-        # The new wording should not still say "delete in all these objects".
-        assert 'delete' in html.lower()
-        assert 'remove' in html.lower() or 'removed' in html.lower()
+        assert 'If you delete it from the list below' not in html
