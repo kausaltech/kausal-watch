@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
@@ -467,9 +467,9 @@ class ChoiceOptionArchivePanel(Panel):
 
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
-            option = self.instance
+            option = cast('AttributeTypeChoiceOption | None', self.instance)
             self.is_archived = bool(option and option.pk and not option.is_active)
-            if self.is_archived and option.type_id is not None:
+            if option is not None and self.is_archived and option.type_id is not None:
                 self.unarchive_url = reverse(
                     'actions_attributetype_modeladmin_unarchive_choice_option',
                     args=[option.type_id, option.pk],

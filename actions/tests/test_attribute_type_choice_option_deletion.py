@@ -11,7 +11,7 @@ gracefully across different contexts:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
@@ -1109,7 +1109,9 @@ class TestPickerVisibility:
 
         choice_fields = [f for f in fields if isinstance(f.django_field, ModelChoiceField)]
         assert choice_fields, 'expected a ModelChoiceField in the form fields'
-        return list(choice_fields[0].django_field.queryset)
+        django_field = cast('ModelChoiceField', choice_fields[0].django_field)
+        assert django_field.queryset is not None
+        return list(django_field.queryset)
 
     def test_ordered_choice_picker_excludes_archived_options(
         self,
@@ -1747,10 +1749,10 @@ class TestArchivableFormset:
 
         from aplans.utils import ArchivableOrderedModelChildFormSet
 
-        FormSet = childformset_factory(
+        FormSet: Any = childformset_factory(
             AttributeType,
             AttributeTypeChoiceOption,
-            formset=ArchivableOrderedModelChildFormSet,
+            formset=cast('Any', ArchivableOrderedModelChildFormSet),
             fields=['name'],
             can_delete=True,
             extra=0,

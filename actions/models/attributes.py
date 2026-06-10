@@ -81,7 +81,7 @@ else:
 
 
 @reversion.register(follow=['choice_options'])
-class AttributeType(
+class AttributeType(  # type: ignore[django-manager-missing]
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
     ReferenceIndexedModelMixin,
@@ -313,12 +313,15 @@ class AttributeTypeChoiceOptionQuerySet(MultilingualQuerySet['AttributeTypeChoic
 
 
 if TYPE_CHECKING:
+    _AttributeTypeChoiceOptionManager = models.Manager.from_queryset(AttributeTypeChoiceOptionQuerySet)
 
     class AttributeTypeChoiceOptionManager(
         MLModelManager['AttributeTypeChoiceOption', AttributeTypeChoiceOptionQuerySet],
+        _AttributeTypeChoiceOptionManager,
     ):
-        def active(self) -> AttributeTypeChoiceOptionQuerySet: ...
-        def archived(self) -> AttributeTypeChoiceOptionQuerySet: ...
+        pass
+
+    del _AttributeTypeChoiceOptionManager
 
 else:
     AttributeTypeChoiceOptionManager = MultilingualManager.from_queryset(AttributeTypeChoiceOptionQuerySet)
@@ -433,7 +436,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
             # nothing can reference it through the attribute machinery.
             return False
 
-        if attribute_model.objects.filter(choice=self).exists():
+        if cast('Any', attribute_model).objects.filter(choice=self).exists():
             return True
 
         target_ct = self.type.object_content_type
@@ -502,8 +505,7 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
 
 def _attribute_choice_is_in_parent_revisions(attribute) -> bool:
     """
-    Return True if a Wagtail revision of the attribute's parent references
-    this `(type, choice)` pair.
+    Return True if a Wagtail revision of the attribute's parent references this `(type, choice)` pair.
 
     Used to recognise the publish-from-draft path: a choice option was
     archived because `is_referenced()` found it in a draft of this very
@@ -558,9 +560,7 @@ def _validate_attribute_choice_is_assignable(attribute) -> None:
         # is still active — nothing to do.
         return
     if attribute.pk is not None:
-        previous_choice_id = (
-            type(attribute).objects.filter(pk=attribute.pk).values_list('choice_id', flat=True).first()
-        )
+        previous_choice_id = type(attribute).objects.filter(pk=attribute.pk).values_list('choice_id', flat=True).first()
         if previous_choice_id == attribute.choice_id:
             return
     if _attribute_choice_is_in_parent_revisions(attribute):
