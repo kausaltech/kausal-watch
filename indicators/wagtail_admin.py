@@ -445,6 +445,8 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             except IndicatorLevel.DoesNotExist:
                 # Indicator is not in active plan
                 pass
+        else:
+            self.fields['level'].initial = 'unspecified'
 
         # Inject the metrics formset into self.formsets so that
         # IndicatorMetricsInlinePanel can pick it up via self.form.formsets['metrics'].
