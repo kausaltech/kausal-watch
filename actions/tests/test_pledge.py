@@ -10,7 +10,7 @@ from wagtail.models import Locale
 
 import pytest
 
-from actions.models import Pledge, PledgeCommitment, PledgeUser
+from actions.models import Pledge, PledgeCommitment, PublicUser
 from actions.models.attributes import AttributeText, AttributeType as AttributeTypeModel
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 
@@ -342,36 +342,36 @@ class TestPledgeOptionalFields:
         assert 'enable_community_engagement' in self.plan.features.public_fields
 
 
-class TestPledgeUser:
-    """Tests for the PledgeUser model."""
+class TestPublicUser:
+    """Tests for the PublicUser model."""
 
-    def test_pledge_user_creation(self):
-        """Test that a PledgeUser can be created with auto-generated UUID."""
-        pledge_user = PledgeUser.objects.create()
+    def test_public_user_creation(self):
+        """Test that a PublicUser can be created with auto-generated UUID."""
+        public_user = PublicUser.objects.create()
 
-        assert pledge_user.uuid is not None
-        assert isinstance(pledge_user.uuid, uuid.UUID)
-        assert pledge_user.user_data == {}
+        assert public_user.uuid is not None
+        assert isinstance(public_user.uuid, uuid.UUID)
+        assert public_user.user_data == {}
 
-    def test_pledge_user_with_user_data(self):
-        """Test that a PledgeUser can store freeform user data."""
+    def test_public_user_with_user_data(self):
+        """Test that a PublicUser can store freeform user data."""
         user_data = {'zip_code': '12345', 'city': 'Test City'}
-        pledge_user = PledgeUser.objects.create(user_data=user_data)
+        public_user = PublicUser.objects.create(user_data=user_data)
 
-        assert pledge_user.user_data == user_data
+        assert public_user.user_data == user_data
 
-    def test_pledge_user_uuid_unique(self):
-        """Test that each PledgeUser gets a unique UUID."""
-        user1 = PledgeUser.objects.create()
-        user2 = PledgeUser.objects.create()
+    def test_public_user_uuid_unique(self):
+        """Test that each PublicUser gets a unique UUID."""
+        user1 = PublicUser.objects.create()
+        user2 = PublicUser.objects.create()
 
         assert user1.uuid != user2.uuid
 
-    def test_pledge_user_str(self):
-        """Test the string representation of PledgeUser."""
-        pledge_user = PledgeUser.objects.create()
+    def test_public_user_str(self):
+        """Test the string representation of PublicUser."""
+        public_user = PublicUser.objects.create()
 
-        assert str(pledge_user) == str(pledge_user.uuid)
+        assert str(public_user) == str(public_user.uuid)
 
 
 class TestPledgeCommitment:
@@ -385,17 +385,17 @@ class TestPledgeCommitment:
             name='Test Pledge',
             slug='test-pledge',
         )
-        self.pledge_user = PledgeUser.objects.create()
+        self.public_user = PublicUser.objects.create()
 
     def test_pledge_commitment_creation(self):
         """Test that a PledgeCommitment can be created."""
         commitment = PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
 
         assert commitment.pledge == self.pledge
-        assert commitment.pledge_user == self.pledge_user
+        assert commitment.public_user == self.public_user
         assert commitment.created_at is not None
 
     def test_pledge_commitment_unique_together(self):
@@ -404,13 +404,13 @@ class TestPledgeCommitment:
 
         PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
 
         with pytest.raises(IntegrityError):
             PledgeCommitment.objects.create(
                 pledge=self.pledge,
-                pledge_user=self.pledge_user,
+                public_user=self.public_user,
             )
 
     def test_pledge_commitment_user_can_commit_to_multiple_pledges(self):
@@ -423,24 +423,24 @@ class TestPledgeCommitment:
 
         commitment1 = PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
         commitment2 = PledgeCommitment.objects.create(
             pledge=pledge2,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
 
         assert commitment1.pledge != commitment2.pledge
-        assert self.pledge_user.commitments.count() == 2
+        assert self.public_user.commitments.count() == 2
 
     def test_pledge_commitment_str(self):
         """Test the string representation of PledgeCommitment."""
         commitment = PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
 
-        assert str(self.pledge_user.uuid) in str(commitment)
+        assert str(self.public_user.uuid) in str(commitment)
         assert self.pledge.name in str(commitment)
 
 

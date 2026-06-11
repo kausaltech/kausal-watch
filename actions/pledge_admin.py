@@ -273,8 +273,8 @@ class PledgeIndexView(WatchIndexView[Pledge]):
         user_data_values = (
             PledgeCommitment.objects
             .filter(pledge_id__in=pledge_ids)
-            .exclude(pledge_user__user_data={})
-            .values_list('pledge_user__user_data', flat=True)
+            .exclude(public_user__user_data={})
+            .values_list('public_user__user_data', flat=True)
         )
         return sorted({key for user_data in user_data_values if user_data for key in user_data})
 
@@ -319,13 +319,13 @@ class PledgeIndexView(WatchIndexView[Pledge]):
     def _commitment_export_rows(self, queryset) -> Generator[dict[str, str]]:
         """Yield one dict per commitment across all pledges in the queryset."""
         for pledge in queryset:
-            for commitment in pledge.commitments.select_related('pledge_user').order_by('created_at'):
-                user_data = commitment.pledge_user.user_data or {}
+            for commitment in pledge.commitments.select_related('public_user').order_by('created_at'):
+                user_data = commitment.public_user.user_data or {}
                 row: dict[str, str] = {
                     'pledge_id': str(pledge.pk),
                     'pledge_name': str(pledge.name),
                     'commitment_created_at': commitment.created_at.isoformat(),
-                    'user_id': str(commitment.pledge_user.uuid),
+                    'user_id': str(commitment.public_user.uuid),
                 }
                 for key in self._user_data_keys:
                     row[f'user_data:{key}'] = str(user_data[key]) if key in user_data else ''

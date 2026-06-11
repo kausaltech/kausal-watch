@@ -339,14 +339,14 @@ class Pledge(
 
 
 @reversion.register()
-class PledgeUser(models.Model):
+class PublicUser(models.Model):
     """
-    An anonymous user who can make pledge commitments.
+    An anonymous public-facing user.
 
-    PledgeUser represents community members who participate in pledges without
-    requiring a full user account. The user_data field stores freeform key-value
-    pairs for information like zip_code that can be used for analytics and
-    aggregation purposes.
+    PublicUser represents community members who participate in public-facing
+    features such as pledges without requiring a full user account. The
+    user_data field stores freeform key-value pairs for information like
+    zip_code that can be used for analytics and aggregation purposes.
     """
 
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -361,13 +361,13 @@ class PledgeUser(models.Model):
         verbose_name=_('created at'),
     )
 
-    objects: ClassVar[models.Manager[PledgeUser]]
+    objects: ClassVar[models.Manager[PublicUser]]
 
     commitments: RevMany[PledgeCommitment]
 
     class Meta:
-        verbose_name = _('pledge user')
-        verbose_name_plural = _('pledge users')
+        verbose_name = _('public user')
+        verbose_name_plural = _('public users')
 
     def __str__(self) -> str:
         return str(self.uuid)
@@ -376,7 +376,7 @@ class PledgeUser(models.Model):
 @reversion.register()
 class PledgeCommitment(models.Model):
     """
-    A commitment made by a PledgeUser to a specific Pledge.
+    A commitment made by a PublicUser to a specific Pledge.
 
     Tracks when anonymous community members commit to supporting climate action
     through pledges.
@@ -388,11 +388,11 @@ class PledgeCommitment(models.Model):
         related_name='commitments',
         verbose_name=_('pledge'),
     )
-    pledge_user: FK[PledgeUser] = models.ForeignKey(
-        PledgeUser,
+    public_user: FK[PublicUser] = models.ForeignKey(
+        PublicUser,
         on_delete=models.CASCADE,
         related_name='commitments',
-        verbose_name=_('pledge user'),
+        verbose_name=_('public user'),
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -404,10 +404,10 @@ class PledgeCommitment(models.Model):
     class Meta:
         verbose_name = _('pledge commitment')
         verbose_name_plural = _('pledge commitments')
-        unique_together = [('pledge', 'pledge_user')]
+        unique_together = [('pledge', 'public_user')]
 
     def __str__(self) -> str:
-        return f'{self.pledge_user} - {self.pledge}'
+        return f'{self.public_user} - {self.pledge}'
 
 
 @reversion.register()
