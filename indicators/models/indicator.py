@@ -145,6 +145,7 @@ class Indicator(
         ('strategic', _('strategic')),
         ('tactical', _('tactical')),
         ('operational', _('operational')),
+        ('unspecified', _('unspecified')),
     )
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -866,7 +867,7 @@ class IndicatorLevel(ClusterableModel):
         verbose_name=_('plan'),
         on_delete=models.CASCADE,
     )
-    level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS)
+    level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS, default='unspecified')
 
     public_fields: typing.ClassVar = ['id', 'indicator', 'plan', 'level']
 

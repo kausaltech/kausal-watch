@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.utils import timezone
 
@@ -24,6 +26,9 @@ from indicators.tests.factories import (
     RelatedIndicatorFactory,
     UnitFactory,
 )
+
+if TYPE_CHECKING:
+    from indicators.models import Indicator
 
 pytestmark = pytest.mark.django_db
 
@@ -238,9 +243,10 @@ def test_indicator_graph_node(graphql_client_query_data):
     assert data == expected
 
 
-def test_indicator_level_node(graphql_client_query_data):
+@pytest.mark.parametrize('level', ['strategic', 'tactical', 'operational', 'unspecified'])
+def test_indicator_level_node(graphql_client_query_data, level):
     plan = PlanFactory.create()
-    indicator_level = IndicatorLevelFactory.create(plan=plan)
+    indicator_level = IndicatorLevelFactory.create(plan=plan, level=level)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -277,7 +283,7 @@ def test_indicator_level_node(graphql_client_query_data):
                         '__typename': 'Plan',
                         'id': str(plan.identifier),
                     },
-                    'level': indicator_level.level.upper(),
+                    'level': level.upper(),
                 }
             ],
         },
@@ -818,7 +824,7 @@ def test_indicator_dimension_node(graphql_client_query_data):
 
 def test_plan_indicators_has_goals_parameter(graphql_client_query_data):
     plan = PlanFactory.create()
-    indicators = [
+    indicators: list[tuple[Indicator, bool]] = [
         (IndicatorFactory.create(), False),
         (IndicatorGoalFactory.create().indicator, True),
     ]

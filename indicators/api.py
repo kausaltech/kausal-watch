@@ -540,7 +540,7 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[
         assert not instance.levels.exists()
         plan = self.context['plan']
         if level is _not_provided:
-            level = 'strategic'
+            level = 'unspecified'
         if level is not None:
             assert level in [v for v, _ in Indicator.LEVELS]
             instance.levels.create(plan=plan, level=level)

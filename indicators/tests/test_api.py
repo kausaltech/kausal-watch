@@ -503,7 +503,7 @@ def test_get_indicator_returns_null_level_when_no_level_exists(
     assert response.data['level'] is None
 
 
-def test_create_indicator_sets_strategic_level(
+def test_create_indicator_defaults_to_unspecified_level(
     api_client, plan, person_factory, unit_factory, organization_factory, indicator_list_url
 ):
     admin_person = person_factory(general_admin_plans=[plan])
@@ -528,7 +528,7 @@ def test_create_indicator_sets_strategic_level(
     level = created_indicator.levels.first()
     assert level is not None
     assert level.plan == plan
-    assert level.level == 'strategic'
+    assert level.level == 'unspecified'
 
 
 def test_create_indicator_with_custom_level(
