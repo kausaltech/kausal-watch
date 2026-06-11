@@ -110,7 +110,7 @@ from .models import (
     IndicatorCategoryRelationship as IndicatorCategoryRelationshipModel,
     IndicatorChangeLogMessage,
     PledgeCommitment,
-    PledgeUser,
+    PublicUser,
 )
 
 if TYPE_CHECKING:
@@ -1287,14 +1287,14 @@ class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
         return primary_pledge.get_translation_for_language(get_language())
 
 
-class PledgeUserNode(DjangoNode[PledgeUser]):
+class PublicUserNode(DjangoNode[PublicUser]):
     commitments = graphene.List(
         graphene.NonNull(PledgeCommitmentNode),
         plan=graphene.ID(description='Filter commitments by plan identifier'),
     )
 
     class Meta:
-        model = PledgeUser
+        model = PublicUser
         fields = [
             'id',
             'uuid',
@@ -1303,7 +1303,7 @@ class PledgeUserNode(DjangoNode[PledgeUser]):
         ]
 
     @staticmethod
-    def resolve_commitments(root: PledgeUser, info: GQLInfo, plan: str | None = None):
+    def resolve_commitments(root: PublicUser, info: GQLInfo, plan: str | None = None):
         qs = root.commitments.filter(
             pledge__plan__features__enable_community_engagement=True,
         ).select_related('pledge', 'pledge__plan', 'pledge__plan__features')
@@ -2148,15 +2148,15 @@ class Query:
         plan=graphene.ID(required=False),
     )
 
-    pledge_user = graphene.Field(
-        PledgeUserNode,
+    public_user = graphene.Field(
+        PublicUserNode,
         uuid=graphene.UUID(required=True),
-        description='Get a pledge user by UUID to retrieve their commitments',
+        description='Get a public user by UUID to retrieve their commitments',
     )
 
     @staticmethod
-    def resolve_pledge_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PledgeUser | None:
-        return PledgeUser.objects.filter(uuid=uuid).first()
+    def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PublicUser | None:
+        return PublicUser.objects.filter(uuid=uuid).first()
 
     @staticmethod
     def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None = None):
@@ -2419,21 +2419,21 @@ class Query:
         )
 
 
-class RegisterPledgeUserPayload(graphene.ObjectType[Any]):
-    """Payload returned after registering a pledge user."""
+class RegisterPublicUserPayload(graphene.ObjectType[Any]):
+    """Payload returned after registering a public user."""
 
     uuid = graphene.UUID(required=True)
 
 
-class RegisterPledgeUserMutation(graphene.Mutation):
-    """Create a new anonymous PledgeUser."""
+class RegisterPublicUserMutation(graphene.Mutation):
+    """Create a new anonymous PublicUser."""
 
-    Output = RegisterPledgeUserPayload
+    Output = RegisterPublicUserPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo) -> RegisterPledgeUserPayload:
-        pledge_user = PledgeUser.objects.create()
-        return RegisterPledgeUserPayload(uuid=pledge_user.uuid)
+    def mutate(cls, _root, _info: GQLInfo) -> RegisterPublicUserPayload:
+        public_user = PublicUser.objects.create()
+        return RegisterPublicUserPayload(uuid=public_user.uuid)
 
 
 class CommitToPledgePayload(graphene.ObjectType[Any]):
@@ -2446,7 +2446,7 @@ class CommitToPledgeMutation(graphene.Mutation):
     """Create or remove a commitment to a pledge."""
 
     class Arguments:
-        user_uuid = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        user_uuid = graphene.UUID(required=True, description='UUID of the PublicUser')
         pledge_id = graphene.ID(required=True, description='ID of the Pledge')
         committed = graphene.Boolean(required=True, description='True to commit, False to uncommit')
 
@@ -2454,35 +2454,30 @@ class CommitToPledgeMutation(graphene.Mutation):
 
     @classmethod
     def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, pledge_id: str, committed: bool) -> CommitToPledgePayload:
-        # Get the PledgeUser
         try:
-            pledge_user = PledgeUser.objects.get(uuid=user_uuid)
-        except PledgeUser.DoesNotExist:
-            raise GraphQLError('PledgeUser not found') from None
+            public_user = PublicUser.objects.get(uuid=user_uuid)
+        except PublicUser.DoesNotExist:
+            raise GraphQLError('PublicUser not found') from None
 
-        # Get the Pledge
         try:
             pledge = Pledge.objects.select_related('plan__features').get(id=pledge_id)
         except Pledge.DoesNotExist:
             raise GraphQLError('Pledge not found') from None
 
-        # Check that community engagement is enabled for this plan
         if not pledge.plan.features.enable_community_engagement:
             raise GraphQLError('Community engagement is not enabled for this plan') from None
 
         canonical_pledge = pledge.get_primary_translation()
 
         if committed:
-            # Create commitment (ignore if already exists)
             PledgeCommitment.objects.get_or_create(
                 pledge=canonical_pledge,
-                pledge_user=pledge_user,
+                public_user=public_user,
             )
         else:
-            # Remove commitment if it exists
             PledgeCommitment.objects.filter(
                 pledge=canonical_pledge,
-                pledge_user=pledge_user,
+                public_user=public_user,
             ).delete()
 
         pledge.plan.invalidate_cache()
@@ -2496,10 +2491,10 @@ class SetUserDataPayload(graphene.ObjectType[Any]):
 
 
 class SetUserDataMutation(graphene.Mutation):
-    """Set a key-value pair in a PledgeUser's user_data."""
+    """Set a key-value pair in a PublicUser's user_data."""
 
     class Arguments:
-        user_uuid = graphene.UUID(required=True, description='UUID of the PledgeUser')
+        user_uuid = graphene.UUID(required=True, description='UUID of the PublicUser')
         key = graphene.String(required=True, description='Key to set in user_data')
         value = graphene.String(required=True, description='Value to set for the key')
 
@@ -2508,27 +2503,27 @@ class SetUserDataMutation(graphene.Mutation):
     @classmethod
     def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, key: str, value: str) -> SetUserDataPayload:
         try:
-            pledge_user = PledgeUser.objects.get(uuid=user_uuid)
-        except PledgeUser.DoesNotExist:
-            raise GraphQLError('PledgeUser not found') from None
+            public_user = PublicUser.objects.get(uuid=user_uuid)
+        except PublicUser.DoesNotExist:
+            raise GraphQLError('PublicUser not found') from None
 
-        pledge_user.user_data[key] = value
-        pledge_user.save(update_fields=['user_data'])
+        public_user.user_data[key] = value
+        public_user.save(update_fields=['user_data'])
 
-        return SetUserDataPayload(uuid=pledge_user.uuid)
+        return SetUserDataPayload(uuid=public_user.uuid)
 
 
 class PledgeMutations(graphene.ObjectType[Any]):
     """Mutations related to pledges and community engagement."""
 
-    register_user = RegisterPledgeUserMutation.Field(
-        description='Register a new anonymous pledge user; returns the UUID for the created user',
+    register_user = RegisterPublicUserMutation.Field(
+        description='Register a new anonymous public user; returns the UUID for the created user',
     )
     commit_to_pledge = CommitToPledgeMutation.Field(
         description='Commit to or uncommit from a pledge',
     )
     set_user_data = SetUserDataMutation.Field(
-        description="Set a key-value pair in a PledgeUser's user_data.",
+        description="Set a key-value pair in a PublicUser's user_data.",
     )
 
 

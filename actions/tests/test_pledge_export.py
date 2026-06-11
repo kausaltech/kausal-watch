@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 from django.db.models import Count
 from django.http import StreamingHttpResponse
+from wagtail.models import Locale
 
 import pytest
 
-from actions.models import Pledge, PledgeCommitment, PledgeUser
+from actions.models import Pledge, PledgeCommitment, PublicUser
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import PlanFactory, PledgeFactory
-from wagtail.models import Locale
 
 if TYPE_CHECKING:
     from django.test import RequestFactory
@@ -83,7 +83,7 @@ class TestPledgeExportCSV:
         for _ in range(3):
             PledgeCommitment.objects.create(
                 pledge=pledge,
-                pledge_user=PledgeUser.objects.create(),
+                public_user=PublicUser.objects.create(),
             )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan)
@@ -96,7 +96,7 @@ class TestPledgeExportCSV:
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(
             pledge=pledge,
-            pledge_user=PledgeUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
+            public_user=PublicUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
         )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan)
@@ -145,7 +145,7 @@ class TestCommitmentsExportCSV:
     def test_commitments_export_columns(self, rf):
         """Commitments export should contain the expected base column headers."""
         pledge = PledgeFactory.create(plan=self.plan)
-        PledgeCommitment.objects.create(pledge=pledge, pledge_user=PledgeUser.objects.create())
+        PledgeCommitment.objects.create(pledge=pledge, public_user=PublicUser.objects.create())
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
         rows = _parse_commitments_csv_rows(view, qs)
@@ -159,7 +159,7 @@ class TestCommitmentsExportCSV:
         for _ in range(3):
             PledgeCommitment.objects.create(
                 pledge=pledge,
-                pledge_user=PledgeUser.objects.create(),
+                public_user=PublicUser.objects.create(),
             )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
@@ -172,11 +172,11 @@ class TestCommitmentsExportCSV:
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(
             pledge=pledge,
-            pledge_user=PledgeUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
+            public_user=PublicUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
         )
         PledgeCommitment.objects.create(
             pledge=pledge,
-            pledge_user=PledgeUser.objects.create(user_data={'zip_code': '00200'}),
+            public_user=PublicUser.objects.create(user_data={'zip_code': '00200'}),
         )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
@@ -192,8 +192,8 @@ class TestCommitmentsExportCSV:
     def test_commitments_includes_timestamp_and_user_id(self, rf):
         """Each commitment row should include a timestamp and the pledge user's UUID."""
         pledge = PledgeFactory.create(plan=self.plan)
-        pu = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=pledge, pledge_user=pu)
+        pu = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge, public_user=pu)
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
         rows = _parse_commitments_csv_rows(view, qs)
@@ -207,13 +207,13 @@ class TestCommitmentsExportCSV:
     def test_commitments_only_own_plan(self, rf):
         """Commitments export should only include commitments from the user's active plan."""
         pledge = PledgeFactory.create(plan=self.plan, name='My Pledge')
-        PledgeCommitment.objects.create(pledge=pledge, pledge_user=PledgeUser.objects.create())
+        PledgeCommitment.objects.create(pledge=pledge, public_user=PublicUser.objects.create())
 
         other_plan = PlanFactory.create()
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
         other_pledge = PledgeFactory.create(plan=other_plan, name='Other Pledge')
-        PledgeCommitment.objects.create(pledge=other_pledge, pledge_user=PledgeUser.objects.create())
+        PledgeCommitment.objects.create(pledge=other_pledge, public_user=PublicUser.objects.create())
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
         rows = _parse_commitments_csv_rows(view, qs)
@@ -227,7 +227,7 @@ class TestCommitmentsExportCSV:
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(
             pledge=pledge,
-            pledge_user=PledgeUser.objects.create(user_data={'location': 'City, State'}),
+            public_user=PublicUser.objects.create(user_data={'location': 'City, State'}),
         )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export_type': 'commitments'})
@@ -276,7 +276,7 @@ class TestCombinedXlsxExport:
         """Commitments sheet should have one data row per commitment."""
         pledge = PledgeFactory.create(plan=self.plan)
         for _ in range(3):
-            PledgeCommitment.objects.create(pledge=pledge, pledge_user=PledgeUser.objects.create())
+            PledgeCommitment.objects.create(pledge=pledge, public_user=PublicUser.objects.create())
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export': 'xlsx'})
         wb = _parse_xlsx_workbook(view, qs)
@@ -289,7 +289,7 @@ class TestCombinedXlsxExport:
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(
             pledge=pledge,
-            pledge_user=PledgeUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
+            public_user=PublicUser.objects.create(user_data={'zip_code': '00100', 'city': 'Helsinki'}),
         )
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export': 'xlsx'})
@@ -306,7 +306,7 @@ class TestCombinedXlsxExport:
     def test_render_to_response_routes_commitments_csv(self, rf):
         """render_to_response with export_type=commitments and export=csv returns a streaming CSV."""
         pledge = PledgeFactory.create(plan=self.plan)
-        PledgeCommitment.objects.create(pledge=pledge, pledge_user=PledgeUser.objects.create())
+        PledgeCommitment.objects.create(pledge=pledge, public_user=PublicUser.objects.create())
 
         view, qs = _get_view_and_queryset(rf, self.user, self.plan, {'export': 'csv', 'export_type': 'commitments'})
         response = view.render_to_response({'object_list': qs})

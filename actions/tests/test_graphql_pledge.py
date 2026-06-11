@@ -3,12 +3,13 @@ from __future__ import annotations
 import json
 import uuid
 
+from wagtail.models import Locale
+
 import pytest
 
-from actions.models import Pledge, PledgeCommitment, PledgeUser
+from actions.models import Pledge, PledgeCommitment, PublicUser
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
-from wagtail.models import Locale
 
 pytestmark = pytest.mark.django_db
 
@@ -134,7 +135,7 @@ ACTION_PLEDGES_QUERY_WITH_LOCALE = """
 
 PLEDGE_USER_QUERY_WITH_LOCALE = """
     query($uuid: UUID!, $lang: String!) @locale(lang: $lang) {
-        pledgeUser(uuid: $uuid) {
+        publicUser(uuid: $uuid) {
             uuid
             commitments {
                 pledge {
@@ -513,8 +514,8 @@ class TestPledgeCommitmentCount:
 
         # Create multiple pledge users and commitments
         for _ in range(3):
-            pledge_user = PledgeUser.objects.create()
-            PledgeCommitment.objects.create(pledge=pledge, pledge_user=pledge_user)
+            public_user = PublicUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
 
         data = graphql_client_query_data(
             PLEDGE_QUERY,
@@ -531,13 +532,13 @@ class TestPledgeCommitmentCount:
 
         # Create 2 commitments for pledge1
         for _ in range(2):
-            pledge_user = PledgeUser.objects.create()
-            PledgeCommitment.objects.create(pledge=pledge1, pledge_user=pledge_user)
+            public_user = PublicUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge1, public_user=public_user)
 
         # Create 5 commitments for pledge2
         for _ in range(5):
-            pledge_user = PledgeUser.objects.create()
-            PledgeCommitment.objects.create(pledge=pledge2, pledge_user=pledge_user)
+            public_user = PublicUser.objects.create()
+            PledgeCommitment.objects.create(pledge=pledge2, public_user=public_user)
 
         data = graphql_client_query_data(
             PLEDGES_QUERY,
@@ -582,12 +583,12 @@ class TestPlanFeaturesGraphQL:
         assert data['plan']['features']['enableCommunityEngagement'] is False
 
 
-class TestRegisterPledgeUserMutation:
+class TestRegisterPublicUserMutation:
     """Tests for the registerUser GraphQL mutation."""
 
-    def test_register_user_creates_pledge_user(self, graphql_client_query_data):
-        """Test that the mutation creates a PledgeUser in the database."""
-        initial_count = PledgeUser.objects.count()
+    def test_register_user_creates_public_user(self, graphql_client_query_data):
+        """Test that the mutation creates a PublicUser in the database."""
+        initial_count = PublicUser.objects.count()
 
         data = graphql_client_query_data(
             """
@@ -601,13 +602,13 @@ class TestRegisterPledgeUserMutation:
             """
         )
 
-        assert PledgeUser.objects.count() == initial_count + 1
+        assert PublicUser.objects.count() == initial_count + 1
 
         # Verify the returned UUID matches the created user
         returned_uuid = data['pledge']['registerUser']['uuid']
-        pledge_user = PledgeUser.objects.get(uuid=returned_uuid)
-        assert pledge_user is not None
-        assert pledge_user.user_data == {}
+        public_user = PublicUser.objects.get(uuid=returned_uuid)
+        assert public_user is not None
+        assert public_user.user_data == {}
 
     def test_register_user_creates_unique_users(self, graphql_client_query_data):
         """Test that multiple calls create different users."""
@@ -639,7 +640,7 @@ class TestRegisterPledgeUserMutation:
         uuid2 = data2['pledge']['registerUser']['uuid']
 
         assert uuid1 != uuid2
-        assert PledgeUser.objects.count() == 2
+        assert PublicUser.objects.count() == 2
 
 
 class TestCommitToPledgeMutation:
@@ -655,7 +656,7 @@ class TestCommitToPledgeMutation:
             name='Test Pledge',
             slug='test-pledge',
         )
-        self.pledge_user = PledgeUser.objects.create()
+        self.public_user = PublicUser.objects.create()
 
     def test_commit_to_pledge_creates_commitment(self, graphql_client_query_data):
         """Test that committing creates a PledgeCommitment."""
@@ -672,7 +673,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -681,14 +682,14 @@ class TestCommitToPledgeMutation:
         assert data['pledge']['commitToPledge']['committed'] is True
         commitment = PledgeCommitment.objects.get()
         assert commitment.pledge == self.pledge
-        assert commitment.pledge_user == self.pledge_user
+        assert commitment.public_user == self.public_user
 
     def test_uncommit_from_pledge_removes_commitment(self, graphql_client_query_data):
         """Test that uncommitting removes the PledgeCommitment."""
         # Create a commitment first
         PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
         assert PledgeCommitment.objects.count() == 1
 
@@ -703,7 +704,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': False,
             },
@@ -717,7 +718,7 @@ class TestCommitToPledgeMutation:
         # Create a commitment first
         PledgeCommitment.objects.create(
             pledge=self.pledge,
-            pledge_user=self.pledge_user,
+            public_user=self.public_user,
         )
         assert PledgeCommitment.objects.count() == 1
 
@@ -732,7 +733,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -756,7 +757,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': False,
             },
@@ -787,7 +788,7 @@ class TestCommitToPledgeMutation:
         )
 
         assert 'errors' in response
-        assert 'PledgeUser not found' in response['errors'][0]['message']
+        assert 'PublicUser not found' in response['errors'][0]['message']
 
     def test_commit_with_invalid_pledge_id_returns_error(self, graphql_client_query):
         """Test that committing with invalid pledge ID returns an error."""
@@ -802,7 +803,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': '99999',
                 'committed': True,
             },
@@ -826,7 +827,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -837,7 +838,7 @@ class TestCommitToPledgeMutation:
 
     def test_uncommit_invalidates_plan_cache(self, graphql_client_query_data):
         """Test that uncommitting from a pledge invalidates the plan's GraphQL cache."""
-        PledgeCommitment.objects.create(pledge=self.pledge, pledge_user=self.pledge_user)
+        PledgeCommitment.objects.create(pledge=self.pledge, public_user=self.public_user)
         old_cache_invalidated_at = self.plan.cache_invalidated_at
 
         graphql_client_query_data(
@@ -851,7 +852,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': False,
             },
@@ -876,7 +877,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={
-                'userUuid': str(self.pledge_user.uuid),
+                'userUuid': str(self.public_user.uuid),
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
@@ -892,8 +893,8 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_sets_value(self, graphql_client_query_data):
         """Test that the mutation sets a key-value pair in user_data."""
-        pledge_user = PledgeUser.objects.create()
-        assert pledge_user.user_data == {}
+        public_user = PublicUser.objects.create()
+        assert public_user.user_data == {}
 
         data = graphql_client_query_data(
             """
@@ -906,20 +907,20 @@ class TestSetUserDataMutation:
             }
             """,
             variables={
-                'userUuid': str(pledge_user.uuid),
+                'userUuid': str(public_user.uuid),
                 'key': 'zip_code',
                 'value': '01234',
             },
         )
 
-        assert data['pledge']['setUserData']['uuid'] == str(pledge_user.uuid)
+        assert data['pledge']['setUserData']['uuid'] == str(public_user.uuid)
 
-        pledge_user.refresh_from_db()
-        assert pledge_user.user_data['zip_code'] == '01234'
+        public_user.refresh_from_db()
+        assert public_user.user_data['zip_code'] == '01234'
 
     def test_set_user_data_updates_existing_value(self, graphql_client_query_data):
         """Test that the mutation updates an existing key."""
-        pledge_user = PledgeUser.objects.create(user_data={'zip_code': '00000'})
+        public_user = PublicUser.objects.create(user_data={'zip_code': '00000'})
 
         graphql_client_query_data(
             """
@@ -932,18 +933,18 @@ class TestSetUserDataMutation:
             }
             """,
             variables={
-                'userUuid': str(pledge_user.uuid),
+                'userUuid': str(public_user.uuid),
                 'key': 'zip_code',
                 'value': '99999',
             },
         )
 
-        pledge_user.refresh_from_db()
-        assert pledge_user.user_data['zip_code'] == '99999'
+        public_user.refresh_from_db()
+        assert public_user.user_data['zip_code'] == '99999'
 
     def test_set_user_data_preserves_other_keys(self, graphql_client_query_data):
         """Test that setting a new key preserves existing keys."""
-        pledge_user = PledgeUser.objects.create(user_data={'city': 'Helsinki'})
+        public_user = PublicUser.objects.create(user_data={'city': 'Helsinki'})
 
         graphql_client_query_data(
             """
@@ -956,15 +957,15 @@ class TestSetUserDataMutation:
             }
             """,
             variables={
-                'userUuid': str(pledge_user.uuid),
+                'userUuid': str(public_user.uuid),
                 'key': 'zip_code',
                 'value': '00100',
             },
         )
 
-        pledge_user.refresh_from_db()
-        assert pledge_user.user_data['city'] == 'Helsinki'
-        assert pledge_user.user_data['zip_code'] == '00100'
+        public_user.refresh_from_db()
+        assert public_user.user_data['city'] == 'Helsinki'
+        assert public_user.user_data['zip_code'] == '00100'
 
     def test_set_user_data_with_invalid_user_uuid_returns_error(self, graphql_client_query):
         """Test that setting data with invalid user UUID returns an error."""
@@ -988,7 +989,7 @@ class TestSetUserDataMutation:
         )
 
         assert 'errors' in response
-        assert 'PledgeUser not found' in response['errors'][0]['message']
+        assert 'PublicUser not found' in response['errors'][0]['message']
 
 
 class TestPledgeBodyField:
@@ -1067,12 +1068,12 @@ class TestPledgeBodyField:
         assert data['plan']['pledge']['body'] == []
 
 
-class TestPledgeUserQuery:
-    """Tests for the pledgeUser GraphQL query."""
+class TestPublicUserQuery:
+    """Tests for the publicUser GraphQL query."""
 
     PLEDGE_USER_QUERY = """
         query($uuid: UUID!) {
-            pledgeUser(uuid: $uuid) {
+            publicUser(uuid: $uuid) {
                 id
                 uuid
                 userData
@@ -1088,30 +1089,30 @@ class TestPledgeUserQuery:
         }
     """
 
-    def test_pledge_user_query_returns_user_with_commitments(self, graphql_client_query_data):
-        """Test that pledgeUser query returns user and their commitments."""
+    def test_public_user_query_returns_user_with_commitments(self, graphql_client_query_data):
+        """Test that publicUser query returns user and their commitments."""
         plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
 
         pledge = PledgeFactory.create(plan=plan, name='Test Pledge')
-        pledge_user = PledgeUser.objects.create()
-        commitment = PledgeCommitment.objects.create(pledge=pledge, pledge_user=pledge_user)
+        public_user = PublicUser.objects.create()
+        commitment = PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(pledge_user.uuid)},
+            variables={'uuid': str(public_user.uuid)},
         )
 
-        assert data['pledgeUser'] is not None
-        assert data['pledgeUser']['uuid'] == str(pledge_user.uuid)
-        assert len(data['pledgeUser']['commitments']) == 1
-        assert data['pledgeUser']['commitments'][0]['id'] == str(commitment.id)
-        assert data['pledgeUser']['commitments'][0]['pledge']['id'] == str(pledge.id)
-        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Test Pledge'
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(public_user.uuid)
+        assert len(data['publicUser']['commitments']) == 1
+        assert data['publicUser']['commitments'][0]['id'] == str(commitment.id)
+        assert data['publicUser']['commitments'][0]['pledge']['id'] == str(pledge.id)
+        assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Test Pledge'
 
-    def test_pledge_user_query_returns_null_for_invalid_uuid(self, graphql_client_query_data):
-        """Test that pledgeUser query returns null for non-existent UUID."""
+    def test_public_user_query_returns_null_for_invalid_uuid(self, graphql_client_query_data):
+        """Test that publicUser query returns null for non-existent UUID."""
         fake_uuid = str(uuid.uuid4())
 
         data = graphql_client_query_data(
@@ -1119,9 +1120,9 @@ class TestPledgeUserQuery:
             variables={'uuid': fake_uuid},
         )
 
-        assert data['pledgeUser'] is None
+        assert data['publicUser'] is None
 
-    def test_pledge_user_query_filters_commitments_by_feature_flag(self, graphql_client_query_data):
+    def test_public_user_query_filters_commitments_by_feature_flag(self, graphql_client_query_data):
         """Test that commitments are filtered based on enable_community_engagement flag."""
         # Create a plan with feature enabled
         plan_enabled = PlanFactory.create()
@@ -1136,22 +1137,22 @@ class TestPledgeUserQuery:
         pledge_enabled = PledgeFactory.create(plan=plan_enabled, name='Enabled Pledge')
         pledge_disabled = PledgeFactory.create(plan=plan_disabled, name='Disabled Pledge')
 
-        pledge_user = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=pledge_enabled, pledge_user=pledge_user)
-        PledgeCommitment.objects.create(pledge=pledge_disabled, pledge_user=pledge_user)
+        public_user = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge_enabled, public_user=public_user)
+        PledgeCommitment.objects.create(pledge=pledge_disabled, public_user=public_user)
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(pledge_user.uuid)},
+            variables={'uuid': str(public_user.uuid)},
         )
 
-        assert data['pledgeUser'] is not None
+        assert data['publicUser'] is not None
         # Only the commitment to the enabled pledge should be returned
-        assert len(data['pledgeUser']['commitments']) == 1
-        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Enabled Pledge'
+        assert len(data['publicUser']['commitments']) == 1
+        assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Enabled Pledge'
 
-    def test_pledge_user_query_returns_multiple_commitments(self, graphql_client_query_data):
-        """Test that pledgeUser query returns all commitments for a user."""
+    def test_public_user_query_returns_multiple_commitments(self, graphql_client_query_data):
+        """Test that publicUser query returns all commitments for a user."""
         plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
         plan.features.save()
@@ -1160,25 +1161,25 @@ class TestPledgeUserQuery:
         pledge2 = PledgeFactory.create(plan=plan, name='Pledge 2')
         pledge3 = PledgeFactory.create(plan=plan, name='Pledge 3')
 
-        pledge_user = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=pledge1, pledge_user=pledge_user)
-        PledgeCommitment.objects.create(pledge=pledge2, pledge_user=pledge_user)
-        PledgeCommitment.objects.create(pledge=pledge3, pledge_user=pledge_user)
+        public_user = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge1, public_user=public_user)
+        PledgeCommitment.objects.create(pledge=pledge2, public_user=public_user)
+        PledgeCommitment.objects.create(pledge=pledge3, public_user=public_user)
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(pledge_user.uuid)},
+            variables={'uuid': str(public_user.uuid)},
         )
 
-        assert data['pledgeUser'] is not None
-        assert len(data['pledgeUser']['commitments']) == 3
+        assert data['publicUser'] is not None
+        assert len(data['publicUser']['commitments']) == 3
 
-        pledge_names = [c['pledge']['name'] for c in data['pledgeUser']['commitments']]
+        pledge_names = [c['pledge']['name'] for c in data['publicUser']['commitments']]
         assert 'Pledge 1' in pledge_names
         assert 'Pledge 2' in pledge_names
         assert 'Pledge 3' in pledge_names
 
-    def test_pledge_user_query_filters_commitments_by_plan(self, graphql_client_query_data):
+    def test_public_user_query_filters_commitments_by_plan(self, graphql_client_query_data):
         """Test that commitments can be filtered by plan identifier."""
         plan1 = PlanFactory.create()
         plan1.features.enable_community_engagement = True
@@ -1191,14 +1192,14 @@ class TestPledgeUserQuery:
         pledge1 = PledgeFactory.create(plan=plan1, name='Plan 1 Pledge')
         pledge2 = PledgeFactory.create(plan=plan2, name='Plan 2 Pledge')
 
-        pledge_user = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=pledge1, pledge_user=pledge_user)
-        PledgeCommitment.objects.create(pledge=pledge2, pledge_user=pledge_user)
+        public_user = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge1, public_user=public_user)
+        PledgeCommitment.objects.create(pledge=pledge2, public_user=public_user)
 
         # Query with plan filter
         query_with_plan = """
             query($uuid: UUID!, $plan: ID) {
-                pledgeUser(uuid: $uuid) {
+                publicUser(uuid: $uuid) {
                     commitments(plan: $plan) {
                         pledge {
                             name
@@ -1210,35 +1211,35 @@ class TestPledgeUserQuery:
 
         data = graphql_client_query_data(
             query_with_plan,
-            variables={'uuid': str(pledge_user.uuid), 'plan': plan1.identifier},
+            variables={'uuid': str(public_user.uuid), 'plan': plan1.identifier},
         )
 
-        assert data['pledgeUser'] is not None
-        assert len(data['pledgeUser']['commitments']) == 1
-        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Plan 1 Pledge'
+        assert data['publicUser'] is not None
+        assert len(data['publicUser']['commitments']) == 1
+        assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Plan 1 Pledge'
 
-    def test_pledge_user_query_returns_user_data(self, graphql_client_query_data):
-        pledge_user = PledgeUser.objects.create(user_data={'zip_code': '90210', 'city': 'Beverly Hills'})
+    def test_public_user_query_returns_user_data(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create(user_data={'zip_code': '90210', 'city': 'Beverly Hills'})
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(pledge_user.uuid)},
+            variables={'uuid': str(public_user.uuid)},
         )
 
-        assert data['pledgeUser'] is not None
-        user_data = json.loads(data['pledgeUser']['userData'])
+        assert data['publicUser'] is not None
+        user_data = json.loads(data['publicUser']['userData'])
         assert user_data == {'zip_code': '90210', 'city': 'Beverly Hills'}
 
-    def test_pledge_user_query_returns_empty_user_data(self, graphql_client_query_data):
-        pledge_user = PledgeUser.objects.create()
+    def test_public_user_query_returns_empty_user_data(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create()
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(pledge_user.uuid)},
+            variables={'uuid': str(public_user.uuid)},
         )
 
-        assert data['pledgeUser'] is not None
-        assert json.loads(data['pledgeUser']['userData']) == {}
+        assert data['publicUser'] is not None
+        assert json.loads(data['publicUser']['userData']) == {}
 
 
 class TestPledgeCommitmentCountAnnotation:
@@ -1254,7 +1255,7 @@ class TestPledgeCommitmentCountAnnotation:
     def test_commitment_count_after_commit_mutation(self, graphql_client_query_data):
         """Test that commitmentCount is correct after a commit mutation."""
         pledge = PledgeFactory.create(plan=self.plan)
-        pledge_user = PledgeUser.objects.create()
+        public_user = PublicUser.objects.create()
 
         # Commit to the pledge
         graphql_client_query_data(
@@ -1268,7 +1269,7 @@ class TestPledgeCommitmentCountAnnotation:
             }
             """,
             variables={
-                'userUuid': str(pledge_user.uuid),
+                'userUuid': str(public_user.uuid),
                 'pledgeId': str(pledge.id),
                 'committed': True,
             },
@@ -1366,7 +1367,7 @@ class TestPledgeLocaleGraphQL:
         assert data['action']['pledges'][0]['name'] == 'Suomenkielinen lupaus'
 
     def test_commit_mutation_with_translated_pledge_id_uses_primary_locale(self, graphql_client_query_data):
-        pledge_user = PledgeUser.objects.create()
+        public_user = PublicUser.objects.create()
         data = graphql_client_query_data(
             """
             mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
@@ -1378,19 +1379,19 @@ class TestPledgeLocaleGraphQL:
             }
             """,
             variables={
-                'userUuid': str(pledge_user.uuid),
+                'userUuid': str(public_user.uuid),
                 'pledgeId': str(self.fi_pledge.id),
                 'committed': True,
             },
         )
 
         assert data['pledge']['commitToPledge']['committed'] is True
-        commitment = PledgeCommitment.objects.get(pledge_user=pledge_user)
+        commitment = PledgeCommitment.objects.get(public_user=public_user)
         assert commitment.pledge_id == self.primary_pledge.id
 
     def test_commitment_count_is_shared_between_locale_copies(self, graphql_client_query_data):
-        pledge_user = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=self.primary_pledge, pledge_user=pledge_user)
+        public_user = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
 
         data_fi = graphql_client_query_data(
             PLEDGE_QUERY_WITH_LOCALE,
@@ -1414,19 +1415,19 @@ class TestPledgeLocaleGraphQL:
         assert data_en['plan']['pledge']['id'] == str(self.primary_pledge.id)
         assert data_en['plan']['pledge']['commitmentCount'] == 1
 
-    def test_pledge_user_commitments_resolve_to_requested_locale(self, graphql_client_query_data):
-        pledge_user = PledgeUser.objects.create()
-        PledgeCommitment.objects.create(pledge=self.primary_pledge, pledge_user=pledge_user)
+    def test_public_user_commitments_resolve_to_requested_locale(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
 
         data = graphql_client_query_data(
             PLEDGE_USER_QUERY_WITH_LOCALE,
-            variables={'uuid': str(pledge_user.uuid), 'lang': 'fi'},
+            variables={'uuid': str(public_user.uuid), 'lang': 'fi'},
         )
 
-        assert data['pledgeUser'] is not None
-        assert len(data['pledgeUser']['commitments']) == 1
-        assert data['pledgeUser']['commitments'][0]['pledge']['id'] == str(self.fi_pledge.id)
-        assert data['pledgeUser']['commitments'][0]['pledge']['name'] == 'Suomenkielinen lupaus'
+        assert data['publicUser'] is not None
+        assert len(data['publicUser']['commitments']) == 1
+        assert data['publicUser']['commitments'][0]['pledge']['id'] == str(self.fi_pledge.id)
+        assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Suomenkielinen lupaus'
 
 
 class TestActionPledgesFeatureFlag:
