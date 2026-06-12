@@ -469,8 +469,7 @@ def _validate_unique_field_copy_policies(plan: Plan, copy_indicators: bool) -> N
     missing = get_unclassified_unique_field_copy_policies()
     if missing:
         raise RuntimeError(
-            'Copying has unique fields without copy policies. Add entries to UNIQUE_FIELD_COPY_POLICIES: '
-            + ', '.join(missing)
+            'Copying has unique fields without copy policies. Add entries to UNIQUE_FIELD_COPY_POLICIES: ' + ', '.join(missing)
         )
 
     unsupported_fields = []
@@ -486,15 +485,12 @@ def _validate_unique_field_copy_policies(plan: Plan, copy_indicators: bool) -> N
 
     if unsupported_fields:
         raise ValueError(
-            'Cannot copy plan because some unique fields do not have copy support yet: '
-            + ', '.join(sorted(unsupported_fields))
+            'Cannot copy plan because some unique fields do not have copy support yet: ' + ', '.join(sorted(unsupported_fields))
         )
 
 
 def _raise_unique_field_policy_error(instance: Model, field: Field, policy: str, message: str) -> NoReturn:
-    raise RuntimeError(
-        f'Unique field copy policy {policy!r} was not applied for {instance._meta.label}.{field.name}: {message}'
-    )
+    raise RuntimeError(f'Unique field copy policy {policy!r} was not applied for {instance._meta.label}.{field.name}: {message}')
 
 
 def _validate_unsupported_if_set_policy(
@@ -1612,6 +1608,8 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
     old_plan.identifier = new_plan_identifier
     new_site_hostname = old_plan.default_hostname()
     old_plan.identifier = old_identifier
+    if not new_site_hostname:
+        raise ValueError(f"Cannot determine hostname for plan '{new_plan_identifier}': no hostname plan domains configured")
     return new_site_hostname
 
 

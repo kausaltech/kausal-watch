@@ -801,6 +801,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def create_default_site(self, hostname=None):
         if hostname is None:
             hostname = self.default_hostname()
+            if not hostname:
+                raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         if self.site is not None:
             return
         root_page = self.create_default_pages()
@@ -1134,7 +1136,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ''
             return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
 
-        return f'https://{self.default_hostname(include_all_domains=True)}{locale_prefix}'
+        hostname = self.default_hostname(include_all_domains=True)
+        if not hostname:
+            raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
+        return f'https://{hostname}{locale_prefix}'
 
     @classmethod
     def create_with_defaults(
@@ -1180,6 +1185,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         plan.statuses_updated_manually = True
         if not hostname:
             hostname = plan.default_hostname()
+            if not hostname:
+                raise ValueError(f"Cannot determine hostname for plan '{plan.identifier}': no hostname plan domains configured")
         plan.create_default_site(hostname)
         plan.save()
 
@@ -1208,19 +1215,27 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
 
-    def default_hostname(self, include_all_domains: bool = False) -> str:
+    def default_hostname(self, include_all_domains: bool = False) -> str | None:
         """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
         hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
         try:
             default_domain = next(hostname_plan_domains)
-        except StopIteration as e:
-            if not include_all_domains:
-                raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
-            default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
+        except StopIteration:
+            if include_all_domains and settings.DEPLOYMENT_TYPE == 'development':
+                try:
+                    default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
+                except StopIteration:
+                    return None
+            else:
+                return None
         if COUNTRY_PLACEHOLDER in default_domain:
             country_code = self.country.code.lower() if self.country else None
             if not country_code:
-                raise Exception(f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'")
+                sentry_sdk.capture_message(
+                    f"Plan '{self.identifier}' has no country set; using fallback for wildcard domain '{default_domain}'",
+                    level='error',
+                )
+                country_code = 'unknown'
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 

@@ -320,12 +320,77 @@ def test_default_hostname_with_exact_domain(settings, plan_factory):
     assert plan.default_hostname() == f'{plan.identifier}.dummy.io'
 
 
-def test_default_hostname_pattern_no_country_raises(settings, plan_factory):
-    """default_hostname() raises if plan has no country and domain is a pattern."""
+def test_default_hostname_pattern_no_country_uses_fallback(settings, plan_factory):
+    """default_hostname() uses 'UNKNOWN' as country fallback and reports to Sentry."""
     settings.HOSTNAME_PLAN_DOMAINS = ['watch.<country>.dummy.io']
     plan = plan_factory(country='')
-    with pytest.raises(Exception, match='no country set'):
-        plan.default_hostname()
+    assert plan.default_hostname() == f'{plan.identifier}.watch.unknown.dummy.io'
+
+
+def test_default_hostname_returns_none_when_no_domains(settings, plan_factory):
+    """default_hostname() returns None when HOSTNAME_PLAN_DOMAINS is empty."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    assert plan.default_hostname() is None
+
+
+def test_default_hostname_returns_none_when_only_localhost_in_production(settings, plan_factory):
+    """default_hostname(include_all_domains=True) returns None in production when only localhost is configured."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    assert plan.default_hostname(include_all_domains=True) is None
+
+
+def test_default_hostname_returns_localhost_in_development(settings, plan_factory):
+    """default_hostname(include_all_domains=True) falls back to localhost in development."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory()
+    assert plan.default_hostname(include_all_domains=True) == f'{plan.identifier}.localhost'
+
+
+def test_get_view_url_raises_when_no_hostname(settings, plan_factory):
+    """get_view_url() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.get_view_url()
+
+
+def test_get_view_url_raises_when_only_localhost_in_production(settings, plan_factory):
+    """get_view_url() raises in production when only localhost is configured."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.get_view_url()
+
+
+def test_create_default_site_raises_when_no_hostname(settings, plan_factory):
+    """create_default_site() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.create_default_site()
+
+
+def test_apply_defaults_raises_when_no_hostname(settings, plan_factory):
+    """apply_defaults() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.apply_defaults(plan)
+
+
+def test_new_site_hostname_raises_when_no_hostname(settings, plan_factory):
+    """_new_site_hostname() raises when default_hostname() returns None."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        _new_site_hostname(plan, 'copy-plan')
 
 
 # --- Tests for legacy hostname redirect (<plan>.domain → <plan>.<country>.domain) ---
