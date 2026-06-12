@@ -258,17 +258,27 @@ class TestGetViewUrlWithSimpleWildcardDomain:
 class TestGetViewUrlLocalhostFallback:
     """Test get_view_url falls back to localhost domain when it's the only one configured."""
 
-    def test_falls_back_to_localhost_when_only_domain(self, settings):
+    def test_falls_back_to_localhost_in_development(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        settings.DEPLOYMENT_TYPE = 'development'
         plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
         url = plan.get_view_url()
         assert url == 'https://myplan.localhost'
 
-    def test_falls_back_to_localhost_with_locale_prefix(self, settings):
+    def test_falls_back_to_localhost_with_locale_prefix_in_development(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        settings.DEPLOYMENT_TYPE = 'development'
         plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
         url = plan.get_view_url(active_locale='fi')
         assert url == 'https://myplan.localhost/fi'
+
+    @pytest.mark.parametrize('deployment_type', ['production', 'staging', 'testing', 'wip', 'ci'])
+    def test_raises_when_only_localhost_in_non_development(self, settings, deployment_type):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        settings.DEPLOYMENT_TYPE = deployment_type
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+        with pytest.raises(ValueError, match='no hostname plan domains configured'):
+            plan.get_view_url()
 
     def test_prefers_non_localhost_domain(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['localhost', 'example.com']
