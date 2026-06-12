@@ -1645,6 +1645,8 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
     old_plan.identifier = new_plan_identifier
     new_site_hostname = old_plan.default_hostname()
     old_plan.identifier = old_identifier
+    if not new_site_hostname:
+        raise ValueError(f"Cannot determine hostname for plan '{new_plan_identifier}': no hostname plan domains configured")
     return new_site_hostname
 
 
