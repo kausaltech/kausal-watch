@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-17 08:21+0200\n"
+"POT-Creation-Date: 2026-06-15 12:55+0300\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/watch/django/es_US/>\n"
@@ -86,6 +86,7 @@ msgstr ""
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #: audit_logging/templates/site_history_results.html copying/views.py
+#: indicators/wagtail_admin.py
 msgid "Name"
 msgstr ""
 
@@ -98,9 +99,9 @@ msgstr ""
 msgid "External links"
 msgstr ""
 
-#: actions/action_admin.py actions/category_admin.py actions/pledge_admin.py
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-#: notifications/wagtail_admin.py orgs/wagtail_admin.py
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr ""
 
@@ -425,7 +426,8 @@ msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
 #: actions/blocks/action_list.py actions/blocks/category_list.py
-#: actions/blocks/paths_content.py pages/blocks.py
+#: actions/blocks/category_page_layout.py actions/blocks/paths_content.py
+#: pages/blocks.py
 msgid "Heading"
 msgstr ""
 
@@ -460,6 +462,7 @@ msgid "Heading to show instead of the default"
 msgstr ""
 
 #: actions/blocks/action_content_blocks.py
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Label"
 msgstr ""
 
@@ -513,6 +516,7 @@ msgid "Form Field"
 msgstr ""
 
 #: actions/blocks/action_content_blocks.py indicators/wagtail_admin.py
+#: pages/blocks.py
 msgid "Description"
 msgstr ""
 
@@ -674,11 +678,11 @@ msgstr ""
 msgid "Filter by level"
 msgstr ""
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID"
 msgstr ""
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used."
 msgstr ""
 
@@ -702,6 +706,14 @@ msgstr ""
 #: actions/blocks/category_page_layout.py actions/blocks/filters.py
 #: reports/blocks/action_content.py
 msgid "Status"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+msgid "What heading should be used in the public UI for the Paths node summary?"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+msgid "Paths node summary"
 msgstr ""
 
 #: actions/blocks/choosers.py
@@ -812,6 +824,10 @@ msgstr ""
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
+msgstr ""
+
+#: actions/category_admin.py
+msgid "There is already a category type with this identifier."
 msgstr ""
 
 #: actions/category_admin.py
@@ -947,7 +963,6 @@ msgstr ""
 
 #: actions/models/action.py actions/models/plan.py actions/models/pledge.py
 #: indicators/models/common_indicator.py indicators/models/indicator.py
-#: indicators/models/metadata.py
 msgid "description"
 msgstr ""
 
@@ -1352,8 +1367,7 @@ msgctxt "action model"
 msgid "action"
 msgstr ""
 
-#: actions/models/action.py feedback/models.py indicators/models/metadata.py
-#: pages/blocks.py pages/models.py
+#: actions/models/action.py feedback/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr ""
 
@@ -1889,6 +1903,14 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Enable indicator factors"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable computed factor values for indicators."
+msgstr ""
+
+#: actions/models/features.py
 msgid "Indicator order"
 msgstr ""
 
@@ -1949,6 +1971,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: actions/models/features.py
+msgid "Enable PDF export of actions in public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable users of the public UI to export actions to PDF."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr ""
 
@@ -1989,7 +2019,7 @@ msgid "The official plan name in full form"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
 msgstr ""
 
 #: actions/models/plan.py indicators/models/metadata.py
@@ -2456,11 +2486,11 @@ msgid "Freeform key-value data about the user (e.g., zip_code)"
 msgstr ""
 
 #: actions/models/pledge.py
-msgid "pledge user"
+msgid "public user"
 msgstr ""
 
 #: actions/models/pledge.py
-msgid "pledge users"
+msgid "public users"
 msgstr ""
 
 #: actions/models/pledge.py
@@ -2485,6 +2515,38 @@ msgstr ""
 
 #: actions/pledge_admin.py
 msgid "Number of commitments"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export as Excel"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export pledges as CSV"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export commitments as CSV"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Pledge ID"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Pledge name"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Commitment date"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "User ID"
 msgstr ""
 
 #: actions/pledge_admin.py pages/models.py
@@ -2584,6 +2646,14 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr ""
 
 #: actions/wagtail_admin.py
+msgid "New organization name"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Create a new organization with this name"
+msgstr ""
+
+#: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr ""
 
@@ -2599,6 +2669,19 @@ msgstr ""
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr ""
 
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name for a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Cannot both select an existing organization and create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, python-format
+msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
+msgstr ""
+
 #: actions/wagtail_admin.py admin_site/wagtail.py
 msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr ""
@@ -2609,6 +2692,22 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Choose an existing organization"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Main organization"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name to create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Client"
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -2649,6 +2748,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Plan features that only superusers are allowed to change"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -2741,7 +2844,7 @@ msgstr ""
 msgid "Plan '%(plan)s' has been unpublished."
 msgstr ""
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+#: actions/wagtail_admin.py admin_site/wagtail_admin.py
 msgid "Plans"
 msgstr ""
 
@@ -2802,6 +2905,11 @@ msgstr ""
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
+msgstr ""
+
+#: admin_site/chooser.py
+#, python-format
+msgid "The email domain \"%(domain)s\" is already in use by another client."
 msgstr ""
 
 #: admin_site/chooser.py
@@ -2957,6 +3065,7 @@ msgid "Edit this indicator"
 msgstr ""
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Edit data"
 msgstr ""
 
@@ -3073,12 +3182,12 @@ msgstr ""
 msgid "View %s live"
 msgstr ""
 
-#: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
-msgid "Reports"
+#: admin_site/wagtail_admin.py
+msgid "Email domains"
 msgstr ""
 
-#: admin_site/wagtail_hooks.py
-msgid "Email domains"
+#: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
+msgid "Reports"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
@@ -3154,11 +3263,19 @@ msgid "Latvian"
 msgstr ""
 
 #: aplans/settings.py
+msgid "Hmong (White)"
+msgstr ""
+
+#: aplans/settings.py
 msgid "Portuguese"
 msgstr ""
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Somali"
 msgstr ""
 
 #: aplans/settings.py
@@ -3750,11 +3867,11 @@ msgstr ""
 msgid "Dimension '%(dimension)s' is not valid for indicator '%(indicator)s'. Please choose a dimension that belongs to the indicator."
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Stacked bars"
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Grouped bars"
 msgstr ""
 
@@ -3811,6 +3928,10 @@ msgstr ""
 msgid "Indicator key figures"
 msgstr ""
 
+#: indicators/blocks/__init__.py
+msgid "Header"
+msgstr ""
+
 #: indicators/blocks/__init__.py pages/models.py
 msgid "Paragraph"
 msgstr ""
@@ -3829,6 +3950,10 @@ msgstr ""
 
 #: indicators/blocks/layout.py
 msgid "Causality navigation"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Value summary (by factors)"
 msgstr ""
 
 #: indicators/blocks/layout.py
@@ -3868,6 +3993,14 @@ msgid "Default value year to pick for this column"
 msgstr ""
 
 #: indicators/blocks/layout.py
+msgid "Highlight if goal is met"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show a tick next to the latest value when the indicator has reached its goal."
+msgstr ""
+
+#: indicators/blocks/layout.py
 msgid "Show reference value"
 msgstr ""
 
@@ -3897,6 +4030,14 @@ msgstr ""
 
 #: indicators/blocks/layout.py
 msgid "This shows the difference between the goal and the current value."
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show calculated values by factors"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Include factor-computed values in the visualization."
 msgstr ""
 
 #: indicators/chooser.py
@@ -4059,7 +4200,7 @@ msgstr ""
 msgid "common indicator dimensions"
 msgstr ""
 
-#: indicators/models/goal_data_point.py indicators/models/metadata.py
+#: indicators/models/goal_data_point.py
 msgid "dataset"
 msgstr ""
 
@@ -4093,6 +4234,26 @@ msgstr ""
 
 #: indicators/models/import_log.py
 msgid "Indicator values import logs"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Bar chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Line chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Area chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Pie chart"
+msgstr ""
+
+#: indicators/models/indicator.py reports/spreadsheets/excel_report.py
+msgid "Summary"
 msgstr ""
 
 #: indicators/models/indicator.py
@@ -4161,10 +4322,6 @@ msgstr ""
 
 #: indicators/models/indicator.py
 msgid "reference value"
-msgstr ""
-
-#: indicators/models/indicator.py indicators/models/metadata.py
-msgid "datasets"
 msgstr ""
 
 #: indicators/models/indicator.py
@@ -4236,6 +4393,38 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr ""
 
 #: indicators/models/indicator.py
+msgid "default visualization type"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Default visualization type for this indicator on dashboards"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "bar type"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "grouping dimension"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Dimension used for grouping in the default visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "pie chart year"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Year to display in pie chart visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
 msgid "non-quantified goal"
 msgstr ""
 
@@ -4272,10 +4461,6 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr ""
 
 #: indicators/models/indicator.py
-msgid "Has datasets"
-msgstr ""
-
-#: indicators/models/indicator.py
 msgid "Has data"
 msgstr ""
 
@@ -4285,6 +4470,10 @@ msgstr ""
 
 #: indicators/models/indicator.py
 msgid "There is already an indicator value for the year preceding the deadline"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "The grouping dimension must be one of the dimensions associated with this indicator."
 msgstr ""
 
 #: indicators/models/indicator.py
@@ -4320,34 +4509,6 @@ msgstr ""
 
 #: indicators/models/metadata.py
 msgid "units"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "dataset license"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "dataset licenses"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "last retrieved at"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "owner"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "owner name"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "Set if owner organization is not available"
-msgstr ""
-
-#: indicators/models/metadata.py
-msgid "license"
 msgstr ""
 
 #: indicators/models/metadata.py
@@ -4418,6 +4579,23 @@ msgstr ""
 msgid "indicator goals"
 msgstr ""
 
+#: indicators/templates/indicators/panels/factors_panel.html
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Remove"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Add factor"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Save the indicator first before adding factors."
+msgstr ""
+
 #: indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -4430,6 +4608,14 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 msgstr[1] ""
+
+#: indicators/wagtail_admin.py
+msgid "Result"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Show indicators"
@@ -4489,6 +4675,19 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+msgid "Please correct the errors in the factors section."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Indicator factors"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
@@ -4534,6 +4733,14 @@ msgid "Advanced settings"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+msgid "Edit factor data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Add factor data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Indicator for actions"
 msgstr ""
 
@@ -4550,11 +4757,28 @@ msgid "Other indicators"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "Relationships"
+msgid "Factors cannot be added to indicators that have dimensions in their data."
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "Unit"
+#, python-brace-format
+msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "factor"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Save the indicator after adding a factor to enable the data editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Factors"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Relationships"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -4951,6 +5175,14 @@ msgid "Notification preferences"
 msgstr ""
 
 #: orgs/chooser.py
+msgid "Search term"
+msgstr ""
+
+#: orgs/chooser.py
+msgid "Search"
+msgstr ""
+
+#: orgs/chooser.py
 msgid "Choose an organization"
 msgstr ""
 
@@ -5102,6 +5334,18 @@ msgid "Answer"
 msgstr ""
 
 #: pages/blocks.py
+msgid "Title"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Helps screen readers describe this embedded content"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Helps screen readers understand what this embed shows"
+msgstr ""
+
+#: pages/blocks.py
 msgid "small"
 msgstr ""
 
@@ -5118,19 +5362,55 @@ msgid "The source URL of the embed is invalid or not supported."
 msgstr ""
 
 #: pages/blocks.py
-msgid "Title"
-msgstr ""
-
-#: pages/blocks.py
 msgid "Questions & Answers"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Big image"
+msgid "Background colour"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Small image"
+msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Fit image without clipping"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Show the image at its exact scaled dimensions; it will never be cropped"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Show image accent"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Display a brand color accent bar below the image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Background covers full block"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Additional settings"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Full-width: content over image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Large image: image above, content below"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Side-by-side: image left, content right"
 msgstr ""
 
 #: pages/blocks.py
@@ -5315,10 +5595,6 @@ msgstr ""
 
 #: pages/models.py
 msgid "layout main bottom"
-msgstr ""
-
-#: pages/models.py
-msgid "layout aside"
 msgstr ""
 
 #: pages/models.py
@@ -5865,10 +6141,6 @@ msgstr ""
 
 #: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete at"
-msgstr ""
-
-#: reports/spreadsheets/excel_report.py
-msgid "Summary"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html

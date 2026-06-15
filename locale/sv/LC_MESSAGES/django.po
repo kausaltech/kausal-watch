@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-17 08:21+0200\n"
+"POT-Creation-Date: 2026-06-15 12:55+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -92,6 +92,7 @@ msgstr "Senast uppdaterad"
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #: audit_logging/templates/site_history_results.html copying/views.py
+#: indicators/wagtail_admin.py
 msgid "Name"
 msgstr "Namn"
 
@@ -104,9 +105,9 @@ msgstr "Kategorier"
 msgid "External links"
 msgstr "Länk till externa webbplats"
 
-#: actions/action_admin.py actions/category_admin.py actions/pledge_admin.py
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-#: notifications/wagtail_admin.py orgs/wagtail_admin.py
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr "Grundläggande information"
 
@@ -441,7 +442,8 @@ msgstr "Nät"
 
 #: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
 #: actions/blocks/action_list.py actions/blocks/category_list.py
-#: actions/blocks/paths_content.py pages/blocks.py
+#: actions/blocks/category_page_layout.py actions/blocks/paths_content.py
+#: pages/blocks.py
 msgid "Heading"
 msgstr "Rubrik"
 
@@ -476,6 +478,7 @@ msgid "Heading to show instead of the default"
 msgstr "Rubrik som ska visas istället för standardrubriken"
 
 #: actions/blocks/action_content_blocks.py
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Label"
 msgstr "Etikett"
 
@@ -541,6 +544,7 @@ msgid "Form Field"
 msgstr "Fält"
 
 #: actions/blocks/action_content_blocks.py indicators/wagtail_admin.py
+#: pages/blocks.py
 msgid "Description"
 msgstr "Beskrivning"
 
@@ -722,11 +726,11 @@ msgstr "Hjälptext för fältet som ska visas i användargränssnittet"
 msgid "Filter by level"
 msgstr "kategorinivå"
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID"
 msgstr ""
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used."
 msgstr ""
 
@@ -753,6 +757,17 @@ msgstr "Fas"
 #: reports/blocks/action_content.py
 msgid "Status"
 msgstr "Status"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Paths node summary?"
+msgstr "Vilken etikett ska användas i den offentliga användargränssnittet för det officiella namnet?"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+msgid "Paths node summary"
+msgstr "Sammanfattning"
 
 #: actions/blocks/choosers.py
 #, fuzzy
@@ -871,6 +886,12 @@ msgstr "Kategorinivåer"
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
+msgstr "Det finns redan en kategori med denna beteckning."
+
+#: actions/category_admin.py
+#, fuzzy
+#| msgid "There is already a category with this identifier."
+msgid "There is already a category type with this identifier."
 msgstr "Det finns redan en kategori med denna beteckning."
 
 #: actions/category_admin.py
@@ -1010,7 +1031,6 @@ msgstr "Ingress"
 
 #: actions/models/action.py actions/models/plan.py actions/models/pledge.py
 #: indicators/models/common_indicator.py indicators/models/indicator.py
-#: indicators/models/metadata.py
 msgid "description"
 msgstr "beskrivning"
 
@@ -1431,8 +1451,7 @@ msgctxt "action model"
 msgid "action"
 msgstr "åtgärd"
 
-#: actions/models/action.py feedback/models.py indicators/models/metadata.py
-#: pages/blocks.py pages/models.py
+#: actions/models/action.py feedback/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -2040,6 +2059,17 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "användbar för kategorisering av indikatorer"
 
 #: actions/models/features.py
+#, fuzzy
+msgid "Enable indicator factors"
+msgstr "användbar för kategorisering av indikatorer"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "contact for indicators"
+msgid "Enable computed factor values for indicators."
+msgstr "kontakt för indikatorer"
+
+#: actions/models/features.py
 msgid "Indicator order"
 msgstr "Sortering av indikatorer"
 
@@ -2109,6 +2139,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: actions/models/features.py
+msgid "Enable PDF export of actions in public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable users of the public UI to export actions to PDF."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "plan funktion"
 
@@ -2157,7 +2195,7 @@ msgstr "Dölj officiellt namn"
 
 #: actions/models/plan.py
 #, fuzzy
-msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
 msgstr "En unik identifierare för planen som används internt för att skilja mellan olika planer. Detta blir en del av testplatsens URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Använd små bokstäver och bindestreck."
 
 #: actions/models/plan.py indicators/models/metadata.py
@@ -2669,13 +2707,15 @@ msgstr ""
 
 #: actions/models/pledge.py
 #, fuzzy
-msgid "pledge user"
-msgstr "uppdaterad kl"
+#| msgid "public"
+msgid "public user"
+msgstr "offentlig"
 
 #: actions/models/pledge.py
 #, fuzzy
-msgid "pledge users"
-msgstr "uppdaterad kl"
+#| msgid "public site viewers"
+msgid "public users"
+msgstr "besökare av offentliga webbplatser"
 
 #: actions/models/pledge.py
 #, fuzzy
@@ -2712,6 +2752,48 @@ msgstr "Det finns redan en kategori med denna beteckning."
 #| msgid "Name of client"
 msgid "Number of commitments"
 msgstr "Kundens namn"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "report"
+msgid "Export"
+msgstr "rapport"
+
+#: actions/pledge_admin.py
+msgid "Export as Excel"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export pledges as CSV"
+msgstr ""
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Export commitments as CSV"
+msgstr "kommentar"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge ID"
+msgstr "uppdaterad kl"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge name"
+msgstr "efternamn"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Commitment date"
+msgstr "kommentar"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "Users"
+msgid "User ID"
+msgstr "Användare"
 
 #: actions/pledge_admin.py pages/models.py
 msgid "Pledges"
@@ -2823,6 +2905,18 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr "%(model_name)s '%(object)s' har skickats in för moderering."
 
 #: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "organization"
+msgid "New organization name"
+msgstr "organisation"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Creating organizations without a parent not allowed."
+msgid "Create a new organization with this name"
+msgstr "Att skapa organisationer utan en förälder är inte tillåtet."
+
+#: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Identifierare som redan används"
 
@@ -2838,6 +2932,19 @@ msgstr "Planens namn redan i bruk"
 #: actions/wagtail_admin.py
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "En plans andra språk får inte vara detsamma som dess primära språk"
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name for a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Cannot both select an existing organization and create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, python-format
+msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
+msgstr ""
 
 #: actions/wagtail_admin.py admin_site/wagtail.py
 #, fuzzy
@@ -2855,6 +2962,26 @@ msgstr "allmänna administratörer"
 #| msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgid "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgstr "Ställs endast in om kunden uttryckligen kräver det. Använd en färgnyckel från UI-temaets graphColors, till exempel red070 eller grey030."
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Choose an existing organization"
+msgstr "Välj en åtgärd"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Main organization"
+msgstr "organisation"
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name to create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Clients"
+msgid "Client"
+msgstr "Kunder"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -2898,6 +3025,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Plan features that only superusers are allowed to change"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -3016,7 +3147,7 @@ msgstr ""
 msgid "Plan '%(plan)s' has been unpublished."
 msgstr ""
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+#: actions/wagtail_admin.py admin_site/wagtail_admin.py
 msgid "Plans"
 msgstr "Planer"
 
@@ -3091,6 +3222,11 @@ msgstr "Historia"
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr "Vad är delen efter @ i personalens e-postadress till den organisation som huvudsakligen ansvarar för planen?"
+
+#: admin_site/chooser.py
+#, python-format
+msgid "The email domain \"%(domain)s\" is already in use by another client."
+msgstr ""
 
 #: admin_site/chooser.py
 #, fuzzy
@@ -3255,6 +3391,7 @@ msgid "Edit this indicator"
 msgstr "Redigera denna indikator"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Edit data"
 msgstr "Redigera data"
 
@@ -3388,13 +3525,13 @@ msgstr "Visa live"
 msgid "View %s live"
 msgstr "Visa %s live"
 
+#: admin_site/wagtail_admin.py
+msgid "Email domains"
+msgstr "E -postdomäner"
+
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Rapporter"
-
-#: admin_site/wagtail_hooks.py
-msgid "Email domains"
-msgstr "E -postdomäner"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
@@ -3471,12 +3608,20 @@ msgid "Latvian"
 msgstr "Lettiska"
 
 #: aplans/settings.py
+msgid "Hmong (White)"
+msgstr ""
+
+#: aplans/settings.py
 msgid "Portuguese"
 msgstr "Portugisiska"
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
 msgstr "Portugisiska (Brasilien)"
+
+#: aplans/settings.py
+msgid "Somali"
+msgstr ""
 
 #: aplans/settings.py
 msgid "Swedish"
@@ -4145,11 +4290,11 @@ msgstr ""
 msgid "Dimension '%(dimension)s' is not valid for indicator '%(indicator)s'. Please choose a dimension that belongs to the indicator."
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Stacked bars"
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Grouped bars"
 msgstr ""
 
@@ -4219,6 +4364,12 @@ msgstr "Sortering av indikatorer"
 msgid "Indicator key figures"
 msgstr "Indikatordata"
 
+#: indicators/blocks/__init__.py
+#, fuzzy
+#| msgid "Header image"
+msgid "Header"
+msgstr "Rubrikbild"
+
 #: indicators/blocks/__init__.py pages/models.py
 msgid "Paragraph"
 msgstr "Paragraf"
@@ -4243,6 +4394,11 @@ msgstr "Sammanfattning"
 #| msgid "causal indicator"
 msgid "Causality navigation"
 msgstr "kausal indikator"
+
+#: indicators/blocks/layout.py
+#, fuzzy
+msgid "Value summary (by factors)"
+msgstr "Sammanfattning"
 
 #: indicators/blocks/layout.py
 #, fuzzy
@@ -4294,6 +4450,14 @@ msgid "Default value year to pick for this column"
 msgstr ""
 
 #: indicators/blocks/layout.py
+msgid "Highlight if goal is met"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show a tick next to the latest value when the indicator has reached its goal."
+msgstr ""
+
+#: indicators/blocks/layout.py
 #, fuzzy
 msgid "Show reference value"
 msgstr "referens"
@@ -4329,6 +4493,14 @@ msgstr "Visa allt"
 
 #: indicators/blocks/layout.py
 msgid "This shows the difference between the goal and the current value."
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show calculated values by factors"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Include factor-computed values in the visualization."
 msgstr ""
 
 #: indicators/chooser.py
@@ -4505,7 +4677,7 @@ msgstr "indikator dimension"
 msgid "common indicator dimensions"
 msgstr "indikator dimensioner"
 
-#: indicators/models/goal_data_point.py indicators/models/metadata.py
+#: indicators/models/goal_data_point.py
 msgid "dataset"
 msgstr "dataset"
 
@@ -4554,6 +4726,27 @@ msgstr "indikatorvärden"
 #| msgid "indicator values"
 msgid "Indicator values import logs"
 msgstr "indikatorvärden"
+
+#: indicators/models/indicator.py
+msgid "Bar chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Line chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Area chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Pie chart"
+msgstr ""
+
+#: indicators/models/indicator.py reports/spreadsheets/excel_report.py
+#, fuzzy
+msgid "Summary"
+msgstr "Sammanfattning"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4629,10 +4822,6 @@ msgstr "uppdaterade värden betalas kl"
 #, fuzzy
 msgid "reference value"
 msgstr "referens"
-
-#: indicators/models/indicator.py indicators/models/metadata.py
-msgid "datasets"
-msgstr "datauppsättningar"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4715,6 +4904,46 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr ""
 
 #: indicators/models/indicator.py
+#, fuzzy
+#| msgid "Indicator actions"
+msgid "default visualization type"
+msgstr "Indikatoråtgärder"
+
+#: indicators/models/indicator.py
+msgid "Default visualization type for this indicator on dashboards"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "Category type"
+msgid "bar type"
+msgstr "Kategorityp"
+
+#: indicators/models/indicator.py
+msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "dimension"
+msgid "grouping dimension"
+msgstr "dimensionera"
+
+#: indicators/models/indicator.py
+msgid "Dimension used for grouping in the default visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "default view"
+msgid "pie chart year"
+msgstr "standardvy"
+
+#: indicators/models/indicator.py
+msgid "Year to display in pie chart visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
 msgid "non-quantified goal"
 msgstr ""
 
@@ -4761,10 +4990,6 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Välj hur indikatorer skall sorteras på åtgärdssidorna"
 
 #: indicators/models/indicator.py
-msgid "Has datasets"
-msgstr "Har datamängder"
-
-#: indicators/models/indicator.py
 msgid "Has data"
 msgstr "Har data"
 
@@ -4775,6 +5000,10 @@ msgstr "Tidsfrister för värdeuppdateringar är för närvarande endast möjlig
 #: indicators/models/indicator.py
 msgid "There is already an indicator value for the year preceding the deadline"
 msgstr "Det finns redan ett indikatorvärde för året före deadline"
+
+#: indicators/models/indicator.py
+msgid "The grouping dimension must be one of the dimensions associated with this indicator."
+msgstr ""
 
 #: indicators/models/indicator.py
 #, python-format
@@ -4810,34 +5039,6 @@ msgstr "omfattande namn plural"
 #: indicators/models/metadata.py
 msgid "units"
 msgstr "enheter"
-
-#: indicators/models/metadata.py
-msgid "dataset license"
-msgstr "dataset-licens"
-
-#: indicators/models/metadata.py
-msgid "dataset licenses"
-msgstr "datasetlicenser"
-
-#: indicators/models/metadata.py
-msgid "last retrieved at"
-msgstr "senast hämtad kl"
-
-#: indicators/models/metadata.py
-msgid "owner"
-msgstr "ägare"
-
-#: indicators/models/metadata.py
-msgid "owner name"
-msgstr "ägarnamn"
-
-#: indicators/models/metadata.py
-msgid "Set if owner organization is not available"
-msgstr "Ange om ägareorganisation inte är tillgänglig"
-
-#: indicators/models/metadata.py
-msgid "license"
-msgstr "licens"
 
 #: indicators/models/metadata.py
 msgid "frameworks"
@@ -4911,6 +5112,25 @@ msgstr "indikatormål"
 msgid "indicator goals"
 msgstr "indikatormål"
 
+#: indicators/templates/indicators/panels/factors_panel.html
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Enhet"
+
+#: indicators/templates/indicators/panels/factors_panel.html
+#, fuzzy
+#| msgid "Remove row"
+msgid "Remove"
+msgstr "Ta bort raden"
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Add factor"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Save the indicator first before adding factors."
+msgstr ""
+
 #: indicators/templates/site_summary/indicators.html
 #, fuzzy, python-format
 msgid ""
@@ -4929,6 +5149,14 @@ msgstr[1] ""
 "\n"
 "         <span> %(total)s </span> åtgärder <span class=\"visuallyhidden\"> övervakas i %(plan.name)s </span>\n"
 "    "
+
+#: indicators/wagtail_admin.py
+msgid "Result"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Show indicators"
@@ -4991,6 +5219,21 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Mått måste vara samma som i gemensam indikator"
 
 #: indicators/wagtail_admin.py
+msgid "Please correct the errors in the factors section."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Indicator for actions"
+msgid "Indicator factors"
+msgstr "Indikator för åtgärder"
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
@@ -5044,6 +5287,16 @@ msgid "Advanced settings"
 msgstr "Avancerade alternativ"
 
 #: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit data"
+msgid "Edit factor data"
+msgstr "Redigera data"
+
+#: indicators/wagtail_admin.py
+msgid "Add factor data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Indicator for actions"
 msgstr "Indikator för åtgärder"
 
@@ -5062,14 +5315,31 @@ msgid "Other indicators"
 msgstr "andra indikatorer"
 
 #: indicators/wagtail_admin.py
+msgid "Factors cannot be added to indicators that have dimensions in their data."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-brace-format
+msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "factor"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Save the indicator after adding a factor to enable the data editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Factors"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "Related actions"
 msgid "Relationships"
 msgstr "Relaterade åtgärder"
-
-#: indicators/wagtail_admin.py
-msgid "Unit"
-msgstr "Enhet"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in all indicators linked to this one"
@@ -5508,6 +5778,16 @@ msgstr "Meddelanden"
 
 #: orgs/chooser.py
 #, fuzzy
+#| msgid "Search"
+msgid "Search term"
+msgstr "Sök"
+
+#: orgs/chooser.py
+msgid "Search"
+msgstr "Sök"
+
+#: orgs/chooser.py
+#, fuzzy
 msgid "Choose an organization"
 msgstr "Välj en åtgärd"
 
@@ -5674,6 +5954,18 @@ msgid "Answer"
 msgstr "Svar"
 
 #: pages/blocks.py
+msgid "Title"
+msgstr "Titel"
+
+#: pages/blocks.py
+msgid "Helps screen readers describe this embedded content"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Helps screen readers understand what this embed shows"
+msgstr ""
+
+#: pages/blocks.py
 msgid "small"
 msgstr "liten"
 
@@ -5690,20 +5982,62 @@ msgid "The source URL of the embed is invalid or not supported."
 msgstr ""
 
 #: pages/blocks.py
-msgid "Title"
-msgstr "Titel"
-
-#: pages/blocks.py
 msgid "Questions & Answers"
 msgstr "Frågor"
 
 #: pages/blocks.py
-msgid "Big image"
+#, fuzzy
+#| msgid "Big image"
+msgid "Background colour"
 msgstr "Stor bild"
 
 #: pages/blocks.py
-msgid "Small image"
-msgstr "Liten bild"
+msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "image cropping"
+msgid "Fit image without clipping"
+msgstr "bildbeskärning"
+
+#: pages/blocks.py
+msgid "Show the image at its exact scaled dimensions; it will never be cropped"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Show image accent"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Display a brand color accent bar below the image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Background covers full block"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Indicator actions"
+msgid "Additional settings"
+msgstr "Indikatoråtgärder"
+
+#: pages/blocks.py
+msgid "Full-width: content over image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Large image: image above, content below"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Side-by-side: image left, content right"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Front page hero block"
@@ -5911,10 +6245,6 @@ msgstr "layout huvud topp"
 #: pages/models.py
 msgid "layout main bottom"
 msgstr "layout huvud botten"
-
-#: pages/models.py
-msgid "layout aside"
-msgstr "layout åt sidan"
 
 #: pages/models.py
 msgid "icon size"
@@ -6520,11 +6850,6 @@ msgstr "fullgjord av"
 msgid "Marked as complete at"
 msgstr "är klart"
 
-#: reports/spreadsheets/excel_report.py
-#, fuzzy
-msgid "Summary"
-msgstr "Sammanfattning"
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -6760,6 +7085,46 @@ msgstr "Användare"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
+
+#, fuzzy
+#~ msgid "pledge users"
+#~ msgstr "uppdaterad kl"
+
+#~ msgid "datasets"
+#~ msgstr "datauppsättningar"
+
+#~ msgid "Has datasets"
+#~ msgstr "Har datamängder"
+
+#~ msgid "dataset license"
+#~ msgstr "dataset-licens"
+
+#~ msgid "dataset licenses"
+#~ msgstr "datasetlicenser"
+
+#~ msgid "last retrieved at"
+#~ msgstr "senast hämtad kl"
+
+#~ msgid "owner"
+#~ msgstr "ägare"
+
+#~ msgid "owner name"
+#~ msgstr "ägarnamn"
+
+#~ msgid "Set if owner organization is not available"
+#~ msgstr "Ange om ägareorganisation inte är tillgänglig"
+
+#~ msgid "license"
+#~ msgstr "licens"
+
+#~ msgid "Big image"
+#~ msgstr "Stor bild"
+
+#~ msgid "Small image"
+#~ msgstr "Liten bild"
+
+#~ msgid "layout aside"
+#~ msgstr "layout åt sidan"
 
 #, fuzzy
 #~| msgid "Page link"
@@ -7100,9 +7465,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 #~ msgid "Set if the person has an user account"
 #~ msgstr "Ange om personen har ett användarkonto"
 
-#~ msgid "image cropping"
-#~ msgstr "bildbeskärning"
-
 #~ msgid "people"
 #~ msgstr "personer"
 
@@ -7239,9 +7601,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 #~ msgid "Add row"
 #~ msgstr "Lägg till rad"
 
-#~ msgid "Remove row"
-#~ msgstr "Ta bort raden"
-
 #~ msgid "Date"
 #~ msgstr "Datum"
 
@@ -7287,16 +7646,8 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 #~ msgstr "Värdeattribut"
 
 #, fuzzy
-#~ msgid "Plan name"
-#~ msgstr "efternamn"
-
-#, fuzzy
 #~ msgid "Plan identifier"
 #~ msgstr "identifierare"
-
-#, fuzzy
-#~ msgid "Main organization"
-#~ msgstr "organisation"
 
 #, fuzzy
 #~ msgid "Short name of plan"
@@ -7378,9 +7729,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Reset all"
 #~ msgstr "Återställ allt"
-
-#~ msgid "Search"
-#~ msgstr "Sök"
 
 #~ msgid "Non-modifiable actions"
 #~ msgstr "Icke-modifierbara åtgärder"

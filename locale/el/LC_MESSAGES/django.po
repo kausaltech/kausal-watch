@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-17 08:21+0200\n"
+"POT-Creation-Date: 2026-06-15 12:55+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -89,6 +89,7 @@ msgstr "Τελευταία ενημέρωση"
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #: audit_logging/templates/site_history_results.html copying/views.py
+#: indicators/wagtail_admin.py
 msgid "Name"
 msgstr "Όνομα"
 
@@ -101,9 +102,9 @@ msgstr "Κατηγορίες"
 msgid "External links"
 msgstr "Εξωτερικοί σύνδεσμοι"
 
-#: actions/action_admin.py actions/category_admin.py actions/pledge_admin.py
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-#: notifications/wagtail_admin.py orgs/wagtail_admin.py
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr "Βασικές πληροφορίες"
 
@@ -431,7 +432,8 @@ msgstr "Πλέγμα"
 
 #: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
 #: actions/blocks/action_list.py actions/blocks/category_list.py
-#: actions/blocks/paths_content.py pages/blocks.py
+#: actions/blocks/category_page_layout.py actions/blocks/paths_content.py
+#: pages/blocks.py
 msgid "Heading"
 msgstr "Κεφαλή"
 
@@ -466,6 +468,7 @@ msgid "Heading to show instead of the default"
 msgstr "Επικεφαλίδα που θα εμφανίζεται αντί της προεπιλεγμένης"
 
 #: actions/blocks/action_content_blocks.py
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Label"
 msgstr "Ετικέτα"
 
@@ -531,6 +534,7 @@ msgid "Form Field"
 msgstr "Πεδίο φόρμας"
 
 #: actions/blocks/action_content_blocks.py indicators/wagtail_admin.py
+#: pages/blocks.py
 msgid "Description"
 msgstr "Περιγραφή"
 
@@ -714,13 +718,13 @@ msgstr "Κείμενο βοήθειας για τη λίστα επιπέδου 
 msgid "Filter by level"
 msgstr "Φίλτρο ανά επίπεδο"
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 #, fuzzy
 #| msgid "Kausal Paths outcome node ID"
 msgid "Kausal Paths target node ID"
 msgstr "Kausal Paths αποτέλεσμα ID κόμβου"
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used."
 msgstr ""
 
@@ -747,6 +751,18 @@ msgstr "Φάση υλοποίησης"
 #: reports/blocks/action_content.py
 msgid "Status"
 msgstr "Κατάσταση"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Paths node summary?"
+msgstr "Ποια επικεφαλίδα θα πρέπει να χρησιμοποιείται στο δημόσιο περιβάλλον εργασίας για το σύνολο δεδομένων;"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "Summary"
+msgid "Paths node summary"
+msgstr "Περίληψη"
 
 #: actions/blocks/choosers.py
 #, fuzzy
@@ -862,6 +878,12 @@ msgstr "Επίπεδα κατηγορίας"
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
+msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
+
+#: actions/category_admin.py
+#, fuzzy
+#| msgid "There is already a category with this identifier."
+msgid "There is already a category type with this identifier."
 msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
 
 #: actions/category_admin.py
@@ -1001,7 +1023,6 @@ msgstr "Επικεφαλής παράγραφος"
 
 #: actions/models/action.py actions/models/plan.py actions/models/pledge.py
 #: indicators/models/common_indicator.py indicators/models/indicator.py
-#: indicators/models/metadata.py
 msgid "description"
 msgstr "περιγραφή"
 
@@ -1416,8 +1437,7 @@ msgctxt "action model"
 msgid "action"
 msgstr "δράση"
 
-#: actions/models/action.py feedback/models.py indicators/models/metadata.py
-#: pages/blocks.py pages/models.py
+#: actions/models/action.py feedback/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -1989,6 +2009,18 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Ρύθμιση για να επιτρέπεται η σύγκριση δεικτών μεταξύ οργανισμών"
 
 #: actions/models/features.py
+#, fuzzy
+#| msgid "Enable indicator comparison"
+msgid "Enable indicator factors"
+msgstr "Ενεργοποίηση σύγκρισης δεικτών"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "contact for indicators"
+msgid "Enable computed factor values for indicators."
+msgstr "επαφή για δείκτες"
+
+#: actions/models/features.py
 msgid "Indicator order"
 msgstr "Εντολή δείκτη"
 
@@ -2055,6 +2087,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: actions/models/features.py
+msgid "Enable PDF export of actions in public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable users of the public UI to export actions to PDF."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "χαρακτηριστικό του πλάνου"
 
@@ -2095,7 +2135,9 @@ msgid "The official plan name in full form"
 msgstr "Η επίσημη ονομασία του σχεδίου σε πλήρη μορφή"
 
 #: actions/models/plan.py
-msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+#, fuzzy
+#| msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
 msgstr "Ένα μοναδικό αναγνωριστικό για το σχέδιο που χρησιμοποιείται εσωτερικά για τη διάκριση μεταξύ των σχεδίων. Αυτό γίνεται μέρος της διεύθυνσης URL της τοποθεσίας δοκιμής: https://[identifier].watch-test.kausal.tech. Χρησιμοποιήστε πεζά γράμματα και παύλες."
 
 #: actions/models/plan.py indicators/models/metadata.py
@@ -2593,15 +2635,15 @@ msgstr ""
 
 #: actions/models/pledge.py
 #, fuzzy
-#| msgid "updated by"
-msgid "pledge user"
-msgstr "μεταφορτώθηκε από τον χρήστη"
+#| msgid "public"
+msgid "public user"
+msgstr "δημόσια"
 
 #: actions/models/pledge.py
 #, fuzzy
-#| msgid "updated by"
-msgid "pledge users"
-msgstr "μεταφορτώθηκε από τον χρήστη"
+#| msgid "public site viewers"
+msgid "public users"
+msgstr "θεατές του δημόσιου ιστότοπου"
 
 #: actions/models/pledge.py
 #, fuzzy
@@ -2638,6 +2680,50 @@ msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αν�
 #| msgid "Name of the owner of the site"
 msgid "Number of commitments"
 msgstr "Όνομα του ιδιοκτήτη του χώρου"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "report"
+msgid "Export"
+msgstr "έκθεση"
+
+#: actions/pledge_admin.py
+msgid "Export as Excel"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export pledges as CSV"
+msgstr ""
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Export commitments as CSV"
+msgstr "σχόλιο"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "updated by"
+msgid "Pledge ID"
+msgstr "μεταφορτώθηκε από τον χρήστη"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "Indicator list page"
+msgid "Pledge name"
+msgstr "Σελίδα λίστας δεικτών"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Commitment date"
+msgstr "σχόλιο"
+
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "Users"
+msgid "User ID"
+msgstr "Χρήστες"
 
 #: actions/pledge_admin.py pages/models.py
 msgid "Pledges"
@@ -2752,6 +2838,18 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από τη μετριοπάθεια."
 
 #: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "organization"
+msgid "New organization name"
+msgstr "οργάνωση"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Creating organizations without a parent not allowed."
+msgid "Create a new organization with this name"
+msgstr "Δεν επιτρέπεται η δημιουργία οργανισμών χωρίς γονέα."
+
+#: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Αναγνωριστικό που χρησιμοποιείται ήδη"
 
@@ -2766,6 +2864,19 @@ msgstr "Όνομα σχεδίου που χρησιμοποιείται ήδη"
 #: actions/wagtail_admin.py
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "Η άλλη γλώσσα ενός σχεδίου δεν μπορεί να είναι η ίδια με την κύρια γλώσσα του"
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name for a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Cannot both select an existing organization and create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, python-format
+msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
+msgstr ""
 
 #: actions/wagtail_admin.py admin_site/wagtail.py
 #, fuzzy
@@ -2782,6 +2893,28 @@ msgstr "Γενικοί διαχειριστές"
 #| msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgid "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgstr "Ορίζεται μόνο εάν απαιτείται ρητά από τον πελάτη. Χρησιμοποιήστε ένα κλειδί χρώματος από τα graphColors του θέματος UI, για παράδειγμα red070 ή grey030."
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Choose an organization"
+msgid "Choose an existing organization"
+msgstr "Επιλέξτε έναν οργανισμό"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "organization"
+msgid "Main organization"
+msgstr "οργάνωση"
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name to create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Clients"
+msgid "Client"
+msgstr "Πελάτες"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -2821,6 +2954,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Plan features that only superusers are allowed to change"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -2939,7 +3076,7 @@ msgstr ""
 msgid "Plan '%(plan)s' has been unpublished."
 msgstr ""
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+#: actions/wagtail_admin.py admin_site/wagtail_admin.py
 msgid "Plans"
 msgstr "Σχέδια"
 
@@ -3013,6 +3150,11 @@ msgstr "Ιστορία"
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr "Ποιο είναι το μέρος μετά το @ στη διεύθυνση ηλεκτρονικού ταχυδρομείου του προσωπικού του οργανισμού που είναι κυρίως υπεύθυνος για το σχέδιο;"
+
+#: admin_site/chooser.py
+#, python-format
+msgid "The email domain \"%(domain)s\" is already in use by another client."
+msgstr ""
 
 #: admin_site/chooser.py
 msgid "Choose a client"
@@ -3169,6 +3311,7 @@ msgid "Edit this indicator"
 msgstr "Επεξεργασία αυτού του δείκτη"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
+#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Edit data"
 msgstr "Επεξεργασία δεδομένων"
 
@@ -3294,13 +3437,13 @@ msgstr "Προβολή live"
 msgid "View %s live"
 msgstr "Δείτε το %s live"
 
+#: admin_site/wagtail_admin.py
+msgid "Email domains"
+msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
+
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Αναφορές"
-
-#: admin_site/wagtail_hooks.py
-msgid "Email domains"
-msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
@@ -3375,12 +3518,20 @@ msgid "Latvian"
 msgstr "Λετονία"
 
 #: aplans/settings.py
+msgid "Hmong (White)"
+msgstr ""
+
+#: aplans/settings.py
 msgid "Portuguese"
 msgstr "Πορτογαλικά"
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
 msgstr "Πορτογαλικά (Βραζιλία)"
+
+#: aplans/settings.py
+msgid "Somali"
+msgstr ""
 
 #: aplans/settings.py
 msgid "Swedish"
@@ -4035,11 +4186,11 @@ msgstr ""
 msgid "Dimension '%(dimension)s' is not valid for indicator '%(indicator)s'. Please choose a dimension that belongs to the indicator."
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Stacked bars"
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Grouped bars"
 msgstr ""
 
@@ -4110,6 +4261,12 @@ msgstr "Εντολή δείκτη"
 msgid "Indicator key figures"
 msgstr "Σελίδες λίστας δεικτών"
 
+#: indicators/blocks/__init__.py
+#, fuzzy
+#| msgid "Header image"
+msgid "Header"
+msgstr "Εικόνα κεφαλίδας"
+
 #: indicators/blocks/__init__.py pages/models.py
 msgid "Paragraph"
 msgstr "Παράγραφος"
@@ -4135,6 +4292,12 @@ msgstr "Περίληψη"
 #| msgid "causal indicator"
 msgid "Causality navigation"
 msgstr "αιτιώδης δείκτης"
+
+#: indicators/blocks/layout.py
+#, fuzzy
+#| msgid "Summary"
+msgid "Value summary (by factors)"
+msgstr "Περίληψη"
 
 #: indicators/blocks/layout.py
 #, fuzzy
@@ -4187,6 +4350,14 @@ msgid "Default value year to pick for this column"
 msgstr ""
 
 #: indicators/blocks/layout.py
+msgid "Highlight if goal is met"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show a tick next to the latest value when the indicator has reached its goal."
+msgstr ""
+
+#: indicators/blocks/layout.py
 #, fuzzy
 #| msgid "reference"
 msgid "Show reference value"
@@ -4224,6 +4395,14 @@ msgstr "Εμφάνιση συνολικής γραμμής"
 
 #: indicators/blocks/layout.py
 msgid "This shows the difference between the goal and the current value."
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show calculated values by factors"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Include factor-computed values in the visualization."
 msgstr ""
 
 #: indicators/chooser.py
@@ -4400,7 +4579,7 @@ msgstr "κοινή διάσταση δείκτη"
 msgid "common indicator dimensions"
 msgstr "κοινές διαστάσεις του δείκτη"
 
-#: indicators/models/goal_data_point.py indicators/models/metadata.py
+#: indicators/models/goal_data_point.py
 msgid "dataset"
 msgstr "σύνολο δεδομένων"
 
@@ -4451,6 +4630,26 @@ msgstr "τιμές δεικτών"
 #| msgid "indicator values"
 msgid "Indicator values import logs"
 msgstr "τιμές δεικτών"
+
+#: indicators/models/indicator.py
+msgid "Bar chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Line chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Area chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Pie chart"
+msgstr ""
+
+#: indicators/models/indicator.py reports/spreadsheets/excel_report.py
+msgid "Summary"
+msgstr "Περίληψη"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4527,10 +4726,6 @@ msgstr "επικαιροποιημένες τιμές που οφείλοντα�
 #| msgid "reference"
 msgid "reference value"
 msgstr "αναφορά"
-
-#: indicators/models/indicator.py indicators/models/metadata.py
-msgid "datasets"
-msgstr "σύνολα δεδομένων"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4611,6 +4806,46 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr ""
 
 #: indicators/models/indicator.py
+#, fuzzy
+#| msgid "Indicator Causal Chain"
+msgid "default visualization type"
+msgstr "Δείκτης Αιτιώδης αλυσίδα"
+
+#: indicators/models/indicator.py
+msgid "Default visualization type for this indicator on dashboards"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "Category type"
+msgid "bar type"
+msgstr "Τύπος κατηγορίας"
+
+#: indicators/models/indicator.py
+msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "dimension"
+msgid "grouping dimension"
+msgstr "διάσταση"
+
+#: indicators/models/indicator.py
+msgid "Dimension used for grouping in the default visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+#| msgid "default view"
+msgid "pie chart year"
+msgstr "προεπιλεγμένη προβολή"
+
+#: indicators/models/indicator.py
+msgid "Year to display in pie chart visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
 msgid "non-quantified goal"
 msgstr ""
 
@@ -4657,10 +4892,6 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Επιλέξτε τον τρόπο διάταξης των δεικτών στις σελίδες δράσης"
 
 #: indicators/models/indicator.py
-msgid "Has datasets"
-msgstr "Διαθέτει σύνολα δεδομένων"
-
-#: indicators/models/indicator.py
 msgid "Has data"
 msgstr "Έχει δεδομένα"
 
@@ -4671,6 +4902,10 @@ msgstr "Οι προθεσμίες για τις επικαιροποιήσεις
 #: indicators/models/indicator.py
 msgid "There is already an indicator value for the year preceding the deadline"
 msgstr "Υπάρχει ήδη τιμή δείκτη για το έτος που προηγείται της προθεσμίας"
+
+#: indicators/models/indicator.py
+msgid "The grouping dimension must be one of the dimensions associated with this indicator."
+msgstr ""
 
 #: indicators/models/indicator.py
 #, python-format
@@ -4706,34 +4941,6 @@ msgstr "λεκτικός πληθυντικός του ονόματος"
 #: indicators/models/metadata.py
 msgid "units"
 msgstr "μονάδες"
-
-#: indicators/models/metadata.py
-msgid "dataset license"
-msgstr "άδεια χρήσης συνόλου δεδομένων"
-
-#: indicators/models/metadata.py
-msgid "dataset licenses"
-msgstr "άδειες χρήσης συνόλου δεδομένων"
-
-#: indicators/models/metadata.py
-msgid "last retrieved at"
-msgstr "τελευταία ανάκτηση στο"
-
-#: indicators/models/metadata.py
-msgid "owner"
-msgstr "ιδιοκτήτης"
-
-#: indicators/models/metadata.py
-msgid "owner name"
-msgstr "όνομα ιδιοκτήτη"
-
-#: indicators/models/metadata.py
-msgid "Set if owner organization is not available"
-msgstr "Ορίζεται εάν ο οργανισμός ιδιοκτήτη δεν είναι διαθέσιμος"
-
-#: indicators/models/metadata.py
-msgid "license"
-msgstr "άδεια"
 
 #: indicators/models/metadata.py
 msgid "frameworks"
@@ -4807,6 +5014,23 @@ msgstr "στόχος του δείκτη"
 msgid "indicator goals"
 msgstr "στόχοι του δείκτη"
 
+#: indicators/templates/indicators/panels/factors_panel.html
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Μονάδα"
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Remove"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Add factor"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Save the indicator first before adding factors."
+msgstr ""
+
 #: indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -4825,6 +5049,14 @@ msgstr[1] ""
 "\n"
 "        <span>%(total)s</span> δείκτες <span class=\"w-sr-only\">που παρακολουθούνται στο %(plan)s</span>\n"
 "    "
+
+#: indicators/wagtail_admin.py
+msgid "Result"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Show indicators"
@@ -4884,6 +5116,21 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Οι διαστάσεις πρέπει να είναι οι ίδιες με τον κοινό δείκτη"
 
 #: indicators/wagtail_admin.py
+msgid "Please correct the errors in the factors section."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Indicator for actions"
+msgid "Indicator factors"
+msgstr "Δείκτης για δράσεις"
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
@@ -4937,6 +5184,16 @@ msgid "Advanced settings"
 msgstr "Προηγμένες ρυθμίσεις"
 
 #: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit data"
+msgid "Edit factor data"
+msgstr "Επεξεργασία δεδομένων"
+
+#: indicators/wagtail_admin.py
+msgid "Add factor data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Indicator for actions"
 msgstr "Δείκτης για δράσεις"
 
@@ -4955,14 +5212,31 @@ msgid "Other indicators"
 msgstr "άλλοι δείκτες"
 
 #: indicators/wagtail_admin.py
+msgid "Factors cannot be added to indicators that have dimensions in their data."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-brace-format
+msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "factor"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Save the indicator after adding a factor to enable the data editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Factors"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "Related actions"
 msgid "Relationships"
 msgstr "Σχέσεις"
-
-#: indicators/wagtail_admin.py
-msgid "Unit"
-msgstr "Μονάδα"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in all indicators linked to this one"
@@ -5371,6 +5645,14 @@ msgid "Notification preferences"
 msgstr "Προτιμήσεις ειδοποιήσεων"
 
 #: orgs/chooser.py
+msgid "Search term"
+msgstr ""
+
+#: orgs/chooser.py
+msgid "Search"
+msgstr ""
+
+#: orgs/chooser.py
 msgid "Choose an organization"
 msgstr "Επιλέξτε έναν οργανισμό"
 
@@ -5531,6 +5813,18 @@ msgid "Answer"
 msgstr "Απάντηση"
 
 #: pages/blocks.py
+msgid "Title"
+msgstr "Τίτλος"
+
+#: pages/blocks.py
+msgid "Helps screen readers describe this embedded content"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Helps screen readers understand what this embed shows"
+msgstr ""
+
+#: pages/blocks.py
 msgid "small"
 msgstr "μικρό"
 
@@ -5547,20 +5841,62 @@ msgid "The source URL of the embed is invalid or not supported."
 msgstr ""
 
 #: pages/blocks.py
-msgid "Title"
-msgstr "Τίτλος"
-
-#: pages/blocks.py
 msgid "Questions & Answers"
 msgstr "Ερωτήσεις & απαντήσεις"
 
 #: pages/blocks.py
-msgid "Big image"
+#, fuzzy
+#| msgid "Big image"
+msgid "Background colour"
 msgstr "Μεγάλη εικόνα"
 
 #: pages/blocks.py
-msgid "Small image"
-msgstr "Μικρή εικόνα"
+msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "image cropping"
+msgid "Fit image without clipping"
+msgstr "περικοπή εικόνας"
+
+#: pages/blocks.py
+msgid "Show the image at its exact scaled dimensions; it will never be cropped"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Show image accent"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Display a brand color accent bar below the image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Background covers full block"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Additional settings"
+msgstr "ρυθμίσεις ειδοποιήσεων"
+
+#: pages/blocks.py
+msgid "Full-width: content over image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Large image: image above, content below"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Side-by-side: image left, content right"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Front page hero block"
@@ -5745,10 +6081,6 @@ msgstr "διάταξη κύρια κορυφή"
 #: pages/models.py
 msgid "layout main bottom"
 msgstr "διάταξη κύριας κάτω πλευράς"
-
-#: pages/models.py
-msgid "layout aside"
-msgstr "εκτός από τη διάταξη"
 
 #: pages/models.py
 msgid "icon size"
@@ -6325,10 +6657,6 @@ msgstr "Σημειώθηκε ως πλήρης από"
 msgid "Marked as complete at"
 msgstr "Σημειώθηκε ως πλήρης στο"
 
-#: reports/spreadsheets/excel_report.py
-msgid "Summary"
-msgstr "Περίληψη"
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -6563,6 +6891,47 @@ msgstr "Χρήστες"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Δεν έχετε δικαίωμα να καταργήσετε τον χρήστη που ανήκει σε σχέδια που δεν διαχειρίζεστε."
+
+#, fuzzy
+#~| msgid "updated by"
+#~ msgid "pledge users"
+#~ msgstr "μεταφορτώθηκε από τον χρήστη"
+
+#~ msgid "datasets"
+#~ msgstr "σύνολα δεδομένων"
+
+#~ msgid "Has datasets"
+#~ msgstr "Διαθέτει σύνολα δεδομένων"
+
+#~ msgid "dataset license"
+#~ msgstr "άδεια χρήσης συνόλου δεδομένων"
+
+#~ msgid "dataset licenses"
+#~ msgstr "άδειες χρήσης συνόλου δεδομένων"
+
+#~ msgid "last retrieved at"
+#~ msgstr "τελευταία ανάκτηση στο"
+
+#~ msgid "owner"
+#~ msgstr "ιδιοκτήτης"
+
+#~ msgid "owner name"
+#~ msgstr "όνομα ιδιοκτήτη"
+
+#~ msgid "Set if owner organization is not available"
+#~ msgstr "Ορίζεται εάν ο οργανισμός ιδιοκτήτη δεν είναι διαθέσιμος"
+
+#~ msgid "license"
+#~ msgstr "άδεια"
+
+#~ msgid "Big image"
+#~ msgstr "Μεγάλη εικόνα"
+
+#~ msgid "Small image"
+#~ msgstr "Μικρή εικόνα"
+
+#~ msgid "layout aside"
+#~ msgstr "εκτός από τη διάταξη"
 
 #, fuzzy
 #~| msgid "Page link"
@@ -6902,9 +7271,6 @@ msgstr "Δεν έχετε δικαίωμα να καταργήσετε τον χ
 
 #~ msgid "Set if the person has an user account"
 #~ msgstr "Ορίζεται εάν το άτομο έχει λογαριασμό χρήστη"
-
-#~ msgid "image cropping"
-#~ msgstr "περικοπή εικόνας"
 
 #~ msgid "people"
 #~ msgstr "άνθρωποι"
