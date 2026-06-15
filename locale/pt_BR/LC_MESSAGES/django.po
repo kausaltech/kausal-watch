@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-17 08:21+0200\n"
+"POT-Creation-Date: 2026-06-15 12:55+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -87,6 +87,7 @@ msgstr "Última atualização"
 #: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
 #: audit_logging/templates/site_history_results.html copying/views.py
+#: indicators/wagtail_admin.py
 msgid "Name"
 msgstr "Nome"
 
@@ -100,9 +101,9 @@ msgstr "Categorias"
 msgid "External links"
 msgstr "Links externos"
 
-#: actions/action_admin.py actions/category_admin.py actions/pledge_admin.py
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-#: notifications/wagtail_admin.py orgs/wagtail_admin.py
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr "Informações básicas"
 
@@ -466,7 +467,8 @@ msgstr "Grade"
 
 #: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
 #: actions/blocks/action_list.py actions/blocks/category_list.py
-#: actions/blocks/paths_content.py pages/blocks.py
+#: actions/blocks/category_page_layout.py actions/blocks/paths_content.py
+#: pages/blocks.py
 #, fuzzy
 msgid "Heading"
 msgstr "Título"
@@ -508,6 +510,7 @@ msgid "Heading to show instead of the default"
 msgstr "Título a ser exibido em vez do padrão"
 
 #: actions/blocks/action_content_blocks.py
+#: indicators/templates/indicators/panels/factors_panel.html
 #, fuzzy
 msgid "Label"
 msgstr "Rótulo"
@@ -571,6 +574,7 @@ msgid "Form Field"
 msgstr "Campo"
 
 #: actions/blocks/action_content_blocks.py indicators/wagtail_admin.py
+#: pages/blocks.py
 #, fuzzy
 msgid "Description"
 msgstr "Descrição"
@@ -761,11 +765,11 @@ msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
 msgid "Filter by level"
 msgstr "nível de categoria"
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID"
 msgstr ""
 
-#: actions/blocks/category_list.py
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used."
 msgstr ""
 
@@ -795,6 +799,15 @@ msgstr "Fase de implementação"
 #, fuzzy
 msgid "Status"
 msgstr "Status"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Paths node summary?"
+msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
+
+#: actions/blocks/category_page_layout.py
+msgid "Paths node summary"
+msgstr ""
 
 #: actions/blocks/choosers.py
 #, fuzzy
@@ -928,6 +941,11 @@ msgstr "Níveis de categoria"
 #: actions/category_admin.py
 #, fuzzy
 msgid "There is already a category with this identifier."
+msgstr "Já existe uma categoria com esse identificador."
+
+#: actions/category_admin.py
+#, fuzzy
+msgid "There is already a category type with this identifier."
 msgstr "Já existe uma categoria com esse identificador."
 
 #: actions/category_admin.py
@@ -1091,7 +1109,6 @@ msgstr "Parágrafo principal"
 
 #: actions/models/action.py actions/models/plan.py actions/models/pledge.py
 #: indicators/models/common_indicator.py indicators/models/indicator.py
-#: indicators/models/metadata.py
 #, fuzzy
 msgid "description"
 msgstr "descrição"
@@ -1585,8 +1602,7 @@ msgctxt "action model"
 msgid "action"
 msgstr "ação"
 
-#: actions/models/action.py feedback/models.py indicators/models/metadata.py
-#: pages/blocks.py pages/models.py
+#: actions/models/action.py feedback/models.py pages/blocks.py pages/models.py
 #, fuzzy
 msgid "URL"
 msgstr "URL"
@@ -2244,6 +2260,16 @@ msgstr "Definido para permitir a comparação de indicadores entre organizaçõe
 
 #: actions/models/features.py
 #, fuzzy
+msgid "Enable indicator factors"
+msgstr "Ativar a comparação de indicadores"
+
+#: actions/models/features.py
+#, fuzzy
+msgid "Enable computed factor values for indicators."
+msgstr "contato para indicadores"
+
+#: actions/models/features.py
+#, fuzzy
 msgid "Indicator order"
 msgstr "Indicador"
 
@@ -2311,6 +2337,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: actions/models/features.py
+msgid "Enable PDF export of actions in public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable users of the public UI to export actions to PDF."
+msgstr ""
+
+#: actions/models/features.py
 #, fuzzy
 msgid "plan feature"
 msgstr "recurso de plano"
@@ -2357,7 +2391,7 @@ msgstr "O nome do plano oficial em sua forma completa"
 
 #: actions/models/plan.py
 #, fuzzy
-msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
 msgstr "Um identificador exclusivo para o plano usado internamente para distinguir entre os planos. Isso se torna parte do URL do site de teste: https://[identifier].watch-test.kausal.tech. Use letras minúsculas e traços."
 
 #: actions/models/plan.py indicators/models/metadata.py
@@ -2907,13 +2941,13 @@ msgstr ""
 
 #: actions/models/pledge.py
 #, fuzzy
-msgid "pledge user"
-msgstr "atualizado por"
+msgid "public user"
+msgstr "público"
 
 #: actions/models/pledge.py
 #, fuzzy
-msgid "pledge users"
-msgstr "atualizado por"
+msgid "public users"
+msgstr "visualizadores de sites públicos"
 
 #: actions/models/pledge.py
 #, fuzzy
@@ -2944,6 +2978,44 @@ msgstr "Já existe uma categoria com esse identificador."
 #, fuzzy
 msgid "Number of commitments"
 msgstr "Nome do proprietário do site"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Export"
+msgstr "relatório"
+
+#: actions/pledge_admin.py
+msgid "Export as Excel"
+msgstr ""
+
+#: actions/pledge_admin.py
+msgid "Export pledges as CSV"
+msgstr ""
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Export commitments as CSV"
+msgstr "comentário"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge ID"
+msgstr "atualizado por"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge name"
+msgstr "Página da lista de indicadores"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "Commitment date"
+msgstr "comentário"
+
+#: actions/pledge_admin.py
+#, fuzzy
+msgid "User ID"
+msgstr "Usuários"
 
 #: actions/pledge_admin.py pages/models.py
 msgid "Pledges"
@@ -3047,6 +3119,16 @@ msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
 
 #: actions/wagtail_admin.py
 #, fuzzy
+msgid "New organization name"
+msgstr "organização"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Create a new organization with this name"
+msgstr "Não é permitido criar organizações sem um dos pais."
+
+#: actions/wagtail_admin.py
+#, fuzzy
 msgid "Identifier already in use"
 msgstr "Identificador já em uso"
 
@@ -3065,6 +3147,19 @@ msgstr "Nome do plano já em uso"
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "O outro idioma de um plano não pode ser o mesmo que seu idioma principal"
 
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name for a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Cannot both select an existing organization and create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, python-format
+msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
+msgstr ""
+
 #: actions/wagtail_admin.py admin_site/wagtail.py
 #, fuzzy
 msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
@@ -3079,6 +3174,25 @@ msgstr "Administradores gerais"
 #, fuzzy
 msgid "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgstr "Somente definido se explicitamente exigido pelo cliente. Use uma chave de cor do graphColors do tema da interface do usuário, por exemplo, red070 ou grey030."
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Choose an existing organization"
+msgstr "Escolha uma organização"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Main organization"
+msgstr "organização"
+
+#: actions/wagtail_admin.py
+msgid "Select an existing organization or enter a name to create a new one."
+msgstr ""
+
+#: actions/wagtail_admin.py
+#, fuzzy
+msgid "Client"
+msgstr "Clientes"
 
 #: actions/wagtail_admin.py
 #, fuzzy
@@ -3126,6 +3240,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Plan features that only superusers are allowed to change"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -3231,7 +3349,7 @@ msgstr ""
 msgid "Plan '%(plan)s' has been unpublished."
 msgstr ""
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+#: actions/wagtail_admin.py admin_site/wagtail_admin.py
 #, fuzzy
 msgid "Plans"
 msgstr "Planos"
@@ -3308,6 +3426,11 @@ msgstr "Histórico"
 #, fuzzy
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr "Qual é a parte depois de @ no endereço de e-mail da equipe da organização que é a principal responsável pelo plano?"
+
+#: admin_site/chooser.py
+#, python-format
+msgid "The email domain \"%(domain)s\" is already in use by another client."
+msgstr ""
 
 #: admin_site/chooser.py
 #, fuzzy
@@ -3490,6 +3613,7 @@ msgid "Edit this indicator"
 msgstr "Editar esse indicador"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
+#: indicators/templates/indicators/panels/factors_panel.html
 #, fuzzy
 msgid "Edit data"
 msgstr "Editar dados"
@@ -3617,15 +3741,15 @@ msgstr "Ver ao vivo"
 msgid "View %s live"
 msgstr "Veja %s ao vivo"
 
+#: admin_site/wagtail_admin.py
+#, fuzzy
+msgid "Email domains"
+msgstr "Domínios de e-mail"
+
 #: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
 #, fuzzy
 msgid "Reports"
 msgstr "Relatórios"
-
-#: admin_site/wagtail_hooks.py
-#, fuzzy
-msgid "Email domains"
-msgstr "Domínios de e-mail"
 
 #: admin_site/wagtail_hooks.py
 #, fuzzy
@@ -3717,6 +3841,10 @@ msgid "Latvian"
 msgstr "Letão"
 
 #: aplans/settings.py
+msgid "Hmong (White)"
+msgstr ""
+
+#: aplans/settings.py
 #, fuzzy
 msgid "Portuguese"
 msgstr "Português"
@@ -3725,6 +3853,10 @@ msgstr "Português"
 #, fuzzy
 msgid "Portuguese (Brazil)"
 msgstr "Português (Brasil)"
+
+#: aplans/settings.py
+msgid "Somali"
+msgstr ""
 
 #: aplans/settings.py
 #, fuzzy
@@ -4428,11 +4560,11 @@ msgstr ""
 msgid "Dimension '%(dimension)s' is not valid for indicator '%(indicator)s'. Please choose a dimension that belongs to the indicator."
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Stacked bars"
 msgstr ""
 
-#: indicators/blocks/__init__.py
+#: indicators/blocks/__init__.py indicators/models/indicator.py
 msgid "Grouped bars"
 msgstr ""
 
@@ -4497,6 +4629,11 @@ msgstr "Indicador"
 msgid "Indicator key figures"
 msgstr "Páginas da lista de indicadores"
 
+#: indicators/blocks/__init__.py
+#, fuzzy
+msgid "Header"
+msgstr "Imagem do cabeçalho"
+
 #: indicators/blocks/__init__.py pages/models.py
 #, fuzzy
 msgid "Paragraph"
@@ -4519,6 +4656,10 @@ msgstr ""
 #, fuzzy
 msgid "Causality navigation"
 msgstr "indicador causal"
+
+#: indicators/blocks/layout.py
+msgid "Value summary (by factors)"
+msgstr ""
 
 #: indicators/blocks/layout.py
 #, fuzzy
@@ -4563,6 +4704,14 @@ msgid "Default value year to pick for this column"
 msgstr ""
 
 #: indicators/blocks/layout.py
+msgid "Highlight if goal is met"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show a tick next to the latest value when the indicator has reached its goal."
+msgstr ""
+
+#: indicators/blocks/layout.py
 msgid "Show reference value"
 msgstr ""
 
@@ -4598,6 +4747,14 @@ msgstr "mostrar linha total"
 
 #: indicators/blocks/layout.py
 msgid "This shows the difference between the goal and the current value."
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Show calculated values by factors"
+msgstr ""
+
+#: indicators/blocks/layout.py
+msgid "Include factor-computed values in the visualization."
 msgstr ""
 
 #: indicators/chooser.py
@@ -4797,7 +4954,7 @@ msgstr "dimensão do indicador comum"
 msgid "common indicator dimensions"
 msgstr "dimensões comuns dos indicadores"
 
-#: indicators/models/goal_data_point.py indicators/models/metadata.py
+#: indicators/models/goal_data_point.py
 #, fuzzy
 msgid "dataset"
 msgstr "conjunto de dados"
@@ -4841,6 +4998,26 @@ msgstr "valores do indicador"
 #, fuzzy
 msgid "Indicator values import logs"
 msgstr "valores do indicador"
+
+#: indicators/models/indicator.py
+msgid "Bar chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Line chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Area chart"
+msgstr ""
+
+#: indicators/models/indicator.py
+msgid "Pie chart"
+msgstr ""
+
+#: indicators/models/indicator.py reports/spreadsheets/excel_report.py
+msgid "Summary"
+msgstr ""
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4923,11 +5100,6 @@ msgstr "valores atualizados devidos em"
 msgid "reference value"
 msgstr ""
 
-#: indicators/models/indicator.py indicators/models/metadata.py
-#, fuzzy
-msgid "datasets"
-msgstr "conjuntos de dados"
-
 #: indicators/models/indicator.py
 #, fuzzy
 msgid "dataset schema"
@@ -5003,6 +5175,42 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr ""
 
 #: indicators/models/indicator.py
+#, fuzzy
+msgid "default visualization type"
+msgstr "Dados do indicador"
+
+#: indicators/models/indicator.py
+msgid "Default visualization type for this indicator on dashboards"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+msgid "bar type"
+msgstr "Tipo de categoria"
+
+#: indicators/models/indicator.py
+msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+msgid "grouping dimension"
+msgstr "dimensão"
+
+#: indicators/models/indicator.py
+msgid "Dimension used for grouping in the default visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
+#, fuzzy
+msgid "pie chart year"
+msgstr "visualização padrão"
+
+#: indicators/models/indicator.py
+msgid "Year to display in pie chart visualization"
+msgstr ""
+
+#: indicators/models/indicator.py
 msgid "non-quantified goal"
 msgstr ""
 
@@ -5045,11 +5253,6 @@ msgstr "pessoas de contato do indicador"
 
 #: indicators/models/indicator.py
 #, fuzzy
-msgid "Has datasets"
-msgstr "Possui conjuntos de dados"
-
-#: indicators/models/indicator.py
-#, fuzzy
 msgid "Has data"
 msgstr "Possui dados"
 
@@ -5062,6 +5265,10 @@ msgstr "Atualmente, os prazos para atualizações de valores só são possíveis
 #, fuzzy
 msgid "There is already an indicator value for the year preceding the deadline"
 msgstr "Já existe um valor de indicador para o ano anterior ao prazo"
+
+#: indicators/models/indicator.py
+msgid "The grouping dimension must be one of the dimensions associated with this indicator."
+msgstr ""
 
 #: indicators/models/indicator.py
 #, fuzzy, python-format
@@ -5103,41 +5310,6 @@ msgstr "plural de nomes detalhados"
 #, fuzzy
 msgid "units"
 msgstr "unidades"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "dataset license"
-msgstr "licença do conjunto de dados"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "dataset licenses"
-msgstr "licenças de conjuntos de dados"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "last retrieved at"
-msgstr "recuperado pela última vez em"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "owner"
-msgstr "proprietário"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "owner name"
-msgstr "nome do proprietário"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "Set if owner organization is not available"
-msgstr "Definir se a organização do proprietário não estiver disponível"
-
-#: indicators/models/metadata.py
-#, fuzzy
-msgid "license"
-msgstr "licença"
 
 #: indicators/models/metadata.py
 #, fuzzy
@@ -5224,6 +5396,25 @@ msgstr "meta do indicador"
 msgid "indicator goals"
 msgstr "metas de indicadores"
 
+#: indicators/templates/indicators/panels/factors_panel.html
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Unit"
+msgstr "Unidade"
+
+#: indicators/templates/indicators/panels/factors_panel.html
+#, fuzzy
+msgid "Remove"
+msgstr "Remover linha"
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Add factor"
+msgstr ""
+
+#: indicators/templates/indicators/panels/factors_panel.html
+msgid "Save the indicator first before adding factors."
+msgstr ""
+
 #: indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -5236,6 +5427,14 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 msgstr[1] ""
+
+#: indicators/wagtail_admin.py
+msgid "Result"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgstr ""
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -5308,6 +5507,20 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "As dimensões devem ser as mesmas do indicador comum"
 
 #: indicators/wagtail_admin.py
+msgid "Please correct the errors in the factors section."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Indicator factors"
+msgstr "Indicador para ações"
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
@@ -5361,6 +5574,15 @@ msgstr "Opções avançadas"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
+msgid "Edit factor data"
+msgstr "Editar dados"
+
+#: indicators/wagtail_admin.py
+msgid "Add factor data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, fuzzy
 msgid "Indicator for actions"
 msgstr "Indicador para ações"
 
@@ -5380,14 +5602,30 @@ msgid "Other indicators"
 msgstr "outros indicadores"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
-msgid "Relationships"
-msgstr "Ações relacionadas"
+msgid "Factors cannot be added to indicators that have dimensions in their data."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, python-brace-format
+msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "factor"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Save the indicator after adding a factor to enable the data editor."
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Factors"
+msgstr ""
 
 #: indicators/wagtail_admin.py
 #, fuzzy
-msgid "Unit"
-msgstr "Unidade"
+msgid "Relationships"
+msgstr "Ações relacionadas"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -5872,6 +6110,14 @@ msgid "Notification preferences"
 msgstr "Preferências de notificação"
 
 #: orgs/chooser.py
+msgid "Search term"
+msgstr ""
+
+#: orgs/chooser.py
+msgid "Search"
+msgstr ""
+
+#: orgs/chooser.py
 #, fuzzy
 msgid "Choose an organization"
 msgstr "Escolha uma organização"
@@ -6050,6 +6296,19 @@ msgstr "Resposta"
 
 #: pages/blocks.py
 #, fuzzy
+msgid "Title"
+msgstr "Título"
+
+#: pages/blocks.py
+msgid "Helps screen readers describe this embedded content"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Helps screen readers understand what this embed shows"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
 msgid "small"
 msgstr "pequeno"
 
@@ -6069,23 +6328,59 @@ msgstr ""
 
 #: pages/blocks.py
 #, fuzzy
-msgid "Title"
-msgstr "Título"
-
-#: pages/blocks.py
-#, fuzzy
 msgid "Questions & Answers"
 msgstr "Perguntas e respostas"
 
 #: pages/blocks.py
 #, fuzzy
-msgid "Big image"
+msgid "Background colour"
 msgstr "Imagem grande"
 
 #: pages/blocks.py
+msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgstr ""
+
+#: pages/blocks.py
 #, fuzzy
-msgid "Small image"
-msgstr "Imagem pequena"
+msgid "Fit image without clipping"
+msgstr "corte de imagens"
+
+#: pages/blocks.py
+msgid "Show the image at its exact scaled dimensions; it will never be cropped"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Show image accent"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Display a brand color accent bar below the image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Background covers full block"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+msgid "Additional settings"
+msgstr "configurações de notificação"
+
+#: pages/blocks.py
+msgid "Full-width: content over image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Large image: image above, content below"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Side-by-side: image left, content right"
+msgstr ""
 
 #: pages/blocks.py
 #, fuzzy
@@ -6315,11 +6610,6 @@ msgstr "layout main top"
 #, fuzzy
 msgid "layout main bottom"
 msgstr "layout do fundo principal"
-
-#: pages/models.py
-#, fuzzy
-msgid "layout aside"
-msgstr "layout à parte"
 
 #: pages/models.py
 #, fuzzy
@@ -6974,10 +7264,6 @@ msgstr "Marcado como completo por"
 msgid "Marked as complete at"
 msgstr "Marcado como completo em"
 
-#: reports/spreadsheets/excel_report.py
-msgid "Summary"
-msgstr ""
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, fuzzy, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -7219,6 +7505,58 @@ msgstr "Usuários"
 #, fuzzy
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nenhuma permissão para remover o usuário pertencente a planos que você não está gerenciando."
+
+#, fuzzy
+#~ msgid "pledge users"
+#~ msgstr "atualizado por"
+
+#, fuzzy
+#~ msgid "datasets"
+#~ msgstr "conjuntos de dados"
+
+#, fuzzy
+#~ msgid "Has datasets"
+#~ msgstr "Possui conjuntos de dados"
+
+#, fuzzy
+#~ msgid "dataset license"
+#~ msgstr "licença do conjunto de dados"
+
+#, fuzzy
+#~ msgid "dataset licenses"
+#~ msgstr "licenças de conjuntos de dados"
+
+#, fuzzy
+#~ msgid "last retrieved at"
+#~ msgstr "recuperado pela última vez em"
+
+#, fuzzy
+#~ msgid "owner"
+#~ msgstr "proprietário"
+
+#, fuzzy
+#~ msgid "owner name"
+#~ msgstr "nome do proprietário"
+
+#, fuzzy
+#~ msgid "Set if owner organization is not available"
+#~ msgstr "Definir se a organização do proprietário não estiver disponível"
+
+#, fuzzy
+#~ msgid "license"
+#~ msgstr "licença"
+
+#, fuzzy
+#~ msgid "Big image"
+#~ msgstr "Imagem grande"
+
+#, fuzzy
+#~ msgid "Small image"
+#~ msgstr "Imagem pequena"
+
+#, fuzzy
+#~ msgid "layout aside"
+#~ msgstr "layout à parte"
 
 #, fuzzy
 #~ msgid "Page"
@@ -7536,10 +7874,6 @@ msgstr "Nenhuma permissão para remover o usuário pertencente a planos que voc�
 #~ msgstr "Defina se a pessoa tem uma conta de usuário"
 
 #, fuzzy
-#~ msgid "image cropping"
-#~ msgstr "corte de imagens"
-
-#, fuzzy
 #~ msgid "people"
 #~ msgstr "pessoas"
 
@@ -7694,10 +8028,6 @@ msgstr "Nenhuma permissão para remover o usuário pertencente a planos que voc�
 #, fuzzy
 #~ msgid "Add row"
 #~ msgstr "Adicionar linha"
-
-#, fuzzy
-#~ msgid "Remove row"
-#~ msgstr "Remover linha"
 
 #, fuzzy
 #~ msgid "Date"
