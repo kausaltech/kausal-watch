@@ -373,6 +373,45 @@ class TestPublicUser:
 
         assert str(public_user) == str(public_user.uuid)
 
+    def test_public_user_token_defaults_to_none(self):
+        """A freshly created PublicUser has no token until they sign up."""
+        public_user = PublicUser.objects.create()
+
+        assert public_user.user_token is None
+
+    def test_regenerate_user_token_returns_raw_and_stores_hash(self):
+        """regenerate_user_token() returns the raw token and stores only the hash."""
+        from actions.models.pledge import hash_user_token
+
+        user1 = PublicUser.objects.create()
+        user2 = PublicUser.objects.create()
+
+        token1 = user1.regenerate_user_token()
+        token2 = user2.regenerate_user_token()
+
+        assert token1
+        assert token2
+        assert token1 != token2
+
+        user1.refresh_from_db()
+        assert user1.user_token != token1
+        assert user1.user_token == hash_user_token(token1)
+
+    def test_regenerate_user_token_rotates_existing_token(self):
+        """Calling regenerate_user_token() again replaces the previous hash."""
+        from actions.models.pledge import hash_user_token
+
+        public_user = PublicUser.objects.create()
+        first_token = public_user.regenerate_user_token()
+        first_hash = public_user.user_token
+
+        second_token = public_user.regenerate_user_token()
+
+        assert second_token != first_token
+        public_user.refresh_from_db()
+        assert public_user.user_token != first_hash
+        assert public_user.user_token == hash_user_token(second_token)
+
 
 class TestPledgeCommitment:
     """Tests for the PledgeCommitment model."""
