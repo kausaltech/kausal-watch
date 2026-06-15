@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("pages", "0068_alter_categorypage_body_alter_planrootpage_body_and_more"),
+        ("pages", "0071_preserve_indicator_value_highlight_goal_met"),
     ]
 
     operations = [
