@@ -112,6 +112,7 @@ from .models import (
     PledgeCommitment,
     PublicUser,
 )
+from .models.pledge import hash_user_token
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -2156,7 +2157,19 @@ class Query:
 
     @staticmethod
     def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PublicUser | None:
-        return PublicUser.objects.filter(uuid=uuid).first()
+        """
+        Look up a PublicUser.
+
+        Anonymous users (no user_token) are identified by the UUID argument.
+        Once a user has signed up, the bearer token is the identifier instead.
+        """
+        matched = PublicUser.objects.filter(uuid=uuid).first()
+        if matched is None or matched.user_token is None:
+            return matched
+        bearer_user = _resolve_public_user_from_bearer(info)
+        if bearer_user is None or bearer_user.pk != matched.pk:
+            return None
+        return matched
 
     @staticmethod
     def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None = None):
@@ -2419,6 +2432,47 @@ class Query:
         )
 
 
+def _resolve_public_user_from_bearer(info: GQLInfo) -> PublicUser | None:
+    """
+    Look up the PublicUser identified by an `Authorization: Bearer <token>` header.
+
+    The DB stores HMAC hashes of user tokens, so the incoming bearer value is
+    hashed before lookup. Returns None when no Bearer header is present or the
+    token doesn't match any row.
+    """
+    headers = info.context.get_request_headers()
+    auth_header = headers.get('authorization') or headers.get('Authorization')
+    if not auth_header:
+        return None
+    prefix, _, token = auth_header.partition(' ')
+    if prefix.lower() != 'bearer' or not token:
+        return None
+    return PublicUser.objects.filter(user_token=hash_user_token(token)).first()
+
+
+def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUser:
+    """
+    Resolve the PublicUser for an authenticated request.
+
+    Prefers the bearer token; falls back to the legacy `userUuid` argument when
+    no bearer is present. Once a user has signed up (has a user_token), the
+    UUID-arg fallback is rejected so the bearer credential can't be bypassed
+    by anyone who knows the UUID.
+    """
+    public_user = _resolve_public_user_from_bearer(info)
+    if public_user is not None:
+        return public_user
+    if user_uuid is None:
+        raise GraphQLError('Authentication required: provide an Authorization: Bearer token or userUuid')
+    try:
+        public_user = PublicUser.objects.get(uuid=user_uuid)
+    except PublicUser.DoesNotExist:
+        raise GraphQLError('PublicUser not found') from None
+    if public_user.user_token is not None:
+        raise GraphQLError('Authentication required: this account requires an Authorization: Bearer header')
+    return public_user
+
+
 class RegisterPublicUserPayload(graphene.ObjectType[Any]):
     """Payload returned after registering a public user."""
 
@@ -2446,18 +2500,25 @@ class CommitToPledgeMutation(graphene.Mutation):
     """Create or remove a commitment to a pledge."""
 
     class Arguments:
-        user_uuid = graphene.UUID(required=True, description='UUID of the PublicUser')
         pledge_id = graphene.ID(required=True, description='ID of the Pledge')
         committed = graphene.Boolean(required=True, description='True to commit, False to uncommit')
+        user_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the PublicUser (legacy; prefer Authorization: Bearer header)',
+        )
 
     Output = CommitToPledgePayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, pledge_id: str, committed: bool) -> CommitToPledgePayload:
-        try:
-            public_user = PublicUser.objects.get(uuid=user_uuid)
-        except PublicUser.DoesNotExist:
-            raise GraphQLError('PublicUser not found') from None
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        pledge_id: str,
+        committed: bool,
+        user_uuid: uuid.UUID | None = None,
+    ) -> CommitToPledgePayload:
+        public_user = _resolve_public_user(info, user_uuid)
 
         try:
             pledge = Pledge.objects.select_related('plan__features').get(id=pledge_id)
@@ -2494,18 +2555,25 @@ class SetUserDataMutation(graphene.Mutation):
     """Set a key-value pair in a PublicUser's user_data."""
 
     class Arguments:
-        user_uuid = graphene.UUID(required=True, description='UUID of the PublicUser')
         key = graphene.String(required=True, description='Key to set in user_data')
         value = graphene.String(required=True, description='Value to set for the key')
+        user_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the PublicUser (legacy; prefer Authorization: Bearer header)',
+        )
 
     Output = SetUserDataPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo, user_uuid: uuid.UUID, key: str, value: str) -> SetUserDataPayload:
-        try:
-            public_user = PublicUser.objects.get(uuid=user_uuid)
-        except PublicUser.DoesNotExist:
-            raise GraphQLError('PublicUser not found') from None
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        key: str,
+        value: str,
+        user_uuid: uuid.UUID | None = None,
+    ) -> SetUserDataPayload:
+        public_user = _resolve_public_user(info, user_uuid)
 
         public_user.user_data[key] = value
         public_user.save(update_fields=['user_data'])

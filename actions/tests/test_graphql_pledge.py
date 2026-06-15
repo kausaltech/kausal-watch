@@ -887,6 +887,98 @@ class TestCommitToPledgeMutation:
         assert 'Community engagement is not enabled for this plan' in response['errors'][0]['message']
         assert PledgeCommitment.objects.count() == 0
 
+    def test_commit_with_bearer_token_authenticates(self, graphql_client_query_data):
+        """The commitToPledge mutation should authenticate via Authorization: Bearer header alone."""
+        token = self.public_user.regenerate_user_token()
+
+        data = graphql_client_query_data(
+            """
+            mutation($pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={'pledgeId': str(self.pledge.id), 'committed': True},
+            headers={'Authorization': f'Bearer {token}'},
+        )
+
+        assert data['pledge']['commitToPledge']['committed'] is True
+        commitment = PledgeCommitment.objects.get()
+        assert commitment.public_user == self.public_user
+
+    def test_commit_bearer_token_takes_precedence_over_user_uuid(self, graphql_client_query_data):
+        """If both bearer and userUuid are given, the bearer-identified user wins."""
+        token = self.public_user.regenerate_user_token()
+        other_user = PublicUser.objects.create()
+
+        graphql_client_query_data(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(other_user.uuid),
+                'pledgeId': str(self.pledge.id),
+                'committed': True,
+            },
+            headers={'Authorization': f'Bearer {token}'},
+        )
+
+        assert PledgeCommitment.objects.filter(public_user=self.public_user).exists()
+        assert not PledgeCommitment.objects.filter(public_user=other_user).exists()
+
+    def test_commit_with_uuid_rejected_when_user_has_signed_up(self, graphql_client_query):
+        """Once a PublicUser has a user_token, the UUID arg must no longer authenticate."""
+        self.public_user.regenerate_user_token()
+
+        response = graphql_client_query(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(self.public_user.uuid),
+                'pledgeId': str(self.pledge.id),
+                'committed': True,
+            },
+        )
+
+        assert 'errors' in response
+        assert 'Authorization: Bearer' in response['errors'][0]['message']
+        assert PledgeCommitment.objects.count() == 0
+
+    def test_commit_without_credentials_returns_error(self, graphql_client_query):
+        """Omitting both bearer and userUuid must fail with an auth error."""
+        response = graphql_client_query(
+            """
+            mutation($pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={'pledgeId': str(self.pledge.id), 'committed': True},
+        )
+
+        assert 'errors' in response
+        assert 'Authentication required' in response['errors'][0]['message']
+        assert PledgeCommitment.objects.count() == 0
+
 
 class TestSetUserDataMutation:
     """Tests for the setUserData GraphQL mutation."""
@@ -990,6 +1082,28 @@ class TestSetUserDataMutation:
 
         assert 'errors' in response
         assert 'PublicUser not found' in response['errors'][0]['message']
+
+    def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
+        """The setUserData mutation should authenticate via Authorization: Bearer header alone."""
+        public_user = PublicUser.objects.create()
+        token = public_user.regenerate_user_token()
+
+        graphql_client_query_data(
+            """
+            mutation($key: String!, $value: String!) {
+              pledge {
+                setUserData(key: $key, value: $value) {
+                  uuid
+                }
+              }
+            }
+            """,
+            variables={'key': 'zip_code', 'value': '01234'},
+            headers={'Authorization': f'Bearer {token}'},
+        )
+
+        public_user.refresh_from_db()
+        assert public_user.user_data['zip_code'] == '01234'
 
 
 class TestPledgeBodyField:
@@ -1240,6 +1354,70 @@ class TestPublicUserQuery:
 
         assert data['publicUser'] is not None
         assert json.loads(data['publicUser']['userData']) == {}
+
+    def test_public_user_query_does_not_expose_user_token(self, graphql_client_query):
+        """The user_token must never be queryable via the publicUser node."""
+        public_user = PublicUser.objects.create()
+        public_user.regenerate_user_token()
+        query = """
+            query($uuid: UUID!) {
+                publicUser(uuid: $uuid) {
+                    uuid
+                    userToken
+                }
+            }
+        """
+
+        response = graphql_client_query(query, variables={'uuid': str(public_user.uuid)})
+
+        assert 'errors' in response
+        assert any('userToken' in error['message'] for error in response['errors'])
+        data = response.get('data') or {}
+        returned = data.get('publicUser') or {}
+        returned_token = returned.get('userToken')
+        assert returned_token is None or returned_token != public_user.user_token
+
+    def test_public_user_query_returns_null_for_signed_up_user_without_bearer(self, graphql_client_query_data):
+        """Once a user has signed up, the UUID query must require a matching bearer header."""
+        public_user = PublicUser.objects.create()
+        public_user.regenerate_user_token()
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+        )
+
+        assert data['publicUser'] is None
+
+    def test_public_user_query_returns_null_when_bearer_belongs_to_other_user(self, graphql_client_query_data):
+        """A signed-up user's data is hidden when the bearer header is for someone else."""
+        public_user = PublicUser.objects.create()
+        public_user.regenerate_user_token()
+
+        other_user = PublicUser.objects.create()
+        other_token = other_user.regenerate_user_token()
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'Authorization': f'Bearer {other_token}'},
+        )
+
+        assert data['publicUser'] is None
+
+    def test_public_user_query_returns_signed_up_user_when_bearer_resolves_to_them(self, graphql_client_query_data):
+        """A signed-up user can read their own data by presenting their own bearer token."""
+        public_user = PublicUser.objects.create()
+        token = public_user.regenerate_user_token()
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'Authorization': f'Bearer {token}'},
+        )
+
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(public_user.uuid)
 
 
 class TestPledgeCommitmentCountAnnotation:
