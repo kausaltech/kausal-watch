@@ -1196,7 +1196,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return ''
         return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
-    def get_view_url(  # noqa: C901, PLR0912
+    @staticmethod
+    def _scheme_for_hostname(hostname: str) -> str:
+        return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
+
+    def get_view_url(  # noqa: C901, PLR0912, PLR0915
         self,
         client_url: str | None = None,
         active_locale: str | None = None,
@@ -1260,12 +1264,69 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ':%s' % port
             else:
                 port_str = ''
-            return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
+            return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
+
+        candidate = self._find_canonical_domain()
+        if candidate is not None:
+            bp = (candidate.base_path or '').rstrip('/')
+            scheme = self._scheme_for_hostname(candidate.hostname)
+            return f'{scheme}://{candidate.hostname}{locale_prefix}{bp}'
 
         hostname = self.default_hostname(include_all_domains=True)
         if not hostname:
             raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
-        return f'https://{hostname}{locale_prefix}'
+        scheme = self._scheme_for_hostname(hostname)
+        return f'{scheme}://{hostname}{locale_prefix}'
+
+    def _first_production_domain(self, candidates: list[PlanDomain]) -> PlanDomain | None:
+        production = [d for d in candidates if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
+        if not production:
+            return None
+        if len(production) > 1:
+            sentry_sdk.capture_message(
+                f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
+                f"using '{production[0].hostname}' as canonical",
+                level='warning',
+            )
+        return production[0]
+
+    def _find_live_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        published_domains = [d for d in domains if d.is_launched]
+        if not published_domains:
+            return None
+        return self._first_production_domain(published_domains) or published_domains[0]
+
+    def _find_unpublished_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        explicitly_published = [d for d in domains if d.publication_status_override == PublicationStatus.PUBLISHED]
+        if explicitly_published:
+            return self._first_production_domain(explicitly_published) or explicitly_published[0]
+
+        non_production_domains = [
+            d
+            for d in domains
+            if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION
+            and d.publication_status_override != PublicationStatus.UNPUBLISHED
+        ]
+        if not non_production_domains:
+            return None
+        return non_production_domains[0]
+
+    def _find_canonical_domain(self) -> PlanDomain | None:
+        """
+        Find the best PlanDomain to use as the canonical URL for this plan.
+
+        Filters out redirect domains. For published (live) plans, prefers
+        published production domains. For unpublished plans, explicit
+        publication overrides take precedence; otherwise production domains are
+        excluded so the URL falls back to a preview/development domain or the
+        wildcard.
+        """
+        domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
+        if not domains:
+            return None
+        if self.is_live():
+            return self._find_live_canonical_domain(domains)
+        return self._find_unpublished_canonical_domain(domains)
 
     @classmethod
     def create_with_defaults(
