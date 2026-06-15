@@ -1134,12 +1134,39 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ':%s' % port
             else:
                 port_str = ''
-            return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
+            return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
+
+        candidate = self._find_canonical_domain()
+        if candidate is not None:
+            bp = (candidate.base_path or '').rstrip('/')
+            return f'https://{candidate.hostname}{locale_prefix}{bp}'
 
         hostname = self.default_hostname(include_all_domains=True)
         if not hostname:
             raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         return f'https://{hostname}{locale_prefix}'
+
+    def _find_canonical_domain(self) -> PlanDomain | None:
+        """
+        Find the best PlanDomain to use as the canonical URL for this plan.
+
+        Filters out redirect domains. For published (live) plans, prefers
+        production deployment environment. For unpublished plans, excludes
+        production domains so the URL falls back to a preview/development
+        domain or the wildcard.
+        """
+        domains = [d for d in self.domains.all() if not d.redirect_to_hostname]
+        if not domains:
+            return None
+        if self.is_live():
+            production = [d for d in domains if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
+            if production:
+                return production[0]
+        else:
+            domains = [d for d in domains if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION]
+            if not domains:
+                return None
+        return domains[0]
 
     @classmethod
     def create_with_defaults(

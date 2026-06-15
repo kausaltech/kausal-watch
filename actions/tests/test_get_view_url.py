@@ -112,10 +112,10 @@ class TestGetViewUrlWithPlanDomain:
         url = plan.get_view_url(client_url='https://climate.city.gov', active_locale='fi')
         assert url == 'https://climate.city.gov/fi'
 
-    def test_locale_prefix_after_base_path(self, plan):
+    def test_locale_prefix_before_base_path(self, plan):
         PlanDomainFactory.create(plan=plan, hostname='city.gov', base_path='/climate')
         url = plan.get_view_url(client_url='https://city.gov', active_locale='fi')
-        assert url == 'https://city.gov/climate/fi'
+        assert url == 'https://city.gov/fi/climate'
 
 
 class TestGetViewUrlFallback:
@@ -287,7 +287,250 @@ class TestGetViewUrlLocalhostFallback:
         assert url == 'https://myplan.example.com'
 
 
+@pytest.fixture
+def plan_no_wildcards(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    return PlanFactory.create(
+        identifier='myplan',
+        primary_language='en',
+        other_languages=['fi'],
+    )
+
+
+class TestGetViewUrlPlanDomainFallback:
+    """Test get_view_url falls back to PlanDomain when no client_url or no match."""
+
+    def test_uses_plan_domain_with_base_path_when_no_client_url(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', base_path='/climate')
+        url = plan.get_view_url()
+        assert url == 'https://city.gov/climate'
+
+    def test_uses_plan_domain_without_base_path_when_no_client_url(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='climate.city.gov')
+        url = plan.get_view_url()
+        assert url == 'https://climate.city.gov'
+
+    def test_skips_redirect_domains(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='old.city.gov', redirect_to_hostname='new.city.gov')
+        PlanDomainFactory.create(plan=plan, hostname='new.city.gov')
+        url = plan.get_view_url()
+        assert url == 'https://new.city.gov'
+
+    def test_base_path_with_locale_prefix(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', base_path='/climate')
+        url = plan.get_view_url(active_locale='fi')
+        assert url == 'https://city.gov/fi/climate'
+
+    def test_prefers_production_domain(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        from actions.models.plan import PlanDomain
+
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        url = plan.get_view_url()
+        assert url == 'https://city.gov'
+
+    def test_raises_when_only_redirect_domains_and_no_wildcards(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='old.city.gov', redirect_to_hostname='new.city.gov')
+        with pytest.raises(ValueError, match='no hostname plan domains configured'):
+            plan.get_view_url()
+
+    def test_uses_plan_domain_when_client_url_does_not_match(self, plan_no_wildcards):
+        plan = plan_no_wildcards
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', base_path='/climate')
+        url = plan.get_view_url(client_url='https://unknown.example.org')
+        assert url == 'https://city.gov/climate'
+
+
+class TestGetViewUrlPlanDomainPriority:
+    """Test that a production PlanDomain takes priority over wildcard settings, but a wildcard from the UI overrides it."""
+
+    @pytest.fixture
+    def published_plan_with_production_domain(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            other_languages=['fi'],
+        )
+        from actions.models.plan import PlanDomain
+
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        return plan
+
+    def test_uses_plan_domain_over_wildcard_settings_when_no_client_url(self, published_plan_with_production_domain):
+        url = published_plan_with_production_domain.get_view_url()
+        assert url == 'https://city.gov/climate'
+
+    def test_uses_plan_domain_over_wildcard_settings_with_locale(self, published_plan_with_production_domain):
+        url = published_plan_with_production_domain.get_view_url(active_locale='fi')
+        assert url == 'https://city.gov/fi/climate'
+
+    def test_wildcard_from_ui_overrides_plan_domain(self, published_plan_with_production_domain):
+        url = published_plan_with_production_domain.get_view_url(client_url='https://anything.example.com')
+        assert url == 'https://myplan.example.com'
+
+    def test_wildcard_from_ui_overrides_plan_domain_with_locale(self, published_plan_with_production_domain):
+        url = published_plan_with_production_domain.get_view_url(
+            client_url='https://anything.example.com',
+            active_locale='fi',
+        )
+        assert url == 'https://myplan.example.com/fi'
+
+    def test_wildcard_from_request_header_overrides_plan_domain(self, published_plan_with_production_domain, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = []
+        request = SimpleNamespace(wildcard_domains=['example.com'])
+        url = published_plan_with_production_domain.get_view_url(
+            client_url='https://anything.example.com',
+            request=request,
+        )
+        assert url == 'https://myplan.example.com'
+
+    def test_non_matching_client_url_falls_back_to_plan_domain(self, published_plan_with_production_domain):
+        url = published_plan_with_production_domain.get_view_url(client_url='https://unknown.example.org')
+        assert url == 'https://city.gov/climate'
+
+
+class TestGetViewUrlUnpublishedPlan:
+    """Unpublished plans should use the wildcard domain, not PRODUCTION PlanDomains."""
+
+    @pytest.fixture
+    def unpublished_plan_with_production_domain(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            other_languages=['fi'],
+            published_at=None,
+        )
+        from actions.models.plan import PlanDomain
+
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        return plan
+
+    def test_uses_wildcard_domain_when_no_client_url(self, unpublished_plan_with_production_domain):
+        url = unpublished_plan_with_production_domain.get_view_url()
+        assert url == 'https://myplan.example.com'
+
+    def test_uses_wildcard_domain_with_locale(self, unpublished_plan_with_production_domain):
+        url = unpublished_plan_with_production_domain.get_view_url(active_locale='fi')
+        assert url == 'https://myplan.example.com/fi'
+
+    def test_uses_non_production_domain_when_available(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        from actions.models.plan import PlanDomain
+
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            other_languages=['fi'],
+            published_at=None,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        url = plan.get_view_url()
+        assert url == 'https://preview.city.gov'
+
+    def test_wildcard_from_ui_still_used(self, unpublished_plan_with_production_domain):
+        url = unpublished_plan_with_production_domain.get_view_url(client_url='https://anything.example.com')
+        assert url == 'https://myplan.example.com'
+
+    def test_falls_back_to_wildcard_when_no_non_production_domains(self, unpublished_plan_with_production_domain):
+        """Only a PRODUCTION domain exists, plan is unpublished -> use wildcard."""
+        url = unpublished_plan_with_production_domain.get_view_url()
+        assert url == 'https://myplan.example.com'
+
+
 class TestGetSiteNotificationContext:
-    def test_view_url_uses_get_view_url(self, plan):
+    def test_view_url_uses_wildcard_when_no_plan_domain(self, plan):
         context = plan.get_site_notification_context()
         assert context['view_url'] == 'https://myplan.example.com'
+
+    def test_view_url_uses_production_domain_for_published_plan(self, settings):
+        from actions.models.plan import PlanDomain
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        context = plan.get_site_notification_context()
+        assert context['view_url'] == 'https://city.gov/climate'
+
+    def test_view_url_uses_wildcard_for_unpublished_plan_with_production_domain(self, settings):
+        from actions.models.plan import PlanDomain
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            published_at=None,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        context = plan.get_site_notification_context()
+        assert context['view_url'] == 'https://myplan.example.com'
+
+    def test_view_url_uses_preview_domain_for_unpublished_plan(self, settings):
+        from actions.models.plan import PlanDomain
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            published_at=None,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        context = plan.get_site_notification_context()
+        assert context['view_url'] == 'https://preview.city.gov'
