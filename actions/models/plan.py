@@ -1070,6 +1070,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return ''
         return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
+    @staticmethod
+    def _scheme_for_hostname(hostname: str) -> str:
+        return 'http' if 'localhost' in hostname else 'https'
+
     def get_view_url(  # noqa: C901, PLR0912
         self,
         client_url: str | None = None,
@@ -1139,12 +1143,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         candidate = self._find_canonical_domain()
         if candidate is not None:
             bp = (candidate.base_path or '').rstrip('/')
-            return f'https://{candidate.hostname}{locale_prefix}{bp}'
+            scheme = self._scheme_for_hostname(candidate.hostname)
+            return f'{scheme}://{candidate.hostname}{locale_prefix}{bp}'
 
         hostname = self.default_hostname(include_all_domains=True)
         if not hostname:
             raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
-        return f'https://{hostname}{locale_prefix}'
+        scheme = self._scheme_for_hostname(hostname)
+        return f'{scheme}://{hostname}{locale_prefix}'
 
     def _find_canonical_domain(self) -> PlanDomain | None:
         """

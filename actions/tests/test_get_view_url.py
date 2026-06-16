@@ -263,14 +263,14 @@ class TestGetViewUrlLocalhostFallback:
         settings.DEPLOYMENT_TYPE = 'development'
         plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
         url = plan.get_view_url()
-        assert url == 'https://myplan.localhost'
+        assert url == 'http://myplan.localhost'
 
     def test_falls_back_to_localhost_with_locale_prefix_in_development(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
         settings.DEPLOYMENT_TYPE = 'development'
         plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
         url = plan.get_view_url(active_locale='fi')
-        assert url == 'https://myplan.localhost/fi'
+        assert url == 'http://myplan.localhost/fi'
 
     @pytest.mark.parametrize('deployment_type', ['production', 'staging', 'testing', 'wip', 'ci'])
     def test_raises_when_only_localhost_in_non_development(self, settings, deployment_type):
