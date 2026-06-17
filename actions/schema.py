@@ -2504,7 +2504,7 @@ class CommitToPledgeMutation(graphene.Mutation):
         committed = graphene.Boolean(required=True, description='True to commit, False to uncommit')
         user_uuid = graphene.UUID(
             required=False,
-            description='UUID of the PublicUser (legacy; prefer Authorization: Bearer header)',
+            description='UUID used to identify an anonymous PublicUser.',
         )
 
     Output = CommitToPledgePayload
@@ -2559,7 +2559,7 @@ class SetUserDataMutation(graphene.Mutation):
         value = graphene.String(required=True, description='Value to set for the key')
         user_uuid = graphene.UUID(
             required=False,
-            description='UUID of the PublicUser (legacy; prefer Authorization: Bearer header)',
+            description='UUID used to identify an anonymous PublicUser.',
         )
 
     Output = SetUserDataPayload

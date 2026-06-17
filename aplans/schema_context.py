@@ -323,6 +323,16 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             self.set_reason('no plan')
             return None
 
+        headers = exec_ctx.get_request_headers()
+        auth = headers.get('authorization') or headers.get('Authorization', '')
+        if auth.lower().startswith('bearer '):
+            self.set_reason('public-user bearer auth present')
+            return None
+
+        if 'publicUser' in (self.execution_context.query or ''):
+            self.set_reason('publicUser query is identity-sensitive and not cached')
+            return None
+
         parts = [str(plan.identifier), plan.cache_invalidated_at.isoformat()]
         return parts
 

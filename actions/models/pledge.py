@@ -411,8 +411,7 @@ class PublicUser(models.Model):
         Mint a new raw bearer token, store its HMAC hash on the row, and return the raw value.
 
         The raw token is returned to the caller exactly once (typically to the
-        client via a mutation payload). The database only ever holds the hash,
-        so a DB leak does not expose live credentials.
+        client via a mutation payload). The database only ever holds the hash.
         """
         raw_token = _generate_user_token()
         self.user_token = hash_user_token(raw_token)
