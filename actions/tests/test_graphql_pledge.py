@@ -1375,7 +1375,7 @@ class TestPublicUserQuery:
         data = response.get('data') or {}
         returned = data.get('publicUser') or {}
         returned_token = returned.get('userToken')
-        assert returned_token is None or returned_token != public_user.user_token
+        assert returned_token is None
 
     def test_public_user_query_returns_null_for_signed_up_user_without_bearer(self, graphql_client_query_data):
         """Once a user has signed up, the UUID query must require a matching bearer header."""
