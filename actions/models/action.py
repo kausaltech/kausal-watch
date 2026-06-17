@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, TypedDict, cast
 
 import reversion
 import strawberry as sb
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
@@ -1085,7 +1086,7 @@ class Action(
     def get_notification_context(self, plan=None, request=None):
         if plan is None:
             plan = self.plan
-        change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
+        change_url = settings.ADMIN_BASE_URL + reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
         return {
             'id': self.id,
             'identifier': self.identifier,

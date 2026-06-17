@@ -562,7 +562,9 @@ class Indicator(
         from django.conf import settings
 
         if 'kausal_watch_extensions' in settings.INSTALLED_APPS:
-            edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
+            edit_values_url = settings.ADMIN_BASE_URL + reverse(
+                'indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id)
+            )
         else:
             edit_values_url = None
         return {

@@ -4,6 +4,7 @@ from datetime import timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import translation
 
@@ -16,6 +17,7 @@ from indicators.models import IndicatorContactPerson
 
 from .mjml import render_mjml_from_template
 from .models import ManuallyScheduledNotificationTemplate
+from .utils import validate_notification_context_urls
 from .notifications import (
     ActionNotUpdatedNotification,
     ManuallyScheduledNotification,
@@ -253,6 +255,7 @@ class NotificationEngine:
                 **template.base.get_notification_context(),
                 **context,
             )
+            validate_notification_context_urls(context, allow_localhost=settings.DEBUG)
 
             rendered['html_body'] = render_mjml_from_template(
                 template.type,
