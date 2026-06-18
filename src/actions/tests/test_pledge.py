@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import uuid
+from datetime import timedelta
 from typing import Any, cast
 
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
+from django.utils import timezone
 from wagtail.models import Locale
 
 import pytest
 
-from actions.models import Pledge, PledgeCommitment, PublicUser
+from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.models.attributes import AttributeText, AttributeType as AttributeTypeModel
+from actions.models.pledge import PIN_MAX_ATTEMPTS, hash_pin, hash_user_token
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 
 pytestmark = pytest.mark.django_db
@@ -381,8 +384,6 @@ class TestPublicUser:
 
     def test_regenerate_user_token_returns_raw_and_stores_hash(self):
         """regenerate_user_token() returns the raw token and stores only the hash."""
-        from actions.models.pledge import hash_user_token
-
         user1 = PublicUser.objects.create()
         user2 = PublicUser.objects.create()
 
@@ -399,8 +400,6 @@ class TestPublicUser:
 
     def test_regenerate_user_token_rotates_existing_token(self):
         """Calling regenerate_user_token() again replaces the previous hash."""
-        from actions.models.pledge import hash_user_token
-
         public_user = PublicUser.objects.create()
         first_token = public_user.regenerate_user_token()
         first_hash = public_user.user_token
@@ -411,6 +410,84 @@ class TestPublicUser:
         public_user.refresh_from_db()
         assert public_user.user_token != first_hash
         assert public_user.user_token == hash_user_token(second_token)
+
+    def test_email_is_lowercased_and_trimmed_on_save(self):
+        """Saving a PublicUser normalizes the email to trimmed lowercase."""
+        public_user = PublicUser.objects.create(email='  Foo@EXAMPLE.com ')
+
+        assert public_user.email == 'foo@example.com'
+
+
+class TestPublicUserSignInAttempt:
+    """Tests for the PublicUserSignInAttempt model."""
+
+    def test_create_for_generates_attempt_with_hashed_pin(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+
+        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+
+        assert raw_pin.isdigit()
+        assert len(raw_pin) == 6
+        assert attempt.pin_hash == hash_pin(raw_pin, attempt.pin_salt)
+        assert attempt.pin_hash != raw_pin
+        assert attempt.attempts == 0
+
+    def test_create_for_replaces_previous_attempt(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        first_attempt, first_pin = PublicUserSignInAttempt.create_for(public_user)
+
+        second_attempt, second_pin = PublicUserSignInAttempt.create_for(public_user)
+
+        assert second_pin != first_pin
+        assert second_attempt.pk == first_attempt.pk
+        assert PublicUserSignInAttempt.objects.filter(public_user=public_user).count() == 1
+
+    def test_create_for_stores_anon_uuid(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        anon_uuid = uuid.uuid4()
+
+        attempt, _ = PublicUserSignInAttempt.create_for(public_user, anon_uuid=anon_uuid)
+
+        assert attempt.anon_uuid == anon_uuid
+
+    def test_verify_returns_true_for_correct_pin(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+
+        assert attempt.verify(raw_pin) is True
+
+    def test_verify_returns_false_for_wrong_pin(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        wrong = '000000' if raw_pin != '000000' else '111111'
+
+        assert attempt.verify(wrong) is False
+
+    def test_verify_increments_attempts(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+
+        attempt.verify('000000')
+        attempt.verify('111111')
+
+        attempt.refresh_from_db()
+        assert attempt.attempts == 2
+
+    def test_verify_returns_false_after_attempts_exhausted(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        for _ in range(PIN_MAX_ATTEMPTS):
+            attempt.verify('000000')
+
+        assert attempt.verify(raw_pin) is False
+
+    def test_verify_returns_false_for_expired_attempt(self):
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt.expires_at = timezone.now() - timedelta(minutes=1)
+        attempt.save(update_fields=['expires_at'])
+
+        assert attempt.verify(raw_pin) is False
 
 
 class TestPledgeCommitment:
