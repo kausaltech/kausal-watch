@@ -115,7 +115,7 @@ from .models import (
     PublicUserSignInAttempt,
 )
 from .models.pledge import SIGNIN_COOLDOWN, hash_user_token
-from .public_user_auth import issue_pin_for, normalize_email
+from .public_user_auth import issue_pin_for, merge_anon_into_verified, normalize_email
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -2699,6 +2699,67 @@ class SignInMutation(graphene.Mutation):
         return SignInPayload(sent=True)
 
 
+class VerifyPinPayload(graphene.ObjectType[Any]):
+    """Payload returned after a successful VerifyPin call."""
+
+    user_token = graphene.String(required=True)
+    pledge_ids = graphene.List(graphene.NonNull(graphene.ID), required=True)
+
+
+class VerifyPinMutation(graphene.Mutation):
+    """
+    Validate a PIN issued by SignIn or SignUp.
+
+    On success, rotates the PublicUser's bearer token, merges any anonymous
+    pledge commitments captured at sign-in time, and returns the new token
+    along with the user's current pledge IDs.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address of the PublicUser to verify.')
+        pin = graphene.String(required=True, description='6-digit PIN delivered by email.')
+
+    Output = VerifyPinPayload
+
+    @classmethod
+    def mutate(cls, _root, _info: GQLInfo, email: str, pin: str) -> VerifyPinPayload:
+        normalized = normalize_email(email)
+        try:
+            public_user = PublicUser.objects.get(email=normalized)
+        except PublicUser.DoesNotExist:
+            raise GraphQLError('Invalid PIN.') from None
+
+        attempt = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
+        if attempt is None:
+            raise GraphQLError('No active sign-in attempt for this email. Please sign in again.')
+
+        if attempt.is_expired:
+            raise GraphQLError('PIN has expired. Please request a new one.')
+        if attempt.attempts_exhausted:
+            raise GraphQLError('Too many attempts. Please request a new PIN.')
+
+        if not attempt.verify(pin):
+            raise GraphQLError('Invalid PIN.')
+
+        anon_uuid = attempt.anon_uuid
+        attempt.delete()
+
+        if anon_uuid is not None:
+            merge_anon_into_verified(public_user, anon_uuid)
+
+        if public_user.email_verified_at is None:
+            public_user.email_verified_at = timezone.now()
+            public_user.save(update_fields=['email_verified_at'])
+
+        raw_token = public_user.regenerate_user_token()
+
+        pledge_ids = list(PledgeCommitment.objects.filter(public_user=public_user).values_list('pledge_id', flat=True))
+        return VerifyPinPayload(
+            user_token=raw_token,
+            pledge_ids=[str(pid) for pid in pledge_ids],
+        )
+
+
 class PledgeMutations(graphene.ObjectType[Any]):
     """Mutations related to pledges and community engagement."""
 
@@ -2716,6 +2777,9 @@ class PledgeMutations(graphene.ObjectType[Any]):
     )
     sign_in = SignInMutation.Field(
         description='Sign in to an existing PublicUser by email and send a verification PIN.',
+    )
+    verify_pin = VerifyPinMutation.Field(
+        description='Validate a PIN, rotate the user token, and return authentication details.',
     )
 
 
