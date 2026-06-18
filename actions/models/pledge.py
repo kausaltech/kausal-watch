@@ -424,6 +424,11 @@ class PublicUser(models.Model):
         blank=True,
         verbose_name=_('marketing consented at'),
     )
+    email_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('email verified at'),
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('created at'),
