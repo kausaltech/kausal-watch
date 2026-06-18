@@ -59,6 +59,7 @@ from .pledge import (
     PledgeActionThrough,
     PledgeCommitment,
     PublicUser,
+    PublicUserSignInAttempt,
 )
 
 __all__ = [
@@ -108,6 +109,7 @@ __all__ = [
     'PledgeActionThrough',
     'PledgeCommitment',
     'PublicUser',
+    'PublicUserSignInAttempt',
     'PublicationStatus',
     'RestrictedVisibilityModel',
     'Scenario',

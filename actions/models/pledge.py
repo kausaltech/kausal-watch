@@ -4,11 +4,13 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from datetime import timedelta
 from typing import TYPE_CHECKING, ClassVar
 
 import reversion
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from wagtail import blocks
@@ -362,6 +364,20 @@ def hash_user_token(raw_token: str) -> str:
     return hmac.new(_get_user_token_pepper(), raw_token.encode(), hashlib.sha256).hexdigest()
 
 
+PIN_LENGTH = 6
+PIN_TTL = timedelta(minutes=10)
+PIN_MAX_ATTEMPTS = 5
+SIGNIN_COOLDOWN = timedelta(seconds=30)
+
+
+def _generate_pin() -> str:
+    return f'{secrets.randbelow(10**PIN_LENGTH):0{PIN_LENGTH}d}'
+
+
+def hash_pin(raw_pin: str, salt: str) -> str:
+    return hashlib.sha256((salt + raw_pin).encode()).hexdigest()
+
+
 @reversion.register(exclude=['user_token'])
 class PublicUser(models.Model):
     """
@@ -390,6 +406,23 @@ class PublicUser(models.Model):
         verbose_name=_('user token'),
         help_text=_('Opaque secret used as a bearer credential after the user signs up.'),
     )
+    email = models.EmailField(
+        null=True,
+        blank=True,
+        unique=True,
+        verbose_name=_('email'),
+        help_text=_('Set when the user signs up; used for PIN-based authentication.'),
+    )
+    terms_accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('terms accepted at'),
+    )
+    marketing_consented_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('marketing consented at'),
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_('created at'),
@@ -398,13 +431,19 @@ class PublicUser(models.Model):
     objects: ClassVar[models.Manager[PublicUser]]
 
     commitments: RevMany[PledgeCommitment]
+    sign_in_attempt: PublicUserSignInAttempt | None
 
     class Meta:
         verbose_name = _('public user')
         verbose_name_plural = _('public users')
 
     def __str__(self) -> str:
-        return str(self.uuid)
+        return self.email or str(self.uuid)
+
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
 
     def regenerate_user_token(self) -> str:
         """
@@ -417,6 +456,88 @@ class PublicUser(models.Model):
         self.user_token = hash_user_token(raw_token)
         self.save(update_fields=['user_token'])
         return raw_token
+
+
+@reversion.register(exclude=['pin_hash', 'pin_salt'])
+class PublicUserSignInAttempt(models.Model):
+    """
+    State held between a SignIn/SignUp call and a successful VerifyPin.
+
+    Created when a user requests a PIN via SignIn or SignUp; consumed by
+    VerifyPin. One attempt per user at a time; a new SignIn/SignUp replaces
+    the previous one. The raw PIN is only ever known to the user; the database
+    stores its sha256(salt + pin). The anon_uuid carries the merge intent
+    captured at sign-in time, so VerifyPin can merge the anonymous session's
+    pledges into the email-verified account even when verification happens on
+    a different device than sign-in.
+    """
+
+    public_user: FK[PublicUser] = models.OneToOneField(
+        'PublicUser',
+        on_delete=models.CASCADE,
+        related_name='sign_in_attempt',
+    )
+    pin_hash = models.CharField(max_length=64, editable=False)
+    pin_salt = models.CharField(max_length=32, editable=False)
+    issued_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    anon_uuid = models.UUIDField(null=True, blank=True, editable=False)
+
+    objects: ClassVar[models.Manager[PublicUserSignInAttempt]]
+
+    class Meta:
+        verbose_name = _('public user sign-in attempt')
+        verbose_name_plural = _('public user sign-in attempts')
+
+    def __str__(self) -> str:
+        return f'Sign-in attempt for {self.public_user}'
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+    @property
+    def attempts_exhausted(self) -> bool:
+        return self.attempts >= PIN_MAX_ATTEMPTS
+
+    @classmethod
+    def create_for(cls, public_user: PublicUser, anon_uuid: uuid.UUID | None = None) -> tuple[PublicUserSignInAttempt, str]:
+        """
+        Generate a fresh PIN for the given user, replacing any existing attempt.
+
+        Returns the new attempt plus the raw PIN. The raw PIN must be delivered
+        to the user (e.g., by email) and is not stored anywhere in the database.
+        """
+        raw_pin = _generate_pin()
+        salt = secrets.token_hex(16)
+        now = timezone.now()
+        attempt, _ = cls.objects.update_or_create(
+            public_user=public_user,
+            defaults={
+                'pin_hash': hash_pin(raw_pin, salt),
+                'pin_salt': salt,
+                'issued_at': now,
+                'expires_at': now + PIN_TTL,
+                'attempts': 0,
+                'anon_uuid': anon_uuid,
+            },
+        )
+        return attempt, raw_pin
+
+    def verify(self, raw_pin: str) -> bool:
+        """
+        Validate a raw PIN against the stored hash.
+
+        Increments the attempt counter on every call. Returns False if the
+        attempt is expired, attempts are exhausted, or the PIN doesn't match.
+        """
+        self.attempts += 1
+        self.save(update_fields=['attempts'])
+        if self.is_expired or self.attempts_exhausted:
+            return False
+        expected = hash_pin(raw_pin, self.pin_salt)
+        return hmac.compare_digest(expected, self.pin_hash)
 
 
 @reversion.register()
