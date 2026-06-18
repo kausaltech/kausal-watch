@@ -8,6 +8,7 @@ from django.db.models.enums import TextChoices
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.admin.telepath import register as telepath_register
+from wagtail.blocks.stream_block import StreamBlockAdapter
 from wagtail.blocks.struct_block import BlockGroup, StructBlockAdapter, StructBlockValidationError  # type: ignore[attr-defined]
 
 from grapple.helpers import register_streamfield_block
@@ -59,30 +60,53 @@ def _get_plan_features() -> PlanFeatures | None:
 
 class PlanFeatureGatedStreamBlockMixin(_StreamBlockBase):
     """
-    Hides child blocks from the admin "add block" menu based on PlanFeatures flags.
+    Marks child blocks as feature-gated based on PlanFeatures flags.
 
     Subclasses define ``feature_gated_blocks`` as a mapping of block names
-    to the PlanFeatures boolean field that must be ``True`` for the block to appear.
-    When the feature is off (or no admin context exists), the block is hidden.
+    to the PlanFeatures boolean field that must be ``True`` for the block to
+    be addable.
+
+    The gating is applied by ``FeatureGatedStreamBlockAdapter`` at telepath
+    serialization time: ALL block definitions are still sent to the client (so
+    already-saved gated data continues to render), but disabled blocks get a
+    ``blockCounts`` entry with ``max_num: 0`` so no new instances can be added.
+    Removing the definitions entirely would crash the editor JS and corrupt
+    StreamField indice.
     """
 
     feature_gated_blocks: ClassVar[dict[str, str]]
-
-    def sorted_child_blocks(self) -> list[blocks.Block]:
-        sorted_blocks = super().sorted_child_blocks()
-        features = _get_plan_features()
-        if features is None:
-            return sorted_blocks
-        hidden = {name for name, flag in self.feature_gated_blocks.items() if not getattr(features, flag, True)}
-        if not hidden:
-            return sorted_blocks
-        return [b for b in sorted_blocks if b.name not in hidden]
 
 
 class _IndicatorDetailsContentStreamFeatureGateMixin(PlanFeatureGatedStreamBlockMixin):
     feature_gated_blocks = {
         'factor_value_summary': 'enable_indicator_factors',
     }
+
+
+class FeatureGatedStreamBlockAdapter(StreamBlockAdapter):
+    """
+    Telepath adapter that disables (but does not remove) feature-gated child blocks.
+
+    See ``PlanFeatureGatedStreamBlockMixin`` for the rationale.
+    """
+
+    def js_args(self, block) -> list:
+        result = super().js_args(block)
+        if not hasattr(block, 'feature_gated_blocks'):
+            return result
+        features = _get_plan_features()
+        if features is None:
+            return result
+        hidden = {name for name, flag in block.feature_gated_blocks.items() if not getattr(features, flag, True)}
+        if not hidden:
+            return result
+        meta = result[3]
+        block_counts = dict(meta.get('blockCounts') or {})
+        for name in hidden:
+            if name in block.child_blocks:
+                block_counts[name] = {'max_num': 0}
+        meta['blockCounts'] = block_counts
+        return result
 
 
 class IndicatorListColumnInterface(DashboardColumnInterface):
@@ -465,3 +489,7 @@ IndicatorMainContentStream = generate_stream_block(
     field_registry=indicator_registry,
     mixins=(_IndicatorDetailsContentStreamFeatureGateMixin,),
 )
+
+_feature_gated_adapter = FeatureGatedStreamBlockAdapter()
+telepath_register(_feature_gated_adapter, IndicatorAsideContentStream)
+telepath_register(_feature_gated_adapter, IndicatorMainContentStream)
