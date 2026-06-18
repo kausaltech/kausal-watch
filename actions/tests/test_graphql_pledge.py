@@ -11,6 +11,7 @@ from wagtail.models import Locale
 import pytest
 
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
+from actions.models.pledge import PIN_MAX_ATTEMPTS, hash_user_token
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
 
@@ -1269,6 +1270,230 @@ class TestSignInMutation:
 
         attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
         assert attempt.anon_uuid == anon_uuid
+
+
+VERIFY_PIN_MUTATION = """
+    mutation($email: String!, $pin: String!) {
+      pledge {
+        verifyPin(email: $email, pin: $pin) {
+          userToken
+          pledgeIds
+        }
+      }
+    }
+"""
+
+
+class TestVerifyPinMutation:
+    """Tests for the verifyPin GraphQL mutation."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create()
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
+        self.public_user = PublicUser.objects.create(email='alice@example.com')
+
+    def _issue_pin(self, anon_uuid: uuid.UUID | None = None) -> str:
+        _, raw_pin = PublicUserSignInAttempt.create_for(self.public_user, anon_uuid=anon_uuid)
+        return raw_pin
+
+    def test_verify_pin_success_returns_token(self, graphql_client_query_data):
+        raw_pin = self._issue_pin()
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        returned_token = data['pledge']['verifyPin']['userToken']
+        assert returned_token
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_token == hash_user_token(returned_token)
+        assert not PublicUserSignInAttempt.objects.filter(public_user=self.public_user).exists()
+
+    def test_verify_pin_sets_email_verified_at_on_first_verify(self, graphql_client_query_data):
+        raw_pin = self._issue_pin()
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.email_verified_at is not None
+
+    def test_verify_pin_does_not_overwrite_email_verified_at(self, graphql_client_query_data):
+        earlier = timezone.now() - timedelta(days=1)
+        self.public_user.email_verified_at = earlier
+        self.public_user.save(update_fields=['email_verified_at'])
+        raw_pin = self._issue_pin()
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.email_verified_at == earlier
+
+    def test_verify_pin_rotates_existing_token(self, graphql_client_query_data):
+        old_raw = self.public_user.regenerate_user_token()
+        old_hash = self.public_user.user_token
+        raw_pin = self._issue_pin()
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        new_token = data['pledge']['verifyPin']['userToken']
+        assert new_token != old_raw
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_token != old_hash
+
+    def test_verify_pin_returns_existing_pledge_ids(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
+        PledgeCommitment.objects.create(pledge=pledge, public_user=self.public_user)
+        raw_pin = self._issue_pin()
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == [str(pledge.id)]
+
+    def test_verify_pin_merges_anonymous_commitments(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
+        anon = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == [str(pledge.id)]
+        assert PledgeCommitment.objects.filter(pledge=pledge, public_user=self.public_user).exists()
+        assert not PublicUser.objects.filter(uuid=anon.uuid).exists()
+
+    def test_verify_pin_merges_subsequent_anon_into_existing_account(self, graphql_client_query_data):
+        existing_pledge = PledgeFactory.create(plan=self.plan, slug='already-committed')
+        PledgeCommitment.objects.create(pledge=existing_pledge, public_user=self.public_user)
+        new_pledge = PledgeFactory.create(plan=self.plan, slug='from-second-device')
+        second_anon = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=new_pledge, public_user=second_anon)
+        raw_pin = self._issue_pin(anon_uuid=second_anon.uuid)
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert set(data['pledge']['verifyPin']['pledgeIds']) == {str(existing_pledge.id), str(new_pledge.id)}
+        assert PledgeCommitment.objects.filter(pledge=new_pledge, public_user=self.public_user).exists()
+        assert not PublicUser.objects.filter(uuid=second_anon.uuid).exists()
+
+    def test_verify_pin_dedupes_overlapping_commitments_on_merge(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
+        PledgeCommitment.objects.create(pledge=pledge, public_user=self.public_user)
+        anon = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert PledgeCommitment.objects.filter(pledge=pledge, public_user=self.public_user).count() == 1
+        assert not PublicUser.objects.filter(uuid=anon.uuid).exists()
+
+    def test_verify_pin_skips_merge_when_anon_uuid_has_email(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
+        bob = PublicUser.objects.create(email='bob@example.com')
+        PledgeCommitment.objects.create(pledge=pledge, public_user=bob)
+        raw_pin = self._issue_pin(anon_uuid=bob.uuid)
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == []
+        assert PledgeCommitment.objects.filter(pledge=pledge, public_user=bob).exists()
+        assert PublicUser.objects.filter(uuid=bob.uuid).exists()
+
+    def test_verify_pin_with_unknown_anon_uuid_no_op(self, graphql_client_query_data):
+        raw_pin = self._issue_pin(anon_uuid=uuid.uuid4())
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['userToken']
+
+    def test_verify_pin_wrong_pin_returns_error(self, graphql_client_query):
+        raw_pin = self._issue_pin()
+        wrong = '000000' if raw_pin != '000000' else '111111'
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': wrong},
+        )
+
+        assert 'errors' in response
+        assert 'Invalid PIN' in response['errors'][0]['message']
+        assert PublicUserSignInAttempt.objects.filter(public_user=self.public_user).exists()
+
+    def test_verify_pin_expired_returns_error(self, graphql_client_query):
+        raw_pin = self._issue_pin()
+        attempt = PublicUserSignInAttempt.objects.get(public_user=self.public_user)
+        attempt.expires_at = timezone.now() - timedelta(minutes=1)
+        attempt.save(update_fields=['expires_at'])
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert 'errors' in response
+        assert 'expired' in response['errors'][0]['message'].lower()
+
+    def test_verify_pin_attempts_exhausted_returns_error(self, graphql_client_query):
+        raw_pin = self._issue_pin()
+        attempt = PublicUserSignInAttempt.objects.get(public_user=self.public_user)
+        attempt.attempts = PIN_MAX_ATTEMPTS
+        attempt.save(update_fields=['attempts'])
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert 'errors' in response
+        assert 'Too many attempts' in response['errors'][0]['message']
+
+    def test_verify_pin_no_account_returns_invalid_pin(self, graphql_client_query):
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'nobody@example.com', 'pin': '000000'},
+        )
+
+        assert 'errors' in response
+        assert 'Invalid PIN' in response['errors'][0]['message']
+
+    def test_verify_pin_no_active_attempt_returns_error(self, graphql_client_query):
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': '000000'},
+        )
+
+        assert 'errors' in response
+        assert 'No active sign-in attempt' in response['errors'][0]['message']
 
 
 class TestPledgeBodyField:
