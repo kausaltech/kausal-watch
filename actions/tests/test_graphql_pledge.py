@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import timedelta
 
+from django.core import mail
+from django.utils import timezone
 from wagtail.models import Locale
 
 import pytest
 
-from actions.models import Pledge, PledgeCommitment, PublicUser
+from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
 
@@ -1104,6 +1107,168 @@ class TestSetUserDataMutation:
 
         public_user.refresh_from_db()
         assert public_user.user_data['zip_code'] == '01234'
+
+
+SIGN_UP_MUTATION = """
+    mutation($email: String!, $terms: Boolean!, $marketing: Boolean!, $anonUuid: UUID) {
+      pledge {
+        signUp(email: $email, termsAccepted: $terms, marketingAccepted: $marketing, anonUuid: $anonUuid) {
+          sent
+        }
+      }
+    }
+"""
+
+SIGN_IN_MUTATION = """
+    mutation($email: String!, $anonUuid: UUID) {
+      pledge {
+        signIn(email: $email, anonUuid: $anonUuid) {
+          sent
+        }
+      }
+    }
+"""
+
+
+class TestSignUpMutation:
+    """Tests for the signUp GraphQL mutation."""
+
+    def test_sign_up_creates_user_and_sends_pin(self, graphql_client_query_data):
+        mail.outbox.clear()
+
+        data = graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'new@example.com', 'terms': True, 'marketing': True},
+        )
+
+        assert data['pledge']['signUp']['sent'] is True
+        public_user = PublicUser.objects.get(email='new@example.com')
+        assert public_user.terms_accepted_at is not None
+        assert public_user.marketing_consented_at is not None
+        assert PublicUserSignInAttempt.objects.filter(public_user=public_user).exists()
+        assert len(mail.outbox) == 1
+        assert 'new@example.com' in mail.outbox[0].to
+
+    def test_sign_up_marketing_opt_out_does_not_set_consent(self, graphql_client_query_data):
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'optout@example.com', 'terms': True, 'marketing': False},
+        )
+
+        public_user = PublicUser.objects.get(email='optout@example.com')
+        assert public_user.marketing_consented_at is None
+
+    def test_sign_up_errors_when_email_exists(self, graphql_client_query):
+        PublicUser.objects.create(email='exists@example.com')
+
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': 'exists@example.com', 'terms': True, 'marketing': False},
+        )
+
+        assert 'errors' in response
+        assert 'already exists' in response['errors'][0]['message']
+
+    def test_sign_up_errors_when_terms_not_accepted(self, graphql_client_query):
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': 'a@example.com', 'terms': False, 'marketing': False},
+        )
+
+        assert 'errors' in response
+        assert 'Terms' in response['errors'][0]['message']
+
+    def test_sign_up_normalizes_email(self, graphql_client_query_data):
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': '  Foo@Example.COM  ', 'terms': True, 'marketing': False},
+        )
+
+        assert PublicUser.objects.filter(email='foo@example.com').exists()
+
+    def test_sign_up_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
+        anon_uuid = uuid.uuid4()
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={
+                'email': 'merge@example.com',
+                'terms': True,
+                'marketing': False,
+                'anonUuid': str(anon_uuid),
+            },
+        )
+
+        public_user = PublicUser.objects.get(email='merge@example.com')
+        attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
+        assert attempt.anon_uuid == anon_uuid
+
+
+class TestSignInMutation:
+    """Tests for the signIn GraphQL mutation."""
+
+    def test_sign_in_sends_pin_for_existing_user(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create(email='hello@example.com')
+        mail.outbox.clear()
+
+        data = graphql_client_query_data(
+            SIGN_IN_MUTATION,
+            variables={'email': 'hello@example.com'},
+        )
+
+        assert data['pledge']['signIn']['sent'] is True
+        assert PublicUserSignInAttempt.objects.filter(public_user=public_user).exists()
+        assert len(mail.outbox) == 1
+
+    def test_sign_in_errors_when_email_not_found(self, graphql_client_query):
+        response = graphql_client_query(
+            SIGN_IN_MUTATION,
+            variables={'email': 'unknown@example.com'},
+        )
+
+        assert 'errors' in response
+        assert 'No account' in response['errors'][0]['message']
+
+    def test_sign_in_cooldown_enforced(self, graphql_client_query, graphql_client_query_data):
+        PublicUser.objects.create(email='hello@example.com')
+
+        graphql_client_query_data(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
+        response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
+
+        assert 'errors' in response
+        assert 'wait' in response['errors'][0]['message'].lower()
+
+    def test_sign_in_allows_after_cooldown_window(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create(email='hello@example.com')
+        graphql_client_query_data(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
+        attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
+        attempt.issued_at = timezone.now() - timedelta(minutes=5)
+        attempt.save(update_fields=['issued_at'])
+
+        data = graphql_client_query_data(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
+
+        assert data['pledge']['signIn']['sent'] is True
+
+    def test_sign_in_normalizes_email(self, graphql_client_query_data):
+        PublicUser.objects.create(email='hello@example.com')
+
+        data = graphql_client_query_data(
+            SIGN_IN_MUTATION,
+            variables={'email': '  HELLO@Example.com '},
+        )
+
+        assert data['pledge']['signIn']['sent'] is True
+
+    def test_sign_in_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
+        public_user = PublicUser.objects.create(email='hello@example.com')
+        anon_uuid = uuid.uuid4()
+
+        graphql_client_query_data(
+            SIGN_IN_MUTATION,
+            variables={'email': 'hello@example.com', 'anonUuid': str(anon_uuid)},
+        )
+
+        attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
+        assert attempt.anon_uuid == anon_uuid
 
 
 class TestPledgeBodyField:
