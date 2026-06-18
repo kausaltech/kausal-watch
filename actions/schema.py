@@ -17,6 +17,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, IntegerField, OuterRef, Prefetch, Q, Subquery, prefetch_related_objects
 from django.db.models.functions import Coalesce
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
@@ -111,8 +112,10 @@ from .models import (
     IndicatorChangeLogMessage,
     PledgeCommitment,
     PublicUser,
+    PublicUserSignInAttempt,
 )
-from .models.pledge import hash_user_token
+from .models.pledge import SIGNIN_COOLDOWN, hash_user_token
+from .public_user_auth import issue_pin_for, normalize_email
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -2594,6 +2597,108 @@ class SetUserDataMutation(graphene.Mutation):
         return SetUserDataPayload(uuid=public_user.uuid)
 
 
+class SignUpPayload(graphene.ObjectType[Any]):
+    """Payload returned after a SignUp request."""
+
+    sent = graphene.Boolean(required=True)
+
+
+class SignUpMutation(graphene.Mutation):
+    """
+    Register a new PublicUser by email and send a PIN to verify it.
+
+    Errors if an account already exists for the given email.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address to register.')
+        terms_accepted = graphene.Boolean(
+            required=True,
+            description='Must be true; the user has accepted the terms.',
+        )
+        marketing_accepted = graphene.Boolean(
+            required=True,
+            description='Whether the user opted in to marketing emails.',
+        )
+        anon_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the anonymous PublicUser to merge into this account once the PIN is verified.',
+        )
+
+    Output = SignUpPayload
+
+    @classmethod
+    def mutate(
+        cls,
+        _root,
+        _info: GQLInfo,
+        email: str,
+        terms_accepted: bool,
+        marketing_accepted: bool,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> SignUpPayload:
+        if not terms_accepted:
+            raise GraphQLError('Terms must be accepted to sign up.')
+
+        normalized = normalize_email(email)
+        if PublicUser.objects.filter(email=normalized).exists():
+            raise GraphQLError('An account with this email already exists.')
+
+        now = timezone.now()
+        public_user = PublicUser.objects.create(
+            email=normalized,
+            terms_accepted_at=now,
+            marketing_consented_at=now if marketing_accepted else None,
+        )
+        issue_pin_for(public_user, anon_uuid=anon_uuid)
+        return SignUpPayload(sent=True)
+
+
+class SignInPayload(graphene.ObjectType[Any]):
+    """Payload returned after a SignIn request."""
+
+    sent = graphene.Boolean(required=True)
+
+
+class SignInMutation(graphene.Mutation):
+    """
+    Sign in to an existing PublicUser by email; sends a PIN to verify.
+
+    Errors if no account exists for the given email; never registers a new
+    user as a side effect.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address of the account to sign into.')
+        anon_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the anonymous PublicUser to merge into this account once the PIN is verified.',
+        )
+
+    Output = SignInPayload
+
+    @classmethod
+    def mutate(
+        cls,
+        _root,
+        _info: GQLInfo,
+        email: str,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> SignInPayload:
+        normalized = normalize_email(email)
+        try:
+            public_user = PublicUser.objects.get(email=normalized)
+        except PublicUser.DoesNotExist:
+            raise GraphQLError('No account found for this email.') from None
+
+        existing = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
+        if existing and existing.issued_at > timezone.now() - SIGNIN_COOLDOWN:
+            raise GraphQLError('Please wait a moment before requesting another PIN.')
+
+        issue_pin_for(public_user, anon_uuid=anon_uuid)
+        return SignInPayload(sent=True)
+
+
 class PledgeMutations(graphene.ObjectType[Any]):
     """Mutations related to pledges and community engagement."""
 
@@ -2605,6 +2710,12 @@ class PledgeMutations(graphene.ObjectType[Any]):
     )
     set_user_data = SetUserDataMutation.Field(
         description="Set a key-value pair in a PublicUser's user_data.",
+    )
+    sign_up = SignUpMutation.Field(
+        description='Register a new PublicUser by email and send a verification PIN.',
+    )
+    sign_in = SignInMutation.Field(
+        description='Sign in to an existing PublicUser by email and send a verification PIN.',
     )
 
 
