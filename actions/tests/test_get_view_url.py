@@ -409,6 +409,56 @@ class TestGetViewUrlPlanDomainPriority:
         assert url == 'https://city.gov/climate'
 
 
+class TestGetViewUrlMultipleProductionDomains:
+    """When several production domains exist, selection is deterministic (first by pk) and warns."""
+
+    @pytest.fixture
+    def published_plan(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        return PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+
+    def _add_production_domain(self, plan, hostname):
+        from actions.models.plan import PlanDomain
+
+        return PlanDomainFactory.create(
+            plan=plan,
+            hostname=hostname,
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+
+    def test_picks_first_production_domain_by_pk(self, published_plan):
+        self._add_production_domain(published_plan, 'first.city.gov')
+        self._add_production_domain(published_plan, 'second.city.gov')
+        assert published_plan.get_view_url() == 'https://first.city.gov'
+
+    def test_warns_when_multiple_production_domains(self, published_plan, monkeypatch):
+        captured = []
+
+        def fake_capture_message(message, *args, **kwargs):
+            captured.append((message, kwargs.get('level')))
+
+        from actions.models import plan as plan_module
+
+        monkeypatch.setattr(plan_module.sentry_sdk, 'capture_message', fake_capture_message)
+        self._add_production_domain(published_plan, 'first.city.gov')
+        self._add_production_domain(published_plan, 'second.city.gov')
+        published_plan.get_view_url()
+        assert len(captured) == 1
+        message, level = captured[0]
+        assert level == 'warning'
+        assert '2 non-redirect production domains' in message
+        assert 'first.city.gov' in message
+
+    def test_does_not_warn_with_single_production_domain(self, published_plan, monkeypatch):
+        captured = []
+        from actions.models import plan as plan_module
+
+        monkeypatch.setattr(plan_module.sentry_sdk, 'capture_message', lambda *a, **_k: captured.append(a))
+        self._add_production_domain(published_plan, 'only.city.gov')
+        published_plan.get_view_url()
+        assert captured == []
+
+
 class TestGetViewUrlUnpublishedPlan:
     """Unpublished plans should use the wildcard domain, not PRODUCTION PlanDomains."""
 

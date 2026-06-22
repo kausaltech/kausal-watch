@@ -1072,7 +1072,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     @staticmethod
     def _scheme_for_hostname(hostname: str) -> str:
-        return 'http' if 'localhost' in hostname else 'https'
+        return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
 
     def get_view_url(  # noqa: C901, PLR0912
         self,
@@ -1161,12 +1161,18 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         production domains so the URL falls back to a preview/development
         domain or the wildcard.
         """
-        domains = [d for d in self.domains.all() if not d.redirect_to_hostname]
+        domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
         if not domains:
             return None
         if self.is_live():
             production = [d for d in domains if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
             if production:
+                if len(production) > 1:
+                    sentry_sdk.capture_message(
+                        f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
+                        f"using '{production[0].hostname}' as canonical",
+                        level='warning',
+                    )
                 return production[0]
         else:
             domains = [d for d in domains if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION]
@@ -1217,7 +1223,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
         plan.statuses_updated_manually = True
         if not hostname:
-            hostname = plan.default_hostname()
+            hostname = plan.default_hostname(include_all_domains=True)
             if not hostname:
                 raise ValueError(f"Cannot determine hostname for plan '{plan.identifier}': no hostname plan domains configured")
         plan.create_default_site(hostname)
@@ -1264,11 +1270,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         if COUNTRY_PLACEHOLDER in default_domain:
             country_code = self.country.code.lower() if self.country else None
             if not country_code:
-                sentry_sdk.capture_message(
-                    f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'",
-                    level='error',
+                raise ValueError(
+                    f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'"
                 )
-                return None
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 
