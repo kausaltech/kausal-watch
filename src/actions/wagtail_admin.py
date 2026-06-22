@@ -1131,9 +1131,12 @@ class PlanPublishView(
 
     def get_preview_url(self):
         try:
-            return f'https://{self.object.default_hostname()}'
+            hostname = self.object.default_hostname()
         except Exception:
             return None
+        if not hostname:
+            return None
+        return f'https://{hostname}'
 
     def is_scheduled(self):
         return self.object.live_state == Plan.LiveState.SCHEDULED
