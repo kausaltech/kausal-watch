@@ -1265,10 +1265,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             country_code = self.country.code.lower() if self.country else None
             if not country_code:
                 sentry_sdk.capture_message(
-                    f"Plan '{self.identifier}' has no country set; using fallback for wildcard domain '{default_domain}'",
+                    f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'",
                     level='error',
                 )
-                country_code = 'unknown'
+                return None
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 

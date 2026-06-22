@@ -473,6 +473,34 @@ class TestGetViewUrlUnpublishedPlan:
         assert url == 'https://myplan.example.com'
 
 
+class TestDefaultHostnameMissingCountry:
+    """A <country> wildcard domain has no resolvable hostname when the plan has no country."""
+
+    @pytest.fixture
+    def plan_no_country(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['<country>.dummy.io']
+        return PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            country='',
+        )
+
+    def test_default_hostname_returns_none(self, plan_no_country):
+        assert plan_no_country.default_hostname() is None
+
+    def test_default_hostname_with_all_domains_returns_none(self, plan_no_country):
+        assert plan_no_country.default_hostname(include_all_domains=True) is None
+
+    def test_get_view_url_raises(self, plan_no_country):
+        with pytest.raises(ValueError, match='no hostname plan domains configured'):
+            plan_no_country.get_view_url()
+
+    def test_plan_with_country_still_resolves(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['<country>.dummy.io']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', country='FI')
+        assert plan.default_hostname() == 'myplan.fi.dummy.io'
+
+
 class TestGetSiteNotificationContext:
     def test_view_url_uses_wildcard_when_no_plan_domain(self, plan):
         context = plan.get_site_notification_context()
