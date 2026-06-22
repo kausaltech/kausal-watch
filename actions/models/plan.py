@@ -840,7 +840,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         for pledge in source_pledges:
             pledge.ensure_locale_copies()
 
-    def save(self, *args, **kwargs):  # noqa: C901, PLR0912
+    def save(self, *args, **kwargs):  # noqa: C901, PLR0912, PLR0915
         previous_language_codes: set[str] | None = None
         save_update_fields = kwargs.get('update_fields')
         if self.pk is not None:
@@ -1074,7 +1074,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def _scheme_for_hostname(hostname: str) -> str:
         return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
 
-    def get_view_url(  # noqa: C901, PLR0912
+    def get_view_url(  # noqa: C901, PLR0912, PLR0915
         self,
         client_url: str | None = None,
         active_locale: str | None = None,
@@ -1152,33 +1152,55 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         scheme = self._scheme_for_hostname(hostname)
         return f'{scheme}://{hostname}{locale_prefix}'
 
+    def _first_production_domain(self, candidates: list[PlanDomain]) -> PlanDomain | None:
+        production = [d for d in candidates if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
+        if not production:
+            return None
+        if len(production) > 1:
+            sentry_sdk.capture_message(
+                f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
+                f"using '{production[0].hostname}' as canonical",
+                level='warning',
+            )
+        return production[0]
+
+    def _find_live_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        published_domains = [d for d in domains if d.status == PublicationStatus.PUBLISHED]
+        if not published_domains:
+            return None
+        return self._first_production_domain(published_domains) or published_domains[0]
+
+    def _find_unpublished_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        explicitly_published = [d for d in domains if d.publication_status_override == PublicationStatus.PUBLISHED]
+        if explicitly_published:
+            return self._first_production_domain(explicitly_published) or explicitly_published[0]
+
+        non_production_domains = [
+            d
+            for d in domains
+            if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION
+            and d.publication_status_override != PublicationStatus.UNPUBLISHED
+        ]
+        if not non_production_domains:
+            return None
+        return non_production_domains[0]
+
     def _find_canonical_domain(self) -> PlanDomain | None:
         """
         Find the best PlanDomain to use as the canonical URL for this plan.
 
         Filters out redirect domains. For published (live) plans, prefers
-        production deployment environment. For unpublished plans, excludes
-        production domains so the URL falls back to a preview/development
-        domain or the wildcard.
+        published production domains. For unpublished plans, explicit
+        publication overrides take precedence; otherwise production domains are
+        excluded so the URL falls back to a preview/development domain or the
+        wildcard.
         """
         domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
         if not domains:
             return None
         if self.is_live():
-            production = [d for d in domains if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
-            if production:
-                if len(production) > 1:
-                    sentry_sdk.capture_message(
-                        f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
-                        f"using '{production[0].hostname}' as canonical",
-                        level='warning',
-                    )
-                return production[0]
-        else:
-            domains = [d for d in domains if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION]
-            if not domains:
-                return None
-        return domains[0]
+            return self._find_live_canonical_domain(domains)
+        return self._find_unpublished_canonical_domain(domains)
 
     @classmethod
     def create_with_defaults(
@@ -1270,9 +1292,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         if COUNTRY_PLACEHOLDER in default_domain:
             country_code = self.country.code.lower() if self.country else None
             if not country_code:
-                raise ValueError(
-                    f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'"
-                )
+                return None
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 

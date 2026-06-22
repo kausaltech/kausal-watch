@@ -17,6 +17,14 @@ def test_check_errors_for_ip_admin_url(settings):
     assert errors[0].id == 'notifications.E001'
 
 
+def test_check_errors_for_unsupported_admin_url_scheme(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    settings.ADMIN_BASE_URL = 'ftp://admin.example.com/admin/'
+    errors = check_admin_base_url(app_configs=None)
+    assert len(errors) == 1
+    assert errors[0].id == 'notifications.E001'
+
+
 def test_check_passes_for_public_admin_url(settings):
     settings.DEPLOYMENT_TYPE = 'production'
     settings.ADMIN_BASE_URL = 'https://admin.example.com'

@@ -513,6 +513,16 @@ class TestGetViewUrlUnpublishedPlan:
         url = plan.get_view_url()
         assert url == 'https://preview.city.gov'
 
+    def test_uses_published_production_override(self, unpublished_plan_with_production_domain):
+        from actions.models.plan import PublicationStatus
+
+        domain = unpublished_plan_with_production_domain.domains.get(hostname='city.gov')
+        domain.publication_status_override = PublicationStatus.PUBLISHED
+        domain.save()
+
+        url = unpublished_plan_with_production_domain.get_view_url()
+        assert url == 'https://city.gov/climate'
+
     def test_wildcard_from_ui_still_used(self, unpublished_plan_with_production_domain):
         url = unpublished_plan_with_production_domain.get_view_url(client_url='https://anything.example.com')
         assert url == 'https://myplan.example.com'
@@ -521,6 +531,29 @@ class TestGetViewUrlUnpublishedPlan:
         """Only a PRODUCTION domain exists, plan is unpublished -> use wildcard."""
         url = unpublished_plan_with_production_domain.get_view_url()
         assert url == 'https://myplan.example.com'
+
+    def test_skips_unpublished_domain_override(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        from actions.models.plan import PlanDomain, PublicationStatus
+
+        plan = PlanFactory.create(
+            identifier='myplan',
+            primary_language='en',
+            other_languages=['fi'],
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+            publication_status_override=PublicationStatus.UNPUBLISHED,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        url = plan.get_view_url()
+        assert url == 'https://preview.city.gov'
 
 
 class TestDefaultHostnameMissingCountry:

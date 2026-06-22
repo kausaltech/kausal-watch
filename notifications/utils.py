@@ -4,10 +4,14 @@ import ipaddress
 from urllib.parse import urlparse
 
 RESERVED_TLDS = ('.localhost', '.local', '.internal', '.test', '.invalid')
+PUBLIC_URL_SCHEMES = ('http', 'https')
+NON_HIERARCHICAL_URL_SCHEMES = ('mailto',)
 
 
 def is_valid_public_domain_url(url: str) -> bool:
     parsed = urlparse(url)
+    if parsed.scheme not in PUBLIC_URL_SCHEMES:
+        return False
     hostname = parsed.hostname
     if not hostname:
         return False
@@ -24,8 +28,17 @@ def is_valid_public_domain_url(url: str) -> bool:
     return True
 
 
+def _looks_like_url(value: str) -> bool:
+    parsed = urlparse(value)
+    if not parsed.scheme:
+        return False
+    if parsed.netloc:
+        return True
+    return parsed.scheme in NON_HIERARCHICAL_URL_SCHEMES
+
+
 def _check_value(value: object, path: str, results: list[tuple[str, str]]) -> None:
-    if isinstance(value, str) and value.startswith(('http://', 'https://')):
+    if isinstance(value, str) and _looks_like_url(value):
         results.append((path, value))
     elif isinstance(value, (dict, list)):
         results.extend(find_urls_in_context(value, path))

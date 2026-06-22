@@ -58,6 +58,15 @@ class TestIsValidPublicDomainUrl:
     def test_rejects_empty_string(self):
         assert is_valid_public_domain_url('') is False
 
+    def test_rejects_no_scheme(self):
+        assert is_valid_public_domain_url('example.com') is False
+
+    def test_rejects_scheme_relative_url(self):
+        assert is_valid_public_domain_url('//example.com/admin/') is False
+
+    def test_rejects_unsupported_scheme(self):
+        assert is_valid_public_domain_url('ftp://example.com/admin/') is False
+
     def test_rejects_no_hostname(self):
         assert is_valid_public_domain_url('http:///path') is False
 
@@ -89,10 +98,15 @@ class TestFindUrlsInContext:
     def test_returns_empty_for_empty_context(self):
         assert find_urls_in_context({}) == []
 
-    def test_ignores_mailto(self):
+    def test_finds_mailto(self):
         ctx = {'email_link': 'mailto:test@example.com'}
         result = find_urls_in_context(ctx)
-        assert result == []
+        assert result == [('email_link', 'mailto:test@example.com')]
+
+    def test_finds_unsupported_scheme(self):
+        ctx = {'admin_url': 'ftp://example.com/admin/'}
+        result = find_urls_in_context(ctx)
+        assert result == [('admin_url', 'ftp://example.com/admin/')]
 
 
 class TestValidateNotificationContextUrls:
@@ -111,6 +125,16 @@ class TestValidateNotificationContextUrls:
     def test_raises_for_ip_address(self):
         ctx = {'admin_url': 'http://192.168.1.1/admin/'}
         with pytest.raises(ValueError, match=r'192\.168\.1\.1'):
+            validate_notification_context_urls(ctx)
+
+    def test_raises_for_unsupported_scheme(self):
+        ctx = {'admin_url': 'ftp://example.com/admin/'}
+        with pytest.raises(ValueError, match=r'ftp://example\.com'):
+            validate_notification_context_urls(ctx)
+
+    def test_raises_for_mailto(self):
+        ctx = {'email_link': 'mailto:test@example.com'}
+        with pytest.raises(ValueError, match=r'mailto:test@example\.com'):
             validate_notification_context_urls(ctx)
 
     def test_lists_all_bad_urls(self):
