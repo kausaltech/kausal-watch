@@ -556,6 +556,15 @@ class TestGetViewUrlUnpublishedPlan:
         assert url == 'https://preview.city.gov'
 
 
+class TestDefaultHostnameWithCountryWildcard:
+    """A <country> wildcard domain resolves using the plan's required country."""
+
+    def test_plan_with_country_still_resolves(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['<country>.dummy.io']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', country='FI')
+        assert plan.default_hostname() == 'myplan.fi.dummy.io'
+
+
 class TestGetSiteNotificationContext:
     def test_view_url_uses_wildcard_when_no_plan_domain(self, plan):
         context = plan.get_site_notification_context()
