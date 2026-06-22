@@ -362,6 +362,7 @@ def test_i18n(plan: Plan, plan_admin_person: Person):
 
 
 def test_localhost_admin_url_raises(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     plan = PlanFactory.create()
     AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
@@ -375,7 +376,8 @@ def test_localhost_admin_url_raises(settings):
         engine.generate_notifications()
 
 
-def test_localhost_hostname_plan_domains_raises(settings):
+def test_localhost_hostname_plan_domains_raises_when_not_development(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
     settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
     settings.ADMIN_BASE_URL = 'https://admin.example.com'
     plan = PlanFactory.create()
@@ -386,12 +388,12 @@ def test_localhost_hostname_plan_domains_raises(settings):
     ActionContactFactory.create(action=task.action)
     ClientPlanFactory.create(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
-    with pytest.raises(ValueError, match='localhost'):
+    with pytest.raises(ValueError, match='Cannot determine hostname'):
         engine.generate_notifications()
 
 
-def test_localhost_allowed_in_debug_mode(settings):
-    settings.DEBUG = True
+def test_localhost_allowed_in_development(settings):
+    settings.DEPLOYMENT_TYPE = 'development'
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     plan = PlanFactory.create()
     AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)

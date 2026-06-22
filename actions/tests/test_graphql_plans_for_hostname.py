@@ -320,11 +320,11 @@ def test_default_hostname_with_exact_domain(settings, plan_factory):
     assert plan.default_hostname() == f'{plan.identifier}.dummy.io'
 
 
-def test_default_hostname_pattern_no_country_uses_fallback(settings, plan_factory):
-    """default_hostname() uses 'UNKNOWN' as country fallback and reports to Sentry."""
+def test_default_hostname_pattern_no_country_returns_none(settings, plan_factory):
+    """default_hostname() returns None if plan has no country and domain is a pattern."""
     settings.HOSTNAME_PLAN_DOMAINS = ['watch.<country>.dummy.io']
     plan = plan_factory(country='')
-    assert plan.default_hostname() == f'{plan.identifier}.watch.unknown.dummy.io'
+    assert plan.default_hostname() is None
 
 
 def test_default_hostname_returns_none_when_no_domains(settings, plan_factory):

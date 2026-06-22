@@ -17,7 +17,6 @@ from indicators.models import IndicatorContactPerson
 
 from .mjml import render_mjml_from_template
 from .models import ManuallyScheduledNotificationTemplate
-from .utils import validate_notification_context_urls
 from .notifications import (
     ActionNotUpdatedNotification,
     ManuallyScheduledNotification,
@@ -31,6 +30,7 @@ from .notifications import (
 )
 from .queue import NotificationQueue
 from .recipients import PersonRecipient
+from .utils import validate_notification_context_urls
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -255,7 +255,7 @@ class NotificationEngine:
                 **template.base.get_notification_context(),
                 **context,
             )
-            validate_notification_context_urls(context, allow_localhost=settings.DEBUG)
+            validate_notification_context_urls(context, allow_localhost=settings.DEPLOYMENT_TYPE == 'development')
 
             rendered['html_body'] = render_mjml_from_template(
                 template.type,
