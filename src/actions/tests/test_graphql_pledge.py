@@ -793,6 +793,7 @@ class TestCommitToPledgeMutation:
 
         assert 'errors' in response
         assert 'PublicUser not found' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'PUBLIC_USER_NOT_FOUND'
 
     def test_commit_with_invalid_pledge_id_returns_error(self, graphql_client_query):
         """Test that committing with invalid pledge ID returns an error."""
@@ -962,6 +963,7 @@ class TestCommitToPledgeMutation:
 
         assert 'errors' in response
         assert 'Authorization: Bearer' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'BEARER_REQUIRED'
         assert PledgeCommitment.objects.count() == 0
 
     def test_commit_without_credentials_returns_error(self, graphql_client_query):
@@ -981,6 +983,7 @@ class TestCommitToPledgeMutation:
 
         assert 'errors' in response
         assert 'Authentication required' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'AUTHENTICATION_REQUIRED'
         assert PledgeCommitment.objects.count() == 0
 
 
@@ -1086,6 +1089,7 @@ class TestSetUserDataMutation:
 
         assert 'errors' in response
         assert 'PublicUser not found' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'PUBLIC_USER_NOT_FOUND'
 
     def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
         """The setUserData mutation should authenticate via Authorization: Bearer header alone."""
@@ -1169,6 +1173,7 @@ class TestSignUpMutation:
 
         assert 'errors' in response
         assert 'already exists' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'ACCOUNT_EXISTS'
 
     def test_sign_up_errors_when_terms_not_accepted(self, graphql_client_query):
         response = graphql_client_query(
@@ -1178,6 +1183,16 @@ class TestSignUpMutation:
 
         assert 'errors' in response
         assert 'Terms' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'TERMS_NOT_ACCEPTED'
+
+    def test_sign_up_errors_when_email_is_blank(self, graphql_client_query):
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': '   ', 'terms': True, 'marketing': False},
+        )
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'EMAIL_REQUIRED'
 
     def test_sign_up_normalizes_email(self, graphql_client_query_data):
         graphql_client_query_data(
@@ -1228,6 +1243,7 @@ class TestSignInMutation:
 
         assert 'errors' in response
         assert 'No account' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'ACCOUNT_NOT_FOUND'
 
     def test_sign_in_cooldown_enforced(self, graphql_client_query, graphql_client_query_data):
         PublicUser.objects.create(email='hello@example.com')
@@ -1237,6 +1253,7 @@ class TestSignInMutation:
 
         assert 'errors' in response
         assert 'wait' in response['errors'][0]['message'].lower()
+        assert response['errors'][0]['extensions']['code'] == 'COOLDOWN_ACTIVE'
 
     def test_sign_in_allows_after_cooldown_window(self, graphql_client_query_data):
         public_user = PublicUser.objects.create(email='hello@example.com')
@@ -1447,6 +1464,7 @@ class TestVerifyPinMutation:
 
         assert 'errors' in response
         assert 'Invalid PIN' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_PIN'
         assert PublicUserSignInAttempt.objects.filter(public_user=self.public_user).exists()
 
     def test_verify_pin_expired_returns_error(self, graphql_client_query):
@@ -1462,6 +1480,7 @@ class TestVerifyPinMutation:
 
         assert 'errors' in response
         assert 'expired' in response['errors'][0]['message'].lower()
+        assert response['errors'][0]['extensions']['code'] == 'PIN_EXPIRED'
 
     def test_verify_pin_attempts_exhausted_returns_error(self, graphql_client_query):
         raw_pin = self._issue_pin()
@@ -1476,6 +1495,7 @@ class TestVerifyPinMutation:
 
         assert 'errors' in response
         assert 'Too many attempts' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'PIN_LOCKED'
 
     def test_verify_pin_no_account_returns_invalid_pin(self, graphql_client_query):
         response = graphql_client_query(
@@ -1485,6 +1505,7 @@ class TestVerifyPinMutation:
 
         assert 'errors' in response
         assert 'Invalid PIN' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_PIN'
 
     def test_verify_pin_no_active_attempt_returns_error(self, graphql_client_query):
         response = graphql_client_query(
@@ -1494,6 +1515,7 @@ class TestVerifyPinMutation:
 
         assert 'errors' in response
         assert 'No active sign-in attempt' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'NO_ACTIVE_ATTEMPT'
 
 
 class TestPledgeBodyField:
