@@ -24,7 +24,7 @@ def normalize_email(email: str) -> str:
     """Trim and lowercase an email. Raise GraphQLError if empty."""
     normalized = email.strip().lower()
     if not normalized:
-        raise GraphQLError('Email is required.')
+        raise GraphQLError('Email is required.', extensions={'code': 'EMAIL_REQUIRED'})
     return normalized
 
 
