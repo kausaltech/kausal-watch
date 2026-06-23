@@ -2479,13 +2479,19 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
     if public_user is not None:
         return public_user
     if user_uuid is None:
-        raise GraphQLError('Authentication required: provide an Authorization: Bearer token or userUuid')
+        raise GraphQLError(
+            'Authentication required: provide an Authorization: Bearer token or userUuid',
+            extensions={'code': 'AUTHENTICATION_REQUIRED'},
+        )
     try:
         public_user = PublicUser.objects.get(uuid=user_uuid)
     except PublicUser.DoesNotExist:
-        raise GraphQLError('PublicUser not found') from None
+        raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'}) from None
     if public_user.user_token is not None:
-        raise GraphQLError('Authentication required: this account requires an Authorization: Bearer header')
+        raise GraphQLError(
+            'Authentication required: this account requires an Authorization: Bearer header',
+            extensions={'code': 'BEARER_REQUIRED'},
+        )
     return public_user
 
 
@@ -2638,11 +2644,14 @@ class SignUpMutation(graphene.Mutation):
         anon_uuid: uuid.UUID | None = None,
     ) -> SignUpPayload:
         if not terms_accepted:
-            raise GraphQLError('Terms must be accepted to sign up.')
+            raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
 
         normalized = normalize_email(email)
         if PublicUser.objects.filter(email=normalized).exists():
-            raise GraphQLError('An account with this email already exists.')
+            raise GraphQLError(
+                'An account with this email already exists.',
+                extensions={'code': 'ACCOUNT_EXISTS'},
+            )
 
         now = timezone.now()
         public_user = PublicUser.objects.create(
@@ -2689,11 +2698,17 @@ class SignInMutation(graphene.Mutation):
         try:
             public_user = PublicUser.objects.get(email=normalized)
         except PublicUser.DoesNotExist:
-            raise GraphQLError('No account found for this email.') from None
+            raise GraphQLError(
+                'No account found for this email.',
+                extensions={'code': 'ACCOUNT_NOT_FOUND'},
+            ) from None
 
         existing = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
         if existing and existing.issued_at > timezone.now() - SIGNIN_COOLDOWN:
-            raise GraphQLError('Please wait a moment before requesting another PIN.')
+            raise GraphQLError(
+                'Please wait a moment before requesting another PIN.',
+                extensions={'code': 'COOLDOWN_ACTIVE'},
+            )
 
         issue_pin_for(public_user, anon_uuid=anon_uuid)
         return SignInPayload(sent=True)
@@ -2727,19 +2742,28 @@ class VerifyPinMutation(graphene.Mutation):
         try:
             public_user = PublicUser.objects.get(email=normalized)
         except PublicUser.DoesNotExist:
-            raise GraphQLError('Invalid PIN.') from None
+            raise GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'}) from None
 
         attempt = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
         if attempt is None:
-            raise GraphQLError('No active sign-in attempt for this email. Please sign in again.')
+            raise GraphQLError(
+                'No active sign-in attempt for this email. Please sign in again.',
+                extensions={'code': 'NO_ACTIVE_ATTEMPT'},
+            )
 
         if attempt.is_expired:
-            raise GraphQLError('PIN has expired. Please request a new one.')
+            raise GraphQLError(
+                'PIN has expired. Please request a new one.',
+                extensions={'code': 'PIN_EXPIRED'},
+            )
         if attempt.attempts_exhausted:
-            raise GraphQLError('Too many attempts. Please request a new PIN.')
+            raise GraphQLError(
+                'Too many attempts. Please request a new PIN.',
+                extensions={'code': 'PIN_LOCKED'},
+            )
 
         if not attempt.verify(pin):
-            raise GraphQLError('Invalid PIN.')
+            raise GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'})
 
         anon_uuid = attempt.anon_uuid
         attempt.delete()
