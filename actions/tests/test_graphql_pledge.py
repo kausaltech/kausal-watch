@@ -1427,6 +1427,24 @@ class TestVerifyPinMutation:
 
         assert PledgeCommitment.objects.filter(pledge=pledge, public_user=self.public_user).count() == 1
         assert not PublicUser.objects.filter(uuid=anon.uuid).exists()
+        assert PledgeCommitment.objects.count() == 1
+
+    def test_verify_pin_invalidates_plan_cache_when_merge_deletes_duplicates(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
+        PledgeCommitment.objects.create(pledge=pledge, public_user=self.public_user)
+        anon = PublicUser.objects.create()
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+        self.plan.refresh_from_db()
+        cache_invalidated_before = self.plan.cache_invalidated_at
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.plan.refresh_from_db()
+        assert self.plan.cache_invalidated_at > cache_invalidated_before
 
     def test_verify_pin_skips_merge_when_anon_uuid_has_email(self, graphql_client_query_data):
         pledge = PledgeFactory.create(plan=self.plan)
