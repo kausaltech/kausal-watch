@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
+from email.utils import formataddr
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.utils.translation import gettext as _
 from graphql.error import GraphQLError
 
 import sentry_sdk
 from loguru import logger
 
-from actions.models.pledge import PledgeCommitment, PublicUser, PublicUserSignInAttempt
+from actions.models.plan import Plan
+from actions.models.pledge import PIN_TTL, PledgeCommitment, PublicUser, PublicUserSignInAttempt
+from notifications.mjml import render_mjml_from_template
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -28,10 +31,14 @@ def normalize_email(email: str) -> str:
     return normalized
 
 
-def issue_pin_for(public_user: PublicUser, anon_uuid: UUID | None = None) -> None:
+def issue_pin_for(
+    public_user: PublicUser,
+    anon_uuid: UUID | None = None,
+    plan: Plan | None = None,
+) -> None:
     """Generate a new PIN for the user, store its hash, and send it via email."""
     _, raw_pin = PublicUserSignInAttempt.create_for(public_user, anon_uuid=anon_uuid)
-    send_pin_email(public_user, raw_pin)
+    send_pin_email(public_user, raw_pin, plan=plan)
 
 
 def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None:
@@ -62,30 +69,79 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         )
         return
 
+    affected_plan_ids = set(
+        PledgeCommitment.objects.filter(public_user=anon).values_list('pledge__plan_id', flat=True).distinct()
+    )
     existing_pledge_ids = set(PledgeCommitment.objects.filter(public_user=verified_user).values_list('pledge_id', flat=True))
     PledgeCommitment.objects.filter(public_user=anon).exclude(pledge_id__in=existing_pledge_ids).update(public_user=verified_user)
     anon.delete()
 
+    for plan in Plan.objects.filter(id__in=affected_plan_ids):
+        plan.invalidate_cache()
 
-def send_pin_email(public_user: PublicUser, raw_pin: str) -> None:
+
+def send_pin_email(public_user: PublicUser, raw_pin: str, plan: Plan | None = None) -> None:
     """
     Send a PIN verification code to the user's email address.
 
     Sent synchronously so the raw PIN never lands in the Celery broker. The
     caller should handle the case where the email delivery fails (treat it as
     a recoverable failure of the mutation that triggered it).
+
+    The From line is always "Kausal <DEFAULT_FROM_EMAIL>" regardless of the
+    plan, so users always look for the same sender. When the plan has a
+    notification base template configured, the email is sent as a multipart
+    message with a plan-themed HTML body; otherwise a plain-text email is sent.
     """
     if not public_user.email:
         raise ValueError('PublicUser has no email; cannot send PIN.')
 
-    subject = _('Your verification code')
-    body = _('Your verification code is: {pin}\n\nThe code expires in 10 minutes.').format(pin=raw_pin)
+    minutes = int(PIN_TTL.total_seconds() // 60)
+    base_template = getattr(plan, 'notification_base_template', None) if plan else None
 
-    send_mail(
-        subject=subject,
-        message=body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[public_user.email],
-        fail_silently=False,
+    if plan is not None:
+        plan_name = plan.name_i18n
+        subject = _('Your sign-in code for the %(plan_name)s') % {'plan_name': plan_name}
+        body_intro = _('Here is your sign-in code for the %(plan_name)s:') % {'plan_name': plan_name}
+    else:
+        subject = _('Your sign-in code')
+        body_intro = _('Here is your sign-in code:')
+
+    plain_body = '{intro}\n\n    {pin}\n\n{ttl}\n\n{ignore}\n\n—\n{powered_by}\nkausal.tech'.format(
+        intro=body_intro,
+        pin=raw_pin,
+        ttl=_('Enter this code when prompted. It expires in %(minutes)d minutes.') % {'minutes': minutes},
+        ignore=_("If you didn't request this code, you can ignore this email."),
+        powered_by=_('Powered by Kausal Watch'),
     )
+
+    from_email = formataddr(('Kausal', settings.DEFAULT_FROM_EMAIL))
+
+    if plan is None or base_template is None:
+        msg: EmailMessage = EmailMessage(
+            subject=subject,
+            body=plain_body,
+            from_email=from_email,
+            to=[public_user.email],
+        )
+    else:
+        context = {
+            'title': subject,
+            'site': plan.get_site_notification_context(),
+            'plan': {'name': plan_name},
+            'raw_pin': raw_pin,
+            'pin_ttl_minutes': minutes,
+            'content_blocks': {},
+            **base_template.get_notification_context(),
+        }
+        html_body = render_mjml_from_template('public_user_pin', context)
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_body,
+            from_email=from_email,
+            to=[public_user.email],
+        )
+        msg.attach_alternative(html_body, 'text/html')
+
+    msg.send(fail_silently=False)
     logger.info('Sent PIN email to public user uuid={uuid}', uuid=public_user.uuid)

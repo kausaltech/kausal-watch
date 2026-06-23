@@ -3,11 +3,14 @@ from __future__ import annotations
 import uuid
 from datetime import timedelta
 from typing import Any, cast
+from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
+from django.core.mail import EmailMultiAlternatives
 from django.db import IntegrityError
-from django.utils import timezone
+from django.utils import timezone, translation
 from wagtail.models import Locale
 
 import pytest
@@ -15,7 +18,9 @@ import pytest
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.models.attributes import AttributeText, AttributeType as AttributeTypeModel
 from actions.models.pledge import PIN_MAX_ATTEMPTS, hash_pin, hash_user_token
+from actions.public_user_auth import send_pin_email
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
+from notifications.models import BaseTemplate
 
 pytestmark = pytest.mark.django_db
 
@@ -164,8 +169,8 @@ class TestPledgeLocaleTranslations:
             primary_pledge.get_translations(inclusive=True).values_list('locale__language_code', flat=True),
         )
         assert locale_codes == ['en', 'fi', 'sv']
-        for translation in primary_pledge.get_translations(inclusive=True):
-            assert list(cast('Pledge', translation).actions.values_list('id', flat=True)) == [action.id]
+        for pledge_translation in primary_pledge.get_translations(inclusive=True):
+            assert list(cast('Pledge', pledge_translation).actions.values_list('id', flat=True)) == [action.id]
 
     def test_plan_language_change_creates_missing_locale_copies_for_existing_pledges(self):
         """Test that changing plan languages syncs pledge locale copies."""
@@ -488,6 +493,77 @@ class TestPublicUserSignInAttempt:
         attempt.save(update_fields=['expires_at'])
 
         assert attempt.verify(raw_pin) is False
+
+
+class TestSendPinEmail:
+    """Tests for the send_pin_email helper."""
+
+    def test_raises_when_user_has_no_email(self):
+        public_user = PublicUser.objects.create()
+
+        with pytest.raises(ValueError, match='no email'):
+            send_pin_email(public_user, '123456')
+
+    def test_no_plan_sends_plain_text_only(self):
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        mail.outbox.clear()
+
+        send_pin_email(public_user, '654321')
+
+        assert len(mail.outbox) == 1
+        msg = mail.outbox[0]
+        assert getattr(msg, 'alternatives', []) == []
+        assert '654321' in msg.body
+        assert msg.to == ['alice@example.com']
+
+    def test_from_header_is_kausal(self):
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        mail.outbox.clear()
+
+        send_pin_email(public_user, '111111')
+
+        msg = mail.outbox[0]
+        assert msg.from_email.startswith('Kausal ')
+
+    def test_with_plan_subject_includes_plan_name(self):
+        plan = PlanFactory.create(name='Example Climate Plan')
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        mail.outbox.clear()
+
+        with patch('actions.public_user_auth.render_mjml_from_template', return_value='<html></html>'):
+            send_pin_email(public_user, '222222', plan=plan)
+
+        msg = mail.outbox[0]
+        assert 'Example Climate Plan' in msg.subject
+        assert '222222' in msg.body
+
+    def test_with_plan_and_base_template_attaches_html(self):
+        plan = PlanFactory.create(name='Example Climate Plan')
+        BaseTemplate.objects.create(plan=plan, brand_dark_color='#123456')
+        plan.refresh_from_db()
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        mail.outbox.clear()
+
+        with patch('actions.public_user_auth.render_mjml_from_template', return_value='<html>rendered</html>') as rendered:
+            send_pin_email(public_user, '333333', plan=plan)
+
+        rendered.assert_called_once()
+        msg = mail.outbox[0]
+        assert isinstance(msg, EmailMultiAlternatives)
+        assert msg.alternatives == [('<html>rendered</html>', 'text/html')]
+
+    def test_uses_translated_plan_name_when_locale_active(self):
+        plan = PlanFactory.create(name='English Plan Name')
+        plan.name_fi = 'Suomalainen suunnitelma'
+        plan.save()
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        mail.outbox.clear()
+
+        with translation.override('fi'):
+            send_pin_email(public_user, '444444', plan=plan)
+
+        msg = mail.outbox[0]
+        assert 'Suomalainen suunnitelma' in msg.subject
 
 
 class TestPledgeCommitment:
