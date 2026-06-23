@@ -2637,7 +2637,7 @@ class SignUpMutation(graphene.Mutation):
     def mutate(
         cls,
         _root,
-        _info: GQLInfo,
+        info: GQLInfo,
         email: str,
         terms_accepted: bool,
         marketing_accepted: bool,
@@ -2659,7 +2659,7 @@ class SignUpMutation(graphene.Mutation):
             terms_accepted_at=now,
             marketing_consented_at=now if marketing_accepted else None,
         )
-        issue_pin_for(public_user, anon_uuid=anon_uuid)
+        issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
         return SignUpPayload(sent=True)
 
 
@@ -2690,7 +2690,7 @@ class SignInMutation(graphene.Mutation):
     def mutate(
         cls,
         _root,
-        _info: GQLInfo,
+        info: GQLInfo,
         email: str,
         anon_uuid: uuid.UUID | None = None,
     ) -> SignInPayload:
@@ -2710,7 +2710,7 @@ class SignInMutation(graphene.Mutation):
                 extensions={'code': 'COOLDOWN_ACTIVE'},
             )
 
-        issue_pin_for(public_user, anon_uuid=anon_uuid)
+        issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
         return SignInPayload(sent=True)
 
 
