@@ -212,11 +212,29 @@ class SentryGraphQLView(GraphQLView):
             kwargs['middleware'] = middleware
         super().__init__(*args, **kwargs)
 
+    # PublicUser auth-flow operations and bearer-varying reads must never be served
+    # from cache. Otherwise PIN emails would not be re-sent, freshly-issued
+    # userTokens would be replayed, and bearer-gated data could leak across callers.
+    PUBLIC_USER_AUTH_OPERATIONS = (
+        'signIn',
+        'signUp',
+        'verifyPin',
+        'registerUser',
+        'commitToPledge',
+        'setUserData',
+        'publicUser',
+    )
+
     def get_cache_key(self, request: WatchAPIRequest, data, query, variables):
         plan_identifier = request.headers.get(PLAN_IDENTIFIER_HEADER)
         plan_domain = request.headers.get(PLAN_DOMAIN_HEADER)
         if not plan_identifier and not plan_domain:
             logger.info('Skipping cache; required HTTP headers missing')
+            return None
+
+        if any(name in query for name in self.PUBLIC_USER_AUTH_OPERATIONS):
+            return None
+        if request.headers.get('X-Public-User-Token'):
             return None
 
         qs: PlanQuerySet = Plan.objects.get_queryset()
