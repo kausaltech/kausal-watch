@@ -512,6 +512,7 @@ CORS_ALLOW_HEADERS = (
     + [
         'x-cache-plan-identifier',
         'x-cache-plan-domain',
+        'x-public-user-token',
     ]
 )
 
