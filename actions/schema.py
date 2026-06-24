@@ -14,6 +14,7 @@ import strawberry as sb
 import strawberry_django
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Count, IntegerField, OuterRef, Prefetch, Q, Subquery, prefetch_related_objects
 from django.db.models.functions import Coalesce
 from django.urls import reverse
@@ -2692,12 +2693,22 @@ class SignUpMutation(graphene.Mutation):
             )
 
         now = timezone.now()
-        public_user = PublicUser.objects.create(
-            email=normalized,
-            terms_accepted_at=now,
-            marketing_consented_at=now if marketing_accepted else None,
-        )
-        issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+        try:
+            with transaction.atomic():
+                public_user = PublicUser.objects.create(
+                    email=normalized,
+                    terms_accepted_at=now,
+                    marketing_consented_at=now if marketing_accepted else None,
+                )
+                issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+        except GraphQLError:
+            raise
+        except Exception as exc:
+            logger.exception('SignUp failed during PIN email delivery for {email}', email=normalized)
+            raise GraphQLError(
+                'Could not send verification email. Please try again.',
+                extensions={'code': 'EMAIL_SEND_FAILED'},
+            ) from exc
         return SignUpPayload(sent=True)
 
 
@@ -2749,7 +2760,17 @@ class SignInMutation(graphene.Mutation):
                 extensions={'code': 'COOLDOWN_ACTIVE'},
             )
 
-        issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+        try:
+            with transaction.atomic():
+                issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+        except GraphQLError:
+            raise
+        except Exception as exc:
+            logger.exception('SignIn failed during PIN email delivery for {email}', email=normalized)
+            raise GraphQLError(
+                'Could not send verification email. Please try again.',
+                extensions={'code': 'EMAIL_SEND_FAILED'},
+            ) from exc
         return SignInPayload(sent=True)
 
 

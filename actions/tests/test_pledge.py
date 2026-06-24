@@ -478,6 +478,19 @@ class TestPublicUserSignInAttempt:
         attempt.refresh_from_db()
         assert attempt.attempts == 2
 
+    def test_verify_increment_survives_concurrent_modification(self):
+        """A stale in-memory counter must not overwrite an interleaved DB update."""
+        public_user = PublicUser.objects.create(email='a@example.com')
+        attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+        # Simulate a concurrent verify having incremented in the DB while this
+        # instance still has attempts=0 in Python.
+        PublicUserSignInAttempt.objects.filter(pk=attempt.pk).update(attempts=2)
+
+        attempt.verify('000000')
+
+        attempt.refresh_from_db()
+        assert attempt.attempts == 3
+
     def test_verify_returns_false_after_attempts_exhausted(self):
         public_user = PublicUser.objects.create(email='a@example.com')
         attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.core import mail
 from django.utils import timezone
@@ -1202,6 +1203,21 @@ class TestSignUpMutation:
 
         assert PublicUser.objects.filter(email='foo@example.com').exists()
 
+    def test_sign_up_rolls_back_on_email_failure(self, graphql_client_query):
+        with patch(
+            'actions.public_user_auth.send_pin_email',
+            side_effect=RuntimeError('SMTP down'),
+        ):
+            response = graphql_client_query(
+                SIGN_UP_MUTATION,
+                variables={'email': 'rollback@example.com', 'terms': True, 'marketing': False},
+            )
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'EMAIL_SEND_FAILED'
+        assert not PublicUser.objects.filter(email='rollback@example.com').exists()
+        assert not PublicUserSignInAttempt.objects.filter(public_user__email='rollback@example.com').exists()
+
     def test_sign_up_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
         anon_uuid = uuid.uuid4()
         graphql_client_query_data(
@@ -1289,6 +1305,37 @@ class TestSignInMutation:
 
         assert 'errors' in response
         assert response['errors'][0]['extensions']['code'] == 'RATE_LIMITED'
+
+    def test_sign_in_rolls_back_attempt_on_email_failure(self, graphql_client_query):
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        prior_attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+        # Backdate the prior attempt so the cooldown doesn't itself block the retry.
+        # The point of this test is to assert all fields are preserved unchanged.
+        prior_attempt.issued_at = timezone.now() - timedelta(minutes=5)
+        prior_attempt.attempts = 3
+        prior_attempt.save(update_fields=['issued_at', 'attempts'])
+        snapshot = {
+            'pin_hash': prior_attempt.pin_hash,
+            'pin_salt': prior_attempt.pin_salt,
+            'issued_at': prior_attempt.issued_at,
+            'expires_at': prior_attempt.expires_at,
+            'attempts': prior_attempt.attempts,
+        }
+
+        with patch(
+            'actions.public_user_auth.send_pin_email',
+            side_effect=RuntimeError('SMTP down'),
+        ):
+            response = graphql_client_query(
+                SIGN_IN_MUTATION,
+                variables={'email': 'alice@example.com'},
+            )
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'EMAIL_SEND_FAILED'
+        prior_attempt.refresh_from_db()
+        for field, expected in snapshot.items():
+            assert getattr(prior_attempt, field) == expected, f'{field} was modified despite rollback'
 
     def test_sign_in_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
         public_user = PublicUser.objects.create(email='hello@example.com')
