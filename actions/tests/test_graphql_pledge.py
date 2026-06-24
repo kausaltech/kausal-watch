@@ -1429,6 +1429,46 @@ class TestVerifyPinMutation:
         assert not PublicUser.objects.filter(uuid=anon.uuid).exists()
         assert PledgeCommitment.objects.count() == 1
 
+    def test_verify_pin_merges_anon_user_data_into_verified_user(self, graphql_client_query_data):
+        anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {'zip_code': '95695'}
+
+    def test_verify_pin_anon_user_data_overrides_existing_on_conflict(self, graphql_client_query_data):
+        self.public_user.user_data = {'zip_code': '12345', 'city': 'Oldtown'}
+        self.public_user.save(update_fields=['user_data'])
+        anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {'zip_code': '95695', 'city': 'Oldtown'}
+
+    def test_verify_pin_user_data_merge_preserves_verified_only_keys(self, graphql_client_query_data):
+        self.public_user.user_data = {'city': 'Newtown'}
+        self.public_user.save(update_fields=['user_data'])
+        anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {'city': 'Newtown', 'zip_code': '95695'}
+
     def test_verify_pin_invalidates_plan_cache_when_merge_deletes_duplicates(self, graphql_client_query_data):
         pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(pledge=pledge, public_user=self.public_user)
