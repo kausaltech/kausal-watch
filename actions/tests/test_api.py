@@ -798,3 +798,36 @@ def test_action_field_customization_allows_plan_admin(api_client, plan, action, 
 
     # Should succeed because user is a plan admin
     assert response.status_code == 200
+
+
+def test_action_task_post_completed_without_completion_date_returns_400(api_client, plan, plan_admin_user, action_task_list_url):
+    action = ActionFactory.create(plan=plan)
+    api_client.force_login(plan_admin_user)
+    response = api_client.post(
+        action_task_list_url,
+        data={
+            'action': action.pk,
+            'name': 'A completed task',
+            'state': ActionTask.COMPLETED,
+            'due_at': '2027-12-31',
+        },
+    )
+    assert response.status_code == 400
+    assert not ActionTask.objects.filter(action=action).exists()
+
+
+def test_action_task_post_non_completed_with_completion_date_returns_400(api_client, plan, plan_admin_user, action_task_list_url):
+    action = ActionFactory.create(plan=plan)
+    api_client.force_login(plan_admin_user)
+    response = api_client.post(
+        action_task_list_url,
+        data={
+            'action': action.pk,
+            'name': 'A not-started task with a completion date',
+            'state': ActionTask.NOT_STARTED,
+            'due_at': '2027-12-31',
+            'completed_at': '2027-01-01',
+        },
+    )
+    assert response.status_code == 400
+    assert not ActionTask.objects.filter(action=action).exists()

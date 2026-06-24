@@ -1895,6 +1895,18 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
             assert isinstance(action_field, RelatedField)
             action_field.queryset = Action.objects.filter(plan=plan)
 
+    def validate(self, data):
+        data = super().validate(data)
+        # Mirror ActionTask.clean() so invalid combinations return a 400 instead of
+        # hitting the database check constraint and raising a 500.
+        state = data.get('state', getattr(self.instance, 'state', None))
+        completed_at = data.get('completed_at', getattr(self.instance, 'completed_at', None))
+        if state != ActionTask.COMPLETED and completed_at is not None:
+            raise serializers.ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
+        if state == ActionTask.COMPLETED and completed_at is None:
+            raise serializers.ValidationError({'completed_at': _('Completed tasks must have a completion date')})
+        return data
+
 
 class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[ActionTask]):
     queryset = ActionTask.objects.all()
