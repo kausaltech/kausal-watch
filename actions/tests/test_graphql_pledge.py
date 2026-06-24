@@ -1442,6 +1442,47 @@ class TestVerifyPinMutation:
 
         assert data['pledge']['verifyPin']['pledgeIds'] == [str(pledge.id)]
 
+    def test_verify_pin_scopes_pledge_ids_to_request_plan(self, graphql_client_query_data):
+        # When the same email-bound user has commitments in another plan,
+        # VerifyPin must only return IDs for the plan in the request context.
+        # Otherwise the frontend sees unrelated IDs that don't match its own
+        # plan.pledges listing.
+        own_pledge = PledgeFactory.create(plan=self.plan)
+        PledgeCommitment.objects.create(pledge=own_pledge, public_user=self.public_user)
+
+        other_plan = PlanFactory.create()
+        other_plan.features.enable_community_engagement = True
+        other_plan.features.save()
+        other_pledge = PledgeFactory.create(plan=other_plan)
+        PledgeCommitment.objects.create(pledge=other_pledge, public_user=self.public_user)
+
+        raw_pin = self._issue_pin()
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            headers={'X-Cache-Plan-Identifier': self.plan.identifier},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == [str(own_pledge.id)]
+
+    def test_verify_pin_excludes_plans_with_engagement_disabled(self, graphql_client_query_data):
+        own_pledge = PledgeFactory.create(plan=self.plan)
+        PledgeCommitment.objects.create(pledge=own_pledge, public_user=self.public_user)
+
+        disabled_plan = PlanFactory.create()
+        disabled_plan.features.enable_community_engagement = False
+        disabled_plan.features.save()
+        disabled_pledge = PledgeFactory.create(plan=disabled_plan)
+        PledgeCommitment.objects.create(pledge=disabled_pledge, public_user=self.public_user)
+
+        raw_pin = self._issue_pin()
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == [str(own_pledge.id)]
+
     def test_verify_pin_merges_anonymous_commitments(self, graphql_client_query_data):
         pledge = PledgeFactory.create(plan=self.plan)
         anon = PublicUser.objects.create()
@@ -2233,6 +2274,31 @@ class TestPledgeLocaleGraphQL:
         assert len(data['publicUser']['commitments']) == 1
         assert data['publicUser']['commitments'][0]['pledge']['id'] == str(self.fi_pledge.id)
         assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Suomenkielinen lupaus'
+
+    def test_verify_pin_payload_returns_locale_specific_pledge_ids(self, graphql_client_query_data):
+        # Commitments are stored against the primary translation, but the
+        # frontend lists pledges in the active locale. The VerifyPin payload
+        # must translate IDs to that locale or the frontend can't reconcile
+        # them against plan.pledges.
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
+        _, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+
+        verify_mutation = """
+            mutation($email: String!, $pin: String!, $lang: String!) @locale(lang: $lang) {
+              pledge {
+                verifyPin(email: $email, pin: $pin) {
+                  pledgeIds
+                }
+              }
+            }
+        """
+        data = graphql_client_query_data(
+            verify_mutation,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'lang': 'fi'},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == [str(self.fi_pledge.id)]
 
 
 class TestActionPledgesFeatureFlag:

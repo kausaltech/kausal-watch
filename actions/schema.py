@@ -2846,10 +2846,28 @@ class VerifyPinMutation(graphene.Mutation):
             raise verify_error
         assert raw_token is not None
 
-        pledge_ids = list(PledgeCommitment.objects.filter(public_user=public_user).values_list('pledge_id', flat=True))
+        # Commitments are stored against the primary translation of each
+        # Pledge, but the frontend lists pledges in the active locale
+        # (plan.pledges filters by active locale, with locale-specific PKs).
+        # Returning raw PledgeCommitment.pledge_id would give the client
+        # primary-language IDs that don't match the Pledge rows it sees, so
+        # an existing commitment wouldn't be recognized after sign-in. Route
+        # each commitment through get_translation_for_language so the IDs
+        # line up with what plan.pledges returns. Scope to the request plan
+        # and to plans with community engagement enabled, matching
+        # PublicUserNode.resolve_commitments and PledgeCommitmentNode.
+        language = get_language()
+        committed_pledges = Pledge.objects.filter(
+            commitments__public_user=public_user,
+            plan__features__enable_community_engagement=True,
+        )
+        request_plan = info.context.request_plan
+        if request_plan is not None:
+            committed_pledges = committed_pledges.filter(plan=request_plan)
+        pledge_ids = [str(p.get_translation_for_language(language).pk) for p in committed_pledges]
         return VerifyPinPayload(
             user_token=raw_token,
-            pledge_ids=[str(pid) for pid in pledge_ids],
+            pledge_ids=pledge_ids,
         )
 
 
