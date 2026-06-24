@@ -893,7 +893,7 @@ class TestCommitToPledgeMutation:
         assert PledgeCommitment.objects.count() == 0
 
     def test_commit_with_bearer_token_authenticates(self, graphql_client_query_data):
-        """The commitToPledge mutation should authenticate via Authorization: Bearer header alone."""
+        """The commitToPledge mutation should authenticate via the X-Public-User-Token header alone."""
         token = self.public_user.regenerate_user_token()
 
         data = graphql_client_query_data(
@@ -907,7 +907,7 @@ class TestCommitToPledgeMutation:
             }
             """,
             variables={'pledgeId': str(self.pledge.id), 'committed': True},
-            headers={'Authorization': f'Bearer {token}'},
+            headers={'X-Public-User-Token': token},
         )
 
         assert data['pledge']['commitToPledge']['committed'] is True
@@ -934,7 +934,7 @@ class TestCommitToPledgeMutation:
                 'pledgeId': str(self.pledge.id),
                 'committed': True,
             },
-            headers={'Authorization': f'Bearer {token}'},
+            headers={'X-Public-User-Token': token},
         )
 
         assert PledgeCommitment.objects.filter(public_user=self.public_user).exists()
@@ -962,8 +962,8 @@ class TestCommitToPledgeMutation:
         )
 
         assert 'errors' in response
-        assert 'Authorization: Bearer' in response['errors'][0]['message']
-        assert response['errors'][0]['extensions']['code'] == 'BEARER_REQUIRED'
+        assert 'X-Public-User-Token' in response['errors'][0]['message']
+        assert response['errors'][0]['extensions']['code'] == 'TOKEN_REQUIRED'
         assert PledgeCommitment.objects.count() == 0
 
     def test_commit_without_credentials_returns_error(self, graphql_client_query):
@@ -1092,7 +1092,7 @@ class TestSetUserDataMutation:
         assert response['errors'][0]['extensions']['code'] == 'PUBLIC_USER_NOT_FOUND'
 
     def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
-        """The setUserData mutation should authenticate via Authorization: Bearer header alone."""
+        """The setUserData mutation should authenticate via the X-Public-User-Token header alone."""
         public_user = PublicUser.objects.create()
         token = public_user.regenerate_user_token()
 
@@ -1107,7 +1107,7 @@ class TestSetUserDataMutation:
             }
             """,
             variables={'key': 'zip_code', 'value': '01234'},
-            headers={'Authorization': f'Bearer {token}'},
+            headers={'X-Public-User-Token': token},
         )
 
         public_user.refresh_from_db()
@@ -1830,7 +1830,7 @@ class TestPublicUserQuery:
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
             variables={'uuid': str(public_user.uuid)},
-            headers={'Authorization': f'Bearer {other_token}'},
+            headers={'X-Public-User-Token': other_token},
         )
 
         assert data['publicUser'] is None
@@ -1843,7 +1843,7 @@ class TestPublicUserQuery:
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
             variables={'uuid': str(public_user.uuid)},
-            headers={'Authorization': f'Bearer {token}'},
+            headers={'X-Public-User-Token': token},
         )
 
         assert data['publicUser'] is not None
@@ -1862,7 +1862,7 @@ class TestPublicUserQuery:
             }
         """
 
-        data = graphql_client_query_data(query, headers={'Authorization': f'Bearer {token}'})
+        data = graphql_client_query_data(query, headers={'X-Public-User-Token': token})
 
         assert data['publicUser'] is not None
         assert data['publicUser']['uuid'] == str(public_user.uuid)
