@@ -1307,9 +1307,30 @@ class PublicUserNode(DjangoNode[PublicUser]):
         fields = [
             'id',
             'uuid',
+            'email',
             'user_data',
+            'email_verified_at',
             'created_at',
         ]
+
+    @staticmethod
+    def _bearer_matches(root: PublicUser, info: GQLInfo) -> bool:
+        bearer_user = _resolve_public_user_from_bearer(info)
+        return bearer_user is not None and bearer_user.pk == root.pk
+
+    @staticmethod
+    def resolve_email(root: PublicUser, info: GQLInfo) -> str | None:
+        # Defensive: PII must never be readable by UUID alone, even if a later
+        # change lets the parent resolver return the row without a bearer match.
+        if not PublicUserNode._bearer_matches(root, info):
+            return None
+        return root.email
+
+    @staticmethod
+    def resolve_email_verified_at(root: PublicUser, info: GQLInfo):
+        if not PublicUserNode._bearer_matches(root, info):
+            return None
+        return root.email_verified_at
 
     @staticmethod
     def resolve_commitments(root: PublicUser, info: GQLInfo, plan: str | None = None):
@@ -2159,18 +2180,24 @@ class Query:
 
     public_user = graphene.Field(
         PublicUserNode,
-        uuid=graphene.UUID(required=True),
-        description='Get a public user by UUID to retrieve their commitments',
+        uuid=graphene.UUID(required=False),
+        description=(
+            'Get a public user. Anonymous users are identified by the uuid argument; '
+            'signed-up users are identified by the Authorization: Bearer header (uuid '
+            'is then optional).'
+        ),
     )
 
     @staticmethod
-    def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PublicUser | None:
+    def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID | None = None) -> PublicUser | None:
         """
         Look up a PublicUser.
 
         Anonymous users (no user_token) are identified by the UUID argument.
         Once a user has signed up, the bearer token is the identifier instead.
         """
+        if uuid is None:
+            return _resolve_public_user_from_bearer(info)
         matched = PublicUser.objects.filter(uuid=uuid).first()
         if matched is None or matched.user_token is None:
             return matched
