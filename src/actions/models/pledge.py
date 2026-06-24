@@ -535,11 +535,13 @@ class PublicUserSignInAttempt(models.Model):
         """
         Validate a raw PIN against the stored hash.
 
-        Increments the attempt counter on every call. Returns False if the
-        attempt is expired, attempts are exhausted, or the PIN doesn't match.
+        Increments the attempt counter atomically on every call so parallel
+        verify calls can't overwrite each other's increment and exceed the
+        PIN_MAX_ATTEMPTS ceiling. Returns False if the attempt is expired,
+        attempts are exhausted, or the PIN doesn't match.
         """
-        self.attempts += 1
-        self.save(update_fields=['attempts'])
+        PublicUserSignInAttempt.objects.filter(pk=self.pk).update(attempts=models.F('attempts') + 1)
+        self.refresh_from_db(fields=['attempts'])
         if self.is_expired or self.attempts_exhausted:
             return False
         expected = hash_pin(raw_pin, self.pin_salt)
