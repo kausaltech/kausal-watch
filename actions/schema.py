@@ -2749,15 +2749,18 @@ class SignInMutation(graphene.Mutation):
                 extensions={'code': 'ACCOUNT_NOT_FOUND'},
             ) from None
 
-        existing = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
-        if existing and existing.issued_at > timezone.now() - SIGNIN_COOLDOWN:
-            raise GraphQLError(
-                'Please wait a moment before requesting another PIN.',
-                extensions={'code': 'COOLDOWN_ACTIVE'},
-            )
-
         try:
             with transaction.atomic():
+                # Lock the user row so concurrent SignIns for the same account
+                # serialize; the cooldown re-check below then sees an up-to-date
+                # state and can't be bypassed by a parallel request.
+                PublicUser.objects.select_for_update().filter(pk=public_user.pk).first()
+                existing = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
+                if existing and existing.issued_at > timezone.now() - SIGNIN_COOLDOWN:
+                    raise GraphQLError(  # noqa: TRY301
+                        'Please wait a moment before requesting another PIN.',
+                        extensions={'code': 'COOLDOWN_ACTIVE'},
+                    )
                 issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
         except GraphQLError:
             raise
@@ -2801,38 +2804,51 @@ class VerifyPinMutation(graphene.Mutation):
         except PublicUser.DoesNotExist:
             raise GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'}) from None
 
-        attempt = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
-        if attempt is None:
-            raise GraphQLError(
-                'No active sign-in attempt for this email. Please sign in again.',
-                extensions={'code': 'NO_ACTIVE_ATTEMPT'},
-            )
+        # Lock the user row first (matching SignIn's order) before the attempt
+        # row, so a parallel SignIn+VerifyPin pair can't deadlock: SignIn locks
+        # the user then writes the attempt; without consistent ordering,
+        # VerifyPin holding the attempt and waiting to update the user would
+        # cycle against SignIn holding the user and waiting on the attempt.
+        # The locks also serialize parallel correct-PIN verifies so they don't
+        # both rotate user_token (last-write-wins would leave one client with
+        # a stale userToken). Errors are stored and raised outside the block so
+        # the wrong-PIN attempts-counter increment commits with the transaction
+        # instead of being rolled back.
+        verify_error: GraphQLError | None = None
+        raw_token: str | None = None
+        with transaction.atomic():
+            PublicUser.objects.select_for_update().filter(pk=public_user.pk).first()
+            attempt = PublicUserSignInAttempt.objects.select_for_update().filter(public_user=public_user).first()
+            if attempt is None:
+                verify_error = GraphQLError(
+                    'No active sign-in attempt for this email. Please sign in again.',
+                    extensions={'code': 'NO_ACTIVE_ATTEMPT'},
+                )
+            elif attempt.is_expired:
+                verify_error = GraphQLError(
+                    'PIN has expired. Please request a new one.',
+                    extensions={'code': 'PIN_EXPIRED'},
+                )
+            elif attempt.attempts_exhausted:
+                verify_error = GraphQLError(
+                    'Too many attempts. Please request a new PIN.',
+                    extensions={'code': 'PIN_LOCKED'},
+                )
+            elif not attempt.verify(pin):
+                verify_error = GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'})
+            else:
+                anon_uuid = attempt.anon_uuid
+                attempt.delete()
+                if anon_uuid is not None:
+                    merge_anon_into_verified(public_user, anon_uuid)
+                if public_user.email_verified_at is None:
+                    public_user.email_verified_at = timezone.now()
+                    public_user.save(update_fields=['email_verified_at'])
+                raw_token = public_user.regenerate_user_token()
 
-        if attempt.is_expired:
-            raise GraphQLError(
-                'PIN has expired. Please request a new one.',
-                extensions={'code': 'PIN_EXPIRED'},
-            )
-        if attempt.attempts_exhausted:
-            raise GraphQLError(
-                'Too many attempts. Please request a new PIN.',
-                extensions={'code': 'PIN_LOCKED'},
-            )
-
-        if not attempt.verify(pin):
-            raise GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'})
-
-        anon_uuid = attempt.anon_uuid
-        attempt.delete()
-
-        if anon_uuid is not None:
-            merge_anon_into_verified(public_user, anon_uuid)
-
-        if public_user.email_verified_at is None:
-            public_user.email_verified_at = timezone.now()
-            public_user.save(update_fields=['email_verified_at'])
-
-        raw_token = public_user.regenerate_user_token()
+        if verify_error is not None:
+            raise verify_error
+        assert raw_token is not None
 
         pledge_ids = list(PledgeCommitment.objects.filter(public_user=public_user).values_list('pledge_id', flat=True))
         return VerifyPinPayload(
