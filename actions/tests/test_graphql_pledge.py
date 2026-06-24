@@ -1849,6 +1849,52 @@ class TestPublicUserQuery:
         assert data['publicUser'] is not None
         assert data['publicUser']['uuid'] == str(public_user.uuid)
 
+    def test_public_user_query_returns_bearer_user_when_no_uuid(self, graphql_client_query_data):
+        """Without a uuid argument, the query resolves to the bearer-identified user."""
+        public_user = PublicUser.objects.create(email='alice@example.com')
+        token = public_user.regenerate_user_token()
+        query = """
+            query {
+                publicUser {
+                    uuid
+                    email
+                }
+            }
+        """
+
+        data = graphql_client_query_data(query, headers={'Authorization': f'Bearer {token}'})
+
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(public_user.uuid)
+        assert data['publicUser']['email'] == 'alice@example.com'
+
+    def test_public_user_query_returns_null_when_no_uuid_and_no_bearer(self, graphql_client_query_data):
+        """Without either a uuid argument or a bearer header, the query returns null."""
+        query = 'query { publicUser { uuid } }'
+
+        data = graphql_client_query_data(query)
+
+        assert data['publicUser'] is None
+
+    def test_email_field_is_null_without_matching_bearer(self, graphql_client_query_data):
+        """Defensive: an email accidentally set on an anon row still requires a matching bearer to read."""
+        public_user = PublicUser.objects.create()
+        public_user.email = 'leaked@example.com'
+        public_user.save(update_fields=['email'])
+        query = """
+            query($uuid: UUID!) {
+                publicUser(uuid: $uuid) {
+                    uuid
+                    email
+                }
+            }
+        """
+
+        data = graphql_client_query_data(query, variables={'uuid': str(public_user.uuid)})
+
+        assert data['publicUser'] is not None
+        assert data['publicUser']['email'] is None
+
 
 class TestPledgeCommitmentCountAnnotation:
     """Test that commitment count works correctly via the annotated queryset."""
