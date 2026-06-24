@@ -74,6 +74,13 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
     )
     existing_pledge_ids = set(PledgeCommitment.objects.filter(public_user=verified_user).values_list('pledge_id', flat=True))
     PledgeCommitment.objects.filter(public_user=anon).exclude(pledge_id__in=existing_pledge_ids).update(public_user=verified_user)
+
+    if anon.user_data:
+        merged_user_data = {**verified_user.user_data, **anon.user_data}
+        if merged_user_data != verified_user.user_data:
+            verified_user.user_data = merged_user_data
+            verified_user.save(update_fields=['user_data'])
+
     anon.delete()
 
     for plan in Plan.objects.filter(id__in=affected_plan_ids):
