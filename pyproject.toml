@@ -38,6 +38,7 @@ dependencies = [
   "django-oauth-toolkit",
   "django-parler",
   "django-pydantic-field",
+  "django-ratelimit",
   "django-redis",
   "django-relations-iterator",
   "django-reversion",

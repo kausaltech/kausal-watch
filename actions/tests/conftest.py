@@ -1,8 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from django.core.cache import cache
 from django.urls import reverse
 
 import pytest
 
 from .fixtures import actions_with_relations_factory  # noqa: F401
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache_between_tests() -> Iterator[None]:
+    """Clear Django cache between tests so per-IP rate-limit counters don't accumulate across the suite."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
