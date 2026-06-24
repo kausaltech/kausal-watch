@@ -324,9 +324,8 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             return None
 
         headers = exec_ctx.get_request_headers()
-        auth = headers.get('authorization') or headers.get('Authorization', '')
-        if auth.lower().startswith('bearer '):
-            self.set_reason('public-user bearer auth present')
+        if headers.get('x-public-user-token') or headers.get('X-Public-User-Token'):
+            self.set_reason('public-user token present')
             return None
 
         if 'publicUser' in (self.execution_context.query or ''):
