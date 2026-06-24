@@ -1315,7 +1315,7 @@ class PublicUserNode(DjangoNode[PublicUser]):
 
     @staticmethod
     def _bearer_matches(root: PublicUser, info: GQLInfo) -> bool:
-        bearer_user = _resolve_public_user_from_bearer(info)
+        bearer_user = _resolve_public_user_from_token(info)
         return bearer_user is not None and bearer_user.pk == root.pk
 
     @staticmethod
@@ -2183,7 +2183,7 @@ class Query:
         uuid=graphene.UUID(required=False),
         description=(
             'Get a public user. Anonymous users are identified by the uuid argument; '
-            'signed-up users are identified by the Authorization: Bearer header (uuid '
+            'signed-up users are identified by the X-Public-User-Token header (uuid '
             'is then optional).'
         ),
     )
@@ -2197,11 +2197,11 @@ class Query:
         Once a user has signed up, the bearer token is the identifier instead.
         """
         if uuid is None:
-            return _resolve_public_user_from_bearer(info)
+            return _resolve_public_user_from_token(info)
         matched = PublicUser.objects.filter(uuid=uuid).first()
         if matched is None or matched.user_token is None:
             return matched
-        bearer_user = _resolve_public_user_from_bearer(info)
+        bearer_user = _resolve_public_user_from_token(info)
         if bearer_user is None or bearer_user.pk != matched.pk:
             return None
         return matched
@@ -2467,20 +2467,22 @@ class Query:
         )
 
 
-def _resolve_public_user_from_bearer(info: GQLInfo) -> PublicUser | None:
-    """
-    Look up the PublicUser identified by an `Authorization: Bearer <token>` header.
+PUBLIC_USER_TOKEN_HEADER = 'X-Public-User-Token'  # noqa: S105
 
-    The DB stores HMAC hashes of user tokens, so the incoming bearer value is
-    hashed before lookup. Returns None when no Bearer header is present or the
-    token doesn't match any row.
+
+def _resolve_public_user_from_token(info: GQLInfo) -> PublicUser | None:
+    """
+    Look up the PublicUser identified by the X-Public-User-Token header.
+
+    The DB stores HMAC hashes of user tokens, so the incoming value is hashed
+    before lookup. Returns None when no token header is present or the token
+    doesn't match any row. A separate header (not Authorization: Bearer) is
+    used so the PublicUser credential never collides with the platform's
+    OAuth/OIDC bearer-token middleware.
     """
     headers = info.context.get_request_headers()
-    auth_header = headers.get('authorization') or headers.get('Authorization')
-    if not auth_header:
-        return None
-    prefix, _, token = auth_header.partition(' ')
-    if prefix.lower() != 'bearer' or not token:
+    token = headers.get(PUBLIC_USER_TOKEN_HEADER.lower()) or headers.get(PUBLIC_USER_TOKEN_HEADER)
+    if not token:
         return None
     return PublicUser.objects.filter(user_token=hash_user_token(token)).first()
 
@@ -2494,12 +2496,12 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
     UUID-arg fallback is rejected so the bearer credential can't be bypassed
     by anyone who knows the UUID.
     """
-    public_user = _resolve_public_user_from_bearer(info)
+    public_user = _resolve_public_user_from_token(info)
     if public_user is not None:
         return public_user
     if user_uuid is None:
         raise GraphQLError(
-            'Authentication required: provide an Authorization: Bearer token or userUuid',
+            'Authentication required: provide an X-Public-User-Token header or userUuid',
             extensions={'code': 'AUTHENTICATION_REQUIRED'},
         )
     try:
@@ -2508,8 +2510,8 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
         raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'}) from None
     if public_user.user_token is not None:
         raise GraphQLError(
-            'Authentication required: this account requires an Authorization: Bearer header',
-            extensions={'code': 'BEARER_REQUIRED'},
+            'Authentication required: this account requires an X-Public-User-Token header',
+            extensions={'code': 'TOKEN_REQUIRED'},
         )
     return public_user
 
