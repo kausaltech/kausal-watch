@@ -115,7 +115,15 @@ from .models import (
     PublicUserSignInAttempt,
 )
 from .models.pledge import SIGNIN_COOLDOWN, hash_user_token
-from .public_user_auth import issue_pin_for, merge_anon_into_verified, normalize_email
+from .public_user_auth import (
+    SIGN_IN_RATE_LIMIT,
+    SIGN_UP_RATE_LIMIT,
+    VERIFY_PIN_RATE_LIMIT,
+    enforce_rate_limit,
+    issue_pin_for,
+    merge_anon_into_verified,
+    normalize_email,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -2668,6 +2676,7 @@ class SignUpMutation(graphene.Mutation):
         marketing_accepted: bool,
         anon_uuid: uuid.UUID | None = None,
     ) -> SignUpPayload:
+        enforce_rate_limit(info, group='public_user_sign_up', rate=SIGN_UP_RATE_LIMIT)
         if not terms_accepted:
             raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
 
@@ -2719,6 +2728,7 @@ class SignInMutation(graphene.Mutation):
         email: str,
         anon_uuid: uuid.UUID | None = None,
     ) -> SignInPayload:
+        enforce_rate_limit(info, group='public_user_sign_in', rate=SIGN_IN_RATE_LIMIT)
         normalized = normalize_email(email)
         try:
             public_user = PublicUser.objects.get(email=normalized)
@@ -2762,7 +2772,8 @@ class VerifyPinMutation(graphene.Mutation):
     Output = VerifyPinPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo, email: str, pin: str) -> VerifyPinPayload:
+    def mutate(cls, _root, info: GQLInfo, email: str, pin: str) -> VerifyPinPayload:
+        enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
         normalized = normalize_email(email)
         try:
             public_user = PublicUser.objects.get(email=normalized)

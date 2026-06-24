@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 from email.utils import formataddr
-from typing import TYPE_CHECKING
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.http import HttpRequest
 from django.utils.translation import gettext as _
 from graphql.error import GraphQLError
+from strawberry.channels import ChannelsRequest
 
 import sentry_sdk
+from django_ratelimit.core import is_ratelimited  # type: ignore[import-untyped]
 from loguru import logger
+from starlette.requests import Request as StarletteRequest
 
 from actions.models.plan import Plan
 from actions.models.pledge import PIN_TTL, PledgeCommitment, PublicUser, PublicUserSignInAttempt
@@ -19,6 +24,12 @@ from notifications.mjml import render_mjml_from_template
 
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from aplans.graphql_types import GQLInfo
+
+SIGN_UP_RATE_LIMIT = '5/m'
+SIGN_IN_RATE_LIMIT = '10/m'
+VERIFY_PIN_RATE_LIMIT = '30/m'
 
 logger = logger.bind(name='actions.public_user_auth')
 
@@ -29,6 +40,49 @@ def normalize_email(email: str) -> str:
     if not normalized:
         raise GraphQLError('Email is required.', extensions={'code': 'EMAIL_REQUIRED'})
     return normalized
+
+
+def _build_ratelimit_request(req: Any) -> Any:
+    """
+    Return an object django-ratelimit can read as a Django request.
+
+    is_ratelimited only touches .method and .META (for the 'ip' key it
+    reads META['REMOTE_ADDR']). For ASGI/Channels/Starlette requests
+    served by Daphne, .request isn't a Django HttpRequest, so we build a
+    minimal shim populated from the underlying ASGI scope. Returns the
+    original request unchanged when it's already a Django HttpRequest, so
+    the WSGI/sync path keeps using django-ratelimit's full IP handling
+    (RATELIMIT_TRUSTED_PROXIES, RATELIMIT_IP_META, etc).
+    """
+    if isinstance(req, HttpRequest):
+        return req
+    meta: dict[str, str] = {}
+    method = 'POST'
+    if isinstance(req, ChannelsRequest):
+        scope = req.consumer.scope
+        client = scope.get('client') or ('', 0)
+        meta['REMOTE_ADDR'] = client[0]
+        for header_name, header_value in scope.get('headers', []):
+            key = 'HTTP_' + header_name.decode('utf8').upper().replace('-', '_')
+            meta[key] = header_value.decode('utf8')
+        method = scope.get('method', 'POST').upper()
+    elif isinstance(req, StarletteRequest):
+        meta['REMOTE_ADDR'] = req.client.host if req.client else ''
+        for name, value in req.headers.items():
+            key = 'HTTP_' + name.upper().replace('-', '_')
+            meta[key] = value
+        method = req.method.upper()
+    return SimpleNamespace(META=meta, method=method)
+
+
+def enforce_rate_limit(info: GQLInfo, group: str, rate: str) -> None:
+    """Throttle a mutation by client IP. Raises RATE_LIMITED when the limit is exceeded."""
+    request = _build_ratelimit_request(info.context.request)
+    if is_ratelimited(request, group=group, key='ip', rate=rate, method='POST', increment=True):
+        raise GraphQLError(
+            'Too many requests, please try again later.',
+            extensions={'code': 'RATE_LIMITED'},
+        )
 
 
 def issue_pin_for(
