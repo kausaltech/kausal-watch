@@ -1276,6 +1276,20 @@ class TestSignInMutation:
 
         assert data['pledge']['signIn']['sent'] is True
 
+    def test_sign_in_rate_limited_returns_error(self, graphql_client_query):
+        from actions.public_user_auth import SIGN_IN_RATE_LIMIT
+
+        max_per_minute = int(SIGN_IN_RATE_LIMIT.split('/')[0])
+        for _ in range(max_per_minute):
+            PublicUser.objects.get_or_create(email='ratelimit@example.com')
+            graphql_client_query(SIGN_IN_MUTATION, variables={'email': f'ratelimit{_}@example.com'})
+
+        PublicUser.objects.get_or_create(email='ratelimit-over@example.com')
+        response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'ratelimit-over@example.com'})
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'RATE_LIMITED'
+
     def test_sign_in_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
         public_user = PublicUser.objects.create(email='hello@example.com')
         anon_uuid = uuid.uuid4()
