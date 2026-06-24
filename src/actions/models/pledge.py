@@ -538,11 +538,15 @@ class PublicUserSignInAttempt(models.Model):
         Increments the attempt counter atomically on every call so parallel
         verify calls can't overwrite each other's increment and exceed the
         PIN_MAX_ATTEMPTS ceiling. Returns False if the attempt is expired,
-        attempts are exhausted, or the PIN doesn't match.
+        the post-increment counter exceeds the cap (a race past the
+        per-mutation pre-check), or the PIN doesn't match. The cap check is
+        strict-greater-than so the Nth attempt - where N == PIN_MAX_ATTEMPTS
+        - is still usable; the per-mutation pre-check via attempts_exhausted
+        catches the (N+1)th request before it ever reaches this code.
         """
         PublicUserSignInAttempt.objects.filter(pk=self.pk).update(attempts=models.F('attempts') + 1)
         self.refresh_from_db(fields=['attempts'])
-        if self.is_expired or self.attempts_exhausted:
+        if self.is_expired or self.attempts > PIN_MAX_ATTEMPTS:
             return False
         expected = hash_pin(raw_pin, self.pin_salt)
         return hmac.compare_digest(expected, self.pin_hash)
