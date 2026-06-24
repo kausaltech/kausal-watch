@@ -328,10 +328,6 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             self.set_reason('public-user token present')
             return None
 
-        if 'publicUser' in (self.execution_context.query or ''):
-            self.set_reason('publicUser query is identity-sensitive and not cached')
-            return None
-
         parts = [str(plan.identifier), plan.cache_invalidated_at.isoformat()]
         return parts
 
