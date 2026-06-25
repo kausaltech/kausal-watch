@@ -121,7 +121,8 @@ from .public_user_auth import (
     SIGN_UP_RATE_LIMIT,
     VERIFY_PIN_RATE_LIMIT,
     enforce_rate_limit,
-    issue_pin_for,
+    issue_signin_pin,
+    issue_signup_pin,
     merge_anon_into_verified,
     normalize_email,
 )
@@ -2682,25 +2683,35 @@ class SignUpMutation(graphene.Mutation):
             raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
 
         normalized = normalize_email(email)
-        if PublicUser.objects.filter(email=normalized).exists():
-            raise GraphQLError(
-                'An account with this email already exists.',
-                extensions={'code': 'ACCOUNT_EXISTS'},
-            )
-
         now = timezone.now()
         try:
             with transaction.atomic():
-                public_user = PublicUser.objects.create(
+                # Check existence inside the transaction. A concurrent
+                # VerifyPin may have consumed a pending attempt and created
+                # the PublicUser between this mutation entering and the
+                # attempt being written. Under READ COMMITTED isolation each
+                # statement here sees the latest committed state, so this
+                # observes the VerifyPin commit; without this re-check, the
+                # SignUp would create a fresh email-only attempt for an
+                # address that now has an account, and the resulting PIN
+                # would be unusable because VerifyPin's existing-user path
+                # ignores email-only attempts.
+                if PublicUser.objects.filter(email=normalized).exists():
+                    raise GraphQLError(  # noqa: TRY301
+                        'An account with this email already exists.',
+                        extensions={'code': 'ACCOUNT_EXISTS'},
+                    )
+                issue_signup_pin(
                     email=normalized,
                     terms_accepted_at=now,
                     marketing_consented_at=now if marketing_accepted else None,
+                    anon_uuid=anon_uuid,
+                    plan=info.context.request_plan,
                 )
-                issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
         except GraphQLError:
             raise
         except Exception as exc:
-            logger.exception('SignUp failed during PIN email delivery for {email}', email=normalized)
+            logger.exception('SignUp failed during PIN email delivery')
             raise GraphQLError(
                 'Could not send verification email. Please try again.',
                 extensions={'code': 'EMAIL_SEND_FAILED'},
@@ -2761,11 +2772,11 @@ class SignInMutation(graphene.Mutation):
                         'Please wait a moment before requesting another PIN.',
                         extensions={'code': 'COOLDOWN_ACTIVE'},
                     )
-                issue_pin_for(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+                issue_signin_pin(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
         except GraphQLError:
             raise
         except Exception as exc:
-            logger.exception('SignIn failed during PIN email delivery for {email}', email=normalized)
+            logger.exception('SignIn failed during PIN email delivery')
             raise GraphQLError(
                 'Could not send verification email. Please try again.',
                 extensions={'code': 'EMAIL_SEND_FAILED'},
@@ -2795,30 +2806,71 @@ class VerifyPinMutation(graphene.Mutation):
 
     Output = VerifyPinPayload
 
+    @staticmethod
+    def _consume_attempt(
+        attempt: PublicUserSignInAttempt,
+        existing_user: PublicUser | None,
+        normalized_email: str,
+    ) -> tuple[PublicUser, str]:
+        """
+        Apply the successful-PIN side effects atomically inside the caller's transaction.
+
+        For pending SignUp attempts (existing_user is None), creates the
+        PublicUser using the attempt's stored consent timestamps so consent
+        is only persisted once the verifier proves mailbox control. For
+        SignIn attempts, reuses the existing user and stamps
+        email_verified_at on first verification.
+        """
+        anon_uuid = attempt.anon_uuid
+        if existing_user is None:
+            pending_terms_accepted_at = attempt.pending_terms_accepted_at
+            pending_marketing_consented_at = attempt.pending_marketing_consented_at
+            attempt.delete()
+            public_user = PublicUser.objects.create(
+                email=normalized_email,
+                terms_accepted_at=pending_terms_accepted_at,
+                marketing_consented_at=pending_marketing_consented_at,
+                email_verified_at=timezone.now(),
+            )
+        else:
+            attempt.delete()
+            public_user = existing_user
+            if public_user.email_verified_at is None:
+                public_user.email_verified_at = timezone.now()
+                public_user.save(update_fields=['email_verified_at'])
+        if anon_uuid is not None:
+            merge_anon_into_verified(public_user, anon_uuid)
+        return public_user, public_user.regenerate_user_token()
+
     @classmethod
     def mutate(cls, _root, info: GQLInfo, email: str, pin: str) -> VerifyPinPayload:
         enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
         normalized = normalize_email(email)
-        try:
-            public_user = PublicUser.objects.get(email=normalized)
-        except PublicUser.DoesNotExist:
-            raise GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'}) from None
+        # Look up the user first to decide which attempt-finder path to take:
+        # if there's a verified PublicUser, this is a SignIn verification;
+        # otherwise it's a SignUp verification (attempt exists by email,
+        # user hasn't been created yet).
+        existing_user = PublicUser.objects.filter(email=normalized).first()
 
-        # Lock the user row first (matching SignIn's order) before the attempt
-        # row, so a parallel SignIn+VerifyPin pair can't deadlock: SignIn locks
-        # the user then writes the attempt; without consistent ordering,
-        # VerifyPin holding the attempt and waiting to update the user would
-        # cycle against SignIn holding the user and waiting on the attempt.
-        # The locks also serialize parallel correct-PIN verifies so they don't
-        # both rotate user_token (last-write-wins would leave one client with
-        # a stale userToken). Errors are stored and raised outside the block so
-        # the wrong-PIN attempts-counter increment commits with the transaction
-        # instead of being rolled back.
+        # Lock the user row (when one exists) before the attempt row so a
+        # parallel SignIn+VerifyPin pair can't deadlock - SignIn locks the
+        # user then writes the attempt. The locks also serialize parallel
+        # correct-PIN verifies so they don't both rotate user_token. Errors
+        # are stored and raised outside the block so the wrong-PIN
+        # attempts-counter increment commits with the transaction instead of
+        # being rolled back.
         verify_error: GraphQLError | None = None
         raw_token: str | None = None
+        public_user: PublicUser | None = None
         with transaction.atomic():
-            PublicUser.objects.select_for_update().filter(pk=public_user.pk).first()
-            attempt = PublicUserSignInAttempt.objects.select_for_update().filter(public_user=public_user).first()
+            locked_user: PublicUser | None = None
+            if existing_user is not None:
+                locked_user = PublicUser.objects.select_for_update().filter(pk=existing_user.pk).first()
+                attempt = PublicUserSignInAttempt.objects.select_for_update().filter(public_user=locked_user).first()
+            else:
+                attempt = (
+                    PublicUserSignInAttempt.objects.select_for_update().filter(email=normalized, public_user__isnull=True).first()
+                )
             if attempt is None:
                 verify_error = GraphQLError(
                     'No active sign-in attempt for this email. Please sign in again.',
@@ -2837,18 +2889,12 @@ class VerifyPinMutation(graphene.Mutation):
             elif not attempt.verify(pin):
                 verify_error = GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'})
             else:
-                anon_uuid = attempt.anon_uuid
-                attempt.delete()
-                if anon_uuid is not None:
-                    merge_anon_into_verified(public_user, anon_uuid)
-                if public_user.email_verified_at is None:
-                    public_user.email_verified_at = timezone.now()
-                    public_user.save(update_fields=['email_verified_at'])
-                raw_token = public_user.regenerate_user_token()
+                public_user, raw_token = cls._consume_attempt(attempt, locked_user, normalized)
 
         if verify_error is not None:
             raise verify_error
         assert raw_token is not None
+        assert public_user is not None
 
         # Commitments are stored against the primary translation of each
         # Pledge, but the frontend lists pledges in the active locale
