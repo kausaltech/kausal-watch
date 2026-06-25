@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import timedelta
 from typing import Any, cast
@@ -10,6 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.db import IntegrityError
+from django.test import override_settings
 from django.utils import timezone, translation
 from wagtail.models import Locale
 
@@ -436,6 +438,28 @@ class TestPublicUserSignInAttempt:
         assert attempt.pin_hash == hash_pin(raw_pin, attempt.pin_salt)
         assert attempt.pin_hash != raw_pin
         assert attempt.attempts == 0
+
+    def test_hash_pin_is_not_plain_sha256(self):
+        # The PIN hash must be keyed with a server-side pepper. Plain
+        # salt+sha256 over a 6-digit keyspace can be brute-forced in
+        # milliseconds with DB-only read access, letting an attacker submit
+        # the recovered PIN via the API. Peppering raises the bar to "needs
+        # SECRET_KEY", matching how user_token is hashed.
+        salt = 'a' * 16
+        raw_pin = '123456'
+        plain_sha256 = hashlib.sha256((salt + raw_pin).encode()).hexdigest()
+
+        assert hash_pin(raw_pin, salt) != plain_sha256
+
+    def test_hash_pin_changes_with_secret_key(self):
+        salt = 'a' * 16
+        raw_pin = '123456'
+        original = hash_pin(raw_pin, salt)
+
+        with override_settings(SECRET_KEY='a-completely-different-secret-key'):
+            rotated = hash_pin(raw_pin, salt)
+
+        assert original != rotated
 
     def test_create_for_replaces_previous_attempt(self):
         public_user = PublicUser.objects.create(email='a@example.com')

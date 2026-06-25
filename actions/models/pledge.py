@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import TYPE_CHECKING, ClassVar
 
 import reversion
@@ -32,6 +32,7 @@ from .attributes import ModelWithAttributes
 from .plan import Plan
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from typing import Any
 
     from modelcluster.fields import PK
@@ -374,8 +375,25 @@ def _generate_pin() -> str:
     return f'{secrets.randbelow(10**PIN_LENGTH):0{PIN_LENGTH}d}'
 
 
+def _get_pin_pepper() -> bytes:
+    """
+    Derive a per-app HMAC key for PIN hashing from SECRET_KEY.
+
+    The 6-digit PIN keyspace is small (10**6), so an attacker with DB-only
+    read access could otherwise brute-force the salted SHA-256 in
+    milliseconds and submit the recovered PIN via the public API before
+    the 10-minute TTL expires, minting a bearer token. Peppering raises
+    the bar from "has DB read" to "has DB read AND SECRET_KEY", matching
+    the threat model already paid for by hash_user_token. The label
+    scopes the pepper so it isn't equivalent to keys used elsewhere with
+    SECRET_KEY; rotating SECRET_KEY invalidates all outstanding PINs,
+    which is fine - users just request a new one (10-minute TTL).
+    """
+    return hashlib.sha256(b'kausal-watch:public_user_pin_pepper:' + settings.SECRET_KEY.encode()).digest()
+
+
 def hash_pin(raw_pin: str, salt: str) -> str:
-    return hashlib.sha256((salt + raw_pin).encode()).hexdigest()
+    return hmac.new(_get_pin_pepper(), (salt + raw_pin).encode(), hashlib.sha256).hexdigest()
 
 
 @reversion.register(exclude=['user_token'])
