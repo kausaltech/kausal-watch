@@ -429,7 +429,7 @@ class TestPublicUserSignInAttempt:
     def test_create_for_generates_attempt_with_hashed_pin(self):
         public_user = PublicUser.objects.create(email='a@example.com')
 
-        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         assert raw_pin.isdigit()
         assert len(raw_pin) == 6
@@ -439,9 +439,9 @@ class TestPublicUserSignInAttempt:
 
     def test_create_for_replaces_previous_attempt(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        first_attempt, first_pin = PublicUserSignInAttempt.create_for(public_user)
+        first_attempt, first_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
-        second_attempt, second_pin = PublicUserSignInAttempt.create_for(public_user)
+        second_attempt, second_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         assert second_pin != first_pin
         assert second_attempt.pk == first_attempt.pk
@@ -451,26 +451,26 @@ class TestPublicUserSignInAttempt:
         public_user = PublicUser.objects.create(email='a@example.com')
         anon_uuid = uuid.uuid4()
 
-        attempt, _ = PublicUserSignInAttempt.create_for(public_user, anon_uuid=anon_uuid)
+        attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user, anon_uuid=anon_uuid)
 
         assert attempt.anon_uuid == anon_uuid
 
     def test_verify_returns_true_for_correct_pin(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         assert attempt.verify(raw_pin) is True
 
     def test_verify_returns_false_for_wrong_pin(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         wrong = '000000' if raw_pin != '000000' else '111111'
 
         assert attempt.verify(wrong) is False
 
     def test_verify_increments_attempts(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+        attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
 
         attempt.verify('000000')
         attempt.verify('111111')
@@ -481,7 +481,7 @@ class TestPublicUserSignInAttempt:
     def test_verify_increment_survives_concurrent_modification(self):
         """A stale in-memory counter must not overwrite an interleaved DB update."""
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+        attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
         # Simulate a concurrent verify having incremented in the DB while this
         # instance still has attempts=0 in Python.
         PublicUserSignInAttempt.objects.filter(pk=attempt.pk).update(attempts=2)
@@ -493,7 +493,7 @@ class TestPublicUserSignInAttempt:
 
     def test_verify_returns_false_after_attempts_exhausted(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         for _ in range(PIN_MAX_ATTEMPTS):
             attempt.verify('000000')
 
@@ -501,7 +501,7 @@ class TestPublicUserSignInAttempt:
 
     def test_verify_returns_false_for_expired_attempt(self):
         public_user = PublicUser.objects.create(email='a@example.com')
-        attempt, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         attempt.expires_at = timezone.now() - timedelta(minutes=1)
         attempt.save(update_fields=['expires_at'])
 
@@ -511,17 +511,14 @@ class TestPublicUserSignInAttempt:
 class TestSendPinEmail:
     """Tests for the send_pin_email helper."""
 
-    def test_raises_when_user_has_no_email(self):
-        public_user = PublicUser.objects.create()
-
-        with pytest.raises(ValueError, match='no email'):
-            send_pin_email(public_user, '123456')
+    def test_raises_when_email_is_empty(self):
+        with pytest.raises(ValueError, match='email is required'):
+            send_pin_email('', '123456')
 
     def test_no_plan_sends_plain_text_only(self):
-        public_user = PublicUser.objects.create(email='alice@example.com')
         mail.outbox.clear()
 
-        send_pin_email(public_user, '654321')
+        send_pin_email('alice@example.com', '654321')
 
         assert len(mail.outbox) == 1
         msg = mail.outbox[0]
@@ -530,21 +527,19 @@ class TestSendPinEmail:
         assert msg.to == ['alice@example.com']
 
     def test_from_header_is_kausal(self):
-        public_user = PublicUser.objects.create(email='alice@example.com')
         mail.outbox.clear()
 
-        send_pin_email(public_user, '111111')
+        send_pin_email('alice@example.com', '111111')
 
         msg = mail.outbox[0]
         assert msg.from_email.startswith('Kausal ')
 
     def test_with_plan_subject_includes_plan_name(self):
         plan = PlanFactory.create(name='Example Climate Plan')
-        public_user = PublicUser.objects.create(email='alice@example.com')
         mail.outbox.clear()
 
         with patch('actions.public_user_auth.render_mjml_from_template', return_value='<html></html>'):
-            send_pin_email(public_user, '222222', plan=plan)
+            send_pin_email('alice@example.com', '222222', plan=plan)
 
         msg = mail.outbox[0]
         assert 'Example Climate Plan' in msg.subject
@@ -554,11 +549,10 @@ class TestSendPinEmail:
         plan = PlanFactory.create(name='Example Climate Plan')
         BaseTemplate.objects.create(plan=plan, brand_dark_color='#123456')
         plan.refresh_from_db()
-        public_user = PublicUser.objects.create(email='alice@example.com')
         mail.outbox.clear()
 
         with patch('actions.public_user_auth.render_mjml_from_template', return_value='<html>rendered</html>') as rendered:
-            send_pin_email(public_user, '333333', plan=plan)
+            send_pin_email('alice@example.com', '333333', plan=plan)
 
         rendered.assert_called_once()
         msg = mail.outbox[0]
@@ -569,11 +563,10 @@ class TestSendPinEmail:
         plan = PlanFactory.create(name='English Plan Name')
         plan.name_fi = 'Suomalainen suunnitelma'
         plan.save()
-        public_user = PublicUser.objects.create(email='alice@example.com')
         mail.outbox.clear()
 
         with translation.override('fi'):
-            send_pin_email(public_user, '444444', plan=plan)
+            send_pin_email('alice@example.com', '444444', plan=plan)
 
         msg = mail.outbox[0]
         assert 'Suomalainen suunnitelma' in msg.subject
