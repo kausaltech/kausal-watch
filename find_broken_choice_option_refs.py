@@ -1,43 +1,95 @@
 """
-Find broken AttributeTypeChoiceOption references.
+Find and restore broken AttributeTypeChoiceOption references.
 
-Scans three sources for references to AttributeTypeChoiceOption rows that
-no longer exist in the database:
+The module covers the full repair pipeline: scan for stale references,
+reconstruct the deleted options from history, and (optionally) re-insert
+them as archived rows so historical reports stop rendering "Missing value".
 
-1. django-reversion Versions of AttributeChoice / AttributeChoiceWithText.
-   These power report snapshots and admin revision history. The `choice`
-   PK lives in `serialized_data` (a JSON-encoded text field).
+# 1. Scanning
 
-2. Wagtail Revisions of any model with attribute drafts (Action, Category,
-   Pledge). The choice PK lives in `content['attributes'][<format>][<at_pk>]`,
-   either as a bare int (ordered_choice / unordered_choice) or as a dict
-   {'choice': <pk>, 'text': ...} (optional_choice).
+Three sources are checked for references to AttributeTypeChoiceOption PKs
+that no longer exist in the database:
 
-3. Live AttributeChoice / AttributeChoiceWithText rows whose `choice_id`
-   doesn't resolve to an AttributeTypeChoiceOption. Under normal CASCADE
-   behaviour these should never exist; if any are found, something has
-   bypassed the FK (raw SQL, partial restore, etc.).
+- **django-reversion Versions of AttributeChoice / AttributeChoiceWithText.**
+  These power report snapshots and admin revision history. The `choice` PK
+  lives in `serialized_data` (a JSON-encoded text field).
 
-Usage from shell_plus:
+- **Wagtail Revisions of any attribute-bearing model (Action, Category,
+  Pledge).** The choice PK lives in
+  `content['attributes'][<format>][<at_pk>]`, either as a bare int
+  (ordered_choice / unordered_choice) or as a dict
+  `{'choice': <pk>, 'text': ...}` (optional_choice). Rows whose `content`
+  is still a JSON-encoded string (legacy / migrated data) are decoded
+  before walking.
 
-    from find_broken_choice_option_refs import scan_all, print_report
+- **Live AttributeChoice / AttributeChoiceWithText rows** whose `choice_id`
+  doesn't resolve. Under normal CASCADE behaviour these don't exist; if any
+  are found, something has bypassed the FK (raw SQL, partial restore, …).
+
+`scan_all()` returns a list of `BrokenRef`s aggregating all three.
+`print_report()` groups them by missing option PK so you can see, for a
+given deleted option, every place it's still referenced.
+
+# 2. Reconstruction
+
+`reconstruct_from_reversion(missing_pks)` reads the django-reversion
+Versions of `AttributeTypeChoiceOption` itself (the model is
+`@reversion.register()`'d, so its history survives the CASCADE that
+deleted the row). For each PK it returns a `ReconstructedOption` carrying
+the last-known `name`, `identifier`, `type_id`, `order`, modeltrans `i18n`
+translations, plus the source Version PK and revision date for audit.
+
+PKs that have no Version in the live DB (e.g. options that were created
+by a migration or raw SQL without reversion tracking) are returned as a
+separate `needs_backup` list — those are the ones that still require a
+backup lookup.
+
+# 3. Restoration
+
+`insert_reconstructed(found)` writes the recovered options back as
+**archived** rows (`is_active=False`) with `order` parked above existing
+siblings on the same type. The original PK is preserved so stale FK
+references resolve again; the original `i18n` translations are restored
+so non-primary-language labels survive. Pickers and the GraphQL listing
+skip archived options, so end users still don't see them — but historical
+reports show the original name instead of "Missing value".
+
+Per-row outcomes are reported via `InsertResult.status`:
+
+- `inserted` — the row was written (or, in dry-run mode, would be).
+- `skipped-already-exists` — a row with that PK is already in the DB
+  (the option was re-created since deletion).
+- `skipped-type-missing` — the original `type_id` no longer exists.
+- `skipped-missing-fields` — required data (name / identifier / type_id)
+  was not recoverable. `order` is *not* required: insertion always picks
+  its own archived order.
+
+The full insert runs in a single `transaction.atomic`. After commit the
+PK sequence is advanced to `MAX(id)` via `transaction.on_commit`, so
+future ORM inserts don't collide with restored PKs.
+
+# End-to-end pipeline (from shell_plus)
+
+    from find_broken_choice_option_refs import (
+        scan_all, print_report,
+        reconstruct_from_reversion, print_reconstruction,
+        insert_reconstructed,
+    )
+
     refs = scan_all()
     print_report(refs)
 
-    # Or scan one source at a time:
-    from find_broken_choice_option_refs import (
-        scan_reversion_versions, scan_wagtail_revisions, scan_live_rows,
-    )
+    missing_pks = {r.missing_option_pk for r in refs}
+    found, needs_backup = reconstruct_from_reversion(missing_pks)
+    print_reconstruction(found, needs_backup)
 
-Each scan returns a list of `BrokenRef`s; `print_report` groups them by
-the missing AttributeTypeChoiceOption PK so you can see, for a given
-deleted option, every place that still references it.
+    # Preview, then commit.
+    for r in insert_reconstructed(found, dry_run=True):
+        print(r)
+    insert_reconstructed(found, dry_run=False)
 
-Once you have the set of missing PKs, `reconstruct_from_reversion()` reads
-the django-reversion Versions of AttributeTypeChoiceOption itself in the
-live DB to recover each option's last-known name / identifier / type / order.
-PKs without any Version row are returned separately so they can be looked
-up in DB backups.
+You can also drive each step on its own; see the individual function
+docstrings.
 """
 
 from __future__ import annotations
