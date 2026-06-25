@@ -23,6 +23,7 @@ from actions.models.pledge import PIN_TTL, PledgeCommitment, PublicUser, PublicU
 from notifications.mjml import render_mjml_from_template
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from uuid import UUID
 
     from aplans.graphql_types import GQLInfo
@@ -85,14 +86,38 @@ def enforce_rate_limit(info: GQLInfo, group: str, rate: str) -> None:
         )
 
 
-def issue_pin_for(
+def issue_signin_pin(
     public_user: PublicUser,
     anon_uuid: UUID | None = None,
     plan: Plan | None = None,
 ) -> None:
-    """Generate a new PIN for the user, store its hash, and send it via email."""
-    _, raw_pin = PublicUserSignInAttempt.create_for(public_user, anon_uuid=anon_uuid)
-    send_pin_email(public_user, raw_pin, plan=plan)
+    """Generate a new PIN for an existing user and send it via email."""
+    assert public_user.email is not None
+    _, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user, anon_uuid=anon_uuid)
+    send_pin_email(public_user.email, raw_pin, plan=plan)
+
+
+def issue_signup_pin(
+    email: str,
+    terms_accepted_at: datetime,
+    marketing_consented_at: datetime | None,
+    anon_uuid: UUID | None = None,
+    plan: Plan | None = None,
+) -> None:
+    """
+    Generate a PIN for a pending sign-up (no PublicUser yet).
+
+    Consent timestamps live on the attempt and are applied to the PublicUser
+    at VerifyPin time, so an unverifying caller can't pre-record consent for
+    someone else's mailbox.
+    """
+    _, raw_pin = PublicUserSignInAttempt.create_for_signup(
+        email=email,
+        terms_accepted_at=terms_accepted_at,
+        marketing_consented_at=marketing_consented_at,
+        anon_uuid=anon_uuid,
+    )
+    send_pin_email(email, raw_pin, plan=plan)
 
 
 def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None:
@@ -141,9 +166,9 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         plan.invalidate_cache()
 
 
-def send_pin_email(public_user: PublicUser, raw_pin: str, plan: Plan | None = None) -> None:
+def send_pin_email(email: str, raw_pin: str, plan: Plan | None = None) -> None:
     """
-    Send a PIN verification code to the user's email address.
+    Send a PIN verification code to the given email address.
 
     Sent synchronously so the raw PIN never lands in the Celery broker. The
     caller should handle the case where the email delivery fails (treat it as
@@ -154,8 +179,8 @@ def send_pin_email(public_user: PublicUser, raw_pin: str, plan: Plan | None = No
     notification base template configured, the email is sent as a multipart
     message with a plan-themed HTML body; otherwise a plain-text email is sent.
     """
-    if not public_user.email:
-        raise ValueError('PublicUser has no email; cannot send PIN.')
+    if not email:
+        raise ValueError('email is required; cannot send PIN.')
 
     minutes = int(PIN_TTL.total_seconds() // 60)
     base_template = getattr(plan, 'notification_base_template', None) if plan else None
@@ -183,7 +208,7 @@ def send_pin_email(public_user: PublicUser, raw_pin: str, plan: Plan | None = No
             subject=subject,
             body=plain_body,
             from_email=from_email,
-            to=[public_user.email],
+            to=[email],
         )
     else:
         context = {
@@ -200,9 +225,9 @@ def send_pin_email(public_user: PublicUser, raw_pin: str, plan: Plan | None = No
             subject=subject,
             body=plain_body,
             from_email=from_email,
-            to=[public_user.email],
+            to=[email],
         )
         msg.attach_alternative(html_body, 'text/html')
 
     msg.send(fail_silently=False)
-    logger.info('Sent PIN email to public user uuid={uuid}', uuid=public_user.uuid)
+    logger.info('Sent PIN email')
