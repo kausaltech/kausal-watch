@@ -124,9 +124,10 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
     """
     Move pledge commitments from the anonymous PublicUser at anon_uuid into verified_user.
 
-    No-op when the anon_uuid is stale (no matching row) or when the row exists
-    but has an email set (in which case it's another verified user's row and
-    touching it would be an account-takeover via UUID knowledge). Duplicate
+    No-op when the anon_uuid is stale (no matching row), when the row exists
+    but already has an email or user_token set (any past-verification row is
+    off-limits to UUID-based merges, matching _resolve_public_user's rule
+    that any token-bearing row requires the bearer header). Duplicate
     commitments (same pledge on both rows) are removed when the anon row is
     deleted via CASCADE.
     """
@@ -136,14 +137,14 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         return
     if anon.pk == verified_user.pk:
         return
-    if anon.email:
+    if anon.email or anon.user_token:
         logger.warning(
-            'Refusing to merge anon row uuid={uuid} into verified user pk={verified_pk}: anon row has email set.',
+            'Refusing to merge anon row uuid={uuid} into verified user pk={verified_pk}: anon row is not anonymous.',
             uuid=anon_uuid,
             verified_pk=verified_user.pk,
         )
         sentry_sdk.capture_message(
-            'VerifyPin merge refused: anon_uuid points to a row with email set',
+            'VerifyPin merge refused: anon_uuid points to a row past the verification boundary',
             level='warning',
         )
         return
