@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, ClassVar, Self
 
 import reversion
@@ -478,11 +478,20 @@ class PublicUserSignInAttempt(models.Model):
     a different device than sign-in.
     """
 
-    public_user: FK[PublicUser] = models.OneToOneField(
+    public_user: FK[PublicUser | None] = models.OneToOneField(
         'PublicUser',
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='sign_in_attempt',
     )
+    # email + pending_* are set only when public_user is None (the SignUp
+    # path). The PublicUser is created at VerifyPin time using these values
+    # so consent is only persisted for a verifier that actually controls the
+    # mailbox.
+    email = models.EmailField(null=True, blank=True)
+    pending_terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    pending_marketing_consented_at = models.DateTimeField(null=True, blank=True)
     pin_hash = models.CharField(max_length=64, editable=False)
     pin_salt = models.CharField(max_length=32, editable=False)
     issued_at = models.DateTimeField()
@@ -495,9 +504,25 @@ class PublicUserSignInAttempt(models.Model):
     class Meta:
         verbose_name = _('public user sign-in attempt')
         verbose_name_plural = _('public user sign-in attempts')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email'],
+                condition=models.Q(public_user__isnull=True),
+                name='unique_pending_signup_email',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(public_user__isnull=False)
+                    | (models.Q(email__isnull=False) & models.Q(pending_terms_accepted_at__isnull=False))
+                ),
+                name='attempt_has_user_or_pending_signup',
+            ),
+        ]
 
     def __str__(self) -> str:
-        return f'Sign-in attempt for {self.public_user}'
+        if self.public_user is not None:
+            return f'Sign-in attempt for {self.public_user}'
+        return f'Pending sign-up for {self.email}'
 
     @property
     def is_expired(self) -> bool:
@@ -508,9 +533,13 @@ class PublicUserSignInAttempt(models.Model):
         return self.attempts >= PIN_MAX_ATTEMPTS
 
     @classmethod
-    def create_for(cls, public_user: PublicUser, anon_uuid: uuid.UUID | None = None) -> tuple[PublicUserSignInAttempt, str]:
+    def create_for_signin(
+        cls,
+        public_user: PublicUser,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> tuple[PublicUserSignInAttempt, str]:
         """
-        Generate a fresh PIN for the given user, replacing any existing attempt.
+        Generate a fresh PIN for an existing (signed-up) user.
 
         Returns the new attempt plus the raw PIN. The raw PIN must be delivered
         to the user (e.g., by email) and is not stored anywhere in the database.
@@ -521,6 +550,9 @@ class PublicUserSignInAttempt(models.Model):
         attempt, _ = cls.objects.update_or_create(
             public_user=public_user,
             defaults={
+                'email': None,
+                'pending_terms_accepted_at': None,
+                'pending_marketing_consented_at': None,
                 'pin_hash': hash_pin(raw_pin, salt),
                 'pin_salt': salt,
                 'issued_at': now,
@@ -528,6 +560,48 @@ class PublicUserSignInAttempt(models.Model):
                 'attempts': 0,
                 'anon_uuid': anon_uuid,
             },
+        )
+        return attempt, raw_pin
+
+    @classmethod
+    def create_for_signup(
+        cls,
+        email: str,
+        terms_accepted_at: datetime,
+        marketing_consented_at: datetime | None,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> tuple[PublicUserSignInAttempt, str]:
+        """
+        Generate a fresh PIN for a pending sign-up (no PublicUser yet).
+
+        Consent timestamps are stored on the attempt and applied to the
+        PublicUser at VerifyPin time, so the row only carries consent for a
+        verifier that actually controls the mailbox. Replaces any existing
+        pending attempt for the same email.
+        """
+        raw_pin = _generate_pin()
+        salt = secrets.token_hex(16)
+        now = timezone.now()
+        existing = cls.objects.filter(email=email, public_user__isnull=True).first()
+        defaults = {
+            'pin_hash': hash_pin(raw_pin, salt),
+            'pin_salt': salt,
+            'issued_at': now,
+            'expires_at': now + PIN_TTL,
+            'attempts': 0,
+            'anon_uuid': anon_uuid,
+            'pending_terms_accepted_at': terms_accepted_at,
+            'pending_marketing_consented_at': marketing_consented_at,
+        }
+        if existing is not None:
+            for field, value in defaults.items():
+                setattr(existing, field, value)
+            existing.save()
+            return existing, raw_pin
+        attempt = cls.objects.create(
+            public_user=None,
+            email=email,
+            **defaults,
         )
         return attempt, raw_pin
 

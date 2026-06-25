@@ -1139,7 +1139,9 @@ SIGN_IN_MUTATION = """
 class TestSignUpMutation:
     """Tests for the signUp GraphQL mutation."""
 
-    def test_sign_up_creates_user_and_sends_pin(self, graphql_client_query_data):
+    def test_sign_up_does_not_create_user_and_sends_pin(self, graphql_client_query_data):
+        # The PublicUser is created only after VerifyPin proves the verifier
+        # controls the mailbox. SignUp stores consent on the pending attempt.
         mail.outbox.clear()
 
         data = graphql_client_query_data(
@@ -1148,10 +1150,10 @@ class TestSignUpMutation:
         )
 
         assert data['pledge']['signUp']['sent'] is True
-        public_user = PublicUser.objects.get(email='new@example.com')
-        assert public_user.terms_accepted_at is not None
-        assert public_user.marketing_consented_at is not None
-        assert PublicUserSignInAttempt.objects.filter(public_user=public_user).exists()
+        assert not PublicUser.objects.filter(email='new@example.com').exists()
+        attempt = PublicUserSignInAttempt.objects.get(email='new@example.com', public_user__isnull=True)
+        assert attempt.pending_terms_accepted_at is not None
+        assert attempt.pending_marketing_consented_at is not None
         assert len(mail.outbox) == 1
         assert 'new@example.com' in mail.outbox[0].to
 
@@ -1161,11 +1163,19 @@ class TestSignUpMutation:
             variables={'email': 'optout@example.com', 'terms': True, 'marketing': False},
         )
 
-        public_user = PublicUser.objects.get(email='optout@example.com')
-        assert public_user.marketing_consented_at is None
+        attempt = PublicUserSignInAttempt.objects.get(email='optout@example.com', public_user__isnull=True)
+        assert attempt.pending_terms_accepted_at is not None
+        assert attempt.pending_marketing_consented_at is None
 
     def test_sign_up_errors_when_email_exists(self, graphql_client_query):
+        # The existence check runs inside the SignUp transaction so a
+        # concurrent VerifyPin that creates the PublicUser doesn't leave
+        # behind a stale email-only attempt with an unusable PIN. We
+        # don't try to simulate the race directly; we just assert the
+        # observable outcome: when a user exists, no attempt is created
+        # and no PIN email is sent.
         PublicUser.objects.create(email='exists@example.com')
+        mail.outbox.clear()
 
         response = graphql_client_query(
             SIGN_UP_MUTATION,
@@ -1175,6 +1185,8 @@ class TestSignUpMutation:
         assert 'errors' in response
         assert 'already exists' in response['errors'][0]['message']
         assert response['errors'][0]['extensions']['code'] == 'ACCOUNT_EXISTS'
+        assert not PublicUserSignInAttempt.objects.filter(email='exists@example.com').exists()
+        assert mail.outbox == []
 
     def test_sign_up_errors_when_terms_not_accepted(self, graphql_client_query):
         response = graphql_client_query(
@@ -1201,7 +1213,7 @@ class TestSignUpMutation:
             variables={'email': '  Foo@Example.COM  ', 'terms': True, 'marketing': False},
         )
 
-        assert PublicUser.objects.filter(email='foo@example.com').exists()
+        assert PublicUserSignInAttempt.objects.filter(email='foo@example.com', public_user__isnull=True).exists()
 
     def test_sign_up_rolls_back_on_email_failure(self, graphql_client_query):
         with patch(
@@ -1216,7 +1228,30 @@ class TestSignUpMutation:
         assert 'errors' in response
         assert response['errors'][0]['extensions']['code'] == 'EMAIL_SEND_FAILED'
         assert not PublicUser.objects.filter(email='rollback@example.com').exists()
-        assert not PublicUserSignInAttempt.objects.filter(public_user__email='rollback@example.com').exists()
+        assert not PublicUserSignInAttempt.objects.filter(email='rollback@example.com').exists()
+
+    def test_sign_up_twice_replaces_pending_attempt(self, graphql_client_query_data):
+        # A second SignUp for the same pending email replaces the existing
+        # attempt instead of erroring. Real owner can recover from a hostile
+        # SignUp on their email by signing up themselves, since the row
+        # doesn't exist until verification.
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'twice@example.com', 'terms': True, 'marketing': False},
+        )
+        first_attempt = PublicUserSignInAttempt.objects.get(email='twice@example.com')
+        first_pin_hash = first_attempt.pin_hash
+
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'twice@example.com', 'terms': True, 'marketing': True},
+        )
+
+        assert PublicUserSignInAttempt.objects.filter(email='twice@example.com').count() == 1
+        second_attempt = PublicUserSignInAttempt.objects.get(email='twice@example.com')
+        assert second_attempt.pk == first_attempt.pk
+        assert second_attempt.pin_hash != first_pin_hash
+        assert second_attempt.pending_marketing_consented_at is not None
 
     def test_sign_up_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
         anon_uuid = uuid.uuid4()
@@ -1230,8 +1265,7 @@ class TestSignUpMutation:
             },
         )
 
-        public_user = PublicUser.objects.get(email='merge@example.com')
-        attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
+        attempt = PublicUserSignInAttempt.objects.get(email='merge@example.com', public_user__isnull=True)
         assert attempt.anon_uuid == anon_uuid
 
 
@@ -1308,7 +1342,7 @@ class TestSignInMutation:
 
     def test_sign_in_rolls_back_attempt_on_email_failure(self, graphql_client_query):
         public_user = PublicUser.objects.create(email='alice@example.com')
-        prior_attempt, _ = PublicUserSignInAttempt.create_for(public_user)
+        prior_attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
         # Backdate the prior attempt so the cooldown doesn't itself block the retry.
         # The point of this test is to assert all fields are preserved unchanged.
         prior_attempt.issued_at = timezone.now() - timedelta(minutes=5)
@@ -1373,8 +1407,69 @@ class TestVerifyPinMutation:
         self.public_user = PublicUser.objects.create(email='alice@example.com')
 
     def _issue_pin(self, anon_uuid: uuid.UUID | None = None) -> str:
-        _, raw_pin = PublicUserSignInAttempt.create_for(self.public_user, anon_uuid=anon_uuid)
+        _, raw_pin = PublicUserSignInAttempt.create_for_signin(self.public_user, anon_uuid=anon_uuid)
         return raw_pin
+
+    def test_verify_pin_creates_user_from_pending_signup(self, graphql_client_query_data):
+        # Verifies the Option B promise: the PublicUser row only comes into
+        # existence after the verifier proves mailbox control. Consent
+        # timestamps are copied from the pending attempt.
+        terms_at = timezone.now() - timedelta(minutes=2)
+        marketing_at = timezone.now() - timedelta(minutes=2)
+        _, raw_pin = PublicUserSignInAttempt.create_for_signup(
+            email='new@example.com',
+            terms_accepted_at=terms_at,
+            marketing_consented_at=marketing_at,
+        )
+        assert not PublicUser.objects.filter(email='new@example.com').exists()
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'new@example.com', 'pin': raw_pin},
+        )
+
+        public_user = PublicUser.objects.get(email='new@example.com')
+        assert public_user.terms_accepted_at == terms_at
+        assert public_user.marketing_consented_at == marketing_at
+        assert public_user.email_verified_at is not None
+        assert data['pledge']['verifyPin']['userToken']
+        assert not PublicUserSignInAttempt.objects.filter(email='new@example.com').exists()
+
+    def test_verify_pin_signin_path_reuses_existing_user(self, graphql_client_query_data):
+        # When a verified PublicUser already exists for the email, VerifyPin
+        # must not create a second one - just rotate the token on the
+        # existing row. Guards against accidentally falling through to the
+        # SignUp-style create path.
+        original_pk = self.public_user.pk
+        original_user_count = PublicUser.objects.count()
+        raw_pin = self._issue_pin()
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert PublicUser.objects.count() == original_user_count
+        assert PublicUser.objects.get(email='alice@example.com').pk == original_pk
+
+    def test_verify_pin_wrong_pin_on_pending_signup_does_not_create_user(self, graphql_client_query):
+        _, raw_pin = PublicUserSignInAttempt.create_for_signup(
+            email='new@example.com',
+            terms_accepted_at=timezone.now(),
+            marketing_consented_at=None,
+        )
+        wrong = '000000' if raw_pin != '000000' else '111111'
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'new@example.com', 'pin': wrong},
+        )
+
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_PIN'
+        assert not PublicUser.objects.filter(email='new@example.com').exists()
+        # Attempt still there with incremented counter
+        attempt = PublicUserSignInAttempt.objects.get(email='new@example.com')
+        assert attempt.attempts == 1
 
     def test_verify_pin_success_returns_token(self, graphql_client_query_data):
         raw_pin = self._issue_pin()
@@ -1707,15 +1802,18 @@ class TestVerifyPinMutation:
         assert 'Too many attempts' in response['errors'][0]['message']
         assert response['errors'][0]['extensions']['code'] == 'PIN_LOCKED'
 
-    def test_verify_pin_no_account_returns_invalid_pin(self, graphql_client_query):
+    def test_verify_pin_no_account_returns_no_active_attempt(self, graphql_client_query):
+        # No PublicUser, no pending signup attempt: identical NO_ACTIVE_ATTEMPT
+        # error as for a known user that hasn't yet requested a PIN, so
+        # attackers can't distinguish "this email has an account" from
+        # "this email has no attempt".
         response = graphql_client_query(
             VERIFY_PIN_MUTATION,
             variables={'email': 'nobody@example.com', 'pin': '000000'},
         )
 
         assert 'errors' in response
-        assert 'Invalid PIN' in response['errors'][0]['message']
-        assert response['errors'][0]['extensions']['code'] == 'INVALID_PIN'
+        assert response['errors'][0]['extensions']['code'] == 'NO_ACTIVE_ATTEMPT'
 
     def test_verify_pin_no_active_attempt_returns_error(self, graphql_client_query):
         response = graphql_client_query(
@@ -2282,7 +2380,7 @@ class TestPledgeLocaleGraphQL:
         # them against plan.pledges.
         public_user = PublicUser.objects.create(email='alice@example.com')
         PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
-        _, raw_pin = PublicUserSignInAttempt.create_for(public_user)
+        _, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         verify_mutation = """
             mutation($email: String!, $pin: String!, $lang: String!) @locale(lang: $lang) {
