@@ -1698,6 +1698,27 @@ class TestVerifyPinMutation:
         assert PledgeCommitment.objects.filter(pledge=pledge, public_user=bob).exists()
         assert PublicUser.objects.filter(uuid=bob.uuid).exists()
 
+    def test_verify_pin_skips_merge_when_anon_uuid_has_user_token(self, graphql_client_query_data):
+        # Defense-in-depth: any row past the verification boundary (email OR
+        # user_token set) is off-limits to UUID-based merge, even if the
+        # email got cleared somehow.
+        pledge = PledgeFactory.create(plan=self.plan)
+        bob = PublicUser.objects.create()
+        bob.regenerate_user_token()
+        bob.email = None
+        bob.save(update_fields=['email'])
+        PledgeCommitment.objects.create(pledge=pledge, public_user=bob)
+        raw_pin = self._issue_pin(anon_uuid=bob.uuid)
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['pledgeIds'] == []
+        assert PledgeCommitment.objects.filter(pledge=pledge, public_user=bob).exists()
+        assert PublicUser.objects.filter(uuid=bob.uuid).exists()
+
     def test_verify_pin_with_unknown_anon_uuid_no_op(self, graphql_client_query_data):
         raw_pin = self._issue_pin(anon_uuid=uuid.uuid4())
 
