@@ -158,6 +158,14 @@ def _iter_revision_choice_refs(
     revision_content: object,
 ) -> Iterable[tuple[str, int | None, int]]:
     """Yield (format_key, attr_type_pk, option_pk) triples from one revision's content."""
+    if isinstance(revision_content, str):
+        # Older / migrated Revision rows may still store `content` as a JSON
+        # string instead of a parsed dict. Decode defensively so we don't
+        # silently miss references in legacy data.
+        try:
+            revision_content = json.loads(revision_content)
+        except ValueError:
+            return
     if not isinstance(revision_content, dict):
         return
     attributes = revision_content.get('attributes')
@@ -266,10 +274,14 @@ class ReconstructedOption:
     type_id: int | None
     order: int | None
 
-    source_version_pk: int
+    i18n: dict | None = None
+    """modeltrans `i18n` JSON ({'name_fi': ..., 'name_en': ...}). Restoring
+    this preserves non-primary-language labels in historical reports."""
+
+    source_version_pk: int = 0
     """The reversion Version row this data was reconstructed from."""
 
-    revision_date: str
+    revision_date: str = ''
     """ISO timestamp of the Version's revision (for audit)."""
 
 
@@ -321,12 +333,25 @@ def reconstruct_from_reversion(
         fields = entries[0].get('fields') if isinstance(entries[0], dict) else None
         if not isinstance(fields, dict):
             continue
+        # The `i18n` field is a JSONField holding modeltrans translations
+        # ({'name_fi': ..., 'name_en': ...}); Django's serializer nests it as
+        # a dict inside `fields`. Some older Versions may have it serialized
+        # as a JSON-encoded string instead — decode defensively.
+        i18n_raw = fields.get('i18n')
+        if isinstance(i18n_raw, str):
+            try:
+                i18n_raw = json.loads(i18n_raw)
+            except ValueError:
+                i18n_raw = None
+        i18n_value = i18n_raw if isinstance(i18n_raw, dict) else None
+
         found[pk] = ReconstructedOption(
             pk=pk,
             name=fields.get('name') if isinstance(fields.get('name'), str) else None,
             identifier=fields.get('identifier') if isinstance(fields.get('identifier'), str) else None,
             type_id=fields.get('type') if isinstance(fields.get('type'), int) else None,
             order=fields.get('order') if isinstance(fields.get('order'), int) else None,
+            i18n=i18n_value,
             source_version_pk=version.pk,
             revision_date=version.revision.date_created.isoformat(),
         )
@@ -343,6 +368,76 @@ class InsertResult:
     'skipped-missing-fields'."""
 
     detail: str = ''
+
+
+def _classify_for_insertion(
+    opt: ReconstructedOption,
+    existing_pks: set[int],
+    type_pks: set[int],
+) -> InsertResult | None:
+    """Return a skip InsertResult, or None if the row is eligible to insert."""
+    if opt.pk in existing_pks:
+        return InsertResult(pk=opt.pk, status='skipped-already-exists')
+    if opt.name is None or opt.identifier is None or opt.type_id is None:
+        return InsertResult(
+            pk=opt.pk,
+            status='skipped-missing-fields',
+            detail=f'name={opt.name!r} identifier={opt.identifier!r} type_id={opt.type_id}',
+        )
+    if opt.type_id not in type_pks:
+        return InsertResult(
+            pk=opt.pk,
+            status='skipped-type-missing',
+            detail=f'type_id={opt.type_id} no longer exists',
+        )
+    return None
+
+
+def _plan_insertions(
+    items: list[ReconstructedOption],
+) -> tuple[list[InsertResult], list[tuple[ReconstructedOption, str, int]]]:
+    """
+    Build per-row insertion plans, skipping or assigning order/identifier as needed.
+
+    Returns `(results, to_insert)` where `results` already contains any skip
+    entries and `to_insert` is a list of (opt, identifier, order) for the
+    rows that should actually be written.
+    """
+    from actions.models import AttributeType
+
+    existing_pks = set(AttributeTypeChoiceOption.objects.values_list('pk', flat=True))
+    type_pks = set(AttributeType.objects.values_list('pk', flat=True))
+
+    results: list[InsertResult] = []
+    to_insert: list[tuple[ReconstructedOption, str, int]] = []
+    # Track per-type values claimed by earlier rows in this batch so multiple
+    # restorations on the same type don't collide on (type, order) or
+    # (type, identifier) with each other.
+    next_order_by_type: dict[int, int] = {}
+    claimed_identifiers: dict[int, set[str]] = defaultdict(set)
+    for opt in items:
+        skip = _classify_for_insertion(opt, existing_pks, type_pks)
+        if skip is not None:
+            results.append(skip)
+            continue
+
+        assert opt.type_id is not None
+        if opt.type_id not in next_order_by_type:
+            next_order_by_type[opt.type_id] = _pick_archived_order(opt.type_id)
+        order = next_order_by_type[opt.type_id]
+        next_order_by_type[opt.type_id] += 1
+
+        assert opt.identifier is not None
+        identifier = _pick_identifier(
+            opt.identifier,
+            opt.type_id,
+            opt.pk,
+            also_taken=claimed_identifiers[opt.type_id],
+        )
+        claimed_identifiers[opt.type_id].add(identifier)
+
+        to_insert.append((opt, identifier, order))
+    return results, to_insert
 
 
 def insert_reconstructed(
@@ -366,16 +461,20 @@ def insert_reconstructed(
       (someone may have re-created the option since deletion).
     - 'skipped-type-missing': the original `type_id` no longer exists, so we
       can't link the row anywhere.
-    - 'skipped-missing-fields': the reconstructed data lacks one of the
-      required fields (name, identifier, type_id, order).
+    - 'skipped-missing-fields': the reconstructed data lacks name, identifier,
+      or type_id. (`order` is not required — insertion picks its own.)
 
     If the reconstructed `identifier` is already taken on the same type, a
-    suffix `-archived-<pk>` is appended so the unique constraint holds. The
-    FK from AttributeChoice points at the PK, not the identifier, so renaming
-    is safe.
+    suffix `-archived-<pk>` is appended so the unique constraint holds; if
+    that is also taken, an extra numeric suffix is appended until uniqueness
+    is reached. The FK from AttributeChoice points at the PK, not the
+    identifier, so renaming is safe.
 
-    The full insert runs in a single transaction. Pass `dry_run=False` to
-    write; the default reports what would happen without touching the DB.
+    The full insert runs in a single transaction. After a successful
+    commit, the AttributeTypeChoiceOption primary-key sequence is advanced
+    to `MAX(id)` so future ORM inserts don't collide with restored PKs.
+    Pass `dry_run=False` to write; the default reports what would happen
+    without touching the DB.
     """
     from django.db import transaction
 
@@ -384,55 +483,7 @@ def insert_reconstructed(
     else:
         items = list(options)
 
-    from actions.models import AttributeType
-
-    existing_pks = set(AttributeTypeChoiceOption.objects.values_list('pk', flat=True))
-    type_pks = set(AttributeType.objects.values_list('pk', flat=True))
-
-    results: list[InsertResult] = []
-    to_insert: list[tuple[ReconstructedOption, str, int]] = []
-    # Track per-type values claimed by earlier rows in this batch so that
-    # multiple restorations on the same type don't collide on (type, order)
-    # or (type, identifier) with each other.
-    next_order_by_type: dict[int, int] = {}
-    claimed_identifiers: dict[int, set[str]] = defaultdict(set)
-    for opt in items:
-        if opt.pk in existing_pks:
-            results.append(InsertResult(pk=opt.pk, status='skipped-already-exists'))
-            continue
-        if opt.name is None or opt.identifier is None or opt.type_id is None or opt.order is None:
-            results.append(
-                InsertResult(
-                    pk=opt.pk,
-                    status='skipped-missing-fields',
-                    detail=(f'name={opt.name!r} identifier={opt.identifier!r} type_id={opt.type_id} order={opt.order}'),
-                ),
-            )
-            continue
-        if opt.type_id not in type_pks:
-            results.append(
-                InsertResult(
-                    pk=opt.pk,
-                    status='skipped-type-missing',
-                    detail=f'type_id={opt.type_id} no longer exists',
-                ),
-            )
-            continue
-
-        if opt.type_id not in next_order_by_type:
-            next_order_by_type[opt.type_id] = _pick_archived_order(opt.type_id)
-        order = next_order_by_type[opt.type_id]
-        next_order_by_type[opt.type_id] += 1
-
-        identifier = _pick_identifier(
-            opt.identifier,
-            opt.type_id,
-            opt.pk,
-            also_taken=claimed_identifiers[opt.type_id],
-        )
-        claimed_identifiers[opt.type_id].add(identifier)
-
-        to_insert.append((opt, identifier, order))
+    results, to_insert = _plan_insertions(items)
 
     if dry_run:
         for opt, identifier, order in to_insert:
@@ -449,7 +500,9 @@ def insert_reconstructed(
         for opt, identifier, order in to_insert:
             # `identifier` is an AutoSlugField with always_update=True; it will
             # be overwritten from `name` on save. Create first, then UPDATE the
-            # identifier directly so the original value is preserved.
+            # identifier and `i18n` (modeltrans translations) directly so the
+            # original values are preserved and no save-time machinery touches
+            # them.
             AttributeTypeChoiceOption.objects.create(
                 pk=opt.pk,
                 name=opt.name,
@@ -457,7 +510,10 @@ def insert_reconstructed(
                 order=order,
                 is_active=False,
             )
-            AttributeTypeChoiceOption.objects.filter(pk=opt.pk).update(identifier=identifier)
+            update_fields: dict = {'identifier': identifier}
+            if opt.i18n is not None:
+                update_fields['i18n'] = opt.i18n
+            AttributeTypeChoiceOption.objects.filter(pk=opt.pk).update(**update_fields)
             results.append(
                 InsertResult(
                     pk=opt.pk,
@@ -465,7 +521,36 @@ def insert_reconstructed(
                     detail=f'identifier={identifier!r} order={order}',
                 ),
             )
+        if to_insert:
+            # PostgreSQL sequences are non-transactional, so calling setval
+            # mid-transaction would leak across test rollbacks. Defer until
+            # the outermost atomic block commits — fires in production, gets
+            # discarded in pytest-django tests whose outer transaction never
+            # commits.
+            transaction.on_commit(_reset_pk_sequence)
     return results
+
+
+def _reset_pk_sequence() -> None:
+    """
+    Advance the AttributeTypeChoiceOption pk sequence past any restored rows.
+
+    Explicit-PK INSERTs don't bump PostgreSQL sequences, so a later normal
+    ORM insert can collide with a restored PK if the restored value sits
+    above the sequence's current position. Aligning `setval` to MAX(id) makes
+    the next `nextval` return MAX(id) + 1.
+    """
+    from django.db import connection
+
+    table = AttributeTypeChoiceOption._meta.db_table
+    # Table name comes from the model's `_meta.db_table`, not user input, so
+    # interpolating it directly is safe.
+    sql = (
+        f"SELECT setval(pg_get_serial_sequence(%s, 'id'), "  # noqa: S608
+        f'GREATEST((SELECT COALESCE(MAX(id), 1) FROM {table}), 1))'
+    )
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [table])
 
 
 def _pick_identifier(
@@ -489,12 +574,12 @@ def _pick_identifier(
         taken |= also_taken
     if original not in taken:
         return original
-    suffixed = f'{original}-archived-{pk}'
-    if suffixed in taken:
-        # Extremely unlikely (would require a previous restoration cycle for
-        # the same PK) but stay defensive.
-        return f'{original}-archived-{pk}-{len(taken)}'
-    return suffixed
+    candidate = f'{original}-archived-{pk}'
+    suffix_n = 1
+    while candidate in taken:
+        candidate = f'{original}-archived-{pk}-{suffix_n}'
+        suffix_n += 1
+    return candidate
 
 
 def _pick_archived_order(type_id: int) -> int:

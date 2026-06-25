@@ -543,3 +543,121 @@ def test_insert_reconstructed_skips_missing_fields(
 
     assert results[0].status == 'skipped-missing-fields'
     assert not AttributeTypeChoiceOption.objects.filter(pk=99007).exists()
+
+
+def test_insert_reconstructed_inserts_when_order_is_missing(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # `order` is not required — insertion picks its own archived order.
+    opt = ReconstructedOption(
+        pk=99030,
+        name='Restored without order',
+        identifier='restored-without-order',
+        type_id=action_attribute_type__ordered_choice.pk,
+        order=None,
+    )
+
+    results = insert_reconstructed([opt], dry_run=False)
+
+    assert results[0].status == 'inserted'
+    assert AttributeTypeChoiceOption.objects.filter(pk=99030).exists()
+
+
+def test_insert_reconstructed_writes_i18n_translations(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # When the reconstructed data carries modeltrans translations, they must
+    # land in the DB so non-primary-language labels survive restoration.
+    pk = 99031
+    opt = ReconstructedOption(
+        pk=pk,
+        name='Restored',
+        identifier='restored-i18n',
+        type_id=action_attribute_type__ordered_choice.pk,
+        order=None,
+        i18n={'name_fi': 'Palautettu', 'name_en': 'Restored EN'},
+    )
+
+    insert_reconstructed({pk: opt}, dry_run=False)
+
+    row = AttributeTypeChoiceOption.objects.get(pk=pk)
+    assert row.i18n == {'name_fi': 'Palautettu', 'name_en': 'Restored EN'}
+
+
+def test_insert_reconstructed_loops_until_identifier_unused(
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Pre-create both the original identifier and the first suffix candidate
+    # so the loop must take a numbered suffix step.
+    existing = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Existing name',
+    )
+    assert existing.identifier == 'existing-name'
+
+    pk = 99040
+    blocking = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Blocking row',
+    )
+    AttributeTypeChoiceOption.objects.filter(pk=blocking.pk).update(
+        identifier=f'existing-name-archived-{pk}',
+    )
+
+    opt = ReconstructedOption(
+        pk=pk,
+        name='Restored',
+        identifier='existing-name',
+        type_id=action_attribute_type__ordered_choice.pk,
+        order=None,
+    )
+
+    insert_reconstructed({pk: opt}, dry_run=False)
+
+    row = AttributeTypeChoiceOption.objects.get(pk=pk)
+    assert row.identifier == f'existing-name-archived-{pk}-1'
+
+
+def test_scan_wagtail_revisions_handles_string_content(
+    plan: Plan,
+    action_attribute_type__ordered_choice: AttributeType,
+):
+    # Some legacy / migrated Revision rows may have `content` stored as a
+    # serialized JSON string rather than a parsed dict. The scanner must
+    # decode it instead of silently skipping.
+    action = ActionFactory.create(plan=plan)
+    option = AttributeTypeChoiceOptionFactory.create(
+        type=action_attribute_type__ordered_choice,
+        name='Stringified content',
+    )
+    stale_pk = option.pk
+
+    content_dict = {
+        'attributes': {
+            'ordered_choice': {
+                str(action_attribute_type__ordered_choice.pk): stale_pk,
+            },
+        },
+    }
+    revision = Revision.objects.create(
+        content_type=ContentType.objects.get_for_model(Action),
+        base_content_type=ContentType.objects.get_for_model(Action),
+        object_id=str(action.pk),
+        content=content_dict,
+    )
+    # Force the underlying JSONB to a string payload, mimicking legacy data.
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            'UPDATE wagtailcore_revision SET content = %s::jsonb WHERE id = %s',
+            [json.dumps(json.dumps(content_dict)), revision.pk],
+        )
+
+    option.delete()
+
+    refs = scan_wagtail_revisions()
+    matching = _refs_for(refs, stale_pk)
+
+    assert matching, 'scanner must decode stringified Revision.content'
+    assert matching[0].extra == 'format=ordered_choice'
