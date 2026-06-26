@@ -72,6 +72,10 @@ except OSError:
 _hyphenation_cache: dict[str, str] = {}
 
 
+def get_default_country() -> str:
+    return (settings.DEPLOYMENT_REGION or 'FI').upper()
+
+
 def hyphenate_fi(s):
     if voikko_fi is None:
         return s

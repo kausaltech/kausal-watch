@@ -49,6 +49,7 @@ from aplans.utils import (
     IdentifierField,
     OrderedModel,
     PlanRelatedModelWithRevision,
+    get_default_country,
     matches_hostname_pattern,
 )
 
@@ -1157,15 +1158,19 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         base_path: str | None = None,
         hostname: str | None = None,
         client_name: str | None = None,
+        country: str | None = None,
     ) -> Plan:
         if other_languages is None:
             other_languages = []
+        if country is None:
+            country = get_default_country()
         plan = Plan(
             identifier=identifier,
             name=name,
             primary_language=primary_language,
             organization=organization,
             other_languages=other_languages,
+            country=country,
         )
         if short_name:
             plan.short_name = short_name

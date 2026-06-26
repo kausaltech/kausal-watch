@@ -7,6 +7,8 @@ from django.contrib.auth.management.commands.createsuperuser import Command as S
 from django.core.management.base import CommandError
 from django.db import transaction
 
+from aplans.utils import get_default_country
+
 from actions.models import Plan
 from admin_site.models import Client, EmailDomains
 from orgs.models import Organization
@@ -110,6 +112,7 @@ class Command(SuperUserCommand):
             name='Default Plan',
             identifier='default-plan',
             organization=organization,
+            country=get_default_country(),
         )
         return plan
 

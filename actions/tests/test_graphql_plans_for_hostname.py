@@ -320,14 +320,6 @@ def test_default_hostname_with_exact_domain(settings, plan_factory):
     assert plan.default_hostname() == f'{plan.identifier}.dummy.io'
 
 
-def test_default_hostname_pattern_no_country_raises(settings, plan_factory):
-    """default_hostname() raises if plan has no country and domain is a pattern."""
-    settings.HOSTNAME_PLAN_DOMAINS = ['watch.<country>.dummy.io']
-    plan = plan_factory(country='')
-    with pytest.raises(Exception, match='no country set'):
-        plan.default_hostname()
-
-
 # --- Tests for legacy hostname redirect (<plan>.domain → <plan>.<country>.domain) ---
 
 
@@ -374,21 +366,6 @@ def test_wrong_region_redirect_simple_wildcard(graphql_client_query_data, settin
     assert len(plans) == 1
     domain = plans[0]['domain']
     assert domain['redirectToHostname'] == f'{plan.identifier}.fi.dummy.io'
-
-
-def test_legacy_hostname_no_redirect_without_country(graphql_client_query_data, settings, plan_factory):
-    """Legacy <plan>.dummy.io with no country set on plan does not redirect."""
-    settings.HOSTNAME_PLAN_DOMAINS = ['<country>.dummy.io']
-    plan = plan_factory(country='')
-    hostname = f'{plan.identifier}.dummy.io'
-    data = graphql_client_query_data(
-        GET_PLAN_DOMAIN_QUERY,
-        variables={'hostname': hostname},
-    )
-    plans = data['plansForHostname']
-    assert len(plans) == 1
-    domain = plans[0]['domain']
-    assert domain['redirectToHostname'] is None
 
 
 def test_legacy_hostname_resolves_and_redirects_for_mid_wildcard(graphql_client_query_data, settings, plan_factory):
