@@ -1,0 +1,49 @@
+{% load i18n %}
+<div class="panel">
+    <section>
+        <h2>{% trans "Participants" %}</h2>
+
+        {% if participants %}
+            <div class="pledge-participants-actions" style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    data-pledge-participants-emails="{{ opted_in_emails }}"
+                    data-pledge-participants-copied-label="{% trans 'Copied' %}"
+                >
+                    {{ copy_emails_label }}
+                </button>
+                {% if export_url %}
+                    <a href="{{ export_url }}" class="button button-secondary" download>
+                        {% trans "Export opted-in emails as CSV" %}
+                    </a>
+                {% endif %}
+            </div>
+
+            <table class="listing">
+                <thead>
+                    <tr>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Marketing opt-in" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participant in participants %}
+                        <tr>
+                            <td>{{ participant.email }}</td>
+                            <td>
+                                {% if participant.marketing_consented_at %}
+                                    <span aria-label="{% trans 'Opted in' %}" title="{% trans 'Opted in' %}">&#10003;</span>
+                                {% else %}
+                                    <span aria-label="{% trans 'Not opted in' %}" title="{% trans 'Not opted in' %}">&mdash;</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{% trans "No participants have committed to this pledge yet." %}</p>
+        {% endif %}
+    </section>
+</div>
