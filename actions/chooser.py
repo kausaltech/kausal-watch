@@ -192,7 +192,15 @@ class PlanChooserMixin(WatchModelChooserBase[Plan]):
 
     def get_unfiltered_object_list(self):
         plan = self.request.get_active_admin_plan()
-        return Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
+        # Filter by primary keys rather than OR-ing in `plan.related_plans.all()`. The latter is a
+        # self-referential M2M, so the combined queryset's WHERE clause references the auto-created
+        # through-table column `from_plan_id`. When this queryset is passed to the search backend's
+        # `autocomplete()`, the compiler would then demand an `index.FilterField('from_plan_id')` on
+        # Plan -- but that column is not a field/attribute on Plan, so indexing it crashes the search
+        # index build (WATCH-BACKEND-5WQ). Filtering by pk keeps the filter on the real `id` field.
+        related_pks = list(plan.related_plans.values_list('pk', flat=True))
+        related_pks.append(plan.pk)
+        return Plan.objects.filter(pk__in=related_pks)
 
     def get_row_data(self, item):
         return {
