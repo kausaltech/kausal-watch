@@ -15,6 +15,7 @@ from kausal_common.strawberry.permissions import SuperuserOnly
 from kausal_common.users import user_or_bust
 
 from aplans import gql
+from aplans.utils import get_default_country
 
 from actions.models import Action, Plan
 from actions.models.attributes import AttributeType, AttributeTypeChoiceOption
@@ -45,7 +46,7 @@ class PlanInput:
     identifier: auto
     organization_id: sb.ID
     short_name: auto
-    country: str = sb.field(description='ISO 3166-1 country code (e.g. FI, DE, US)', default='FI')
+    country: str = sb.field(description='ISO 3166-1 country code (e.g. FI, DE, US)', default_factory=get_default_country)
     primary_language: str = sb.field(
         default='en-US',
         description='Primary language code (ISO 639-1, e.g. "en-US", "fi", "de-CH")',

@@ -324,6 +324,47 @@ class TestCreatePlan:
         assert plan.features.has_action_identifiers is True
         assert plan.features.has_action_primary_orgs is True
 
+    def test_create_plan_uses_default_country_when_not_specified(self, graphql_client_query_data, client, superuser: User):
+        client.force_login(superuser)
+        org = OrganizationFactory.create()
+        data = graphql_client_query_data(
+            CREATE_PLAN,
+            variables={
+                'input': {
+                    'identifier': 'plan-default-country',
+                    'name': 'Plan Default Country',
+                    'organizationId': str(org.pk),
+                    'primaryLanguage': 'en',
+                }
+            },
+        )
+        result = data['plan']['createPlan']
+        assert result['identifier'] == 'plan-default-country'
+
+        plan = Plan.objects.get(identifier='plan-default-country')
+        assert str(plan.country) == 'FI'
+
+    def test_create_plan_with_explicit_country(self, graphql_client_query_data, client, superuser: User):
+        client.force_login(superuser)
+        org = OrganizationFactory.create()
+        data = graphql_client_query_data(
+            CREATE_PLAN,
+            variables={
+                'input': {
+                    'identifier': 'plan-explicit-country',
+                    'name': 'Plan Explicit Country',
+                    'organizationId': str(org.pk),
+                    'primaryLanguage': 'en',
+                    'country': 'DE',
+                }
+            },
+        )
+        result = data['plan']['createPlan']
+        assert result['identifier'] == 'plan-explicit-country'
+
+        plan = Plan.objects.get(identifier='plan-explicit-country')
+        assert str(plan.country) == 'DE'
+
 
 # -- delete_plan ---------------------------------------------------------------
 
