@@ -8,13 +8,14 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, StreamingHttpResponse
 from django.utils.translation import gettext_lazy as _
-from django.db.models.functions import Coalesce
 from wagtail.admin.panels import (
     FieldPanel,
     MultiFieldPanel,
     ObjectList,
+    TabbedInterface,
 )
 from wagtail.admin.ui.components import Component
 from wagtail.admin.ui.menus import MenuItem
@@ -32,6 +33,7 @@ from kausal_common.users import user_or_bust
 from admin_site.forms import WatchAdminModelForm
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
+
 from .models import Pledge
 from .models.pledge import PledgeCommitment
 
@@ -179,7 +181,12 @@ class PledgeViewMixin:
         # Add remaining panels
         panels.extend(PledgeViewSet.panels[pos:])
 
-        return ObjectList(panels).bind_to_model(self.model)
+        from actions.pledge_participants_admin import PledgeParticipantsPanel
+
+        return TabbedInterface([
+            ObjectList(panels, heading=_('Pledge')),
+            PledgeParticipantsPanel(heading=_('Participants')),
+        ]).bind_to_model(self.model)
 
 
 class PledgeCreateView(PledgeViewMixin, WatchCreateView[Pledge]):
@@ -387,7 +394,10 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     icon = 'kausal-pledge'
     menu_icon = 'kausal-pledge'
     menu_order = 41  # After Indicators (40)
-    add_to_admin_menu = True
+    # Pledges menu is registered as a submenu (Pledges + Participants) via the
+    # register_pledges_submenu hook in actions/wagtail_hooks.py, so we don't
+    # let the SnippetViewSet auto-add a top-level menu item.
+    add_to_admin_menu = False
     list_display = [
         'name',
         Column('commitment_count', label=_('Commitments'), sort_key='commitment_count'),
