@@ -762,3 +762,14 @@ class TestPlanPublicationStatus:
             tooltip = plan.publication_status_description
             assert 'Scheduled at:' in tooltip
             assert '30 minutes' in tooltip
+
+
+@pytest.mark.django_db
+class TestPlanCountryRequired:
+    def test_cannot_save_plan_with_empty_country(self):
+        with pytest.raises(IntegrityError):
+            PlanFactory.create(country='')
+
+    def test_can_save_plan_with_valid_country(self):
+        plan = PlanFactory.create(country='FI')
+        assert plan.country == 'FI'
