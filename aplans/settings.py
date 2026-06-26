@@ -36,6 +36,7 @@ env = environ.FileAwareEnv(
     DEBUG=(bool, False),
     ENABLE_TEST_MODE=(bool, False),
     DEPLOYMENT_TYPE=(str, 'development'),
+    DEPLOYMENT_REGION=(str, None),
     KUBERNETES_MODE=(bool, False),
     ENABLE_WAGTAIL_STYLEGUIDE=(bool, False),
     SECRET_KEY=(str, ''),
@@ -135,6 +136,7 @@ for directory in cast('list[str]', env('MOUNTED_SECRET_PATHS')):
 
 DEBUG = cast('bool', env('DEBUG'))
 DEPLOYMENT_TYPE = cast('str', env('DEPLOYMENT_TYPE'))
+DEPLOYMENT_REGION = cast('str | None', env('DEPLOYMENT_REGION'))
 ENABLE_TEST_MODE = cast('bool', env('ENABLE_TEST_MODE'))
 
 if DEPLOYMENT_TYPE in ('production', 'staging') and ENABLE_TEST_MODE:
