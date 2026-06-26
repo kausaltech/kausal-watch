@@ -16,7 +16,7 @@ from aplans.context_vars import get_admin_cache
 
 from admin_site.wagtail import execute_admin_post_save_tasks
 
-from . import wagtail_admin  # noqa: F401
+from . import pledge_participants_admin, wagtail_admin  # noqa: F401
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -82,6 +82,60 @@ def register_documents_search_area():
         name='actions',
         icon_name='kausal-action',
         order=200,
+    )
+
+
+@hooks.register('insert_global_admin_js')
+def pledge_participants_admin_js():
+    from django.utils.html import format_html
+
+    return format_html('<script src="{}"></script>', static('admin_site/js/pledge_participants.js'))
+
+
+@hooks.register('register_admin_urls')
+def register_pledge_participants_urls():
+    return pledge_participants_admin.get_pledge_participants_admin_urlpatterns()
+
+
+@hooks.register('register_admin_menu_item')
+def register_pledges_submenu():
+    from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
+
+    from actions.pledge_admin import PledgeViewSet
+    from actions.pledge_participants_admin import ParticipantsViewSet
+
+    pledge_viewset = PledgeViewSet()
+    participants_viewset = ParticipantsViewSet()
+
+    pledges_url = reverse(pledge_viewset.get_url_name('list'))
+    participants_url = reverse(participants_viewset.get_url_name('list'))
+
+    submenu = Menu(
+        items=[
+            MenuItem(_('Pledges'), pledges_url, icon_name='kausal-pledge', order=1),
+            MenuItem(_('Participants'), participants_url, icon_name='group', order=2),
+        ]
+    )
+
+    class PledgesSubmenuItem(SubmenuMenuItem):
+        def is_shown(self, request) -> bool:
+            from users.models import User
+
+            if not super().is_shown(request):
+                return False
+            user = request.user
+            if not isinstance(user, User):
+                return False
+            plan = user.get_active_admin_plan(required=False)
+            if plan is None:
+                return False
+            return plan.features.enable_community_engagement
+
+    return PledgesSubmenuItem(
+        _('Pledges'),
+        submenu,
+        icon_name='kausal-pledge',
+        order=41,
     )
 
 
