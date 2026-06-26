@@ -675,6 +675,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 condition=models.Q(parent__isnull=True),
                 name='unique_short_identifier_for_top_level_plans',
             ),
+            models.CheckConstraint(
+                condition=~models.Q(country=''),
+                name='plan_country_required',
+            ),
         ]
 
     def __init__(self, *args, **kwargs):

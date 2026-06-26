@@ -90,6 +90,7 @@ class PlanFactory(ModelFactory[Plan]):
     accessibility_statement_url = 'https://example.com'
     primary_language = 'en'
     other_languages = ['fi']
+    country = 'FI'
     published_at = make_aware(datetime.datetime(2021, 1, 1))  # noqa: DTZ001
     general_content = RelatedFactory[Plan, SiteGeneralContent](
         'content.tests.factories.SiteGeneralContentFactory', factory_related_name='plan'
