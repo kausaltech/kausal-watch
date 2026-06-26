@@ -68,6 +68,7 @@ jobs:
           REDIS_URL: redis://localhost
           DB_ENDPOINT: localhost:5432
           ALLOWED_HOSTS: localhost
+          HOSTNAME_PLAN_DOMAINS: admin-e2e.test
           KUBERNETES_LOGGING: 1
           TEST_MODE: 1
           ENABLE_TEST_MODE: 1

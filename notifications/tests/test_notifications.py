@@ -359,3 +359,49 @@ def test_i18n(plan: Plan, plan_admin_person: Person):
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
     engine.generate_notifications()
     assert 'Hallo' in mail.outbox[0].body
+
+
+def test_localhost_admin_url_raises(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    settings.ADMIN_BASE_URL = 'http://localhost:8000'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    due_at = now.date() - timedelta(days=1)
+    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with pytest.raises(ValueError, match='localhost'):
+        engine.generate_notifications()
+
+
+def test_localhost_hostname_plan_domains_raises_when_not_development(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.ADMIN_BASE_URL = 'https://admin.example.com'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    due_at = now.date() - timedelta(days=1)
+    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with pytest.raises(ValueError, match='Cannot determine hostname'):
+        engine.generate_notifications()
+
+
+def test_localhost_allowed_in_development(settings):
+    settings.DEPLOYMENT_TYPE = 'development'
+    settings.ADMIN_BASE_URL = 'http://localhost:8000'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    due_at = now.date() - timedelta(days=1)
+    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1

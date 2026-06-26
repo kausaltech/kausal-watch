@@ -4,6 +4,7 @@ from datetime import timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import translation
 
@@ -29,6 +30,7 @@ from .notifications import (
 )
 from .queue import NotificationQueue
 from .recipients import PersonRecipient
+from .utils import validate_notification_context_urls
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -253,6 +255,7 @@ class NotificationEngine:
                 **template.base.get_notification_context(),
                 **context,
             )
+            validate_notification_context_urls(context, allow_localhost=settings.DEPLOYMENT_TYPE == 'development')
 
             rendered['html_body'] = render_mjml_from_template(
                 template.type,

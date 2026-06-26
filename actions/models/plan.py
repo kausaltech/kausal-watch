@@ -799,8 +799,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def create_default_site(self, hostname=None):
         if hostname is None:
-            parsed_url = urlparse(self.site_url)
-            hostname = parsed_url.hostname
+            hostname = self.default_hostname()
+            if not hostname:
+                raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         if self.site is not None:
             return
         root_page = self.create_default_pages()
@@ -838,7 +839,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         for pledge in source_pledges:
             pledge.ensure_locale_copies()
 
-    def save(self, *args, **kwargs):  # noqa: C901, PLR0912
+    def save(self, *args, **kwargs):  # noqa: C901, PLR0912, PLR0915
         previous_language_codes: set[str] | None = None
         save_update_fields = kwargs.get('update_fields')
         if self.pk is not None:
@@ -919,7 +920,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def get_site_notification_context(self):
         return dict(
-            view_url=self.site_url,
+            view_url=self.get_view_url(),
             title=self.general_content.site_title,
         )
 
@@ -1068,7 +1069,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return ''
         return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
-    def get_view_url(  # noqa: C901, PLR0912
+    @staticmethod
+    def _scheme_for_hostname(hostname: str) -> str:
+        return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
+
+    def get_view_url(  # noqa: C901, PLR0912, PLR0915
         self,
         client_url: str | None = None,
         active_locale: str | None = None,
@@ -1132,14 +1137,69 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ':%s' % port
             else:
                 port_str = ''
-            return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
-        else:  # noqa: RET505
-            assert self.site_url is not None
-            if self.site_url.startswith('http'):
-                url = self.site_url.rstrip('/')
-            else:
-                url = 'https://%s' % self.site_url
-            return f'{url}{locale_prefix}'
+            return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
+
+        candidate = self._find_canonical_domain()
+        if candidate is not None:
+            bp = (candidate.base_path or '').rstrip('/')
+            scheme = self._scheme_for_hostname(candidate.hostname)
+            return f'{scheme}://{candidate.hostname}{locale_prefix}{bp}'
+
+        hostname = self.default_hostname(include_all_domains=True)
+        if not hostname:
+            raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
+        scheme = self._scheme_for_hostname(hostname)
+        return f'{scheme}://{hostname}{locale_prefix}'
+
+    def _first_production_domain(self, candidates: list[PlanDomain]) -> PlanDomain | None:
+        production = [d for d in candidates if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
+        if not production:
+            return None
+        if len(production) > 1:
+            sentry_sdk.capture_message(
+                f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
+                f"using '{production[0].hostname}' as canonical",
+                level='warning',
+            )
+        return production[0]
+
+    def _find_live_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        published_domains = [d for d in domains if d.status == PublicationStatus.PUBLISHED]
+        if not published_domains:
+            return None
+        return self._first_production_domain(published_domains) or published_domains[0]
+
+    def _find_unpublished_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
+        explicitly_published = [d for d in domains if d.publication_status_override == PublicationStatus.PUBLISHED]
+        if explicitly_published:
+            return self._first_production_domain(explicitly_published) or explicitly_published[0]
+
+        non_production_domains = [
+            d
+            for d in domains
+            if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION
+            and d.publication_status_override != PublicationStatus.UNPUBLISHED
+        ]
+        if not non_production_domains:
+            return None
+        return non_production_domains[0]
+
+    def _find_canonical_domain(self) -> PlanDomain | None:
+        """
+        Find the best PlanDomain to use as the canonical URL for this plan.
+
+        Filters out redirect domains. For published (live) plans, prefers
+        published production domains. For unpublished plans, explicit
+        publication overrides take precedence; otherwise production domains are
+        excluded so the URL falls back to a preview/development domain or the
+        wildcard.
+        """
+        domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
+        if not domains:
+            return None
+        if self.is_live():
+            return self._find_live_canonical_domain(domains)
+        return self._find_unpublished_canonical_domain(domains)
 
     @classmethod
     def create_with_defaults(
@@ -1150,7 +1210,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         organization: Organization,
         other_languages: list[str] | None = None,
         short_name: str | None = None,
-        base_path: str | None = None,
         hostname: str | None = None,
         client_name: str | None = None,
     ) -> Plan:
@@ -1172,25 +1231,22 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-        return cls.apply_defaults(plan, hostname=hostname, base_path=base_path)
+        return cls.apply_defaults(plan, hostname=hostname)
 
     @classmethod
     @transaction.atomic()
     def apply_defaults(
         cls,
         plan: Plan,
-        base_path: str | None = None,
         hostname: str | None = None,
     ) -> Plan:
         from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
 
         plan.statuses_updated_manually = True
         if not hostname:
-            hostname = plan.default_hostname()
-        site_url = f'https://{hostname}'
-        if base_path:
-            site_url += '/' + base_path.strip('/')
-        plan.site_url = site_url
+            hostname = plan.default_hostname(include_all_domains=True)
+            if not hostname:
+                raise ValueError(f"Cannot determine hostname for plan '{plan.identifier}': no hostname plan domains configured")
         plan.create_default_site(hostname)
         plan.save()
 
@@ -1219,17 +1275,23 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
 
-    def default_hostname(self) -> str:
+    def default_hostname(self, include_all_domains: bool = False) -> str | None:
         """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
         hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
         try:
-            default_domain = next(iter(hostname_plan_domains))
-        except StopIteration as e:
-            raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
+            default_domain = next(hostname_plan_domains)
+        except StopIteration:
+            if include_all_domains and settings.DEPLOYMENT_TYPE == 'development':
+                try:
+                    default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
+                except StopIteration:
+                    return None
+            else:
+                return None
         if COUNTRY_PLACEHOLDER in default_domain:
             country_code = self.country.code.lower() if self.country else None
             if not country_code:
-                raise Exception(f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'")
+                return None
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 
