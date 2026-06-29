@@ -115,7 +115,7 @@ from .models import (
     PublicUser,
     PublicUserSignInAttempt,
 )
-from .models.pledge import SIGNIN_COOLDOWN, hash_user_token
+from .models.pledge import SIGNIN_COOLDOWN, SIGNUP_COOLDOWN, hash_user_token
 from .public_user_auth import (
     SIGN_IN_RATE_LIMIT,
     SIGN_UP_RATE_LIMIT,
@@ -2704,6 +2704,14 @@ class SignUpMutation(graphene.Mutation):
                     raise GraphQLError(  # noqa: TRY301
                         'An account with this email already exists.',
                         extensions={'code': 'ACCOUNT_EXISTS'},
+                    )
+                existing_attempt = (
+                    PublicUserSignInAttempt.objects.select_for_update().filter(email=normalized, public_user__isnull=True).first()
+                )
+                if existing_attempt and existing_attempt.issued_at > now - SIGNUP_COOLDOWN:
+                    raise GraphQLError(  # noqa: TRY301
+                        'Please wait a moment before requesting another PIN.',
+                        extensions={'code': 'COOLDOWN_ACTIVE'},
                     )
                 issue_signup_pin(
                     email=normalized,
