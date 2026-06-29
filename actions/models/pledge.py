@@ -369,6 +369,7 @@ PIN_LENGTH = 6
 PIN_TTL = timedelta(minutes=10)
 PIN_MAX_ATTEMPTS = 5
 SIGNIN_COOLDOWN = timedelta(seconds=30)
+SIGNUP_COOLDOWN = timedelta(seconds=5)
 
 
 def _generate_pin() -> str:

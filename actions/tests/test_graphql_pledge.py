@@ -12,7 +12,7 @@ from wagtail.models import Locale
 import pytest
 
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
-from actions.models.pledge import PIN_MAX_ATTEMPTS, hash_user_token
+from actions.models.pledge import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
 
@@ -1231,16 +1231,16 @@ class TestSignUpMutation:
         assert not PublicUserSignInAttempt.objects.filter(email='rollback@example.com').exists()
 
     def test_sign_up_twice_replaces_pending_attempt(self, graphql_client_query_data):
-        # A second SignUp for the same pending email replaces the existing
-        # attempt instead of erroring. Real owner can recover from a hostile
-        # SignUp on their email by signing up themselves, since the row
-        # doesn't exist until verification.
         graphql_client_query_data(
             SIGN_UP_MUTATION,
             variables={'email': 'twice@example.com', 'terms': True, 'marketing': False},
         )
         first_attempt = PublicUserSignInAttempt.objects.get(email='twice@example.com')
         first_pin_hash = first_attempt.pin_hash
+        # Age the first attempt past the cooldown so the second SignUp is
+        # allowed to replace it.
+        first_attempt.issued_at = first_attempt.issued_at - SIGNUP_COOLDOWN - timedelta(seconds=1)
+        first_attempt.save(update_fields=['issued_at'])
 
         graphql_client_query_data(
             SIGN_UP_MUTATION,
@@ -1252,6 +1252,21 @@ class TestSignUpMutation:
         assert second_attempt.pk == first_attempt.pk
         assert second_attempt.pin_hash != first_pin_hash
         assert second_attempt.pending_marketing_consented_at is not None
+
+    def test_sign_up_within_cooldown_returns_error(self, graphql_client_query, graphql_client_query_data):
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'fast@example.com', 'terms': True, 'marketing': False},
+        )
+        first_pin_hash = PublicUserSignInAttempt.objects.get(email='fast@example.com').pin_hash
+
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': 'fast@example.com', 'terms': True, 'marketing': True},
+        )
+
+        assert response['errors'][0]['extensions']['code'] == 'COOLDOWN_ACTIVE'
+        assert PublicUserSignInAttempt.objects.get(email='fast@example.com').pin_hash == first_pin_hash
 
     def test_sign_up_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
         anon_uuid = uuid.uuid4()
