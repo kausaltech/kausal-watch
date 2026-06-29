@@ -121,6 +121,8 @@ class PlanFactory(ModelFactory[Plan]):
 @mute_signals(post_save)
 class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
     plan = SubFactory[PlanFeatures, Plan](PlanFactory, features=None)
+    # To make testing easier, change the default in tests
+    expose_unpublished_plan_only_to_authenticated_user = False
 
 
 @mute_signals(post_save)
