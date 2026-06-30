@@ -2203,6 +2203,9 @@ class Query:
         Anonymous users (no user_token) are identified by the UUID argument.
         Once a user has signed up, the bearer token is the identifier instead.
         """
+        # Per-user response; opt out of the shared cache.
+        info.context.graphql_cache_key = None
+        info.context.graphql_no_cache_reason = 'publicUser is per-user'
         if uuid is None:
             return _resolve_public_user_from_token(info)
         matched = PublicUser.objects.filter(uuid=uuid).first()
