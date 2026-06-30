@@ -105,7 +105,7 @@ class ClientPlan(OrderedModel):
         blank=False,
         related_name='plans',
     )
-    plan = ParentalKey['Plan'](
+    plan: FK[Plan] = ParentalKey['Plan'](
         'actions.Plan',
         on_delete=models.CASCADE,
         null=False,

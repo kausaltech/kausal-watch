@@ -62,7 +62,7 @@ class IndicatorValueCategory(models.Model):
 class IndicatorValue(ClusterableModel, PlanRelatedModelWithRevision):
     """One measurement of an indicator for a certain date/month/year."""
 
-    indicator = ParentalKey['Indicator'](
+    indicator: FK[Indicator] = ParentalKey['Indicator'](
         'indicators.Indicator',
         related_name='values',
         on_delete=models.CASCADE,
@@ -121,7 +121,7 @@ class IndicatorValue(ClusterableModel, PlanRelatedModelWithRevision):
 class IndicatorGoal(PlanRelatedModelWithRevision):
     """The numeric goal which the organization has set for an indicator."""
 
-    indicator = ParentalKey['Indicator'](
+    indicator: FK[Indicator] = ParentalKey['Indicator'](
         'indicators.Indicator',
         related_name='goals',
         on_delete=models.CASCADE,
