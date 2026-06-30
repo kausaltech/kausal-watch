@@ -2100,6 +2100,29 @@ class TestPublicUserQuery:
         user_data = json.loads(data['publicUser']['userData'])
         assert user_data == {'zip_code': '90210', 'city': 'Beverly Hills'}
 
+    def test_public_user_query_response_is_not_cached(self, graphql_client_query_data):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+        public_user = PublicUser.objects.create(user_data={'zip_code': '90210'})
+
+        first = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'X-Cache-Plan-Identifier': plan.identifier},
+        )
+        assert json.loads(first['publicUser']['userData']) == {'zip_code': '90210'}
+
+        public_user.user_data = {'zip_code': '10001'}
+        public_user.save(update_fields=['user_data'])
+
+        second = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'X-Cache-Plan-Identifier': plan.identifier},
+        )
+        assert json.loads(second['publicUser']['userData']) == {'zip_code': '10001'}
+
     def test_public_user_query_returns_empty_user_data(self, graphql_client_query_data):
         public_user = PublicUser.objects.create()
 
