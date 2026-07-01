@@ -14,6 +14,7 @@ emails of participants who have opted in to marketing.
 from __future__ import annotations
 
 import csv
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, cast
 
 from django.core.exceptions import PermissionDenied
@@ -115,6 +116,11 @@ class ParticipantsIndexView(WatchIndexView[PublicUser]):
     page_title = _('Pledge participants')
     show_export_buttons = False  # we provide a tailored CSV button below
     list_export: list[str] = []  # Wagtail's auto-export off; CSV is via the custom button
+
+    @cached_property
+    def columns(self):  # type: ignore[override]
+        # Bulk actions aren't available for now
+        return [column for column in super().columns if column.name != 'bulk_actions']
 
     def get_queryset(self) -> QuerySet[PublicUser]:
         user = user_or_bust(self.request.user)
