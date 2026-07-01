@@ -12,7 +12,7 @@ from wagtail.models import Locale
 import pytest
 
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
-from actions.models.pledge import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
+from actions.models.public_user import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
 
