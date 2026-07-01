@@ -81,6 +81,7 @@ def enforce_rate_limit(info: GQLInfo, group: str, rate: str) -> None:
     """Throttle a mutation by client IP. Raises RATE_LIMITED when the limit is exceeded."""
     request = _build_ratelimit_request(info.context.request)
     if is_ratelimited(request, group=group, key='ip', rate=rate, method='POST', increment=True):
+        logger.warning('rate_limited group={group}', group=group)
         raise GraphQLError(
             'Too many requests, please try again later.',
             extensions={'code': 'RATE_LIMITED'},
@@ -151,18 +152,32 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         PledgeCommitment.objects.filter(public_user=anon).values_list('pledge__plan_id', flat=True).distinct()
     )
     existing_pledge_ids = set(PledgeCommitment.objects.filter(public_user=verified_user).values_list('pledge_id', flat=True))
-    PledgeCommitment.objects.filter(public_user=anon).exclude(pledge_id__in=existing_pledge_ids).update(public_user=verified_user)
+    moved = (
+        PledgeCommitment.objects
+        .filter(public_user=anon)
+        .exclude(pledge_id__in=existing_pledge_ids)
+        .update(public_user=verified_user)
+    )
 
+    user_data_updated = False
     if anon.user_data:
         merged_user_data = {**verified_user.user_data, **anon.user_data}
         if merged_user_data != verified_user.user_data:
             verified_user.user_data = merged_user_data
             verified_user.save(update_fields=['user_data'])
+            user_data_updated = True
 
     anon.delete()
 
     for plan in Plan.objects.filter(id__in=affected_plan_ids):
         plan.invalidate_cache()
+
+    logger.info(
+        'anon_merged verified_pk={verified_pk} moved={moved} user_data_updated={user_data_updated}',
+        verified_pk=verified_user.pk,
+        moved=moved,
+        user_data_updated=user_data_updated,
+    )
 
 
 def send_pin_email(to_email: str, raw_pin: str, plan: Plan | None = None) -> None:
