@@ -2198,6 +2198,42 @@ class TestPublicUserQuery:
         assert data['publicUser'] is not None
         assert data['publicUser']['uuid'] == str(public_user.uuid)
 
+    def test_signed_up_user_commitments_are_gated_at_the_parent_resolver(self, graphql_client_query_data):
+        plan = PlanFactory.create()
+        plan.features.enable_community_engagement = True
+        plan.features.save()
+        pledge = PledgeFactory.create(plan=plan)
+        public_user = PublicUser.objects.create()
+        token = public_user.regenerate_user_token()
+        PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
+
+        # No token: publicUser is null, commitments never resolve
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+        )
+        assert data['publicUser'] is None
+
+        # Someone else's token: still null
+        other_user = PublicUser.objects.create()
+        other_token = other_user.regenerate_user_token()
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'X-Public-User-Token': other_token},
+        )
+        assert data['publicUser'] is None
+
+        # Matching token: commitments are readable
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(public_user.uuid)},
+            headers={'X-Public-User-Token': token},
+        )
+        assert data['publicUser'] is not None
+        assert len(data['publicUser']['commitments']) == 1
+        assert data['publicUser']['commitments'][0]['pledge']['id'] == str(pledge.id)
+
     def test_public_user_query_returns_bearer_user_when_no_uuid(self, graphql_client_query_data):
         """Without a uuid argument, the query resolves to the bearer-identified user."""
         public_user = PublicUser.objects.create(email='alice@example.com')
