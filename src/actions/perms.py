@@ -64,7 +64,6 @@ from .models import (
     Pledge,
     PledgeCommitment,
     PublicUser,
-    PublicUserSignInAttempt,
 )
 
 if typing.TYPE_CHECKING:
@@ -317,7 +316,6 @@ PLAN_ADMIN_PERMS: tuple[tuple[type[Model], tuple[str, ...]], ...] = (
     (Pledge, ALL_PERMS),
     (PledgeCommitment, ('view',)),
     (PublicUser, ('view',)),
-    (PublicUserSignInAttempt, ('view',)),
 )
 
 
