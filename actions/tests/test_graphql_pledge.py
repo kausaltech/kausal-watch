@@ -2159,21 +2159,25 @@ class TestPublicUserQuery:
 
         assert data['publicUser'] is None
 
-    def test_public_user_query_returns_null_when_bearer_belongs_to_other_user(self, graphql_client_query_data):
-        """A signed-up user's data is hidden when the bearer header is for someone else."""
-        public_user = PublicUser.objects.create()
-        public_user.regenerate_user_token()
+    def test_public_user_query_ignores_other_users_uuid_when_bearer_present(self, graphql_client_query_data):
+        # Token-first: the bearer identifies the caller; the uuid arg is ignored
+        # when a token resolves. The target user's data isn't leaked either -
+        # the caller just gets their own row back.
+        target = PublicUser.objects.create()
+        target.regenerate_user_token()
 
-        other_user = PublicUser.objects.create()
-        other_token = other_user.regenerate_user_token()
+        caller = PublicUser.objects.create()
+        caller_token = caller.regenerate_user_token()
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
-            variables={'uuid': str(public_user.uuid)},
-            headers={'X-Public-User-Token': other_token},
+            variables={'uuid': str(target.uuid)},
+            headers={'X-Public-User-Token': caller_token},
         )
 
-        assert data['publicUser'] is None
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(caller.uuid)
+        assert data['publicUser']['uuid'] != str(target.uuid)
 
     def test_public_user_query_returns_signed_up_user_when_bearer_resolves_to_them(self, graphql_client_query_data):
         """A signed-up user can read their own data by presenting their own bearer token."""
@@ -2189,6 +2193,39 @@ class TestPublicUserQuery:
         assert data['publicUser'] is not None
         assert data['publicUser']['uuid'] == str(public_user.uuid)
 
+    def test_public_user_query_token_wins_when_uuid_stale(self, graphql_client_query_data):
+        # After a successful VerifyPin the anon row is deleted, but the UI may
+        # still hold a cached anon_uuid alongside the freshly-issued token.
+        # The token identifies the caller; the stale uuid must not shadow it.
+        signed_up = PublicUser.objects.create()
+        token = signed_up.regenerate_user_token()
+        stale_anon_uuid = uuid.uuid4()  # deliberately doesn't match any row
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(stale_anon_uuid)},
+            headers={'X-Public-User-Token': token},
+        )
+
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(signed_up.uuid)
+
+    def test_public_user_query_token_wins_over_other_users_uuid(self, graphql_client_query_data):
+        # If the caller has a token and also passes some other anon user's
+        # uuid, they get their own row - not the anon row.
+        signed_up = PublicUser.objects.create()
+        token = signed_up.regenerate_user_token()
+        other_anon = PublicUser.objects.create()
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(other_anon.uuid)},
+            headers={'X-Public-User-Token': token},
+        )
+
+        assert data['publicUser'] is not None
+        assert data['publicUser']['uuid'] == str(signed_up.uuid)
+
     def test_signed_up_user_commitments_are_gated_at_the_parent_resolver(self, graphql_client_query_data):
         plan = PlanFactory.create()
         plan.features.enable_community_engagement = True
@@ -2198,14 +2235,14 @@ class TestPublicUserQuery:
         token = public_user.regenerate_user_token()
         PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
 
-        # No token: publicUser is null, commitments never resolve
+        # No token, target's uuid points to a signed-up user: null
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
             variables={'uuid': str(public_user.uuid)},
         )
         assert data['publicUser'] is None
 
-        # Someone else's token: still null
+        # Someone else's token: caller gets their own row, not the target's
         other_user = PublicUser.objects.create()
         other_token = other_user.regenerate_user_token()
         data = graphql_client_query_data(
@@ -2213,7 +2250,8 @@ class TestPublicUserQuery:
             variables={'uuid': str(public_user.uuid)},
             headers={'X-Public-User-Token': other_token},
         )
-        assert data['publicUser'] is None
+        assert data['publicUser']['uuid'] == str(other_user.uuid)
+        assert data['publicUser']['commitments'] == []
 
         # Matching token: commitments are readable
         data = graphql_client_query_data(
