@@ -42,6 +42,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
+from aplans.graphene_views import PUBLIC_USER_TOKEN_HEADER
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
     DjangoNode,
@@ -1321,21 +1322,19 @@ class PublicUserNode(DjangoNode[PublicUser]):
         ]
 
     @staticmethod
-    def _bearer_matches(root: PublicUser, info: GQLInfo) -> bool:
-        bearer_user = _resolve_public_user_from_token(info)
-        return bearer_user is not None and bearer_user.pk == root.pk
+    def _token_owner_matches(root: PublicUser, info: GQLInfo) -> bool:
+        token_owner = _resolve_public_user_from_token(info)
+        return token_owner is not None and token_owner.pk == root.pk
 
     @staticmethod
     def resolve_email(root: PublicUser, info: GQLInfo) -> str | None:
-        # Defensive: PII must never be readable by UUID alone, even if a later
-        # change lets the parent resolver return the row without a bearer match.
-        if not PublicUserNode._bearer_matches(root, info):
+        if not PublicUserNode._token_owner_matches(root, info):
             return None
         return root.email
 
     @staticmethod
     def resolve_email_verified_at(root: PublicUser, info: GQLInfo):
-        if not PublicUserNode._bearer_matches(root, info):
+        if not PublicUserNode._token_owner_matches(root, info):
             return None
         return root.email_verified_at
 
@@ -2484,9 +2483,6 @@ class Query:
         )
 
 
-PUBLIC_USER_TOKEN_HEADER = 'X-Public-User-Token'  # noqa: S105
-
-
 def _resolve_public_user_from_token(info: GQLInfo) -> PublicUser | None:
     """
     Look up the PublicUser identified by the X-Public-User-Token header.
@@ -2498,7 +2494,7 @@ def _resolve_public_user_from_token(info: GQLInfo) -> PublicUser | None:
     OAuth/OIDC bearer-token middleware.
     """
     headers = info.context.get_request_headers()
-    token = headers.get(PUBLIC_USER_TOKEN_HEADER.lower()) or headers.get(PUBLIC_USER_TOKEN_HEADER)
+    token = headers.get(PUBLIC_USER_TOKEN_HEADER)
     if not token:
         return None
     return PublicUser.objects.filter(user_token=hash_user_token(token)).first()

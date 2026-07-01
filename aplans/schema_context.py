@@ -21,7 +21,7 @@ from kausal_common.strawberry.context import GraphQLContext
 from kausal_common.strawberry.extensions import AuthenticationExtension, ExecutionCacheExtension, SchemaExtension
 from kausal_common.users import user_or_none
 
-from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER
+from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER, PUBLIC_USER_TOKEN_HEADER
 
 from actions.models import Plan
 
@@ -324,7 +324,7 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             return None
 
         headers = exec_ctx.get_request_headers()
-        if headers.get('x-public-user-token') or headers.get('X-Public-User-Token'):
+        if headers.get(PUBLIC_USER_TOKEN_HEADER):
             self.set_reason('public-user token present')
             return None
 

@@ -54,6 +54,7 @@ SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
 PLAN_DOMAIN_HEADER = 'x-cache-plan-domain'
 WILDCARD_DOMAIN_HEADER = 'x-wildcard-domains'
+PUBLIC_USER_TOKEN_HEADER = 'x-public-user-token'  # noqa: S105
 
 
 class APITokenMiddleware:
@@ -234,7 +235,7 @@ class SentryGraphQLView(GraphQLView):
 
         if any(name in query for name in self.PUBLIC_USER_AUTH_OPERATIONS):
             return None
-        if request.headers.get('X-Public-User-Token'):
+        if request.headers.get(PUBLIC_USER_TOKEN_HEADER):
             return None
 
         qs: PlanQuerySet = Plan.objects.get_queryset()

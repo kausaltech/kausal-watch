@@ -350,13 +350,7 @@ def _generate_user_token() -> str:
 
 
 def _get_user_token_pepper() -> bytes:
-    """
-    Derive a per-app HMAC key from SECRET_KEY.
-
-    Scoping with a label prevents the pepper from being equivalent to keys used
-    elsewhere with SECRET_KEY. Rotating SECRET_KEY rotates all user_token hashes,
-    invalidating outstanding bearer credentials, which is the intended behavior.
-    """
+    """Derive an HMAC key for user token hashing from SECRET_KEY."""
     return hashlib.sha256(b'kausal-watch:public_user_token_pepper:' + settings.SECRET_KEY.encode()).digest()
 
 
@@ -377,19 +371,7 @@ def _generate_pin() -> str:
 
 
 def _get_pin_pepper() -> bytes:
-    """
-    Derive a per-app HMAC key for PIN hashing from SECRET_KEY.
-
-    The 6-digit PIN keyspace is small (10**6), so an attacker with DB-only
-    read access could otherwise brute-force the salted SHA-256 in
-    milliseconds and submit the recovered PIN via the public API before
-    the 10-minute TTL expires, minting a bearer token. Peppering raises
-    the bar from "has DB read" to "has DB read AND SECRET_KEY", matching
-    the threat model already paid for by hash_user_token. The label
-    scopes the pepper so it isn't equivalent to keys used elsewhere with
-    SECRET_KEY; rotating SECRET_KEY invalidates all outstanding PINs,
-    which is fine - users just request a new one (10-minute TTL).
-    """
+    """Derive an HMAC key for PIN hashing from SECRET_KEY."""
     return hashlib.sha256(b'kausal-watch:public_user_pin_pepper:' + settings.SECRET_KEY.encode()).digest()
 
 
@@ -550,6 +532,20 @@ class PublicUserSignInAttempt(models.Model):
     def attempts_exhausted(self) -> bool:
         return self.attempts >= PIN_MAX_ATTEMPTS
 
+    @staticmethod
+    def _fresh_attempt_state(anon_uuid: uuid.UUID | None) -> tuple[dict[str, Any], str]:
+        raw_pin = _generate_pin()
+        salt = secrets.token_hex(16)
+        now = timezone.now()
+        return {
+            'pin_hash': hash_pin(raw_pin, salt),
+            'pin_salt': salt,
+            'issued_at': now,
+            'expires_at': now + PIN_TTL,
+            'attempts': 0,
+            'anon_uuid': anon_uuid,
+        }, raw_pin
+
     @classmethod
     def create_for_signin(
         cls,
@@ -562,21 +558,14 @@ class PublicUserSignInAttempt(models.Model):
         Returns the new attempt plus the raw PIN. The raw PIN must be delivered
         to the user (e.g., by email) and is not stored anywhere in the database.
         """
-        raw_pin = _generate_pin()
-        salt = secrets.token_hex(16)
-        now = timezone.now()
+        base, raw_pin = cls._fresh_attempt_state(anon_uuid)
         attempt, _ = cls.objects.update_or_create(
             public_user=public_user,
             defaults={
+                **base,
                 'email': None,
                 'pending_terms_accepted_at': None,
                 'pending_marketing_consented_at': None,
-                'pin_hash': hash_pin(raw_pin, salt),
-                'pin_salt': salt,
-                'issued_at': now,
-                'expires_at': now + PIN_TTL,
-                'attempts': 0,
-                'anon_uuid': anon_uuid,
             },
         )
         return attempt, raw_pin
@@ -597,17 +586,10 @@ class PublicUserSignInAttempt(models.Model):
         verifier that actually controls the mailbox. Replaces any existing
         pending attempt for the same email.
         """
-        raw_pin = _generate_pin()
-        salt = secrets.token_hex(16)
-        now = timezone.now()
+        base, raw_pin = cls._fresh_attempt_state(anon_uuid)
         existing = cls.objects.filter(email=email, public_user__isnull=True).first()
         defaults = {
-            'pin_hash': hash_pin(raw_pin, salt),
-            'pin_salt': salt,
-            'issued_at': now,
-            'expires_at': now + PIN_TTL,
-            'attempts': 0,
-            'anon_uuid': anon_uuid,
+            **base,
             'pending_terms_accepted_at': terms_accepted_at,
             'pending_marketing_consented_at': marketing_consented_at,
         }
@@ -627,14 +609,9 @@ class PublicUserSignInAttempt(models.Model):
         """
         Validate a raw PIN against the stored hash.
 
-        Increments the attempt counter atomically on every call so parallel
-        verify calls can't overwrite each other's increment and exceed the
-        PIN_MAX_ATTEMPTS ceiling. Returns False if the attempt is expired,
-        the post-increment counter exceeds the cap (a race past the
-        per-mutation pre-check), or the PIN doesn't match. The cap check is
-        strict-greater-than so the Nth attempt - where N == PIN_MAX_ATTEMPTS
-        - is still usable; the per-mutation pre-check via attempts_exhausted
-        catches the (N+1)th request before it ever reaches this code.
+        Increments the attempt counter atomically on every call. Returns False
+        if the attempt is expired, the counter is past PIN_MAX_ATTEMPTS, or
+        the PIN doesn't match.
         """
         PublicUserSignInAttempt.objects.filter(pk=self.pk).update(attempts=models.F('attempts') + 1)
         self.refresh_from_db(fields=['attempts'])
