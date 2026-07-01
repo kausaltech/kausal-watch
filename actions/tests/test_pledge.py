@@ -19,7 +19,7 @@ import pytest
 
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.models.attributes import AttributeText, AttributeType as AttributeTypeModel
-from actions.models.pledge import PIN_MAX_ATTEMPTS, hash_pin, hash_user_token
+from actions.models.public_user import PIN_MAX_ATTEMPTS, hash_pin, hash_user_token
 from actions.public_user_auth import send_pin_email
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from notifications.models import BaseTemplate
