@@ -123,13 +123,7 @@ def issue_signup_pin(
 
 
 def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None:
-    """
-    Move pledge commitments from the anonymous PublicUser at anon_uuid into verified_user.
-
-    No-op when the anon row doesn't exist or already has an email or
-    user_token set. Duplicate commitments are removed via CASCADE when
-    the anon row is deleted.
-    """
+    """Move pledge commitments from the anonymous PublicUser at anon_uuid into verified_user."""
     try:
         anon = PublicUser.objects.get(uuid=anon_uuid)
     except PublicUser.DoesNotExist:
