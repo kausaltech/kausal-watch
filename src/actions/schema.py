@@ -2203,21 +2203,22 @@ class Query:
         """
         Look up a PublicUser.
 
-        Anonymous users (no user_token) are identified by the UUID argument.
-        Once a user has signed up, the bearer token is the identifier instead.
+        Token identifies the caller when present. The uuid argument is a
+        fallback for anonymous callers: anonymous rows (no user_token) are
+        addressed by uuid; token-bearing rows require the bearer.
         """
         # Per-user response; opt out of the shared cache.
         info.context.graphql_cache_key = None
         info.context.graphql_no_cache_reason = 'publicUser is per-user'
+        token_owner = _resolve_public_user_from_token(info)
+        if token_owner is not None:
+            return token_owner
         if uuid is None:
-            return _resolve_public_user_from_token(info)
+            return None
         matched = PublicUser.objects.filter(uuid=uuid).first()
         if matched is None or matched.user_token is None:
             return matched
-        bearer_user = _resolve_public_user_from_token(info)
-        if bearer_user is None or bearer_user.pk != matched.pk:
-            return None
-        return matched
+        return None
 
     @staticmethod
     def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None = None):
