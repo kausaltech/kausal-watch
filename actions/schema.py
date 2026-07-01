@@ -2715,7 +2715,8 @@ class SignUpMutation(graphene.Mutation):
                     anon_uuid=anon_uuid,
                     plan=info.context.request_plan,
                 )
-        except GraphQLError:
+        except GraphQLError as err:
+            logger.info('signup_rejected code={code}', code=err.extensions.get('code') if err.extensions else None)
             raise
         except Exception as exc:
             logger.exception('SignUp failed during PIN email delivery')
@@ -2723,6 +2724,11 @@ class SignUpMutation(graphene.Mutation):
                 'Could not send verification email. Please try again.',
                 extensions={'code': 'EMAIL_SEND_FAILED'},
             ) from exc
+        logger.info(
+            'signup_pin_issued plan={plan} has_anon_uuid={has_anon}',
+            plan=info.context.request_plan.identifier if info.context.request_plan else None,
+            has_anon=bool(anon_uuid),
+        )
         return SignUpPayload(sent=True)
 
 
@@ -2762,6 +2768,7 @@ class SignInMutation(graphene.Mutation):
         try:
             public_user = PublicUser.objects.get(email=normalized)
         except PublicUser.DoesNotExist:
+            logger.info('signin_rejected code={code}', code='ACCOUNT_NOT_FOUND')
             raise GraphQLError(
                 'No account found for this email.',
                 extensions={'code': 'ACCOUNT_NOT_FOUND'},
@@ -2780,7 +2787,8 @@ class SignInMutation(graphene.Mutation):
                         extensions={'code': 'COOLDOWN_ACTIVE'},
                     )
                 issue_signin_pin(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
-        except GraphQLError:
+        except GraphQLError as err:
+            logger.info('signin_rejected code={code}', code=err.extensions.get('code') if err.extensions else None)
             raise
         except Exception as exc:
             logger.exception('SignIn failed during PIN email delivery')
@@ -2788,6 +2796,12 @@ class SignInMutation(graphene.Mutation):
                 'Could not send verification email. Please try again.',
                 extensions={'code': 'EMAIL_SEND_FAILED'},
             ) from exc
+        logger.info(
+            'signin_pin_issued plan={plan} public_user_pk={pk} has_anon_uuid={has_anon}',
+            plan=info.context.request_plan.identifier if info.context.request_plan else None,
+            pk=public_user.pk,
+            has_anon=bool(anon_uuid),
+        )
         return SignInPayload(sent=True)
 
 
@@ -2899,9 +2913,19 @@ class VerifyPinMutation(graphene.Mutation):
                 public_user, raw_token = cls._consume_attempt(attempt, locked_user, normalized)
 
         if verify_error is not None:
+            logger.info(
+                'pin_verify_failed code={code}',
+                code=verify_error.extensions.get('code') if verify_error.extensions else None,
+            )
             raise verify_error
         assert raw_token is not None
         assert public_user is not None
+
+        logger.info(
+            'pin_verified flow={flow} public_user_pk={pk}',
+            flow='signup' if existing_user is None else 'signin',
+            pk=public_user.pk,
+        )
 
         # Commitments are stored against the primary translation of each
         # Pledge, but the frontend lists pledges in the active locale
