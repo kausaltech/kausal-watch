@@ -19,7 +19,8 @@ from loguru import logger
 from starlette.requests import Request as StarletteRequest
 
 from actions.models.plan import Plan
-from actions.models.pledge import PIN_TTL, PledgeCommitment, PublicUser, PublicUserSignInAttempt
+from actions.models.pledge import PledgeCommitment
+from actions.models.public_user import PIN_TTL, PublicUser, PublicUserSignInAttempt
 from notifications.mjml import render_mjml_from_template
 
 if TYPE_CHECKING:
