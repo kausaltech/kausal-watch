@@ -39,6 +39,7 @@ logger = logger.bind(markup=True)
 
 PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
 PLAN_DOMAIN_HEADER = 'x-cache-plan-domain'
+PUBLIC_USER_TOKEN_HEADER = 'x-public-user-token'  # noqa: S105
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
@@ -331,7 +332,7 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             return None
 
         headers = exec_ctx.get_request_headers()
-        if headers.get('x-public-user-token') or headers.get('X-Public-User-Token'):
+        if headers.get(PUBLIC_USER_TOKEN_HEADER):
             self.set_reason('public-user token present')
             return None
 
