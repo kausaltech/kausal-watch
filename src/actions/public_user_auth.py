@@ -124,12 +124,9 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
     """
     Move pledge commitments from the anonymous PublicUser at anon_uuid into verified_user.
 
-    No-op when the anon_uuid is stale (no matching row), when the row exists
-    but already has an email or user_token set (any past-verification row is
-    off-limits to UUID-based merges, matching _resolve_public_user's rule
-    that any token-bearing row requires the bearer header). Duplicate
-    commitments (same pledge on both rows) are removed when the anon row is
-    deleted via CASCADE.
+    No-op when the anon row doesn't exist or already has an email or
+    user_token set. Duplicate commitments are removed via CASCADE when
+    the anon row is deleted.
     """
     try:
         anon = PublicUser.objects.get(uuid=anon_uuid)
@@ -167,7 +164,7 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         plan.invalidate_cache()
 
 
-def send_pin_email(email: str, raw_pin: str, plan: Plan | None = None) -> None:
+def send_pin_email(to_email: str, raw_pin: str, plan: Plan | None = None) -> None:
     """
     Send a PIN verification code to the given email address.
 
@@ -180,8 +177,8 @@ def send_pin_email(email: str, raw_pin: str, plan: Plan | None = None) -> None:
     notification base template configured, the email is sent as a multipart
     message with a plan-themed HTML body; otherwise a plain-text email is sent.
     """
-    if not email:
-        raise ValueError('email is required; cannot send PIN.')
+    if not to_email:
+        raise ValueError('to_email is required; cannot send PIN.')
 
     minutes = int(PIN_TTL.total_seconds() // 60)
     base_template = getattr(plan, 'notification_base_template', None) if plan else None
@@ -209,7 +206,7 @@ def send_pin_email(email: str, raw_pin: str, plan: Plan | None = None) -> None:
             subject=subject,
             body=plain_body,
             from_email=from_email,
-            to=[email],
+            to=[to_email],
         )
     else:
         context = {
@@ -226,7 +223,7 @@ def send_pin_email(email: str, raw_pin: str, plan: Plan | None = None) -> None:
             subject=subject,
             body=plain_body,
             from_email=from_email,
-            to=[email],
+            to=[to_email],
         )
         msg.attach_alternative(html_body, 'text/html')
 

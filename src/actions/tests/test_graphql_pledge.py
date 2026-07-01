@@ -1759,10 +1759,6 @@ class TestVerifyPinMutation:
         assert PublicUserSignInAttempt.objects.filter(public_user=self.public_user).exists()
 
     def test_verify_pin_wrong_pin_persists_attempt_increment(self, graphql_client_query):
-        # The verify call increments the attempts counter via verify(). The
-        # mutation wraps verify in transaction.atomic(); raising INVALID_PIN
-        # from inside the block previously rolled the increment back, so the
-        # PIN_MAX_ATTEMPTS guard was never reached.
         raw_pin = self._issue_pin()
         wrong = '000000' if raw_pin != '000000' else '111111'
 
@@ -1798,11 +1794,6 @@ class TestVerifyPinMutation:
         assert response['errors'][0]['extensions']['code'] == 'PIN_EXPIRED'
 
     def test_verify_pin_last_allowed_attempt_succeeds(self, graphql_client_query, graphql_client_query_data):
-        # The Nth submission (where N == PIN_MAX_ATTEMPTS) must still be
-        # usable. A previous bug rejected it because verify() incremented
-        # the counter before checking exhaustion, so the post-increment
-        # check tripped on the last allowed attempt and locked the user out
-        # before the PIN hash was even compared.
         raw_pin = self._issue_pin()
         wrong = '000000' if raw_pin != '000000' else '111111'
 
