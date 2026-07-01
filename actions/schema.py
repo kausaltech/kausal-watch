@@ -116,7 +116,7 @@ from .models import (
     PublicUser,
     PublicUserSignInAttempt,
 )
-from .models.pledge import SIGNIN_COOLDOWN, SIGNUP_COOLDOWN, hash_user_token
+from .models.public_user import SIGNIN_COOLDOWN, SIGNUP_COOLDOWN, hash_user_token
 from .public_user_auth import (
     SIGN_IN_RATE_LIMIT,
     SIGN_UP_RATE_LIMIT,

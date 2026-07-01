@@ -58,6 +58,8 @@ from .pledge import (
     Pledge,
     PledgeActionThrough,
     PledgeCommitment,
+)
+from .public_user import (
     PublicUser,
     PublicUserSignInAttempt,
 )
