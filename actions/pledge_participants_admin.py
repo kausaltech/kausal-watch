@@ -173,6 +173,7 @@ class ParticipantsViewSet(WatchViewSet[PublicUser]):
     menu_label = _('Participants')
     menu_icon = 'group'
     add_to_admin_menu = False  # menu wired via custom Pledges submenu
+    menu_item_is_registered = True
     list_display = [
         Column('email', label=_('Email'), sort_key='email'),
         Column('commitment_count', label=_('Pledges committed'), sort_key='commitment_count'),
