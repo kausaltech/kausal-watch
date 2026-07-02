@@ -1283,6 +1283,28 @@ class TestSignUpMutation:
         attempt = PublicUserSignInAttempt.objects.get(email='merge@example.com', public_user__isnull=True)
         assert attempt.anon_uuid == anon_uuid
 
+    @pytest.mark.parametrize('bad_email', ['not-an-email', 'user@', '@example.com', 'a@b', 'user@@example.com'])
+    def test_sign_up_rejects_invalid_email(self, graphql_client_query, bad_email):
+        mail.outbox.clear()
+
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': bad_email, 'terms': True, 'marketing': False},
+        )
+
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_EMAIL'
+        assert not PublicUserSignInAttempt.objects.exists()
+        assert not mail.outbox
+
+    def test_sign_up_rejects_overlong_email(self, graphql_client_query):
+        local = 'a' * 250
+        response = graphql_client_query(
+            SIGN_UP_MUTATION,
+            variables={'email': f'{local}@example.com', 'terms': True, 'marketing': False},
+        )
+
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_EMAIL'
+
 
 class TestSignInMutation:
     """Tests for the signIn GraphQL mutation."""
@@ -1397,6 +1419,15 @@ class TestSignInMutation:
 
         attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
         assert attempt.anon_uuid == anon_uuid
+
+    @pytest.mark.parametrize('bad_email', ['not-an-email', 'user@', '@example.com', 'user@@example.com'])
+    def test_sign_in_rejects_invalid_email(self, graphql_client_query, bad_email):
+        mail.outbox.clear()
+
+        response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': bad_email})
+
+        assert response['errors'][0]['extensions']['code'] == 'INVALID_EMAIL'
+        assert not mail.outbox
 
 
 VERIFY_PIN_MUTATION = """
