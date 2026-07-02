@@ -2700,6 +2700,13 @@ class SignUpMutation(graphene.Mutation):
                 existing_attempt = (
                     PublicUserSignInAttempt.objects.select_for_update().filter(email=normalized, public_user__isnull=True).first()
                 )
+                # Re-check after the attempt lock: a concurrent verifyPin
+                # may have consumed the pending attempt while we were waiting.
+                if PublicUser.objects.filter(email=normalized).exists():
+                    raise GraphQLError(  # noqa: TRY301
+                        'An account with this email already exists.',
+                        extensions={'code': 'ACCOUNT_EXISTS'},
+                    )
                 if existing_attempt and existing_attempt.issued_at > now - SIGNUP_COOLDOWN:
                     raise GraphQLError(  # noqa: TRY301
                         'Please wait a moment before requesting another PIN.',

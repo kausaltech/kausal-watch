@@ -7,7 +7,10 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.validators import validate_email
+from django.db import transaction
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 from graphql.error import GraphQLError
@@ -36,11 +39,20 @@ VERIFY_PIN_RATE_LIMIT = '30/m'
 logger = logger.bind(name='actions.public_user_auth')
 
 
+EMAIL_MAX_LENGTH = 254
+
+
 def normalize_email(email: str) -> str:
-    """Trim and lowercase an email. Raise GraphQLError if empty."""
+    """Trim, lowercase, and validate an email. Raise GraphQLError on invalid input."""
     normalized = email.strip().lower()
     if not normalized:
         raise GraphQLError('Email is required.', extensions={'code': 'EMAIL_REQUIRED'})
+    if len(normalized) > EMAIL_MAX_LENGTH:
+        raise GraphQLError('Email address is too long.', extensions={'code': 'INVALID_EMAIL'})
+    try:
+        validate_email(normalized)
+    except ValidationError as exc:
+        raise GraphQLError('Invalid email address.', extensions={'code': 'INVALID_EMAIL'}) from exc
     return normalized
 
 
@@ -124,8 +136,9 @@ def issue_signup_pin(
 
 def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None:
     """Move pledge commitments from the anonymous PublicUser at anon_uuid into verified_user."""
+    assert transaction.get_connection().in_atomic_block, 'must run inside a transaction'
     try:
-        anon = PublicUser.objects.get(uuid=anon_uuid)
+        anon = PublicUser.objects.select_for_update().get(uuid=anon_uuid)
     except PublicUser.DoesNotExist:
         return
     if anon.pk == verified_user.pk:
