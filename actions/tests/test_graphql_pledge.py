@@ -1400,9 +1400,9 @@ class TestSignInMutation:
 
 
 VERIFY_PIN_MUTATION = """
-    mutation($email: String!, $pin: String!) {
+    mutation($email: String!, $pin: String!, $anonUuid: UUID) {
       pledge {
-        verifyPin(email: $email, pin: $pin) {
+        verifyPin(email: $email, pin: $pin, anonUuid: $anonUuid) {
           userToken
           pledgeIds
         }
@@ -1601,7 +1601,7 @@ class TestVerifyPinMutation:
 
         data = graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         assert data['pledge']['verifyPin']['pledgeIds'] == [str(pledge.id)]
@@ -1618,7 +1618,7 @@ class TestVerifyPinMutation:
 
         data = graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(second_anon.uuid)},
         )
 
         assert set(data['pledge']['verifyPin']['pledgeIds']) == {str(existing_pledge.id), str(new_pledge.id)}
@@ -1634,7 +1634,7 @@ class TestVerifyPinMutation:
 
         graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         assert PledgeCommitment.objects.filter(pledge=pledge, public_user=self.public_user).count() == 1
@@ -1647,7 +1647,7 @@ class TestVerifyPinMutation:
 
         graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         self.public_user.refresh_from_db()
@@ -1661,7 +1661,7 @@ class TestVerifyPinMutation:
 
         graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         self.public_user.refresh_from_db()
@@ -1675,7 +1675,7 @@ class TestVerifyPinMutation:
 
         graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         self.public_user.refresh_from_db()
@@ -1692,7 +1692,7 @@ class TestVerifyPinMutation:
 
         graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
         )
 
         self.plan.refresh_from_db()
@@ -1706,7 +1706,7 @@ class TestVerifyPinMutation:
 
         data = graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(bob.uuid)},
         )
 
         assert data['pledge']['verifyPin']['pledgeIds'] == []
@@ -1727,7 +1727,7 @@ class TestVerifyPinMutation:
 
         data = graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(bob.uuid)},
         )
 
         assert data['pledge']['verifyPin']['pledgeIds'] == []
@@ -1735,11 +1735,12 @@ class TestVerifyPinMutation:
         assert PublicUser.objects.filter(uuid=bob.uuid).exists()
 
     def test_verify_pin_with_unknown_anon_uuid_no_op(self, graphql_client_query_data):
-        raw_pin = self._issue_pin(anon_uuid=uuid.uuid4())
+        unknown_uuid = uuid.uuid4()
+        raw_pin = self._issue_pin(anon_uuid=unknown_uuid)
 
         data = graphql_client_query_data(
             VERIFY_PIN_MUTATION,
-            variables={'email': 'alice@example.com', 'pin': raw_pin},
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(unknown_uuid)},
         )
 
         assert data['pledge']['verifyPin']['userToken']
@@ -1851,6 +1852,43 @@ class TestVerifyPinMutation:
         assert 'errors' in response
         assert 'No active sign-in attempt' in response['errors'][0]['message']
         assert response['errors'][0]['extensions']['code'] == 'NO_ACTIVE_ATTEMPT'
+
+    def test_verify_pin_rejects_session_mismatch(self, graphql_client_query):
+        raw_pin = self._issue_pin(anon_uuid=uuid.uuid4())
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(uuid.uuid4())},
+        )
+        assert response['errors'][0]['extensions']['code'] == 'SESSION_MISMATCH'
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+        assert response['errors'][0]['extensions']['code'] == 'SESSION_MISMATCH'
+
+        assert PublicUserSignInAttempt.objects.filter(public_user=self.public_user).exists()
+
+    def test_verify_pin_rejects_uuid_when_attempt_had_none(self, graphql_client_query):
+        raw_pin = self._issue_pin()
+
+        response = graphql_client_query(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(uuid.uuid4())},
+        )
+
+        assert response['errors'][0]['extensions']['code'] == 'SESSION_MISMATCH'
+
+    def test_verify_pin_accepts_when_neither_side_has_uuid(self, graphql_client_query_data):
+        raw_pin = self._issue_pin()
+
+        data = graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin},
+        )
+
+        assert data['pledge']['verifyPin']['userToken']
 
 
 class TestPledgeBodyField:

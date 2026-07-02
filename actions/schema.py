@@ -2821,6 +2821,13 @@ class VerifyPinMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True, description='Email address of the PublicUser to verify.')
         pin = graphene.String(required=True, description='6-digit PIN delivered by email.')
+        anon_uuid = graphene.UUID(
+            required=False,
+            description=(
+                'Anonymous UUID for the verifying browser. Must match the value passed to signIn/signUp; '
+                'binds verification to the initiating session.'
+            ),
+        )
 
     Output = VerifyPinPayload
 
@@ -2861,7 +2868,14 @@ class VerifyPinMutation(graphene.Mutation):
         return public_user, public_user.regenerate_user_token()
 
     @classmethod
-    def mutate(cls, _root, info: GQLInfo, email: str, pin: str) -> VerifyPinPayload:
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        email: str,
+        pin: str,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> VerifyPinPayload:
         enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
         normalized = normalize_email(email)
         # Look up the user first to decide which attempt-finder path to take:
@@ -2893,6 +2907,11 @@ class VerifyPinMutation(graphene.Mutation):
                 verify_error = GraphQLError(
                     'No active sign-in attempt for this email. Please sign in again.',
                     extensions={'code': 'NO_ACTIVE_ATTEMPT'},
+                )
+            elif attempt.anon_uuid != anon_uuid:
+                verify_error = GraphQLError(
+                    'This sign-in was started from a different browser. Please request a new PIN from this browser.',
+                    extensions={'code': 'SESSION_MISMATCH'},
                 )
             elif attempt.is_expired:
                 verify_error = GraphQLError(
