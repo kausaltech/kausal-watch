@@ -398,6 +398,7 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     # register_pledges_submenu hook in actions/wagtail_hooks.py, so we don't
     # let the SnippetViewSet auto-add a top-level menu item.
     add_to_admin_menu = False
+    menu_item_is_registered = True
     list_display = [
         'name',
         Column('commitment_count', label=_('Commitments'), sort_key='commitment_count'),
