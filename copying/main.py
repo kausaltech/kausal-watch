@@ -441,7 +441,23 @@ def _get_attribute_types_for_copying(plan: Plan) -> list[AttributeType]:
     )
 
 
-def _iter_instances_for_unique_field_validation(plan: Plan, copy_indicators: bool) -> Generator[Model]:
+def iter_plan_owned_instances(
+    plan: Plan,
+    *,
+    plan_structure: CloneStructure = PLAN_CLONE_STRUCTURE,
+    include_indicators: bool = True,
+) -> Generator[Model]:
+    """
+    Yield every instance owned by the plan, deduplicated by (type, pk).
+
+    Walks `plan_structure` from the plan, then the GFK-scoped attribute types, and (when
+    `include_indicators` is true) the plan's indicators together with their dataset schemas
+    and dimensions.
+
+    The declarative clone structures are reused here as the definition of what belongs to a
+    plan. This is the shared traversal used both by copy's unique-field validation and by the
+    single-tenant export; the export passes its own `plan_structure` (see `copying.export`).
+    """
     seen: set[tuple[type[Model], Any]] = set()
 
     def yield_unseen(instances: Iterable[Model]) -> Generator[Model]:
@@ -452,10 +468,10 @@ def _iter_instances_for_unique_field_validation(plan: Plan, copy_indicators: boo
             seen.add(key)
             yield instance
 
-    yield from yield_unseen(_iter_clone_structure_instances(plan, PLAN_CLONE_STRUCTURE))
+    yield from yield_unseen(_iter_clone_structure_instances(plan, plan_structure))
     for attribute_type in _get_attribute_types_for_copying(plan):
         yield from yield_unseen(_iter_clone_structure_instances(attribute_type, ATTRIBUTE_TYPE_CLONE_STRUCTURE))
-    if not copy_indicators:
+    if not include_indicators:
         return
     for indicator in plan.indicators.all():
         yield from yield_unseen(_iter_clone_structure_instances(indicator, INDICATOR_CLONE_STRUCTURE))
@@ -474,7 +490,7 @@ def _validate_unique_field_copy_policies(plan: Plan, copy_indicators: bool) -> N
         )
 
     unsupported_fields = []
-    for instance in _iter_instances_for_unique_field_validation(plan, copy_indicators):
+    for instance in iter_plan_owned_instances(plan, include_indicators=copy_indicators):
         policies = UNIQUE_FIELD_COPY_POLICIES.get(type(instance), {})
         for field in _iter_unique_fields_requiring_copy_policy(type(instance)):
             if policies.get(field.name) != UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET:
