@@ -18,6 +18,7 @@ omit =
 show_missing = True
 exclude_lines =
     pragma: no cover
+    if TYPE_CHECKING:
     def __repr__
     if self.debug:
     if __name__ == .__main__.:
