@@ -194,6 +194,7 @@ class FrontPageHeroAdditionalSettingsValue(blocks.StructValue):
 class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
     background_colour = blocks.CharBlock(
         required=False,
+        default='',
         label=_('Background colour'),
         help_text=_('CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)'),
     )

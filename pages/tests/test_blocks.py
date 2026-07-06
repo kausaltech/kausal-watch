@@ -1,8 +1,31 @@
 import pytest
+from wagtail_localize.segments.extract import extract_segments
 
+from images.tests.factories import AplansImageFactory
 from pages.tests.factories import StaticPageFactory
 
 pytestmark = pytest.mark.django_db
+
+
+def test_front_page_hero_without_additional_settings_can_be_localized(plan_with_pages):
+    page = plan_with_pages.root_page
+    image = AplansImageFactory.create()
+    page.body = [
+        {
+            'type': 'front_page_hero',
+            'value': {
+                'layout': 'big_image',
+                'image': image.id,
+                'heading': 'Hero heading',
+                'lead': '<p>Hero lead</p>',
+            },
+            'id': '6350861f-c5ff-4764-81f9-55d27418ec14',
+        },
+    ]
+
+    segments = list(extract_segments(page))
+
+    assert any(segment.path == 'body.6350861f-c5ff-4764-81f9-55d27418ec14.heading' for segment in segments)
 
 
 def test_adaptive_embed_block_title_and_description(graphql_client_query_data, plan_with_pages):
