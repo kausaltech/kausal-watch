@@ -195,8 +195,8 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
     background_colour = blocks.CharBlock(
         required=False,
         default='',
-        label=_('Background colour'),
-        help_text=_('CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)'),
+        label=_('Background color'),
+        help_text=_('CSS color value, e.g. #FFFFFF or rgb(255, 255, 255)'),
     )
     fit_image = blocks.BooleanBlock(
         required=False,
@@ -214,7 +214,7 @@ class FrontPageHeroAdditionalSettingsBlock(blocks.StructBlock):
         required=False,
         default=False,
         label=_('Background covers full block'),
-        help_text=_('Extend the background colour to cover the content below the image, not just the image area'),
+        help_text=_('Extend the background color to cover the content below the image, not just the image area'),
     )
 
     class Meta:
