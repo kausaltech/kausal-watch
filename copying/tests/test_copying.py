@@ -766,6 +766,19 @@ def test_action_revision_is_copied(plan_with_pages, action, user):
     assert rev_obj.name == action.name
 
 
+def test_action_revision_with_attribute_type_is_copied(plan_with_pages, action, user):
+    AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=ContentType.objects.get_for_model(Action),
+    )
+    action.save_revision(user=user)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    action_copy = plan_copy.actions.get()
+    assert isinstance(action_copy.latest_revision, Revision)
+
+
 def test_action_revision_references_are_updated(plan_with_pages, action, user):
     """The revision content should reference the copied plan, not the original."""
     action.save_revision(user=user)

@@ -618,7 +618,7 @@ class Action(
             new_revision.publish(user=user, skip_permission_checks=True, log_action=False)
         return new_revision
 
-    def commit_attributes(self, attributes: dict[str, Any], user):
+    def commit_attributes(self, attributes: dict[str, Any], user: UserOrAnon | None) -> None:
         """
         Persist unpublished serialized draft contents to Attribute models.
 
@@ -627,7 +627,10 @@ class Action(
         from actions.attributes import DraftAttributes
 
         draft_attributes = DraftAttributes.from_revision_content(attributes)
-        attribute_types = self.get_editable_attribute_types(user)
+        if user is None:
+            attribute_types = self.__class__.get_attribute_types_for_plan(self.plan)
+        else:
+            attribute_types = self.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
             try:
                 attribute_value = draft_attributes.get_value_for_attribute_type(attribute_type)
