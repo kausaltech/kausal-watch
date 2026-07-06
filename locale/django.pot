@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 12:55+0300\n"
+"POT-Creation-Date: 2026-07-06 10:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -288,6 +288,10 @@ msgstr ""
 msgid "Person occurs multiple times as contact person"
 msgstr ""
 
+#: actions/api.py actions/models/attributes.py
+msgid "This choice option is archived and cannot be selected as a new value."
+msgstr ""
+
 #: actions/api.py
 msgid "Identifier must be set"
 msgstr ""
@@ -304,6 +308,14 @@ msgstr ""
 #: actions/api.py
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
+msgstr ""
+
+#: actions/api.py actions/models/action.py
+msgid "Non-completed tasks cannot have a completion date"
+msgstr ""
+
+#: actions/api.py actions/models/action.py
+msgid "Completed tasks must have a completion date"
 msgstr ""
 
 #: actions/attribute_type_admin.py
@@ -356,6 +368,11 @@ msgstr ""
 
 #: actions/attribute_type_admin.py
 #, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr ""
+
+#: actions/attribute_type_admin.py
+#, python-format
 msgid "Fields (%(model)s)"
 msgstr ""
 
@@ -365,6 +382,11 @@ msgstr ""
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
 msgstr ""
 
 #: actions/attribute_type_admin.py actions/category_admin.py
@@ -462,7 +484,6 @@ msgid "Heading to show instead of the default"
 msgstr ""
 
 #: actions/blocks/action_content_blocks.py
-#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Label"
 msgstr ""
 
@@ -1296,7 +1317,7 @@ msgstr ""
 msgid "details"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py reports/report_formatters.py
 msgid "due date"
 msgstr ""
 
@@ -1344,14 +1365,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "action tasks"
-msgstr ""
-
-#: actions/models/action.py
-msgid "Non-completed tasks cannot have a completion date"
-msgstr ""
-
-#: actions/models/action.py
-msgid "Completed tasks must have a completion date"
 msgstr ""
 
 #: actions/models/action.py
@@ -1569,6 +1582,10 @@ msgstr ""
 
 #: actions/models/attributes.py
 msgid "The icon must be an SVG file."
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "active"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -2484,6 +2501,14 @@ msgid "Freeform key-value data about the user (e.g., zip_code)"
 msgstr ""
 
 #: actions/models/pledge.py
+msgid "user token"
+msgstr ""
+
+#: actions/models/pledge.py
+msgid "Opaque secret used as a bearer credential after the user signs up."
+msgstr ""
+
+#: actions/models/pledge.py
 msgid "public user"
 msgstr ""
 
@@ -2513,6 +2538,10 @@ msgstr ""
 
 #: actions/pledge_admin.py
 msgid "Number of commitments"
+msgstr ""
+
+#: actions/pledge_admin.py pages/models.py
+msgid "Pledges"
 msgstr ""
 
 #: actions/pledge_admin.py
@@ -2547,8 +2576,8 @@ msgstr ""
 msgid "User ID"
 msgstr ""
 
-#: actions/pledge_admin.py pages/models.py
-msgid "Pledges"
+#: actions/pledge_admin.py
+msgid "Pledge Commitments"
 msgstr ""
 
 #: actions/pledge_admin.py
@@ -3061,7 +3090,6 @@ msgid "Edit this indicator"
 msgstr ""
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Edit data"
 msgstr ""
 
@@ -4285,6 +4313,10 @@ msgid "operational"
 msgstr ""
 
 #: indicators/models/indicator.py
+msgid "unspecified"
+msgstr ""
+
+#: indicators/models/indicator.py
 msgid "minimum value"
 msgstr ""
 
@@ -4575,23 +4607,6 @@ msgstr ""
 msgid "indicator goals"
 msgstr ""
 
-#: indicators/templates/indicators/panels/factors_panel.html
-#: indicators/wagtail_admin.py
-msgid "Unit"
-msgstr ""
-
-#: indicators/templates/indicators/panels/factors_panel.html
-msgid "Remove"
-msgstr ""
-
-#: indicators/templates/indicators/panels/factors_panel.html
-msgid "Add factor"
-msgstr ""
-
-#: indicators/templates/indicators/panels/factors_panel.html
-msgid "Save the indicator first before adding factors."
-msgstr ""
-
 #: indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -4610,7 +4625,7 @@ msgid "Result"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -4775,6 +4790,10 @@ msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Relationships"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -5360,11 +5379,11 @@ msgid "Questions & Answers"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Background colour"
+msgid "Background color"
 msgstr ""
 
 #: pages/blocks.py
-msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgid "CSS color value, e.g. #FFFFFF or rgb(255, 255, 255)"
 msgstr ""
 
 #: pages/blocks.py
@@ -5388,7 +5407,7 @@ msgid "Background covers full block"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgid "Extend the background color to cover the content below the image, not just the image area"
 msgstr ""
 
 #: pages/blocks.py
@@ -6118,6 +6137,10 @@ msgid "Other responsible parties"
 msgstr ""
 
 #: reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr ""
+
+#: reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -6271,16 +6294,36 @@ msgstr ""
 msgid "Skip"
 msgstr ""
 
-#: templates/aplans/panels/choice_option_usage_panel.html
-msgid "This choice option is currently in use. Changing or deleting it will affect the following objects:"
+#: templates/aplans/panels/choice_option_archive_panel.html
+msgid "Archived"
+msgstr ""
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+msgid "This option is hidden from new selections but kept so existing references continue to resolve."
+msgstr ""
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+msgid "Unarchive"
+msgstr ""
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+msgid "Failed to unarchive option."
 msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-msgid "Changing (or deleting) this choice option will change (or delete) the choice in all these objects."
+msgid "Currently used by:"
 msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-msgid "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete."
+msgid "Changing this choice option will change the choice in all these objects."
+msgstr ""
+
+#: templates/aplans/panels/choice_option_usage_panel.html
+msgid "If you would like to keep the current value in reports even after changing this choice option, please mark the reports using this choice option as complete."
+msgstr ""
+
+#: templates/aplans/panels/choice_option_usage_panel.html
+msgid "This choice option is still in use. If you save after removing it, it will be archived instead of permanently deleted. Existing references will keep working, and the option will be hidden from new selections."
 msgstr ""
 
 #: templates/aplans/paths_sync_confirmation.html

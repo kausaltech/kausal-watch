@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-15 12:55+0300\n"
+"POT-Creation-Date: 2026-07-06 10:49+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -300,6 +300,10 @@ msgstr "Organisation förekommer flera gånger som ansvarig part"
 msgid "Person occurs multiple times as contact person"
 msgstr "Personen förekommer flera gånger som kontaktperson"
 
+#: actions/api.py actions/models/attributes.py
+msgid "This choice option is archived and cannot be selected as a new value."
+msgstr ""
+
 #: actions/api.py
 msgid "Identifier must be set"
 msgstr "Identifierare måste anges"
@@ -317,6 +321,14 @@ msgstr ""
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr ""
+
+#: actions/api.py actions/models/action.py
+msgid "Non-completed tasks cannot have a completion date"
+msgstr "Oavslutade uppgifter kan inte ha ett slutdatum"
+
+#: actions/api.py actions/models/action.py
+msgid "Completed tasks must have a completion date"
+msgstr "Slutförda uppgifter måste ha ett slutdatum"
 
 #: actions/attribute_type_admin.py
 #, python-format
@@ -369,6 +381,11 @@ msgstr "Fält för %s"
 
 #: actions/attribute_type_admin.py
 #, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr ""
+
+#: actions/attribute_type_admin.py
+#, python-format
 msgid "Fields (%(model)s)"
 msgstr "Fält (%(model)s)"
 
@@ -379,6 +396,11 @@ msgstr "Om formatet är \"Kategori\" måste en kategorityp anges"
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Om formatet är \"Numerisk\" måste en enhet anges"
+
+#: actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr ""
 
 #: actions/attribute_type_admin.py actions/category_admin.py
 #, fuzzy
@@ -478,7 +500,6 @@ msgid "Heading to show instead of the default"
 msgstr "Rubrik som ska visas istället för standardrubriken"
 
 #: actions/blocks/action_content_blocks.py
-#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Label"
 msgstr "Etikett"
 
@@ -1377,7 +1398,7 @@ msgstr "stat"
 msgid "details"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py reports/report_formatters.py
 msgid "due date"
 msgstr "förfallodatum"
 
@@ -1427,14 +1448,6 @@ msgstr "åtgärd uppgift"
 #: actions/models/action.py
 msgid "action tasks"
 msgstr "åtgärdsuppgifter"
-
-#: actions/models/action.py
-msgid "Non-completed tasks cannot have a completion date"
-msgstr "Oavslutade uppgifter kan inte ha ett slutdatum"
-
-#: actions/models/action.py
-msgid "Completed tasks must have a completion date"
-msgstr "Slutförda uppgifter måste ha ett slutdatum"
 
 #: actions/models/action.py
 msgid "action impact class"
@@ -1680,6 +1693,12 @@ msgstr "Detta värde är endast tillåtet för åtgärdsfält"
 #: actions/models/attributes.py
 msgid "The icon must be an SVG file."
 msgstr ""
+
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "Deactivate"
+msgid "active"
+msgstr "Avaktivera"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -2707,6 +2726,16 @@ msgstr ""
 
 #: actions/models/pledge.py
 #, fuzzy
+#| msgid "Has data"
+msgid "user token"
+msgstr "Har data"
+
+#: actions/models/pledge.py
+msgid "Opaque secret used as a bearer credential after the user signs up."
+msgstr ""
+
+#: actions/models/pledge.py
+#, fuzzy
 #| msgid "public"
 msgid "public user"
 msgstr "offentlig"
@@ -2753,6 +2782,10 @@ msgstr "Det finns redan en kategori med denna beteckning."
 msgid "Number of commitments"
 msgstr "Kundens namn"
 
+#: actions/pledge_admin.py pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2795,9 +2828,11 @@ msgstr "kommentar"
 msgid "User ID"
 msgstr "Användare"
 
-#: actions/pledge_admin.py pages/models.py
-msgid "Pledges"
-msgstr ""
+#: actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Pledge Commitments"
+msgstr "kommentar"
 
 #: actions/pledge_admin.py
 #, fuzzy
@@ -3391,7 +3426,6 @@ msgid "Edit this indicator"
 msgstr "Redigera denna indikator"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: indicators/templates/indicators/panels/factors_panel.html
 msgid "Edit data"
 msgstr "Redigera data"
 
@@ -4785,6 +4819,12 @@ msgid "operational"
 msgstr "operativ"
 
 #: indicators/models/indicator.py
+#, fuzzy
+#| msgid "Unspecified"
+msgid "unspecified"
+msgstr "Ospecificerad"
+
+#: indicators/models/indicator.py
 msgid "minimum value"
 msgstr "minimivärde"
 
@@ -5112,25 +5152,6 @@ msgstr "indikatormål"
 msgid "indicator goals"
 msgstr "indikatormål"
 
-#: indicators/templates/indicators/panels/factors_panel.html
-#: indicators/wagtail_admin.py
-msgid "Unit"
-msgstr "Enhet"
-
-#: indicators/templates/indicators/panels/factors_panel.html
-#, fuzzy
-#| msgid "Remove row"
-msgid "Remove"
-msgstr "Ta bort raden"
-
-#: indicators/templates/indicators/panels/factors_panel.html
-msgid "Add factor"
-msgstr ""
-
-#: indicators/templates/indicators/panels/factors_panel.html
-msgid "Save the indicator first before adding factors."
-msgstr ""
-
 #: indicators/templates/site_summary/indicators.html
 #, fuzzy, python-format
 msgid ""
@@ -5155,7 +5176,7 @@ msgid "Result"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -5340,6 +5361,10 @@ msgstr ""
 #| msgid "Related actions"
 msgid "Relationships"
 msgstr "Relaterade åtgärder"
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Enhet"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in all indicators linked to this one"
@@ -5988,11 +6013,11 @@ msgstr "Frågor"
 #: pages/blocks.py
 #, fuzzy
 #| msgid "Big image"
-msgid "Background colour"
+msgid "Background color"
 msgstr "Stor bild"
 
 #: pages/blocks.py
-msgid "CSS colour value, e.g. #FFFFFF or rgb(255, 255, 255)"
+msgid "CSS color value, e.g. #FFFFFF or rgb(255, 255, 255)"
 msgstr ""
 
 #: pages/blocks.py
@@ -6018,7 +6043,7 @@ msgid "Background covers full block"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Extend the background colour to cover the content below the image, not just the image area"
+msgid "Extend the background color to cover the content below the image, not just the image area"
 msgstr ""
 
 #: pages/blocks.py
@@ -6828,6 +6853,12 @@ msgstr "Andra ansvariga"
 
 #: reports/spreadsheets/action_print_layout.py
 #, fuzzy
+#| msgid "Page link"
+msgid "Page"
+msgstr "Sidolänk"
+
+#: reports/spreadsheets/action_print_layout.py
+#, fuzzy
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6990,16 +7021,40 @@ msgstr "Ändringar sparades"
 msgid "Skip"
 msgstr ""
 
+#: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
+msgid "Archived"
+msgstr "senast hämtad kl"
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+msgid "This option is hidden from new selections but kept so existing references continue to resolve."
+msgstr ""
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
+msgid "Unarchive"
+msgstr "senast hämtad kl"
+
+#: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
+#| msgid "attribute choice option"
+msgid "Failed to unarchive option."
+msgstr "attribut val alternativ"
+
 #: templates/aplans/panels/choice_option_usage_panel.html
-msgid "This choice option is currently in use. Changing or deleting it will affect the following objects:"
+msgid "Currently used by:"
 msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-msgid "Changing (or deleting) this choice option will change (or delete) the choice in all these objects."
+msgid "Changing this choice option will change the choice in all these objects."
 msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-msgid "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete."
+msgid "If you would like to keep the current value in reports even after changing this choice option, please mark the reports using this choice option as complete."
+msgstr ""
+
+#: templates/aplans/panels/choice_option_usage_panel.html
+msgid "This choice option is still in use. If you save after removing it, it will be archived instead of permanently deleted. Existing references will keep working, and the option will be hidden from new selections."
 msgstr ""
 
 #: templates/aplans/paths_sync_confirmation.html
@@ -7087,6 +7142,11 @@ msgid "No permission to remove the user belonging to plans you are not managing.
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
 
 #, fuzzy
+#~| msgid "Remove row"
+#~ msgid "Remove"
+#~ msgstr "Ta bort raden"
+
+#, fuzzy
 #~ msgid "pledge users"
 #~ msgstr "uppdaterad kl"
 
@@ -7125,11 +7185,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "layout aside"
 #~ msgstr "layout åt sidan"
-
-#, fuzzy
-#~| msgid "Page link"
-#~ msgid "Page"
-#~ msgstr "Sidolänk"
 
 #~ msgid "This page has unsaved changes."
 #~ msgstr "Denna sida har ändringar som inte sparats."
