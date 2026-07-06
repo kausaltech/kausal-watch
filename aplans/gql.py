@@ -40,11 +40,15 @@ def get_plan_or_error(info: Info, plan_id: str) -> Plan:
 
 
 @overload
-def mutation(*, extensions: list[FieldExtension] | None = None, **kwargs: Unpack[MutationArgs]) -> DjangoMutationBase: ...
+def mutation[T: ResolverFunc](
+    *, extensions: list[FieldExtension] | None = None, **kwargs: Unpack[MutationArgs]
+) -> Callable[[T], DjangoMutationBase]: ...
 
 
 @overload
-def mutation(resolver: ResolverFunc, **kwargs: Unpack[MutationArgs]) -> Callable[[ResolverFunc], DjangoMutationBase]: ...
+def mutation(
+    resolver: ResolverFunc, *, extensions: list[FieldExtension] | None = None, **kwargs: Unpack[MutationArgs]
+) -> DjangoMutationBase: ...
 
 
 def mutation(
