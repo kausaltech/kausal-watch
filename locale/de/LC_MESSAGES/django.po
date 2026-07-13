@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-06 10:49+0200\n"
-"PO-Revision-Date: 2026-03-02 13:21+0000\n"
+"PO-Revision-Date: 2026-07-13 15:56+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -294,6 +295,8 @@ msgstr "Person tritt mehrfach als Ansprechperson auf"
 #: actions/api.py actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
 msgstr ""
+"Diese Wahlmöglichkeit ist archiviert und kann nicht als neuer Wert "
+"ausgewählt werden."
 
 #: actions/api.py
 msgid "Identifier must be set"
@@ -373,6 +376,11 @@ msgstr "Feld für %s"
 #, python-format
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
 msgstr ""
+"Die Wahlmöglichkeit „%(name)s“ wird weiterhin verwendet, daher wurde sie "
+"archiviert statt gelöscht. Bestehende Verweise funktionieren weiterhin; die "
+"Wahlmöglichkeit wird bei neuen Auswahlen ausgeblendet. Verwenden Sie die "
+"Schaltfläche „Aus dem Archiv holen“ bei der Wahlmöglichkeit, um sie "
+"wiederherzustellen."
 
 #: actions/attribute_type_admin.py
 #, python-format
@@ -390,7 +398,7 @@ msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werde
 #: actions/attribute_type_admin.py
 #, python-format
 msgid "Choice option '%s' has been restored."
-msgstr ""
+msgstr "Die Wahlmöglichkeit „%s“ wurde wiederhergestellt."
 
 #: actions/attribute_type_admin.py actions/category_admin.py
 msgid "Order"
@@ -733,16 +741,14 @@ msgid "Status"
 msgstr "Status"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "What heading should be used in the public UI for the dataset?"
 msgid "What heading should be used in the public UI for the Paths node summary?"
-msgstr "Welche Überschrift soll in der öffentlichen Benutzeroberfläche für den Datensatz verwendet werden?"
+msgstr ""
+"Welche Überschrift soll in der öffentlichen Benutzeroberfläche für die "
+"Zusammenfassung des Paths-Knotens verwendet werden?"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "Value summary"
 msgid "Paths node summary"
-msgstr "Zusammenfassung der Werte"
+msgstr "Zusammenfassung des Paths-Knotens"
 
 #: actions/blocks/choosers.py
 msgid "Dataset Schema"
@@ -855,10 +861,8 @@ msgid "There is already a category with this identifier."
 msgstr "Es gibt bereits eine Kategorie mit dieser Kennung."
 
 #: actions/category_admin.py
-#, fuzzy
-#| msgid "There is already a category with this identifier."
 msgid "There is already a category type with this identifier."
-msgstr "Es gibt bereits eine Kategorie mit dieser Kennung."
+msgstr "Es gibt bereits einen Kategorietyp mit dieser Kennung."
 
 #: actions/category_admin.py
 #, python-format
@@ -1177,7 +1181,7 @@ msgstr "Andere Maßnahme ist mit dieser zusammengeführt"
 
 #: actions/models/action.py
 msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr ""
+msgstr "Leitabsatz ist für Maßnahmen in diesem Plan nicht zulässig"
 
 #: actions/models/action.py
 msgid "Has contact persons"
@@ -1324,7 +1328,7 @@ msgstr "Status"
 
 #: actions/models/action.py
 msgid "details"
-msgstr ""
+msgstr "Details"
 
 #: actions/models/action.py reports/report_formatters.py
 msgid "due date"
@@ -1594,10 +1598,8 @@ msgid "The icon must be an SVG file."
 msgstr "Das Symbol muss eine SVG-Datei sein."
 
 #: actions/models/attributes.py
-#, fuzzy
-#| msgid "Inactive"
 msgid "active"
-msgstr "Inaktiv"
+msgstr "aktiv"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1929,16 +1931,12 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Setzen, um den Vergleich von Indikatoren zwischen Organisationen zu ermöglichen"
 
 #: actions/models/features.py
-#, fuzzy
-#| msgid "Enable indicator comparison"
 msgid "Enable indicator factors"
-msgstr "Indikatorenvergleich ermöglichen"
+msgstr "Indikatorfaktoren aktivieren"
 
 #: actions/models/features.py
-#, fuzzy
-#| msgid "contact for indicators"
 msgid "Enable computed factor values for indicators."
-msgstr "Ansprechperson für Indikatoren"
+msgstr "Berechnete Faktorwerte für Indikatoren aktivieren."
 
 #: actions/models/features.py
 msgid "Indicator order"
@@ -2003,10 +2001,13 @@ msgstr "Aktiviere Funktionen für das Bürgerengagement, wie z. B. Mitmach-Aktio
 #: actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
 msgstr ""
+"PDF-Export von Maßnahmen in der öffentlichen Benutzeroberfläche ermöglichen"
 
 #: actions/models/features.py
 msgid "Enable users of the public UI to export actions to PDF."
 msgstr ""
+"Nutzern der öffentlichen Benutzeroberfläche die Möglichkeit geben, Maßnahmen "
+"als PDF zu exportieren."
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -2049,10 +2050,12 @@ msgid "The official plan name in full form"
 msgstr "Der offizielle Name des Plans in vollständiger Form"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
 msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
-msgstr "Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: https://[kennung].watch-test.kausal.tech. Benutzen Sie Kleinbuchstaben und Bindestriche."
+msgstr ""
+"Eine eindeutige Kennung für den Plan, die intern zur Unterscheidung zwischen "
+"verschiedenen Plänen verwendet wird. Diese wird Teil der Website-URL, die "
+"beim Onboarding verwendet wird. Verwenden Sie Kleinbuchstaben und "
+"Bindestriche."
 
 #: actions/models/plan.py indicators/models/metadata.py
 msgid "short name"
@@ -2518,26 +2521,22 @@ msgid "Freeform key-value data about the user (e.g., zip_code)"
 msgstr "Freiform-Schlüsselwertdaten über den Benutzer (z. B. zip_code)"
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "user data"
 msgid "user token"
-msgstr "Benutzerdaten"
+msgstr "Benutzer-Token"
 
 #: actions/models/pledge.py
 msgid "Opaque secret used as a bearer credential after the user signs up."
 msgstr ""
+"Opakes Secret, das nach der Registrierung des Benutzers als Bearer-"
+"Anmeldeinformation verwendet wird."
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "public"
 msgid "public user"
-msgstr "öffentlich"
+msgstr "öffentlicher Nutzer"
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "public site viewers"
 msgid "public users"
-msgstr "Betrachter der öffentlichen Website"
+msgstr "öffentliche Nutzer"
 
 #: actions/models/pledge.py
 msgid "pledge commitment"
@@ -2568,54 +2567,40 @@ msgid "Pledges"
 msgstr "Mitmach-Aktionen"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "report"
 msgid "Export"
-msgstr "Bericht"
+msgstr "Exportieren"
 
 #: actions/pledge_admin.py
 msgid "Export as Excel"
-msgstr ""
+msgstr "Als Excel exportieren"
 
 #: actions/pledge_admin.py
 msgid "Export pledges as CSV"
-msgstr ""
+msgstr "Mitmach-Aktionen als CSV exportieren"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "pledge commitments"
 msgid "Export commitments as CSV"
-msgstr "Teilnahmen"
+msgstr "Teilnahmen als CSV-Datei exportieren"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "Pledge"
 msgid "Pledge ID"
-msgstr "Mitmach-Aktion"
+msgstr "Mitmach-Aktions-ID"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "Pledge"
 msgid "Pledge name"
-msgstr "Mitmach-Aktion"
+msgstr "Name der Mitmach-Aktion"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "Commitments"
 msgid "Commitment date"
-msgstr "Teilnahmen"
+msgstr "Teilnahmedatum"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "Users"
 msgid "User ID"
-msgstr "Benutzer"
+msgstr "Benutzer-ID"
 
 #: actions/pledge_admin.py
-#, fuzzy
-#| msgid "pledge commitments"
 msgid "Pledge Commitments"
-msgstr "Teilnahmen"
+msgstr "Teilnahme-Erklärungen"
 
 #: actions/pledge_admin.py
 msgid "Commitments"
@@ -2714,16 +2699,12 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr "Das „%(model_name)s“-Objekt %(title)s wurde in „%(workflow)s“ mit einer Anmerkung genehmigt."
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "organization"
 msgid "New organization name"
-msgstr "Organisation"
+msgstr "Name der neuen Organisation"
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Creating organizations without a parent not allowed."
 msgid "Create a new organization with this name"
-msgstr "Erstellen von Organisationen ohne Mutterorganisation ist nicht erlaubt."
+msgstr "Erstelle eine neue Organisation mit diesem Namen"
 
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
@@ -2744,15 +2725,22 @@ msgstr "Eine zusätzliche Sprache des Plans darf nicht gleich sein wie seine Hau
 #: actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name for a new one."
 msgstr ""
+"Wählen Sie eine bestehende Organisation aus oder geben Sie einen Namen für "
+"eine neue ein."
 
 #: actions/wagtail_admin.py
 msgid "Cannot both select an existing organization and create a new one."
 msgstr ""
+"Es ist nicht möglich, gleichzeitig eine bestehende Organisation auszuwählen "
+"und eine neue anzulegen."
 
 #: actions/wagtail_admin.py
 #, python-format
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
 msgstr ""
+"Die Hauptsprache des Plans (%(plan_lang)s) weicht von der Hauptsprache der "
+"Organisation (%(org_lang)s) ab. Bitte stellen Sie sicher, dass dies "
+"beabsichtigt ist."
 
 #: actions/wagtail_admin.py admin_site/wagtail.py
 msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
@@ -2767,10 +2755,8 @@ msgid "Only set if explicitly required by the customer. Use a color key from the
 msgstr "Nur setzen, wenn vom Kunden ausdrücklich gewünscht. Verwenden Sie einen Farbschlüssel aus den graphColors des UI-Themas, zum Beispiel red070 oder grey030."
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Choose an organization"
 msgid "Choose an existing organization"
-msgstr "Wähle eine Organisation"
+msgstr "Wählen Sie eine bestehende Organisation aus"
 
 #: actions/wagtail_admin.py
 msgid "Main organization"
@@ -2779,12 +2765,12 @@ msgstr "Hauptorganisation"
 #: actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name to create a new one."
 msgstr ""
+"Wählen Sie eine bestehende Organisation aus oder geben Sie einen Namen ein, "
+"um eine neue anzulegen."
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Clients"
 msgid "Client"
-msgstr "Kunden"
+msgstr "Kunde"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -2829,6 +2815,8 @@ msgstr "Plan-Features, die nur Superuser ändern dürfen"
 #: actions/wagtail_admin.py
 msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
 msgstr ""
+"Für einen Plan, für den keine Basisvorlage für Benachrichtigungen vorhanden "
+"ist, können keine Benachrichtigungen aktiviert werden."
 
 #: actions/wagtail_admin.py
 msgid "Plan notification settings"
@@ -2987,6 +2975,7 @@ msgstr "Wie lautet der Teil nach @ in der E-Mail-Adresse der Mitarbeiter der Org
 #, python-format
 msgid "The email domain \"%(domain)s\" is already in use by another client."
 msgstr ""
+"Die E-Mail-Domain „%(domain)s“ wird bereits von einem anderen Kunden genutzt."
 
 #: admin_site/chooser.py
 msgid "Choose a client"
@@ -3339,7 +3328,7 @@ msgstr "Lettisch"
 
 #: aplans/settings.py
 msgid "Hmong (White)"
-msgstr ""
+msgstr "Hmong (Weiß)"
 
 #: aplans/settings.py
 msgid "Portuguese"
@@ -3351,7 +3340,7 @@ msgstr "Portugiesisch (Brasilien)"
 
 #: aplans/settings.py
 msgid "Somali"
-msgstr ""
+msgstr "Somali"
 
 #: aplans/settings.py
 msgid "Swedish"
@@ -3549,11 +3538,11 @@ msgstr "Indikator"
 
 #: content/models.py
 msgid "Measure"
-msgstr ""
+msgstr "Messung"
 
 #: content/models.py
 msgid "Measures"
-msgstr ""
+msgstr "Messungen"
 
 #: content/models.py
 msgid "site title"
@@ -3612,10 +3601,8 @@ msgid "Term to use for 'organization'"
 msgstr "Für 'Organisation' zu verwendender Begriff"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Term to use for 'action'"
 msgid "Term to use for 'indicator'"
-msgstr "Für 'Maßnahme' zu verwendender Begriff"
+msgstr "Für 'Indikator' zu verwendender Begriff"
 
 #: content/models.py
 msgid "Sitewide announcement"
@@ -4006,10 +3993,8 @@ msgid "Indicator key figures"
 msgstr "Indikator-Kenndaten"
 
 #: indicators/blocks/__init__.py
-#, fuzzy
-#| msgid "Header image"
 msgid "Header"
-msgstr "Kopfzeilenbild"
+msgstr "Kopfzeile"
 
 #: indicators/blocks/__init__.py pages/models.py
 msgid "Paragraph"
@@ -4032,10 +4017,8 @@ msgid "Causality navigation"
 msgstr "Kausalitätsnavigation"
 
 #: indicators/blocks/layout.py
-#, fuzzy
-#| msgid "Value summary"
 msgid "Value summary (by factors)"
-msgstr "Zusammenfassung der Werte"
+msgstr "Zusammenfassung der Werte (nach Faktoren)"
 
 #: indicators/blocks/layout.py
 msgid "Indicator visualization"
@@ -4075,11 +4058,13 @@ msgstr "Standardwert für das Jahr, das für diese Spalte ausgewählt werden sol
 
 #: indicators/blocks/layout.py
 msgid "Highlight if goal is met"
-msgstr ""
+msgstr "Hervorheben, wenn das Ziel erreicht ist"
 
 #: indicators/blocks/layout.py
 msgid "Show a tick next to the latest value when the indicator has reached its goal."
 msgstr ""
+"Zeige ein Häkchen neben dem aktuellen Wert an, sobald der Indikator sein "
+"Ziel erreicht hat."
 
 #: indicators/blocks/layout.py
 msgid "Show reference value"
@@ -4115,11 +4100,11 @@ msgstr "Dies verdeutlicht die Differenz zwischen dem Zielwert und dem aktuellen 
 
 #: indicators/blocks/layout.py
 msgid "Show calculated values by factors"
-msgstr ""
+msgstr "Berechnete Werte nach Faktoren anzeigen"
 
 #: indicators/blocks/layout.py
 msgid "Include factor-computed values in the visualization."
-msgstr ""
+msgstr "Füge faktorberechnete Werte in die Visualisierung ein."
 
 #: indicators/chooser.py
 msgid "Choose an indicator"
@@ -4290,28 +4275,20 @@ msgid "metric"
 msgstr "Messgröße"
 
 #: indicators/models/goal_data_point.py
-#, fuzzy
-#| msgid "indicator goal"
 msgid "indicator goal data point"
-msgstr "Indikatorziel"
+msgstr "Indikatorziel-Datenpunkt"
 
 #: indicators/models/goal_data_point.py
-#, fuzzy
-#| msgid "indicator goals"
 msgid "indicator goal data points"
-msgstr "Indikatorziele"
+msgstr "Indikatorziel-Datenpunkte"
 
 #: indicators/models/goal_data_point.py
-#, fuzzy
-#| msgid "data point dimension category"
 msgid "indicator goal dimension category"
-msgstr "Datenpunkt-Dimensionskategorie"
+msgstr "Indikatorziel-Dimensionskategorie"
 
 #: indicators/models/goal_data_point.py
-#, fuzzy
-#| msgid "data point dimension categories"
 msgid "indicator goal dimension categories"
-msgstr "Datenpunkt-Dimensionskategorien"
+msgstr "Indikatorziel-Dimensionskategorien"
 
 #: indicators/models/import_log.py
 msgid "Kausal Paths"
@@ -4327,19 +4304,19 @@ msgstr "Indikatorwerte-Importprotokolle"
 
 #: indicators/models/indicator.py
 msgid "Bar chart"
-msgstr ""
+msgstr "Balkendiagramm"
 
 #: indicators/models/indicator.py
 msgid "Line chart"
-msgstr ""
+msgstr "Liniendiagramm"
 
 #: indicators/models/indicator.py
 msgid "Area chart"
-msgstr ""
+msgstr "Flächendiagramm"
 
 #: indicators/models/indicator.py
 msgid "Pie chart"
-msgstr ""
+msgstr "Kreisdiagramm"
 
 #: indicators/models/indicator.py reports/spreadsheets/excel_report.py
 msgid "Summary"
@@ -4378,10 +4355,8 @@ msgid "operational"
 msgstr "operativ"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Unspecified"
 msgid "unspecified"
-msgstr "Unspezifiziert"
+msgstr "unspezifiziert"
 
 #: indicators/models/indicator.py
 msgid "minimum value"
@@ -4426,6 +4401,8 @@ msgstr "Datensatzschema"
 #: indicators/models/indicator.py
 msgid "If set, this indicator uses the dataset system instead of legacy indicator values"
 msgstr ""
+"Wenn diese Option aktiviert ist, verwendet dieser Indikator das "
+"Datensatzsystem anstelle der bisherigen Indikatorwerte"
 
 #: indicators/models/indicator.py
 msgid "reference"
@@ -4488,48 +4465,38 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr "Datenkategorien können summiert werden, um einen Gesamtwert für den Indikator zu bilden (standardmäßig als gestapeltes Diagramm dargestellt)"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Indicator visualization"
 msgid "default visualization type"
-msgstr "Indikatorvisualisierung"
+msgstr "Standard-Visualisierungstyp"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Default color for this dimension category in charts"
 msgid "Default visualization type for this indicator on dashboards"
-msgstr "Standardfarbe für diese Dimensionskategorie in Diagrammen"
+msgstr "Standard-Visualisierungstyp für diesen Indikator auf Dashboards"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Category type"
 msgid "bar type"
-msgstr "Kategorietyp"
+msgstr "Balkenart"
 
 #: indicators/models/indicator.py
 msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
 msgstr ""
+"Art des Balkendiagramms (nur relevant, wenn der Visualisierungstyp „"
+"Balkendiagramm“ ist)"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "plan dimension"
 msgid "grouping dimension"
-msgstr "Plan-Dimension"
+msgstr "Gruppierungsdimension"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Choose the indicator dimension that will be used for categories in the visualization"
 msgid "Dimension used for grouping in the default visualization"
-msgstr "Wähle die Indikator-Dimension, die für die Kategorien in der Visualisierung verwendet werden soll"
+msgstr "In der Standardvisualisierung für die Gruppierung verwendete Dimension"
 
 #: indicators/models/indicator.py
-#, fuzzy
-#| msgid "Default year"
 msgid "pie chart year"
-msgstr "Standardjahr"
+msgstr "Jahr des Kreisdiagramms"
 
 #: indicators/models/indicator.py
 msgid "Year to display in pie chart visualization"
-msgstr ""
+msgstr "Anzuzeigendes Jahr in der Kreisdiagramm-Visualisierung"
 
 #: indicators/models/indicator.py
 msgid "non-quantified goal"
@@ -4582,6 +4549,8 @@ msgstr "Es gibt bereits einen Indikatorwert für das Jahr vor der Frist"
 #: indicators/models/indicator.py
 msgid "The grouping dimension must be one of the dimensions associated with this indicator."
 msgstr ""
+"Die Gruppierungsdimension muss eine der mit diesem Indikator verknüpften "
+"Dimensionen sein."
 
 #: indicators/models/indicator.py
 #, python-format
@@ -4707,11 +4676,13 @@ msgstr[1] ""
 
 #: indicators/wagtail_admin.py
 msgid "Result"
-msgstr ""
+msgstr "Ergebnis"
 
 #: indicators/wagtail_admin.py
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
+"Bezeichnung des in Diagrammen dargestellten berechneten Werts (Indikatorwert "
+"× Faktor), z. B. „Fahrzeugemissionen“"
 
 #: indicators/wagtail_admin.py
 msgid "Show indicators"
@@ -4772,18 +4743,18 @@ msgstr "Dimensionen müssen gleich wie im Gemeinsamen Indikator sein"
 
 #: indicators/wagtail_admin.py
 msgid "Please correct the errors in the factors section."
-msgstr ""
+msgstr "Bitte korrigieren Sie die Fehler im Abschnitt „Faktoren“."
 
 #: indicators/wagtail_admin.py
 #, python-format
 msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
 msgstr ""
+"Der Faktor „%(label)s“ enthält Daten und kann nicht gelöscht werden. Löschen "
+"Sie zunächst die zugehörigen Datenpunkte im Datensatz-Editor."
 
 #: indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "Indicator for actions"
 msgid "Indicator factors"
-msgstr "Indikator für Maßnahmen"
+msgstr "Indikatorfaktoren"
 
 #: indicators/wagtail_admin.py
 #, python-format
@@ -4831,14 +4802,12 @@ msgid "Advanced settings"
 msgstr "Fortgeschrittene Einstellungen"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "Edit data"
 msgid "Edit factor data"
-msgstr "Daten bearbeiten"
+msgstr "Faktordaten bearbeiten"
 
 #: indicators/wagtail_admin.py
 msgid "Add factor data"
-msgstr ""
+msgstr "Faktordaten hinzufügen"
 
 #: indicators/wagtail_admin.py
 msgid "Indicator for actions"
@@ -4859,23 +4828,30 @@ msgstr "Andere Indikatoren"
 #: indicators/wagtail_admin.py
 msgid "Factors cannot be added to indicators that have dimensions in their data."
 msgstr ""
+"Indikatoren, deren Daten Dimensionen enthalten, können keine Faktoren "
+"hinzugefügt werden."
 
 #: indicators/wagtail_admin.py
 #, python-brace-format
 msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
 msgstr ""
+"Faktoren werden mit den Werten dieses Indikators multipliziert, um einen "
+"abgeleiteten Wert zu berechnen, beispielsweise Gesamtemissionen oder Kosten. "
+"Fügen Sie Faktorwerte im {link_start}Indikatordateneditor{link_end} hinzu."
 
 #: indicators/wagtail_admin.py
 msgid "factor"
-msgstr ""
+msgstr "Faktor"
 
 #: indicators/wagtail_admin.py
 msgid "Save the indicator after adding a factor to enable the data editor."
 msgstr ""
+"Speichern Sie den Indikator nach dem Hinzufügen eines Faktors, um den "
+"Dateneditor zu aktivieren."
 
 #: indicators/wagtail_admin.py
 msgid "Factors"
-msgstr ""
+msgstr "Faktoren"
 
 #: indicators/wagtail_admin.py
 msgid "Relationships"
@@ -5284,11 +5260,11 @@ msgstr "Benachrichtigungseinstellungen"
 
 #: orgs/chooser.py
 msgid "Search term"
-msgstr ""
+msgstr "Suchbegriff"
 
 #: orgs/chooser.py
 msgid "Search"
-msgstr ""
+msgstr "Suche"
 
 #: orgs/chooser.py
 msgid "Choose an organization"
@@ -5447,11 +5423,11 @@ msgstr "Titel"
 
 #: pages/blocks.py
 msgid "Helps screen readers describe this embedded content"
-msgstr ""
+msgstr "Hilft Screenreadern, diesen eingebetteten Inhalt zu beschreiben"
 
 #: pages/blocks.py
 msgid "Helps screen readers understand what this embed shows"
-msgstr ""
+msgstr "Hilft Screenreadern zu verstehen, was diese Einbettung anzeigt"
 
 #: pages/blocks.py
 msgid "small"
@@ -5474,58 +5450,57 @@ msgid "Questions & Answers"
 msgstr "Fragen & Antworten"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "Background image"
 msgid "Background color"
-msgstr "Hintergrundbild"
+msgstr "Hintergrundfarbe"
 
 #: pages/blocks.py
 msgid "CSS color value, e.g. #FFFFFF or rgb(255, 255, 255)"
-msgstr ""
+msgstr "CSS-Farbwert, z. B. #FFFFFF oder rgb(255, 255, 255)"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "image cropping"
 msgid "Fit image without clipping"
-msgstr "Bildzuschnitt"
+msgstr "Bild ohne Beschneidung einpassen"
 
 #: pages/blocks.py
 msgid "Show the image at its exact scaled dimensions; it will never be cropped"
 msgstr ""
+"Das Bild wird in seiner exakten skalierten Größe angezeigt; es wird niemals "
+"beschnitten"
 
 #: pages/blocks.py
 msgid "Show image accent"
-msgstr ""
+msgstr "Bildakzent anzeigen"
 
 #: pages/blocks.py
 msgid "Display a brand color accent bar below the image"
 msgstr ""
+"Zeige unterhalb des Bildes einen farbigen Akzentbalken in der Markenfarbe an"
 
 #: pages/blocks.py
 msgid "Background covers full block"
-msgstr ""
+msgstr "Hintergrund erstreckt sich über den gesamten Block"
 
 #: pages/blocks.py
 msgid "Extend the background color to cover the content below the image, not just the image area"
 msgstr ""
+"Strecke die Hintergrundfarbe über den Inhalt unterhalb des Bildes, nicht nur "
+"über den Bildbereich"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "Indicator settings"
 msgid "Additional settings"
-msgstr "Indikator-Einstellungen"
+msgstr "Zusätzliche Einstellungen"
 
 #: pages/blocks.py
 msgid "Full-width: content over image"
-msgstr ""
+msgstr "Volle Breite: Inhalt über Bild"
 
 #: pages/blocks.py
 msgid "Large image: image above, content below"
-msgstr ""
+msgstr "Großes Bild: Bild oben, Inhalt darunter"
 
 #: pages/blocks.py
 msgid "Side-by-side: image left, content right"
-msgstr ""
+msgstr "Nebeneinander: Bild links, Inhalt rechts"
 
 #: pages/blocks.py
 msgid "Front page hero block"
@@ -6396,46 +6371,47 @@ msgid "Skip"
 msgstr "Überspringen"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
-#, fuzzy
-#| msgid "archived at"
 msgid "Archived"
-msgstr "archiviert am"
+msgstr "Archiviert"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
 msgid "This option is hidden from new selections but kept so existing references continue to resolve."
 msgstr ""
+"Diese Option wird bei neuen Auswahlen ausgeblendet, bleibt jedoch erhalten, "
+"damit bestehende Verweise weiterhin aufgelöst werden können."
 
 #: templates/aplans/panels/choice_option_archive_panel.html
-#, fuzzy
-#| msgid "archived at"
 msgid "Unarchive"
-msgstr "archiviert am"
+msgstr "Aus dem Archiv holen"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
-#, fuzzy
-#| msgid "attribute choice option"
 msgid "Failed to unarchive option."
-msgstr "Attribut-Wahlmöglichkeit"
+msgstr "Wahlmöglichkeit konnte nicht aus dem Archiv geholt werden."
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "Currently used by:"
-msgstr ""
+msgstr "Derzeit verwendet von:"
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-#, fuzzy
-#| msgid "Changing (or deleting) this choice option will change (or delete) the choice in all these objects."
 msgid "Changing this choice option will change the choice in all these objects."
-msgstr "Durch Ändern (oder Löschen) dieser Wahlmöglichkeit wird die Auswahl in allen diesen Objekten geändert (oder gelöscht)."
+msgstr ""
+"Wenn Sie diese Wahlmöglichkeit ändern, wird die Auswahl in allen diesen "
+"Objekten entsprechend angepasst."
 
 #: templates/aplans/panels/choice_option_usage_panel.html
-#, fuzzy
-#| msgid "If you would like to keep the current value in reports even after changing or deleting this choice option, please mark the reports using this choice option as complete."
 msgid "If you would like to keep the current value in reports even after changing this choice option, please mark the reports using this choice option as complete."
-msgstr "Wenn Sie den aktuellen Wert in Berichten auch nach dem Ändern oder Löschen dieser Wahlmöglichkeit beibehalten möchten, markieren Sie bitte die Berichte, die diese Wahlmöglichkeit verwenden, als abgeschlossen."
+msgstr ""
+"Wenn Sie den aktuellen Wert in den Berichten auch nach einer Änderung dieser "
+"Wahlmöglichkeit beibehalten möchten, markieren Sie bitte die Berichte, die "
+"diese Wahlmöglichkeit enthalten, als abgeschlossen."
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "This choice option is still in use. If you save after removing it, it will be archived instead of permanently deleted. Existing references will keep working, and the option will be hidden from new selections."
 msgstr ""
+"Diese Wahlmöglichkeit wird weiterhin verwendet. Wenn Sie sie nach dem "
+"Entfernen speichern, wird sie archiviert und nicht endgültig gelöscht. "
+"Bestehende Verweise funktionieren weiterhin, und die Wahlmöglichkeit wird "
+"bei neuen Auswahlen ausgeblendet."
 
 #: templates/aplans/paths_sync_confirmation.html
 msgid "Please verify the correct node is connected to the indicator."
