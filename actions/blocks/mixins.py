@@ -105,10 +105,8 @@ class ActionListPageBlockFormMixin(_FormBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk is not None:
-            from pages.models import ActionListPage
-
-            action_list_page = self.plan.root_page.get_descendants().type(ActionListPage).get().specific
-            assert isinstance(action_list_page, ActionListPage)
+            action_list_page = self.plan.get_action_list_page(only_visible=False)
+            assert action_list_page is not None
             for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
                 if action_list_page.contains_model_instance_block(self.instance, field_name):
                     self.fields['action_list_filter_section'].initial = field_name
@@ -119,11 +117,9 @@ class ActionListPageBlockFormMixin(_FormBase):
                     break
 
     def save(self, commit=True):
-        from pages.models import ActionListPage
-
         instance = super().save(commit)
-        action_list_page = self.plan.root_page.get_descendants().type(ActionListPage).get().specific
-        assert isinstance(action_list_page, ActionListPage)
+        action_list_page = self.plan.get_action_list_page(only_visible=False)
+        assert action_list_page is not None
         action_list_filter_section = self.cleaned_data.get('action_list_filter_section')
         for field_name in (f for f, __ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
             if action_list_filter_section == field_name:

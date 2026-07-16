@@ -773,3 +773,33 @@ class TestPlanCountryRequired:
     def test_can_save_plan_with_valid_country(self):
         plan = PlanFactory.create(country='FI')
         assert plan.country == 'FI'
+
+
+@pytest.mark.django_db
+class TestGetActionListPage:
+    def _direct_child_action_list_page(self, plan):
+        from pages.models import ActionListPage
+
+        return plan.root_page.get_children().type(ActionListPage).get().specific
+
+    def test_returns_none_without_site(self, plan):
+        assert plan.site_id is None
+        assert plan.get_action_list_page() is None
+
+    def test_returns_live_public_page(self, plan_with_pages):
+        expected = self._direct_child_action_list_page(plan_with_pages)
+        assert plan_with_pages.get_action_list_page().pk == expected.pk
+
+    def test_finds_nested_page(self, plan_with_pages):
+        action_list_page = self._direct_child_action_list_page(plan_with_pages)
+        sibling = plan_with_pages.root_page.get_children().exclude(pk=action_list_page.pk).first()
+        action_list_page.move(sibling, pos='last-child')
+        assert plan_with_pages.get_action_list_page().pk == action_list_page.pk
+
+    def test_only_visible_flag_controls_unpublished_pages(self, plan_with_pages):
+        action_list_page = self._direct_child_action_list_page(plan_with_pages)
+        action_list_page.unpublish()
+        # Hidden from the default (visible-only) lookup...
+        assert plan_with_pages.get_action_list_page() is None
+        # ...but reachable for admin use.
+        assert plan_with_pages.get_action_list_page(only_visible=False).pk == action_list_page.pk

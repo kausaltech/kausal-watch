@@ -210,8 +210,6 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
 def get_action_list_page_node():
     from grapple.registry import registry
 
-    from pages.models import ActionListPage
-
     return registry.pages[ActionListPage]
 
 
@@ -509,11 +507,7 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_action_list_page(root: Plan, info: GQLInfo):
-        cache = info.context.cache.for_plan(root)
-        for page in cache.visible_pages:
-            if type(page) is ActionListPage:
-                return page
-        return None
+        return info.context.cache.for_plan(root).action_list_page
 
     @staticmethod
     def resolve_indicator_list_page(root: Plan, info: GQLInfo) -> IndicatorListPage | None:

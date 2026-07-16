@@ -83,7 +83,7 @@ if TYPE_CHECKING:
     from indicators.models import IndicatorDimension, IndicatorLevelQuerySet
     from notifications.models import BaseTemplate, NotificationSettings
     from orgs.models import OrganizationPlanAdmin
-    from pages.models import PlanLink
+    from pages.models import ActionListPage, PlanLink
     from reports.models import ReportType
 
     from .action import Action, ActionImplementationPhase, ActionStatus
@@ -769,6 +769,27 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     @classmethod
     def permission_policy(cls) -> PlanPermissionPolicy:
         return PlanPermissionPolicy(cls)
+
+    def get_action_list_page(self, *, only_visible: bool = True) -> ActionListPage | None:
+        """
+        Return the plan's ActionListPage, or None if it has none.
+
+        The page may be nested anywhere beneath the root page, not just a direct child.
+        By default only a live, public page is returned; pass only_visible=False to also
+        consider drafts and private pages (e.g. when editing in the admin).
+
+        This is the canonical DB lookup. In a request context, prefer the cached
+        `info.context.cache.for_plan(plan).action_list_page` to avoid extra queries.
+        """
+        from pages.models import ActionListPage
+
+        if self.site_id is None or self.site is None:
+            return None
+        pages = self.root_page.get_descendants().type(ActionListPage)
+        if only_visible:
+            pages = pages.live().public()
+        page = pages.specific().first()
+        return cast('ActionListPage', page) if page is not None else None
 
     def get_translated_root_page(self, fallback=True) -> Page | None:
         """Return root page in activated language, fall back to default language by default."""

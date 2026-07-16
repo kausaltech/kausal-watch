@@ -24,7 +24,6 @@ from aplans.utils import PlanRelatedModelWithRevision
 from actions.action_fields import action_registry
 from actions.models.action import Action
 from kausal_common.blocks.registry import FieldBlockContext
-from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
 from reports.utils import get_field_unique_key
 
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.models import Plan
+    from pages.models import ActionListPage
     from users.models import User
 
 
@@ -146,14 +146,12 @@ class ReportType(PlanRelatedModelWithRevision):
         return labels
 
     def get_action_list_page(self) -> ActionListPage:
-        page = self.plan.root_page.get_descendants().live().public().type(ActionListPage).first()
+        page = self.plan.get_action_list_page()
         if page is None:
             # Every properly configured plan has a live, public ActionListPage. A plan
             # without one is a data-integrity problem, not a normal runtime condition.
             raise ActionListPageNotFoundError(self.plan)
-        al_page = page.specific
-        assert isinstance(al_page, ActionListPage)
-        return al_page
+        return page
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
