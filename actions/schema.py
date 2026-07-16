@@ -100,7 +100,7 @@ from actions.models.attributes import ModelWithAttributes
 from actions.models.category import IndicatorCategoryRelationshipType
 from orgs.models import Organization
 from pages import schema as pages_schema
-from pages.models import ActionListPage, AplansPage, CategoryPage, IndicatorListPage, PageChangeLogMessage
+from pages.models import ActionListPage, AplansPage, CategoryPage, PageChangeLogMessage
 from people.models import Person
 from search.backends import WatchSearchBackend, get_search_backend
 
@@ -132,6 +132,7 @@ if TYPE_CHECKING:
     from indicators.models import ActionIndicator, IndicatorLevelQuerySet
     from indicators.schema import IndicatorNode  # noqa: TC004 (strawberry.lazy handles runtime resolution)
     from orgs.models import OrganizationQuerySet
+    from pages.models import IndicatorListPage
     from users.models import User
 
 
@@ -511,11 +512,7 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_indicator_list_page(root: Plan, info: GQLInfo) -> IndicatorListPage | None:
-        cache = info.context.cache.for_plan(root)
-        for page in cache.visible_pages:
-            if type(page) is IndicatorListPage:
-                return page
-        return None
+        return info.context.cache.for_plan(root).indicator_list_page
 
     @staticmethod
     def resolve_view_url(root: Plan, info: GQLInfo, client_url: str | None = None):
