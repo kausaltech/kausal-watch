@@ -1,7 +1,7 @@
 from __future__ import annotations  # noqa: I001
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, ClassVar, cast, Never
+from typing import TYPE_CHECKING, ClassVar, Never
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
@@ -50,6 +50,14 @@ class NoRevisionSaveError(Exception):
     pass
 
 
+class ActionListPageNotFoundError(Exception):
+    """Raised when a plan has no live, public ActionListPage (a data-integrity problem)."""
+
+    def __init__(self, plan: Plan):
+        self.plan = plan
+        super().__init__(f'Plan {plan.identifier!r} has no live, public ActionListPage')
+
+
 @reversion.register()
 class ReportType(PlanRelatedModelWithRevision):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
@@ -74,7 +82,7 @@ class ReportType(PlanRelatedModelWithRevision):
     @staticmethod
     def generate_for_plan_dashboard(plan: Plan, user: UserOrAnon) -> ReportType:
         report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
-        action_list_page = cast('ActionListPage', plan.root_page.get_children().type(ActionListPage).get().specific)
+        action_list_page = report_type.get_action_list_page()
         dashboard_blocks = (
             [(x.block_type, x.value) for x in action_list_page.dashboard_columns] if action_list_page.dashboard_columns else []
         )
@@ -139,7 +147,10 @@ class ReportType(PlanRelatedModelWithRevision):
 
     def get_action_list_page(self) -> ActionListPage:
         page = self.plan.root_page.get_descendants().live().public().type(ActionListPage).first()
-        assert page is not None
+        if page is None:
+            # Every properly configured plan has a live, public ActionListPage. A plan
+            # without one is a data-integrity problem, not a normal runtime condition.
+            raise ActionListPageNotFoundError(self.plan)
         al_page = page.specific
         assert isinstance(al_page, ActionListPage)
         return al_page

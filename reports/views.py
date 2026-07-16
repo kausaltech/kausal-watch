@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 
+import sentry_sdk
 from wagtail_modeladmin.views import WMABaseView
 
 from kausal_common.users import user_or_bust
@@ -18,7 +19,7 @@ from kausal_common.users import user_or_bust
 from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
-from .models import ActionSnapshot, Report
+from .models import ActionListPageNotFoundError, ActionSnapshot, Report
 
 ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
 
@@ -168,7 +169,13 @@ def export_report_view(request, plan_identifier):
         except ValueError:
             return HttpResponseBadRequest('Invalid actions parameter. Must be a comma-separated list of integers.')
 
-    output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids)
+    try:
+        output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids)
+    except ActionListPageNotFoundError as e:
+        # A live plan should always have an ActionListPage; if it doesn't, that's a
+        # misconfiguration we want to learn about rather than serve a 500 to the user.
+        sentry_sdk.capture_exception(e)
+        raise Http404 from e
     content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if format == 'xlsx' else 'text/csv'
     response = HttpResponse(
         output,

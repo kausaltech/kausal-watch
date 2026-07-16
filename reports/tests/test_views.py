@@ -132,3 +132,47 @@ class TestExportReportView:
         response = self._get(rf, plan.identifier)
         assert response.status_code == 200
         assert mock_export.call_args[0][3] is None
+
+    def test_missing_action_list_page_raises_404(self, rf, plan):
+        from reports.models import ActionListPageNotFoundError
+
+        with (
+            patch(
+                'reports.views.export_dashboard_report_for_plan',
+                side_effect=ActionListPageNotFoundError(plan),
+            ),
+            pytest.raises(Http404),
+        ):
+            self._get(rf, plan.identifier)
+
+
+@pytest.mark.django_db
+class TestGenerateForPlanDashboard:
+    def _action_list_page(self, plan):
+        from pages.models import ActionListPage
+
+        return plan.root_page.get_children().type(ActionListPage).get().specific
+
+    def test_finds_nested_action_list_page(self, plan_with_pages):
+        """The ActionListPage may live deeper than a direct child of the root page (see WATCH-BACKEND-4YN)."""
+        from reports.models import ReportType
+
+        plan = plan_with_pages
+        action_list_page = self._action_list_page(plan)
+        # Nest the ActionListPage under a sibling so it is no longer a direct child of the root page.
+        sibling = plan.root_page.get_children().exclude(pk=action_list_page.pk).first()
+        action_list_page.move(sibling, pos='last-child')
+
+        # Previously raised Page.DoesNotExist because the lookup only considered direct children.
+        report_type = ReportType.generate_for_plan_dashboard(plan, AnonymousUser())
+        assert report_type is not None
+
+    def test_missing_action_list_page_raises(self, plan_with_pages):
+        from reports.models import ActionListPageNotFoundError, ReportType
+
+        plan = plan_with_pages
+        self._action_list_page(plan).delete()
+
+        report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
+        with pytest.raises(ActionListPageNotFoundError):
+            report_type.get_action_list_page()
