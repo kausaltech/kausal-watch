@@ -3,14 +3,18 @@ from __future__ import annotations
 from itertools import permutations
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import F
 from django.urls import reverse
 
 import pytest
 
-from actions.api import ActionSerializer, CategorySerializer
+from aplans.utils import InstancesEditableByMixin
+
+from actions.api import ActionSerializer, CategorySerializer, NonTreebeardModelWithTreePositionSerializerMixin
 from actions.models import Action, ActionTask, Category
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.tests.utils import assert_log_entry_created, count_log_entries
+from admin_site.tests.factories import BuiltInFieldCustomizationFactory
 from audit_logging.models import PlanScopedModelLogEntry
 from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 from people.tests.factories import PersonFactory
@@ -261,6 +265,205 @@ def test_action_bulk_put_as_contact_person_allowed_for_own_action(api_client, pl
     api_client.force_login(user)
     response = api_client.put(action_list_url, data=[{'identifier': 'ID-1', 'id': contact.action.id, 'name': 'bar'}])
     assert response.status_code == 200
+
+
+def test_action_bulk_update_stale_version_returns_409(api_client, plan, plan_admin_user, action_list_url):
+    """A bulk update carrying an out-of-date `version` token is rejected with 409, not applied."""
+    action = ActionFactory.create(plan=plan)
+    api_client.force_login(plan_admin_user)
+    stale_version = action.version
+
+    # First write with the current version succeeds and bumps `version`.
+    first = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'first', 'version': stale_version}],
+    )
+    assert first.status_code == 200
+    action.refresh_from_db()
+    assert action.version == stale_version + 1
+
+    # Reusing the now-stale version is rejected and does not overwrite the first write.
+    second = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'second', 'version': stale_version}],
+    )
+    assert second.status_code == 409
+    assert second.json_data['code'] == 'concurrent_modification'
+    assert str(action.pk) in [str(cid) for cid in second.json_data['conflicting_ids']]
+
+    action.refresh_from_db()
+    assert action.name == 'first'
+
+
+def test_action_update_bumps_updated_at(api_client, plan, plan_admin_user, action_list_url):
+    """
+    Every update stamps `updated_at` — it is now set centrally in `Action.save()`
+    rather than in the serializer, so even a version-less bulk write (the path
+    that used to rely on `ActionSerializer.update` setting it) still refreshes it.
+    """
+    action = ActionFactory.create(plan=plan)
+    api_client.force_login(plan_admin_user)
+    action.refresh_from_db()
+    updated_at_before = action.updated_at
+
+    # No `version` in the payload: exercises the branch that skips the CAS.
+    resp = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'renamed'}],
+    )
+    assert resp.status_code == 200
+
+    action.refresh_from_db()
+    assert action.updated_at > updated_at_before
+
+
+def test_action_save_bumps_version_so_stale_grid_write_conflicts(api_client, plan, plan_admin_user, action_list_url):
+    """
+    A plain model `save()` (e.g. the Wagtail admin form or a GraphQL mutation)
+    bumps `version`, so a grid bulk write carrying the pre-save version is
+    detected as stale and rejected with 409.
+    """
+    action = ActionFactory.create(plan=plan)
+    api_client.force_login(plan_admin_user)
+    stale_version = action.version
+
+    # Simulate a non-grid write path: mutate the model directly and save().
+    action.name = 'changed elsewhere'
+    action.save()
+    action.refresh_from_db()
+    assert action.version == stale_version + 1
+
+    # A targeted `update_fields` save also bumps `version` (the field is force-added).
+    version_before_partial = action.version
+    action.name = 'changed again'
+    action.save(update_fields=['name'])
+    action.refresh_from_db()
+    assert action.version == version_before_partial + 1
+
+    # A grid bulk update carrying the now-stale version is rejected, not applied.
+    resp = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'grid', 'version': stale_version}],
+    )
+    assert resp.status_code == 409
+    assert resp.json_data['code'] == 'concurrent_modification'
+
+    action.refresh_from_db()
+    assert action.name == 'changed again'
+
+
+def test_reorder_bumps_version_of_shifted_siblings(api_client, plan, plan_admin_user, action_list_url):
+    """
+    Reordering an action shifts sibling `order` values via bulk_update (not
+    `save()`); those shifted rows must still get `version` bumped, so a concurrent
+    stale write to a merely-shifted row is rejected with 409 instead of silently
+    overwriting the reorder.
+    """
+    actions = [ActionFactory.create(plan=plan) for _ in range(3)]
+    api_client.force_login(plan_admin_user)
+
+    def snapshot():
+        return {a.pk: (a.order, a.version) for a in Action.objects.filter(plan=plan).only('order', 'version')}
+
+    before = snapshot()
+    moved, anchor = actions[-1], actions[0]
+
+    resp = api_client.put(
+        action_list_url,
+        data=[
+            {
+                'id': moved.pk,
+                'identifier': moved.identifier,
+                'name': moved.name,
+                'version': before[moved.pk][1],
+                'left_sibling': str(anchor.uuid),
+            }
+        ],
+    )
+    assert resp.status_code == 200
+
+    after = snapshot()
+    # Every row whose order actually changed must have had its version bumped by
+    # exactly one (idempotently — no double-bump for the moved row).
+    shifted_others = []
+    for pk, (order_before, version_before) in before.items():
+        order_after, version_after = after[pk]
+        if order_after != order_before:
+            assert version_after == version_before + 1, f'action {pk} shifted without a matching version bump'
+            if pk != moved.pk:
+                shifted_others.append((pk, version_before))
+    assert shifted_others, 'expected the reorder to shift at least one other action'
+
+    # The response must carry the shifted siblings (which weren't in the request
+    # body) with their fresh version, so the client can refresh its baseline and
+    # not 409 against its own reorder.
+    response_by_uuid = {str(o['uuid']): o for o in resp.json_data if isinstance(o, dict) and 'uuid' in o}
+    for pk, _ in shifted_others:
+        sibling = Action.objects.get(pk=pk)
+        assert str(sibling.uuid) in response_by_uuid, f'shifted sibling {pk} missing from response'
+        assert response_by_uuid[str(sibling.uuid)]['version'] == sibling.version
+
+    # A grid write to a shifted sibling carrying its pre-reorder version is rejected.
+    victim_pk, victim_stale_version = shifted_others[0]
+    victim = Action.objects.get(pk=victim_pk)
+    conflict = api_client.put(
+        action_list_url,
+        data=[{'id': victim.pk, 'identifier': victim.identifier, 'name': 'stale', 'version': victim_stale_version}],
+    )
+    assert conflict.status_code == 409
+
+
+def test_reorder_version_bump_is_atomic_against_concurrent_edit(api_client, plan, plan_admin_user, action_list_url, monkeypatch):
+    """
+    The reorder `version` bump must increment the *current* DB value, not a stale
+    load-time baseline — otherwise an edit committed after the reorder snapshot
+    could be masked (its bump silently overwritten). We simulate such an edit by
+    advancing a shifted sibling's `version` mid-request, right before the reorder
+    bump runs, and assert the reorder still advances past it. A `baseline + 1`
+    implementation would regress the value here instead.
+    """
+    actions = [ActionFactory.create(plan=plan) for _ in range(3)]
+    api_client.force_login(plan_admin_user)
+    moved, anchor = actions[-1], actions[0]
+    sibling_pks = [a.pk for a in actions if a.pk != moved.pk]
+
+    def snapshot():
+        return {a.pk: (a.order, a.version) for a in Action.objects.filter(plan=plan).only('order', 'version')}
+
+    before = snapshot()
+    original = NonTreebeardModelWithTreePositionSerializerMixin._update_tree_position
+
+    def inject_then_reorder(self, instance, left_sibling_uuid):
+        # Stand in for a concurrent edit that committed after this request loaded
+        # its cache: advance the siblings' DB version out from under the snapshot,
+        # right before the reorder bump runs.
+        Action.objects.filter(pk__in=sibling_pks).update(version=F('version') + 10)
+        return original(self, instance, left_sibling_uuid)
+
+    monkeypatch.setattr(NonTreebeardModelWithTreePositionSerializerMixin, '_update_tree_position', inject_then_reorder)
+
+    resp = api_client.put(
+        action_list_url,
+        data=[
+            {
+                'id': moved.pk,
+                'identifier': moved.identifier,
+                'name': moved.name,
+                'version': moved.version,
+                'left_sibling': str(anchor.uuid),
+            }
+        ],
+    )
+    assert resp.status_code == 200
+
+    after = snapshot()
+    shifted = [pk for pk in sibling_pks if after[pk][0] != before[pk][0]]
+    assert shifted, 'test setup: the move was expected to shift at least one sibling'
+    for pk in shifted:
+        # Atomic increment of the injected value (+10, then +1). A stale
+        # `baseline + 1` write would land on `before + 1` and silently drop the
+        # concurrent +10 bump.
+        assert after[pk][1] == before[pk][1] + 10 + 1, f'action {pk} reorder bump was not atomic'
 
 
 def test_action_post_as_plan_admin_allowed(api_client, plan, action_list_url, plan_factory, person_factory):
@@ -728,10 +931,6 @@ def test_action_field_customization_restricts_editing(api_client, plan, action, 
     When a BuiltInFieldCustomization restricts editing of contact_persons or responsible_parties
     to plan_admins only, regular contact persons should not be able to modify those fields.
     """
-    from aplans.utils import InstancesEditableByMixin
-
-    from admin_site.tests.factories import BuiltInFieldCustomizationFactory
-
     # Create a contact person for this action (not a plan admin)
     contact = ActionContactFactory.create(action=action)
     user = contact.person.user
@@ -769,10 +968,6 @@ def test_action_field_customization_restricts_editing(api_client, plan, action, 
 )
 def test_action_field_customization_allows_plan_admin(api_client, plan, action, field_name, role):
     """Test that plan admins can edit fields even when BuiltInFieldCustomization restricts to plan_admins."""
-
-    from aplans.utils import InstancesEditableByMixin
-
-    from admin_site.tests.factories import BuiltInFieldCustomizationFactory
 
     # Create a plan admin
     admin_person = PersonFactory.create(general_admin_plans=[plan])
