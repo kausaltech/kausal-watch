@@ -8,12 +8,12 @@ from uuid import UUID
 
 import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
+from django.db.models import F, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import build_localized_fieldname, get_available_languages
-from rest_framework import exceptions, permissions, serializers, viewsets
+from rest_framework import exceptions, permissions, serializers, status, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
 
@@ -902,6 +902,13 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
 ):
     left_sibling = PrevSiblingField[Any](allow_null=True, required=False)
     _cached_instances: dict[UUID, M]
+    _reorder_baseline: dict[UUID, tuple[int, int | None]]
+    # Rows whose optimistic-concurrency `version` is bumped elsewhere (the bulk
+    # pre-pass CAS + save() for edited rows, or a freshly-created row) and so must
+    # not also be bumped by the reorder pass; and the set already reorder-bumped
+    # this request (dedup across the per-row `_update_tree_position` calls).
+    _reorder_bump_exclude_pks: set[int]
+    _reorder_bumped_pks: set[int]
     instance: M | None
 
     def __init__(self, *args, **kwargs):
@@ -935,6 +942,23 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
             # nodes because the cache was initially initialized when the new nodes where not in the database.
             init_cache(force_refresh=True)
 
+        # Snapshot the load-time `order` (and optimistic-concurrency `version`, if
+        # the model has one) so a reorder can (a) tell which rows actually moved
+        # and (b) bump their `version` idempotently — `_update_tree_position` may
+        # run several times in one bulk request, so we set `version` from this
+        # baseline rather than incrementing in place.
+        self._reorder_baseline = {
+            uuid: (node.order, getattr(node, 'version', None)) for uuid, node in self._cached_instances.items()
+        }
+        # Persist across the per-row `create()` / `update()` calls of a bulk
+        # request (this method runs once per created row): the dedup set so a row
+        # is bumped at most once, and the exclude set so it accumulates all rows
+        # whose version is handled elsewhere.
+        if not hasattr(self, '_reorder_bumped_pks'):
+            self._reorder_bumped_pks = set()
+        if not hasattr(self, '_reorder_bump_exclude_pks'):
+            self._reorder_bump_exclude_pks = set()
+
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
         # fields += self._tree_position_fields
@@ -946,6 +970,11 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
         instance = super().create(validated_data)
         self.init_cached_instances(instance)
         instance = self._cached_instances[instance.uuid]
+        # The new row's version starts at the model default; don't let the reorder
+        # pass bump it (its in-memory value must match what's returned). Accumulate
+        # across a bulk create so an earlier-created row shifted by a later create
+        # is also left alone (its response object carries the default version).
+        self._reorder_bump_exclude_pks.add(instance.pk)
         ops = self._update_tree_position(instance, left_sibling_uuid)
         self.add_deferred_operations(ops)
         return instance
@@ -1058,7 +1087,40 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
         for node in siblings:
             order = self._reorder_descendants(node, order, instance, predecessor)
 
-        return [('update', instance, ['order']) for instance in self._cached_instances.values()]
+        # A reorder is a real write to every shifted row, but its `order` is
+        # persisted via bulk_update (not save()), so the shifted rows need their
+        # optimistic-concurrency `version` bumped too — otherwise a concurrent
+        # stale write to a merely-shifted sibling would slip past the 409 check.
+        # Bump them with an atomic `F('version') + 1` (which also row-locks): it
+        # increments the *current* DB value, so it can neither regress the token
+        # nor collide with a concurrent direct edit's bump — closing the window a
+        # load-time `baseline + 1` write would leave open. Rows already handled by
+        # the payload path (CAS pre-pass + save(), or a freshly-created row) are
+        # excluded so they aren't double-bumped, and each row is bumped at most
+        # once per request even though `_update_tree_position` runs per edited row.
+        to_bump = [
+            node.pk
+            for node in self._cached_instances.values()
+            if (baseline := self._reorder_baseline.get(node.uuid)) is not None
+            and baseline[1] is not None  # model has a `version` token
+            and node.order != baseline[0]  # order actually changed
+            and node.pk not in self._reorder_bump_exclude_pks
+            and node.pk not in self._reorder_bumped_pks
+        ]
+        if to_bump:
+            self._reorder_bumped_pks.update(to_bump)
+            type(instance)._base_manager.filter(pk__in=to_bump).update(version=F('version') + 1, updated_at=timezone.now())
+        # Only emit an `order` write for rows that actually moved. In the immediate
+        # (non-bulk detail) path these ops run as full `Action.save()` calls, which
+        # bump `version`/`updated_at`; emitting an op for an unmoved sibling would
+        # make an untouched row look modified and spuriously 409 a concurrent grid
+        # save. (In the bulk path the ops feed `bulk_update(['order'])`, which never
+        # touches `version`, so there it is a harmless optimisation.)
+        return [
+            ('update', node, ['order'])
+            for node in self._cached_instances.values()
+            if (baseline := self._reorder_baseline.get(node.uuid)) is None or node.order != baseline[0]
+        ]
 
     def _cache_descendants(self, node) -> None:
         """Add instance `node` and all its descendants to the dict `self._cached_instances`."""
@@ -1067,6 +1129,29 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
         if hasattr(node, 'children'):
             for child in node.children.all():
                 self._cache_descendants(child)
+
+
+class ConcurrentModificationError(exceptions.APIException):
+    """
+    Raised when an action update targets a row that changed since the client read it.
+
+    This is the optimistic-concurrency conflict signal. It surfaces as HTTP 409
+    so the grid editor can re-sync the affected rows instead of silently
+    overwriting (or crashing on) a concurrent edit.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    default_code = 'concurrent_modification'
+    default_detail = _('Some of these actions were modified by someone else. Please reload the latest version and try again.')
+
+    def __init__(self, conflicting_ids: list[int]):
+        super().__init__(
+            {
+                'detail': self.default_detail,
+                'code': self.default_code,
+                'conflicting_ids': conflicting_ids,
+            },
+        )
 
 
 class ActionSerializer(  # type: ignore[misc]
@@ -1078,6 +1163,15 @@ class ActionSerializer(  # type: ignore[misc]
     _modifiable_actions_cache: ActionQuerySet
 
     uuid = serializers.UUIDField(required=False)
+    # `updated_at` is a display-only "last modified" timestamp; the server stamps
+    # it (see `_check_and_stamp_versions`) and never accepts a client value.
+    updated_at = serializers.DateTimeField(read_only=True)
+    # Writable so the client's last-seen version can be used as an
+    # optimistic-concurrency token. An integer counter (not a timestamp) so the
+    # compare-and-swap can't be defeated by sub-millisecond precision loss when
+    # the value round-trips through a JS client. The server always stamps the
+    # next value itself (see `_check_and_stamp_versions`), never the client's.
+    version = serializers.IntegerField(required=False)
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False, label=_('Responsible parties'))
     contact_persons = ActionContactPersonSerializer(required=False, label=_('Contact persons'))
@@ -1256,6 +1350,9 @@ class ActionSerializer(  # type: ignore[misc]
     def create(self, validated_data: dict):
         validated_data['plan'] = self.plan
         validated_data['order_on_create'] = validated_data.get('order')
+        # `version` is only meaningful as an optimistic-lock token on updates; a
+        # new row starts at the model default.
+        validated_data.pop('version', None)
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
@@ -1271,12 +1368,86 @@ class ActionSerializer(  # type: ignore[misc]
             self.initialize_cache_context()
         return instance
 
+    def lock_rows_for_optimistic_update(self, rows: list[tuple[Action, dict[str, Any]]]) -> None:
+        """
+        Optimistic-concurrency pre-pass for bulk updates.
+
+        Called by ``BulkListSerializer`` before the per-row update loop. Locks
+        every target row and rejects the whole batch (HTTP 409) if any row's
+        version has moved since the client read it.
+        """
+        self._check_and_stamp_versions(rows)
+
+    def get_extra_response_rows(self) -> list[dict[str, Any]]:
+        """
+        Rows to append to a bulk response beyond the ones the client submitted.
+
+        A reorder bumps the ``version`` of shifted *sibling* rows that weren't in
+        the request body (see ``_update_tree_position``). Those rows aren't in the
+        serialized response, so without this the client would keep their old token
+        and 409 against its own successful reorder on the next edit. We return
+        their fresh token fields (read back from the DB, since the bump is an
+        ``F()`` expression that doesn't touch the in-memory instances) so the
+        client can refresh its baseline for them.
+        """
+        pks = getattr(self, '_reorder_bumped_pks', None)
+        if not pks:
+            return []
+        rows = self.Meta.model._base_manager.filter(pk__in=pks).values('uuid', 'version', 'updated_at')
+        return [
+            {
+                'uuid': str(row['uuid']),
+                'version': row['version'],
+                'updated_at': row['updated_at'].isoformat() if row['updated_at'] is not None else None,
+            }
+            for row in rows
+        ]
+
+    def _check_and_stamp_versions(self, rows: list[tuple[Action, dict[str, Any]]]) -> None:
+        """
+        Compare-and-swap the integer ``version`` token for each row, collecting
+        stale ones.
+
+        Each conditional ``UPDATE`` both detects a stale write (zero rows matched
+        → the version moved) and takes the row lock that serialises concurrent
+        writers, so the losing request bails out with a 409 before it can create
+        a duplicate attribute. The persisted bump (and the ``updated_at`` stamp)
+        is done by ``Action.save()``, which bumps ``version`` on every update so
+        non-grid write paths are covered too; because the target rows were loaded
+        before this swap, the value ``save()`` bumps matches the token checked
+        here, so the two stay consistent.
+
+        A row whose payload carries no ``version`` (e.g. a non-grid API client)
+        is saved without a concurrency check, matching the previous behaviour.
+        """
+        # Payload rows get their `version` bumped by `save()` (and, when a version
+        # is supplied, the CAS below); exclude them from the reorder pass's atomic
+        # bump so a moved row isn't double-counted (see `_update_tree_position`).
+        self._reorder_bump_exclude_pks = {instance.pk for instance, _ in rows}
+        model = self.Meta.model
+        conflicting_ids: list[int] = []
+        # Lock in a deterministic (pk) order so overlapping batches touching the
+        # same rows can't deadlock by acquiring locks in opposite orders.
+        for instance, data in sorted(rows, key=lambda row: row[0].pk):
+            expected_version = data.get('version')
+            if expected_version is None:
+                continue
+            locked = model._base_manager.filter(pk=instance.pk, version=expected_version).update(version=expected_version + 1)
+            if not locked:
+                conflicting_ids.append(instance.pk)
+        if conflicting_ids:
+            raise ConcurrentModificationError(conflicting_ids)
+
     def update(self, instance, validated_data):
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
         validated_data.pop('plan', None)
-        instance.updated_at = timezone.now()
+        if self.parent is None:
+            # Single-object update. In the bulk path the list serializer's
+            # pre-pass (`lock_rows_for_optimistic_update`) has already checked and
+            # stamped the version.
+            self._check_and_stamp_versions([(instance, validated_data)])
         instance = super().update(instance, validated_data)
         if categories is not None:
             cast('Any', self.fields['categories']).update(instance, categories)
@@ -1299,6 +1470,7 @@ class ActionSerializer(  # type: ignore[misc]
                 'internal_admin_notes',
                 'visibility',
                 'visibility_display',
+                'version',
             ],
             remove_fields=[
                 'impact',

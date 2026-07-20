@@ -512,6 +512,15 @@ class Action(
         verbose_name=_('updated at'),
         default=timezone.now,
     )
+    version = models.PositiveBigIntegerField(
+        editable=False,
+        default=0,
+        verbose_name=_('version'),
+        help_text=_(
+            'Monotonic counter used as an optimistic-concurrency token for bulk edits. '
+            'Bumped on every conflict-checked write; not meant for display.'
+        ),
+    )
     start_date = models.DateField(
         verbose_name=_('start date'),
         help_text=_('The date when implementation of this action starts'),
@@ -859,6 +868,23 @@ class Action(
                 self.order = 0
             else:
                 self.order = max_order + 1
+        else:
+            # Bump the optimistic-concurrency token on every update so edits made
+            # outside the bulk REST path (the Wagtail admin form, GraphQL
+            # mutations, status/completion recalculations) are also detectable by
+            # a concurrent grid save. The bulk path additionally compare-and-swaps
+            # `version` up front to reject stale writes with a 409; because it
+            # loads its target rows before that swap, the in-memory value here
+            # matches the token it checked, so this bump stays consistent with it
+            # (see `ActionSerializer._check_and_stamp_versions`).
+            self.version = (self.version or 0) + 1
+            # `updated_at` is a server-stamped "last modified" timestamp; bump it
+            # here too so every update path refreshes it (there is no `auto_now`).
+            self.updated_at = timezone.now()
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                # Persist the bumps even for targeted `update_fields` saves.
+                kwargs['update_fields'] = {*update_fields, 'version', 'updated_at'}
         # Invalidate the plan's action cache because, e.g., we might have changed the order
         with contextlib.suppress(AttributeError):
             del self.plan.cached_actions
