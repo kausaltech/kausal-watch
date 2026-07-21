@@ -752,7 +752,7 @@ class Indicator(
         values_to_remove = (
             IndicatorValue.objects
             .filter(indicator=self)
-            .exclude(date__year__in=metric_dim.years)
+            .exclude(date__year__in=cast('list[str]', metric_dim.years))  # django-stubs expects a list of strings
             .exclude(date__year__gt=max_year)
         )
         values_to_remove.delete()

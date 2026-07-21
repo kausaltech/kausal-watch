@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from django_stubs_ext import StrOrPromise
     from wagtail.models import Task
 
+    from django_countries.fields import Country
     from rich.repr import RichReprResult
 
     from kausal_common.models.types import FK, M2M, OneToOne, RevMany, RevManyQS, RevManyToMany, RevOne
@@ -172,7 +173,9 @@ def get_canonical_wildcard_hostname(
             continue
         is_match, matched_region = matches_hostname_pattern(domain, wd, allow_shortened=True, placeholder=COUNTRY_PLACEHOLDER)
         if is_match and matched_region:
-            plan_region = plan.country.code.lower()
+            country = cast('Country', plan.country)
+            assert country.code is not None
+            plan_region = country.code.lower()
             if matched_region.lower() != plan_region:
                 domain_parts = domain.split('.')
                 pattern_parts = wd.split('.')
@@ -182,7 +185,9 @@ def get_canonical_wildcard_hostname(
                         break
                 return f'{identifier}.{".".join(domain_parts)}'
         elif is_match and matched_region is None:
-            plan_region = plan.country.code.lower()
+            country = cast('Country', plan.country)
+            assert country.code is not None
+            plan_region = country.code.lower()
             domain_parts = domain.split('.')
             pattern_parts = wd.split('.')
             wildcard_idx = pattern_parts.index(COUNTRY_PLACEHOLDER)
@@ -204,6 +209,11 @@ def get_page_translation(page: Page, fallback=True) -> Page:
 
 
 class PlanQuerySet(PermissionedQuerySet['Plan'], MultilingualQuerySet['Plan']):
+    if TYPE_CHECKING:
+
+        @classmethod
+        def as_manager(cls) -> PlanManager: ...  # type: ignore[override]
+
     def for_hostname(self, hostname: str, request: WatchAPIRequest | WatchGraphQLContext | None = None) -> Self:
         hostname = hostname.lower()
         plan_domains = PlanDomain.objects.filter(hostname=hostname)
@@ -1257,7 +1267,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         except StopIteration as e:
             raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
         if COUNTRY_PLACEHOLDER in default_domain:
-            country_code = self.country.code.lower() if self.country else None
+            country = cast('Country | None', self.country)
+            country_code = country.code.lower() if country is not None and country.code is not None else None
             if not country_code:
                 raise Exception(f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'")
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)

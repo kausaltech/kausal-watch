@@ -150,7 +150,7 @@ class PersonForm(AplansAdminModelForm[Person]):
 
     def save(self, commit=True):
         if 'image' in self.files:
-            self.instance.image_cropping = None
+            self.instance.image_cropping = None  # type: ignore[assignment]
         return super().save(commit)
 
 

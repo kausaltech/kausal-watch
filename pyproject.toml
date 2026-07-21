@@ -145,7 +145,7 @@ lint = [
   "djangorestframework-stubs",
   "graphene-stubs",
   "isort",
-  "mypy[faster-cache]",
+  "mypy[faster-cache]>2",
   "ondivi",
   "ruff",
   "types-factory-boy>=0.4.1",
@@ -210,6 +210,8 @@ always_true = [ "IS_WATCH", "IS_MYPY" ]
 always_false = [ "IS_PATHS" ]
 local_partial_types = true
 allow_redefinition_new = true
+num_workers = 2
+native_parser = true
 
 [[tool.mypy.overrides]]
 module = [

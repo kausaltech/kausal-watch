@@ -212,7 +212,9 @@ def test_new_user_social_auth_login_preconditions_met(
     assert plan.clients.count() > 0
     for cp in plan.clients.all():
         assert cp.client.email_domains.count() > 0
-    email = f'user@{cp.client.email_domains.first().domain}'
+    email_domain = cp.client.email_domains.first()
+    assert email_domain is not None
+    email = f'user@{email_domain.domain}'
     person = person_factory.create(email=email)
     user = person.user
     assert user is not None

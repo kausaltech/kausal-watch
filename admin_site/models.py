@@ -27,7 +27,7 @@ from aplans.utils import (
 from users.models import User
 
 if TYPE_CHECKING:
-    from kausal_common.models.types import FK
+    from kausal_common.models.types import FK, RevMany
 
     from actions.models.plan import Plan
 
@@ -65,6 +65,8 @@ class Client(ClusterableModel):
         verbose_name=_('login method'),
         help_text=_("Login method that will be used for users that don't have a password set"),
     )
+
+    email_domains: RevMany[EmailDomains]
 
     def __str__(self):
         return self.name
