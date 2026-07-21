@@ -81,6 +81,35 @@ def _no_permission_sync_on_flush():
     post_migrate.connect(sync_permissions, dispatch_uid='sync_app_permissions')
 
 
+@pytest.fixture(autouse=True, scope='module')
+def _flush_with_cascade():
+    """
+    Force the transactional-test teardown flush to use `TRUNCATE ... CASCADE`.
+
+    `transaction=True` tests are torn down with Django's `flush` command, which
+    builds a single `TRUNCATE <every managed table>` without CASCADE. The
+    `helusers_adgroupmapping` table (an unmanaged model, so absent from that
+    list) has a foreign key to `auth_group`, so Postgres rejects the non-CASCADE
+    truncate with "cannot truncate a table referenced in a foreign key
+    constraint". Wrapping the `flush` command's `sql_flush` to force
+    `allow_cascade=True` truncates the dangling dependent rows along with it.
+
+    Scoped to the module (not the test) so the patch is still active when the
+    per-test teardown flush runs, and restored afterwards.
+    """
+    from django.core.management.commands import flush as flush_command
+    from django.core.management.sql import sql_flush
+
+    def sql_flush_cascade(style, connection, reset_sequences=True, allow_cascade=False):
+        return sql_flush(style, connection, reset_sequences=reset_sequences, allow_cascade=True)
+
+    # `flush` re-exports `sql_flush` via `from ... import sql_flush`; the type
+    # stub doesn't declare that re-export, hence the ignores on the rebind.
+    flush_command.sql_flush = sql_flush_cascade  # type: ignore[attr-defined]
+    yield
+    flush_command.sql_flush = sql_flush  # type: ignore[attr-defined]
+
+
 def _is_server_error(outcome: object) -> bool:
     return isinstance(outcome, Exception) or outcome == 500
 
