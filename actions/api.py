@@ -1149,7 +1149,9 @@ class ConcurrentModificationError(exceptions.APIException):
             {
                 'detail': self.default_detail,
                 'code': self.default_code,
-                'conflicting_ids': conflicting_ids,
+                # Stringify: DRF coerces error-detail scalars to strings anyway, so
+                # this matches the wire format while satisfying the typed `detail`.
+                'conflicting_ids': [str(pk) for pk in conflicting_ids],
             },
         )
 
@@ -1164,13 +1166,15 @@ class ActionSerializer(  # type: ignore[misc]
 
     uuid = serializers.UUIDField(required=False)
     # `updated_at` is a display-only "last modified" timestamp; the server stamps
-    # it (see `_check_and_stamp_versions`) and never accepts a client value.
+    # it (in `Action.save()`) and never accepts a client value.
     updated_at = serializers.DateTimeField(read_only=True)
     # Writable so the client's last-seen version can be used as an
     # optimistic-concurrency token. An integer counter (not a timestamp) so the
-    # compare-and-swap can't be defeated by sub-millisecond precision loss when
-    # the value round-trips through a JS client. The server always stamps the
-    # next value itself (see `_check_and_stamp_versions`), never the client's.
+    # conflict check can't be defeated by sub-millisecond precision loss when
+    # the value round-trips through a JS client. The server always bumps the next
+    # value itself (in `Action.save()`), never trusting the client's; this field
+    # is only the client's last-seen baseline for the conflict check (see
+    # `_lock_and_check_versions`).
     version = serializers.IntegerField(required=False)
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False, label=_('Responsible parties'))
@@ -1376,7 +1380,7 @@ class ActionSerializer(  # type: ignore[misc]
         every target row and rejects the whole batch (HTTP 409) if any row's
         version has moved since the client read it.
         """
-        self._check_and_stamp_versions(rows)
+        self._lock_and_check_versions(rows)
 
     def get_extra_response_rows(self) -> list[dict[str, Any]]:
         """
@@ -1403,26 +1407,24 @@ class ActionSerializer(  # type: ignore[misc]
             for row in rows
         ]
 
-    def _check_and_stamp_versions(self, rows: list[tuple[Action, dict[str, Any]]]) -> None:
+    def _lock_and_check_versions(self, rows: list[tuple[Action, dict[str, Any]]]) -> None:
         """
-        Compare-and-swap the integer ``version`` token for each row, collecting
-        stale ones.
+        Lock each row and reject the batch if any ``version`` token is stale.
 
         Each conditional ``UPDATE`` both detects a stale write (zero rows matched
         → the version moved) and takes the row lock that serialises concurrent
         writers, so the losing request bails out with a 409 before it can create
-        a duplicate attribute. The persisted bump (and the ``updated_at`` stamp)
-        is done by ``Action.save()``, which bumps ``version`` on every update so
-        non-grid write paths are covered too; because the target rows were loaded
-        before this swap, the value ``save()`` bumps matches the token checked
-        here, so the two stay consistent.
+        a duplicate attribute. The token itself is advanced by ``Action.save()``
+        (an atomic ``F('version') + 1``), which runs per row after this pre-pass
+        while the lock is still held; keeping the bump there means every write
+        path — grid and non-grid alike — advances the token by exactly one.
 
         A row whose payload carries no ``version`` (e.g. a non-grid API client)
         is saved without a concurrency check, matching the previous behaviour.
         """
-        # Payload rows get their `version` bumped by `save()` (and, when a version
-        # is supplied, the CAS below); exclude them from the reorder pass's atomic
-        # bump so a moved row isn't double-counted (see `_update_tree_position`).
+        # Payload rows get their `version` bumped by `save()`; exclude them from
+        # the reorder pass's atomic bump so a moved row isn't double-counted
+        # (see `_update_tree_position`).
         self._reorder_bump_exclude_pks = {instance.pk for instance, _ in rows}
         model = self.Meta.model
         conflicting_ids: list[int] = []
@@ -1432,7 +1434,17 @@ class ActionSerializer(  # type: ignore[misc]
             expected_version = data.get('version')
             if expected_version is None:
                 continue
-            locked = model._base_manager.filter(pk=instance.pk, version=expected_version).update(version=expected_version + 1)
+            # Conditional UPDATE with no value change: it both detects a stale
+            # write (zero rows matched -> the version moved) and takes the row lock
+            # that serialises concurrent writers. The lock is held until the
+            # request transaction commits (ATOMIC_REQUESTS), so the losing writer
+            # blocks here and, once the winner commits its bump, re-evaluates the
+            # `version=expected_version` filter against the new value, matches
+            # nothing and is reported as a conflict. The actual token bump is done
+            # by `Action.save()` (atomic `F('version') + 1`), which runs per row
+            # after this pre-pass while still holding the lock — so we deliberately
+            # don't bump here, to keep the token advancing by exactly one per edit.
+            locked = model._base_manager.filter(pk=instance.pk, version=expected_version).update(version=expected_version)
             if not locked:
                 conflicting_ids.append(instance.pk)
         if conflicting_ids:
@@ -1445,9 +1457,9 @@ class ActionSerializer(  # type: ignore[misc]
         validated_data.pop('plan', None)
         if self.parent is None:
             # Single-object update. In the bulk path the list serializer's
-            # pre-pass (`lock_rows_for_optimistic_update`) has already checked and
-            # stamped the version.
-            self._check_and_stamp_versions([(instance, validated_data)])
+            # pre-pass (`lock_rows_for_optimistic_update`) has already locked and
+            # version-checked the row.
+            self._lock_and_check_versions([(instance, validated_data)])
         instance = super().update(instance, validated_data)
         if categories is not None:
             cast('Any', self.fields['categories']).update(instance, categories)

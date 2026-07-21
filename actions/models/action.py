@@ -861,6 +861,7 @@ class Action(
         # same action plan.
 
     def save(self, *args, **kwargs):
+        bumped_version = False
         if self.pk is None:
             qs = self.plan.actions.values('order').order_by()
             max_order = qs.aggregate(Max('order'))['order__max']
@@ -869,15 +870,23 @@ class Action(
             else:
                 self.order = max_order + 1
         else:
-            # Bump the optimistic-concurrency token on every update so edits made
-            # outside the bulk REST path (the Wagtail admin form, GraphQL
-            # mutations, status/completion recalculations) are also detectable by
-            # a concurrent grid save. The bulk path additionally compare-and-swaps
-            # `version` up front to reject stale writes with a 409; because it
-            # loads its target rows before that swap, the in-memory value here
-            # matches the token it checked, so this bump stays consistent with it
-            # (see `ActionSerializer._check_and_stamp_versions`).
-            self.version = (self.version or 0) + 1
+            # Bump the optimistic-concurrency token on every update so edits from
+            # every path (the Wagtail admin form, GraphQL mutations,
+            # status/completion recalculations and the bulk grid save) advance it
+            # and are therefore detectable by a concurrent grid save. Bump it with
+            # an atomic `F('version') + 1` rather than `self.version + 1`: the
+            # in-memory value may be stale (another request could have committed
+            # since this instance was loaded — the bulk path in particular re-reads
+            # its target rows into fresh instances), and two writers doing
+            # `self.version + 1` from the same load-time value would both land on
+            # the same token, letting a grid client miss the second edit. `F()`
+            # increments the *current* DB value under a row lock, so concurrent
+            # writers always get distinct tokens. The bulk path additionally locks
+            # and version-checks each target row up front to reject stale writes
+            # with a 409 before this bump runs
+            # (see `ActionSerializer._lock_and_check_versions`).
+            self.version = F('version') + 1
+            bumped_version = True
             # `updated_at` is a server-stamped "last modified" timestamp; bump it
             # here too so every update path refreshes it (there is no `auto_now`).
             self.updated_at = timezone.now()
@@ -888,7 +897,13 @@ class Action(
         # Invalidate the plan's action cache because, e.g., we might have changed the order
         with contextlib.suppress(AttributeError):
             del self.plan.cached_actions
-        return super().save(*args, **kwargs)
+        result = super().save(*args, **kwargs)
+        if bumped_version:
+            # `self.version` currently holds the unresolved `F()` expression; reload
+            # the concrete integer so callers (and any serialized response) don't
+            # see the expression object.
+            self.refresh_from_db(fields=['version'])
+        return result
 
     def is_merged(self):
         return self.merged_with_id is not None

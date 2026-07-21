@@ -297,9 +297,11 @@ def test_action_bulk_update_stale_version_returns_409(api_client, plan, plan_adm
 
 def test_action_update_bumps_updated_at(api_client, plan, plan_admin_user, action_list_url):
     """
-    Every update stamps `updated_at` — it is now set centrally in `Action.save()`
-    rather than in the serializer, so even a version-less bulk write (the path
-    that used to rely on `ActionSerializer.update` setting it) still refreshes it.
+    Every update stamps `updated_at`.
+
+    It is now set centrally in `Action.save()` rather than in the serializer, so
+    even a version-less bulk write (the path that used to rely on
+    `ActionSerializer.update` setting it) still refreshes it.
     """
     action = ActionFactory.create(plan=plan)
     api_client.force_login(plan_admin_user)
@@ -319,9 +321,11 @@ def test_action_update_bumps_updated_at(api_client, plan, plan_admin_user, actio
 
 def test_action_save_bumps_version_so_stale_grid_write_conflicts(api_client, plan, plan_admin_user, action_list_url):
     """
-    A plain model `save()` (e.g. the Wagtail admin form or a GraphQL mutation)
-    bumps `version`, so a grid bulk write carrying the pre-save version is
-    detected as stale and rejected with 409.
+    A plain model `save()` bumps `version`, so a stale grid write 409s.
+
+    A `save()` from a non-grid path (e.g. the Wagtail admin form or a GraphQL
+    mutation) bumps `version`, so a grid bulk write carrying the pre-save
+    version is detected as stale and rejected with 409.
     """
     action = ActionFactory.create(plan=plan)
     api_client.force_login(plan_admin_user)
@@ -352,12 +356,42 @@ def test_action_save_bumps_version_so_stale_grid_write_conflicts(api_client, pla
     assert action.name == 'changed again'
 
 
+@pytest.mark.django_db
+def test_stale_instance_save_bumps_version_atomically(plan):
+    """
+    A `save()` bumps `version` from the current DB value, not the stale in-memory one.
+
+    A model instance loaded before another writer commits carries an
+    out-of-date `version`. Bumping `self.version + 1` would let two such stale
+    writers both persist the same token; the atomic `F('version') + 1` in
+    `Action.save()` instead increments the current DB value, so the token still
+    advances (and a grid client that saw the intermediate value detects the
+    change).
+    """
+    action = ActionFactory.create(plan=plan)
+    action.refresh_from_db()
+    stale = Action.objects.get(pk=action.pk)  # in-memory snapshot at the current version
+    baseline = stale.version
+
+    # Another writer advances the row out from under the `stale` instance.
+    Action.objects.filter(pk=action.pk).update(version=F('version') + 5)
+
+    # `stale.version` is still `baseline`, but the save must build on the DB value.
+    stale.name = 'saved from a stale instance'
+    stale.save()
+
+    stale.refresh_from_db()
+    assert stale.version == baseline + 5 + 1
+
+
 def test_reorder_bumps_version_of_shifted_siblings(api_client, plan, plan_admin_user, action_list_url):
     """
+    A reorder bumps `version` on shifted siblings too, not just the moved row.
+
     Reordering an action shifts sibling `order` values via bulk_update (not
-    `save()`); those shifted rows must still get `version` bumped, so a concurrent
-    stale write to a merely-shifted row is rejected with 409 instead of silently
-    overwriting the reorder.
+    `save()`); those shifted rows must still get `version` bumped, so a
+    concurrent stale write to a merely-shifted row is rejected with 409 instead
+    of silently overwriting the reorder.
     """
     actions = [ActionFactory.create(plan=plan) for _ in range(3)]
     api_client.force_login(plan_admin_user)
@@ -415,12 +449,13 @@ def test_reorder_bumps_version_of_shifted_siblings(api_client, plan, plan_admin_
 
 def test_reorder_version_bump_is_atomic_against_concurrent_edit(api_client, plan, plan_admin_user, action_list_url, monkeypatch):
     """
-    The reorder `version` bump must increment the *current* DB value, not a stale
-    load-time baseline — otherwise an edit committed after the reorder snapshot
-    could be masked (its bump silently overwritten). We simulate such an edit by
-    advancing a shifted sibling's `version` mid-request, right before the reorder
-    bump runs, and assert the reorder still advances past it. A `baseline + 1`
-    implementation would regress the value here instead.
+    The reorder `version` bump increments the current DB value, not a stale baseline.
+
+    Otherwise an edit committed after the reorder snapshot could be masked (its
+    bump silently overwritten). We simulate such an edit by advancing a shifted
+    sibling's `version` mid-request, right before the reorder bump runs, and
+    assert the reorder still advances past it. A `baseline + 1` implementation
+    would regress the value here instead.
     """
     actions = [ActionFactory.create(plan=plan) for _ in range(3)]
     api_client.force_login(plan_admin_user)
