@@ -273,7 +273,7 @@ def remove_main_menu_items(request, items: list[MenuItem]):
 @hooks.register('register_help_menu_item')
 def register_video_tutorials_menu_item():
     return DismissibleMenuItem(
-        _('Video tutorials'),
+        _('User handbook'),
         _('https://kausal.gitbook.io/watch'),
         icon_name='help',
         order=1000,
