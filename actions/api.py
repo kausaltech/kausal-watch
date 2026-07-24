@@ -26,10 +26,7 @@ from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSer
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
 from kausal_common.api.utils import register_view_helper
-from kausal_common.model_images import (
-    ModelWithImageSerializerMixin,
-    ModelWithImageViewMixin,
-)
+from kausal_common.model_images import ModelWithImageSerializerMixin
 from kausal_common.people.api import PersonSerializer as BasePersonSerializer
 from kausal_common.users import user_or_bust, user_or_none
 
@@ -157,7 +154,7 @@ class PlanSerializer(CountryFieldMixin, ModelWithImageSerializerMixin, serialize
         }
 
 
-class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet[Plan]):
+class PlanViewSet(viewsets.ModelViewSet[Plan]):
     queryset = Plan.objects.get_queryset()
     serializer_class = PlanSerializer
     filterset_fields = {
@@ -1776,7 +1773,7 @@ class PersonSerializer(BasePersonSerializer):
 
 
 @register_view
-class PersonViewSet(ModelWithImageViewMixin, AuditLoggingBulkModelViewSet[Person]):
+class PersonViewSet(AuditLoggingBulkModelViewSet[Person]):
     queryset = Person.objects.get_queryset()
     serializer_class = PersonSerializer
 
