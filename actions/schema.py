@@ -259,6 +259,16 @@ def _annotate_shared_pledge_commitment_count(queryset: QuerySet[Pledge]) -> Quer
 T = TypeVar('T', bound=Plan)
 
 
+def _get_plan_domains_for_hostname(plan: Plan, hostname: str) -> list[PlanDomain]:
+    domains_by_hostname: dict[str, list[PlanDomain]] | None = getattr(plan, '_domains_by_hostname', None)
+    if domains_by_hostname is None:
+        domains_by_hostname = {}
+        for domain in plan.domains.all():
+            domains_by_hostname.setdefault(domain.hostname, []).append(domain)
+        plan.__dict__['_domains_by_hostname'] = domains_by_hostname
+    return domains_by_hostname.get(hostname, [])
+
+
 class PlanInterface(graphene.Interface[T], Generic[T]):
     primary_language = graphene.String(required=True)
     published_at = graphene.DateTime()
@@ -279,9 +289,9 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
             hostname = context_hostname
         if not hostname:
             return None
-        explicit_domains = root.domains.filter(plan=root, hostname=hostname).first()
+        explicit_domains = _get_plan_domains_for_hostname(root, hostname)
         if explicit_domains:
-            return explicit_domains
+            return explicit_domains[0]
 
         implicit_domain = PlanDomain(
             plan=root,
@@ -305,13 +315,13 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
     @gql_optimizer.resolver_hints(
         model_field='domains',
     )
-    def resolve_domains(root: Plan, info, hostname=None) -> None | QuerySet[PlanDomain, PlanDomain]:
+    def resolve_domains(root: Plan, info, hostname=None) -> list[PlanDomain] | None:
         context_hostname = getattr(info.context, '_plan_hostname', None)
         if not hostname:
             hostname = context_hostname
             if not hostname:
                 return None
-        return root.domains.filter(plan=root, hostname=hostname)
+        return _get_plan_domains_for_hostname(root, hostname)
 
     @classmethod
     def resolve_type(cls, instance: Plan, info: GQLInfo) -> type[RestrictedPlanNode | PlanNode]:
@@ -319,8 +329,9 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         if context_hostname is None:
             return RestrictedPlanNode
 
-        first_domain = instance.domains.filter(plan=instance, hostname=context_hostname).first()
-        if first_domain is not None:
+        domains = _get_plan_domains_for_hostname(instance, context_hostname)
+        if domains:
+            first_domain = domains[0]
             override = first_domain.publication_status_override
             if override is not None:
                 if override == PublicationStatus.PUBLISHED:
@@ -338,9 +349,9 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
             hostname = context_hostname
             if not hostname:
                 return None
-        domain = root.domains.filter(plan=root, hostname=hostname).first()
-        if domain is not None:
-            return domain.status_message
+        domains = _get_plan_domains_for_hostname(root, hostname)
+        if domains:
+            return domains[0].status_message
         if root.is_live():
             return None
         with override(root.primary_language):

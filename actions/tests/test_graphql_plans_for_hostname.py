@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 import pytest
@@ -125,6 +127,27 @@ def test_get_plans_by_hostname(
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected
+
+
+def test_plans_for_hostname_reuses_prefetched_domains(
+    graphql_client_query_data,
+    plan_domain_factory,
+    plan_factory,
+):
+    hostname = 'multi-plan.example.org'
+    plans = [plan_factory() for _ in range(8)]
+    for index, plan in enumerate(plans):
+        plan_domain_factory(plan=plan, hostname=hostname, base_path=f'/plan-{index}')
+
+    with CaptureQueriesContext(connection) as queries:
+        data = graphql_client_query_data(
+            GET_PLANS_BY_HOSTNAME_QUERY,
+            variables={'hostname': hostname},
+        )
+
+    assert len(data['plansForHostname']) == len(plans)
+    plan_domain_queries = [query for query in queries if 'FROM "actions_plandomain"' in query['sql']]
+    assert len(plan_domain_queries) == 2
 
 
 @pytest.mark.parametrize(
