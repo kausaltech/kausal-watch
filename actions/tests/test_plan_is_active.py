@@ -94,9 +94,22 @@ class TestPlanPermissionPolicy:
         inactive_plan = plan_factory(is_active=False, published_at=timezone.now())
         policy = PlanPermissionPolicy(Plan)
 
-        has_perm = policy.anon_has_perm('view', inactive_plan)
+        has_perm = policy.user_has_permission_for_instance(AnonymousUser(), 'view', inactive_plan)
 
         assert has_perm is False
+
+    def test_inactive_plan_with_publication_gate_disabled_is_not_visible(self, plan_factory):
+        inactive_plan = plan_factory(is_active=False)
+        inactive_plan.features.expose_unpublished_plan_only_to_authenticated_user = False
+        inactive_plan.features.save()
+
+        assert inactive_plan.is_visible_for_user(AnonymousUser()) is False
+
+    def test_inactive_plan_is_not_publicly_visible_to_superuser(self, plan_factory, user_factory):
+        inactive_plan = plan_factory(is_active=False)
+        superuser = user_factory(is_superuser=True)
+
+        assert inactive_plan.is_visible_for_user(superuser) is False
 
     def test_anonymous_can_view_active_plan(self, plan_factory):
         """Test that anonymous users can view active published plans."""
@@ -120,24 +133,21 @@ class TestPlanPermissionPolicy:
         inactive_plan = plan_factory(is_active=False, published_at=timezone.now())
 
         policy = PlanPermissionPolicy(Plan)
-        q = policy.construct_perm_q_anon('view')
-
-        assert q is not None
-        filtered_plans = Plan.objects.filter(q)
+        filtered_plans = policy.filter_by_perm(Plan.objects.all(), AnonymousUser(), 'view')
 
         assert active_plan in filtered_plans or not active_plan.features.expose_unpublished_plan_only_to_authenticated_user
         assert inactive_plan not in filtered_plans
 
-    def test_superuser_can_view_inactive_plan(self, plan_factory, user_factory):
-        """Test that superusers can view inactive plans."""
+    def test_permission_policy_blocks_inactive_plan_for_superuser(self, plan_factory, user_factory):
+        """State-level permission blocks apply before the superuser shortcut."""
         inactive_plan = plan_factory(is_active=False, published_at=timezone.now())
         superuser = user_factory(is_superuser=True)
 
         policy = PlanPermissionPolicy(Plan)
 
-        has_perm = policy.user_has_perm(superuser, 'view', inactive_plan)
+        has_perm = policy.user_has_permission_for_instance(superuser, 'view', inactive_plan)
 
-        assert has_perm is True
+        assert has_perm is False
 
     def test_non_superuser_cannot_view_inactive_plan(self, plan_factory, user_factory):
         """Test that non-superusers cannot view inactive plans they don't admin."""
@@ -146,7 +156,7 @@ class TestPlanPermissionPolicy:
 
         policy = PlanPermissionPolicy(Plan)
 
-        has_perm = policy.user_has_perm(regular_user, 'view', inactive_plan)
+        has_perm = policy.user_has_permission_for_instance(regular_user, 'view', inactive_plan)
 
         assert has_perm is False
 
@@ -184,8 +194,8 @@ class TestPlanPermissionPolicy:
         # Regular user should not see inactive plan
         assert inactive_plan not in visible_plans
 
-    def test_filter_by_perm_includes_inactive_for_superuser(self, plan_factory, user_factory):
-        """Test that visible_for_user() includes inactive plans for superusers."""
+    def test_visible_for_user_excludes_inactive_for_superuser(self, plan_factory, user_factory):
+        """Public visibility excludes inactive plans even for superusers."""
         active_plan = plan_factory(is_active=True, published_at=timezone.now())
         inactive_plan = plan_factory(is_active=False, published_at=timezone.now())
 
@@ -194,4 +204,4 @@ class TestPlanPermissionPolicy:
         visible_plans = Plan.objects.qs.visible_for_user(superuser)
 
         assert active_plan in visible_plans
-        assert inactive_plan in visible_plans
+        assert inactive_plan not in visible_plans

@@ -5,10 +5,10 @@ import typing
 from django.db.models import Q
 from django.utils import timezone
 
-from kausal_common.models.permission_policy import ModelPermissionPolicy
+from kausal_common.models.permission_policy import ModelPermissionPolicy, PermissionBlock
 
 if typing.TYPE_CHECKING:
-    from kausal_common.models.permission_policy import ObjectSpecificAction
+    from kausal_common.models.permission_policy import BaseObjectAction, ObjectSpecificAction
 
     from actions.models import Plan
     from actions.models.plan import PlanQuerySet  # noqa: F401
@@ -16,18 +16,33 @@ if typing.TYPE_CHECKING:
 
 
 class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
+    def get_permission_block(
+        self,
+        action: BaseObjectAction,
+        *,
+        obj: Plan | None = None,
+        context: None = None,
+    ) -> PermissionBlock | None:
+        if action == 'view' and obj is not None and not obj.is_active:
+            return PermissionBlock('Inactive plans are not visible', code='plan_inactive')
+        return super().get_permission_block(action, obj=obj, context=context)
+
+    def construct_state_perm_q(self, action: ObjectSpecificAction) -> Q:
+        if action == 'view':
+            return Q(is_active=True)
+        return Q()
+
     def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:
         """
         Construct permission query for anonymous users.
 
         Allow viewing of plans if the expose_unpublished_plan_only_to_authenticated_user flag is False.
         If the expose_unpublished_plan_only_to_authenticated_user flag is True, only allow viewing of published plans.
-        Inactive plans are never visible to anonymous users.
         """
         if action == 'view':
-            return Q(is_active=True) & (
-                Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
-                | Q(published_at__isnull=False, published_at__lte=timezone.now())
+            return Q(features__expose_unpublished_plan_only_to_authenticated_user=False) | Q(
+                published_at__isnull=False,
+                published_at__lte=timezone.now(),
             )
         return None
 
@@ -35,19 +50,16 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
         """
         Construct permission query for authenticated users.
 
-        Only superusers can see inactive plans. For non-superusers, inactive plans
-        are excluded from both admin and public-facing access.
+        Inactive plans are excluded by the state-level permission filter.
         """
         if action == 'view':
             # get_adminable_plans() already filters out inactive plans for non-superusers,
             # and get_viewable_plans() also excludes inactive plans.
             viewable_plans = user.get_adminable_plans().union(user.get_viewable_plans()).values_list('id', flat=True)
-            return Q(id__in=viewable_plans) | (
-                Q(is_active=True)
-                & (
-                    Q(published_at__isnull=False, published_at__lte=timezone.now())
-                    | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
-                )
+            return (
+                Q(id__in=viewable_plans)
+                | Q(published_at__isnull=False, published_at__lte=timezone.now())
+                | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
             )
         return None
 
@@ -55,7 +67,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
         """Check permissions for a specific plan instance."""
         if action == 'view':
             if not obj.is_active:
-                return user.is_superuser
+                return False
             if user.can_access_public_site(obj):
                 return True
             if obj.features.expose_unpublished_plan_only_to_authenticated_user:

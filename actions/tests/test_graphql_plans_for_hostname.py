@@ -53,6 +53,14 @@ GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = """
   }
 """
 
+GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME = """
+  query GetPlansByHostname($hostname: String) {
+    plansForHostname(hostname: $hostname) {
+      __typename
+    }
+  }
+"""
+
 
 @pytest.mark.parametrize(
     ('publication_status_override', 'delta_minutes', 'expected_publication_status', 'redirect_to'),
@@ -112,10 +120,76 @@ def test_get_plans_by_hostname(
             'publishedAt': published_at.isoformat() if published_at else None,
         },
     ]
-    if expected_publication_status == PublicationStatus.PUBLISHED:
+    publication_status_gates_visibility = expose_flag or publication_status_override is not None
+    if expected_publication_status == PublicationStatus.PUBLISHED or not publication_status_gates_visibility:
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected
+
+
+@pytest.mark.parametrize(
+    'domain_kind',
+    ['implicit', 'explicit', 'published_override', 'unpublished_override'],
+)
+@pytest.mark.parametrize('publication_state', ['published', 'scheduled', 'unpublished'])
+@pytest.mark.parametrize('user_kind', ['anonymous', 'plan_admin', 'superuser'])
+@pytest.mark.parametrize('expose_flag', [True, False])
+def test_plan_type_respects_publication_visibility(
+    client,
+    graphql_client_query_data,
+    person_factory,
+    plan_domain_factory,
+    plan_factory,
+    settings,
+    user_factory,
+    domain_kind,
+    publication_state,
+    user_kind,
+    expose_flag,
+):
+    published_at = {
+        'published': timezone.now() - timedelta(minutes=5),
+        'scheduled': timezone.now() + timedelta(minutes=5),
+        'unpublished': None,
+    }[publication_state]
+    plan = plan_factory(published_at=published_at)
+    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_flag
+    plan.features.save()
+
+    override = None
+    if domain_kind == 'implicit':
+        settings.HOSTNAME_PLAN_DOMAINS = ['dummy.io']
+        hostname = f'{plan.identifier}.dummy.io'
+    else:
+        if domain_kind == 'published_override':
+            override = PublicationStatus.PUBLISHED
+        elif domain_kind == 'unpublished_override':
+            override = PublicationStatus.UNPUBLISHED
+        domain = plan_domain_factory(plan=plan, publication_status_override=override)
+        hostname = domain.hostname
+
+    if user_kind == 'plan_admin':
+        person = person_factory(general_admin_plans=[plan])
+        client.force_login(person.user)
+    elif user_kind == 'superuser':
+        client.force_login(user_factory(is_superuser=True))
+
+    data = graphql_client_query_data(
+        GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME,
+        variables={'hostname': hostname},
+    )
+
+    if domain_kind == 'published_override':
+        is_visible = True
+    elif domain_kind == 'unpublished_override':
+        is_visible = False
+    elif not expose_flag or publication_state == 'published':
+        is_visible = True
+    else:
+        is_visible = user_kind in ('plan_admin', 'superuser')
+
+    expected_type = 'Plan' if is_visible else 'RestrictedPlanNode'
+    assert data['plansForHostname'][0]['__typename'] == expected_type
 
 
 @pytest.mark.parametrize(

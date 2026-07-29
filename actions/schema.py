@@ -298,6 +298,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         only=('features__expose_unpublished_plan_only_to_authenticated_user',),
     )
     def resolve_login_enabled(root: Plan, _info: GQLInfo) -> bool:
+        # This indicates whether signing in may grant access to a restricted plan.
         return root.features.expose_unpublished_plan_only_to_authenticated_user
 
     @staticmethod
@@ -317,15 +318,9 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         context_hostname = getattr(info.context, '_plan_hostname', None)
         if context_hostname is None:
             return RestrictedPlanNode
-        domains = instance.domains.filter(plan=instance, hostname=context_hostname)
-        first_domain = domains.first()
 
-        if instance.features.expose_unpublished_plan_only_to_authenticated_user is False:
-            if first_domain is None or first_domain.status == PublicationStatus.PUBLISHED:
-                return PlanNode
-            return RestrictedPlanNode
-
-        if first_domain:
+        first_domain = instance.domains.filter(plan=instance, hostname=context_hostname).first()
+        if first_domain is not None:
             override = first_domain.publication_status_override
             if override is not None:
                 if override == PublicationStatus.PUBLISHED:
@@ -2174,6 +2169,8 @@ class Query:
         user = user_or_none(info.context.user)
         result = []
         plan_obj = Plan.objects.get(identifier=plan)
+        if not plan_obj.is_active:
+            return []
         if plan_obj.features.moderation_workflow is None:
             return []
         tasks = plan_obj.get_workflow_tasks()
@@ -2219,9 +2216,14 @@ class Query:
     @staticmethod
     def resolve_plans_for_hostname(_root: Query, info: GQLInfo, hostname: str) -> list[Plan]:
         info.context._plan_hostname = hostname.lower()  # type: ignore
-        plans = Plan.objects.get_queryset().for_hostname(
-            info.context._plan_hostname,
-            request=info.context,  # type: ignore
+        plans = (
+            Plan.objects
+            .get_queryset()
+            .for_hostname(
+                info.context._plan_hostname,
+                request=info.context,  # type: ignore
+            )
+            .filter(is_active=True)
         )
         ret = list(gql_optimizer.query(plans, info))
         req = info.context
@@ -2243,7 +2245,7 @@ class Query:
         user = user_or_none(info.context.user)
         if user is None:
             return []
-        plans = Plan.objects.get_queryset().user_has_staff_role_for(user)
+        plans = Plan.objects.get_queryset().user_has_staff_role_for(user).visible_for_user(user)
         return gql_optimizer.query(plans, info)
 
     @staticmethod

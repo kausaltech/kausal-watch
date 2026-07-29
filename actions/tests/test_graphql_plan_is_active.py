@@ -13,6 +13,8 @@ from django.utils import timezone
 
 import pytest
 
+from actions.models.plan import PublicationStatus
+
 pytestmark = pytest.mark.django_db
 
 
@@ -40,11 +42,31 @@ PLAN_WITH_IS_ACTIVE_QUERY = """
 PLANS_FOR_HOSTNAME_QUERY = """
     query GetPlansForHostname($hostname: String) {
         plansForHostname(hostname: $hostname) {
+            __typename
             ... on Plan {
                 id
                 identifier
                 name
             }
+        }
+    }
+"""
+
+WORKFLOW_STATES_QUERY = """
+    query GetWorkflowStates($plan: ID!) {
+        workflowStates(plan: $plan) {
+            id
+        }
+    }
+"""
+
+PUBLIC_PLAN_WORKFLOW_STATES_QUERY = """
+    query GetPublicPlanWorkflowStates($hostname: String, $plan: ID!) {
+        plansForHostname(hostname: $hostname) {
+            __typename
+        }
+        workflowStates(plan: $plan) {
+            id
         }
     }
 """
@@ -68,6 +90,60 @@ class TestPlanGraphQLIsActive:
         # Should return None for inactive plan
         assert data['plan'] is None
 
+    def test_superuser_cannot_query_inactive_plan_by_id(self, client, graphql_client_query_data, plan_factory, user_factory):
+        inactive_plan = plan_factory(
+            is_active=False,
+            published_at=timezone.now() - timedelta(days=1),
+        )
+        client.force_login(user_factory(is_superuser=True))
+
+        data = graphql_client_query_data(
+            PLAN_QUERY,
+            variables={'id': inactive_plan.identifier},
+        )
+
+        assert data['plan'] is None
+
+    def test_superuser_cannot_query_inactive_plan_workflow_states(
+        self, client, graphql_client_query_data, plan_factory, user_factory
+    ):
+        inactive_plan = plan_factory(is_active=False)
+        client.force_login(user_factory(is_superuser=True))
+
+        data = graphql_client_query_data(
+            WORKFLOW_STATES_QUERY,
+            variables={'plan': inactive_plan.identifier},
+        )
+
+        assert data['workflowStates'] == []
+
+    def test_anonymous_can_query_workflow_states_for_plan_published_by_domain_override(
+        self,
+        graphql_client_query_data,
+        plan_domain_factory,
+        plan_factory,
+        workflow_factory,
+        workflow_task_factory,
+    ):
+        plan = plan_factory(published_at=None)
+        plan.features.expose_unpublished_plan_only_to_authenticated_user = True
+        workflow = workflow_factory()
+        workflow_task_factory(workflow=workflow)
+        plan.features.moderation_workflow = workflow
+        plan.features.save()
+        domain = plan_domain_factory(
+            plan=plan,
+            publication_status_override=PublicationStatus.PUBLISHED,
+        )
+
+        data = graphql_client_query_data(
+            PUBLIC_PLAN_WORKFLOW_STATES_QUERY,
+            variables={'hostname': domain.hostname, 'plan': plan.identifier},
+        )
+
+        assert data['plansForHostname'][0]['__typename'] == 'Plan'
+        assert data['workflowStates'] == [{'id': 'PUBLISHED'}]
+
     def test_anonymous_can_query_active_plan_by_id(self, graphql_client_query_data, plan_factory):
         """Test that anonymous users can query active published plans by ID."""
         active_plan = plan_factory(
@@ -86,64 +162,57 @@ class TestPlanGraphQLIsActive:
         assert data['plan'] is not None
         assert data['plan']['identifier'] == active_plan.identifier
 
-    # Note: Testing authenticated GraphQL queries requires a more complex setup
-    # with the request context. The permission filtering is tested in the
-    # permission policy tests above.
-
 
 class TestPlansForHostnameGraphQL:
     """Test plansForHostname GraphQL query respects is_active field."""
 
-    def test_plans_for_hostname_excludes_inactive_for_anon(self, graphql_client_query_data, plan_factory, plan_domain_factory):
-        """Test that plansForHostname excludes inactive plans for anonymous users."""
-        active_plan = plan_factory(
-            is_active=True,
-            published_at=timezone.now() - timedelta(days=1),
-        )
+    @pytest.mark.parametrize('user_kind', ['anonymous', 'superuser'])
+    @pytest.mark.parametrize('publication_override', [None, 'PUBLISHED'])
+    def test_plans_for_hostname_excludes_inactive_plan(
+        self,
+        client,
+        graphql_client_query_data,
+        plan_factory,
+        plan_domain_factory,
+        user_factory,
+        user_kind,
+        publication_override,
+    ):
         inactive_plan = plan_factory(
             is_active=False,
             published_at=timezone.now() - timedelta(days=1),
         )
-
-        # Create domains for both plans
-        active_domain = plan_domain_factory(
-            plan=active_plan,
-            hostname='active.example.com',
-        )
         inactive_domain = plan_domain_factory(
             plan=inactive_plan,
             hostname='inactive.example.com',
+            publication_status_override=publication_override,
         )
-
-        # Ensure expose flag allows viewing when active
-        active_plan.features.expose_unpublished_plan_only_to_authenticated_user = False
-        active_plan.features.save()
         inactive_plan.features.expose_unpublished_plan_only_to_authenticated_user = False
         inactive_plan.features.save()
 
-        # Query for active plan
-        active_data = graphql_client_query_data(
-            PLANS_FOR_HOSTNAME_QUERY,
-            variables={'hostname': active_domain.hostname},
-        )
+        if user_kind == 'superuser':
+            client.force_login(user_factory(is_superuser=True))
 
-        assert len(active_data['plansForHostname']) == 1
-        assert active_data['plansForHostname'][0]['identifier'] == active_plan.identifier
-
-        # Query for inactive plan - should return empty or without identifier
-        graphql_client_query_data(
+        data = graphql_client_query_data(
             PLANS_FOR_HOSTNAME_QUERY,
             variables={'hostname': inactive_domain.hostname},
         )
 
-        # NOTE: The actual behavior of plansForHostname with inactive plans
-        # depends on publication_status_override and other factors.
-        # For this test, we just verify that active plans are returned correctly.
-        # The filtering of inactive plans is tested in the permission policy tests.
+        assert data['plansForHostname'] == []
 
-    # Note: Testing authenticated GraphQL queries for plansForHostname requires
-    # a more complex setup. The permission filtering is tested in the permission
-    # policy tests.
+    def test_plans_for_hostname_returns_active_plan(self, graphql_client_query_data, plan_factory, plan_domain_factory):
+        active_plan = plan_factory(
+            is_active=True,
+            published_at=timezone.now() - timedelta(days=1),
+        )
+        active_domain = plan_domain_factory(plan=active_plan, hostname='active.example.com')
+
+        data = graphql_client_query_data(
+            PLANS_FOR_HOSTNAME_QUERY,
+            variables={'hostname': active_domain.hostname},
+        )
+
+        assert data['plansForHostname'][0]['identifier'] == active_plan.identifier
 
 
 class TestPlanIsActiveFieldInSchema:

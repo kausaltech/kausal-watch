@@ -1093,8 +1093,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def is_visible_for_user(self, user: UserOrAnon | None) -> bool:
         """Use permission policy to check visibility."""
-        if self.features.expose_unpublished_plan_only_to_authenticated_user is False:
-            return True
         if user is None:  # TODO: remove this once all places where None is used are fixed
             user = AnonymousUser()
         return self.permission_policy().user_has_permission_for_instance(user, 'view', self)
