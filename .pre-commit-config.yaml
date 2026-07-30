@@ -15,9 +15,9 @@ repos:
         name: Check with Ruff
         types: [python]
         stages: [pre-commit, manual]
-        language: script
+        language: system
         require_serial: true
-        entry: kausal_common/development/git-hooks/ruff-pre-commit.sh
+        entry: ruff check --force-exclude
 
       - id: check-submodules
         name: Check submodules
