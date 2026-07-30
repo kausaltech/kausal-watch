@@ -26,8 +26,8 @@ def collection_index_get_queryset(self):
     return plan.root_collection.get_descendants(inclusive=False)
 
 
-def _get_language_choices():
-    language_choices = []
+def _get_language_choices() -> list[tuple[str, str]]:
+    language_choices: list[tuple[str, str]] = []
     for lang_code, _lang_name in get_available_admin_languages():
         try:
             lang_info = get_language_info(lang_code.lower())
@@ -50,8 +50,7 @@ class AdminSiteConfig(AdminConfig):
 
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
-        global _wagtail_collection_save_instance
-        global _wagtail_collection_index_get_queryset
+        global _wagtail_collection_save_instance  # noqa: PLW0603
 
         if _wagtail_collection_save_instance is None:
             from wagtail.admin.views.collections import Create, Index
@@ -59,8 +58,6 @@ class AdminSiteConfig(AdminConfig):
             _wagtail_collection_save_instance = Create.save_instance
             Create.save_instance = collection_save_instance
             Index.get_queryset = collection_index_get_queryset
-
-        global _wagtail_preferred_language_choices_func
 
         # Monkey-patch Wagtail's _get_language_choices to transform language codes to lower case. See the comment above
         # LANGUAGES in settings.py for details about this.
@@ -71,7 +68,7 @@ class AdminSiteConfig(AdminConfig):
         # Remove the ThemeSettingsPanel
         from wagtail.admin.views.account import ThemeSettingsPanel
 
-        ThemeSettingsPanel.is_active = lambda self: False  # type: ignore
+        ThemeSettingsPanel.is_active = lambda _self: False  # type: ignore
 
         from wagtail.admin.rich_text import DraftailRichTextArea
         from wagtail.telepath import register as register_telepath_adapter

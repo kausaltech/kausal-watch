@@ -1,7 +1,8 @@
 """
-A module for writing action data in  a spreadsheet in a format which aims to
-fit a visually pleasing  amount of data in one printed page  of the sheet. This
-module writes explicit horizontal page breaks with worksheet.set_h_pagebreaks().
+Write action data in a spreadsheet format suitable for printing.
+
+The module writes explicit horizontal page breaks with
+worksheet.set_h_pagebreaks().
 
 The internal implementation  is considered a hack based on  heuristics and lots
 of trial-and-error. The implementation uses a lot of magic numbers which can be
@@ -45,11 +46,14 @@ class ReportActionPrintLayoutCustomization(models.Model):
     approximate_chars_per_line = models.IntegerField(null=True, blank=True)
     approximate_lines_per_page = models.IntegerField(null=True, blank=True)
     min_split_chars = models.IntegerField(null=True, blank=True)
-    # Approximately how many excel columns do we need to fit a string of this many characters.  4 is full width, 2 is half of the width of
-    # the entire page.
+    # Approximately how many Excel columns fit a string of this length. Four is
+    # full width, two is half the width of the entire page.
     # Contains a list[list[int, int]]
     # (fist of pair is char count, second width in columns)
     width_needed = models.JSONField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return str(self.plan) if self.plan else 'Global defaults'
 
     @classmethod
     def _get_field_names(cls) -> list[str]:
@@ -196,7 +200,7 @@ def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -
 
     pages_per_action_identifier = {}
 
-    def grid_layout_to_grid_values(
+    def grid_layout_to_grid_values(  # noqa: C901, PLR0912, PLR0915
         grid_layout: list[list[str]],
         action: dict[str, Any],
         approximate_chars_per_line: int,
@@ -344,8 +348,8 @@ def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -
     worksheet = excel_report.workbook.add_worksheet(_('Profiles'))
     column_width = 21
     worksheet.set_column(0, MAX_COLUMNS - 1, column_width)
-    # The following empty columns need to be 2 columns wide and 4 columns wide (actually a little bit less) and are used when forcing excel
-    # to automatically adjust the row height to fit the texts (with a separate macro), since excel doesn't do that for merged cells
+    # These empty columns are used when forcing Excel to automatically adjust
+    # row heights with a separate macro; Excel does not do so for merged cells.
     worksheet.set_column(MAX_COLUMNS + 1, MAX_COLUMNS + 2, column_width * 2)
     worksheet.set_column(MAX_COLUMNS + 3, MAX_COLUMNS + 3, column_width * 4)
     worksheet.insert_button(

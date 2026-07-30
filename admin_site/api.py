@@ -58,7 +58,7 @@ def check_user_in_other_clusters(email, request):
 @permission_classes([])
 @schema(None)
 @throttle_classes([LoginMethodThrottle])
-def check_login_method(request):
+def check_login_method(request):  # noqa: C901
     d = request.data
     if not d or not isinstance(d, dict):
         msg = _('Invalid email address')
@@ -111,7 +111,7 @@ def check_login_method(request):
     # Use the client's authorization backend
     try:
         client = person.get_admin_client()
-    except:
+    except Exception:
         client = None
 
     if client is None:

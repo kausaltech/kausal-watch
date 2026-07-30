@@ -80,7 +80,7 @@ class ScopeInheritedDatasetPermissionPolicy(ModelPermissionPolicy[Dataset, HttpR
         """Check if an unauthenticated user has permission to perform an action on an instance."""
         return False
 
-    def user_can_create(self, user: User, context: None | HttpRequest = None) -> bool:
+    def user_can_create(self, user: User, context: HttpRequest | None = None) -> bool:
         """
         Check if user can create a new dataset.
 
@@ -219,9 +219,9 @@ class DatasetSchemaPermissionPolicy(ModelPermissionPolicy[DatasetSchema, None, D
         editable_indicators = Indicator.objects.qs.modifiable_by(user)
 
         return Q(
-            Q(scopes__scope_content_type=plan_ct, scopes__scope_id__in=adminable_plans) |
-            Q(scopes__scope_content_type=category_ct, scopes__scope_id__in=adminable_categories) |
-            Q(scopes__scope_content_type=indicator_ct, scopes__scope_id__in=editable_indicators)
+            Q(scopes__scope_content_type=plan_ct, scopes__scope_id__in=adminable_plans)
+            | Q(scopes__scope_content_type=category_ct, scopes__scope_id__in=adminable_categories)
+            | Q(scopes__scope_content_type=indicator_ct, scopes__scope_id__in=editable_indicators)
         )
 
     def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:

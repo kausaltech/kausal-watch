@@ -145,7 +145,7 @@ class ActionGraphGenerator(GraphGenerator):
             )
         return None
 
-    def add_node(self, obj):
+    def add_node(self, obj):  # noqa: C901, PLR0912
         node_id = self.make_node_id(obj)
         if node_id in self.nodes:
             return

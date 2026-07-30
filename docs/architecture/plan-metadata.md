@@ -39,10 +39,10 @@ Organization: Helsinki (path='00A1', depth=1)
 
 **Tree navigation methods:**
 ```python
-org.get_parent()        # Returns parent organization or None
-org.get_ancestors()     # QuerySet of all ancestors (root to parent)
-org.get_descendants()   # QuerySet of all children recursively
-org.get_children()      # QuerySet of direct children only
+org.get_parent()  # Returns parent organization or None
+org.get_ancestors()  # QuerySet of all ancestors (root to parent)
+org.get_descendants()  # QuerySet of all children recursively
+org.get_children()  # QuerySet of direct children only
 ```
 
 **Plan Relationships:**

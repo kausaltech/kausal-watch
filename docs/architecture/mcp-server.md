@@ -69,6 +69,7 @@ mcp_server/
 
    from .helpers import execute_operation
 
+
    async def get_plan(identifier: str) -> MCPGetPlan:
        """Get plan details by identifier."""
        result = await execute_operation(MCPGetPlan, MCPGetPlan.Arguments(identifier=identifier))
@@ -115,6 +116,7 @@ regenerate). The key differences are in the GraphQL operation and the tool imple
 
    from .helpers import check_operation_result, execute_operation
 
+
    async def create_category(
        type_id: Annotated[str, 'The ID of the category type'],
        identifier: Annotated[str, 'Unique identifier'],
@@ -123,9 +125,7 @@ regenerate). The key differences are in the GraphQL operation and the tool imple
        """Create a new category within a category type."""
        result = await execute_operation(
            CreateCategory,
-           CreateCategory.Arguments(
-               input=CategoryInput(typeId=type_id, identifier=identifier, name=name)
-           ),
+           CreateCategory.Arguments(input=CategoryInput(typeId=type_id, identifier=identifier, name=name)),
        )
        return check_operation_result(result.plan.create_category)
    ```
@@ -147,10 +147,10 @@ field names:
 
 ```python
 # Correct - use camelCase (the alias)
-input=AddRelatedOrganizationInput(planId=plan_id, organizationId=organization_id)
+input = AddRelatedOrganizationInput(planId=plan_id, organizationId=organization_id)
 
 # Wrong - snake_case will fail at runtime
-input=AddRelatedOrganizationInput(plan_id=plan_id, organization_id=organization_id)
+input = AddRelatedOrganizationInput(plan_id=plan_id, organization_id=organization_id)
 ```
 
 This is because the generated Pydantic models use `Field(alias='camelCase')`.
@@ -206,11 +206,11 @@ and decorated with `@gql.mutation()` from `aplans.gql`:
 from aplans import gql
 from kausal_common.strawberry.permissions import SuperuserOnly
 
+
 @sb.type
 class PlanMutations:
     @gql.mutation(permission_classes=[SuperuserOnly], description='Create a new plan')
-    def create_plan(self, info: gql.Info, input: PlanInput) -> PlanNode:
-        ...
+    def create_plan(self, info: gql.Info, input: PlanInput) -> PlanNode: ...
 ```
 
 The `gql.mutation()` decorator wraps `strawberry_django.mutation` with:
@@ -344,7 +344,7 @@ should I focus on now?"
 **Example - Find late actions with Senate priorities:**
 ```python
 query_actions(
-    plan="bremen-klima-copy1",
+    plan='bremen-klima-copy1',
     fields="""
         identifier
         name
@@ -356,7 +356,7 @@ query_actions(
             }
         }
     """,
-    first=20
+    first=20,
 )
 ```
 

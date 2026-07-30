@@ -28,6 +28,8 @@ class ReportTypeChooserBlock(blocks.ChooserBlock):
 @register_streamfield_block
 class ReportTypeFieldChooserBlock(blocks.CharBlock):
     # TODO: Write proper chooser block instead of extending CharBlock
-    # Idea: Override CharBlock.__init__(), plug in widget to call of CharField.__init__(), set it to autocomplete widget. However, there are some issues with that regarding serialization to JSON.
+    # Idea: Override CharBlock.__init__(), plug in a widget to call from
+    # CharField.__init__(), and set it to autocomplete. Serialization to JSON
+    # makes this awkward, though.
     class Meta:
         label = _('Report type field')

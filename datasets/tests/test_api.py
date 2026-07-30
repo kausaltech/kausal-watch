@@ -1,5 +1,7 @@
 """
-Tests for the dataset REST API, focusing on the DataPoint duplicate-detection logic
+Tests for the dataset REST API.
+
+Focuses on the DataPoint duplicate-detection logic
 and the computed_data_points endpoint.
 
 Key behaviours verified:
@@ -392,8 +394,9 @@ class TestDataPointAPIMonthly:
 
 def _make_computation_setup():
     """
-    Create a schema with three metrics (a, b, c) where c = a * b,
-    and return (dataset, metric_a, metric_b, metric_c).
+    Create a schema with three metrics where c = a * b.
+
+    Return (dataset, metric_a, metric_b, metric_c).
     """
     schema = DatasetSchemaFactory.create()
     metric_a = DatasetMetricFactory.create(schema=schema)
@@ -418,8 +421,7 @@ class TestComputedDataPoints:
 
     def test_no_result_when_only_one_operand_has_data(self, api_client, superuser):
         """
-        When only one operand of a computation has a data point, no computed
-        result should be returned — not even a null value.
+        Return no result when only one operand has a data point.
 
         This guards against the bug where _compute_metric_values() emitted a
         null ComputedValue whenever any one operand was present, even if the
@@ -462,8 +464,9 @@ class TestComputedDataPoints:
 
     def test_partial_dates_produce_no_null_results(self, api_client, superuser):
         """
-        If operand a has data for two dates but operand b only covers one of
-        them, only the date with both operands present should yield a result.
+        Return results only for dates covered by both operands.
+
+        Operand a has data for two dates, while operand b covers only one.
         """
         dataset, metric_a, metric_b, _metric_c = _make_computation_setup()
         DataPointFactory.create(dataset=dataset, metric=metric_a, date=date(2023, 1, 1), value=Decimal(2))

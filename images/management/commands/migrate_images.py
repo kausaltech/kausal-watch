@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for image in AplansImage.objects.all():
             old_path = image.file.name
-            basename = os.path.basename(old_path)
+            basename = Path(old_path).name
             new_path = image.file.field.generate_filename(image, basename)
             if old_path != new_path:
                 storage = image.file.storage

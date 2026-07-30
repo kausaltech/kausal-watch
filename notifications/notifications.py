@@ -63,7 +63,7 @@ class Notification(ABC):
 
     def get_content_blocks(self, base_template, template) -> dict[str, Markup]:
         cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
-        return {cb.identifier: Markup(cb.content) for cb in cb_qs}
+        return {cb.identifier: Markup(cb.content) for cb in cb_qs}  # noqa: S704
 
     def get_identifier(self) -> str | None:
         return None
@@ -72,8 +72,9 @@ class Notification(ABC):
     @abstractmethod
     def get_default_intro_text(cls) -> str | None:
         """
-        Return None if this notification type does not need a default text
-        when initializing the default notification templates, otherwise a string.
+        Return None if this notification type does not need a default text.
+
+        When initializing the default notification templates, otherwise return a string.
         """
         pass
 
@@ -119,7 +120,7 @@ class TaskLateNotification(DeadlinePassedNotification):
         return dict(task=self.obj.get_notification_context(self.plan), days_late=self.days_late)
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'task_late',
             'This is an automatic reminder about updating '
@@ -130,7 +131,7 @@ class TaskLateNotification(DeadlinePassedNotification):
         )
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Task is late')
 
 
@@ -144,11 +145,11 @@ class UpdatedIndicatorValuesLateNotification(DeadlinePassedNotification):
         return dict(indicator=self.obj.get_notification_context(self.plan), days_late=self.days_late)
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Updated indicator values are late')
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'updated_indicator_values_late',
             'This is an automatic '
@@ -195,11 +196,11 @@ class TaskDueSoonNotification(DeadlineSoonNotification):
         return dict(task=self.obj.get_notification_context(self.plan), days_left=self.days_left)
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Task is due soon')
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'task_due_soon',
             'This is an automatic reminder about '
@@ -222,11 +223,11 @@ class UpdatedIndicatorValuesDueSoonNotification(DeadlineSoonNotification):
         return dict(indicator=self.obj.get_notification_context(self.plan), days_left=self.days_left)
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Updated indicator values are due soon')
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'updated_indicator_values_due_soon',
             'This is an automatic '
@@ -262,7 +263,7 @@ class NotEnoughTasksNotification(Notification):
         return _("Action doesn't have enough in-progress tasks")
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'not_enough_tasks',
             'This is an automatic reminder about '
@@ -297,11 +298,11 @@ class ActionNotUpdatedNotification(Notification):
             engine.queue_notification(self, recipient)
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Action metadata has not been updated recently')
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'action_not_updated',
             'This is an automatic reminder about '
@@ -331,11 +332,11 @@ class UserFeedbackReceivedNotification(Notification):
                 engine.queue_notification(self, recipient)
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('User feedback received')
 
     @classmethod
-    def get_default_intro_text(cls):
+    def get_default_intro_text(cls) -> str:
         return pgettext(
             'user_feedback_received',
             'A user has submitted feedback.',
@@ -378,12 +379,12 @@ class ManuallyScheduledNotification(Notification):
 
     def get_content_blocks(self, base_template, template) -> dict[str, Markup]:
         cb_qs = base_template.content_blocks.filter(template__isnull=True)
-        result = {cb.identifier: Markup(cb.content) for cb in cb_qs}
+        result = {cb.identifier: Markup(cb.content) for cb in cb_qs}  # noqa: S704
         result['intro'] = template.content
         return result
 
     @classmethod
-    def get_verbose_name(cls):
+    def get_verbose_name(cls) -> StrPromise:
         return _('Manually scheduled notification')
 
     @classmethod

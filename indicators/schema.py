@@ -469,7 +469,7 @@ class Query:
         has_data=None,
         has_goals=None,
         **kwargs,
-    ):
+    ) -> IndicatorQuerySet | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
@@ -502,7 +502,7 @@ class Query:
         qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
         return gql_optimizer.query(qs, info)
 
-    def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
+    def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs) -> Indicator | None:
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
@@ -547,7 +547,7 @@ class Query:
         return obj
 
 
-def plans_indicators_queryset(plans, user, **kwargs):
+def plans_indicators_queryset(plans, user, **kwargs) -> IndicatorQuerySet:
     first = kwargs.get('first')
     order_by = kwargs.get('order_by')
     restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)

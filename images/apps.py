@@ -10,7 +10,6 @@ class ImagesConfig(AppConfig):
 
         monkeypatch_chooser()
 
-
         from wagtail.images import permissions
         from wagtail.images.forms import BaseImageForm
 

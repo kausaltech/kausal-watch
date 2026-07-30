@@ -234,7 +234,7 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             # Persons can only have at most one role as a contact person.
             # Organizations can only have at most one role as a responsible party
 
-    def save(self, commit=True):
+    def save(self, commit=True):  # noqa: C901, PLR0912
         initial_plan_id = self.initial_plan_id
         # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
         if initial_plan_id and str(initial_plan_id) != str(self.instance.plan.id):
@@ -343,8 +343,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
         """
         Save the related objects from the given role-specific formsets.
 
-        For contact persons: If the plan does not distinguish contact persons by role, then there are no role-specific formsets and the
-        contact persons (in the formset `contact_persons`) are saved in `super().save()`.
+        For contact persons: If the plan does not distinguish contact persons by role, then there are no role-specific
+        formsets and the contact persons (in the formset `contact_persons`) are saved in `super().save()`.
         """
         saved_objects = []  # but not yet committed
         deleted_objects = []
@@ -407,7 +407,7 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
 
 class ModelWithRoleInlinePanel(InlinePanel):
     @staticmethod
-    def create_for_model_class(_cls: type[ModelWithRole], *args, **kwargs):
+    def create_for_model_class(_cls: type[ModelWithRole], *args, **kwargs) -> InlinePanel | None:
         if _cls == ActionResponsibleParty:
             return ResponsiblePartiesInlinePanel(*args, **kwargs)
         if _cls == ActionContactPerson:
@@ -416,8 +416,9 @@ class ModelWithRoleInlinePanel(InlinePanel):
 
     def __init__(self, filter_by_role: bool, role: ModelWithRole.Role | None = None, *args, **kwargs):
         """
-        If `filter_by_role` is false, we show all instances in this panel, otherwise only the ones with the given
-        role. (`None` is a possible role for ActionResponsibleParty.).
+        If `filter_by_role` is false, we show all instances in this panel, otherwise only the ones with the given role.
+
+        (`None` is a possible role for ActionResponsibleParty.).
 
         For the latter to work, make sure that your form contains formsets `contact_persons_<role>` (or equivalent for
         other models) whose querysets are filtered accordingly.
@@ -566,10 +567,12 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         self.relation_name = relation_name
         self._cls = _cls
         self.editable_roles = editable_roles
-        children = []
+        children: list[Panel] = []
         assert _cls  # TODO: Didn't really check when or if it can actually be None
         if editable_roles is None:
-            children.append(ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=False))
+            panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=False)
+            assert panel is not None
+            children.append(panel)
         else:
             for role in _cls.get_roles():
                 # Only show panel for "unspecified" role if there are instances with an unspecified role
@@ -580,7 +583,8 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
                     panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=True, role=role)
                 else:
                     panel = ModelWithRoleReadOnlyInlinePanel(relation_name, filter_by_role=True, role=role)
-                children.append(panel)
+                assert panel is not None
+                children.append(cast('Panel', panel))
         super().__init__(children=children, **kwargs)
 
     def clone_kwargs(self):
@@ -606,7 +610,7 @@ class ActionEditHandler(
         result['draft_attributes'] = self.draft_attributes
         return result
 
-    def get_form_class(self):
+    def get_form_class(self):  # noqa: C901, PLR0912
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(Action)
         user = user_or_bust(request.user)
@@ -1030,7 +1034,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self, instance_being_edited: Action | None = None):
+    def get_edit_handler(self, instance_being_edited: Action | None = None):  # noqa: C901, PLR0912, PLR0915
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(Action)
         # TODO: find out how to include the relevant draftable mixin state

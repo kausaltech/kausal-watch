@@ -5,7 +5,7 @@ from enum import StrEnum, auto
 from graphql.error import GraphQLError
 
 
-class GraphQLErrorWithCode(GraphQLError):
+class GraphQLErrorWithCode(GraphQLError):  # noqa: N818
     def __init__(
         self,
         *args,

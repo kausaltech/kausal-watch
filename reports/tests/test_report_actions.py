@@ -29,9 +29,12 @@ def plan_with_some_actions(plan, action_factory):
     return plan
 
 
-def test_report_action_snapshots(plan_with_some_actions, report_type_with_multiple_reports, user):
+def test_report_action_snapshots(  # noqa: C901, PLR0912, PLR0915
+    plan_with_some_actions, report_type_with_multiple_reports, user
+):
     """
-    This test intentionally creates revisions sequentially
+    Create revisions sequentially.
+
     to test that the correct revisions / versions get tied to
     the actions when reporting / completing.
     """

@@ -221,7 +221,7 @@ async def create_action(
 
 
 @register_tool(annotations=ToolAnnotations(title='Update a single action in a plan', idempotentHint=True))
-async def update_action(
+async def update_action(  # noqa: PLR0913, PLR0917
     plan_id: Annotated[str, 'The ID (pk or identifier) of the plan'],
     id: Annotated[str, 'The action ID (pk) or identifier'],
     name: Annotated[str | None, 'Action name'] = None,

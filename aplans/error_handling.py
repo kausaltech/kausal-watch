@@ -25,14 +25,14 @@ def html_server_error(request, template_name=ERROR_500_TEMPLATE_NAME):
         ret = current_plan(request)
         if ret:
             context.update(ret)
-    except Exception:
-        pass
+    except Exception as error:
+        sentry_sdk.capture_exception(error)
     try:
         ret = sentry(request)
         if ret:
             context.update(ret)
-    except Exception:
-        pass
+    except Exception as error:
+        sentry_sdk.capture_exception(error)
 
     context['sentry_error_id'] = None
     if settings.SENTRY_DSN:

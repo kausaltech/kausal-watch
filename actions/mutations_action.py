@@ -396,7 +396,7 @@ class ActionMutations:
         action = Action.objects.get(pk=action.pk)
         return cast('ActionNode', action)  # pyright: ignore[reportInvalidCast]
 
-    def _update_action(self, info: gql.Info, action: Action, input: ActionUpdateInput) -> bool:
+    def _update_action(self, info: gql.Info, action: Action, input: ActionUpdateInput) -> bool:  # noqa: C901, PLR0912
         updated = False
         if input.name is not sb.UNSET:
             action.name = input.name

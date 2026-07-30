@@ -72,7 +72,7 @@ class PageMenuItemNode(graphene.ObjectType[MenuItemBase]):
         return [PageMenuItemNode(page=page) for page in pages]
 
     @staticmethod
-    def resolve_view_url(root: MenuItemBase, info: GQLInfo, client_url: str | None = None) -> None | str:
+    def resolve_view_url(root: MenuItemBase, info: GQLInfo, client_url: str | None = None) -> str | None:
         page = root.page
         plan = page.plan
         if plan is None:
@@ -127,7 +127,7 @@ class MenuNodeMixin:
         return cache
 
     @classmethod
-    def resolver_from_plan(cls, plan: Plan, info: GQLInfo) -> None | WagtailPage:
+    def resolver_from_plan(cls, plan: Plan, info: GQLInfo) -> WagtailPage | None:
         if not plan.is_visible_for_user(info.context.user):
             return None
         cache = info.context.cache.for_plan(plan)
@@ -213,7 +213,7 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType[Any]):
 class Query:
     plan_page = graphene.Field(get_page_interface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
-    def resolve_plan_page(self, info: GQLInfo, plan: str, path: str, **_kwargs) -> None | WagtailPage:
+    def resolve_plan_page(self, info: GQLInfo, plan: str, path: str, **_kwargs) -> WagtailPage | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             logger.warning('Plan not found', plan=plan, path=path)

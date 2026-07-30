@@ -88,7 +88,7 @@ async def get_plan(
 
 
 @register_tool(annotations=ToolAnnotations(title='Create a new action plan'))
-async def create_plan(  # noqa: PLR0913
+async def create_plan(  # noqa: PLR0913, PLR0917
     identifier: Annotated[str, 'Unique identifier for the plan (lowercase, dashes). Becomes part of the URL.'],
     name: Annotated[str, 'The official plan name in full form'],
     organization_id: Annotated[str, 'The ID (pk) of the owner organization'],

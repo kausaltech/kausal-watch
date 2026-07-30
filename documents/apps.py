@@ -27,4 +27,4 @@ class DocumentsConfig(AppConfig):
 
         import wagtail.documents.wagtail_hooks  # noqa: F401
 
-        from .rich_text import DocumentLinkHandler  # noqa
+        from .rich_text import DocumentLinkHandler  # noqa: F401

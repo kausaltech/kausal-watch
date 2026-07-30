@@ -15,9 +15,10 @@ if TYPE_CHECKING:
 
 class PlanSpecificSingletonModelMenuItem(MenuItem):
     """
-    Menu item for models of which there's only one instance of them per
-    action plan. Since there's only one instance of the model, the user is
-    directed straight to the edit view (instead of the index view).
+    Represent a menu item for models with one instance per action plan.
+
+    Since there's only one instance of the model, the user is directed
+    straight to the edit view (instead of the index view).
     """
 
     def __init__(self, view_set, order):

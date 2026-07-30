@@ -74,7 +74,7 @@ class ImageNode(DjangoNode[AplansImage]):
         prefetch_related=(Prefetch('renditions', to_attr='prefetched_renditions'),),
     )
     @staticmethod
-    def resolve_rendition(root: AplansImage, info: GQLInfo, size: str | None = None, crop: bool = True) -> None | ImageRendition:
+    def resolve_rendition(root: AplansImage, info: GQLInfo, size: str | None = None, crop: bool = True) -> ImageRendition | None:
         if size is not None:
             try:
                 width_str, height_str = size.split('x')

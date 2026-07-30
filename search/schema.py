@@ -58,7 +58,7 @@ class SearchHit(graphene.ObjectType[SearchHitObj]):
     page = graphene.Field(get_page_interface, required=False)
 
     @staticmethod
-    def resolve_url(root: SearchHitObj, info, client_url=None) -> None | str:
+    def resolve_url(root: SearchHitObj, info, client_url=None) -> str | None:
         plan = root.plan
         if not plan or not plan.is_visible_for_user(info.context.user):
             return None

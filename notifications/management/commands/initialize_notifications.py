@@ -13,7 +13,7 @@ ALPHANUM = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
 
 def generate_draftail_block_key():
-    return ''.join(ALPHANUM[randrange(0, len(ALPHANUM))] for _ in range(5))
+    return ''.join(ALPHANUM[randrange(0, len(ALPHANUM))] for _ in range(5))  # noqa: S311
 
 
 def split_into_draftail_paragraphs(s):
@@ -31,7 +31,7 @@ def _create_templates_for_plan(plan) -> None:
         'font_family': None,
         'font_css_url': None,
     }
-    base_template, created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
+    base_template, _created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
     for notification_type in NotificationType:
         default_intro_text = notification_type.default_intro_text
         if default_intro_text is None:

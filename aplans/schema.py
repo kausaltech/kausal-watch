@@ -119,7 +119,7 @@ class Query(
             raise PermissionError('Admin namespace requires authenticated access')
         return get_admin_query()()
 
-    def resolve_plan_organizations(
+    def resolve_plan_organizations(  # noqa: C901, PLR0912, PLR0915
         self,
         info: GQLInfo,
         plan: str | None = None,

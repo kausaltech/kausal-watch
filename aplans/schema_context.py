@@ -237,7 +237,7 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
 
 class ProcessWorkflowDirectiveExtension(WatchSchemaExtension):
     def process_workflow_directive(self, directive: DirectiveNode) -> WorkflowStateEnum:
-        from .schema import workflow_directive  # noqa: PLC0415
+        from .schema import workflow_directive
 
         assert workflow_directive.graphql_name is not None
         exec_ctx = self.execution_context

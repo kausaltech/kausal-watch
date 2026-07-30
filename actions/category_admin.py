@@ -122,7 +122,7 @@ class CategoryTypeDeleteView(DeleteView[CategoryType]):
 
 
 class CategoryTypePermissionHelper(PermissionHelper[CategoryType]):
-    def _is_admin_of_active_plan(self, user):
+    def _is_admin_of_active_plan(self, user) -> bool:
         active_plan = user.get_active_admin_plan()
         return user.is_general_admin_for_plan(active_plan)
 

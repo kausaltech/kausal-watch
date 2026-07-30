@@ -22,7 +22,7 @@ class Command(BaseCommand):
         parser.add_argument('-o', '--org', type=str, help='Add user in this organization')
         parser.add_argument('-p', '--password', type=str, help='Set the password for the user')
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: C901
         email = options['email'].strip().lower()
         existing = Person.objects.filter(email__iexact=email).first()
         if options['remove']:

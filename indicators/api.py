@@ -714,9 +714,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
     @action(detail=True, methods=['get'])
     def goals(self, request, pk=None):
         indicator = Indicator.objects.get(pk=pk)
-        resp = []
-        for obj in indicator.goals.all().order_by('date'):
-            resp.append(dict(date=obj.date, value=obj.value))
+        resp = [dict(date=obj.date, value=obj.value) for obj in indicator.goals.all().order_by('date')]
         return Response(resp)
 
     @goals.mapping.post

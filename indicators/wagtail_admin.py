@@ -222,11 +222,10 @@ class DisconnectedIndicatorFilter(SimpleListFilter):
     def choices(self, changelist):
         assert self.parameter_name is not None
         for lookup, title in self.lookup_choices:
-            if lookup is not None:
-                lookup = str(lookup)
+            lookup_value = str(lookup) if lookup is not None else None
             yield {
-                'selected': self.value() == lookup,
-                'query_string': changelist.get_query_string({self.parameter_name: lookup}),
+                'selected': self.value() == lookup_value,
+                'query_string': changelist.get_query_string({self.parameter_name: lookup_value}),
                 'display': title,
             }
 
@@ -566,7 +565,7 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         indicator.save(update_fields=['dataset_schema'])
         return schema
 
-    def save(self, commit=True):
+    def save(self, commit=True):  # noqa: C901, PLR0912
         initial_plan_id = self.initial_plan_id
         # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
         if initial_plan_id and str(initial_plan_id) != str(self.plan.id):
@@ -745,7 +744,7 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
                     operand_b=factor,
                 )
 
-    def _save_m2m(self):
+    def _save_m2m(self) -> None:
         assert self.plan
         chosen_level = self.data['level']
         # Update related IndicatorLevel object, deleting it if chosen_level is empty or None

@@ -82,8 +82,9 @@ Kausal Watch uses a custom `ModelFactory[T]` base class (defined in `aplans/fact
 from aplans.factories import ModelFactory
 from actions.models import Action
 
+
 class ActionFactory(ModelFactory[Action]):
-    name = Sequence(lambda i: f"Action {i}")
+    name = Sequence(lambda i: f'Action {i}')
     plan = SubFactory(PlanFactory)
 ```
 
@@ -108,14 +109,17 @@ from actions.models import Plan
 if TYPE_CHECKING:
     from collections.abc import Callable
     from django.dispatch.dispatcher import Signal
+
     def mute_signals[X](signal: Signal) -> Callable[[X], X]: ...
+
 else:
     mute_signals = factory.django.mute_signals
+
 
 @mute_signals(post_save)
 class PlanFactory(ModelFactory[Plan]):
     organization = SubFactory(OrganizationFactory)
-    name = Sequence(lambda i: f"Plan {i}")
+    name = Sequence(lambda i: f'Plan {i}')
     identifier = Sequence(lambda i: f'plan{i}')
     primary_language = 'en'
     other_languages = ['fi']
@@ -133,24 +137,19 @@ from actions.tests import factories as actions_factories
 
 # Simple registration - creates fixtures with default names
 register(actions_factories.ActionFactory)  # Creates 'action' fixture
-register(actions_factories.PlanFactory)    # Creates 'plan' fixture
+register(actions_factories.PlanFactory)  # Creates 'plan' fixture
 
 # Customized registration - creates specialized fixtures
 register(
     actions_factories.AttributeTypeFactory,
     'action_attribute_type',
-    name=Sequence(lambda i: f"Action attribute type {i}"),
-    object_content_type=LazyAttribute(
-        lambda _: ContentType.objects.get(app_label='actions', model='action')
-    ),
+    name=Sequence(lambda i: f'Action attribute type {i}'),
+    object_content_type=LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action')),
     scope=SubFactory(actions_factories.PlanFactory),
 )
 
 # Using LazyFixture for dependencies
-register(
-    actions_factories.IndicatorFactory,
-    plans=LazyFixture(lambda plan: [plan])
-)
+register(actions_factories.IndicatorFactory, plans=LazyFixture(lambda plan: [plan]))
 ```
 
 This creates:
@@ -177,6 +176,7 @@ def test_action_belongs_to_plan(plan: Plan, action: Action):
 
 ```python
 from actions.tests.factories import ActionFactory
+
 
 def test_actions_with_different_statuses():
     draft_action: Action = ActionFactory.create(visibility='draft')
@@ -237,6 +237,7 @@ def test_action_creation():
     # Shouldn't annotate – Factory.create() methods should already be typed.
     action = ActionFactory.create()
     assert action.name is not None
+
 
 def test_with_typed_fixture(user: User):
     assert user.is_authenticated
@@ -397,14 +398,11 @@ def assert_log_entry_created(instance: PlanRelatedModelWithRevision, action: Act
     """Assert that a PlanScopedModelLogEntry was created for a given instance."""
     content_type = ContentType.objects.get_for_model(instance, for_concrete_model=False)
     log_entry = PlanScopedModelLogEntry.objects.filter(
-        content_type=content_type,
-        object_id=str(instance.pk),
-        action=action,
-        plan=plan
+        content_type=content_type, object_id=str(instance.pk), action=action, plan=plan
     ).first()
     assert log_entry is not None, (
         f'Expected PlanScopedModelLogEntry for {instance.__class__.__name__} '
-        f'id={instance.pk}, action=\'{action}\', plan={plan.pk}, but none found'
+        f"id={instance.pk}, action='{action}', plan={plan.pk}, but none found"
     )
     assert log_entry.user_id == user.pk
     return log_entry
@@ -488,6 +486,7 @@ Use `<model>_factory` to create additional instances:
 ```python
 from actions.tests.factories import ActionFactory
 
+
 def test_multiple_actions(action: Action):
     action2 = ActionFactory.create(plan=action.plan)  # if the new action should be in the same plan
     action3 = ActionFactory.create()
@@ -504,6 +503,7 @@ def test_action_name(action: Action):
     name = action.name  # no need to annotate `name`
     assert len(name) > 0
 
+
 # Bad
 def test_action_name(action):
     name = action.name
@@ -514,12 +514,11 @@ def test_action_name(action):
 
 ```python
 # Good
-def test_action_query_set_modifiable_by_contact_person(action: Action, action_contact_person: ActionContactPerson):
-    ...
+def test_action_query_set_modifiable_by_contact_person(action: Action, action_contact_person: ActionContactPerson): ...
+
 
 # Bad
-def test_action_1(action, action_contact_person):
-    ...
+def test_action_1(action, action_contact_person): ...
 ```
 
 ### 3. Test One Concept Per Test
@@ -530,9 +529,11 @@ def test_action_visibility_internal(action: Action):
     action.visibility = 'internal'
     assert not action.is_public()
 
+
 def test_action_visibility_public(action: Action):
     action.visibility = 'public'
     assert action.is_public()
+
 
 # Bad
 def test_action_visibility(action):
@@ -551,6 +552,7 @@ def test_action_with_category():
     category = CategoryFactory.create(type__plan=action.plan)
     action.categories.add(category)
 
+
 # Bad
 def test_action_with_category(plan):
     action = Action.objects.create(plan=plan, name='Test')
@@ -565,6 +567,7 @@ def test_action_with_category(plan):
 # Good
 def test_action_count():
     assert Action.objects.count() == 0
+
 
 # Avoid (Django TestCase style)
 def test_action_count():

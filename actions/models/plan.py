@@ -874,7 +874,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         for pledge in source_pledges:
             pledge.ensure_locale_copies()
 
-    def save(self, *args, **kwargs):  # noqa: C901, PLR0912
+    def save(self, *args, **kwargs):  # noqa: C901, PLR0912, PLR0915
         previous_language_codes: set[str] | None = None
         save_update_fields = kwargs.get('update_fields')
         if self.pk is not None:

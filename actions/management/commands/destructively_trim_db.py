@@ -100,7 +100,7 @@ class Command(BaseCommand):
             orgs_to_keep |= Organization.objects.filter(uuid__in=exclude_organization)
         return orgs_to_keep
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: C901, PLR0912, PLR0915
         if not settings.DEBUG or settings.DEPLOYMENT_TYPE == 'production':
             raise CommandError(
                 'Sorry, for preventing accidents, this management command only works if DEBUG is true and '
@@ -201,11 +201,7 @@ class Command(BaseCommand):
         aggregated: dict[str, int] = {}
 
         for content_type_id in content_type_ids:
-            target = (
-                ContentType.objects.get_for_id(content_type_id).model_class()
-                if content_type_id is not None
-                else None
-            )
+            target = ContentType.objects.get_for_id(content_type_id).model_class() if content_type_id is not None else None
             queryset = model._default_manager.filter(content_type_id=content_type_id)
             if target is None:
                 # Stale content type (model removed from the codebase): the object cannot exist.
@@ -215,9 +211,7 @@ class Command(BaseCommand):
                     pk=Cast(OuterRef('object_id'), output_field=self._get_object_id_cast_field(target))
                 )
                 _, by_type = (
-                    queryset.annotate(has_live_object=Exists(existing_object_subquery))
-                    .filter(has_live_object=False)
-                    .delete()
+                    queryset.annotate(has_live_object=Exists(existing_object_subquery)).filter(has_live_object=False).delete()
                 )
             for model_name, n in by_type.items():
                 aggregated[model_name] = aggregated.get(model_name, 0) + n
@@ -230,9 +224,7 @@ class Command(BaseCommand):
         # delete_entries_for_missing_objects: drop entries for pages that no longer exist
         # (regardless of author), keep entries for surviving pages.
         live_pages = Page.objects.filter(pk=OuterRef('page_id'))
-        _, by_type = (
-            PageLogEntry.objects.annotate(has_live_page=Exists(live_pages)).filter(has_live_page=False).delete()
-        )
+        _, by_type = PageLogEntry.objects.annotate(has_live_page=Exists(live_pages)).filter(has_live_page=False).delete()
         self.print_deleted_instances_by_model(by_type)
 
     def delete_thoroughly(self):

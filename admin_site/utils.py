@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from generic_chooser.views import ChooserListingTabMixin
@@ -17,17 +17,21 @@ if TYPE_CHECKING:
 def render_html_label_for_visibility(text_content: StrOrPromise, public: bool):
     class_specifier = 'primary' if public else 'secondary'
     label = _('Public field') if public else _('Non-public field')
-    return mark_safe(
-        f'{text_content}<span class="w-status w-status--{class_specifier} field-visibility-label">{label}</span>',
+    return format_html(
+        '{}<span class="w-status w-status--{} field-visibility-label">{}</span>',
+        text_content,
+        class_specifier,
+        label,
     )
 
 
 class FieldLabelRenderer:
     """
-    This class provides a function which adds an additional label to field labels, specifying the visibility restrictions for the field
-    in question to help users see what information will be shown on the public Watch site and which is for internal users only. The feature
-    is switched on with a flag in PlanFeatures; if it's not enabled this doesn't modify the passed field label.
+    Add a visibility label to field labels.
 
+    This helps users distinguish information shown on the public Watch site
+    from information available only to internal users. The feature is enabled
+    by a flag in PlanFeatures; otherwise the passed field label is unchanged.
     """
 
     def __init__(self, plan):

@@ -182,11 +182,12 @@ def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
 @pytest.fixture
 def category_type_with_category_hierarchy(category_type, category_level_factory, category_factory):
     """
-    Constructs a three level category hierarchy with a balanced structure,
-    with the category identifiers matching the hierarchy structure.
+    Build a three level category hierarchy with a balanced structure.
+
+    Its category identifiers match the hierarchy structure.
     """
     ct_id = category_type
-    for _ in range(3):
+    for _index in range(3):
         category_level_factory(type=category_type)
 
     p1 = category_factory(type=ct_id, identifier='C1', parent_id=None)
@@ -508,7 +509,7 @@ def test_attribute_type_icon_accepts_svg(plan):
     attr_type.full_clean()
 
 
-LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]
+LANGUAGES_TO_TEST = [language[0] for language in settings.LANGUAGES]
 
 
 @pytest.mark.parametrize('primary_language', LANGUAGES_TO_TEST)
@@ -627,7 +628,7 @@ def test_action_on_form_save_no_commit(
 
 def test_primary_language_lowercase(attribute_type, common_category_type, plan, organization):
     for instance in (attribute_type, common_category_type, plan, organization):
-        for lang_code, _ in settings.LANGUAGES:
+        for lang_code, _language_name in settings.LANGUAGES:
             # The locale is used for the pledge functionality
             Locale.objects.get_or_create(language_code=lang_code)
             instance.primary_language = lang_code

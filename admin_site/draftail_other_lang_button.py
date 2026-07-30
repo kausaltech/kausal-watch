@@ -34,7 +34,7 @@ def register_lang_feature(features):
 
     db_conversion = {
         'from_database_format': {tag: InlineStyleElementHandler(type_)},
-        'to_database_format': {'style_map': {type_: {'element': tag, 'props': {'lang': lambda x: to_db}}}},
+        'to_database_format': {'style_map': {type_: {'element': tag, 'props': {'lang': lambda _x: to_db}}}},
     }
 
     features.register_converter_rule('contentstate', feature_name, db_conversion)

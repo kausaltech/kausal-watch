@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
-from . import wagtail_admin  # noqa
+from . import wagtail_admin  # noqa: F401
 
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping

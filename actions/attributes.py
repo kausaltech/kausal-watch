@@ -237,7 +237,11 @@ class CategoryChoiceAttributeValue(AttributeValue):
     categories: QuerySet[Category]
 
     @classmethod
-    def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> CategoryChoiceAttributeValue:
+    def from_serialized_value(
+        cls,
+        value: Any,
+        cache: PlanSpecificCache | None = None,  # noqa: ARG003
+    ) -> CategoryChoiceAttributeValue:
         assert isinstance(value, list)
         from actions.models import Category
 
@@ -338,7 +342,11 @@ class GenericTextAttributeAttributeValue(AttributeValue):
     text_vals: dict[str, str]  # keys: "text", and zero or more "text_<language>"
 
     @classmethod
-    def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> GenericTextAttributeAttributeValue:
+    def from_serialized_value(
+        cls,
+        value: Any,
+        cache: PlanSpecificCache | None = None,  # noqa: ARG003
+    ) -> GenericTextAttributeAttributeValue:
         assert isinstance(value, dict)
         return GenericTextAttributeAttributeValue(text_vals=value)
 
@@ -358,7 +366,11 @@ class NumericAttributeValue(AttributeValue):
     value: float | None
 
     @classmethod
-    def from_serialized_value(cls, value: Any, cache: PlanSpecificCache | None = None) -> NumericAttributeValue:
+    def from_serialized_value(
+        cls,
+        value: Any,
+        cache: PlanSpecificCache | None = None,  # noqa: ARG003
+    ) -> NumericAttributeValue:
         assert value is None or isinstance(value, float)
         return NumericAttributeValue(value=value)
 

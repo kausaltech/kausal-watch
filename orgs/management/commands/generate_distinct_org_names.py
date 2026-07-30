@@ -15,7 +15,7 @@ class Command(BaseCommand):
             action='store_true',
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: C901, PLR0912
         # First we make sure the abbreviations are unique
         orgs = Organization.objects.filter(dissolution_date=None)
         for org in orgs:

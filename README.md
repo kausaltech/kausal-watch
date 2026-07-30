@@ -113,15 +113,17 @@ To access the admin UI with the created superuser, create and associate a `Perso
 python manage.py shell_plus
 ```
 ```python
-superuser = User.objects.get(email="<email of the superuser you created>")
-organization = Organization.objects.get(abbreviation='Kausal')  # Found only if database is prepopulated with the help of a coworker
+superuser = User.objects.get(email='<email of the superuser you created>')
+organization = Organization.objects.get(
+    abbreviation='Kausal'
+)  # Found only if database is prepopulated with the help of a coworker
 
 person = Person.objects.create(
     user=superuser,
-    first_name="<first name of your user>",
-    last_name="<last name of your user>",
-    email="<email of the superuser you created>",
-    organization=organization
+    first_name='<first name of your user>',
+    last_name='<last name of your user>',
+    email='<email of the superuser you created>',
+    organization=organization,
 )
 person.save()
 ```

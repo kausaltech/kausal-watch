@@ -222,8 +222,7 @@ class ExcelReport:
         for i, row in enumerate(df.iter_rows()):
             worksheet.write_row(i + 1, 0, row)
             worksheet.set_row(i + 1, row_height)
-        i = 0
-        for label in df.columns:
+        for i, label in enumerate(df.columns):
             _format = self.formats.get_for_label(label)
             if _format is None:
                 _format = self.formats.all_rows
@@ -235,7 +234,6 @@ class ExcelReport:
             if small:
                 width = None
             worksheet.set_column(i, i, width, _format)
-            i += 1
         worksheet.conditional_format(
             1,
             0,
@@ -297,7 +295,7 @@ class ExcelReport:
     def get_column_labels(self, field_name: str) -> set[str]:
         return self.field_to_column_labels.get(field_name, set())
 
-    def create_populated_actions_dataframe(
+    def create_populated_actions_dataframe(  # noqa: C901
         self,
         all_actions: list[SerializedActionVersion],
         all_related_versions: list[SerializedVersion],
@@ -393,7 +391,7 @@ class ExcelReport:
             aggregate_function='len',
         ).sort(labels[0])
 
-    def post_process(self, action_df: pl.DataFrame):
+    def post_process(self, action_df: pl.DataFrame):  # noqa: C901
         if self.report.disable_summary_sheets:
             return
         if getattr(self.report.type.plan.features, 'output_report_action_print_layout', False):

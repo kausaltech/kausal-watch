@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import datetime
-import os
+from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from wagtail.images.models import AbstractImage, AbstractRendition, Image as WagtailImage, ImageQuerySet
 
@@ -13,6 +13,8 @@ from kausal_common.models.types import ModelManager
 from aplans.utils import PlanRelatedModelWithRevision
 
 if TYPE_CHECKING:
+    import datetime
+
     from wagtail.images.models import Filter
 
     from kausal_common.models.types import FK
@@ -26,19 +28,19 @@ def truncate_filename(directories: list[str], filename: str) -> str:
     """
 
     # Adapted from wagtail/images/models.py
-    full_path = os.path.join(*directories, filename)
+    full_path = str(Path(*directories, filename))
     if len(full_path) >= 95:
         chars_to_trim = len(full_path) - 94
-        prefix, extension = os.path.splitext(filename)
-        filename = prefix[:-chars_to_trim] + extension
-        full_path = os.path.join(*directories, filename)
+        filename_path = Path(filename)
+        filename = filename_path.stem[:-chars_to_trim] + filename_path.suffix
+        full_path = str(Path(*directories, filename))
     return full_path
 
 
 def insert_date_directory_to_path(path: str, target_dir: str, date: datetime.date | None = None) -> str:
     if not date:
         # The instance may not yet be created, so `date` may be None even if we pass `instance.created_by`
-        date = datetime.date.today()
+        date = timezone.localdate()
     filename = path.removeprefix(f'{target_dir}/')
     assert filename != path  # otherwise the prefix wasn't there
     date_dir = date.strftime('%Y-%m')

@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, StreamingHttpResponse
 from django.utils.translation import gettext_lazy as _
-from django.db.models.functions import Coalesce
 from wagtail.admin.panels import (
     FieldPanel,
     MultiFieldPanel,
@@ -32,6 +32,7 @@ from kausal_common.users import user_or_bust
 from admin_site.forms import WatchAdminModelForm
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
+
 from .models import Pledge
 from .models.pledge import PledgeCommitment
 

@@ -109,6 +109,7 @@ Each Django app follows consistent naming conventions for different functionalit
 - Initialize module-level logger with:
   ```python
   from loguru import logger
+
   logger = logger.bind(name='app.module')
   ```
 - Use descriptive logger names following the pattern `app.module` (e.g., `webhooks.tasks`, `actions.models`)
@@ -128,7 +129,7 @@ Each Django app follows consistent naming conventions for different functionalit
   ```
 - Report unexpected events or conditions:
   ```python
-  sentry_sdk.capture_message("Unexpected condition: webhook config not found", level="warning")
+  sentry_sdk.capture_message('Unexpected condition: webhook config not found', level='warning')
   ```
 - Use appropriate Sentry levels: `"debug"`, `"info"`, `"warning"`, `"error"`, `"fatal"`
 
@@ -177,6 +178,7 @@ def process_request(request):
                 # main logic here
                 return do_something()
     return None
+
 
 # Good: early returns
 def process_request(request):

@@ -1,2 +1,4 @@
-from . import wagtail_admin  # noqa
-from . import chooser  # noqa
+from . import (
+    chooser,  # noqa: F401
+    wagtail_admin,  # noqa: F401
+)

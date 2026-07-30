@@ -12,11 +12,11 @@ class Command(BaseCommand):
     help = 'Import an organisation from YTJ'
     plan: Plan | None = None
 
-    def import_organisation(self, name_or_id):
+    def import_organisation(self, name_or_id):  # noqa: C901, PLR0912
         namespace = Namespace.objects.get(identifier='ytj')
 
         if not name_or_id[0].isnumeric():
-            resp = requests.get('https://avoindata.prh.fi/bis/v1?name=%s' % name_or_id)
+            resp = requests.get('https://avoindata.prh.fi/bis/v1?name=%s' % name_or_id, timeout=10)
             resp.raise_for_status()
             res = resp.json()['results']
             if len(res) == 0:
@@ -25,11 +25,11 @@ class Command(BaseCommand):
             if len(res) > 1:
                 print('Multiple matches for: %s' % name_or_id)
                 for org in res:
-                    print('\t%s: %s' % (res['businessId'], res['name']))
+                    print('\t%s: %s' % (org['businessId'], org['name']))
                 return
             data = res[0]
         else:
-            resp = requests.get('https://avoindata.prh.fi/bis/v1/%s' % name_or_id)
+            resp = requests.get('https://avoindata.prh.fi/bis/v1/%s' % name_or_id, timeout=10)
             resp.raise_for_status()
             res = resp.json()['results']
             if len(res) == 0:

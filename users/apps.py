@@ -9,20 +9,17 @@ def remove_from_staff_if_no_plan_admin(user, **kwargs):
 
 
 def remove_user_related_menu_items(hooks):
-    from wagtail.admin import wagtail_hooks  # noqa
+    from wagtail.admin import wagtail_hooks  # noqa: F401
     from wagtail.admin.views.account import AvatarSettingsPanel
     from wagtail.admin.wagtail_hooks import register_reports_menu
 
-    AvatarSettingsPanel.is_active = lambda self: False
+    AvatarSettingsPanel.is_active = lambda _self: False
 
     menu_item_hooks = hooks._hooks['register_admin_menu_item']
     for idx, val in enumerate(menu_item_hooks):
         if val[0] == register_reports_menu:
+            del menu_item_hooks[idx]
             break
-    else:
-        idx = None
-    if idx is not None:
-        del menu_item_hooks[idx]
 
 
 class UsersConfig(AppConfig):

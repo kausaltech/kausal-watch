@@ -22,16 +22,15 @@ class GenericFinder(EmbedFinder):
 
     def accept(self, url):
         """
-        Returns True if this finder knows how to fetch an embed for the URL.
+        Return whether this finder knows how to fetch an embed for the URL.
 
-        This should not have any side effects (no requests to external servers)
+        This should not have any side effects (no requests to external servers).
         """
         return self.acceptable_url_re.match(url)
 
     def find_embed(self, url, max_width=None, max_height=None):
         """
-        Takes a URL and max width and returns a dictionary of information about the
-        content to be used for embedding it on the site.
+        Return information used for embedding a URL on the site.
 
         This is the part that may make requests to external APIs.
         """

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import TYPE_CHECKING, Annotated, cast
+from typing import Annotated, cast
 
 import strawberry
 import strawberry_django
+from strawberry import auto
 
 from grapple.registry import registry as grapple_registry
 
@@ -22,9 +23,6 @@ from kausal_common.datasets.models import (
 from kausal_common.strawberry.registry import register_strawberry_type
 
 from actions.schema import ActionNode, CategoryNode, CategoryTypeNode, PlanNode
-
-if TYPE_CHECKING:
-    from strawberry import auto
 
 DimensionScopeType = Annotated[
     PlanNode | CategoryTypeNode,

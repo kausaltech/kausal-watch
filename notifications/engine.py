@@ -47,7 +47,7 @@ TASK_DUE_SOON_DAYS = 30
 UPDATED_INDICATOR_VALUES_DUE_SOON_DAYS = 30
 
 
-class InvalidStateException(Exception):
+class InvalidStateException(Exception):  # noqa: N818
     pass
 
 
@@ -263,7 +263,7 @@ class NotificationEngine:
 
         return rendered
 
-    def generate_notifications(self):
+    def generate_notifications(self):  # noqa: C901, PLR0912, PLR0915
         self.queue = NotificationQueue()
         self.action_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
         self.indicator_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}

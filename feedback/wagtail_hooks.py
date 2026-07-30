@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 
-from . import wagtail_admin  # noqa
+from . import wagtail_admin  # noqa: F401
 
 if TYPE_CHECKING:
     from wagtail.log_actions import LogActionRegistry

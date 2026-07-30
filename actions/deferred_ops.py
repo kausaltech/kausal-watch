@@ -54,7 +54,6 @@ class DeferredDatabaseOperationsMixin[M: Model](ModelSerializerMixinBase[M]):
                 obj.delete()
             if operation == 'create_and_set_related':
                 obj.save()
-                operation = 'set_related'
-            if operation == 'set_related':
+            if operation in {'create_and_set_related', 'set_related'}:
                 field_name, related_ids = rest
                 setattr(obj, field_name, related_ids)

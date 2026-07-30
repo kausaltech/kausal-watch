@@ -299,13 +299,19 @@ class TestNullOperandComputation:
 
         # Null operand computation: indicator_values * factor = result1
         DatasetMetricComputation.objects.create(
-            schema=schema, target_metric=result1, operation='multiply',
-            operand_a=None, operand_b=factor,
+            schema=schema,
+            target_metric=result1,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
         )
         # Regular computation: metric_a + metric_b = result2
         DatasetMetricComputation.objects.create(
-            schema=schema, target_metric=result2, operation='add',
-            operand_a=metric_a, operand_b=metric_b,
+            schema=schema,
+            target_metric=result2,
+            operation='add',
+            operand_a=metric_a,
+            operand_b=metric_b,
         )
 
         indicator_ct = ContentType.objects.get_for_model(type(indicator))
@@ -330,8 +336,11 @@ class TestNullOperandComputation:
         factor = DatasetMetric.objects.create(schema=schema, label='Factor')
         target = DatasetMetric.objects.create(schema=schema, label='Target')
         DatasetMetricComputation.objects.create(
-            schema=schema, target_metric=target, operation='multiply',
-            operand_a=None, operand_b=factor,
+            schema=schema,
+            target_metric=target,
+            operation='multiply',
+            operand_a=None,
+            operand_b=factor,
         )
         dataset = Dataset.objects.create(schema=schema)
         d = datetime.date(2024, 1, 1)

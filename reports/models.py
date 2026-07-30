@@ -212,8 +212,8 @@ class Report(PlanRelatedModelWithRevision):
         ),
     )
 
-    # The fields are copied from the report type at the time of completion of this report. These are not currently used anywhere but we
-    # might need them in the future to take care of certain edge cases wrt. schema changes
+    # The fields are copied from the report type when this report is completed.
+    # They are not currently used, but may handle schema-change edge cases later.
     fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
 
     public_fields: ClassVar[list[str]] = [
@@ -247,7 +247,7 @@ class Report(PlanRelatedModelWithRevision):
         return [self.type.plan]
 
     @classmethod
-    def filter_by_plan(cls, plan, qs):
+    def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[Report]) -> models.QuerySet[Report]:
         return qs.filter(type__plan=plan)
 
     def get_xlsx_exporter(self, action_ids: list[int] | None = None) -> ExcelReport:
@@ -257,7 +257,7 @@ class Report(PlanRelatedModelWithRevision):
     def _raise_complete(self) -> Never:
         raise ValueError(_('The report is already marked as complete.'))
 
-    def get_live_versions(self, action_ids: list[int] | None = None) -> LiveVersions:
+    def get_live_versions(self, action_ids: list[int] | None = None) -> LiveVersions:  # noqa: C901
         """
         Return action versions and related object versions for an incomplete report.
 
@@ -373,7 +373,7 @@ class Report(PlanRelatedModelWithRevision):
         except NoRevisionSaveError:
             pass
 
-        def is_action(v):
+        def is_action(v: Version) -> bool:
             return v._model == Action
 
         result.actions += filter(is_action, fake_revision_versions)
@@ -428,18 +428,22 @@ class ActionSnapshot(models.Model):
         get_latest_by = 'action_version__revision__date_created'
         unique_together = (('report', 'action_version'),)
 
+    def __str__(self):
+        return f'{self.action_version} @ {self.report}'
+
     @classmethod
     def for_action(cls, report: Report, action: Action, created_explicitly: bool = True) -> ActionSnapshot:
         action_version: Version = Version.objects.get_for_object(action).first()
         return cls(report=report, action_version=action_version, created_explicitly=created_explicitly)
 
-    class _RollbackRevision(Exception):
+    class _RollbackRevisionError(Exception):
         pass
 
     @contextmanager
     def inspect(self):
         """
-        Use like this to temporarily revert the action to this snapshot:
+        Temporarily revert the action to this snapshot as follows.
+
         with snapshot.inspect() as action:
             pass  # action is reverted here and will be rolled back afterwards.
         """
@@ -447,8 +451,8 @@ class ActionSnapshot(models.Model):
             with transaction.atomic():
                 self.action_version.revision.revert(delete=True)
                 yield Action.objects.get(pk=self.action_version.object.pk)
-                raise ActionSnapshot._RollbackRevision()
-        except ActionSnapshot._RollbackRevision:
+                raise ActionSnapshot._RollbackRevisionError()  # noqa: TRY301
+        except ActionSnapshot._RollbackRevisionError:
             pass
 
     def get_related_versions(self) -> models.QuerySet[Version]:
@@ -487,7 +491,8 @@ class ActionSnapshot(models.Model):
             if model.__module__ == 'actions.models.attributes':
                 # Replace PKs by model instances. (We assume they still exist in the DB, otherwise we are fucked.)
                 field_dict = {}
-                for field_name, value in version.field_dict.items():
+                for field_name, serialized_value in version.field_dict.items():
+                    value = serialized_value
                     field = getattr(model, field_name)
                     if isinstance(field, ParentalManyToManyDescriptor):
                         # value should be a list of PKs of the related model; transform it to a list of instances
@@ -518,6 +523,3 @@ class ActionSnapshot(models.Model):
 
     def get_serialized_data(self) -> SerializedActionVersion:
         return SerializedActionVersion.from_version(self.action_version)
-
-    def __str__(self):
-        return f'{self.action_version} @ {self.report}'

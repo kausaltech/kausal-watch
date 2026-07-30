@@ -289,7 +289,7 @@ class ActionCategoriesSerializer(serializers.Serializer[QuerySet[Category]]):
             out[ct.identifier] = val
         return out
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data):  # noqa: C901, PLR0912
         if not data:
             return {}
 
@@ -579,16 +579,18 @@ class AttributesSerializerMixin[InstanceT: Any](AttributesSerializerMixinBase[In
 
     def to_attribute_value_input(self, item: Any) -> Any:
         """
-        Format the incoming REST API data to conform
-        to the format expected by each actions.attributes.AttributeValue
+        Format the incoming REST API data to conform.
+
+        It conforms to the format expected by each actions.attributes.AttributeValue
         subclass as the value parameter of the from_serialized_value method.
         """
         return self.to_value_parameter(item)
 
     def to_value_parameter(self, item: Any) -> dict[str, Any]:
         """
-        Format the incoming REST API data to conform
-        to the format expected by an existing Attribute model
+        Format the incoming REST API data to conform.
+
+        It conforms to the format expected by an existing Attribute model
         instance, setting the instance attributes with.
 
             setattr(instance, key_in_dict, value_parameter_dict[key_in_dict])
@@ -875,7 +877,7 @@ class ModelWithAttributesSerializerMixin[M: ModelWithAttributes](
         self._update_attribute_fields(instance, popped_fields)
         return instance
 
-    def _pop_attributes_from_validated_data(self, validated_data: dict):
+    def _pop_attributes_from_validated_data(self, validated_data: dict) -> dict[str, Any]:
         return {field: validated_data.pop(field, None) for field in self._attribute_fields}
 
     def _update_attribute_fields(self, instance: ModelWithAttributes, popped_fields) -> None:
@@ -990,7 +992,9 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
 
     def _reorder_descendants(self, node, next_order: int, instance_to_move: M, predecessor) -> int:
         """
-        Order descendants of `node` (including `node`) consecutively starting at `next_order` and put
+        Order descendants consecutively starting at `next_order`.
+
+        Put `node` (including its descendants) before `instance_to_move`, and put
         `instance_to_move` (followed by its descendants) after `predecessor` in the ordering.
 
         This does not save the instances but instead only sets the fields in the respective element in the dict
@@ -1026,7 +1030,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
                 next_order = self._reorder_descendants(child, next_order, instance_to_move, predecessor)
         return next_order
 
-    def _update_tree_position(self, instance, left_sibling_uuid: UUID):
+    def _update_tree_position(self, instance, left_sibling_uuid: UUID | None) -> list[tuple[Any, ...]]:
         # When changing the `order` value of instance, we also need to change it for all its descendants, potentially
         # leading to new collisions, so we just reorder everything here
 

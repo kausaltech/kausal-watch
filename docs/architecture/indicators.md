@@ -71,6 +71,7 @@ Rather than encoding this distinction as a dimension category or using separate 
 # In kausal_common/datasets/models.py
 class DataPointBase(UserModifiableModel, UUIDIdentifiedModel, PermissionedModel):
     """Abstract base for tabular data cells."""
+
     dataset = ForeignKey(Dataset, related_name='+')
     dimension_categories = ManyToManyField(DimensionCategory)
     date = DateField()
@@ -80,15 +81,19 @@ class DataPointBase(UserModifiableModel, UUIDIdentifiedModel, PermissionedModel)
     class Meta:
         abstract = True
 
+
 class DataPoint(DataPointBase):
     """Actual/measured values."""
+
     # Keeps existing related_name='data_points' on dataset FK
     # Retains relationships: comments, source_references
     pass
 
+
 # In indicators/ (Watch-only)
 class IndicatorGoalDataPoint(DataPointBase):
     """Target/goal values for an indicator's dataset."""
+
     # Points to the same Dataset as the indicator's DataPoints.
     # No comments or source references — goals are infrequently set
     # and don't need the same audit trail.

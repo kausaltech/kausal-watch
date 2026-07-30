@@ -150,7 +150,7 @@ class LogHandler(RichHandler):
         path = Path(record.pathname).name
         level = self.get_level_text(record)
         time_format = None if self.formatter is None else self.formatter.datefmt
-        log_time = datetime.fromtimestamp(record.created)
+        log_time = datetime.fromtimestamp(record.created).astimezone()
 
         log_renderable = self._log_render(
             self.console,
@@ -189,7 +189,7 @@ class LogFmtFormatter(Logfmter):
             ret[key] = val
         return ret
 
-    def formatTime(self, record, datefmt=None):
+    def formatTime(self, record, datefmt=None):  # noqa: N802
         return datetime.fromtimestamp(record.created, UTC).strftime(ISO_FORMAT)
 
 

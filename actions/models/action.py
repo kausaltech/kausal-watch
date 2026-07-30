@@ -902,7 +902,7 @@ class Action(
     def visibility_display(self):
         return self.get_visibility_display()
 
-    def _calculate_status_from_indicators(self) -> None | dict[str, int]:  # noqa: C901
+    def _calculate_status_from_indicators(self) -> dict[str, int] | None:  # noqa: C901
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
         total_completion = 0.0
         total_indicators = 0
@@ -956,13 +956,13 @@ class Action(
             return None
         return dict(completion=completion, is_late=is_late)
 
-    def _calculate_completion_from_tasks(self, tasks) -> None | dict[str, int]:
+    def _calculate_completion_from_tasks(self, tasks) -> dict[str, int] | None:
         if not tasks:
             return None
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
         return dict(completion=int(n_completed * 100 / len(tasks)))
 
-    def _determine_status(self, tasks, indicator_status, today=None) -> None | ActionStatus:
+    def _determine_status(self, tasks, indicator_status, today=None) -> ActionStatus | None:
         if today is None:
             today = self.plan.now_in_local_timezone().date()
 

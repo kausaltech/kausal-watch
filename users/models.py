@@ -391,7 +391,7 @@ class User(AbstractUser):
 
         # If the plan is not set in session, select the
         # lastly created one.
-        plan = sorted(plans, key=lambda x: x.created_at, reverse=True)[0]
+        plan = max(plans, key=lambda x: x.created_at)
 
         self.selected_admin_plan = plan
         self.save(update_fields=['selected_admin_plan'])

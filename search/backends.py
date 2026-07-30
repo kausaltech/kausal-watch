@@ -72,7 +72,7 @@ class WatchSearchAtomicRebuilder(ElasticsearchAtomicIndexRebuilder):
 
 
 class WatchSearchQueryCompiler(Elasticsearch8SearchQueryCompiler):
-    def _process_filter(self, field_attname, lookup, value, check_only=False):
+    def _process_filter(self, field_attname, lookup, value, check_only=False):  # noqa: ANN202
         from indicators.models import Indicator
 
         # Work around Wagtail problem with M2M relationships
@@ -82,7 +82,7 @@ class WatchSearchQueryCompiler(Elasticsearch8SearchQueryCompiler):
 
 
 class WatchAutocompleteQueryCompiler(Elasticsearch8AutocompleteQueryCompiler):
-    def _process_filter(self, field_attname, lookup, value, check_only=False):
+    def _process_filter(self, field_attname, lookup, value, check_only=False):  # noqa: ANN202
         from indicators.models import Indicator
 
         # Work around Wagtail problem with M2M relationships

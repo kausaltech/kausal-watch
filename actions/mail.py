@@ -27,8 +27,9 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
 
     class AllowAllUsersAdminURLFinder(ModelAdminURLFinder):
         """
-        Only to be used in contexts where permissions checks are impossible and not needed,
-        currently when rendering emails to non-logged in users.
+        Only use where permissions checks are impossible and unnecessary.
+
+        This currently applies when rendering emails to non-logged in users.
         """
 
         class PermissionHelper:
@@ -44,16 +45,16 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
 
     def get_context(self, task_state, **kwargs):
         context = super().get_context(task_state, **kwargs)
-        object = task_state.workflow_state.content_object
-        context['object'] = object
-        context['plan'] = getattr(object, 'plan', None)
+        content_object = task_state.workflow_state.content_object
+        context['object'] = content_object
+        context['plan'] = getattr(content_object, 'plan', None)
         context['task'] = task_state.task.specific
         context['admin_url_finder'] = self.AllowAllUsersAdminURLFinder(None)
-        context['model_name'] = object._meta.verbose_name
+        context['model_name'] = content_object._meta.verbose_name
         return context
 
     def get_valid_recipients(self, instance, **kwargs):
-        # The stock implementation has a limited selection of notification types based on what's available in Wagtail's UserProfile
+        # The stock implementation has a limited selection of notification types based on what's available in Wagtail's
         # model. We will assume that cancellation of a submitted item can reuse the same settings as the original submit.
         actual_notification = self.notification
         if self.notification == 'cancelled':

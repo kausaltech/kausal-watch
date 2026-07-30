@@ -158,10 +158,7 @@ def construct_homepage_panels(request, panels):
     from wagtail.admin.site_summary import SiteSummaryPanel
 
     allowed_panels = (SiteSummaryPanel,)
-    panels_to_remove = []
-    for panel in panels:
-        if not isinstance(panel, allowed_panels):
-            panels_to_remove.append(panel)
+    panels_to_remove = [panel for panel in panels if not isinstance(panel, allowed_panels)]
     for panel in panels_to_remove:
         panels.remove(panel)
 

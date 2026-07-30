@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import json
 import typing
 from typing import Any, Protocol
@@ -190,7 +191,7 @@ def action_contact_person_user(action_contact_person):
 
 @pytest.fixture
 def graphql_client_query(client):
-    def func(*args, **kwargs):
+    def func(*args, **kwargs) -> Any:
         response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
         return json.loads(response.content)
 
@@ -201,7 +202,7 @@ def graphql_client_query(client):
 def graphql_client_query_data(graphql_client_query):
     """Make a GraphQL request, make sure the `error` field is not present and return the `data` field."""
 
-    def func(*args, **kwargs):
+    def func(*args, **kwargs) -> Any:
         response = graphql_client_query(*args, **kwargs)
         assert 'errors' not in response
         return response['data']
@@ -221,7 +222,7 @@ def token(user):
 
 @pytest.fixture
 def contains_error():
-    def func(response, code=None, message=None):
+    def func(response, code=None, message=None) -> bool:
         if 'errors' not in response:
             return False
         expected_parts = {}
@@ -315,13 +316,12 @@ common_kwargs = dict(
 )
 
 
-i = 0
+attribute_type_counter = itertools.count(1)
 
 
 def _attribute_type_name(format) -> str:
-    global i
-    i += 1
-    return f'Action attribute type {i} [{format}]'
+    sequence_number = next(attribute_type_counter)
+    return f'Action attribute type {sequence_number} [{format}]'
 
 
 for format in AttributeType.AttributeFormat:
@@ -368,7 +368,7 @@ def n_of_a_kind(factory, count, context=None):
 
 
 @pytest.fixture
-def actions_having_attributes(
+def actions_having_attributes(  # noqa: PLR0913, PLR0917
     plan,
     category_type,
     category_factory,
@@ -409,7 +409,7 @@ def actions_having_attributes(
     choices_unordered = [attribute_type_choice_option_factory(type=action_attribute_type__unordered_choice) for i in range(3)]
     choices_optional = [attribute_type_choice_option_factory(type=action_attribute_type__optional_choice) for i in range(3)]
 
-    def decorated_action(i: int):
+    def decorated_action(i: int) -> Any:
         # Create less implementation phases than actions
         implementation_phase = implementation_phases[i % IMPLEMENTATION_PHASE_COUNT]
         action = action_factory(plan=plan, implementation_phase=implementation_phase)

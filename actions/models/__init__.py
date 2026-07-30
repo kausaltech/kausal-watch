@@ -83,7 +83,6 @@ __all__ = [
     'AttributeRichText',
     'AttributeText',
     'AttributeType',
-    'AttributeType',
     'AttributeTypeChoiceOption',
     'Category',
     'CategoryChangeLogMessage',

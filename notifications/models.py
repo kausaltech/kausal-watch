@@ -214,7 +214,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
     def natural_key(self):
         return (self.plan.identifier,)
 
-    def _get_font_family_with_fallback(self):
+    def _get_font_family_with_fallback(self) -> str:
         font_family = self.font_family
         if font_family is None or len(font_family) == 0:
             return DEFAULT_FONT_FAMILY
@@ -393,7 +393,7 @@ class AutomaticNotificationTemplate(NotificationTemplate):
         plan_admins,
         action,
         indicator,
-    ):
+    ) -> list[NotificationRecipient]:
         recipients = []
         fall_back_to_org_admins = self.send_to_contact_persons in (
             self.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
@@ -482,7 +482,7 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplate):
         # In practice this should not be called, it's only a safeguard if future admin UIs expose the type
         if self.type != NotificationType.MANUALLY_SCHEDULED.identifier:
             raise ValidationError({
-                'type': _('The type must be "%(t)s".' % {'t': NotificationType.MANUALLY_SCHEDULED.value}),
+                'type': _('The type must be "%(t)s".') % {'t': NotificationType.MANUALLY_SCHEDULED.value},
             })
         super().clean()
 
@@ -585,6 +585,9 @@ class GeneralPlanAdminNotificationPreferences(models.Model):
         default=True,
     )
 
+    def __str__(self) -> str:
+        return str(self.general_plan_admin)
+
 
 class ActionContactPersonNotificationPreferences(models.Model):
     action_contact_person = models.OneToOneField(
@@ -600,3 +603,6 @@ class ActionContactPersonNotificationPreferences(models.Model):
         verbose_name=_('receive action feedback notifications'),
         default=True,
     )
+
+    def __str__(self) -> str:
+        return str(self.action_contact_person)

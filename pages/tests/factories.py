@@ -1,3 +1,5 @@
+from typing import Any
+
 from wagtail.blocks import PageChooserBlock, RichTextBlock
 from wagtail.fields import StreamField
 from wagtail.images.blocks import ImageChooserBlock
@@ -38,12 +40,12 @@ class PageChooserBlockFactory(BlockFactory):
 # Copied from https://github.com/wagtail/wagtail-factories/pull/25
 class RichTextBlockFactory(StreamBlockFactory):
     @classmethod
-    def _build(cls, model_class, value=''):
+    def _build(cls, model_class: type[RichTextBlock], value: str = '') -> Any:
         block = model_class()
         return block.to_python(value)
 
     @classmethod
-    def _create(cls, model_class, *args, **kwargs):
+    def _create(cls, model_class: type[RichTextBlock], *args: Any, **kwargs: Any) -> Any:
         return cls._build(model_class, *args, **kwargs)
 
     class Meta:
