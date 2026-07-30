@@ -708,7 +708,7 @@ WAGTAILEMBEDS_FINDERS = [
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         # If we leave the provider out, the "default" provider will be used
-        'domain_whitelist': ('public.tableau.com', 'tableau.minneapolismn.gov'),
+        'domain_whitelist': ('public.tableau.com', 'tableau.minneapolismn.gov','tableaupub.kingcounty.gov'),
         'title': 'Chart',
     },
     {
