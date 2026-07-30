@@ -3454,8 +3454,8 @@ msgid "Reports"
 msgstr "Informes"
 
 #: admin_site/wagtail_hooks.py
-msgid "Video tutorials"
-msgstr "Tutoriales en vídeo"
+msgid "User handbook"
+msgstr "Manual de usuario"
 
 #: admin_site/wagtail_hooks.py
 msgid "https://kausal.gitbook.io/watch"

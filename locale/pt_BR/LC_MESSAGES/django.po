@@ -3783,9 +3783,8 @@ msgid "Reports"
 msgstr "Relatórios"
 
 #: admin_site/wagtail_hooks.py
-#, fuzzy
-msgid "Video tutorials"
-msgstr "Tutoriais em vídeo"
+msgid "User handbook"
+msgstr "Manual do usuário"
 
 #: admin_site/wagtail_hooks.py
 #, fuzzy

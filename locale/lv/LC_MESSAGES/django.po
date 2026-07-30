@@ -3531,8 +3531,8 @@ msgid "Reports"
 msgstr "Ziņojumi"
 
 #: admin_site/wagtail_hooks.py
-msgid "Video tutorials"
-msgstr "Video pamācības"
+msgid "User handbook"
+msgstr "Lietotāja rokasgrāmata"
 
 #: admin_site/wagtail_hooks.py
 msgid "https://kausal.gitbook.io/watch"

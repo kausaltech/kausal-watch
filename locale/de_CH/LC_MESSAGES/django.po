@@ -3387,7 +3387,7 @@ msgid "Reports"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
-msgid "Video tutorials"
+msgid "User handbook"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
