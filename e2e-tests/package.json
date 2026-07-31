@@ -11,10 +11,10 @@
     "@types/node": "^25.5.0",
     "eslint": "^10.1.0"
   },
-  "packageManager": "pnpm@11.0.0-beta.2+sha512.728d59d899a332fb79bfa2563010cc18c73f063044ca299c7465a76f406b7e8038b87ed6e140952c9b08943faab7e7e4172db0a10386f74601c3a72d068dfca2",
+  "packageManager": "pnpm@11.19.0",
   "dependencies": {
     "@apollo/client": "^4.1.6",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.62.0",
     "dotenv": "^17.3.1"
   }
 }
