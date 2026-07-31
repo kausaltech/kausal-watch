@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Wait for backend
         run: wait-for-it.sh -t 180 localhost:8000
@@ -161,7 +161,7 @@ jobs:
         working-directory: ./e2e-tests
         shell: bash
 
-      - uses: daun/playwright-report-summary@v3
+      - uses: daun/playwright-report-summary@v4
         if: always()
         with:
           report-file: ./e2e-tests/test-results.json
@@ -170,7 +170,7 @@ jobs:
       - name: Upload coverage report as artifact
         if: always() && !cancelled()
         id: upload-coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-backend-coverage
           path: ./e2e-tests/coverage-data/coverage.xml
@@ -182,18 +182,18 @@ jobs:
     needs: run-e2e-tests
     if: always() && !cancelled() && needs.run-e2e-tests.outputs.coverage_uploaded == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: e2e-backend-coverage
           path: ./coverage-data
 
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage-data/coverage.xml
