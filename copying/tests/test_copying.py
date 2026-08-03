@@ -836,6 +836,22 @@ def test_model_without_revision_is_not_affected(plan_with_pages, action):
     assert action_copy.latest_revision is None
 
 
+@pytest.mark.parametrize('category_type__synchronize_with_pages', [True])
+def test_category_type_with_revision_and_page_sync_does_not_duplicate_pages(
+    plan_with_pages, category_type, category, category_level, user
+):
+    category_type.save_revision(user=user)
+    source_ct_page_count = category_type.category_type_pages.count()
+    source_cat_page_count = category.category_pages.count()
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    ct_copy = plan_copy.category_types.get()
+    cat_copy = ct_copy.categories.get()
+    assert ct_copy.category_type_pages.count() == source_ct_page_count
+    assert cat_copy.category_pages.count() == source_cat_page_count
+
+
 def test_attribute_type_revision_with_stale_snapshot_can_be_copied(plan_with_pages, category, user):
     attribute_type = AttributeTypeFactory.create(
         scope=plan_with_pages,

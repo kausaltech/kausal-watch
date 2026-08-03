@@ -37,7 +37,7 @@ from kausal_common.datasets.models import (
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
-from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType
+from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType, skip_page_synchronization_ctx
 from actions.models.features import PlanFeatures
 from actions.models.plan import Plan
 from actions.models.pledge import Pledge
@@ -1618,6 +1618,25 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
 
 
 @contextmanager
+def _default_skip_page_synchronization() -> Generator[None]:
+    """
+    Make `Category.save` and `CategoryType.save` skip `synchronize_pages()` for this context.
+
+    Wagtail's `save_revision` calls `self.save(update_fields=[...])` internally without any
+    way to forward `skip_page_synchronization=True`, which would otherwise trigger
+    `synchronize_pages()` and grow duplicate CategoryTypePage/CategoryPage trees during
+    plan copy. The two `save` methods consult `skip_page_synchronization_ctx` and treat it
+    as an implicit skip flag; setting it here is safe under concurrency (contextvars are
+    per-async-task / per-thread) and nests correctly.
+    """
+    token = skip_page_synchronization_ctx.set(True)
+    try:
+        yield
+    finally:
+        skip_page_synchronization_ctx.reset(token)
+
+
+@contextmanager
 def _update_reference_index_immediately_ctx() -> Generator[None]:
     """
     Force immediate update of Wagtail's reference index for the duration of this context.
@@ -1891,7 +1910,7 @@ def copy_plan(
         supersede_original_actions=supersede_original_actions,
     )
 
-    with transaction.atomic():
+    with _default_skip_page_synchronization(), transaction.atomic():
         return _clone_plan_objects(plan, clone_visitor, root_page_title_suffix, copy_indicators)
 
 

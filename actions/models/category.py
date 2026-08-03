@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import reversion
@@ -56,6 +57,13 @@ if TYPE_CHECKING:
     from ..attributes import AttributeFieldPanel
     from .action import Action, ActionCategoryThrough, ActionQuerySet
     from .attributes import AttributeTypeQuerySet
+
+
+# When set, `Category.save` and `CategoryType.save` skip the `synchronize_pages()` side effect
+# even if the caller doesn't pass `skip_page_synchronization=True`. This is used by plan copying
+# to prevent Wagtail's `save_revision` (which internally calls `self.save(update_fields=[...])`
+# with no way to forward custom kwargs) from minting duplicate page trees.
+skip_page_synchronization_ctx: ContextVar[bool] = ContextVar('skip_page_synchronization_ctx', default=False)
 
 
 class CategoryTypeBase(models.Model):
@@ -277,7 +285,8 @@ class CategoryType(
     @transaction.atomic
     def save(self, *args, skip_page_synchronization=False, **kwargs):
         super().save(*args, **kwargs)
-        if self.synchronize_with_pages and not skip_page_synchronization:
+        skip = skip_page_synchronization or skip_page_synchronization_ctx.get()
+        if self.synchronize_with_pages and not skip:
             self.synchronize_pages()
 
     def clean(self):
@@ -687,7 +696,8 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     @transaction.atomic()
     def save(self, *args, skip_page_synchronization=False, **kwargs):
         super().save(*args, **kwargs)
-        if self.type.synchronize_with_pages and not skip_page_synchronization:
+        skip = skip_page_synchronization or skip_page_synchronization_ctx.get()
+        if self.type.synchronize_with_pages and not skip:
             # We need to synchronize multiple page trees if there are multiple languages
             if self.parent:
                 parent_pages = self.parent.category_pages.all()
