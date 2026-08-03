@@ -1222,7 +1222,12 @@ class UpdateReferencesVisitor(AbstractVisitor):
         assert isinstance(manager, Manager)
         # Create `from_object._cluster_related_objects`
         manager.get_object_list()  # type: ignore[attr-defined]
-        referencing_object = manager.get(id=id)
+        try:
+            referencing_object = manager.get(id=id)
+        except source_field.related_model.DoesNotExist:  # type: ignore[attr-defined]
+            # The parent's cluster snapshot (from a stale revision) can lag the current DB.
+            # The reference index is authoritative about which child PK exists right now.
+            referencing_object = source_field.related_model.objects.get(id=id)  # type: ignore[attr-defined]
         # Make sure we only update copies
         assert self.clone_visitor.is_copy(referencing_object)
         child_field_name, *child_content_path = content_path_rest

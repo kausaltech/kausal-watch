@@ -22,6 +22,7 @@ from actions.tests.factories import (
     ActionContactFactory,
     ActionStatusFactory,
     ActionTaskFactory,
+    AttributeChoiceFactory,
     AttributeChoiceWithTextFactory,
     AttributeRichTextFactory,
     AttributeTypeChoiceOptionFactory,
@@ -833,6 +834,19 @@ def test_model_without_revision_is_not_affected(plan_with_pages, action):
     plan_copy = copy_plan(plan_with_pages)
     action_copy = plan_copy.actions.get()
     assert action_copy.latest_revision is None
+
+
+def test_attribute_type_revision_with_stale_snapshot_can_be_copied(plan_with_pages, category, user):
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=ContentType.objects.get_for_model(Category),
+        format=AttributeType.AttributeFormat.ORDERED_CHOICE,
+    )
+    attribute_type.save_revision(user=user)
+    option = AttributeTypeChoiceOptionFactory.create(type=attribute_type)
+    AttributeChoiceFactory.create(type=attribute_type, choice=option, content_object=category)
+
+    copy_plan(plan_with_pages)
 
 
 def test_copying_repairs_impossible_draft_state_without_revision(plan_with_pages, action):
