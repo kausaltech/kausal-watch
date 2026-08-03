@@ -708,7 +708,7 @@ WAGTAILEMBEDS_FINDERS = [
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         # If we leave the provider out, the "default" provider will be used
-        'domain_whitelist': ('public.tableau.com', 'tableau.minneapolismn.gov','tableaupub.kingcounty.gov'),
+        'domain_whitelist': ('public.tableau.com', 'tableau.minneapolismn.gov', 'tableaupub.kingcounty.gov'),
         'title': 'Chart',
     },
     {
@@ -752,6 +752,12 @@ WAGTAILEMBEDS_FINDERS = [
         # If we leave the provider out, the "default" provider will be used
         'domain_whitelist': ('kraftwerk-unterland.ch',),
         'title': 'Kraftwerk-Unterland',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        # If we leave the provider out, the "default" provider will be used
+        'domain_whitelist': ('pv-kloten-zeitreise.pplx.app',),
+        'title': 'Photovoltaik-Zubau Kloten',
     },
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
