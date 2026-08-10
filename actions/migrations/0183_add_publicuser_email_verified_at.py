@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0181_add_publicuser_email_and_signin_attempt"),
+        ("actions", "0182_add_publicuser_email_and_signin_attempt"),
     ]
 
     operations = [
