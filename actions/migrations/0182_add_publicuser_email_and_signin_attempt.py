@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0180_plan_plan_country_required"),
+        ("actions", "0181_alter_planfeatures_allow_public_site_login_and_more"),
     ]
 
     operations = [
