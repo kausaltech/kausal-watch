@@ -367,6 +367,8 @@ class ActionMutations:
         # Get primary org if provided
         primary_org: Organization | None = None
         if input.primary_org_id:
+            if not plan.features.has_action_primary_orgs:
+                raise ValidationError('Action primary organizations are not enabled for this plan.')
             primary_org = get_or_error(info, Organization, pk=input.primary_org_id)
 
         # Create action
@@ -416,6 +418,8 @@ class ActionMutations:
             if input.primary_org_id is None:
                 action.primary_org = None
             else:
+                if not action.plan.features.has_action_primary_orgs:
+                    raise ValidationError('Action primary organizations are not enabled for this plan.')
                 action.primary_org = get_or_error(info, Organization, pk=input.primary_org_id)
             updated = True
 
