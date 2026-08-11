@@ -1112,6 +1112,9 @@ class ActionSerializer(  # type: ignore[misc]
         if not self.plan.features.enable_community_engagement:
             fields.pop('pledges', None)
 
+        if not self.plan.features.has_action_primary_orgs:
+            fields.pop('primary_org', None)
+
         if user is not None:
             fields['modifiable_by_user'] = serializers.SerializerMethodField()
 

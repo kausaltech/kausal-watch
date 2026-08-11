@@ -219,6 +219,42 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
     assert data == expected
 
 
+def test_action_primary_org_masked_when_flag_disabled(graphql_client_query_data, plan, action, organization_factory):
+    """Action.primaryOrg and Plan.primaryOrgs must be null/empty when the plan's flag is off."""
+    org = organization_factory()
+    plan.features.has_action_primary_orgs = True
+    plan.features.save()
+    action.primary_org = org
+    action.save()
+
+    action_query = """
+        query($id: ID!) {
+          action(id: $id) { primaryOrg { id } }
+        }
+    """
+    plan_query = """
+        query($id: ID!) {
+          plan(id: $id) { primaryOrgs { id } }
+        }
+    """
+
+    data = graphql_client_query_data(action_query, variables={'id': str(action.id)})
+    assert data == {'action': {'primaryOrg': {'id': str(org.id)}}}
+    data = graphql_client_query_data(plan_query, variables={'id': plan.identifier})
+    assert data == {'plan': {'primaryOrgs': [{'id': str(org.id)}]}}
+
+    plan.features.has_action_primary_orgs = False
+    plan.features.save()
+
+    data = graphql_client_query_data(action_query, variables={'id': str(action.id)})
+    assert data == {'action': {'primaryOrg': None}}
+    data = graphql_client_query_data(plan_query, variables={'id': plan.identifier})
+    assert data == {'plan': {'primaryOrgs': []}}
+
+    action.refresh_from_db()
+    assert action.primary_org_id == org.id
+
+
 def test_action_dependency_basics(graphql_client_query_data, plan, action_factory):
     r1 = ActionDependencyRole.objects.create(plan=plan, name='role1', order=0)
     r2 = ActionDependencyRole.objects.create(plan=plan, name='role2', order=1)

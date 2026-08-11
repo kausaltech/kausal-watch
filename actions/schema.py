@@ -590,6 +590,8 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_primary_orgs(root: Plan, _info: GQLInfo) -> OrganizationQuerySet:
+        if not root.features.has_action_primary_orgs:
+            return Organization.objects.qs.none()
         qs = Action.objects.filter(plan=root).values_list('primary_org').distinct()
         return Organization.objects.qs.filter(id__in=qs)
 
@@ -1886,11 +1888,13 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
 
     @gql_optimizer.resolver_hints(
         model_field=('primary_org'),
-        select_related=('primary_org__logo'),
+        select_related=('primary_org__logo', 'plan__features'),
     )
     @staticmethod
     def resolve_primary_org(root: Action, info: GQLInfo) -> Organization | None:
         if not root.primary_org_id:
+            return None
+        if not root.plan.features.has_action_primary_orgs:
             return None
         cache = info.context.cache.for_plan_id(root.plan_id)
         org = cache.get_organization(root.primary_org_id)
