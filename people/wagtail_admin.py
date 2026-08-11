@@ -203,6 +203,8 @@ class PersonFormForGeneralAdmin(PersonForm):
         is_plan_admin = cleaned_data.get('is_admin_for_active_plan')
         organization_plan_admin_orgs = cleaned_data.get('organization_plan_admin_orgs')
         contact_for_actions = cleaned_data.get('contact_for_actions_unordered')
+        if contact_for_actions is not None:
+            contact_for_actions = contact_for_actions.filter(plan=self.plan)
         if access_level == self.AccessLevel.PUBLIC_SITE_ONLY:  # noqa: SIM102
             if is_plan_admin or organization_plan_admin_orgs or contact_for_actions:
                 raise ValidationError(
