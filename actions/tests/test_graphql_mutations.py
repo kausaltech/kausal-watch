@@ -502,6 +502,34 @@ class TestCreateAction:
         )
         assert 'errors' in response
 
+    def test_create_action_rejects_primary_org_when_flag_disabled(
+        self,
+        graphql_client_query,
+        client,
+        superuser: User,
+    ):
+        client.force_login(superuser)
+        plan = PlanFactory.create()
+        assert plan.features.has_action_primary_orgs is False
+        org = OrganizationFactory.create()
+
+        response = graphql_client_query(
+            CREATE_ACTION,
+            variables={
+                'input': {
+                    'planId': str(plan.pk),
+                    'name': 'Should Fail',
+                    'identifier': 'ca-no-primary-org',
+                    'primaryOrgId': str(org.pk),
+                }
+            },
+        )
+        data = response['data']['action']['createAction']
+        assert 'errors' not in response
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert data['messages'][0]['message'] == 'Action primary organizations are not enabled for this plan.'
+        assert not Action.objects.filter(plan=plan, identifier='ca-no-primary-org').exists()
+
     def test_create_action_with_categories(
         self,
         graphql_client_query_data,
@@ -1275,6 +1303,8 @@ class TestUpdateAction:
         plan: Plan,
     ):
         client.force_login(superuser)
+        plan.features.has_action_primary_orgs = True
+        plan.features.save()
         action = self._create_action(plan, 'ua-editable', 'Original Name')
         org = OrganizationFactory.create(name='Primary Org')
 
@@ -1298,6 +1328,59 @@ class TestUpdateAction:
         assert action.name == 'Updated Name'
         assert action.identifier == 'ua-editable-updated'
         assert action.primary_org == org
+
+    def test_update_action_rejects_primary_org_when_flag_disabled(
+        self,
+        graphql_client_query,
+        client,
+        superuser: User,
+        plan: Plan,
+    ):
+        client.force_login(superuser)
+        assert plan.features.has_action_primary_orgs is False
+        action = self._create_action(plan, 'ua-no-primary-org', 'No Primary Org')
+        org = OrganizationFactory.create()
+
+        response = graphql_client_query(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk), 'primaryOrgId': str(org.pk)},
+            },
+        )
+        data = response['data']['action']['updateAction']
+        assert 'errors' not in response
+        assert data['messages'][0]['kind'] == 'VALIDATION'
+        assert data['messages'][0]['message'] == 'Action primary organizations are not enabled for this plan.'
+
+        action.refresh_from_db()
+        assert action.primary_org is None
+
+    def test_update_action_allows_clearing_primary_org_when_flag_disabled(
+        self,
+        graphql_client_query_data,
+        client,
+        superuser: User,
+        plan: Plan,
+    ):
+        """A pre-existing stray primary_org should still be clearable via the API even with the flag off."""
+        client.force_login(superuser)
+        assert plan.features.has_action_primary_orgs is False
+        org = OrganizationFactory.create()
+        action = self._create_action(plan, 'ua-clear-primary-org', 'Clear Stray', primary_org=org)
+
+        data = graphql_client_query_data(
+            UPDATE_ACTION,
+            variables={
+                'planId': str(plan.pk),
+                'input': {'id': str(action.pk), 'primaryOrgId': None},
+            },
+        )
+        result = data['action']['updateAction']
+        assert result['id']
+
+        action.refresh_from_db()
+        assert action.primary_org is None
 
     def test_update_lead_paragraph(self, graphql_client_query_data, client, superuser: User, plan: Plan):
         client.force_login(superuser)
