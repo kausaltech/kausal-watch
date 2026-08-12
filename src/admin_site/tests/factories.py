@@ -6,7 +6,6 @@ from factory.django import DjangoModelFactory
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 from actions.models import Plan
-from actions.tests.factories import PlanFactory
 from admin_site.models import BuiltInFieldCustomization, Client, ClientPlan, EmailDomains
 
 
@@ -38,7 +37,7 @@ class BuiltInFieldCustomizationFactory(DjangoModelFactory[BuiltInFieldCustomizat
     class Meta:
         model = 'admin_site.BuiltInFieldCustomization'
 
-    plan = SubFactory[BuiltInFieldCustomization, Plan](PlanFactory)
+    plan = SubFactory[BuiltInFieldCustomization, Plan]('actions.tests.factories.PlanFactory')
     content_type = LazyAttribute[BuiltInFieldCustomization, ContentType](
         lambda _: ContentType.objects.get(app_label='actions', model='action')
     )

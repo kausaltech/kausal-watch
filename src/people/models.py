@@ -28,7 +28,7 @@ from kausal_common.users import user_or_none
 from aplans.utils import IndirectPlanRelatedModel
 
 from actions.models import ActionContactPerson, PlanFeatures
-from admin_site.models import Client
+from admin_site.models import Client, ClientPlan
 from orgs.models import Organization
 from search.models import SearchableModel
 from users.models import User
@@ -257,18 +257,31 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
 
         client = None
         if plans:
-            clients = Client.objects.filter(plans__plan__in=plans).distinct()
-            if len(clients) == 1:
-                client = clients[0]
-            elif user is not None and not user.is_superuser:
-                logger.warning(
-                    'Invalid number of clients found for %s [Person-%d]: %d'
-                    % (
-                        self.email,
-                        self.id,
-                        len(clients),
+            # actions.models imports Person, so top-level Plan import here would deadlock at boot.
+            from actions.models.plan import Plan
+
+            plan_ids: list[int] = [p.pk if isinstance(p, Plan) else p for p in plans]
+            primary_rows = ClientPlan.objects.filter(plan_id__in=plan_ids, is_primary=True).values_list(
+                'plan_id',
+                'client_id',
+            )
+            plans_with_primary = {plan_id for plan_id, _client_id in primary_rows}
+            primary_client_ids = {client_id for _plan_id, client_id in primary_rows}
+            if len(primary_client_ids) == 1 and plans_with_primary == set(plan_ids):
+                client = Client.objects.get(pk=next(iter(primary_client_ids)))
+            else:
+                clients = Client.objects.filter(plans__plan__in=plan_ids).distinct()
+                if len(clients) == 1:
+                    client = clients[0]
+                elif user is not None and not user.is_superuser:
+                    logger.warning(
+                        'Invalid number of clients found for %s [Person-%d]: %d'
+                        % (
+                            self.email,
+                            self.id,
+                            len(clients),
+                        )
                     )
-                )
         if not client:
             client = self.get_client_for_email_domain()
         return client

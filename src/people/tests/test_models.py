@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from actions.tests.factories import PlanFactory
+from admin_site.tests.factories import ClientFactory, ClientPlanFactory
 from orgs.tests.factories import OrganizationFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
@@ -157,6 +159,50 @@ def test_person_change_email_to_deactivated_users_email(plan_admin_user: User):
     assert old_user.is_active
     new_user.refresh_from_db()
     assert not new_user.is_active
+
+
+def test_get_admin_client_prefers_primary_client_when_multiple_client_plans():
+    # A plan admin whose plan has multiple ClientPlan associations must still
+    # resolve to a single client for notification recipient purposes; the
+    # plan's primary_client is the canonical pick.
+    primary = ClientFactory.create(name='Primary tenant')
+    other = ClientFactory.create(name='Other tenant')
+    plan = PlanFactory.create(primary_client=primary)
+    ClientPlanFactory.create(plan=plan, client=primary)
+    ClientPlanFactory.create(plan=plan, client=other)
+
+    person = PersonFactory.create(general_admin_plans=[plan])
+
+    assert person.get_admin_client() == primary
+
+
+def test_get_admin_client_takes_shortcut_when_all_plans_share_primary():
+    primary = ClientFactory.create(name='Shared tenant')
+    plan_a = PlanFactory.create(primary_client=primary)
+    plan_b = PlanFactory.create(primary_client=primary)
+
+    person = PersonFactory.create(general_admin_plans=[plan_a, plan_b])
+
+    assert person.get_admin_client() == primary
+
+
+def test_get_admin_client_refuses_primary_when_some_plans_lack_it():
+    """
+    Regression: don't leak plan A's primary client into notifications for plan B.
+
+    If a person admins plan A (primary set) and plan B (no primary), the
+    is_primary shortcut used to return A's client for every notification
+    including plan B's; resolve to None instead so the caller fails loudly.
+    """
+    primary = ClientFactory.create(name='Primary tenant')
+    other = ClientFactory.create(name='Other tenant')
+    plan_a = PlanFactory.create(primary_client=primary)
+    plan_b = PlanFactory.create()
+    ClientPlanFactory.create(plan=plan_b, client=other)
+
+    person = PersonFactory.create(general_admin_plans=[plan_a, plan_b])
+
+    assert person.get_admin_client() is None
 
 
 @pytest.mark.parametrize('value', [None, True, False])

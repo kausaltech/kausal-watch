@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 
     from aplans.graphql_types import GQLInfo
 
+    from admin_site.models import Client
+
 SIGN_UP_RATE_LIMIT = '5/m'
 SIGN_IN_RATE_LIMIT = '10/m'
 VERIFY_PIN_RATE_LIMIT = '30/m'
@@ -40,6 +42,33 @@ logger = logger.bind(name='actions.public_user_auth')
 
 
 EMAIL_MAX_LENGTH = 254
+
+
+def require_request_client(info: GQLInfo) -> Client:
+    """
+    Resolve the tenant that owns the current request's plan.
+
+    Raises when the request has no plan or the plan has no primary_client set.
+    All public-user auth mutations must run in a plan-hosted origin, so a
+    missing client indicates the request is coming from an unconfigured site
+    rather than a legitimate client user; failing loudly avoids silently
+    creating client-less rows that would violate the check constraint later.
+    """
+    plan = info.context.request_plan
+    if plan is None:
+        logger.warning('public_user auth call has no request plan')
+        raise GraphQLError(
+            'Public user actions must originate from a plan-hosted site.',
+            extensions={'code': 'NO_REQUEST_PLAN'},
+        )
+    client = plan.primary_client
+    if client is None:
+        logger.warning('plan {identifier} has no primary_client configured', identifier=plan.identifier)
+        raise GraphQLError(
+            'This plan is not configured for public user accounts.',
+            extensions={'code': 'PLAN_HAS_NO_CLIENT'},
+        )
+    return client
 
 
 def normalize_email(email: str) -> str:
@@ -113,6 +142,7 @@ def issue_signin_pin(
 
 def issue_signup_pin(
     email: str,
+    client: Client,
     terms_accepted_at: datetime,
     marketing_consented_at: datetime | None,
     anon_uuid: UUID | None = None,
@@ -127,6 +157,7 @@ def issue_signup_pin(
     """
     _, raw_pin = PublicUserSignInAttempt.create_for_signup(
         email=email,
+        client=client,
         terms_accepted_at=terms_accepted_at,
         marketing_consented_at=marketing_consented_at,
         anon_uuid=anon_uuid,
@@ -155,26 +186,41 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         )
         return
 
-    affected_plan_ids = set(
-        PledgeCommitment.objects.filter(public_user=anon).values_list('pledge__plan_id', flat=True).distinct()
+    # Defense-in-depth against a cross-client anon_uuid: only move commitments,
+    # merge user_data, and delete the anon row when the anon shows a same-client
+    # connection via at least one commitment. Anon UUIDs live in per-origin
+    # browser storage, so a real browser should never present a UUID from
+    # another client here; the guard fails safe if a non-browser caller ever does.
+    same_client_commitments = PledgeCommitment.objects.filter(
+        public_user=anon,
+        pledge__plan__clients__is_primary=True,
+        pledge__plan__clients__client=verified_user.client,
     )
+    has_same_client_commitments = same_client_commitments.exists()
+    affected_plan_ids = set(same_client_commitments.values_list('pledge__plan_id', flat=True).distinct())
     existing_pledge_ids = set(PledgeCommitment.objects.filter(public_user=verified_user).values_list('pledge_id', flat=True))
-    moved = (
-        PledgeCommitment.objects
-        .filter(public_user=anon)
-        .exclude(pledge_id__in=existing_pledge_ids)
-        .update(public_user=verified_user)
-    )
+    moved = same_client_commitments.exclude(pledge_id__in=existing_pledge_ids).update(public_user=verified_user)
+    # Anything still in the same-client set is a duplicate the verified user
+    # already had; drop it so the anon row can be cleaned up.
+    same_client_commitments.delete()
+    remaining = PledgeCommitment.objects.filter(public_user=anon).count()
+    if remaining:
+        logger.warning(
+            'Anon merge kept {remaining} cross-client commitments on anon uuid={uuid}',
+            remaining=remaining,
+            uuid=anon_uuid,
+        )
 
     user_data_updated = False
-    if anon.user_data:
+    if has_same_client_commitments and anon.user_data:
         merged_user_data = {**verified_user.user_data, **anon.user_data}
         if merged_user_data != verified_user.user_data:
             verified_user.user_data = merged_user_data
             verified_user.save(update_fields=['user_data'])
             user_data_updated = True
 
-    anon.delete()
+    if has_same_client_commitments and not remaining:
+        anon.delete()
 
     for plan in Plan.objects.filter(id__in=affected_plan_ids):
         plan.invalidate_cache()

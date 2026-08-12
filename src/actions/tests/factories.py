@@ -56,6 +56,7 @@ from actions.models import (
     Scenario,
 )
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
+from admin_site.models import ClientPlan
 from content.models import SiteGeneralContent
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
@@ -110,7 +111,12 @@ class PlanFactory(ModelFactory[Plan]):
         Locale.objects.get_or_create(language_code=kwargs['primary_language'])
         for language in kwargs.get('other_languages', []):
             Locale.objects.get_or_create(language_code=language)
-        return super()._create(model_class, *args, **kwargs)
+        # primary_client is not a field on Plan; opt-in attach via ClientPlan.
+        primary_client = kwargs.pop('primary_client', None)
+        plan = super()._create(model_class, *args, **kwargs)
+        if primary_client is not None:
+            ClientPlan.objects.create(plan=plan, client=primary_client, is_primary=True)
+        return plan
 
     if TYPE_CHECKING:
 
