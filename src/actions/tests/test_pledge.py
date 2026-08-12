@@ -10,7 +10,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.test import override_settings
 from django.utils import timezone, translation
 from wagtail.models import Locale
@@ -22,6 +22,7 @@ from actions.models.attributes import AttributeText, AttributeType as AttributeT
 from actions.models.public_user import PIN_MAX_ATTEMPTS, hash_pin, hash_user_token
 from actions.public_user_auth import send_pin_email
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
+from admin_site.tests.factories import ClientFactory
 from notifications.models import BaseTemplate
 
 pytestmark = pytest.mark.django_db
@@ -30,7 +31,7 @@ pytestmark = pytest.mark.django_db
 class TestPledge:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
 
@@ -69,7 +70,7 @@ class TestPledge:
 
     def test_pledge_slug_unique_across_different_plans(self):
         """Test that the same slug can be used in different plans."""
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
 
         pledge1 = Pledge.objects.create(
             plan=self.plan,
@@ -191,7 +192,7 @@ class TestPledgeLocaleTranslations:
 class TestPledgeActionRelationship:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
 
@@ -232,7 +233,7 @@ class TestPledgeActionRelationship:
 class TestPledgeOrdering:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
 
@@ -265,13 +266,13 @@ class TestPledgeOrdering:
 class TestPledgeQuerySet:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
 
     def test_for_plan_filters_by_plan(self):
         """Test that for_plan queryset method filters by plan."""
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
 
@@ -285,7 +286,7 @@ class TestPledgeQuerySet:
 
     def test_visible_for_user_filters_by_plan(self):
         """Test that visible_for_user queryset method filters by plan."""
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
 
@@ -302,7 +303,7 @@ class TestPledgeQuerySet:
 class TestPledgeOptionalFields:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
 
@@ -354,6 +355,10 @@ class TestPledgeOptionalFields:
 
 class TestPublicUser:
     """Tests for the PublicUser model."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.client_tenant = ClientFactory.create()
 
     def test_public_user_creation(self):
         """Test that a PublicUser can be created with auto-generated UUID."""
@@ -420,16 +425,56 @@ class TestPublicUser:
 
     def test_email_is_lowercased_and_trimmed_on_save(self):
         """Saving a PublicUser normalizes the email to trimmed lowercase."""
-        public_user = PublicUser.objects.create(email='  Foo@EXAMPLE.com ')
+        public_user = PublicUser.objects.create(email='  Foo@EXAMPLE.com ', client=self.client_tenant)
 
         assert public_user.email == 'foo@example.com'
+
+    def test_same_email_allowed_across_clients(self):
+        other = ClientFactory.create()
+        first = PublicUser.objects.create(email='same@example.com', client=self.client_tenant)
+        second = PublicUser.objects.create(email='same@example.com', client=other)
+
+        assert first.pk != second.pk
+
+    def test_duplicate_email_within_client_is_rejected(self):
+        PublicUser.objects.create(email='dup@example.com', client=self.client_tenant)
+        with pytest.raises(IntegrityError), transaction.atomic():
+            PublicUser.objects.create(email='dup@example.com', client=self.client_tenant)
+
+    def test_email_without_client_is_rejected(self):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            PublicUser.objects.create(email='no-client@example.com')
+
+
+class TestPlanFeaturesCommunityEngagementValidation:
+    """Enabling community engagement requires a primary_client on the plan."""
+
+    def test_clean_rejects_engagement_without_primary_client(self):
+        from django.core.exceptions import ValidationError
+
+        plan = PlanFactory.create(primary_client=None)
+        plan.features.enable_community_engagement = True
+
+        with pytest.raises(ValidationError, match='primary client'):
+            plan.features.full_clean()
+
+    def test_clean_accepts_engagement_with_primary_client(self):
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
+        assert plan.primary_client_id is not None
+        plan.features.enable_community_engagement = True
+
+        plan.features.full_clean()
 
 
 class TestPublicUserSignInAttempt:
     """Tests for the PublicUserSignInAttempt model."""
 
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.client_tenant = ClientFactory.create()
+
     def test_create_for_generates_attempt_with_hashed_pin(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
 
         attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
@@ -462,7 +507,7 @@ class TestPublicUserSignInAttempt:
         assert original != rotated
 
     def test_create_for_replaces_previous_attempt(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         first_attempt, first_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         second_attempt, second_pin = PublicUserSignInAttempt.create_for_signin(public_user)
@@ -472,7 +517,7 @@ class TestPublicUserSignInAttempt:
         assert PublicUserSignInAttempt.objects.filter(public_user=public_user).count() == 1
 
     def test_create_for_stores_anon_uuid(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         anon_uuid = uuid.uuid4()
 
         attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user, anon_uuid=anon_uuid)
@@ -480,20 +525,20 @@ class TestPublicUserSignInAttempt:
         assert attempt.anon_uuid == anon_uuid
 
     def test_verify_returns_true_for_correct_pin(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 
         assert attempt.verify(raw_pin) is True
 
     def test_verify_returns_false_for_wrong_pin(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         wrong = '000000' if raw_pin != '000000' else '111111'
 
         assert attempt.verify(wrong) is False
 
     def test_verify_increments_attempts(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
 
         attempt.verify('000000')
@@ -504,7 +549,7 @@ class TestPublicUserSignInAttempt:
 
     def test_verify_increment_survives_concurrent_modification(self):
         """A stale in-memory counter must not overwrite an interleaved DB update."""
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
         # Simulate a concurrent verify having incremented in the DB while this
         # instance still has attempts=0 in Python.
@@ -516,7 +561,7 @@ class TestPublicUserSignInAttempt:
         assert attempt.attempts == 3
 
     def test_verify_returns_false_after_attempts_exhausted(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         for _ in range(PIN_MAX_ATTEMPTS):
             attempt.verify('000000')
@@ -524,7 +569,7 @@ class TestPublicUserSignInAttempt:
         assert attempt.verify(raw_pin) is False
 
     def test_verify_returns_false_for_expired_attempt(self):
-        public_user = PublicUser.objects.create(email='a@example.com')
+        public_user = PublicUser.objects.create(email='a@example.com', client=self.client_tenant)
         attempt, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
         attempt.expires_at = timezone.now() - timedelta(minutes=1)
         attempt.save(update_fields=['expires_at'])
@@ -601,7 +646,7 @@ class TestPledgeCommitment:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.pledge = Pledge.objects.create(
             plan=self.plan,
             name='Test Pledge',
