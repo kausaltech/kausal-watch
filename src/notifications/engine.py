@@ -12,6 +12,7 @@ from sentry_sdk import capture_exception
 from aplans.email_sender import EmailSender
 
 from actions.models import ActionContactPerson, ActionTask
+from actions.models.public_user import PublicUser
 from indicators.models import IndicatorContactPerson
 
 from .mjml import render_mjml_from_template
@@ -21,6 +22,7 @@ from .notifications import (
     ManuallyScheduledNotification,
     NotEnoughTasksNotification,
     NotificationType,
+    PledgeParticipantSignupNotification,
     TaskDueSoonNotification,
     TaskLateNotification,
     UpdatedIndicatorValuesDueSoonNotification,
@@ -230,6 +232,18 @@ class NotificationEngine:
             )
             notification.generate_notifications(self, recipients, now=self.now)
 
+    def generate_pledge_signup_notifications(self, public_user: PublicUser):
+        notification = PledgeParticipantSignupNotification(self.plan, public_user)
+        template = self.templates_by_type.get(NotificationType.PLEDGE_PARTICIPANT_SIGNUP.identifier)
+        if template:
+            recipients = template.get_recipients(
+                self.action_contact_person_recipients,
+                self.indicator_contact_person_recipients,
+                self.plan_admin_recipients,
+                self.organization_plan_admin_recipients,
+            )
+            notification.generate_notifications(self, recipients, now=self.now)
+
     def generate_manually_scheduled_notification(self, template: ManuallyScheduledNotificationTemplate):
         notification = ManuallyScheduledNotification(self.plan, template)
         recipients = template.get_recipients(
@@ -294,6 +308,24 @@ class NotificationEngine:
 
         for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
+
+        client_id = self.plan.primary_client_id
+        signup_type = NotificationType.PLEDGE_PARTICIPANT_SIGNUP
+        signup_identifier = signup_type.identifier
+        if (
+            client_id is not None
+            and signup_type.is_enabled_for(self.plan.features)
+            and signup_identifier in self.templates_by_type
+            and (not self.only_type or self.only_type == signup_identifier)
+        ):
+            participants = (
+                PublicUser.objects
+                .filter(client_id=client_id, email__isnull=False)
+                .exclude(sent_notifications__type=signup_identifier)
+                .order_by('email_verified_at')
+            )
+            for public_user in participants:
+                self.generate_pledge_signup_notifications(public_user)
 
         for manually_scheduled_notification_template in ManuallyScheduledNotificationTemplate.objects.filter(
             base__plan=self.plan
