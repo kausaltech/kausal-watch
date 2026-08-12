@@ -335,6 +335,32 @@ class User(AbstractUser):
             query |= Q(organization__path__startswith=admin.organization.path, plans=admin.plan_id)
         return Indicator.objects.qs.filter(query).distinct()
 
+    def get_org_admin_indicator_plan_ids(self) -> set[int]:
+        """
+        Return the IDs of the plans in which the user administers indicators.
+
+        An indicator can belong to several plans, so these cannot be derived from the indicators
+        returned by get_org_admin_indicators(): a plan sharing such an indicator would look adminable
+        even though the OrganizationPlanAdmin was granted for a different plan.
+        """
+        from indicators.models import Indicator
+
+        person = self.get_corresponding_person()
+        if not person:
+            return set()
+
+        plan_ids = set[int]()
+        for admin in person.organization_plan_admins.select_related('organization'):
+            if admin.plan_id in plan_ids:
+                continue
+            indicators = Indicator.objects.qs.filter(
+                organization__path__startswith=admin.organization.path,
+                plans=admin.plan_id,
+            )
+            if indicators.exists():
+                plan_ids.add(admin.plan_id)
+        return plan_ids
+
     def is_organization_admin_for_action(self, action: Action | None = None, plan: Plan | None = None):
         cache = self.get_cache()
         if not hasattr(cache, '_org_admin_for_actions'):
@@ -447,7 +473,7 @@ class User(AbstractUser):
             q |= Q(indicators__in=self.perms.contact_for_indicators)
             q |= Q(id__in=cache._general_admin_for_plans)
             q |= Q(actions__in=cache._org_admin_for_actions[None])
-            q |= Q(indicators__in=cache._org_admin_for_indicators)
+            q |= Q(id__in=self.get_org_admin_indicator_plan_ids())
             plans = Plan.objects.qs.filter(q, is_active=True).distinct()
         cache._adminable_plans = plans
         return plans

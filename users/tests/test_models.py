@@ -7,7 +7,7 @@ import pytest
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
 from admin_site.models import Client
 from admin_site.tests.factories import ClientPlanFactory, EmailDomainsFactory
-from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
+from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory, IndicatorLevelFactory
 from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 from people.tests.factories import PersonFactory
 
@@ -180,6 +180,28 @@ def test_get_adminable_organizations_organization_plan_admin():
     org_admin = OrganizationPlanAdminFactory.create()
     assert org_admin.person.user is not None
     assert list(org_admin.person.user.get_adminable_organizations()) == [org_admin.organization]
+
+
+def test_get_adminable_plans_organization_plan_admin(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert org_admin.person.user is not None
+    assert plan in org_admin.person.user.get_adminable_plans()
+
+
+def test_get_adminable_plans_organization_plan_admin_shared_indicator(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    other_plan = PlanFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator, plan=other_plan)
+    assert org_admin.person.user is not None
+    adminable = org_admin.person.user.get_adminable_plans()
+    assert plan in adminable
+    assert other_plan not in adminable
 
 
 def test_new_user_password_login_preconditions_met(plan: Plan, api_client, client, person_factory, action_contact_factory):
