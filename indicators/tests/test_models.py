@@ -295,3 +295,52 @@ def test_indicator_permission_helper_scopes_editing_to_the_active_plan(plan, pla
     # Editing would write the indicator level of the other plan, where the user is no admin
     assert user.get_active_admin_plan() == other_plan
     assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+
+
+@pytest.fixture
+def post_request_with_initial_plan(rf):
+    """Put a POST request that was opened with `initial_plan` into the request context."""
+    from contextlib import contextmanager
+
+    from aplans.context_vars import ctx_request
+
+    @contextmanager
+    def func(initial_plan):
+        request = rf.post('/admin/indicators/indicator/edit/1/')
+        request.session = {'initial_plan_id': str(initial_plan.id)}
+        with ctx_request.activate(request):
+            yield request
+
+    return func
+
+
+def test_indicator_permission_helper_allows_editing_the_plan_the_form_was_opened_with(
+    plan, plan_admin_person, post_request_with_initial_plan
+):
+    from indicators.wagtail_admin import IndicatorPermissionHelper
+
+    indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    user = plan_admin_person.user
+    assert user is not None
+    # The user switched to the other plan after opening the form, so the level of `plan` is written
+    user.selected_admin_plan = other_plan
+    user.save()
+
+    with post_request_with_initial_plan(plan):
+        assert IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+
+
+def test_indicator_permission_helper_denies_editing_the_plan_the_form_was_opened_with(
+    plan, plan_admin_person, post_request_with_initial_plan
+):
+    from indicators.wagtail_admin import IndicatorPermissionHelper
+
+    indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    user = plan_admin_person.user
+    assert user is not None
+    user.selected_admin_plan = plan
+    user.save()
+
+    # The form was opened with the other plan, so its level is written even though `plan` is active
+    with post_request_with_initial_plan(other_plan):
+        assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
