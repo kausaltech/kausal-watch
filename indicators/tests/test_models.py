@@ -353,7 +353,8 @@ def indicator_create_view(rf):
     def func(user, instance):
         from indicators.wagtail_admin import IndicatorAdmin, IndicatorCreateView
 
-        view = IndicatorCreateView(model_admin=IndicatorAdmin())
+        # Only the views for an existing instance take an instance_pk, but they share a base class
+        view = IndicatorCreateView(model_admin=IndicatorAdmin())  # type: ignore[call-arg]
         request = rf.post('/admin/indicators/indicator/create/')
         request.user = user
         request.session = {}
@@ -390,3 +391,13 @@ def test_indicator_create_success_url_skips_the_change_log_of_a_plan_without_rig
 
     # Writing a change log message would write it for the other plan, where the user is no admin
     assert 'indicatorchangelogmessage' not in indicator_create_view(user, indicator).get_success_url()
+
+
+def test_adminable_in_plan_by_general_admin_includes_indicators_of_the_plan_organization(plan, plan_admin_user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    IndicatorLevelFactory.create(indicator=indicator)
+    # The indicator belongs to another plan, but this plan's admins may connect it as well
+    assert plan not in indicator.plans.all()
+    assert plan in indicator.get_plans_with_access()
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+    assert indicator in Indicator.objects.qs.modifiable_by(plan_admin_user)

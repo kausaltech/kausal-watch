@@ -100,9 +100,9 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         Filter to the indicators the user may work with in the admin of `plan`.
 
         Everybody gets the indicators of the plan; whether they may also edit them depends on their
-        roles. General plan admins additionally get the indicators that no plan has connected yet
-        but that are owned by an organization related to the plan, so that they can connect them.
-        Superusers get everything owned by an organization related to the plan.
+        roles. General plan admins additionally get the indicators that the plan may connect, so
+        that they can find and connect them. Superusers get everything owned by an organization
+        related to the plan.
         """
         if user.is_superuser:
             return self.available_for_plan(plan)
@@ -111,11 +111,14 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         # once per plan that has connected it.
         query = Q(pk__in=Indicator.objects.qs.in_plan(plan).values('pk'))
         if user.is_general_admin_for_plan(plan):
+            # The indicators that the plan has access to without having connected them, i.e. the
+            # queryset counterpart of Indicator.get_plans_with_access() for this plan
+            owned_by_plan_organization = Indicator.objects.qs.filter(organization__plans=plan)
             unconnected = Indicator.objects.qs.filter(
                 plans__isnull=True,
                 organization__in=Organization.objects.qs.available_for_plan(plan),
             )
-            query |= Q(pk__in=unconnected.values('pk'))
+            query |= Q(pk__in=owned_by_plan_organization.values('pk')) | Q(pk__in=unconnected.values('pk'))
         return self.filter(query)
 
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
