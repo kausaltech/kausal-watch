@@ -77,7 +77,7 @@ if TYPE_CHECKING:
     from actions.models.action_deps import ActionDependencyRole
     from actions.models.attributes import AttributeType
     from actions.models.category import CommonCategoryType
-    from admin_site.models import ClientPlan
+    from admin_site.models import Client, ClientPlan
     from content.models import SiteGeneralContent
     from documentation.models import DocumentationRootPage
     from feedback.models import UserFeedback
@@ -699,6 +699,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def __str__(self):
         return self.name
 
+    @property
+    def primary_client(self) -> Client | None:
+        client_plan = self.clients.filter(is_primary=True).select_related('client').first()
+        return client_plan.client if client_plan else None
+
+    @property
+    def primary_client_id(self) -> int | None:
+        return self.clients.filter(is_primary=True).values_list('client_id', flat=True).first()
+
     def __rich_repr__(self):
         yield self.name
         if self.version_name:
@@ -718,6 +727,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def clean(self):
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
+
+        if sum(1 for cp in self.clients.all() if cp.is_primary) > 1:
+            raise ValidationError({'clients': _('Only one client can be marked as primary.')})
 
         for field in ['primary_action_classification', 'secondary_action_classification']:
             value = getattr(self, field)
@@ -1209,7 +1221,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             client = Client.objects.filter(name=client_name).first()
             if client is None:
                 client = Client.objects.create(name=client_name)
-            ClientPlan.objects.create(plan=plan, client=client)
+            ClientPlan.objects.create(plan=plan, client=client, is_primary=True)
         return cls.apply_defaults(plan, hostname=hostname, base_path=base_path)
 
     @classmethod

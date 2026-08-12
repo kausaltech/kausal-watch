@@ -126,6 +126,7 @@ from .public_user_auth import (
     issue_signup_pin,
     merge_anon_into_verified,
     normalize_email,
+    require_request_client,
 )
 
 if TYPE_CHECKING:
@@ -2497,12 +2498,21 @@ def _resolve_public_user_from_token(info: GQLInfo) -> PublicUser | None:
     doesn't match any row. A separate header (not Authorization: Bearer) is
     used so the PublicUser credential never collides with the platform's
     OAuth/OIDC bearer-token middleware.
+
+    The lookup is scoped to the request plan's client so a token issued on one
+    tenant cannot be presented on another tenant's site.
     """
     headers = info.context.get_request_headers()
     token = headers.get(PUBLIC_USER_TOKEN_HEADER)
     if not token:
         return None
-    return PublicUser.objects.filter(user_token=hash_user_token(token)).first()
+    request_plan = info.context.request_plan
+    if request_plan is None or request_plan.primary_client_id is None:
+        return None
+    return PublicUser.objects.filter(
+        user_token=hash_user_token(token),
+        client_id=request_plan.primary_client_id,
+    ).first()
 
 
 def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUser:
@@ -2531,6 +2541,13 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
             'Authentication required: this account requires an X-Public-User-Token header',
             extensions={'code': 'TOKEN_REQUIRED'},
         )
+    # Anon rows do not carry a client; if the row has been tied to a client
+    # (should not happen for user_token-less rows, but check defensively),
+    # require the request to be on the same tenant.
+    if public_user.client_id is not None:
+        request_plan = info.context.request_plan
+        if request_plan is None or request_plan.primary_client_id != public_user.client_id:
+            raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'})
     return public_user
 
 
@@ -2581,8 +2598,15 @@ class CommitToPledgeMutation(graphene.Mutation):
     ) -> CommitToPledgePayload:
         public_user = _resolve_public_user(info, user_uuid)
 
+        request_plan = info.context.request_plan
+        pledge_qs = Pledge.objects.select_related('plan__features')
+        if request_plan is not None and request_plan.primary_client_id is not None:
+            pledge_qs = pledge_qs.filter(
+                plan__clients__is_primary=True,
+                plan__clients__client_id=request_plan.primary_client_id,
+            )
         try:
-            pledge = Pledge.objects.select_related('plan__features').get(id=pledge_id)
+            pledge = pledge_qs.get(id=pledge_id)
         except Pledge.DoesNotExist:
             raise GraphQLError('Pledge not found') from None
 
@@ -2686,6 +2710,7 @@ class SignUpMutation(graphene.Mutation):
         if not terms_accepted:
             raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
 
+        client = require_request_client(info)
         normalized = normalize_email(email)
         now = timezone.now()
         try:
@@ -2700,17 +2725,20 @@ class SignUpMutation(graphene.Mutation):
                 # address that now has an account, and the resulting PIN
                 # would be unusable because VerifyPin's existing-user path
                 # ignores email-only attempts.
-                if PublicUser.objects.filter(email=normalized).exists():
+                if PublicUser.objects.filter(email=normalized, client=client).exists():
                     raise GraphQLError(  # noqa: TRY301
                         'An account with this email already exists.',
                         extensions={'code': 'ACCOUNT_EXISTS'},
                     )
                 existing_attempt = (
-                    PublicUserSignInAttempt.objects.select_for_update().filter(email=normalized, public_user__isnull=True).first()
+                    PublicUserSignInAttempt.objects
+                    .select_for_update()
+                    .filter(email=normalized, client=client, public_user__isnull=True)
+                    .first()
                 )
                 # Re-check after the attempt lock: a concurrent verifyPin
                 # may have consumed the pending attempt while we were waiting.
-                if PublicUser.objects.filter(email=normalized).exists():
+                if PublicUser.objects.filter(email=normalized, client=client).exists():
                     raise GraphQLError(  # noqa: TRY301
                         'An account with this email already exists.',
                         extensions={'code': 'ACCOUNT_EXISTS'},
@@ -2722,6 +2750,7 @@ class SignUpMutation(graphene.Mutation):
                     )
                 issue_signup_pin(
                     email=normalized,
+                    client=client,
                     terms_accepted_at=now,
                     marketing_consented_at=now if marketing_accepted else None,
                     anon_uuid=anon_uuid,
@@ -2776,9 +2805,10 @@ class SignInMutation(graphene.Mutation):
         anon_uuid: uuid.UUID | None = None,
     ) -> SignInPayload:
         enforce_rate_limit(info, group='public_user_sign_in', rate=SIGN_IN_RATE_LIMIT)
+        client = require_request_client(info)
         normalized = normalize_email(email)
         try:
-            public_user = PublicUser.objects.get(email=normalized)
+            public_user = PublicUser.objects.get(email=normalized, client=client)
         except PublicUser.DoesNotExist:
             logger.info('signin_rejected code={code}', code='ACCOUNT_NOT_FOUND')
             raise GraphQLError(
@@ -2865,9 +2895,11 @@ class VerifyPinMutation(graphene.Mutation):
         if existing_user is None:
             pending_terms_accepted_at = attempt.pending_terms_accepted_at
             pending_marketing_consented_at = attempt.pending_marketing_consented_at
+            attempt_client = attempt.client
             attempt.delete()
             public_user = PublicUser.objects.create(
                 email=normalized_email,
+                client=attempt_client,
                 terms_accepted_at=pending_terms_accepted_at,
                 marketing_consented_at=pending_marketing_consented_at,
                 email_verified_at=timezone.now(),
@@ -2892,12 +2924,13 @@ class VerifyPinMutation(graphene.Mutation):
         anon_uuid: uuid.UUID | None = None,
     ) -> VerifyPinPayload:
         enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
+        client = require_request_client(info)
         normalized = normalize_email(email)
         # Look up the user first to decide which attempt-finder path to take:
         # if there's a verified PublicUser, this is a SignIn verification;
         # otherwise it's a SignUp verification (attempt exists by email,
         # user hasn't been created yet).
-        existing_user = PublicUser.objects.filter(email=normalized).first()
+        existing_user = PublicUser.objects.filter(email=normalized, client=client).first()
 
         # Lock the user row (when one exists) before the attempt row so a
         # parallel SignIn+VerifyPin pair can't deadlock - SignIn locks the
@@ -2916,7 +2949,10 @@ class VerifyPinMutation(graphene.Mutation):
                 attempt = PublicUserSignInAttempt.objects.select_for_update().filter(public_user=locked_user).first()
             else:
                 attempt = (
-                    PublicUserSignInAttempt.objects.select_for_update().filter(email=normalized, public_user__isnull=True).first()
+                    PublicUserSignInAttempt.objects
+                    .select_for_update()
+                    .filter(email=normalized, client=client, public_user__isnull=True)
+                    .first()
                 )
             if attempt is None:
                 verify_error = GraphQLError(

@@ -60,6 +60,7 @@ class TestPlanOrganizationPanel:
             'clients-MIN_NUM_FORMS': '1',
             'clients-MAX_NUM_FORMS': '1000',
             'clients-0-client': str(client.pk),
+            'clients-0-is_primary': 'on',
             'clients-0-ORDER': '0',
         }
         data.update(overrides)
