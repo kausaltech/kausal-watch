@@ -13,6 +13,7 @@ import pytest
 
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.models.public_user import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
+from actions.public_user_auth import SIGN_IN_RATE_LIMIT
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
 from images.tests.factories import AplansImageFactory
 
@@ -895,6 +896,9 @@ class TestCommitToPledgeMutation:
 
     def test_commit_with_bearer_token_authenticates(self, graphql_client_query_data):
         """The commitToPledge mutation should authenticate via the X-Public-User-Token header alone."""
+        self.public_user.email = 'authed@example.com'
+        self.public_user.client = self.plan.primary_client
+        self.public_user.save()
         token = self.public_user.regenerate_user_token()
 
         data = graphql_client_query_data(
@@ -917,6 +921,9 @@ class TestCommitToPledgeMutation:
 
     def test_commit_bearer_token_takes_precedence_over_user_uuid(self, graphql_client_query_data):
         """If both bearer and userUuid are given, the bearer-identified user wins."""
+        self.public_user.email = 'authed@example.com'
+        self.public_user.client = self.plan.primary_client
+        self.public_user.save()
         token = self.public_user.regenerate_user_token()
         other_user = PublicUser.objects.create()
 
@@ -986,6 +993,37 @@ class TestCommitToPledgeMutation:
         assert 'Authentication required' in response['errors'][0]['message']
         assert response['errors'][0]['extensions']['code'] == 'AUTHENTICATION_REQUIRED'
         assert PledgeCommitment.objects.count() == 0
+
+    def test_commit_refuses_pledge_from_other_client(self, graphql_client_query):
+        # Authed user on our plan/client tries to commit to a pledge that
+        # belongs to a different client's plan. Must be rejected.
+        self.public_user.email = 'authed@example.com'
+        self.public_user.client = self.plan.primary_client
+        self.public_user.save()
+        token = self.public_user.regenerate_user_token()
+
+        other_plan = PlanFactory.create()
+        other_plan.features.enable_community_engagement = True
+        other_plan.features.save()
+        other_pledge = PledgeFactory.create(plan=other_plan)
+
+        response = graphql_client_query(
+            """
+            mutation($pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={'pledgeId': str(other_pledge.id), 'committed': True},
+            headers={'X-Public-User-Token': token},
+        )
+
+        assert 'errors' in response
+        assert 'Pledge not found' in response['errors'][0]['message']
+        assert not PledgeCommitment.objects.filter(pledge=other_pledge).exists()
 
 
 class TestSetUserDataMutation:
@@ -1094,8 +1132,10 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
         """The setUserData mutation should authenticate via the X-Public-User-Token header alone."""
-        public_user = PublicUser.objects.create()
+        plan = PlanFactory.create()
+        public_user = PublicUser.objects.create(email='authed@example.com', client=plan.primary_client)
         token = public_user.regenerate_user_token()
+        self.plan = plan
 
         graphql_client_query_data(
             """
@@ -1139,6 +1179,11 @@ SIGN_IN_MUTATION = """
 class TestSignUpMutation:
     """Tests for the signUp GraphQL mutation."""
 
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create()
+        self.client_tenant = self.plan.primary_client
+
     def test_sign_up_does_not_create_user_and_sends_pin(self, graphql_client_query_data):
         # The PublicUser is created only after VerifyPin proves the verifier
         # controls the mailbox. SignUp stores consent on the pending attempt.
@@ -1174,7 +1219,7 @@ class TestSignUpMutation:
         # don't try to simulate the race directly; we just assert the
         # observable outcome: when a user exists, no attempt is created
         # and no PIN email is sent.
-        PublicUser.objects.create(email='exists@example.com')
+        PublicUser.objects.create(email='exists@example.com', client=self.client_tenant)
         mail.outbox.clear()
 
         response = graphql_client_query(
@@ -1305,12 +1350,46 @@ class TestSignUpMutation:
 
         assert response['errors'][0]['extensions']['code'] == 'INVALID_EMAIL'
 
+    def test_sign_up_same_email_allowed_on_second_client(self, graphql_client_query_data):
+        # First SignUp on the fixture's plan/client.
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'shared@example.com', 'terms': True, 'marketing': False},
+        )
+        assert PublicUserSignInAttempt.objects.filter(
+            email='shared@example.com',
+            client=self.client_tenant,
+            public_user__isnull=True,
+        ).exists()
+
+        # Switch to a second plan with a different primary_client. Auto-injected
+        # X-Cache-Plan-Identifier reads from self.plan, so the SignUp resolves
+        # against the second client.
+        self.plan = PlanFactory.create()
+        graphql_client_query_data(
+            SIGN_UP_MUTATION,
+            variables={'email': 'shared@example.com', 'terms': True, 'marketing': False},
+        )
+
+        assert (
+            PublicUserSignInAttempt.objects.filter(
+                email='shared@example.com',
+                public_user__isnull=True,
+            ).count()
+            == 2
+        )
+
 
 class TestSignInMutation:
     """Tests for the signIn GraphQL mutation."""
 
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create()
+        self.client_tenant = self.plan.primary_client
+
     def test_sign_in_sends_pin_for_existing_user(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create(email='hello@example.com')
+        public_user = PublicUser.objects.create(email='hello@example.com', client=self.client_tenant)
         mail.outbox.clear()
 
         data = graphql_client_query_data(
@@ -1333,7 +1412,7 @@ class TestSignInMutation:
         assert response['errors'][0]['extensions']['code'] == 'ACCOUNT_NOT_FOUND'
 
     def test_sign_in_cooldown_enforced(self, graphql_client_query, graphql_client_query_data):
-        PublicUser.objects.create(email='hello@example.com')
+        PublicUser.objects.create(email='hello@example.com', client=self.client_tenant)
 
         graphql_client_query_data(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
         response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
@@ -1343,7 +1422,7 @@ class TestSignInMutation:
         assert response['errors'][0]['extensions']['code'] == 'COOLDOWN_ACTIVE'
 
     def test_sign_in_allows_after_cooldown_window(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create(email='hello@example.com')
+        public_user = PublicUser.objects.create(email='hello@example.com', client=self.client_tenant)
         graphql_client_query_data(SIGN_IN_MUTATION, variables={'email': 'hello@example.com'})
         attempt = PublicUserSignInAttempt.objects.get(public_user=public_user)
         attempt.issued_at = timezone.now() - timedelta(minutes=5)
@@ -1354,7 +1433,7 @@ class TestSignInMutation:
         assert data['pledge']['signIn']['sent'] is True
 
     def test_sign_in_normalizes_email(self, graphql_client_query_data):
-        PublicUser.objects.create(email='hello@example.com')
+        PublicUser.objects.create(email='hello@example.com', client=self.client_tenant)
 
         data = graphql_client_query_data(
             SIGN_IN_MUTATION,
@@ -1364,21 +1443,19 @@ class TestSignInMutation:
         assert data['pledge']['signIn']['sent'] is True
 
     def test_sign_in_rate_limited_returns_error(self, graphql_client_query):
-        from actions.public_user_auth import SIGN_IN_RATE_LIMIT
-
         max_per_minute = int(SIGN_IN_RATE_LIMIT.split('/')[0])
         for _ in range(max_per_minute):
-            PublicUser.objects.get_or_create(email='ratelimit@example.com')
+            PublicUser.objects.get_or_create(email=f'ratelimit{_}@example.com', client=self.client_tenant)
             graphql_client_query(SIGN_IN_MUTATION, variables={'email': f'ratelimit{_}@example.com'})
 
-        PublicUser.objects.get_or_create(email='ratelimit-over@example.com')
+        PublicUser.objects.get_or_create(email='ratelimit-over@example.com', client=self.client_tenant)
         response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'ratelimit-over@example.com'})
 
         assert 'errors' in response
         assert response['errors'][0]['extensions']['code'] == 'RATE_LIMITED'
 
     def test_sign_in_rolls_back_attempt_on_email_failure(self, graphql_client_query):
-        public_user = PublicUser.objects.create(email='alice@example.com')
+        public_user = PublicUser.objects.create(email='alice@example.com', client=self.client_tenant)
         prior_attempt, _ = PublicUserSignInAttempt.create_for_signin(public_user)
         # Backdate the prior attempt so the cooldown doesn't itself block the retry.
         # The point of this test is to assert all fields are preserved unchanged.
@@ -1409,7 +1486,7 @@ class TestSignInMutation:
             assert getattr(prior_attempt, field) == expected, f'{field} was modified despite rollback'
 
     def test_sign_in_stores_anon_uuid_on_attempt(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create(email='hello@example.com')
+        public_user = PublicUser.objects.create(email='hello@example.com', client=self.client_tenant)
         anon_uuid = uuid.uuid4()
 
         graphql_client_query_data(
@@ -1428,6 +1505,16 @@ class TestSignInMutation:
 
         assert response['errors'][0]['extensions']['code'] == 'INVALID_EMAIL'
         assert not mail.outbox
+
+    def test_sign_in_does_not_find_account_on_other_client(self, graphql_client_query):
+        # Account exists on the fixture plan's client but the request comes
+        # from a different plan/client. Must be treated as "no account".
+        PublicUser.objects.create(email='shared@example.com', client=self.client_tenant)
+        self.plan = PlanFactory.create()
+
+        response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'shared@example.com'})
+
+        assert response['errors'][0]['extensions']['code'] == 'ACCOUNT_NOT_FOUND'
 
 
 VERIFY_PIN_MUTATION = """
@@ -1450,7 +1537,9 @@ class TestVerifyPinMutation:
         self.plan = PlanFactory.create()
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
-        self.public_user = PublicUser.objects.create(email='alice@example.com')
+        assert self.plan.primary_client is not None
+        self.client_tenant = self.plan.primary_client
+        self.public_user = PublicUser.objects.create(email='alice@example.com', client=self.client_tenant)
 
     def _issue_pin(self, anon_uuid: uuid.UUID | None = None) -> str:
         _, raw_pin = PublicUserSignInAttempt.create_for_signin(self.public_user, anon_uuid=anon_uuid)
@@ -1464,6 +1553,7 @@ class TestVerifyPinMutation:
         marketing_at = timezone.now() - timedelta(minutes=2)
         _, raw_pin = PublicUserSignInAttempt.create_for_signup(
             email='new@example.com',
+            client=self.client_tenant,
             terms_accepted_at=terms_at,
             marketing_consented_at=marketing_at,
         )
@@ -1501,6 +1591,7 @@ class TestVerifyPinMutation:
     def test_verify_pin_wrong_pin_on_pending_signup_does_not_create_user(self, graphql_client_query):
         _, raw_pin = PublicUserSignInAttempt.create_for_signup(
             email='new@example.com',
+            client=self.client_tenant,
             terms_accepted_at=timezone.now(),
             marketing_consented_at=None,
         )
@@ -1673,7 +1764,9 @@ class TestVerifyPinMutation:
         assert PledgeCommitment.objects.count() == 1
 
     def test_verify_pin_merges_anon_user_data_into_verified_user(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
         anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
         raw_pin = self._issue_pin(anon_uuid=anon.uuid)
 
         graphql_client_query_data(
@@ -1685,9 +1778,11 @@ class TestVerifyPinMutation:
         assert self.public_user.user_data == {'zip_code': '95695'}
 
     def test_verify_pin_anon_user_data_overrides_existing_on_conflict(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
         self.public_user.user_data = {'zip_code': '12345', 'city': 'Oldtown'}
         self.public_user.save(update_fields=['user_data'])
         anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
         raw_pin = self._issue_pin(anon_uuid=anon.uuid)
 
         graphql_client_query_data(
@@ -1699,9 +1794,11 @@ class TestVerifyPinMutation:
         assert self.public_user.user_data == {'zip_code': '95695', 'city': 'Oldtown'}
 
     def test_verify_pin_user_data_merge_preserves_verified_only_keys(self, graphql_client_query_data):
+        pledge = PledgeFactory.create(plan=self.plan)
         self.public_user.user_data = {'city': 'Newtown'}
         self.public_user.save(update_fields=['user_data'])
         anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        PledgeCommitment.objects.create(pledge=pledge, public_user=anon)
         raw_pin = self._issue_pin(anon_uuid=anon.uuid)
 
         graphql_client_query_data(
@@ -1711,6 +1808,21 @@ class TestVerifyPinMutation:
 
         self.public_user.refresh_from_db()
         assert self.public_user.user_data == {'city': 'Newtown', 'zip_code': '95695'}
+
+    def test_verify_pin_skips_user_data_merge_for_anon_without_same_client_commitments(self, graphql_client_query_data):
+        # Empty anon (or cross-client anon) does not prove it belongs to this
+        # client, so its user_data must not be copied into the verified account.
+        anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {}
+        assert PublicUser.objects.filter(uuid=anon.uuid).exists()
 
     def test_verify_pin_invalidates_plan_cache_when_merge_deletes_duplicates(self, graphql_client_query_data):
         pledge = PledgeFactory.create(plan=self.plan)
@@ -1731,7 +1843,7 @@ class TestVerifyPinMutation:
 
     def test_verify_pin_skips_merge_when_anon_uuid_has_email(self, graphql_client_query_data):
         pledge = PledgeFactory.create(plan=self.plan)
-        bob = PublicUser.objects.create(email='bob@example.com')
+        bob = PublicUser.objects.create(email='bob@example.com', client=self.client_tenant)
         PledgeCommitment.objects.create(pledge=pledge, public_user=bob)
         raw_pin = self._issue_pin(anon_uuid=bob.uuid)
 
@@ -2001,6 +2113,15 @@ class TestPledgeBodyField:
 class TestPublicUserQuery:
     """Tests for the publicUser GraphQL query."""
 
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create()
+        self.client_tenant = self.plan.primary_client
+
+    def _make_authed(self, email: str) -> tuple[PublicUser, str]:
+        user = PublicUser.objects.create(email=email, client=self.client_tenant)
+        return user, user.regenerate_user_token()
+
     PLEDGE_USER_QUERY = """
         query($uuid: UUID!) {
             publicUser(uuid: $uuid) {
@@ -2232,11 +2353,8 @@ class TestPublicUserQuery:
         # Token-first: the bearer identifies the caller; the uuid arg is ignored
         # when a token resolves. The target user's data isn't leaked either -
         # the caller just gets their own row back.
-        target = PublicUser.objects.create()
-        target.regenerate_user_token()
-
-        caller = PublicUser.objects.create()
-        caller_token = caller.regenerate_user_token()
+        target, _ = self._make_authed('target@example.com')
+        caller, caller_token = self._make_authed('caller@example.com')
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
@@ -2250,8 +2368,7 @@ class TestPublicUserQuery:
 
     def test_public_user_query_returns_signed_up_user_when_bearer_resolves_to_them(self, graphql_client_query_data):
         """A signed-up user can read their own data by presenting their own bearer token."""
-        public_user = PublicUser.objects.create()
-        token = public_user.regenerate_user_token()
+        public_user, token = self._make_authed('self@example.com')
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
@@ -2266,8 +2383,7 @@ class TestPublicUserQuery:
         # After a successful VerifyPin the anon row is deleted, but the UI may
         # still hold a cached anon_uuid alongside the freshly-issued token.
         # The token identifies the caller; the stale uuid must not shadow it.
-        signed_up = PublicUser.objects.create()
-        token = signed_up.regenerate_user_token()
+        signed_up, token = self._make_authed('signed@example.com')
         stale_anon_uuid = uuid.uuid4()  # deliberately doesn't match any row
 
         data = graphql_client_query_data(
@@ -2282,8 +2398,7 @@ class TestPublicUserQuery:
     def test_public_user_query_token_wins_over_other_users_uuid(self, graphql_client_query_data):
         # If the caller has a token and also passes some other anon user's
         # uuid, they get their own row - not the anon row.
-        signed_up = PublicUser.objects.create()
-        token = signed_up.regenerate_user_token()
+        signed_up, token = self._make_authed('signed@example.com')
         other_anon = PublicUser.objects.create()
 
         data = graphql_client_query_data(
@@ -2296,12 +2411,10 @@ class TestPublicUserQuery:
         assert data['publicUser']['uuid'] == str(signed_up.uuid)
 
     def test_signed_up_user_commitments_are_gated_at_the_parent_resolver(self, graphql_client_query_data):
-        plan = PlanFactory.create()
-        plan.features.enable_community_engagement = True
-        plan.features.save()
-        pledge = PledgeFactory.create(plan=plan)
-        public_user = PublicUser.objects.create()
-        token = public_user.regenerate_user_token()
+        self.plan.features.enable_community_engagement = True
+        self.plan.features.save()
+        pledge = PledgeFactory.create(plan=self.plan)
+        public_user, token = self._make_authed('owner@example.com')
         PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
 
         # No token, target's uuid points to a signed-up user: null
@@ -2312,8 +2425,7 @@ class TestPublicUserQuery:
         assert data['publicUser'] is None
 
         # Someone else's token: caller gets their own row, not the target's
-        other_user = PublicUser.objects.create()
-        other_token = other_user.regenerate_user_token()
+        other_user, other_token = self._make_authed('other@example.com')
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
             variables={'uuid': str(public_user.uuid)},
@@ -2334,7 +2446,9 @@ class TestPublicUserQuery:
 
     def test_public_user_query_returns_bearer_user_when_no_uuid(self, graphql_client_query_data):
         """Without a uuid argument, the query resolves to the bearer-identified user."""
-        public_user = PublicUser.objects.create(email='alice@example.com')
+        plan = PlanFactory.create()
+        public_user = PublicUser.objects.create(email='alice@example.com', client=plan.primary_client)
+        self.plan = plan
         token = public_user.regenerate_user_token()
         query = """
             query {
@@ -2360,10 +2474,9 @@ class TestPublicUserQuery:
         assert data['publicUser'] is None
 
     def test_email_field_is_null_without_matching_bearer(self, graphql_client_query_data):
-        """Defensive: an email accidentally set on an anon row still requires a matching bearer to read."""
-        public_user = PublicUser.objects.create()
-        public_user.email = 'leaked@example.com'
-        public_user.save(update_fields=['email'])
+        """The email field must not be readable without a matching bearer token."""
+        signed_up, _ = self._make_authed('leaked@example.com')
+        other_user, other_token = self._make_authed('other@example.com')
         query = """
             query($uuid: UUID!) {
                 publicUser(uuid: $uuid) {
@@ -2373,10 +2486,26 @@ class TestPublicUserQuery:
             }
         """
 
-        data = graphql_client_query_data(query, variables={'uuid': str(public_user.uuid)})
+        # Bearer belongs to someone else: caller's own row is returned with
+        # the target's email masked to None.
+        data = graphql_client_query_data(
+            query,
+            variables={'uuid': str(signed_up.uuid)},
+            headers={'X-Public-User-Token': other_token},
+        )
+        assert data['publicUser']['uuid'] == str(other_user.uuid)
+        assert data['publicUser']['email'] == 'other@example.com'
 
-        assert data['publicUser'] is not None
-        assert data['publicUser']['email'] is None
+    def test_bearer_token_does_not_resolve_on_other_client(self, graphql_client_query_data):
+        # A token issued for a user on one client must not authenticate the
+        # same user when the request comes in on another client's site.
+        _, token = self._make_authed('shared@example.com')
+        self.plan = PlanFactory.create()  # different plan/client
+
+        query = 'query { publicUser { uuid } }'
+        data = graphql_client_query_data(query, headers={'X-Public-User-Token': token})
+
+        assert data['publicUser'] is None
 
 
 class TestPledgeCommitmentCountAnnotation:
@@ -2571,7 +2700,7 @@ class TestPledgeLocaleGraphQL:
         # frontend lists pledges in the active locale. The VerifyPin payload
         # must translate IDs to that locale or the frontend can't reconcile
         # them against plan.pledges.
-        public_user = PublicUser.objects.create(email='alice@example.com')
+        public_user = PublicUser.objects.create(email='alice@example.com', client=self.plan.primary_client)
         PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
         _, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)
 

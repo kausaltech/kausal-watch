@@ -114,6 +114,13 @@ class ClientPlan(OrderedModel):
         blank=False,
         related_name='clients',
     )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name=_('primary client'),
+        help_text=_(
+            'The tenant that owns this plan. Used to scope public user identities and staff notifications for pledge sign-ups.'
+        ),
+    )
 
     def get_sort_order_max(self):
         qs = self.__class__.objects.filter(plan=self.plan)
@@ -125,6 +132,13 @@ class ClientPlan(OrderedModel):
     class Meta:
         unique_together = (('plan', 'order'),)
         ordering = ('plan', 'order')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['plan'],
+                condition=models.Q(is_primary=True),
+                name='unique_primary_client_per_plan',
+            ),
+        ]
 
     def __str__(self):
         return str(self.plan)

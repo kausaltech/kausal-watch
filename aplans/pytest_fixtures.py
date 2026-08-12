@@ -192,9 +192,19 @@ def action_contact_person_user(action_contact_person):
 
 
 @pytest.fixture
-def graphql_client_query(client):
+def graphql_client_query(client, request):
     def func(*args, **kwargs) -> Any:
-        response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
+        # Auto-inject X-Cache-Plan-Identifier from a `plan` attribute on the
+        # test-class instance so tests that exercise plan-scoped resolvers
+        # (public user auth, etc.) don't have to pass the header on every call.
+        headers = dict(kwargs.pop('headers', None) or {})
+        instance = getattr(request, 'instance', None)
+        if instance is not None and 'X-Cache-Plan-Identifier' not in headers:
+            plan = getattr(instance, 'plan', None)
+            plan_identifier = getattr(plan, 'identifier', None)
+            if plan_identifier:
+                headers['X-Cache-Plan-Identifier'] = plan_identifier
+        response = graphql_query(*args, **kwargs, headers=headers, client=client, graphql_url='/v1/graphql/')
         return json.loads(response.content)
 
     return func

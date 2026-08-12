@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar
 
 import reversion
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -202,6 +203,13 @@ class PlanFeatures(PlanRelatedModelWithRevision):
 
     def __str__(self) -> str:
         return 'Features for %s' % self.plan
+
+    def clean(self) -> None:
+        super().clean()
+        if self.enable_community_engagement and self.plan.primary_client_id is None:
+            raise ValidationError({
+                'enable_community_engagement': _('Community engagement requires a primary client to be set on the plan.'),
+            })
 
     @property
     def public_contact_persons(self) -> bool:

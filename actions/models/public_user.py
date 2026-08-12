@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import reversion
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
 
     from actions.models.pledge import PledgeCommitment
+    from admin_site.models import Client
 
 
 def _generate_user_token() -> str:
@@ -87,9 +89,17 @@ class PublicUser(models.Model):
     email = models.EmailField(
         null=True,
         blank=True,
-        unique=True,
         verbose_name=_('email'),
         help_text=_('Set when the user signs up; used for PIN-based authentication.'),
+    )
+    client: FK[Client | None] = models.ForeignKey(
+        'admin_site.Client',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='public_users',
+        verbose_name=_('client'),
+        help_text=_('Tenant this account belongs to. Required for authed rows; null for anonymous rows.'),
     )
     terms_accepted_at = models.DateTimeField(
         null=True,
@@ -110,6 +120,7 @@ class PublicUser(models.Model):
         auto_now_add=True,
         verbose_name=_('created at'),
     )
+    sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='public_user')
 
     objects: ClassVar[models.Manager[PublicUser]]
 
@@ -120,6 +131,17 @@ class PublicUser(models.Model):
         app_label = 'actions'
         verbose_name = _('public user')
         verbose_name_plural = _('public users')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email', 'client'],
+                condition=models.Q(email__isnull=False),
+                name='unique_public_user_email_per_client',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(email__isnull=True) | models.Q(client__isnull=False),
+                name='public_user_email_requires_client',
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.email or str(self.uuid)
@@ -163,6 +185,13 @@ class PublicUserSignInAttempt(models.Model):
         on_delete=models.CASCADE,
         related_name='sign_in_attempt',
     )
+    client: FK[Client | None] = models.ForeignKey(
+        'admin_site.Client',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='+',
+    )
     email = models.EmailField(null=True, blank=True)
     pending_terms_accepted_at = models.DateTimeField(null=True, blank=True)
     pending_marketing_consented_at = models.DateTimeField(null=True, blank=True)
@@ -181,14 +210,18 @@ class PublicUserSignInAttempt(models.Model):
         verbose_name_plural = _('public user sign-in attempts')
         constraints = [
             models.UniqueConstraint(
-                fields=['email'],
+                fields=['email', 'client'],
                 condition=models.Q(public_user__isnull=True),
                 name='unique_pending_signup_email',
             ),
             models.CheckConstraint(
                 condition=(
                     models.Q(public_user__isnull=False)
-                    | (models.Q(email__isnull=False) & models.Q(pending_terms_accepted_at__isnull=False))
+                    | (
+                        models.Q(email__isnull=False)
+                        & models.Q(client__isnull=False)
+                        & models.Q(pending_terms_accepted_at__isnull=False)
+                    )
                 ),
                 name='attempt_has_user_or_pending_signup',
             ),
@@ -239,6 +272,7 @@ class PublicUserSignInAttempt(models.Model):
             defaults={
                 **base,
                 'email': None,
+                'client': public_user.client,
                 'pending_terms_accepted_at': None,
                 'pending_marketing_consented_at': None,
             },
@@ -249,6 +283,7 @@ class PublicUserSignInAttempt(models.Model):
     def create_for_signup(
         cls,
         email: str,
+        client: Client,
         terms_accepted_at: datetime,
         marketing_consented_at: datetime | None,
         anon_uuid: uuid.UUID | None = None,
@@ -259,12 +294,13 @@ class PublicUserSignInAttempt(models.Model):
         Consent timestamps are stored on the attempt and applied to the
         PublicUser at VerifyPin time, so the row only carries consent for a
         verifier that actually controls the mailbox. Replaces any existing
-        pending attempt for the same email.
+        pending attempt for the same (email, client).
         """
         base, raw_pin = cls._fresh_attempt_state(anon_uuid)
-        existing = cls.objects.filter(email=email, public_user__isnull=True).first()
+        existing = cls.objects.filter(email=email, client=client, public_user__isnull=True).first()
         defaults = {
             **base,
+            'client': client,
             'pending_terms_accepted_at': terms_accepted_at,
             'pending_marketing_consented_at': marketing_consented_at,
         }

@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from actions.tests.factories import PlanFactory
+from admin_site.tests.factories import ClientFactory, ClientPlanFactory
 from orgs.tests.factories import OrganizationFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
@@ -157,6 +159,21 @@ def test_person_change_email_to_deactivated_users_email(plan_admin_user: User):
     assert old_user.is_active
     new_user.refresh_from_db()
     assert not new_user.is_active
+
+
+def test_get_admin_client_prefers_primary_client_when_multiple_client_plans():
+    # A plan admin whose plan has multiple ClientPlan associations must still
+    # resolve to a single client for notification recipient purposes; the
+    # plan's primary_client is the canonical pick.
+    primary = ClientFactory.create(name='Primary tenant')
+    other = ClientFactory.create(name='Other tenant')
+    plan = PlanFactory.create(primary_client=primary)
+    ClientPlanFactory.create(plan=plan, client=primary)
+    ClientPlanFactory.create(plan=plan, client=other)
+
+    person = PersonFactory.create(general_admin_plans=[plan])
+
+    assert person.get_admin_client() == primary
 
 
 @pytest.mark.parametrize('value', [None, True, False])

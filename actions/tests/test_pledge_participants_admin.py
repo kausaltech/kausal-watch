@@ -14,6 +14,7 @@ from actions.pledge_participants_admin import (
     _opted_in_emails,
 )
 from actions.tests.factories import PlanFactory, PledgeFactory
+from admin_site.tests.factories import ClientFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -26,10 +27,11 @@ def active_plan(plan_admin_user):
     return plan_obj
 
 
-def _make_participant(email: str, marketing: bool = False) -> PublicUser:
+def _make_participant(email: str, marketing: bool = False, client=None) -> PublicUser:
     now = timezone.now()
     return PublicUser.objects.create(
         email=email,
+        client=client or ClientFactory.create(),
         terms_accepted_at=now,
         marketing_consented_at=now if marketing else None,
         email_verified_at=now,
