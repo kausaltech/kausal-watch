@@ -123,6 +123,13 @@ def test_adminable_in_plan_by_general_admin_includes_indicators_not_connected_to
     assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
 
 
+def test_adminable_in_plan_by_general_admin_lists_shared_indicators_once(plan, plan_admin_user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert list(Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)) == [indicator]
+
+
 def test_adminable_in_plan_by_general_admin_excludes_unrelated_organizations(plan, plan_admin_user):
     indicator = IndicatorFactory.create()
     assert indicator not in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
