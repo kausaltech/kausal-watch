@@ -22,6 +22,26 @@ def split_into_draftail_paragraphs(s):
     )
 
 
+def seed_template_for_type(base_template, notification_type: NotificationType) -> None:
+    """Idempotently create the AutomaticNotificationTemplate and intro block for a type."""
+    if notification_type == NotificationType.MANUALLY_SCHEDULED:
+        return
+
+    with translation.override(base_template.plan.primary_language):
+        defaults = {'subject': notification_type.default_subject}
+        template, _created = AutomaticNotificationTemplate.objects.get_or_create(
+            base=base_template, type=notification_type.identifier, defaults=defaults
+        )
+        default_intro_text = notification_type.default_intro_text
+        if default_intro_text:
+            ContentBlock.objects.get_or_create(
+                template=template,
+                identifier='intro',
+                base=base_template,
+                defaults={'content': split_into_draftail_paragraphs(default_intro_text)},
+            )
+
+
 def _create_templates_for_plan(plan) -> None:
     base_template_defaults = {
         'from_name': plan.name,
@@ -33,22 +53,9 @@ def _create_templates_for_plan(plan) -> None:
     }
     base_template, _created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
     for notification_type in NotificationType:
-        default_intro_text = notification_type.default_intro_text
-        if default_intro_text is None:
+        if not notification_type.is_enabled_for(plan.features):
             continue
-
-        defaults = {
-            'subject': notification_type.verbose_name,
-        }
-        template, _created = AutomaticNotificationTemplate.objects.get_or_create(
-            base=base_template, type=notification_type.identifier, defaults=defaults
-        )
-        ContentBlock.objects.get_or_create(
-            template=template,
-            identifier='intro',
-            base=base_template,
-            defaults={'content': split_into_draftail_paragraphs(default_intro_text)},
-        )
+        seed_template_for_type(base_template, notification_type)
 
     default_shared_texts = {
         'motivation': pgettext(
