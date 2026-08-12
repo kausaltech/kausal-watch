@@ -182,6 +182,15 @@ def test_get_adminable_organizations_organization_plan_admin():
     assert list(org_admin.person.user.get_adminable_organizations()) == [org_admin.organization]
 
 
+def test_get_adminable_organizations_organization_plan_admin_descendants():
+    org_admin = OrganizationPlanAdminFactory.create()
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    assert org_admin.person.user is not None
+    adminable = org_admin.person.user.get_adminable_organizations()
+    assert org_admin.organization in adminable
+    assert sub_org in adminable
+
+
 def test_new_user_password_login_preconditions_met(plan: Plan, api_client, client, person_factory, action_contact_factory):
     cp = ClientPlanFactory.create(plan=plan)
     assert cp.client is not None

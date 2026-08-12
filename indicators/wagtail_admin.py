@@ -64,7 +64,6 @@ from admin_site.wagtail import (
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.panels import IndicatorMetricsInlinePanel
-from orgs.models import Organization
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from .models.goal_data_point import IndicatorGoalDataPoint
@@ -75,6 +74,8 @@ if TYPE_CHECKING:
     from wagtail.admin.panels.base import Panel
 
     from users.models import User
+
+    from .models.indicator import IndicatorQuerySet
 
 
 class UnitSuffixWidget(autocomplete.ListSelect2):
@@ -1204,16 +1205,10 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         return unit.short_name or unit.name
 
     def get_queryset(self, request: HttpRequest):
-        qs = super().get_queryset(request)
+        qs = cast('IndicatorQuerySet', super().get_queryset(request))
         user = user_or_bust(request.user)
         plan = get_admin_cache(request).plan
-        if user.is_superuser:
-            qs = qs.filter(organization__in=Organization.objects.qs.available_for_plan(plan))
-        else:
-            orgs = [plan.organization.id]
-            orgs.extend(Organization.objects.qs.user_is_plan_admin_for(user, plan).values_list('id', flat=True))
-            qs = qs.filter(organization_id__in=orgs)
-        return qs.select_related('unit', 'quantity')
+        return qs.adminable_in_plan_by(user, plan).select_related('unit', 'quantity')
 
 
 class CommonIndicatorForm(AplansAdminModelForm[CommonIndicator]):

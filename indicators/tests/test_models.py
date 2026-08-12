@@ -4,7 +4,14 @@ from django.core.exceptions import ValidationError
 
 import pytest
 
-from indicators.tests.factories import IndicatorFactory, IndicatorValueFactory
+from indicators.models import Indicator
+from indicators.tests.factories import (
+    IndicatorContactFactory,
+    IndicatorFactory,
+    IndicatorLevelFactory,
+    IndicatorValueFactory,
+)
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -93,3 +100,72 @@ def test_indicator_handle_values_update_bumps_deadline_multiple_times():
 
     # Verify that full_clean passes (no ValidationError)
     indicator.full_clean()
+
+
+def test_adminable_in_plan_by_general_admin_includes_descendant_organizations(plan, plan_admin_user):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+
+
+def test_adminable_in_plan_by_general_admin_includes_related_organization_descendants(plan, plan_admin_user):
+    related_org = OrganizationFactory.create()
+    plan.related_organizations.add(related_org)
+    sub_org = OrganizationFactory.create(parent=related_org)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+
+
+def test_adminable_in_plan_by_general_admin_includes_indicators_not_connected_to_the_plan(plan, plan_admin_user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    assert plan not in indicator.plans.all()
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+
+
+def test_adminable_in_plan_by_general_admin_excludes_unrelated_organizations(plan, plan_admin_user):
+    indicator = IndicatorFactory.create()
+    assert indicator not in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+
+
+def test_adminable_in_plan_by_organization_plan_admin_includes_descendant_organizations(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    user = org_admin.person.user
+    assert user is not None
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(user, plan)
+
+
+def test_adminable_in_plan_by_includes_indicators_of_the_plan(plan, user):
+    indicator = IndicatorFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(user, plan)
+
+
+def test_adminable_in_plan_by_excludes_indicators_not_connected_to_the_plan(plan, user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    assert indicator not in Indicator.objects.qs.adminable_in_plan_by(user, plan)
+
+
+def test_adminable_in_plan_by_contact_person(plan, person):
+    contact = IndicatorContactFactory.create(person=person)
+    IndicatorLevelFactory.create(indicator=contact.indicator, plan=plan)
+    assert person.user is not None
+    assert contact.indicator in Indicator.objects.qs.adminable_in_plan_by(person.user, plan)
+
+
+def test_adminable_in_plan_by_contact_person_excludes_other_plans(plan, person):
+    contact = IndicatorContactFactory.create(person=person)
+    IndicatorLevelFactory.create(indicator=contact.indicator)
+    assert person.user is not None
+    assert contact.indicator not in Indicator.objects.qs.adminable_in_plan_by(person.user, plan)
+
+
+def test_indicator_modifiable_by_organization_plan_admin_of_ancestor_organization(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    user = org_admin.person.user
+    assert user is not None
+    assert indicator in Indicator.objects.qs.modifiable_by(user)
+    assert user.is_organization_admin_for_indicator(indicator)
