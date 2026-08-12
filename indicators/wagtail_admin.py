@@ -249,14 +249,9 @@ class IndicatorPermissionHelper(PermissionHelper[Indicator]):
     def user_can_edit_obj(self, user: User, obj: Indicator):
         if not super().user_can_edit_obj(user, obj):
             return False
-        if user.is_superuser:
-            return True
-
-        for plan in obj.get_plans_with_access():
-            if user.is_general_admin_for_plan(plan):
-                return True
-
-        return user.is_contact_person_for_indicator(obj) or user.is_organization_admin_for_indicator(obj)
+        # Editing an indicator here writes the indicator level of the active plan (see
+        # IndicatorForm._save_m2m), so the rights of that plan alone decide it.
+        return user.can_modify_indicator(obj, plan=user.get_active_admin_plan())
 
     def user_can_delete_obj(self, user: User, obj: Indicator):
         if not super().user_can_delete_obj(user, obj):

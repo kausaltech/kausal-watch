@@ -1223,7 +1223,8 @@ class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[Indicat
     def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
+        user = user_or_bust(self.request.user)
+        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
 
 
 class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator]):
@@ -1233,7 +1234,8 @@ class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorCh
     def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
+        user = user_or_bust(self.request.user)
+        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
 
 
 class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage, Indicator]):
@@ -1242,7 +1244,8 @@ class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[Indicat
     def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
         if related_obj is None:
             return False
-        return user_or_bust(self.request.user).can_modify_indicator(indicator=related_obj)
+        user = user_or_bust(self.request.user)
+        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
 
 
 class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
