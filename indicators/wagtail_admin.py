@@ -246,12 +246,31 @@ class IndicatorPermissionHelper(PermissionHelper[Indicator]):
         obj_plans = obj.plans.all()
         return any(plan in obj_plans for plan in adminable_plans)
 
+    def _get_plan_of_edit(self, user: User) -> Plan:
+        """
+        Return the plan whose rights decide about editing an indicator.
+
+        Editing writes the indicator level of one plan, which is the active one unless the user
+        switched plans while the form was open: IndicatorForm.save() then keeps writing for the plan
+        the form was opened with, and the rights have to be checked for that same plan.
+        """
+        active_plan = user.get_active_admin_plan()
+        if not ctx_request.is_set():
+            return active_plan
+        request = ctx_request.get()
+        if request.method != 'POST':
+            return active_plan
+        initial_plan_id = request.session.get('initial_plan_id')
+        if not initial_plan_id or str(initial_plan_id) == str(active_plan.id):
+            return active_plan
+        return Plan.objects.filter(id=initial_plan_id).first() or active_plan
+
     def user_can_edit_obj(self, user: User, obj: Indicator):
         if not super().user_can_edit_obj(user, obj):
             return False
-        # Editing an indicator here writes the indicator level of the active plan (see
-        # IndicatorForm._save_m2m), so the rights of that plan alone decide it.
-        return user.can_modify_indicator(obj, plan=user.get_active_admin_plan())
+        # Editing an indicator here writes an indicator level (see IndicatorForm._save_m2m), so the
+        # rights of the plan that the level belongs to decide it.
+        return user.can_modify_indicator(obj, plan=self._get_plan_of_edit(user))
 
     def user_can_delete_obj(self, user: User, obj: Indicator):
         if not super().user_can_delete_obj(user, obj):
