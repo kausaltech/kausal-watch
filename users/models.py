@@ -120,7 +120,8 @@ class UserRelatedModelsCache:
     _adminable_plans: PlanQuerySet
     # Key: plan ID (or None to consider actions from all plans)
     _org_admin_for_actions: dict[int | None, ActionQuerySet]
-    _org_admin_for_indicators: IndicatorQuerySet
+    # Key: plan ID (or None to consider indicators from all plans)
+    _org_admin_for_indicators: dict[int | None, IndicatorQuerySet]
     _contact_for_actions: set[int]
     _contact_for_indicators: set[int]
     _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
@@ -153,7 +154,8 @@ class User(AbstractUser):
     _instance_editable_perms: set[InstancesEditableByMixin.EditableBy]
     # Key: plan ID (or None to consider actions from all plans)
     _org_admin_for_actions: dict[int | None, ActionQuerySet]
-    _org_admin_for_indicators: IndicatorQuerySet
+    # Key: plan ID (or None to consider indicators from all plans)
+    _org_admin_for_indicators: dict[int | None, IndicatorQuerySet]
     _contact_for_actions: set[int]
     _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
     _general_admin_for_plans: set[int]
@@ -315,14 +317,16 @@ class User(AbstractUser):
         orgs = person.organization_plan_admins.values_list('organization')
         return Organization.objects.get_queryset().filter(id__in=orgs)
 
-    def get_org_admin_indicators(self) -> IndicatorQuerySet:
+    def get_org_admin_indicators(self, plan: Plan | None = None) -> IndicatorQuerySet:
         """
         Return the indicators the user administers by way of being an organization plan admin.
 
         Being an admin for an organization implies being an admin for its descendants, which is also how
         OrganizationPlanAdmin is interpreted elsewhere (see OrganizationQuerySet.user_is_plan_admin_for and
         actions.perms.calculate_people_with_login_rights). The rights are scoped to the plan of the
-        OrganizationPlanAdmin, so they only cover the indicators of that plan.
+        OrganizationPlanAdmin, so they only cover the indicators of that plan. Passing `plan` restricts
+        the result to the rights granted for that plan; an indicator that some other plan shares does
+        not qualify.
         """
         from indicators.models import Indicator
 
@@ -330,8 +334,11 @@ class User(AbstractUser):
         if not person:
             return Indicator.objects.qs.none()
 
+        admins = person.organization_plan_admins.select_related('organization')
+        if plan is not None:
+            admins = admins.filter(plan=plan)
         query = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
-        for admin in person.organization_plan_admins.select_related('organization'):
+        for admin in admins:
             query |= Q(organization__path__startswith=admin.organization.path, plans=admin.plan_id)
         return Indicator.objects.qs.filter(query).distinct()
 
@@ -382,16 +389,18 @@ class User(AbstractUser):
             return bool(actions)
         return action in actions
 
-    def is_organization_admin_for_indicator(self, indicator: Indicator | None = None) -> bool:
-        indicators = None
+    def is_organization_admin_for_indicator(self, indicator: Indicator | None = None, plan: Plan | None = None) -> bool:
         cache = self.get_cache()
         if self.is_superuser:
             return True
-        if hasattr(cache, '_org_admin_for_indicators'):
-            indicators = cache._org_admin_for_indicators
+        if not hasattr(cache, '_org_admin_for_indicators'):
+            cache._org_admin_for_indicators = {}
+        plan_key = plan.id if plan else None
+        if plan_key in cache._org_admin_for_indicators:
+            indicators = cache._org_admin_for_indicators[plan_key]
         else:
-            indicators = self.get_org_admin_indicators()
-            cache._org_admin_for_indicators = indicators
+            indicators = self.get_org_admin_indicators(plan)
+            cache._org_admin_for_indicators[plan_key] = indicators
         # Ensure below that the indicators queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
         if indicator is None:
@@ -574,20 +583,34 @@ class User(AbstractUser):
     def can_delete_indicator(self, plan):
         return self.can_create_indicator(plan)
 
-    def can_modify_indicator(self, indicator=None):
+    def can_modify_indicator(self, indicator=None, plan=None):
+        """
+        Tell whether the user may modify an indicator, optionally in the context of a plan.
+
+        Modifying an indicator through a plan also modifies what that plan sees of it (its level, for
+        example), so a caller that acts on behalf of a plan must pass it. Rights that the user holds
+        in some other plan then do not apply, even if that plan shares the indicator.
+        """
         if self.is_superuser:
             return True
-        if indicator is None:
-            plans = [self.get_active_admin_plan()]
-        else:
-            # Not indicator.plans: an indicator that no plan has connected can be modified by the
-            # admins of the plans that may connect it (cf. IndicatorPermissionHelper.user_can_edit_obj).
-            plans = list(indicator.get_plans_with_access())
+        if plan is None and indicator is None:
+            plan = self.get_active_admin_plan()
 
-        if plans is not None:
-            for plan in plans:
-                if self.is_general_admin_for_plan(plan):
-                    return True
+        if plan is not None:
+            if indicator is not None and plan not in indicator.get_plans_with_access():
+                return False
+            if self.is_general_admin_for_plan(plan):
+                return True
+            return self.is_contact_person_for_indicator_in_plan(plan, indicator) or self.is_organization_admin_for_indicator(
+                indicator, plan
+            )
+
+        assert indicator is not None  # if both are None, `plan` was set to the active admin plan above
+        # Not indicator.plans: an indicator that no plan has connected can be modified by the
+        # admins of the plans that may connect it (cf. IndicatorPermissionHelper.user_can_edit_obj).
+        for indicator_plan in indicator.get_plans_with_access():
+            if self.is_general_admin_for_plan(indicator_plan):
+                return True
 
         return self.is_contact_person_for_indicator(indicator) or self.is_organization_admin_for_indicator(indicator)
 
