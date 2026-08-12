@@ -319,9 +319,8 @@ class User(AbstractUser):
         """
         Return the indicators the user administers by way of being an organization plan admin.
 
-        Being an admin for an organization implies being an admin for its descendants, which is also
-        how OrganizationPlanAdmin is interpreted elsewhere (see
-        OrganizationQuerySet.user_is_plan_admin_for and
+        Being an admin for an organization implies being an admin for its descendants, which is also how
+        OrganizationPlanAdmin is interpreted elsewhere (see OrganizationQuerySet.user_is_plan_admin_for and
         actions.perms.calculate_people_with_login_rights). The rights are scoped to the plan of the
         OrganizationPlanAdmin, so they only cover the indicators of that plan.
         """
@@ -555,7 +554,9 @@ class User(AbstractUser):
         if indicator is None:
             plans = [self.get_active_admin_plan()]
         else:
-            plans = list(indicator.plans.all())
+            # Not indicator.plans: an indicator that no plan has connected can be modified by the
+            # admins of the plans that may connect it (cf. IndicatorPermissionHelper.user_can_edit_obj).
+            plans = list(indicator.get_plans_with_access())
 
         if plans is not None:
             for plan in plans:
