@@ -82,7 +82,12 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         person = user.get_corresponding_person()
         query = Q(pk__in=user.get_org_admin_indicators().values('pk'))
         if person:
-            query |= Q(plans__in=person.general_admin_plans.all())
+            # The general admin clauses are the queryset counterpart of
+            # Indicator.get_plans_with_access(), which decides the same thing for a single indicator.
+            admin_plans = list(person.general_admin_plans.all())
+            query |= Q(plans__in=admin_plans)
+            query |= Q(organization__plans__in=admin_plans)
+            query |= Q(plans__isnull=True) & Q(organization__in=Organization.objects.qs.available_for_plans(admin_plans))
             query |= Q(contact_persons__person=person)
         return self.filter(query).distinct()
 

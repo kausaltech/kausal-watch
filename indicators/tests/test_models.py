@@ -189,6 +189,27 @@ def test_indicator_not_modifiable_by_organization_plan_admin_of_another_plan(pla
     assert not user.can_modify_indicator(indicator)
 
 
+def test_indicator_modifiable_by_general_admin_when_not_connected_to_any_plan(plan, plan_admin_user):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    assert indicator in Indicator.objects.qs.modifiable_by(plan_admin_user)
+    assert plan_admin_user.can_modify_indicator(indicator)
+
+
+def test_indicator_modifiable_by_general_admin_when_owned_by_the_plan_organization(plan, plan_admin_user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert indicator in Indicator.objects.qs.modifiable_by(plan_admin_user)
+    assert plan_admin_user.can_modify_indicator(indicator)
+
+
+def test_indicator_not_modifiable_by_general_admin_of_another_plan(plan_admin_user):
+    indicator = IndicatorFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert indicator not in Indicator.objects.qs.modifiable_by(plan_admin_user)
+    assert not plan_admin_user.can_modify_indicator(indicator)
+
+
 def test_indicator_plans_with_access_include_plans_related_to_the_organization(plan):
     sub_org = OrganizationFactory.create(parent=plan.organization)
     indicator = IndicatorFactory.create(organization=sub_org)
