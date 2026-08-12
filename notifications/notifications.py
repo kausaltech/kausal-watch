@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 from django.db.models import Q
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _, pgettext
 
 from markupsafe import Markup
@@ -14,6 +15,8 @@ if typing.TYPE_CHECKING:
     from django_stubs_ext import StrPromise
 
     from actions.models import Action, ActionTask, Plan
+    from actions.models.features import PlanFeatures
+    from actions.models.public_user import PublicUser
     from feedback.models import UserFeedback
     from indicators.models import Indicator
 
@@ -77,6 +80,27 @@ class Notification(ABC):
         When initializing the default notification templates, otherwise return a string.
         """
         pass
+
+    @classmethod
+    def get_default_subject(cls) -> str | None:
+        """
+        Default subject seeded when a template row is created.
+
+        Override to provide a specific default; otherwise the verbose_name is
+        used. Both `initialize_notifications` (per-plan seeding) and the
+        migration that back-fills existing plans read from here.
+        """
+        return None
+
+    @classmethod
+    def is_enabled_for(cls, features: PlanFeatures) -> bool:  # noqa: ARG003
+        """
+        Whether this notification type is enabled by the given PlanFeatures.
+
+        Override to gate a notification behind a plan feature flag. The
+        transition-detecting signal compares this against a pre-save snapshot.
+        """
+        return True
 
     @classmethod
     @abstractmethod
@@ -343,6 +367,52 @@ class UserFeedbackReceivedNotification(Notification):
         )
 
 
+class PledgeParticipantSignupNotification(Notification):
+    obj: PublicUser
+
+    def __init__(self, plan: Plan, public_user: PublicUser):
+        super().__init__(NotificationType.PLEDGE_PARTICIPANT_SIGNUP, plan, public_user)
+
+    def get_context(self):
+        return {
+            'email': self.obj.email,
+            'signed_up_at': self.obj.email_verified_at or self.obj.created_at,
+            'marketing_opted_in': self.obj.marketing_consented_at is not None,
+            'admin_path': reverse('wagtailsnippets_actions_publicuser:list'),
+        }
+
+    def generate_notifications(
+        self,
+        engine: NotificationEngine,
+        recipients: typing.Sequence[NotificationRecipient],
+        now=None,
+    ):
+        if now is None:
+            now = self.plan.now_in_local_timezone()
+        # Send once per participant, ever: skip if any recipient has already
+        # been notified about this sign-up.
+        if self.days_since_notification_last_sent(now=now) is not None:
+            return
+        for recipient in recipients:
+            engine.queue_notification(self, recipient)
+
+    @classmethod
+    def get_verbose_name(cls) -> StrPromise:
+        return _('Pledge participant signed up')
+
+    @classmethod
+    def get_default_intro_text(cls) -> None:
+        return None
+
+    @classmethod
+    def get_default_subject(cls) -> str:
+        return pgettext('pledge_participant_signup', 'New pledge sign-ups')
+
+    @classmethod
+    def is_enabled_for(cls, features: PlanFeatures) -> bool:
+        return features.enable_community_engagement
+
+
 class ManuallyScheduledNotification(Notification):
     obj: ManuallyScheduledNotificationTemplate
 
@@ -403,6 +473,7 @@ class NotificationType(Enum):
     UPDATED_INDICATOR_VALUES_LATE = UpdatedIndicatorValuesLateNotification
     UPDATED_INDICATOR_VALUES_DUE_SOON = UpdatedIndicatorValuesDueSoonNotification
     USER_FEEDBACK_RECEIVED = UserFeedbackReceivedNotification
+    PLEDGE_PARTICIPANT_SIGNUP = PledgeParticipantSignupNotification
     MANUALLY_SCHEDULED = ManuallyScheduledNotification
 
     @property
@@ -412,6 +483,13 @@ class NotificationType(Enum):
     @property
     def default_intro_text(self):
         return self.value.get_default_intro_text()
+
+    @property
+    def default_subject(self) -> str:
+        return self.value.get_default_subject() or str(self.value.get_verbose_name())
+
+    def is_enabled_for(self, features: PlanFeatures) -> bool:
+        return self.value.is_enabled_for(features)
 
     @property
     def verbose_name(self):
