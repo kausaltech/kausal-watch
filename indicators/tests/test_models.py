@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 import pytest
 
+from actions.tests.factories import PlanFactory
 from indicators.models import Indicator
 from indicators.tests.factories import (
     IndicatorContactFactory,
@@ -208,6 +209,34 @@ def test_indicator_not_modifiable_by_general_admin_of_another_plan(plan_admin_us
     IndicatorLevelFactory.create(indicator=indicator)
     assert indicator not in Indicator.objects.qs.modifiable_by(plan_admin_user)
     assert not plan_admin_user.can_modify_indicator(indicator)
+
+
+def test_indicator_not_modifiable_in_another_plan_by_organization_plan_admin(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    other_level = IndicatorLevelFactory.create(indicator=indicator)
+    user = org_admin.person.user
+    assert user is not None
+    assert user.can_modify_indicator(indicator, plan=plan)
+    assert not user.can_modify_indicator(indicator, plan=other_level.plan)
+
+
+def test_indicator_not_modifiable_in_another_plan_by_general_admin(plan, plan_admin_user):
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    other_level = IndicatorLevelFactory.create(indicator=indicator)
+    assert plan_admin_user.can_modify_indicator(indicator, plan=plan)
+    assert not plan_admin_user.can_modify_indicator(indicator, plan=other_level.plan)
+
+
+def test_indicator_not_modifiable_in_a_plan_without_access(plan, plan_admin_user):
+    indicator = IndicatorFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert plan_admin_user.can_modify_indicator(indicator, plan=plan)
+    unrelated_plan = PlanFactory.create()
+    assert not plan_admin_user.can_modify_indicator(indicator, plan=unrelated_plan)
 
 
 def test_indicator_plans_with_access_include_plans_related_to_the_organization(plan):

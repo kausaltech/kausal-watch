@@ -631,7 +631,7 @@ class IndicatorEditValuesPermission(WatchObjectPermissions):
                 indicator = Indicator.objects.get(id=indicator_pk)
             except Indicator.DoesNotExist as e:
                 raise exceptions.NotFound(detail='Indicator not found') from e
-            return user.can_modify_indicator(indicator=indicator)
+            return user.can_modify_indicator(indicator=indicator, plan=get_plan_from_view(view))
         return False
 
 
@@ -644,7 +644,7 @@ class IndicatorPermission(WatchObjectPermissions):
         match perm:
             case 'indicators.change_indicator':
                 assert obj is None or isinstance(obj, Indicator)
-                return user.can_modify_indicator(indicator=obj)
+                return user.can_modify_indicator(indicator=obj, plan=plan)
             case 'indicators.add_indicator':
                 assert obj is None
                 return user.can_create_indicator(plan=plan)
@@ -691,7 +691,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         super().check_object_permissions(request, obj)
         user = request.user
         if obj is not None:
-            if not user.can_modify_indicator(obj):
+            if not user.can_modify_indicator(obj, plan=self.get_plan()):
                 self.permission_denied(
                     request,
                     message='No permission to modify indicator',
