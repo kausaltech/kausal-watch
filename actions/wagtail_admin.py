@@ -56,6 +56,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
+from actions.models.public_user import PublicUser
 from admin_site.chooser import ClientChooser
 from admin_site.forms import WatchAdminModelForm
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
@@ -190,9 +191,53 @@ class PlanForm(AplansAdminModelForm[Plan]):
                 _("A plan's other language cannot be the same as its primary language"),
                 code='plan-language-duplicate',
             )
+        self._clean_primary_client()
         if self.instance.pk is None:
             self._clean_new_plan(cleaned_data)
         return cleaned_data
+
+    def _collect_submitted_clients(self, formset) -> tuple[list[int], int]:
+        primary_ids: list[int] = []
+        non_deleted = 0
+        for form in formset.forms:
+            if form.data.get(form.add_prefix('DELETE')):
+                continue
+            raw_client_id = form.data.get(form.add_prefix('client'))
+            if not raw_client_id:
+                continue
+            non_deleted += 1
+            if form.data.get(form.add_prefix('is_primary')):
+                primary_ids.append(int(raw_client_id))
+        return primary_ids, non_deleted
+
+    def _clean_primary_client(self) -> None:
+        clients_formset = getattr(self, 'formsets', {}).get('clients')
+        if clients_formset is None:
+            return
+        primary_ids, non_deleted = self._collect_submitted_clients(clients_formset)
+        if len(primary_ids) > 1:
+            raise ValidationError(
+                _('Only one client can be marked as primary.'),
+                code='multiple-primary-clients',
+            )
+        if non_deleted > 0 and not primary_ids:
+            raise ValidationError(
+                _('One client must be marked as primary.'),
+                code='missing-primary-client',
+            )
+        if self.instance.pk is None or not primary_ids:
+            return
+        existing_primary_id = self.instance.primary_client_id
+        if existing_primary_id is None or existing_primary_id == primary_ids[0]:
+            return
+        if PublicUser.objects.filter(client_id=existing_primary_id).exists():
+            raise ValidationError(
+                _(
+                    'Public-user accounts exist for the current primary client. '
+                    'Contact system administration to migrate them before changing the primary client.'
+                ),
+                code='primary-client-change-blocked',
+            )
 
     def _clean_new_plan(self, cleaned_data: dict[str, Any]) -> None:
         """Handle organization choosing or creation and language specially when creating new plan."""
@@ -242,6 +287,15 @@ class PlanForm(AplansAdminModelForm[Plan]):
             % {'plan_lang': plan_language_name, 'org_lang': org_language_name},
         )
 
+    def _demote_old_primary_client(self) -> None:
+        clients_formset = getattr(self, 'formsets', {}).get('clients')
+        if clients_formset is None:
+            return
+        primary_ids, _ = self._collect_submitted_clients(clients_formset)
+        if not primary_ids:
+            return
+        self.instance.clients.filter(is_primary=True).exclude(client_id=primary_ids[0]).update(is_primary=False)
+
     @transaction.atomic()
     def save(self, *args, **kwargs):
         creating = self.instance.pk is None
@@ -251,6 +305,8 @@ class PlanForm(AplansAdminModelForm[Plan]):
             org = Organization(name=org_name, primary_language=primary_language)
             Organization.add_root(instance=org)
             self.instance.organization = org
+        if not creating:
+            self._demote_old_primary_client()
         instance = super().save(*args, **kwargs)
         if creating:
             Plan.apply_defaults(instance)
@@ -481,6 +537,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                     label=_('Client'),
                     panels=[
                         FieldPanel('client', widget=ClientChooser),
+                        FieldPanel('is_primary'),
                     ],
                     heading=_('Clients'),
                 )

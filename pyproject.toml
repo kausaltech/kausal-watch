@@ -191,6 +191,12 @@ extend-exclude = [
   "./paths_integration/_generated_",
 ]
 
+[tool.ruff.lint]
+# PLR0917 is a ruff preview rule; CI runs ruff with preview enabled and
+# flags too-many-positional-arguments, but our local ruff doesn't. Marking
+# it external keeps `# noqa: PLR0917` from being stripped locally.
+external = ["PLR0917"]
+
 [tool.mypy]
 plugins = [ "mypy_django_plugin.main", "kausal_common.development.mypy_plugin", "pydantic.mypy" ]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings"
