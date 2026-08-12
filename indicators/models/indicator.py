@@ -107,9 +107,15 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         if user.is_superuser:
             return self.available_for_plan(plan)
 
+        # Every clause is a subquery so that the filter needs no join, which would list an indicator
+        # once per plan that has connected it.
         query = Q(pk__in=Indicator.objects.qs.in_plan(plan).values('pk'))
         if user.is_general_admin_for_plan(plan):
-            query |= Q(plans__isnull=True) & Q(organization__in=Organization.objects.qs.available_for_plan(plan))
+            unconnected = Indicator.objects.qs.filter(
+                plans__isnull=True,
+                organization__in=Organization.objects.qs.available_for_plan(plan),
+            )
+            query |= Q(pk__in=unconnected.values('pk'))
         return self.filter(query)
 
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
