@@ -312,10 +312,29 @@ class User(AbstractUser):
         if not person:
             return Organization.objects.get_queryset().none()
 
-        # Being an admin for an organization implies being an admin for its descendants, which is
-        # also how OrganizationPlanAdmin is interpreted when determining who has login rights (see
-        # actions.perms.calculate_people_with_login_rights).
-        return Organization.objects.get_queryset().user_is_plan_admin_for(self)
+        orgs = person.organization_plan_admins.values_list('organization')
+        return Organization.objects.get_queryset().filter(id__in=orgs)
+
+    def get_org_admin_indicators(self) -> IndicatorQuerySet:
+        """
+        Return the indicators the user administers by way of being an organization plan admin.
+
+        Being an admin for an organization implies being an admin for its descendants, which is also
+        how OrganizationPlanAdmin is interpreted elsewhere (see
+        OrganizationQuerySet.user_is_plan_admin_for and
+        actions.perms.calculate_people_with_login_rights). The rights are scoped to the plan of the
+        OrganizationPlanAdmin, so they only cover the indicators of that plan.
+        """
+        from indicators.models import Indicator
+
+        person = self.get_corresponding_person()
+        if not person:
+            return Indicator.objects.qs.none()
+
+        query = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
+        for admin in person.organization_plan_admins.select_related('organization'):
+            query |= Q(organization__path__startswith=admin.organization.path, plans=admin.plan_id)
+        return Indicator.objects.qs.filter(query).distinct()
 
     def is_organization_admin_for_action(self, action: Action | None = None, plan: Plan | None = None):
         cache = self.get_cache()
@@ -346,9 +365,7 @@ class User(AbstractUser):
         if hasattr(cache, '_org_admin_for_indicators'):
             indicators = cache._org_admin_for_indicators
         else:
-            from indicators.models import Indicator
-
-            indicators = Indicator.objects.qs.filter(organization__in=self.get_adminable_organizations()).distinct()
+            indicators = self.get_org_admin_indicators()
             cache._org_admin_for_indicators = indicators
         # Ensure below that the indicators queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)

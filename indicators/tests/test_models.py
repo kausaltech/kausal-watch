@@ -127,13 +127,18 @@ def test_adminable_in_plan_by_general_admin_excludes_unrelated_organizations(pla
     assert indicator not in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
 
 
-def test_adminable_in_plan_by_organization_plan_admin_includes_descendant_organizations(plan):
-    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
-    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+def test_adminable_in_plan_by_general_admin_excludes_indicators_of_other_plans(plan, plan_admin_user):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
     indicator = IndicatorFactory.create(organization=sub_org)
-    user = org_admin.person.user
-    assert user is not None
-    assert indicator in Indicator.objects.qs.adminable_in_plan_by(user, plan)
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert indicator not in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
+
+
+def test_adminable_in_plan_by_superuser_includes_indicators_of_other_plans(plan, superuser):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert indicator in Indicator.objects.qs.adminable_in_plan_by(superuser, plan)
 
 
 def test_adminable_in_plan_by_includes_indicators_of_the_plan(plan, user):
@@ -165,7 +170,33 @@ def test_indicator_modifiable_by_organization_plan_admin_of_ancestor_organizatio
     org_admin = OrganizationPlanAdminFactory.create(plan=plan)
     sub_org = OrganizationFactory.create(parent=org_admin.organization)
     indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
     user = org_admin.person.user
     assert user is not None
     assert indicator in Indicator.objects.qs.modifiable_by(user)
     assert user.is_organization_admin_for_indicator(indicator)
+
+
+def test_indicator_not_modifiable_by_organization_plan_admin_of_another_plan(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    sub_org = OrganizationFactory.create(parent=org_admin.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator)
+    user = org_admin.person.user
+    assert user is not None
+    assert indicator not in Indicator.objects.qs.modifiable_by(user)
+    assert not user.is_organization_admin_for_indicator(indicator)
+    assert not user.can_modify_indicator(indicator)
+
+
+def test_indicator_plans_with_access_include_plans_related_to_the_organization(plan):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    assert plan in indicator.get_plans_with_access()
+
+
+def test_indicator_plans_with_access_dont_include_related_plans_of_connected_indicators(plan):
+    sub_org = OrganizationFactory.create(parent=plan.organization)
+    indicator = IndicatorFactory.create(organization=sub_org)
+    IndicatorLevelFactory.create(indicator=indicator)
+    assert plan not in indicator.get_plans_with_access()

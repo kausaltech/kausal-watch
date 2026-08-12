@@ -80,7 +80,7 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         if user.is_superuser:
             return self
         person = user.get_corresponding_person()
-        query = Q(organization__in=user.get_adminable_organizations())
+        query = Q(pk__in=user.get_org_admin_indicators().values('pk'))
         if person:
             query |= Q(plans__in=person.general_admin_plans.all())
             query |= Q(contact_persons__person=person)
@@ -94,17 +94,17 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         """
         Filter to the indicators the user may work with in the admin of `plan`.
 
-        General plan admins (and superusers) get everything owned by an organization related to the
-        plan, including indicators that are not connected to the plan yet so that they can connect
-        them. Everyone else gets the indicators of the plan (which they may not necessarily be
-        allowed to edit) as well as the ones owned by the subtrees of the organizations they are an
-        organization plan admin for.
+        Everybody gets the indicators of the plan; whether they may also edit them depends on their
+        roles. General plan admins additionally get the indicators that no plan has connected yet
+        but that are owned by an organization related to the plan, so that they can connect them.
+        Superusers get everything owned by an organization related to the plan.
         """
-        if user.is_general_admin_for_plan(plan):  # already True for superusers
+        if user.is_superuser:
             return self.available_for_plan(plan)
 
         query = Q(pk__in=Indicator.objects.qs.in_plan(plan).values('pk'))
-        query |= Q(organization__in=Organization.objects.qs.user_is_plan_admin_for(user, plan))
+        if user.is_general_admin_for_plan(plan):
+            query |= Q(plans__isnull=True) & Q(organization__in=Organization.objects.qs.available_for_plan(plan))
         return self.filter(query)
 
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
@@ -490,14 +490,22 @@ class Indicator(
             rel_action.action.recalculate_status()
 
     def get_plans_with_access(self):
-        plans = set()
-        for plan in self.plans.all():
-            plans.add(plan)
-        # For unconnected indicators, allow seeing and
-        # connecting them for plan admins for plans
-        # with same organization as indicator organization
+        connected_plans = set(self.plans.all())
+        plans = set(connected_plans)
+        # Plans whose main organization owns this indicator can confer access to it as well. Whether
+        # a user actually has access is up to the caller, which checks their role in each plan.
         for plan in self.organization.plans.all():
             plans.add(plan)
+        if connected_plans:
+            return plans
+        # An indicator that no plan has connected yet can also be connected by the admins of the
+        # plans that its organization is related to, which is exactly the set of plans whose
+        # indicator index lists it (see IndicatorQuerySet.adminable_in_plan_by). This is the inverse
+        # of OrganizationQuerySet.available_for_plan.
+        from actions.models.plan import Plan
+
+        orgs = [self.organization, *self.organization.get_ancestors()]
+        plans.update(Plan.objects.filter(Q(organization__in=orgs) | Q(related_organizations__in=orgs)))
         return plans
 
     def get_related_plans(self):
