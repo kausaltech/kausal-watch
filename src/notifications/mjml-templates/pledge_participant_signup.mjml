@@ -1,0 +1,39 @@
+{% extends "bookended_base.mjml" %}
+
+{% block notification_content %}
+<mj-section mj-class="notification-content-section">
+    <mj-column>
+        <mj-text align="left">
+            <p>
+                {% trans trimmed count=items|length, plan_name=site.title %}
+                {{ count }} new resident created a pledge account on {{ plan_name }}.
+                {% pluralize %}
+                {{ count }} new residents created a pledge account on {{ plan_name }}.
+                {% endtrans %}
+            </p>
+            <ul>
+            {% for item in items %}
+                <li>
+                    <a href="mailto:{{ item.email|e }}">{{ item.email|e }}</a>
+                    {% if item.signed_up_at %}
+                        {% trans signed_up_at=item.signed_up_at|format_date %} – signed up: {{ signed_up_at }}{% endtrans %}
+                    {% endif %}
+                    {% if item.marketing_opted_in %}
+                        {% trans %} – marketing opt-in: Yes{% endtrans %}
+                    {% else %}
+                        {% trans %} – marketing opt-in: No{% endtrans %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+            {% if items and items[0].admin_path %}
+                <p>
+                    {% trans participants_url=admin_url ~ items[0].admin_path %}
+                    You can view the full list of participants in the <a href="{{ participants_url }}">admin user interface</a>.
+                    {% endtrans %}
+                </p>
+            {% endif %}
+        </mj-text>
+    </mj-column>
+</mj-section>
+{% endblock %}
