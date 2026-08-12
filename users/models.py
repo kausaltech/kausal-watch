@@ -312,8 +312,10 @@ class User(AbstractUser):
         if not person:
             return Organization.objects.get_queryset().none()
 
-        orgs = person.organization_plan_admins.values_list('organization')
-        return Organization.objects.get_queryset().filter(id__in=orgs)
+        # Being an admin for an organization implies being an admin for its descendants, which is
+        # also how OrganizationPlanAdmin is interpreted when determining who has login rights (see
+        # actions.perms.calculate_people_with_login_rights).
+        return Organization.objects.get_queryset().user_is_plan_admin_for(self)
 
     def is_organization_admin_for_action(self, action: Action | None = None, plan: Plan | None = None):
         cache = self.get_cache()

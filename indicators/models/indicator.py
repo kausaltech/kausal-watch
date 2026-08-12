@@ -90,6 +90,23 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         related_orgs = Organization.objects.qs.available_for_plan(plan)
         return self.filter(organization__in=related_orgs)
 
+    def adminable_in_plan_by(self, user: User, plan: Plan) -> Self:
+        """
+        Filter to the indicators the user may work with in the admin of `plan`.
+
+        General plan admins (and superusers) get everything owned by an organization related to the
+        plan, including indicators that are not connected to the plan yet so that they can connect
+        them. Everyone else gets the indicators of the plan (which they may not necessarily be
+        allowed to edit) as well as the ones owned by the subtrees of the organizations they are an
+        organization plan admin for.
+        """
+        if user.is_general_admin_for_plan(plan):  # already True for superusers
+            return self.available_for_plan(plan)
+
+        query = Q(pk__in=Indicator.objects.qs.in_plan(plan).values('pk'))
+        query |= Q(organization__in=Organization.objects.qs.user_is_plan_admin_for(user, plan))
+        return self.filter(query)
+
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """
         Filter by visibility for a specific user.
