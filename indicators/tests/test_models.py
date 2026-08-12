@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 
 import pytest
 
-from actions.tests.factories import PlanFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from indicators.models import Indicator
 from indicators.tests.factories import (
     IndicatorContactFactory,
@@ -257,3 +257,41 @@ def test_indicator_plans_with_access_dont_include_related_plans_of_connected_ind
     indicator = IndicatorFactory.create(organization=sub_org)
     IndicatorLevelFactory.create(indicator=indicator)
     assert plan not in indicator.get_plans_with_access()
+
+
+def _shared_indicator_with_other_adminable_plan(plan, plan_admin_person):
+    """Set up an indicator of `plan` that another plan, in which the person is no admin, also uses."""
+    other_plan = PlanFactory.create()
+    # The person can access the other plan's admin, but only as a contact person for one of its actions
+    ActionContactFactory.create(action=ActionFactory.create(plan=other_plan), person=plan_admin_person)
+    indicator = IndicatorFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    IndicatorLevelFactory.create(indicator=indicator, plan=other_plan)
+    return indicator, other_plan
+
+
+def test_indicator_permission_helper_allows_editing_in_the_administered_plan(plan, plan_admin_person):
+    from indicators.wagtail_admin import IndicatorPermissionHelper
+
+    indicator, _other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    user = plan_admin_person.user
+    assert user is not None
+    user.selected_admin_plan = plan
+    user.save()
+
+    assert user.get_active_admin_plan() == plan
+    assert IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+
+
+def test_indicator_permission_helper_scopes_editing_to_the_active_plan(plan, plan_admin_person):
+    from indicators.wagtail_admin import IndicatorPermissionHelper
+
+    indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    user = plan_admin_person.user
+    assert user is not None
+    user.selected_admin_plan = other_plan
+    user.save()
+
+    # Editing would write the indicator level of the other plan, where the user is no admin
+    assert user.get_active_admin_plan() == other_plan
+    assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
