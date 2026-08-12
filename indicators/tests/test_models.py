@@ -344,3 +344,49 @@ def test_indicator_permission_helper_denies_editing_the_plan_the_form_was_opened
     # The form was opened with the other plan, so its level is written even though `plan` is active
     with post_request_with_initial_plan(other_plan):
         assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+
+
+@pytest.fixture
+def indicator_create_view(rf):
+    """Build an IndicatorCreateView that just saved `instance` on behalf of `user`."""
+
+    def func(user, instance):
+        from indicators.wagtail_admin import IndicatorAdmin, IndicatorCreateView
+
+        view = IndicatorCreateView(model_admin=IndicatorAdmin())
+        request = rf.post('/admin/indicators/indicator/create/')
+        request.user = user
+        request.session = {}
+        view.request = request
+        view.instance = instance
+        return view
+
+    return func
+
+
+def test_indicator_create_success_url_leads_to_the_change_log(plan, plan_admin_person, indicator_create_view):
+    plan.features.enable_change_log = True
+    plan.features.save()
+    indicator, _other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    user = plan_admin_person.user
+    assert user is not None
+    user.selected_admin_plan = plan
+    user.save()
+
+    assert 'indicatorchangelogmessage' in indicator_create_view(user, indicator).get_success_url()
+
+
+def test_indicator_create_success_url_skips_the_change_log_of_a_plan_without_rights(
+    plan, plan_admin_person, indicator_create_view
+):
+    indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
+    other_plan.features.enable_change_log = True
+    other_plan.features.save()
+    user = plan_admin_person.user
+    assert user is not None
+    # The user switched to the other plan while creating, so the indicator was saved for `plan`
+    user.selected_admin_plan = other_plan
+    user.save()
+
+    # Writing a change log message would write it for the other plan, where the user is no admin
+    assert 'indicatorchangelogmessage' not in indicator_create_view(user, indicator).get_success_url()

@@ -802,8 +802,12 @@ class IndicatorCreateView(
     InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansCreateView[Indicator]
 ):
     def get_success_url(self):
-        plan = user_or_bust(self.request.user).get_active_admin_plan()
-        if plan.features.enable_change_log:
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
+        # A change log message is written for the active plan, so only send the user on to write one
+        # if they may modify the indicator in that plan. They may not, for instance, if they switched
+        # plans while the form was open, in which case the indicator was saved for the original plan.
+        if plan.features.enable_change_log and user.can_modify_indicator(self.instance, plan=plan):
             change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
             return f'{change_log_create_url}?indicator={self.instance.pk}'
         return super().get_success_url()
