@@ -401,7 +401,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # SOCIAL_AUTH_POSTGRES_JSONFIELD = True
 
 AUTHENTICATION_BACKENDS = (
-    'admin_site.backends.AzureADAuth',
+    'kausal_common.auth.backends.AzureADAuth',
     'admin_site.backends.SingleTenantSpecificEntraAuth',
     'admin_site.backends.ADFSOpenIDConnectAuth',
     'django.contrib.auth.backends.ModelBackend',
