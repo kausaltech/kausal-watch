@@ -416,6 +416,7 @@ LOGOUT_REDIRECT_URL = '/admin/'
 
 CSRF_COOKIE_NAME = '%s-csrftoken' % env.str('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env.str('COOKIE_PREFIX')
+SESSION_ENGINE = 'kausal_common.sessions.backends.db'
 LANGUAGE_COOKIE_NAME = '%s-language' % env.str('COOKIE_PREFIX')
 
 SINGLE_TENANT_SPECIFIC_ENTRA_BACKEND_NAME = env.str('SINGLE_TENANT_SPECIFIC_ENTRA_BACKEND_NAME')
