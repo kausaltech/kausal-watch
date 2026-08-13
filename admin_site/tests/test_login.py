@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 from urllib.parse import parse_qs, urlparse
 
+from django.contrib.auth import get_user
 from django.test import override_settings
 from django.urls import reverse
 
@@ -35,6 +36,14 @@ def test_azure_ad_auth_entry_requires_post_and_forwards_email(client):
     query = parse_qs(urlparse(response['Location']).query)
     assert query['login_hint'] == ['juha.yrjola@kausal.tech']
     assert client.session['next'] == '/admin/'
+
+
+def test_azure_ad_backend_can_restore_authenticated_session(client, rf, superuser):
+    client.force_login(superuser, backend='kausal_common.auth.backends.AzureADAuth')
+    request = rf.get('/admin/')
+    request.session = client.session
+
+    assert get_user(request) == superuser
 
 
 def get_social_auth_strategy(settings_by_name: dict[str, str]) -> Mock:
