@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         GraphQLOutputType,
     )
     from graphql.error import GraphQLError
+    from graphql.pyutils import Path
     from strawberry.channels import (
         ChannelsRequest,
     )
@@ -49,12 +50,13 @@ class WatchExecutionContext(ExecutionContext):
         self,
         error: GraphQLError,
         return_type: GraphQLOutputType,
+        path: Path,
     ) -> None:
         if settings.DEBUG and error.original_error is not None and not getattr(error, '_was_printed', False):
             exc = error.original_error
             logger.opt(exception=exc).error('GraphQL field error at {path}', path=error.path)
             setattr(error, '_was_printed', True)  # noqa: B010
-        return super().handle_field_error(error, return_type)
+        return super().handle_field_error(error, return_type, path)
 
 
 class WatchGraphQLWSConsumer(GraphQLWSConsumer[WatchGraphQLContext]):

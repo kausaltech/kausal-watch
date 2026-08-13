@@ -68,11 +68,11 @@ class TestFeatureGatedStreamBlockAdapter:
             args = self.adapter.js_args(block)
         assert 'factor_value_summary' not in _block_counts(args)
 
-    def test_sorted_child_blocks_returns_all_blocks(self, rf):
+    def test_child_blocks_contains_all_blocks(self, rf):
         plan = PlanFactory.create(features__enable_indicator_factors=False)
         block = IndicatorMainContentStream()
         with ctx_request.activate(_activate_request(rf, plan)):
-            names = {b.name for b in block.sorted_child_blocks()}
+            names = {b.name for b in block.child_blocks.values()}
         assert 'factor_value_summary' in names
 
     def test_telepath_pack_does_not_crash_when_feature_disabled(self, rf):

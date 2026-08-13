@@ -851,7 +851,8 @@ class ModelWithAttributesSerializerMixin[M: ModelWithAttributes](
         organizations_by_id = {o.pk: o for o in Organization.objects.all()}
 
         for field_name in self._attribute_fields:
-            self.fields[field_name].context['_cache'] = {
+            field_context = cast('dict[str, Any]', self.fields[field_name].context)
+            field_context['_cache'] = {
                 'attribute_values': prepopulated_attributes,
                 'attribute_types': attribute_types_by_identifier,
                 'available_organization_ids': available_organization_ids,
@@ -1725,7 +1726,7 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
         return user is not None and user.is_authenticated and user.is_general_admin_for_plan(plan)
 
     def get_serializer_context(self):
-        context = super().get_serializer_context()
+        context = dict(super().get_serializer_context())
         plan = self.get_plan()
         if plan is None:
             return context
@@ -1826,7 +1827,7 @@ class PersonViewSet(AuditLoggingBulkModelViewSet[Person]):
         )
 
     def get_serializer_context(self):
-        context = super().get_serializer_context()
+        context = dict(super().get_serializer_context())
         plan = self.get_plan()
         if plan is None:
             return context

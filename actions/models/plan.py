@@ -1407,7 +1407,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             Q(causal_indicator__in=visible_indicators) & Q(effect_indicator__in=visible_indicators)
         ).exists()
 
-    def shared_indicators(self) -> models.QuerySet[IndicatorLevel, dict[str, Any]]:
+    def shared_indicators(self) -> models.QuerySet[IndicatorLevel, Any]:
         """Return the indicators of this plan that are also linked to some other plan."""
         return (
             IndicatorLevel.objects

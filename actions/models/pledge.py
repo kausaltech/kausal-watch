@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 import reversion
 from django.conf import settings
@@ -32,6 +32,7 @@ from .plan import Plan
 if TYPE_CHECKING:
     from typing import Any
 
+    from django.db.models import Manager
     from modelcluster.fields import PK
     from wagtail.fields import StreamValue
 
@@ -395,7 +396,7 @@ class PublicUser(models.Model):
         verbose_name=_('created at'),
     )
 
-    objects: ClassVar[models.Manager[PublicUser]]
+    objects: ClassVar[Manager[Self]]
 
     commitments: RevMany[PledgeCommitment]
 
@@ -445,7 +446,7 @@ class PledgeCommitment(models.Model):
         verbose_name=_('created at'),
     )
 
-    objects: ClassVar[models.Manager[PledgeCommitment]]
+    objects: ClassVar[Manager[Self]]
 
     class Meta:
         verbose_name = _('pledge commitment')
@@ -460,7 +461,7 @@ class PledgeCommitment(models.Model):
 class PledgeActionThrough(models.Model):
     """Through model for Pledge-Action many-to-many relationship."""
 
-    objects: ClassVar[models.Manager[PledgeActionThrough]]
+    objects: ClassVar[Manager[Self]]
 
     pledge: FK[Pledge] = models.ForeignKey(
         Pledge,

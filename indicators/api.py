@@ -478,7 +478,8 @@ class IndicatorSerializerMixin:
 
         for field_name in ['categories', 'contact_persons']:
             if field_name in fields:
-                fields[field_name].context['_cache'] = cache
+                field_context = cast('dict[str, Any]', fields[field_name].context)
+                field_context['_cache'] = cache
 
 
 class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[Indicator]):
@@ -678,7 +679,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')  # type: ignore[attr-defined]
 
     def get_serializer_context(self):
-        context = super().get_serializer_context()
+        context = dict(super().get_serializer_context())
         context['plan'] = self.get_plan()
         return context
 

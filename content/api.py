@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 BlogPost: type[Model] | None
 try:
-    BlogPost = apps.get_model('content', 'BlogPost')
+    BlogPost = apps.get_model('content', 'BlogPost')  # type: ignore[misc]
 except LookupError:
     BlogPost = None
 

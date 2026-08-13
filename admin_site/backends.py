@@ -4,7 +4,7 @@ from typing import override
 
 from django.conf import settings
 
-from jwt import DecodeError, ExpiredSignatureError, decode as jwt_decode, get_unverified_header
+from jwt import DecodeError, ExpiredSignatureError, PyJWK, decode as jwt_decode
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
 from social_core.backends.open_id_connect import OpenIdConnectAuth
 from social_core.exceptions import AuthTokenError
@@ -73,15 +73,11 @@ class SingleTenantSpecificEntraAuth(AzureADAuth):
         assert response is not None
         id_token = response.get('id_token')
 
-        # get key id and algorithm
-        key_id = get_unverified_header(id_token)['kid']
-
         try:
             from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa
 
-            # retrieve certificate for key_id
-            certificate = self.get_certificate(key_id)
-            public_key = certificate.public_key()
+            key = self.get_id_token_key(id_token)
+            public_key = PyJWK(key).key
             assert isinstance(public_key, (rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed25519.Ed25519PublicKey))
             return jwt_decode(
                 id_token,
