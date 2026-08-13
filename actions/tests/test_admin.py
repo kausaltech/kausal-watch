@@ -27,8 +27,9 @@ from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
 
 if typing.TYPE_CHECKING:
+    from aplans.pytest_fixtures import ModelAdminEditTest
+
     from actions.models import Action
-    from conftest import ModelAdminEditTest
     from people.models import Person
     from users.models import User
 
