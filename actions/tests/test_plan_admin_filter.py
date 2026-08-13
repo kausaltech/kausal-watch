@@ -13,6 +13,7 @@ import pytest
 
 from actions.models import Plan
 from actions.tests.factories import PlanFactory
+from actions.tests.utils import instantiate_view
 from actions.wagtail_admin import IsActiveFilter, PlanIndexView, PlanViewSet
 from users.tests.factories import UserFactory
 
@@ -106,7 +107,7 @@ class TestPlanFilterVisibility:
     def test_superuser_gets_filter_with_active_status(self, superuser):
         """Test that superusers get the filterset with is_active filter."""
         viewset = PlanViewSet()
-        view = PlanIndexView(**viewset.get_index_view_kwargs())
+        view = instantiate_view(viewset.index_view, PlanIndexView)
         view.request = Mock()
         view.request.user = superuser
 
@@ -118,7 +119,7 @@ class TestPlanFilterVisibility:
         user = UserFactory.create()
 
         viewset = PlanViewSet()
-        view = PlanIndexView(**viewset.get_index_view_kwargs())
+        view = instantiate_view(viewset.index_view, PlanIndexView)
         view.request = Mock()
         view.request.user = user
 

@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        OldStaticPage = apps.get_model('content', 'StaticPage')
+        OldStaticPage = apps.get_model('content', 'StaticPage')  # type: ignore[misc]
 
         # Fix plan root page url_paths
         for node in PlanRootPage.objects.all():

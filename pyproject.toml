@@ -189,7 +189,7 @@ extend-exclude = [
 ]
 
 [tool.mypy]
-plugins = [ "mypy_django_plugin.main", "pydantic.mypy" ]
+plugins = [ "mypy_django_plugin.main", "kausal_common.development.mypy_plugin", "pydantic.mypy" ]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings"
 exclude = [
   "/migrations/",

@@ -22,6 +22,7 @@ from actions.tests.factories import (
     PlanFactory,
     PledgeFactory,
 )
+from actions.tests.utils import instantiate_view
 from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
 
@@ -48,7 +49,7 @@ def get_plan_index_view(rf, client, user, view_set=None) -> PlanIndexView:
         view_set = PlanViewSet()
     client.force_login(user)
     request = get_request(rf, user)
-    index_view = PlanIndexView(**view_set.get_common_view_kwargs(), **view_set.get_index_view_kwargs())
+    index_view = instantiate_view(view_set.index_view, PlanIndexView)
     index_view.setup(request)
     return index_view
 
@@ -57,7 +58,7 @@ def get_pledge_index_view(rf, user, view_set=None) -> PledgeIndexView:
     if view_set is None:
         view_set = PledgeViewSet()
     request = get_request(rf, user)
-    index_view = PledgeIndexView(**view_set.get_common_view_kwargs(), **view_set.get_index_view_kwargs())
+    index_view = instantiate_view(view_set.index_view, PledgeIndexView)
     index_view.setup(request)
     return index_view
 

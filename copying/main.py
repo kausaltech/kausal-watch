@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import dataclasses
 from collections.abc import Generator
 from contextlib import ExitStack, contextmanager
 from copy import copy as shallow_copy
-from functools import singledispatchmethod, wraps
+from functools import singledispatchmethod
 from itertools import chain
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 from uuid import uuid4
 
-import wagtail.signal_handlers
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -1636,38 +1634,6 @@ def _default_skip_page_synchronization() -> Generator[None]:
         skip_page_synchronization_ctx.reset(token)
 
 
-@contextmanager
-def _update_reference_index_immediately_ctx() -> Generator[None]:
-    """
-    Force immediate update of Wagtail's reference index for the duration of this context.
-
-    When a model instance is saved, Wagtail enqueues a task to update the reference index. By default, this task is
-    executed when the current transaction is committed. This may cause problems if the code within the transaction not
-    only saves some model instances but also relies on the reference index being kept up to date before the transaction
-    ends.
-
-    Within this context, the reference index is updated immediately when a model instance is saved.
-    """
-    original_task = wagtail.signal_handlers.update_reference_index_task  # type: ignore[attr-defined]
-    tmp_task = dataclasses.replace(original_task, enqueue_on_commit=False)
-    wagtail.signal_handlers.update_reference_index_task = tmp_task  # type: ignore[attr-defined]
-    try:
-        yield
-    finally:
-        wagtail.signal_handlers.update_reference_index_task = original_task  # type: ignore[attr-defined]
-
-
-def update_reference_index_immediately[**P, R](f: Callable[P, R]) -> Callable[P, R]:
-    """Force immediate reference index updates within a call to `f`."""
-
-    @wraps(f)
-    def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
-        with _update_reference_index_immediately_ctx():
-            return f(*args, **kwargs)
-
-    return wrapped
-
-
 def get_cluster_related_objects(instance: Model) -> Generator[tuple[str, Model]]:
     """
     Return objects that have a parental key to the given model instance.
@@ -1860,7 +1826,6 @@ def _clone_plan_objects(
     return plan_copy
 
 
-@update_reference_index_immediately
 def copy_plan(
     plan: Plan,
     new_plan_identifier: str | None = None,

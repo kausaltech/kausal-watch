@@ -55,6 +55,7 @@ if typing.TYPE_CHECKING:
     from types import ModuleType
 
     from django.contrib.contenttypes.models import ContentType
+    from django.http import HttpRequest
     from wagtail.query import PageQuerySet
 
 extensions_api_views = []
@@ -79,9 +80,10 @@ class KausalLogoutView(LogoutView):
     def get(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
-    def get_success_url_allowed_hosts(self):
-        base = super().get_success_url_allowed_hosts()
-        redirect_url = self.request.GET.get(self.redirect_field_name, '')
+    def get_success_url_allowed_hosts(self, request: HttpRequest | None = None) -> set[str]:
+        base = super().get_success_url_allowed_hosts(request)
+        effective_request = request or self.request
+        redirect_url = effective_request.GET.get(self.redirect_field_name, '')
         if redirect_url:
             parsed = urlparse(redirect_url)
             configs = PlanDomain.objects.filter(hostname=parsed.hostname)

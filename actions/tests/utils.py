@@ -9,6 +9,13 @@ from django.contrib.contenttypes.models import ContentType
 from audit_logging.models import PlanScopedModelLogEntry
 
 
+def instantiate_view[V](view_callable: Any, expected_view_class: type[V]) -> V:
+    """Instantiate a class-based view from the callable returned by ``as_view``."""
+    view_class = view_callable.view_class
+    assert issubclass(view_class, expected_view_class)
+    return view_class(**view_callable.view_initkwargs)
+
+
 def assert_log_entry_created(instance, action, user, plan):
     """Assert that a PlanScopedModelLogEntry was created for a given instance."""
     content_type = ContentType.objects.get_for_model(instance, for_concrete_model=False)

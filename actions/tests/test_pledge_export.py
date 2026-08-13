@@ -15,6 +15,7 @@ import pytest
 from actions.models import Pledge, PledgeCommitment, PublicUser
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import PlanFactory, PledgeFactory
+from actions.tests.utils import instantiate_view
 
 if TYPE_CHECKING:
     from django.test import RequestFactory
@@ -27,10 +28,7 @@ pytestmark = pytest.mark.django_db
 def _get_view_and_queryset(rf: RequestFactory, user: User, plan, extra_params: dict | None = None):
     """Set up a PledgeIndexView and build the queryset for the given plan."""
     view_set = PledgeViewSet()
-    view = PledgeIndexView(
-        **view_set.get_common_view_kwargs(),
-        **view_set.get_index_view_kwargs(),
-    )
+    view = instantiate_view(view_set.index_view, PledgeIndexView)
     params = {'export': 'csv'}
     if extra_params:
         params.update(extra_params)
