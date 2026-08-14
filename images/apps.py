@@ -13,6 +13,11 @@ class ImagesConfig(AppConfig):
         from wagtail.images import permissions
         from wagtail.images.forms import BaseImageForm
 
+        # Don't let deleting one image delete a file that another image still points at.
+        from aplans.media_cleanup import ensure_file_cleanup_guard_installed
+
+        ensure_file_cleanup_guard_installed()
+
         # Register post_save signal handler for audit logging.
         # Register graphql types overrides for grapple
         from . import schema, signals  # noqa: F401

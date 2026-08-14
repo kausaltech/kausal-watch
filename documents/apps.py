@@ -10,6 +10,11 @@ class DocumentsConfig(AppConfig):
 
         monkeypatch_chooser()
 
+        # Don't let deleting one document delete a file that another document still points at.
+        from aplans.media_cleanup import ensure_file_cleanup_guard_installed
+
+        ensure_file_cleanup_guard_installed()
+
         # monkeypatch new permission policy
         from wagtail.documents import permissions
 
