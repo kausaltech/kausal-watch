@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, cast, override
 
 from django.db import transaction
@@ -143,34 +144,41 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
         indicator = self.context['indicator']
         created_or_updated_objects = []
 
-        indicator_values = indicator.values.all().prefetch_related('categories').select_for_update()
+        indicator_values = indicator.values.all().prefetch_related('categories').order_by('pk').select_for_update()
         with transaction.atomic():
-            existing_values_by_date_and_categories = dict()
+            # Several rows can share a (date, categories) key: the DB has no constraint against it,
+            # and such duplicates make the values editor unusable, so keep one row per key here and
+            # delete the rest.
+            existing_values_by_date_and_categories: dict[tuple, list[IndicatorValue]] = defaultdict(list)
             for val in indicator_values:
                 date = val.date.isoformat()
                 categories = tuple(sorted(val.categories.values_list('pk', flat=True)))
-                existing_values_by_date_and_categories[(date,) + categories] = val
+                existing_values_by_date_and_categories[(date,) + categories].append(val)
 
             for data in validated_data:
                 categories = data.pop('categories', [])
                 date = data.get('date').isoformat()
 
                 sorted_category_pks = tuple(sorted([c.pk for c in categories]))
-                try:
-                    existing_indicator_value = existing_values_by_date_and_categories.pop((date,) + sorted_category_pks)
-                except KeyError:
+                existing = existing_values_by_date_and_categories.pop((date,) + sorted_category_pks, [])
+                if not existing:
                     obj = IndicatorValue.objects.create(indicator=indicator, **data)
                     if categories:
                         obj.categories.set(categories)
-                        created_or_updated_objects.append(obj)
+                    created_or_updated_objects.append(obj)
                     continue
+
+                existing_indicator_value = existing[0]
                 existing_indicator_value.value = data['value']
                 existing_indicator_value.save()
                 created_or_updated_objects.append(existing_indicator_value)
+                for duplicate in existing[1:]:
+                    duplicate.delete()
 
             # If there are values in the database not in the data, delete them
-            for indicator_value in existing_values_by_date_and_categories.values():
-                indicator_value.delete()
+            for values_for_key in existing_values_by_date_and_categories.values():
+                for indicator_value in values_for_key:
+                    indicator_value.delete()
             indicator.latest_value = None
             indicator.handle_values_update()
 
