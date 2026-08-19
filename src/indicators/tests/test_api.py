@@ -12,7 +12,15 @@ from actions.tests.factories import CategoryFactory, CategoryTypeFactory
 from actions.tests.utils import assert_log_entry_created, count_log_entries
 from audit_logging.models import PlanScopedModelLogEntry
 from indicators.models import Indicator
-from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
+from indicators.tests.factories import (
+    CommonIndicatorNormalizatorFactory,
+    DimensionCategoryFactory,
+    DimensionFactory,
+    IndicatorContactFactory,
+    IndicatorDimensionFactory,
+    IndicatorFactory,
+    IndicatorValueFactory,
+)
 from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
@@ -93,6 +101,46 @@ def test_all_values_get_replaced(client, plan, plan_admin_user):
         # post_values(indicator, values)
         post(client, plan, plan_admin_user, 'indicator-values', indicator, values)
         assert_values_match(indicator, values)
+
+
+def test_duplicate_values_are_pruned_on_save(client, plan, plan_admin_user):
+    """A pre-existing duplicate (date, categories) row is removed by the next save."""
+    indicator = IndicatorFactory.create(plans=[plan])
+    for _ in range(2):
+        IndicatorValueFactory.create(indicator=indicator, date=date(2019, 12, 31), value=1.23)
+    assert indicator.values.count() == 2
+
+    post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
+
+    assert indicator.values.count() == 1
+    assert_values_match(indicator, [VALUE_2019])
+
+
+def test_duplicate_categorized_values_are_pruned_on_save(client, plan, plan_admin_user):
+    """A duplicate row carrying the same categories is removed by the next save."""
+    indicator = IndicatorFactory.create(plans=[plan])
+    dimension = DimensionFactory.create()
+    category = DimensionCategoryFactory.create(dimension=dimension)
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    IndicatorValueFactory.create(indicator=indicator, date=date(2019, 12, 31), value=1.23)
+    for _ in range(2):
+        IndicatorValueFactory.create(
+            indicator=indicator,
+            date=date(2019, 12, 31),
+            value=0.5,
+            categories=[category],
+        )
+    assert indicator.values.count() == 3
+
+    categorized_value = {
+        'categories': [category.pk],
+        'date': '2019-12-31',
+        'value': 0.5,
+    }
+    post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019, categorized_value])
+
+    assert indicator.values.count() == 2
+    assert indicator.values.filter(categories=category).count() == 1
 
 
 def test_all_goals_get_replaced(client, plan, plan_admin_user):
