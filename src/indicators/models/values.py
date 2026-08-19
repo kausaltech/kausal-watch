@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import reversion
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -91,7 +92,20 @@ class IndicatorValue(ClusterableModel, PlanRelatedModelWithRevision):
 
     def clean(self):
         super().clean()
-        # FIXME: Check for duplicates on categories
+        if self.indicator_id is None or self.date is None:
+            return
+        # The DB cannot express "unique per (date, category set)", because the category set
+        # lives in a through table. Duplicates make the values editor unusable, so at least
+        # reject them here, on the paths that call full_clean(): Wagtail forms and shell use.
+        # The REST API does not call clean(); IndicatorValueListSerializer guards that path.
+        category_pks = set(self.categories.values_list('pk', flat=True)) if self.pk else set()
+        for other in self.indicator.values.filter(date=self.date).exclude(pk=self.pk).prefetch_related('categories'):
+            if {c.pk for c in other.categories.all()} == category_pks:
+                raise ValidationError(
+                    {
+                        'date': _('There is already a value for this date and these categories.'),
+                    },
+                )
 
     def get_plans(self):
         return self.indicator.get_plans()
