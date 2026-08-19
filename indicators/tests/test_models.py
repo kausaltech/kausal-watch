@@ -7,7 +7,10 @@ import pytest
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from indicators.models import Indicator
 from indicators.tests.factories import (
+    DimensionCategoryFactory,
+    DimensionFactory,
     IndicatorContactFactory,
+    IndicatorDimensionFactory,
     IndicatorFactory,
     IndicatorLevelFactory,
     IndicatorValueFactory,
@@ -401,3 +404,41 @@ def test_adminable_in_plan_by_general_admin_includes_indicators_of_the_plan_orga
     assert plan in indicator.get_plans_with_access()
     assert indicator in Indicator.objects.qs.adminable_in_plan_by(plan_admin_user, plan)
     assert indicator in Indicator.objects.qs.modifiable_by(plan_admin_user)
+
+
+def test_indicator_value_clean_rejects_duplicate_date():
+    indicator = IndicatorFactory.create()
+    IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31))
+    duplicate = IndicatorValueFactory.build(indicator=indicator, date=date(2020, 12, 31), value=2.34)
+    with pytest.raises(ValidationError):
+        duplicate.clean()
+
+
+def test_indicator_value_clean_rejects_duplicate_categories():
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    category = DimensionCategoryFactory.create(dimension=dimension)
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    existing = IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31), categories=[category])
+    duplicate = IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31), value=2.34)
+    duplicate.categories.set([category])
+    assert existing.pk != duplicate.pk
+    with pytest.raises(ValidationError):
+        duplicate.clean()
+
+
+def test_indicator_value_clean_allows_distinct_categories():
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    first, second = DimensionCategoryFactory.create_batch(2, dimension=dimension)
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31), categories=[first])
+    other = IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31), value=2.34)
+    other.categories.set([second])
+    other.clean()
+
+
+def test_indicator_value_clean_allows_saved_value_to_be_recleaned():
+    indicator = IndicatorFactory.create()
+    value = IndicatorValueFactory.create(indicator=indicator, date=date(2020, 12, 31))
+    value.clean()
