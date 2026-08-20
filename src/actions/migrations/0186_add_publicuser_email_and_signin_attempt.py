@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0181_alter_planfeatures_allow_public_site_login_and_more"),
+        ("actions", "0185_planfeatures_show_parent_plan_in_plan_switcher_and_more"),
     ]
 
     operations = [
