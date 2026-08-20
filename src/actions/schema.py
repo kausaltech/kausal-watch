@@ -2217,9 +2217,16 @@ class Query:
         if uuid is None:
             return None
         matched = PublicUser.objects.filter(uuid=uuid).first()
-        if matched is None or matched.user_token is None:
-            return matched
-        return None
+        if matched is None or matched.user_token is not None:
+            return None
+        request_plan = info.context.request_plan
+        if (
+            request_plan is None
+            or request_plan.primary_client_id is None
+            or request_plan.primary_client_id != matched.client_id
+        ):
+            return None
+        return matched
 
     @staticmethod
     def resolve_workflow_states(_root: Query, info: GQLInfo, plan: str | None = None):
@@ -2541,13 +2548,13 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
             'Authentication required: this account requires an X-Public-User-Token header',
             extensions={'code': 'TOKEN_REQUIRED'},
         )
-    # Anon rows do not carry a client; if the row has been tied to a client
-    # (should not happen for user_token-less rows, but check defensively),
-    # require the request to be on the same tenant.
-    if public_user.client_id is not None:
-        request_plan = info.context.request_plan
-        if request_plan is None or request_plan.primary_client_id != public_user.client_id:
-            raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'})
+    request_plan = info.context.request_plan
+    if (
+        request_plan is None
+        or request_plan.primary_client_id is None
+        or request_plan.primary_client_id != public_user.client_id
+    ):
+        raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'})
     return public_user
 
 
@@ -2563,8 +2570,9 @@ class RegisterPublicUserMutation(graphene.Mutation):
     Output = RegisterPublicUserPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo) -> RegisterPublicUserPayload:
-        public_user = PublicUser.objects.create()
+    def mutate(cls, _root, info: GQLInfo) -> RegisterPublicUserPayload:
+        client = require_request_client(info)
+        public_user = PublicUser.objects.create(client=client)
         return RegisterPublicUserPayload(uuid=public_user.uuid)
 
 

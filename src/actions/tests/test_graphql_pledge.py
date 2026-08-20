@@ -15,6 +15,7 @@ from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignI
 from actions.models.public_user import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
 from actions.public_user_auth import SIGN_IN_RATE_LIMIT
 from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
+from admin_site.tests.factories import ClientFactory
 from images.tests.factories import AplansImageFactory
 
 pytestmark = pytest.mark.django_db
@@ -157,7 +158,7 @@ PLEDGE_USER_QUERY_WITH_LOCALE = """
 class TestPledgeQueryById:
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -239,7 +240,7 @@ class TestPledgeQueryById:
 class TestPledgeQueryFeatureFlag:
     def test_pledge_query_returns_null_when_feature_disabled(self, graphql_client_query_data):
         """Test that pledge query returns null when enable_community_engagement is False."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = False
         plan.features.save()
 
@@ -254,7 +255,7 @@ class TestPledgeQueryFeatureFlag:
 
     def test_pledge_query_returns_pledge_when_feature_enabled(self, graphql_client_query_data):
         """Test that pledge query returns pledge when feature is enabled."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -272,7 +273,7 @@ class TestPledgeQueryFeatureFlag:
 class TestPledgesListQuery:
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -339,12 +340,12 @@ class TestPledgesListQuery:
 class TestPledgePlanIsolation:
     def test_pledge_query_returns_null_for_other_plan_pledge(self, graphql_client_query_data):
         """Test that pledge query cannot access pledges from different plans."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
         # Create another plan with a pledge
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
         other_pledge = PledgeFactory.create(plan=other_plan)
@@ -359,7 +360,7 @@ class TestPledgePlanIsolation:
 
     def test_pledges_query_only_returns_current_plan_pledges(self, graphql_client_query_data):
         """Test that pledges query only returns pledges for the current plan."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -367,7 +368,7 @@ class TestPledgePlanIsolation:
         pledge1 = PledgeFactory.create(plan=plan, order=1)
 
         # Create another plan with pledges
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
         PledgeFactory.create(plan=other_plan)
@@ -384,7 +385,7 @@ class TestPledgePlanIsolation:
 class TestPledgeActionsResolver:
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -462,7 +463,7 @@ class TestPledgeActionsResolver:
 class TestPledgeImageResolver:
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -497,7 +498,7 @@ class TestPledgeImageResolver:
 class TestPledgeCommitmentCount:
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -564,7 +565,7 @@ class TestPledgeCommitmentCount:
 class TestPlanFeaturesGraphQL:
     def test_enable_community_engagement_exposed_in_graphql(self, graphql_client_query_data):
         """Test that enable_community_engagement flag is exposed in GraphQL."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -577,7 +578,7 @@ class TestPlanFeaturesGraphQL:
 
     def test_enable_community_engagement_false_exposed_in_graphql(self, graphql_client_query_data):
         """Test that enable_community_engagement=False is correctly exposed."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = False
         plan.features.save()
 
@@ -591,6 +592,10 @@ class TestPlanFeaturesGraphQL:
 
 class TestRegisterPublicUserMutation:
     """Tests for the registerUser GraphQL mutation."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
 
     def test_register_user_creates_public_user(self, graphql_client_query_data):
         """Test that the mutation creates a PublicUser in the database."""
@@ -615,6 +620,7 @@ class TestRegisterPublicUserMutation:
         public_user = PublicUser.objects.get(uuid=returned_uuid)
         assert public_user is not None
         assert public_user.user_data == {}
+        assert public_user.client_id == self.plan.primary_client_id
 
     def test_register_user_creates_unique_users(self, graphql_client_query_data):
         """Test that multiple calls create different users."""
@@ -654,7 +660,7 @@ class TestCommitToPledgeMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
         self.pledge = Pledge.objects.create(
@@ -662,7 +668,7 @@ class TestCommitToPledgeMutation:
             name='Test Pledge',
             slug='test-pledge',
         )
-        self.public_user = PublicUser.objects.create()
+        self.public_user = PublicUser.objects.create(client=self.plan.primary_client)
 
     def test_commit_to_pledge_creates_commitment(self, graphql_client_query_data):
         """Test that committing creates a PledgeCommitment."""
@@ -1002,7 +1008,7 @@ class TestCommitToPledgeMutation:
         self.public_user.save()
         token = self.public_user.regenerate_user_token()
 
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
         other_pledge = PledgeFactory.create(plan=other_plan)
@@ -1025,13 +1031,80 @@ class TestCommitToPledgeMutation:
         assert 'Pledge not found' in response['errors'][0]['message']
         assert not PledgeCommitment.objects.filter(pledge=other_pledge).exists()
 
+    def test_commit_rejects_anon_uuid_from_other_tenant(self, graphql_client_query):
+        # Victim's anon PublicUser is bound to tenant A. An attacker on tenant
+        # B who somehow learned the UUID must not be able to resolve the row,
+        # otherwise a subsequent VerifyPin merge could leak user_data.
+        victim = PublicUser.objects.create(client=self.plan.primary_client)
+
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
+        other_plan.features.enable_community_engagement = True
+        other_plan.features.save()
+        other_pledge = PledgeFactory.create(plan=other_plan)
+        self.plan = other_plan
+
+        response = graphql_client_query(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(victim.uuid),
+                'pledgeId': str(other_pledge.id),
+                'committed': True,
+            },
+        )
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'PUBLIC_USER_NOT_FOUND'
+        assert not PledgeCommitment.objects.filter(public_user=victim).exists()
+
+    def test_commit_rejects_legacy_null_client_anon(self, graphql_client_query):
+        # Legacy anon rows with client=None survived the backfill migration
+        # (no commitments to derive tenant from). The resolver must reject
+        # them so the frontend registers a fresh UUID instead of exposing a
+        # cross-tenant window on first touch.
+        legacy = PublicUser.objects.create()
+        assert legacy.client_id is None
+
+        response = graphql_client_query(
+            """
+            mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
+              pledge {
+                commitToPledge(userUuid: $userUuid, pledgeId: $pledgeId, committed: $committed) {
+                  committed
+                }
+              }
+            }
+            """,
+            variables={
+                'userUuid': str(legacy.uuid),
+                'pledgeId': str(self.pledge.id),
+                'committed': True,
+            },
+        )
+
+        assert 'errors' in response
+        assert response['errors'][0]['extensions']['code'] == 'PUBLIC_USER_NOT_FOUND'
+        legacy.refresh_from_db()
+        assert legacy.client_id is None
+
 
 class TestSetUserDataMutation:
     """Tests for the setUserData GraphQL mutation."""
 
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+
     def test_set_user_data_sets_value(self, graphql_client_query_data):
         """Test that the mutation sets a key-value pair in user_data."""
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.plan.primary_client)
         assert public_user.user_data == {}
 
         data = graphql_client_query_data(
@@ -1058,7 +1131,7 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_updates_existing_value(self, graphql_client_query_data):
         """Test that the mutation updates an existing key."""
-        public_user = PublicUser.objects.create(user_data={'zip_code': '00000'})
+        public_user = PublicUser.objects.create(client=self.plan.primary_client, user_data={'zip_code': '00000'})
 
         graphql_client_query_data(
             """
@@ -1082,7 +1155,7 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_preserves_other_keys(self, graphql_client_query_data):
         """Test that setting a new key preserves existing keys."""
-        public_user = PublicUser.objects.create(user_data={'city': 'Helsinki'})
+        public_user = PublicUser.objects.create(client=self.plan.primary_client, user_data={'city': 'Helsinki'})
 
         graphql_client_query_data(
             """
@@ -1132,7 +1205,7 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
         """The setUserData mutation should authenticate via the X-Public-User-Token header alone."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         public_user = PublicUser.objects.create(email='authed@example.com', client=plan.primary_client)
         token = public_user.regenerate_user_token()
         self.plan = plan
@@ -1181,7 +1254,7 @@ class TestSignUpMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.client_tenant = self.plan.primary_client
 
     def test_sign_up_does_not_create_user_and_sends_pin(self, graphql_client_query_data):
@@ -1365,7 +1438,7 @@ class TestSignUpMutation:
         # Switch to a second plan with a different primary_client. Auto-injected
         # X-Cache-Plan-Identifier reads from self.plan, so the SignUp resolves
         # against the second client.
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         graphql_client_query_data(
             SIGN_UP_MUTATION,
             variables={'email': 'shared@example.com', 'terms': True, 'marketing': False},
@@ -1385,7 +1458,7 @@ class TestSignInMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.client_tenant = self.plan.primary_client
 
     def test_sign_in_sends_pin_for_existing_user(self, graphql_client_query_data):
@@ -1510,7 +1583,7 @@ class TestSignInMutation:
         # Account exists on the fixture plan's client but the request comes
         # from a different plan/client. Must be treated as "no account".
         PublicUser.objects.create(email='shared@example.com', client=self.client_tenant)
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
 
         response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'shared@example.com'})
 
@@ -1534,7 +1607,7 @@ class TestVerifyPinMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
         assert self.plan.primary_client is not None
@@ -1682,7 +1755,7 @@ class TestVerifyPinMutation:
         own_pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(pledge=own_pledge, public_user=self.public_user)
 
-        other_plan = PlanFactory.create()
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
         other_plan.features.enable_community_engagement = True
         other_plan.features.save()
         other_pledge = PledgeFactory.create(plan=other_plan)
@@ -1701,7 +1774,7 @@ class TestVerifyPinMutation:
         own_pledge = PledgeFactory.create(plan=self.plan)
         PledgeCommitment.objects.create(pledge=own_pledge, public_user=self.public_user)
 
-        disabled_plan = PlanFactory.create()
+        disabled_plan = PlanFactory.create(primary_client=ClientFactory.create())
         disabled_plan.features.enable_community_engagement = False
         disabled_plan.features.save()
         disabled_pledge = PledgeFactory.create(plan=disabled_plan)
@@ -1810,9 +1883,43 @@ class TestVerifyPinMutation:
         assert self.public_user.user_data == {'city': 'Newtown', 'zip_code': '95695'}
 
     def test_verify_pin_skips_user_data_merge_for_anon_without_same_client_commitments(self, graphql_client_query_data):
-        # Empty anon (or cross-client anon) does not prove it belongs to this
-        # client, so its user_data must not be copied into the verified account.
+        # Legacy client-less anon with no commitments cannot prove it belongs
+        # to this client, so its user_data must not be copied into the verified
+        # account.
         anon = PublicUser.objects.create(user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {}
+        assert PublicUser.objects.filter(uuid=anon.uuid).exists()
+
+    def test_verify_pin_merges_user_data_for_same_client_anon_without_commitments(self, graphql_client_query_data):
+        # Post-RegisterPublicUser anons are already client-bound. When the user
+        # sets user_data and then uncommits before PIN verify (leaving zero
+        # commitments), client_id match is the tenancy proof and user_data
+        # still merges into the verified account.
+        anon = PublicUser.objects.create(client=self.client_tenant, user_data={'zip_code': '95695'})
+        raw_pin = self._issue_pin(anon_uuid=anon.uuid)
+
+        graphql_client_query_data(
+            VERIFY_PIN_MUTATION,
+            variables={'email': 'alice@example.com', 'pin': raw_pin, 'anonUuid': str(anon.uuid)},
+        )
+
+        self.public_user.refresh_from_db()
+        assert self.public_user.user_data == {'zip_code': '95695'}
+        assert not PublicUser.objects.filter(uuid=anon.uuid).exists()
+
+    def test_verify_pin_ignores_cross_client_anon_even_when_client_bound(self, graphql_client_query_data):
+        # An anon bound to a different tenant must not have its user_data
+        # merged; client_id mismatch fails the tenancy check.
+        other_client = ClientFactory.create()
+        anon = PublicUser.objects.create(client=other_client, user_data={'zip_code': '95695'})
         raw_pin = self._issue_pin(anon_uuid=anon.uuid)
 
         graphql_client_query_data(
@@ -2039,7 +2146,7 @@ class TestPledgeBodyField:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -2115,7 +2222,7 @@ class TestPublicUserQuery:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create()
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
         self.client_tenant = self.plan.primary_client
 
     def _make_authed(self, email: str) -> tuple[PublicUser, str]:
@@ -2142,12 +2249,12 @@ class TestPublicUserQuery:
 
     def test_public_user_query_returns_user_with_commitments(self, graphql_client_query_data):
         """Test that publicUser query returns user and their commitments."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
         pledge = PledgeFactory.create(plan=plan, name='Test Pledge')
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.client_tenant)
         commitment = PledgeCommitment.objects.create(pledge=pledge, public_user=public_user)
 
         data = graphql_client_query_data(
@@ -2176,19 +2283,19 @@ class TestPublicUserQuery:
     def test_public_user_query_filters_commitments_by_feature_flag(self, graphql_client_query_data):
         """Test that commitments are filtered based on enable_community_engagement flag."""
         # Create a plan with feature enabled
-        plan_enabled = PlanFactory.create()
+        plan_enabled = PlanFactory.create(primary_client=ClientFactory.create())
         plan_enabled.features.enable_community_engagement = True
         plan_enabled.features.save()
 
         # Create a plan with feature disabled
-        plan_disabled = PlanFactory.create()
+        plan_disabled = PlanFactory.create(primary_client=ClientFactory.create())
         plan_disabled.features.enable_community_engagement = False
         plan_disabled.features.save()
 
         pledge_enabled = PledgeFactory.create(plan=plan_enabled, name='Enabled Pledge')
         pledge_disabled = PledgeFactory.create(plan=plan_disabled, name='Disabled Pledge')
 
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.client_tenant)
         PledgeCommitment.objects.create(pledge=pledge_enabled, public_user=public_user)
         PledgeCommitment.objects.create(pledge=pledge_disabled, public_user=public_user)
 
@@ -2204,7 +2311,7 @@ class TestPublicUserQuery:
 
     def test_public_user_query_returns_multiple_commitments(self, graphql_client_query_data):
         """Test that publicUser query returns all commitments for a user."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -2212,7 +2319,7 @@ class TestPublicUserQuery:
         pledge2 = PledgeFactory.create(plan=plan, name='Pledge 2')
         pledge3 = PledgeFactory.create(plan=plan, name='Pledge 3')
 
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.client_tenant)
         PledgeCommitment.objects.create(pledge=pledge1, public_user=public_user)
         PledgeCommitment.objects.create(pledge=pledge2, public_user=public_user)
         PledgeCommitment.objects.create(pledge=pledge3, public_user=public_user)
@@ -2232,18 +2339,18 @@ class TestPublicUserQuery:
 
     def test_public_user_query_filters_commitments_by_plan(self, graphql_client_query_data):
         """Test that commitments can be filtered by plan identifier."""
-        plan1 = PlanFactory.create()
+        plan1 = PlanFactory.create(primary_client=ClientFactory.create())
         plan1.features.enable_community_engagement = True
         plan1.features.save()
 
-        plan2 = PlanFactory.create()
+        plan2 = PlanFactory.create(primary_client=ClientFactory.create())
         plan2.features.enable_community_engagement = True
         plan2.features.save()
 
         pledge1 = PledgeFactory.create(plan=plan1, name='Plan 1 Pledge')
         pledge2 = PledgeFactory.create(plan=plan2, name='Plan 2 Pledge')
 
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.client_tenant)
         PledgeCommitment.objects.create(pledge=pledge1, public_user=public_user)
         PledgeCommitment.objects.create(pledge=pledge2, public_user=public_user)
 
@@ -2270,7 +2377,10 @@ class TestPublicUserQuery:
         assert data['publicUser']['commitments'][0]['pledge']['name'] == 'Plan 1 Pledge'
 
     def test_public_user_query_returns_user_data(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create(user_data={'zip_code': '90210', 'city': 'Beverly Hills'})
+        public_user = PublicUser.objects.create(
+            client=self.client_tenant,
+            user_data={'zip_code': '90210', 'city': 'Beverly Hills'},
+        )
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
@@ -2282,10 +2392,10 @@ class TestPublicUserQuery:
         assert user_data == {'zip_code': '90210', 'city': 'Beverly Hills'}
 
     def test_public_user_query_response_is_not_cached(self, graphql_client_query_data):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
-        public_user = PublicUser.objects.create(user_data={'zip_code': '90210'})
+        public_user = PublicUser.objects.create(client=plan.primary_client, user_data={'zip_code': '90210'})
 
         first = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
@@ -2305,7 +2415,7 @@ class TestPublicUserQuery:
         assert json.loads(second['publicUser']['userData']) == {'zip_code': '10001'}
 
     def test_public_user_query_returns_empty_user_data(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.client_tenant)
 
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
@@ -2345,6 +2455,38 @@ class TestPublicUserQuery:
         data = graphql_client_query_data(
             self.PLEDGE_USER_QUERY,
             variables={'uuid': str(public_user.uuid)},
+        )
+
+        assert data['publicUser'] is None
+
+    def test_public_user_query_returns_null_across_tenants(self, graphql_client_query_data):
+        # An anon row bound to tenant A must not resolve for a caller on
+        # tenant B, otherwise userData and commitments leak cross-tenant.
+        victim = PublicUser.objects.create(client=self.client_tenant)
+
+        other_plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = other_plan
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(victim.uuid)},
+        )
+
+        assert data['publicUser'] is None
+
+    def test_public_user_query_rejects_null_client_match(self, graphql_client_query_data):
+        # A legacy anon with client=None must not resolve just because the
+        # request plan also has no primary_client. `None == None` cannot be
+        # treated as tenant proof.
+        unconfigured_plan = PlanFactory.create(primary_client=None)
+        assert unconfigured_plan.primary_client_id is None
+        self.plan = unconfigured_plan
+        legacy = PublicUser.objects.create()
+        assert legacy.client_id is None
+
+        data = graphql_client_query_data(
+            self.PLEDGE_USER_QUERY,
+            variables={'uuid': str(legacy.uuid)},
         )
 
         assert data['publicUser'] is None
@@ -2446,7 +2588,7 @@ class TestPublicUserQuery:
 
     def test_public_user_query_returns_bearer_user_when_no_uuid(self, graphql_client_query_data):
         """Without a uuid argument, the query resolves to the bearer-identified user."""
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         public_user = PublicUser.objects.create(email='alice@example.com', client=plan.primary_client)
         self.plan = plan
         token = public_user.regenerate_user_token()
@@ -2500,7 +2642,7 @@ class TestPublicUserQuery:
         # A token issued for a user on one client must not authenticate the
         # same user when the request comes in on another client's site.
         _, token = self._make_authed('shared@example.com')
-        self.plan = PlanFactory.create()  # different plan/client
+        self.plan = PlanFactory.create(primary_client=ClientFactory.create())  # different plan/client
 
         query = 'query { publicUser { uuid } }'
         data = graphql_client_query_data(query, headers={'X-Public-User-Token': token})
@@ -2513,7 +2655,7 @@ class TestPledgeCommitmentCountAnnotation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
         self.plan = plan
@@ -2521,7 +2663,7 @@ class TestPledgeCommitmentCountAnnotation:
     def test_commitment_count_after_commit_mutation(self, graphql_client_query_data):
         """Test that commitmentCount is correct after a commit mutation."""
         pledge = PledgeFactory.create(plan=self.plan)
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.plan.primary_client)
 
         # Commit to the pledge
         graphql_client_query_data(
@@ -2563,6 +2705,7 @@ class TestPledgeLocaleGraphQL:
         self.plan = PlanFactory.create(
             primary_language='en',
             other_languages=['fi'],
+            primary_client=ClientFactory.create(),
         )
         self.plan.features.enable_community_engagement = True
         self.plan.features.save()
@@ -2633,7 +2776,7 @@ class TestPledgeLocaleGraphQL:
         assert data['action']['pledges'][0]['name'] == 'Suomenkielinen lupaus'
 
     def test_commit_mutation_with_translated_pledge_id_uses_primary_locale(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.plan.primary_client)
         data = graphql_client_query_data(
             """
             mutation($userUuid: UUID!, $pledgeId: ID!, $committed: Boolean!) {
@@ -2682,7 +2825,7 @@ class TestPledgeLocaleGraphQL:
         assert data_en['plan']['pledge']['commitmentCount'] == 1
 
     def test_public_user_commitments_resolve_to_requested_locale(self, graphql_client_query_data):
-        public_user = PublicUser.objects.create()
+        public_user = PublicUser.objects.create(client=self.plan.primary_client)
         PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
 
         data = graphql_client_query_data(
@@ -2725,7 +2868,7 @@ class TestActionPledgesFeatureFlag:
     """Test that pledges on ActionNode are gated behind enable_community_engagement."""
 
     def test_action_pledges_returned_when_feature_enabled(self, graphql_client_query_data):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = True
         plan.features.save()
 
@@ -2742,7 +2885,7 @@ class TestActionPledgesFeatureFlag:
         assert pledges[0]['id'] == str(pledge.id)
 
     def test_action_pledges_empty_when_feature_disabled(self, graphql_client_query_data):
-        plan = PlanFactory.create()
+        plan = PlanFactory.create(primary_client=ClientFactory.create())
         plan.features.enable_community_engagement = False
         plan.features.save()
 
