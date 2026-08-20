@@ -7,8 +7,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("actions", "0184_publicusersigninattempt_email_and_more"),
-        ("admin_site", "0018_clientplan_is_primary"),
+        ("actions", "0188_publicusersigninattempt_email_and_more"),
+        ("admin_site", "0019_clientplan_is_primary"),
     ]
 
     operations = [

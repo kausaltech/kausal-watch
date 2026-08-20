@@ -187,16 +187,18 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         return
 
     # Defense-in-depth against a cross-client anon_uuid: only move commitments,
-    # merge user_data, and delete the anon row when the anon shows a same-client
-    # connection via at least one commitment. Anon UUIDs live in per-origin
-    # browser storage, so a real browser should never present a UUID from
-    # another client here; the guard fails safe if a non-browser caller ever does.
+    # merge user_data, and delete the anon row when the anon is same-tenant.
+    # Post-RegisterPublicUser anons carry client_id directly; legacy unbound
+    # rows fall back to commitment inference.
     same_client_commitments = PledgeCommitment.objects.filter(
         public_user=anon,
         pledge__plan__clients__is_primary=True,
         pledge__plan__clients__client=verified_user.client,
     )
-    has_same_client_commitments = same_client_commitments.exists()
+    if anon.client_id is not None:
+        is_same_client = anon.client_id == verified_user.client_id
+    else:
+        is_same_client = same_client_commitments.exists()
     affected_plan_ids = set(same_client_commitments.values_list('pledge__plan_id', flat=True).distinct())
     existing_pledge_ids = set(PledgeCommitment.objects.filter(public_user=verified_user).values_list('pledge_id', flat=True))
     moved = same_client_commitments.exclude(pledge_id__in=existing_pledge_ids).update(public_user=verified_user)
@@ -212,14 +214,14 @@ def merge_anon_into_verified(verified_user: PublicUser, anon_uuid: UUID) -> None
         )
 
     user_data_updated = False
-    if has_same_client_commitments and anon.user_data:
+    if is_same_client and anon.user_data:
         merged_user_data = {**verified_user.user_data, **anon.user_data}
         if merged_user_data != verified_user.user_data:
             verified_user.user_data = merged_user_data
             verified_user.save(update_fields=['user_data'])
             user_data_updated = True
 
-    if has_same_client_commitments and not remaining:
+    if is_same_client and not remaining:
         anon.delete()
 
     for plan in Plan.objects.filter(id__in=affected_plan_ids):

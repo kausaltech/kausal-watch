@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("admin_site", "0017_builtinfieldcustomization_latest_revision"),
+        ("admin_site", "0018_alter_builtinfieldcustomization_options"),
     ]
 
     operations = [
