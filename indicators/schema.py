@@ -403,7 +403,7 @@ class IndicatorNode(DjangoNode[Indicator]):
             return IndicatorDefaultBarChart(
                 indicator=root,
                 dimension=root.grouping_dimension,
-                bar_type=root.bar_type or 'stacked',
+                bar_type=root.bar_type or None,
                 chart_series=chart_series,
             )
         if viz_type == VisualizationType.LINE_CHART:

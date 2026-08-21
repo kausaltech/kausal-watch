@@ -213,14 +213,17 @@ class DashboardIndicatorBarChartBlock(DashboardIndicatorChartBaseBlock):
             ('stacked', _('Stacked bars')),
             ('grouped', _('Grouped bars')),
         ],
-        default='stacked',
-        required=True,
+        default='',
+        required=False,
     )
 
     graphql_fields = DashboardIndicatorChartBaseBlock.graphql_fields + [
-        GraphQLString('bar_type'),
+        GraphQLString('bar_type', source='get_bar_type'),
     ]
     graphql_interfaces = [IndicatorBarChartInterface]
+
+    def get_bar_type(self, info: GQLInfo, values: dict[str, Any]) -> str | None:
+        return values.get('bar_type') or None
 
     class Meta:
         icon = 'fontawesome-chart-simple'

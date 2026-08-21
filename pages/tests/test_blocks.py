@@ -2,6 +2,7 @@ import pytest
 from wagtail_localize.segments.extract import extract_segments
 
 from images.tests.factories import AplansImageFactory
+from indicators.tests.factories import IndicatorFactory
 from pages.tests.factories import StaticPageFactory
 
 pytestmark = pytest.mark.django_db
@@ -110,3 +111,52 @@ def test_adaptive_embed_block_empty_title_and_description(graphql_client_query_d
     assert embed_block['title'] == ''
     assert embed_block['description'] == ''
     assert embed_block['fullWidth'] is True
+
+
+def test_dashboard_bar_chart_block_returns_null_bar_type_when_empty(graphql_client_query_data, plan_with_pages):
+    """When no bar type is selected in a dashboard bar chart block, GraphQL should return null."""
+
+    plan = plan_with_pages
+    root_page = plan.site.root_page
+    slug = 'dashboard-bar-chart-empty-bar-type'
+    indicator = IndicatorFactory.create(organization=plan.organization, plans=[plan])
+    static_page = StaticPageFactory.create(slug=slug, parent=root_page)
+    static_page.body.append((
+        'dashboard_row',
+        [
+            (
+                'bar_chart',
+                {
+                    'help_text': '',
+                    'indicator': indicator,
+                    'dimension': None,
+                    'bar_type': '',
+                },
+            ),
+        ],
+    ))
+    static_page.save()
+
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            ... on StaticPage {
+              body {
+                ... on DashboardRowBlock {
+                  blocks {
+                    ... on DashboardIndicatorBarChartBlock {
+                      barType
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """,
+        variables=dict(plan=plan.identifier, path=f'/{slug}'),
+    )
+
+    dashboard_row = data['planPage']['body'][-1]
+    assert dashboard_row['blocks'][0]['barType'] is None

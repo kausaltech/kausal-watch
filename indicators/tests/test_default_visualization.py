@@ -295,8 +295,8 @@ def test_default_visualization_pie_chart(graphql_client_query_data):
     assert len(viz['chartSeries']) == 1
 
 
-def test_bar_chart_defaults_bar_type_to_stacked_when_empty(graphql_client_query_data):
-    """When bar_type is empty, the resolver should default to 'stacked'."""
+def test_bar_chart_returns_null_bar_type_when_empty(graphql_client_query_data):
+    """When no bar type is selected, the resolver should return null instead of a default."""
 
     indicator = IndicatorFactory.create(
         visualization_type=VisualizationType.BAR_CHART,
@@ -320,7 +320,7 @@ def test_bar_chart_defaults_bar_type_to_stacked_when_empty(graphql_client_query_
         variables=dict(id=indicator.id),
     )
     viz = data['indicator']['defaultVisualization']
-    assert viz['barType'] == 'stacked'
+    assert viz['barType'] is None
 
 
 def test_default_visualization_with_grouping_dimension(graphql_client_query_data):
