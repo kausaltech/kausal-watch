@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any
 
 from django.core.management.base import BaseCommand, CommandError
@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser
 
     from django.db.models import Model
+
+
+_KEY_ALLOCATION_ATTEMPTS = 10
 
 
 class UnresolvedError(Exception):
@@ -161,6 +164,7 @@ class Command(BaseCommand):
             return 0, len(rows)
 
         others = [row for row in rows if row['pk'] != keeper['pk']]
+        taken: set[str] = {name}
         state = ' (currently deleted)' if deleted else ''
         self.stdout.write(f'{name!r}{state}: row {keeper["pk"]} keeps the key; {len(others)} row(s) move')
 
@@ -179,7 +183,7 @@ class Command(BaseCommand):
             repaired += 1
 
         for row in others:
-            new_name = self.copy_to_new_key(model, client, storage, file_field, bucket, key, name, row, plan[row['pk']])
+            new_name = self.copy_to_new_key(model, client, storage, file_field, bucket, key, name, row, plan[row['pk']], taken)
             self.stdout.write(f'  row {row["pk"]} -> {new_name!r}')
             repaired += 1
         return repaired, 0
@@ -260,11 +264,10 @@ class Command(BaseCommand):
         name: str,
         row: dict,
         version_id: str,
+        taken: set[str],
     ) -> str:
         """Copy one version to a key of its own and point the row at it."""
-        new_name = storage.get_available_name(name, max_length=file_field.max_length)
-        if new_name == name:
-            raise CommandError(f'Storage returned the same key {name!r} for a copy; refusing to overwrite it')
+        new_name = self.allocate_key(storage, file_field, name, taken)
         if not self.execute_repairs:
             return new_name
 
@@ -281,6 +284,31 @@ class Command(BaseCommand):
             # still hold, and there is no reason to touch revisions or re-render renditions.
             model._default_manager.filter(pk=row['pk']).update(file=new_name)
         return new_name
+
+    def allocate_key(self, storage: Any, file_field: FileField, name: str, taken: set[str]) -> str:
+        """
+        Pick a free key for a copy of `name`, treating the original as taken.
+
+        Storage cannot be asked whether the original is occupied: a key with a delete marker on top
+        reads as free, so on a dry run -- where the keeper's content has not been restored onto it
+        yet -- `get_available_name` would hand back the very key the row is being moved off. Names
+        already handed out in this run are reserved for the same reason: a dry run writes nothing
+        for storage to notice.
+        """
+        path = PurePosixPath(name)
+        file_root, file_ext = str(path.with_suffix('')), path.suffix
+        candidate = storage.get_available_name(name, max_length=file_field.max_length)
+        for _ in range(_KEY_ALLOCATION_ATTEMPTS):
+            if candidate != name and candidate not in taken:
+                taken.add(candidate)
+                return candidate
+            candidate = storage.get_available_name(
+                storage.get_alternative_name(file_root, file_ext), max_length=file_field.max_length
+            )
+        raise CommandError(
+            f'Could not allocate a key distinct from {name!r} after {_KEY_ALLOCATION_ATTEMPTS} attempts; '
+            'is the storage de-duplicating names?'
+        )
 
     def copy_extra(self, storage: Any) -> dict[str, Any]:
         acl = getattr(storage, 'default_acl', None)
