@@ -326,3 +326,50 @@ def test_a_failed_copy_leaves_the_whole_group_in_the_database_untouched():
         _unshare(client, rows)
 
     assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 3
+
+
+def test_a_failed_sibling_copy_does_not_bring_a_deleted_shared_key_back():
+    """
+    Restoring the shared key while other rows still point at it would serve them the keeper's bytes.
+
+    That is worse than the 404 they had, so the restore goes last and a sibling failure must leave
+    the key deleted.
+    """
+    rows = _shared_images(2)
+    name = rows[0]['file']
+
+    class FlakyClient(FakeClient):
+        def copy_object(self, **kwargs) -> dict:
+            if kwargs['Key'] != name:  # the sibling's copy
+                raise RuntimeError('S3 is having a moment')
+            return super().copy_object(**kwargs)
+
+    client = FlakyClient(name, [b'same'], deleted=True)
+
+    with pytest.raises(RuntimeError, match='having a moment'):
+        _unshare(client, rows, FakeStorage())
+
+    assert client.copies == []
+    assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 2
+
+
+def test_a_shared_key_is_never_sent_down_the_single_row_restore_path():
+    """
+    A deleted shared key is both shared and missing.
+
+    `restore_missing` consults only the first row, so routing it there would copy that row's bytes
+    onto the key and leave every row still sharing them.
+    """
+    command = Command()
+    shared = {'documents/a.pdf'}
+    missing = {'documents/a.pdf', 'documents/b.pdf'}
+
+    assert command.choose_repair('documents/a.pdf', shared, missing, None) == 'shared'
+    assert command.choose_repair('documents/a.pdf', shared, missing, 'shared') == 'shared'
+    assert command.choose_repair('documents/a.pdf', shared, missing, 'missing') == 'skip'
+
+    assert command.choose_repair('documents/b.pdf', shared, missing, None) == 'missing'
+    assert command.choose_repair('documents/b.pdf', shared, missing, 'missing') == 'missing'
+    assert command.choose_repair('documents/b.pdf', shared, missing, 'shared') == 'skip'
+
+    assert command.choose_repair('documents/c.pdf', shared, missing, None) == 'skip'

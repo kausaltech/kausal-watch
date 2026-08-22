@@ -113,15 +113,38 @@ class Command(BaseCommand):
         repaired = skipped = 0
         for name in sorted(rows_by_name):
             rows = rows_by_name[name]
-            if name in shared_names and only != 'missing':
+            repair = self.choose_repair(name, shared_names, missing_names, only)
+            if repair == 'shared':
                 done, left = self.unshare(model, client, storage, file_field, bucket, name, rows)
-            elif name in missing_names and only != 'shared':
+            elif repair == 'missing':
                 done, left = self.restore_missing(client, storage, bucket, name, rows)
             else:
+                if only == 'missing' and name in shared_names and name in missing_names:
+                    self.warn(
+                        f'{name!r}: shared by {[row["pk"] for row in rows]} and currently deleted, so it needs '
+                        'the shared repair rather than a restore; run without --only missing'
+                    )
+                    skipped += len(rows)
                 continue
             repaired += done
             skipped += left
         return repaired, skipped
+
+    def choose_repair(self, name: str, shared_names: set[str], missing_names: set[str], only: str | None) -> str:
+        """
+        Return which repair applies to `name`: 'shared', 'missing' or 'skip'.
+
+        Being shared wins over being missing. A shared key whose current state is deleted is both,
+        but `restore_missing` only consults the first row: it would copy that row's version onto the
+        key and leave every row still sharing it, so rows that recorded other bytes would quietly
+        start serving the first row's content. `unshare` handles a deleted key properly, as part of
+        giving each row an object of its own.
+        """
+        if name in shared_names:
+            return 'skip' if only == 'missing' else 'shared'
+        if name in missing_names:
+            return 'skip' if only == 'shared' else 'missing'
+        return 'skip'
 
     def find_missing(self, storage: Any, names: set[str], shared_names: set[str], *, wanted: set[str] | None) -> set[str]:
         """Return the names whose file is gone from storage, skipping discovery for an explicit key list."""
@@ -180,11 +203,8 @@ class Command(BaseCommand):
         if not self.execute_repairs:
             return repaired, 0
 
-        # Every copy first. A failure part-way leaves unreferenced objects, which are harmless,
-        # and no row has been repointed yet, so the group is still exactly as it was.
-        if deleted:
-            # The keeper would otherwise be left holding a key with a delete marker on top.
-            self.copy_version(client, storage, bucket, key, key, plan[keeper['pk']])
+        # The siblings' copies come first. A failure part-way leaves unreferenced objects, which
+        # are harmless, and nothing else has moved.
         for row, new_name in allocations:
             self.copy_version(client, storage, bucket, key, storage_key(storage, new_name), plan[row['pk']])
 
@@ -194,6 +214,14 @@ class Command(BaseCommand):
         with transaction.atomic():
             for row, new_name in allocations:
                 model._default_manager.filter(pk=row['pk']).update(file=new_name)
+
+        if deleted:
+            # The keeper would otherwise be left holding a key with a delete marker on top. This
+            # goes last, after the row updates, on purpose: bringing the key back while the other
+            # rows still point at it would serve them the keeper's bytes, which is worse than the
+            # 404 they had. Failing here instead leaves the keeper merely still missing, which is
+            # the state it was already in and which the integrity check reports.
+            self.copy_version(client, storage, bucket, key, key, plan[keeper['pk']])
         return repaired, 0
 
     def plan_group(
