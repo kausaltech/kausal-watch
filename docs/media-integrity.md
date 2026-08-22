@@ -165,8 +165,9 @@ version is also copied back onto it, so the keeper is not left holding a delete 
 
 Design decisions:
 
-- **Repair of a shared key is all-or-nothing.** Every row must be traceable to the bytes it
-  recorded before anything is copied. A partial repair would move some rows while the keeper and the
+- **Repair of a shared key is all-or-nothing, in both directions.** Every row must be traceable
+  to the bytes it recorded before anything is copied, and the group's rows move together or not at
+  all. A partial repair would move some rows while the keeper and the
   unresolvable ones went on sharing a key — harder to reason about than the original problem, and it
   hides the rows that still need attention. The single-content inference is reserved for rows that
   never recorded a hash, where nothing better exists; a row that did record one has it verified
@@ -182,9 +183,11 @@ Design decisions:
   granularity on most S3 implementations, and the uploads that caused this are often seconds apart,
   so a tie can leave the API's newest-first ordering intact and make the *oldest* version look
   current. Version listings are sorted by time for display only.
-- **The S3 copy happens before the database update.** A failure between the two leaves an
-  unreferenced object, which is harmless; the reverse would leave a row pointing at a key that was
-  never written, which is precisely the breakage being repaired.
+- **Every copy in a group happens before any row is repointed**, and the repointing runs in one
+  transaction. A failure part-way leaves unreferenced objects, which are harmless, and no row
+  moved; the reverse ordering would leave a row pointing at a key that was never written, which is
+  precisely the breakage being repaired, and per-row commits would leave a group half-repaired if
+  a later copy failed.
 - **Rows are updated with `update()`, not `save()`.** The bytes are unchanged, so `file_hash` and
   `file_size` still hold, and there is no reason to churn revisions or re-render renditions.
   Renditions are unaffected by an original's key changing: they are separate objects, and Wagtail's

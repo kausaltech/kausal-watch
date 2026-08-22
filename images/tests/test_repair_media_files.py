@@ -302,3 +302,27 @@ def test_blank_hash_rows_are_still_rejected_when_the_bytes_really_differ():
 
     assert client.copies == []
     assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 2
+
+
+def test_a_failed_copy_leaves_the_whole_group_in_the_database_untouched():
+    """
+    All-or-nothing has to survive execution, not just planning.
+
+    With three rows, a storage failure on a later copy must not leave the earlier siblings already
+    repointed at their new keys.
+    """
+    rows = _shared_images(3)
+    name = rows[0]['file']
+
+    class FlakyClient(FakeClient):
+        def copy_object(self, **kwargs) -> dict:
+            if self.copies:
+                raise RuntimeError('S3 is having a moment')
+            return super().copy_object(**kwargs)
+
+    client = FlakyClient(name, [b'same', b'same'])
+
+    with pytest.raises(RuntimeError, match='having a moment'):
+        _unshare(client, rows)
+
+    assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 3
