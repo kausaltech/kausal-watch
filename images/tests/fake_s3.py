@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 from io import BytesIO
+from pathlib import PurePosixPath
 
 BUCKET = 'test-bucket'
 
@@ -14,11 +15,38 @@ def sha1_hex(data: bytes) -> str:
 
 
 class FakeStorage:
+    """
+    Mimics Django's name allocation: a name is handed back only when nothing occupies it.
+
+    Modelling occupancy matters, because a key with a delete marker on top reads as free — which is
+    what makes a dry run allocate the very key it is moving a row off.
+    """
+
     bucket_name = BUCKET
     default_acl = 'public-read'
 
+    def __init__(self, *, present: set[str] | None = None) -> None:
+        self.present = set(present or ())
+        self._counter = 0
+
+    def exists(self, name: str) -> bool:
+        return name in self.present
+
+    def get_alternative_name(self, file_root: str, file_ext: str) -> str:
+        self._counter += 1
+        return f'{file_root}.moved{self._counter}{file_ext}'
+
     def get_available_name(self, name: str, max_length: int | None = None) -> str:
-        return f'{name}.moved'
+        while self.exists(name):
+            path = PurePosixPath(name)
+            name = self.get_alternative_name(str(path.with_suffix('')), path.suffix)
+        return name
+
+
+def moved(name: str, n: int = 1) -> str:
+    """Return the name `FakeStorage` hands out for the n-th copy made off `name`."""
+    path = PurePosixPath(name)
+    return f'{path.with_suffix("")}.moved{n}{path.suffix}'
 
 
 class FakePaginator:

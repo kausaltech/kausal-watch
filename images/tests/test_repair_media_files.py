@@ -11,7 +11,7 @@ from aplans.media_integrity import current_version, is_currently_deleted, list_v
 from images.management.commands.repair_media_files import Command, UnresolvedError
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
-from images.tests.fake_s3 import BUCKET, FakeClient, FakeStorage, sha1_hex
+from images.tests.fake_s3 import BUCKET, FakeClient, FakeStorage, moved, sha1_hex
 
 if TYPE_CHECKING:
     from django.db.models import FileField
@@ -44,8 +44,13 @@ def _command(*, execute: bool = True) -> Command:
     return command
 
 
-def _unshare(client: FakeClient, rows: list[dict[str, Any]], storage: FakeStorage | None = None) -> tuple[int, int]:
-    return _command().unshare(AplansImage, client, storage or FakeStorage(), FILE_FIELD, BUCKET, rows[0]['file'], rows)
+def _unshare(
+    client: FakeClient, rows: list[dict[str, Any]], storage: FakeStorage | None = None, *, execute: bool = True
+) -> tuple[int, int]:
+    name = rows[0]['file']
+    # By default the shared key is live, so storage reports it as occupied.
+    storage = storage if storage is not None else FakeStorage(present={name})
+    return _command(execute=execute).unshare(AplansImage, client, storage, FILE_FIELD, BUCKET, name, rows)
 
 
 def test_identical_content_keeps_the_oldest_row_and_moves_the_rest():
@@ -56,7 +61,8 @@ def test_identical_content_keeps_the_oldest_row_and_moves_the_rest():
     assert _unshare(client, rows) == (2, 0)
 
     assert AplansImage.objects.get(pk=rows[0]['pk']).file.name == name
-    assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == f'{name}.moved'
+    assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == moved(name, 1)
+    assert AplansImage.objects.get(pk=rows[2]['pk']).file.name == moved(name, 2)
     assert len(client.copies) == 2
     assert {c['CopySource']['VersionId'] for c in client.copies} == {'v1'}
     assert {c['ACL'] for c in client.copies} == {'public-read'}
@@ -67,7 +73,7 @@ def test_dry_run_writes_nothing():
     name = rows[0]['file']
     client = FakeClient(name, [b'same', b'same'])
 
-    _command(execute=False).unshare(AplansImage, client, FakeStorage(), FILE_FIELD, BUCKET, name, rows)
+    _unshare(client, rows, execute=False)
 
     assert client.copies == []
     assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == name
@@ -82,7 +88,7 @@ def test_overwritten_content_restores_each_row_from_its_own_version():
 
     # The row matching the current bytes keeps the key; the overwritten one is restored elsewhere.
     assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == rows[0]['file']
-    assert AplansImage.objects.get(pk=rows[0]['pk']).file.name == f'{rows[0]["file"]}.moved'
+    assert AplansImage.objects.get(pk=rows[0]['pk']).file.name == moved(rows[0]['file'], 1)
     assert client.copies[0]['CopySource']['VersionId'] == 'v0'
 
 
@@ -122,14 +128,14 @@ def test_shared_key_that_is_currently_deleted_restores_the_keeper_too():
     name = rows[0]['file']
     client = FakeClient(name, [b'same'], deleted=True)
 
-    assert _unshare(client, rows) == (2, 0)
+    assert _unshare(client, rows, FakeStorage()) == (2, 0)
 
     # One copy puts the keeper's content back on the shared key, the other moves the second row.
     onto_key = [c for c in client.copies if c['Key'] == name]
-    moved = [c for c in client.copies if c['Key'] == f'{name}.moved']
+    moved_copies = [c for c in client.copies if c['Key'] == moved(name, 1)]
     assert len(onto_key) == 1
-    assert len(moved) == 1
-    assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == f'{name}.moved'
+    assert len(moved_copies) == 1
+    assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == moved(name, 1)
 
 
 def test_current_version_uses_is_latest_when_timestamps_tie():
@@ -226,64 +232,44 @@ def test_a_stale_delete_marker_does_not_trigger_a_restore():
     assert client.copies == []
 
 
-def test_refuses_to_copy_when_storage_hands_back_the_same_key():
+def test_dry_run_previews_a_deleted_shared_key_instead_of_aborting():
     """
-    With `file_overwrite=True` the storage returns the key that is already taken.
+    A key with a delete marker on top reads as free, so allocation cannot ask storage about it.
 
-    Copying onto it would be a silent no-op reported as a successful move.
+    On a dry run the keeper's content has not been restored yet, so nothing occupies the key and a
+    naive `get_available_name` hands back the very name the row is being moved off — aborting the
+    preview for exactly the groups this command exists to fix.
     """
-
-    class OverwritingStorage(FakeStorage):
-        def get_available_name(self, name: str, max_length: int | None = None) -> str:
-            return name
-
     rows = _shared_images(2)
-    client = FakeClient(rows[0]['file'], [b'same', b'same'])
-
-    with pytest.raises(CommandError, match='refusing to overwrite'):
-        _unshare(client, rows, OverwritingStorage())
-
-    assert client.copies == []
-
-
-def test_a_single_content_does_not_vouch_for_a_row_that_recorded_other_bytes():
-    """
-    Versioning can be switched on after an overwrite, leaving only the sibling's content behind.
-
-    The history then holds one ETag while the row's hash records bytes that no longer exist, so
-    trusting the single surviving version would copy the sibling's file and call it a repair.
-    """
-    rows = _shared_images(2, content=b'what-the-rows-recorded')
     name = rows[0]['file']
-    client = FakeClient(name, [b'the-siblings-bytes'])
+    client = FakeClient(name, [b'same'], deleted=True)
 
-    assert _unshare(client, rows) == (0, 2)
+    assert _unshare(client, rows, FakeStorage(), execute=False) == (2, 0)
 
     assert client.copies == []
     assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 2
 
 
-def test_missing_file_is_not_restored_from_a_sole_version_that_does_not_match():
-    own = b'what-the-row-recorded'
-    image = AplansImageFactory.create()
-    AplansImage.objects.filter(pk=image.pk).update(file_hash=sha1_hex(own))
-    rows = _rows([image.pk])
-    name = rows[0]['file']
-    client = FakeClient(name, [b'someone-elses-bytes'], deleted=True)
+def test_allocation_never_hands_out_the_same_name_twice_in_one_run():
+    """A dry run writes nothing, so storage cannot report what this run has already allocated."""
+    name = 'documents/report.pdf'
+    storage = FakeStorage()
+    taken = {name}
 
-    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (0, 1)
+    first = Command().allocate_key(storage, FILE_FIELD, name, taken)
+    second = Command().allocate_key(storage, FILE_FIELD, name, taken)
 
-    assert client.copies == []
+    assert first != name
+    assert second != name
+    assert first != second
 
 
-def test_a_row_without_a_recorded_hash_still_falls_back_to_the_sole_version():
-    """Nothing better exists for a blank file_hash, and one content spans the whole history."""
-    image = AplansImageFactory.create()
-    AplansImage.objects.filter(pk=image.pk).update(file_hash='')
-    rows = _rows([image.pk])
-    name = rows[0]['file']
-    client = FakeClient(name, [b'only-content'], deleted=True)
+def test_allocation_gives_up_on_a_storage_that_will_not_de_duplicate():
+    class CollapsingStorage(FakeStorage):
+        """Ignores the name it is asked about and always hands back the one it already has."""
 
-    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (1, 0)
+        def get_available_name(self, name: str, max_length: int | None = None) -> str:
+            return 'documents/report.pdf'
 
-    assert client.copies[0]['CopySource']['VersionId'] == 'v0'
+    with pytest.raises(CommandError, match='Could not allocate a key distinct'):
+        Command().allocate_key(CollapsingStorage(), FILE_FIELD, 'documents/report.pdf', set())

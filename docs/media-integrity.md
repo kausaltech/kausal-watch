@@ -184,6 +184,11 @@ Design decisions:
   `file_size` still hold, and there is no reason to churn revisions or re-render renditions.
   Renditions are unaffected by an original's key changing: they are separate objects, and Wagtail's
   rendition cache key uses `file_hash`, not the path.
+- **The original key counts as taken when allocating a copy's key**, even when storage says it is
+  free. A key with a delete marker on top reads as free, and on a dry run the keeper's content has
+  not been restored onto it yet — so asking storage would hand back the very key the row is being
+  moved off. Names already allocated in the same run are reserved too, since a dry run writes
+  nothing for storage to notice.
 - **It refuses to run against a storage with `file_overwrite=True`.** `get_available_name()` would
   return the already-taken key, so every "move" would be a no-op onto the same object, reported as
   success. This is why the branch must be *deployed*, not merely merged, before repairing.
