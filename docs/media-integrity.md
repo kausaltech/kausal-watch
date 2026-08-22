@@ -127,10 +127,14 @@ database rows recorded. Read-only — it writes nothing to S3 or the database.
 - **A blank `file_hash` is treated as unknown, never as a match.** The column is populated lazily,
   so older rows have `''`, and treating two blanks as equal would silently classify real data loss
   as harmless.
-- **Equal ETags are a free proof that nothing changed.** If every version of a key shares one ETag,
-  the bytes never differed, and no download is needed even under `--verify-hashes`. The converse
-  does *not* hold — multipart uploads of identical content differ in ETag when part sizes differ —
-  so unequal ETags mean "unknown", not "changed".
+- **Equal ETags are a free proof that nothing *changed*, not that the content is the right one.**
+  If every version of a key shares one ETag the bytes never differed, so one download settles every
+  row instead of one per version. But a single-content history is not evidence that the content
+  belongs to a given row: where versioning was switched on *after* an overwrite, the only surviving
+  content is the sibling's, and the row's recorded hash is the one thing that reveals it. A
+  recorded `file_hash` is therefore always checked against the bytes. The converse of the ETag rule
+  does not hold either — multipart uploads of identical content differ in ETag when part sizes
+  differ — so unequal ETags mean "unknown", not "changed".
 - **ETag cannot map a row to a version.** It is an MD5; `file_hash` is a SHA-1. Matching a specific
   row to the version holding its bytes requires downloading, which is what `--verify-hashes` does.
   Without it, versions are matched on recorded `file_size`, which is free but only indicative.
@@ -154,8 +158,9 @@ Design decisions:
 - **Repair of a shared key is all-or-nothing.** Every row must be traceable to the bytes it
   recorded before anything is copied. A partial repair would move some rows while the keeper and the
   unresolvable ones went on sharing a key — harder to reason about than the original problem, and it
-  hides the rows that still need attention. A blank `file_hash` is only resolvable when a single
-  content ever existed under the key; otherwise the group is reported and skipped.
+  hides the rows that still need attention. The single-content inference is reserved for rows that
+  never recorded a hash, where nothing better exists; a row that did record one has it verified
+  against the bytes, and the group is reported and skipped if it does not match.
 - **Missing files are restored from the version matching the row's `file_hash`**, never the most
   recent one. Where a sibling overwrote the key before being deleted, the newest surviving version
   holds the *sibling's* bytes, so restoring by recency would quietly hand the row a file that was

@@ -113,7 +113,7 @@ class Command(BaseCommand):
             if name in shared_names and only != 'missing':
                 done, left = self.unshare(model, client, storage, file_field, bucket, name, rows)
             elif name in missing_names and only != 'shared':
-                done, left = self.restore_missing(model, client, storage, bucket, name, rows)
+                done, left = self.restore_missing(client, storage, bucket, name, rows)
             else:
                 continue
             repaired += done
@@ -214,9 +214,7 @@ class Command(BaseCommand):
             raise UnresolvedError(f'no row matches the current content ({current_hash[:12]}...)')
         return keepers[0], plan
 
-    def restore_missing(
-        self, model: type[Model], client: Any, storage: Any, bucket: str, name: str, rows: list[dict]
-    ) -> tuple[int, int]:
+    def restore_missing(self, client: Any, storage: Any, bucket: str, name: str, rows: list[dict]) -> tuple[int, int]:
         """
         Put the version whose bytes the row recorded back as the current one.
 

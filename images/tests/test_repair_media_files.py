@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 from io import BytesIO
+from typing import TYPE_CHECKING, Any, cast
 
 from django.core.management.base import CommandError
 
@@ -14,10 +15,13 @@ from images.management.commands.repair_media_files import Command, UnresolvedErr
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
 
+if TYPE_CHECKING:
+    from django.db.models import FileField
+
 pytestmark = pytest.mark.django_db
 
 BUCKET = 'test-bucket'
-FILE_FIELD = AplansImage._meta.get_field('file')
+FILE_FIELD = cast('FileField', AplansImage._meta.get_field('file'))
 
 
 def _sha1(data: bytes) -> str:
@@ -99,19 +103,21 @@ class FakeClient:
         return {}
 
 
-def _shared_images(count: int, *, hashes: list[str] | None = None) -> list[dict]:
+def _shared_images(count: int, *, content: bytes = b'same', hashes: list[str] | None = None) -> list[dict[str, Any]]:
+    """Create `count` images sharing one key, recording the hash of `content` unless told otherwise."""
     images = [AplansImageFactory.create() for _ in range(count)]
     pks = [image.pk for image in images]
     name = images[0].file.name
-    AplansImage.objects.filter(pk__in=pks).update(file=name, file_hash='h', file_size=4)
+    AplansImage.objects.filter(pk__in=pks).update(file=name, file_hash=_sha1(content), file_size=len(content))
     if hashes is not None:
         for pk, file_hash in zip(sorted(pks), hashes, strict=True):
             AplansImage.objects.filter(pk=pk).update(file_hash=file_hash)
     return _rows(pks)
 
 
-def _rows(pks: list[int]) -> list[dict]:
-    return list(AplansImage.objects.filter(pk__in=pks).order_by('pk').values('pk', 'file', 'file_hash', 'file_size'))
+def _rows(pks: list[int]) -> list[dict[str, Any]]:
+    rows = AplansImage.objects.filter(pk__in=pks).order_by('pk').values('pk', 'file', 'file_hash', 'file_size')
+    return [cast('dict[str, Any]', row) for row in rows]
 
 
 def _command(*, execute: bool = True) -> Command:
@@ -120,7 +126,7 @@ def _command(*, execute: bool = True) -> Command:
     return command
 
 
-def _unshare(client: FakeClient, rows: list[dict], storage: FakeStorage | None = None) -> tuple[int, int]:
+def _unshare(client: FakeClient, rows: list[dict[str, Any]], storage: FakeStorage | None = None) -> tuple[int, int]:
     return _command().unshare(AplansImage, client, storage or FakeStorage(), FILE_FIELD, BUCKET, rows[0]['file'], rows)
 
 
@@ -215,7 +221,9 @@ def test_current_version_uses_is_latest_when_timestamps_tie():
     versions, _markers = list_versions(client, BUCKET, 'k')
 
     assert versions[-1]['VersionId'] == 'v0'  # recency order is useless here
-    assert current_version(versions)['VersionId'] == 'v1'
+    current = current_version(versions)
+    assert current is not None
+    assert current['VersionId'] == 'v1'
 
 
 def test_keeper_is_chosen_by_is_latest_not_by_timestamp_order():
@@ -238,7 +246,7 @@ def test_missing_file_is_restored_from_the_version_it_recorded():
     name = rows[0]['file']
     client = FakeClient(name, [own], deleted=True)
 
-    assert _command().restore_missing(AplansImage, client, FakeStorage(), BUCKET, name, rows) == (1, 0)
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (1, 0)
 
     assert client.copies[0]['CopySource'] == {'Bucket': BUCKET, 'Key': name, 'VersionId': 'v0'}
     assert client.copies[0]['Key'] == name
@@ -258,7 +266,7 @@ def test_missing_file_restores_its_own_version_not_the_newest():
     name = rows[0]['file']
     client = FakeClient(name, [own, sibling], deleted=True)
 
-    assert _command().restore_missing(AplansImage, client, FakeStorage(), BUCKET, name, rows) == (1, 0)
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (1, 0)
 
     assert client.copies[0]['CopySource']['VersionId'] == 'v0'
 
@@ -270,7 +278,7 @@ def test_missing_file_with_no_matching_version_is_left_for_review():
     name = rows[0]['file']
     client = FakeClient(name, [b'one', b'two'], deleted=True)
 
-    assert _command().restore_missing(AplansImage, client, FakeStorage(), BUCKET, name, rows) == (0, 1)
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (0, 1)
 
     assert client.copies == []
 
@@ -281,7 +289,7 @@ def test_missing_file_without_versions_is_reported_not_repaired():
     name = rows[0]['file']
     client = FakeClient(name, [], deleted=True)
 
-    assert _command().restore_missing(AplansImage, client, FakeStorage(), BUCKET, name, rows) == (0, 1)
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (0, 1)
 
     assert client.copies == []
 
@@ -295,7 +303,7 @@ def test_a_stale_delete_marker_does_not_trigger_a_restore():
     versions, markers = list_versions(client, BUCKET, name)
     assert is_currently_deleted(versions, markers) is False
 
-    assert _command().restore_missing(AplansImage, client, FakeStorage(), BUCKET, name, rows) == (0, 0)
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (0, 0)
 
     assert client.copies == []
 
@@ -318,3 +326,46 @@ def test_refuses_to_copy_when_storage_hands_back_the_same_key():
         _unshare(client, rows, OverwritingStorage())
 
     assert client.copies == []
+
+
+def test_a_single_content_does_not_vouch_for_a_row_that_recorded_other_bytes():
+    """
+    Versioning can be switched on after an overwrite, leaving only the sibling's content behind.
+
+    The history then holds one ETag while the row's hash records bytes that no longer exist, so
+    trusting the single surviving version would copy the sibling's file and call it a repair.
+    """
+    rows = _shared_images(2, content=b'what-the-rows-recorded')
+    name = rows[0]['file']
+    client = FakeClient(name, [b'the-siblings-bytes'])
+
+    assert _unshare(client, rows) == (0, 2)
+
+    assert client.copies == []
+    assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 2
+
+
+def test_missing_file_is_not_restored_from_a_sole_version_that_does_not_match():
+    own = b'what-the-row-recorded'
+    image = AplansImageFactory.create()
+    AplansImage.objects.filter(pk=image.pk).update(file_hash=_sha1(own))
+    rows = _rows([image.pk])
+    name = rows[0]['file']
+    client = FakeClient(name, [b'someone-elses-bytes'], deleted=True)
+
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (0, 1)
+
+    assert client.copies == []
+
+
+def test_a_row_without_a_recorded_hash_still_falls_back_to_the_sole_version():
+    """Nothing better exists for a blank file_hash, and one content spans the whole history."""
+    image = AplansImageFactory.create()
+    AplansImage.objects.filter(pk=image.pk).update(file_hash='')
+    rows = _rows([image.pk])
+    name = rows[0]['file']
+    client = FakeClient(name, [b'only-content'], deleted=True)
+
+    assert _command().restore_missing(client, FakeStorage(), BUCKET, name, rows) == (1, 0)
+
+    assert client.copies[0]['CopySource']['VersionId'] == 'v0'
