@@ -144,10 +144,12 @@ class Command(BaseCommand):
         """
         Give every row on a shared key an object of its own, restoring content where it differs.
 
-        All or nothing: unless every row can be traced to the bytes it recorded, the group is left
-        exactly as it is. A partial repair would move some rows while the keeper and the
+        All or nothing, in both directions. Unless every row can be traced to the bytes it
+        recorded, nothing is copied: a partial repair would move some rows while the keeper and the
         unresolvable ones went on sharing a key, which is harder to reason about than the original
-        problem and hides the rows that still need attention.
+        problem and hides the rows that still need attention. And every copy is made before any row
+        is repointed, with the repointing in one transaction, so a storage failure midway through a
+        group cannot commit part of it either.
         """
         key = storage_key(storage, name)
         versions, markers = list_versions(client, bucket, key)
@@ -165,27 +167,33 @@ class Command(BaseCommand):
 
         others = [row for row in rows if row['pk'] != keeper['pk']]
         taken: set[str] = {name}
+        allocations = [(row, self.allocate_key(storage, file_field, name, taken)) for row in others]
+
         state = ' (currently deleted)' if deleted else ''
         self.stdout.write(f'{name!r}{state}: row {keeper["pk"]} keeps the key; {len(others)} row(s) move')
+        if deleted:
+            self.stdout.write(f'  row {keeper["pk"]}: restoring version {plan[keeper["pk"]]} onto the shared key')
+        for row, new_name in allocations:
+            self.stdout.write(f'  row {row["pk"]} -> {new_name!r}')
 
-        repaired = 0
+        repaired = len(others) + (1 if deleted else 0)
+        if not self.execute_repairs:
+            return repaired, 0
+
+        # Every copy first. A failure part-way leaves unreferenced objects, which are harmless,
+        # and no row has been repointed yet, so the group is still exactly as it was.
         if deleted:
             # The keeper would otherwise be left holding a key with a delete marker on top.
-            keeper_version = plan[keeper['pk']]
-            self.stdout.write(f'  row {keeper["pk"]}: restoring version {keeper_version} onto the shared key')
-            if self.execute_repairs:
-                client.copy_object(
-                    Bucket=bucket,
-                    Key=key,
-                    CopySource={'Bucket': bucket, 'Key': key, 'VersionId': keeper_version},
-                    **self.copy_extra(storage),
-                )
-            repaired += 1
+            self.copy_version(client, storage, bucket, key, key, plan[keeper['pk']])
+        for row, new_name in allocations:
+            self.copy_version(client, storage, bucket, key, storage_key(storage, new_name), plan[row['pk']])
 
-        for row in others:
-            new_name = self.copy_to_new_key(model, client, storage, file_field, bucket, key, name, row, plan[row['pk']], taken)
-            self.stdout.write(f'  row {row["pk"]} -> {new_name!r}')
-            repaired += 1
+        # Then the rows move together or not at all, so a transient storage failure cannot commit
+        # half a group. `update()` rather than `save()`: the bytes are unchanged, so file_hash and
+        # file_size still hold, and there is no reason to churn revisions or re-render renditions.
+        with transaction.atomic():
+            for row, new_name in allocations:
+                model._default_manager.filter(pk=row['pk']).update(file=new_name)
         return repaired, 0
 
     def plan_group(
@@ -255,37 +263,14 @@ class Command(BaseCommand):
             )
         return len(rows), 0
 
-    def copy_to_new_key(
-        self,
-        model: type[Model],
-        client: Any,
-        storage: Any,
-        file_field: FileField,
-        bucket: str,
-        key: str,
-        name: str,
-        row: dict,
-        version_id: str,
-        taken: set[str],
-    ) -> str:
-        """Copy one version to a key of its own and point the row at it."""
-        new_name = self.allocate_key(storage, file_field, name, taken)
-        if not self.execute_repairs:
-            return new_name
-
-        # Copy first: an unreferenced object is harmless, whereas a row pointing at a key that was
-        # never written is exactly the breakage being repaired.
+    def copy_version(self, client: Any, storage: Any, bucket: str, source_key: str, target_key: str, version_id: str) -> None:
+        """Copy one version of `source_key` to `target_key`, preserving the storage's ACL."""
         client.copy_object(
             Bucket=bucket,
-            Key=storage_key(storage, new_name),
-            CopySource={'Bucket': bucket, 'Key': key, 'VersionId': version_id},
+            Key=target_key,
+            CopySource={'Bucket': bucket, 'Key': source_key, 'VersionId': version_id},
             **self.copy_extra(storage),
         )
-        with transaction.atomic():
-            # `update()` rather than `save()`: the bytes are unchanged, so file_hash and file_size
-            # still hold, and there is no reason to touch revisions or re-render renditions.
-            model._default_manager.filter(pk=row['pk']).update(file=new_name)
-        return new_name
 
     def allocate_key(self, storage: Any, file_field: FileField, name: str, taken: set[str]) -> str:
         """
