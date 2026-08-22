@@ -183,11 +183,18 @@ Design decisions:
   granularity on most S3 implementations, and the uploads that caused this are often seconds apart,
   so a tie can leave the API's newest-first ordering intact and make the *oldest* version look
   current. Version listings are sorted by time for display only.
-- **Every copy in a group happens before any row is repointed**, and the repointing runs in one
-  transaction. A failure part-way leaves unreferenced objects, which are harmless, and no row
-  moved; the reverse ordering would leave a row pointing at a key that was never written, which is
-  precisely the breakage being repaired, and per-row commits would leave a group half-repaired if
-  a later copy failed.
+- **The order within a group is: sibling copies, then the row updates in one transaction, then —
+  for a deleted key — the keeper's restore.** Each step is placed so that failing at it leaves the
+  prior state intact. Copying before repointing avoids a row pointing at a key that was never
+  written, which is precisely the breakage being repaired. One transaction avoids committing half
+  a group when a later copy fails. And restoring the shared key *last* matters most: bringing it
+  back while the other rows still point at it would serve them the keeper's bytes, which is worse
+  than the 404 they had, whereas failing there leaves the keeper merely still missing — the state
+  it was already in, and one the integrity check reports.
+- **Being shared takes precedence over being missing.** A shared key whose current state is deleted
+  is both. `restore_missing` consults only the first row, so sending it there would copy that row's
+  bytes onto the key and leave every row still sharing them. `--only missing` therefore skips such
+  a key and says so, rather than repairing it wrongly.
 - **Rows are updated with `update()`, not `save()`.** The bytes are unchanged, so `file_hash` and
   `file_size` still hold, and there is no reason to churn revisions or re-render renditions.
   Renditions are unaffected by an original's key changing: they are separate objects, and Wagtail's
