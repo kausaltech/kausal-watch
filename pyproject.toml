@@ -216,6 +216,7 @@ native_parser = true
 [[tool.mypy.overrides]]
 module = [
   "anymail.*",
+  "boto3.*",
   "channels.*",
   "colored.*",
   "dal_admin_filters.*",

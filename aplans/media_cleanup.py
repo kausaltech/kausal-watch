@@ -101,5 +101,5 @@ def _wrap_register_signal_handlers(module: ModuleType) -> None:
         original()
         install_file_cleanup_guard()
 
-    module.register_signal_handlers = register_signal_handlers  # pyright: ignore[reportAttributeAccessIssue]
+    module.register_signal_handlers = register_signal_handlers  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
     _wrapped_modules.add(module.__name__)
