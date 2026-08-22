@@ -13,13 +13,14 @@ from aplans.media_integrity import (
     MISSING,
     classify_rows,
     content_ever_changed,
+    current_version,
     existing_names,
     is_currently_deleted,
     list_versions,
     recovery_client,
     s3_storage,
-    sha1_of_version,
     storage_key,
+    version_sha1,
 )
 
 from documents.models import AplansDocument
@@ -126,21 +127,23 @@ class Command(BaseCommand):
             'shared': shared,
             'content_ever_changed': changed,
             'rows': rows,
-            'versions': [
-                {'VersionId': v['VersionId'], 'Size': v['Size'], 'ETag': v['ETag'], 'LastModified': v['LastModified']}
-                for v in versions
-            ],
             'delete_markers': [{'VersionId': m['VersionId'], 'LastModified': m['LastModified']} for m in markers],
         }
         entry['deleted'] = is_currently_deleted(versions, markers)
 
-        entry['verified'] = bool(verify_hashes and changed)
-        if verify_hashes and changed:
-            for version in entry['versions']:
-                version['sha1'] = sha1_of_version(client, bucket, key, version['VersionId'])
-            entry['matched'] = self.match_rows(rows, entry['versions'], by='sha1')
-        else:
-            entry['matched'] = self.match_rows(rows, entry['versions'], by='Size')
+        entry['verified'] = bool(verify_hashes)
+        if verify_hashes:
+            # With a single content spanning the history, hashing the current version settles every
+            # row; only a history that actually changed needs each version fetched.
+            current = current_version(versions)
+            targets = versions if changed else ([current] if current is not None else [])
+            for version in targets:
+                version_sha1(client, bucket, key, version)
+
+        # Reported after any hashing, so the digests travel with the versions into the JSON report.
+        reported_fields = ('VersionId', 'Size', 'ETag', 'LastModified', 'IsLatest', 'sha1')
+        entry['versions'] = [{field: version[field] for field in reported_fields if field in version} for version in versions]
+        entry['matched'] = self.match_rows(rows, entry['versions'], by='sha1' if verify_hashes else 'Size')
 
         entry['recoverable'] = self.is_recoverable(entry)
         self.report(entry)
@@ -159,9 +162,10 @@ class Command(BaseCommand):
         if entry['kind'] == MISSING:
             if not entry['versions']:
                 return False
-            if not entry['content_ever_changed']:
-                # Only one content ever existed under this key, so the surviving version is the
-                # row's own by elimination.
+            if not entry['content_ever_changed'] and not any(row['file_hash'] for row in entry['rows']):
+                # Nothing was recorded to check against, and one content spans the history, so it is
+                # the row's by elimination. With a hash on record only a match counts: versioning
+                # may have been switched on after the overwrite, leaving just the sibling's bytes.
                 return True
             # A sibling may have overwritten this key before being deleted, leaving the newest
             # version holding the sibling's bytes. Only a version matching what the row recorded
@@ -181,7 +185,7 @@ class Command(BaseCommand):
         style = self.style.SUCCESS if entry['recoverable'] else self.style.ERROR
         verdict = 'recoverable' if entry['recoverable'] else 'NEEDS REVIEW'
         deleted = ' deleted' if entry['deleted'] else ''
-        basis = '' if entry['verified'] or not entry['content_ever_changed'] else ' (size-matched only)'
+        basis = '' if entry['verified'] else ' (size-matched only)'
         self.stdout.write(
             style(
                 f'{entry["kind"]:<15} {entry["file"]!r} rows={pks} versions={len(entry["versions"])} '

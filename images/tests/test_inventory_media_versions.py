@@ -44,7 +44,7 @@ def test_lossless_groups_are_recoverable_without_version_history():
 
 
 def test_missing_file_is_recoverable_only_if_a_version_survives():
-    rows = [_row(1)]
+    rows = [_row(1, '')]
     base = {'kind': MISSING, 'rows': rows, 'matched': {}, 'content_ever_changed': False}
     assert Command().is_recoverable({**base, 'versions': []}) is False
     assert Command().is_recoverable({**base, 'versions': [{'VersionId': 'v1'}]}) is True
@@ -150,3 +150,16 @@ def test_missing_file_with_a_single_content_is_recoverable_by_elimination():
     }
 
     assert Command().is_recoverable(entry) is True
+
+
+def test_a_single_content_does_not_vouch_for_a_row_that_recorded_a_different_hash():
+    """Versioning enabled after an overwrite leaves one ETag holding bytes the row never had."""
+    entry = {
+        'kind': MISSING,
+        'versions': [{'VersionId': 'v1'}],
+        'rows': [_row(1, 'abc')],
+        'matched': {'1': []},
+        'content_ever_changed': False,
+    }
+
+    assert Command().is_recoverable(entry) is False

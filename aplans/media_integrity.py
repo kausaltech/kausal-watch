@@ -201,17 +201,26 @@ def match_version_for_row(client: Any, bucket: str, key: str, row: dict, version
 
     The version is never chosen by recency. When a sibling overwrote this key and was then deleted,
     the newest surviving version holds the *sibling's* bytes, so restoring it would hand the row a
-    file that was never its own. A blank `file_hash` only resolves when a single content ever
-    existed under the key, since there is then nothing else the row could have pointed at.
+    file that was never its own.
+
+    A recorded `file_hash` is always checked against the bytes themselves. A key whose history holds
+    a single content is *not* evidence that the content is this row's: where versioning was switched
+    on after the overwrite, the only surviving content is the sibling's, and the row's hash is the
+    one thing that reveals it. The single-content inference is therefore reserved for rows that
+    never recorded a hash, where nothing better exists.
     """
     if not versions:
         return None
-    if not content_ever_changed(versions):
-        only = current_version(versions) or versions[-1]
-        return only['VersionId']
     file_hash = row.get('file_hash')
     if not file_hash:
-        return None
+        if content_ever_changed(versions):
+            return None
+        only = current_version(versions) or versions[-1]
+        return only['VersionId']
+    if not content_ever_changed(versions):
+        # One content spans the history, so one hash settles it -- no need to fetch the rest.
+        only = current_version(versions) or versions[-1]
+        return only['VersionId'] if version_sha1(client, bucket, key, only) == file_hash else None
     for version in versions:
         if version_sha1(client, bucket, key, version) == file_hash:
             return version['VersionId']
