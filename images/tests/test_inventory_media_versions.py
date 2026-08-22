@@ -17,6 +17,7 @@ from aplans.media_integrity import (
 )
 
 from images.management.commands.inventory_media_versions import Command
+from images.tests.fake_s3 import BUCKET, FakeClient, FakeStorage, sha1_hex
 
 pytestmark = pytest.mark.django_db
 
@@ -38,9 +39,19 @@ def test_blank_hash_is_not_treated_as_a_match():
     assert classify_rows([_row(1, ''), _row(2, '')]) == UNKNOWN_HASHES
 
 
-def test_lossless_groups_are_recoverable_without_version_history():
-    entry = {'kind': LOSSLESS, 'versions': [], 'rows': [_row(1), _row(2)], 'matched': {}, 'content_ever_changed': False}
+def test_lossless_groups_need_no_restore_but_still_need_the_bytes_present():
+    rows = [_row(1), _row(2)]
+    entry = {
+        'kind': LOSSLESS,
+        'versions': [{'VersionId': 'v1'}],
+        'rows': rows,
+        'matched': {'1': ['v1'], '2': ['v1']},
+        'content_ever_changed': False,
+    }
+
     assert Command().is_recoverable(entry) is True
+
+    assert Command().is_recoverable({**entry, 'versions': []}) is False
 
 
 def test_missing_file_is_recoverable_only_if_a_version_survives():
@@ -163,3 +174,40 @@ def test_a_single_content_does_not_vouch_for_a_row_that_recorded_a_different_has
     }
 
     assert Command().is_recoverable(entry) is False
+
+
+def test_lossless_group_whose_hash_matches_no_surviving_version_is_not_recoverable():
+    """
+    Versioning can begin after a sibling has already overwritten the key.
+
+    The rows then agree with each other about a hash whose bytes are nowhere in the history, so the
+    repair would refuse them -- and the inventory must not promise otherwise.
+    """
+    rows = [_row(1, 'agreed'), _row(2, 'agreed')]
+    entry = {
+        'kind': LOSSLESS,
+        'versions': [{'VersionId': 'v1'}],
+        'rows': rows,
+        'matched': {'1': [], '2': []},
+        'content_ever_changed': False,
+    }
+
+    assert Command().is_recoverable(entry) is False
+
+
+def test_verify_hashes_reaches_a_version_beneath_a_delete_marker():
+    """
+    A deleted key has no current version, but the surviving ones are still the row's candidates.
+
+    Skipping them would report a file as needing review that `repair_media_files` can restore.
+    """
+    own = b'the-rows-own-bytes'
+    name = 'original_images/2026-06/gone.png'
+    rows = [{'pk': 1, 'file': name, 'file_hash': sha1_hex(own), 'file_size': len(own)}]
+    client = FakeClient(name, [own], deleted=True)
+
+    entry = Command().inspect(client, FakeStorage(), BUCKET, name, rows, shared=False, verify_hashes=True)
+
+    assert entry['deleted'] is True
+    assert entry['matched']['1'] == ['v0']
+    assert entry['recoverable'] is True

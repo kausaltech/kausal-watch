@@ -9,7 +9,6 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, FileField
 
 from aplans.media_integrity import (
-    LOSSLESS,
     MISSING,
     classify_rows,
     content_ever_changed,
@@ -132,11 +131,13 @@ class Command(BaseCommand):
         entry['deleted'] = is_currently_deleted(versions, markers)
 
         entry['verified'] = bool(verify_hashes)
-        if verify_hashes:
-            # With a single content spanning the history, hashing the current version settles every
-            # row; only a history that actually changed needs each version fetched.
-            current = current_version(versions)
-            targets = versions if changed else ([current] if current is not None else [])
+        if verify_hashes and versions:
+            # With a single content spanning the history, hashing one version settles every row;
+            # only a history that actually changed needs each version fetched. A delete marker on
+            # top leaves no current version, but the surviving ones are still the row's candidates
+            # -- which is exactly the case repair_media_files can restore.
+            representative = current_version(versions) or versions[-1]
+            targets = versions if changed else [representative]
             for version in targets:
                 version_sha1(client, bucket, key, version)
 
@@ -159,26 +160,28 @@ class Command(BaseCommand):
         return matched
 
     def is_recoverable(self, entry: dict[str, Any]) -> bool:
-        if entry['kind'] == MISSING:
-            if not entry['versions']:
-                return False
-            if not entry['content_ever_changed'] and not any(row['file_hash'] for row in entry['rows']):
-                # Nothing was recorded to check against, and one content spans the history, so it is
-                # the row's by elimination. With a hash on record only a match counts: versioning
-                # may have been switched on after the overwrite, leaving just the sibling's bytes.
-                return True
-            # A sibling may have overwritten this key before being deleted, leaving the newest
-            # version holding the sibling's bytes. Only a version matching what the row recorded
-            # counts as recoverable.
-            return all(entry['matched'].get(str(row['pk'])) for row in entry['rows'])
-        if entry['kind'] == LOSSLESS:
-            # Content is intact; the rows just need their own keys. No version history needed.
-            return True
-        if not entry['content_ever_changed']:
-            # Only one content ever existed under this key, so there is nothing to restore --
-            # even though the rows' hashes did not settle it on their own.
-            return True
-        return all(entry['matched'].get(str(row['pk'])) for row in entry['rows'])
+        """
+        Return whether every row could be given the bytes it recorded.
+
+        This mirrors `match_version_for_row`, which is what the repair actually runs: a verdict the
+        repair would not honour is worse than no verdict at all.
+        """
+        if not entry['versions']:
+            return False
+        return all(self.row_resolves(entry, row) for row in entry['rows'])
+
+    def row_resolves(self, entry: dict[str, Any], row: dict[str, Any]) -> bool:
+        """
+        Return whether one row can be traced to a stored version.
+
+        A row that recorded no hash resolves only by elimination, when a single content spans the
+        history. A row that did record one needs a version to match it: a single-content history is
+        no help if versioning began after a sibling had already overwritten the key, since the only
+        surviving bytes are then the sibling's.
+        """
+        if not row['file_hash']:
+            return not entry['content_ever_changed']
+        return bool(entry['matched'].get(str(row['pk'])))
 
     def report(self, entry: dict[str, Any]) -> None:
         pks = [row['pk'] for row in entry['rows']]
