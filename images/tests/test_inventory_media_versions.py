@@ -8,6 +8,7 @@ from django.core.management.base import CommandError
 import pytest
 
 from aplans.media_integrity import (
+    INTACT,
     LOSSLESS,
     MISSING,
     OVERWRITTEN,
@@ -226,10 +227,41 @@ def test_verified_hashes_outrank_etags_for_a_blank_hash_row():
     content = b'identical-bytes'
     name = 'documents/big.pdf'
     rows = [{'pk': 1, 'file': name, 'file_hash': '', 'file_size': len(content)}]
-    client = FakeClient(name, [content, content], multipart=True)
+    # Deleted, so the verdict turns on the blank-hash rule rather than the key simply being intact.
+    client = FakeClient(name, [content, content], multipart=True, deleted=True)
 
     entry = Command().inspect(client, FakeStorage(), BUCKET, name, rows, shared=False, verify_hashes=True)
 
+    assert entry['kind'] == MISSING
     assert entry['content_ever_changed'] is True  # the ETags disagree
     assert entry['distinct_contents'] == 1  # the bytes do not
     assert entry['recoverable'] is True
+
+
+def test_a_live_unshared_key_is_reported_as_intact_not_as_missing():
+    """
+    `--keys-file` inspects what it is given, without discovery.
+
+    A list reused after a repair still names keys that are now healthy, and reporting those as
+    missing-media incidents would misstate what the run found.
+    """
+    name = 'original_images/2026-06/fine.png'
+    rows = [{'pk': 1, 'file': name, 'file_hash': 'whatever', 'file_size': 4}]
+    client = FakeClient(name, [b'here'])
+
+    entry = Command().inspect(client, FakeStorage(), BUCKET, name, rows, shared=False, verify_hashes=False)
+
+    assert entry['kind'] == INTACT
+    assert entry['deleted'] is False
+    assert entry['recoverable'] is True
+
+
+def test_a_key_whose_only_version_is_deleted_is_still_missing():
+    name = 'original_images/2026-06/gone.png'
+    rows = [{'pk': 1, 'file': name, 'file_hash': 'whatever', 'file_size': 4}]
+    client = FakeClient(name, [b'gone'], deleted=True)
+
+    entry = Command().inspect(client, FakeStorage(), BUCKET, name, rows, shared=False, verify_hashes=False)
+
+    assert entry['kind'] == MISSING
+    assert entry['deleted'] is True

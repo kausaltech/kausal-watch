@@ -124,6 +124,10 @@ database rows recorded. Read-only — it writes nothing to S3 or the database.
 - **`file_hash` is the triage lever.** Wagtail stores a SHA-1 of the contents at upload time
   (`wagtail/utils/file.py:hash_filelike`). Rows in a shared group that agree on their hash lost
   nothing *to each other* and only need separate keys; rows that disagree had content overwritten.
+- **A live, unshared key is reported as `intact`, not as missing.** `--keys-file` inspects exactly
+  what it is given, so a list reused after a repair still names keys that are now healthy; and in
+  discovery mode `listdir` is what nominated the key, which the version listing can contradict.
+  Either way the version state decides, so a healthy key is not counted as an incident.
 - **The verdict mirrors what the repair would do.** A key counts as recoverable only when every row
   can be traced to a stored version by the same rule `repair_media_files` applies. Agreement among
   the rows is not enough on its own — they can agree on a hash whose bytes are nowhere in the

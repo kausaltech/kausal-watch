@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, FileField
 
 from aplans.media_integrity import (
+    INTACT,
     MISSING,
     classify_rows,
     content_ever_changed,
@@ -118,17 +119,22 @@ class Command(BaseCommand):
         key = storage_key(storage, name)
         versions, markers = list_versions(client, bucket, key)
         changed = content_ever_changed(versions)
+        deleted = is_currently_deleted(versions, markers)
+        # A key named explicitly with --keys-file is inspected without discovery, and one found by
+        # discovery was judged with `listdir`. Neither means the object is actually gone, so a
+        # single row over a live version is reported as what it is rather than as an incident.
+        present = not deleted and current_version(versions) is not None
 
         entry: dict[str, Any] = {
             'file': name,
             'key': key,
-            'kind': classify_rows(rows) if shared else MISSING,
+            'kind': classify_rows(rows) if shared else (INTACT if present else MISSING),
             'shared': shared,
             'content_ever_changed': changed,
+            'deleted': deleted,
             'rows': rows,
             'delete_markers': [{'VersionId': m['VersionId'], 'LastModified': m['LastModified']} for m in markers],
         }
-        entry['deleted'] = is_currently_deleted(versions, markers)
 
         entry['verified'] = bool(verify_hashes)
         entry['distinct_contents'] = None
@@ -168,6 +174,8 @@ class Command(BaseCommand):
         This mirrors `match_version_for_row`, which is what the repair actually runs: a verdict the
         repair would not honour is worse than no verdict at all.
         """
+        if entry['kind'] == INTACT:
+            return True
         if not entry['versions']:
             return False
         return all(self.row_resolves(entry, row) for row in entry['rows'])
@@ -201,6 +209,8 @@ class Command(BaseCommand):
         pks = [row['pk'] for row in entry['rows']]
         style = self.style.SUCCESS if entry['recoverable'] else self.style.ERROR
         verdict = 'recoverable' if entry['recoverable'] else 'NEEDS REVIEW'
+        if entry['kind'] == INTACT:
+            verdict = 'nothing to repair'
         deleted = ' deleted' if entry['deleted'] else ''
         basis = '' if entry['verified'] else ' (size-matched only)'
         self.stdout.write(

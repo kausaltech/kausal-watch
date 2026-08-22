@@ -69,6 +69,9 @@ UNKNOWN_HASHES = 'unknown-hashes'
 MISSING = 'missing'
 """A single row whose file is gone from storage."""
 
+INTACT = 'intact'
+"""Neither shared nor missing: a live object with one row pointing at it, so nothing to repair."""
+
 
 def s3_storage(storage: Storage) -> Any:
     """
