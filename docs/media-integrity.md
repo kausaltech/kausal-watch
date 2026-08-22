@@ -140,6 +140,11 @@ database rows recorded. Read-only — it writes nothing to S3 or the database.
   recorded `file_hash` is therefore always checked against the bytes. The converse of the ETag rule
   does not hold either — multipart uploads of identical content differ in ETag when part sizes
   differ — so unequal ETags mean "unknown", not "changed".
+- **Unequal ETags never stand in for "the content changed".** A multipart ETag is not a digest of
+  the object, so identical bytes stored with different part sizes carry different ETags — readily
+  produced when one version was uploaded and another made by a server-side copy. Wherever the
+  distinction decides whether a key is recoverable, the bytes are hashed rather than the ETags
+  compared; the ETag shortcut is only ever used in the direction that holds, to prove sameness.
 - **ETag cannot map a row to a version.** It is an MD5; `file_hash` is a SHA-1. Matching a specific
   row to the version holding its bytes requires downloading, which is what `--verify-hashes` does.
   Without it, versions are matched on recorded `file_size`, which is free but only indicative.

@@ -9,8 +9,8 @@ from django.db import transaction
 from django.db.models import Count, FileField
 
 from aplans.media_integrity import (
-    content_ever_changed,
     current_version,
+    distinct_contents,
     existing_names,
     is_currently_deleted,
     list_versions,
@@ -204,9 +204,11 @@ class Command(BaseCommand):
                 raise UnresolvedError(f'row {row["pk"]} cannot be traced to a stored version')
             plan[row['pk']] = version_id
 
-        if deleted or not content_ever_changed(versions):
-            # Either nothing is currently under the key to anchor the choice, or every row wants
-            # the same bytes. The oldest row is then as good a keeper as any.
+        if deleted or len(distinct_contents(client, bucket, key, versions)) == 1:
+            # Either nothing is currently under the key to anchor the choice, or every version
+            # holds the same bytes. The oldest row is then as good a keeper as any. The history is
+            # judged by content, not by ETag: identical bytes stored with different part sizes
+            # would otherwise look like an overwrite and strand the group.
             return rows[0], plan
 
         current = current_version(versions)
