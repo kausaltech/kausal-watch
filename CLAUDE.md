@@ -273,3 +273,4 @@ For in-depth implementation details on specific subsystems, see:
 - [MCP Server](docs/architecture/mcp-server.md) - Adding tools, GraphQL integration, authentication flow
 - [Plan Metadata Model](docs/architecture/plan-metadata.md) - How climate action plans are structured, including CategoryTypes, Attributes, and common classification systems
 - [Unit Testing Guide](docs/unit-tests.md) - Comprehensive guide to testing practices, Factory Boy patterns, fixtures, and type annotations in tests
+- [Media File Integrity](docs/media-integrity.md) - Why media objects came to share S3 keys, the storage/versioning situation per cluster, and the check/inventory/repair commands
