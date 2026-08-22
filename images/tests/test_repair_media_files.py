@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import datetime
-import hashlib
-from io import BytesIO
 from typing import TYPE_CHECKING, Any, cast
 
 from django.core.management.base import CommandError
@@ -14,93 +11,14 @@ from aplans.media_integrity import current_version, is_currently_deleted, list_v
 from images.management.commands.repair_media_files import Command, UnresolvedError
 from images.models import AplansImage
 from images.tests.factories import AplansImageFactory
+from images.tests.fake_s3 import BUCKET, FakeClient, FakeStorage, sha1_hex
 
 if TYPE_CHECKING:
     from django.db.models import FileField
 
 pytestmark = pytest.mark.django_db
 
-BUCKET = 'test-bucket'
 FILE_FIELD = cast('FileField', AplansImage._meta.get_field('file'))
-
-
-def _sha1(data: bytes) -> str:
-    return hashlib.sha1(data).hexdigest()  # noqa: S324 -- matches Wagtail's file_hash
-
-
-class FakeStorage:
-    bucket_name = BUCKET
-    default_acl = 'public-read'
-
-    def get_available_name(self, name: str, max_length: int | None = None) -> str:
-        return f'{name}.moved'
-
-
-class FakePaginator:
-    def __init__(self, versions: list[dict], markers: list[dict]) -> None:
-        self.versions = versions
-        self.markers = markers
-
-    def paginate(self, **_kwargs):
-        return [{'Versions': self.versions, 'DeleteMarkers': self.markers}]
-
-
-class FakeClient:
-    """
-    Serves a canned version history and records every copy_object call.
-
-    `contents` is oldest-first. `api_order='newest_first'` mimics how S3 actually returns listings,
-    and `same_timestamp` collapses LastModified so that only `IsLatest` distinguishes the current
-    version -- the tie the real API can produce for uploads seconds apart.
-    """
-
-    def __init__(
-        self,
-        key: str,
-        contents: list[bytes],
-        *,
-        deleted: bool = False,
-        stale_marker: bool = False,
-        same_timestamp: bool = False,
-        api_order: str = 'oldest_first',
-    ) -> None:
-        base = datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
-        self.bodies = {f'v{i}': data for i, data in enumerate(contents)}
-        newest = len(contents) - 1
-        self.versions = [
-            {
-                'Key': key,
-                'VersionId': f'v{i}',
-                'ETag': _sha1(data)[:32],
-                'Size': len(data),
-                'LastModified': base if same_timestamp else base + datetime.timedelta(minutes=i),
-                'IsLatest': i == newest and not deleted,
-            }
-            for i, data in enumerate(contents)
-        ]
-        if api_order == 'newest_first':
-            self.versions.reverse()
-        self.markers = []
-        if deleted or stale_marker:
-            self.markers = [
-                {
-                    'Key': key,
-                    'VersionId': 'dm',
-                    'LastModified': base + datetime.timedelta(hours=1 if deleted else -1),
-                    'IsLatest': deleted,
-                }
-            ]
-        self.copies: list[dict] = []
-
-    def get_paginator(self, _name: str) -> FakePaginator:
-        return FakePaginator(self.versions, self.markers)
-
-    def get_object(self, Bucket: str, Key: str, VersionId: str) -> dict:  # noqa: N803 -- boto3 casing
-        return {'Body': BytesIO(self.bodies[VersionId])}
-
-    def copy_object(self, **kwargs) -> dict:
-        self.copies.append(kwargs)
-        return {}
 
 
 def _shared_images(count: int, *, content: bytes = b'same', hashes: list[str] | None = None) -> list[dict[str, Any]]:
@@ -108,7 +26,7 @@ def _shared_images(count: int, *, content: bytes = b'same', hashes: list[str] | 
     images = [AplansImageFactory.create() for _ in range(count)]
     pks = [image.pk for image in images]
     name = images[0].file.name
-    AplansImage.objects.filter(pk__in=pks).update(file=name, file_hash=_sha1(content), file_size=len(content))
+    AplansImage.objects.filter(pk__in=pks).update(file=name, file_hash=sha1_hex(content), file_size=len(content))
     if hashes is not None:
         for pk, file_hash in zip(sorted(pks), hashes, strict=True):
             AplansImage.objects.filter(pk=pk).update(file_hash=file_hash)
@@ -157,7 +75,7 @@ def test_dry_run_writes_nothing():
 
 def test_overwritten_content_restores_each_row_from_its_own_version():
     old, new = b'old-content', b'new'
-    rows = _shared_images(2, hashes=[_sha1(old), _sha1(new)])
+    rows = _shared_images(2, hashes=[sha1_hex(old), sha1_hex(new)])
     client = FakeClient(rows[0]['file'], [old, new])
 
     assert _unshare(client, rows) == (1, 0)
@@ -181,7 +99,7 @@ def test_group_is_left_alone_when_no_row_matches_the_current_content():
 
 def test_group_with_unknown_hashes_and_changed_content_is_all_or_nothing():
     """A blank file_hash cannot be traced to a version, so no row in the group may be moved."""
-    rows = _shared_images(3, hashes=['', _sha1(b'two'), ''])
+    rows = _shared_images(3, hashes=['', sha1_hex(b'two'), ''])
     name = rows[0]['file']
     client = FakeClient(name, [b'one', b'two'])
 
@@ -228,7 +146,7 @@ def test_current_version_uses_is_latest_when_timestamps_tie():
 
 def test_keeper_is_chosen_by_is_latest_not_by_timestamp_order():
     old, new = b'old', b'new'
-    rows = _shared_images(2, hashes=[_sha1(old), _sha1(new)])
+    rows = _shared_images(2, hashes=[sha1_hex(old), sha1_hex(new)])
     name = rows[0]['file']
     client = FakeClient(name, [old, new], same_timestamp=True, api_order='newest_first')
 
@@ -241,7 +159,7 @@ def test_keeper_is_chosen_by_is_latest_not_by_timestamp_order():
 def test_missing_file_is_restored_from_the_version_it_recorded():
     own = b'gone'
     image = AplansImageFactory.create()
-    AplansImage.objects.filter(pk=image.pk).update(file_hash=_sha1(own))
+    AplansImage.objects.filter(pk=image.pk).update(file_hash=sha1_hex(own))
     rows = _rows([image.pk])
     name = rows[0]['file']
     client = FakeClient(name, [own], deleted=True)
@@ -261,7 +179,7 @@ def test_missing_file_restores_its_own_version_not_the_newest():
     """
     own, sibling = b'my-content', b'sibling-content'
     image = AplansImageFactory.create()
-    AplansImage.objects.filter(pk=image.pk).update(file_hash=_sha1(own))
+    AplansImage.objects.filter(pk=image.pk).update(file_hash=sha1_hex(own))
     rows = _rows([image.pk])
     name = rows[0]['file']
     client = FakeClient(name, [own, sibling], deleted=True)
@@ -348,7 +266,7 @@ def test_a_single_content_does_not_vouch_for_a_row_that_recorded_other_bytes():
 def test_missing_file_is_not_restored_from_a_sole_version_that_does_not_match():
     own = b'what-the-row-recorded'
     image = AplansImageFactory.create()
-    AplansImage.objects.filter(pk=image.pk).update(file_hash=_sha1(own))
+    AplansImage.objects.filter(pk=image.pk).update(file_hash=sha1_hex(own))
     rows = _rows([image.pk])
     name = rows[0]['file']
     client = FakeClient(name, [b'someone-elses-bytes'], deleted=True)

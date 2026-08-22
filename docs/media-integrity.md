@@ -122,8 +122,13 @@ beyond the application's own.
 database rows recorded. Read-only — it writes nothing to S3 or the database.
 
 - **`file_hash` is the triage lever.** Wagtail stores a SHA-1 of the contents at upload time
-  (`wagtail/utils/file.py:hash_filelike`). Rows in a shared group that agree on their hash never
-  lost anything and only need separate keys; rows that disagree had content overwritten.
+  (`wagtail/utils/file.py:hash_filelike`). Rows in a shared group that agree on their hash lost
+  nothing *to each other* and only need separate keys; rows that disagree had content overwritten.
+- **The verdict mirrors what the repair would do.** A key counts as recoverable only when every row
+  can be traced to a stored version by the same rule `repair_media_files` applies. Agreement among
+  the rows is not enough on its own — they can agree on a hash whose bytes are nowhere in the
+  history, if versioning began after a sibling had already overwritten the key. A verdict the
+  repair would refuse to honour is worse than no verdict.
 - **A blank `file_hash` is treated as unknown, never as a match.** The column is populated lazily,
   so older rows have `''`, and treating two blanks as equal would silently classify real data loss
   as harmless.
