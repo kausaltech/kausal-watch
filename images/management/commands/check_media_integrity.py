@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, FileField
+
+from aplans.media_integrity import existing_names
 
 from documents.models import AplansDocument
 from images.models import AplansImage, AplansRendition
@@ -13,44 +13,7 @@ from images.models import AplansImage, AplansRendition
 if TYPE_CHECKING:
     from argparse import ArgumentParser
 
-    from django.core.files.storage import Storage
     from django.db.models import Model
-
-
-def _split_path(name: str) -> tuple[str, str]:
-    path = PurePosixPath(name)
-    directory = str(path.parent)
-    return ('' if directory == '.' else directory), path.name
-
-
-def _join_path(directory: str, basename: str) -> str:
-    return f'{directory}/{basename}' if directory else basename
-
-
-def _existing_names(storage: Storage, names: set[str]) -> set[str]:
-    """
-    Return the subset of `names` that exists on `storage`.
-
-    Each directory is listed once instead of checking every name on its own, so the number of
-    storage requests stays proportional to the number of directories rather than to the number of
-    files. Storages that can't list a directory fall back to per-file existence checks.
-    """
-    basenames_by_directory: dict[str, set[str]] = defaultdict(set)
-    for name in names:
-        directory, basename = _split_path(name)
-        basenames_by_directory[directory].add(basename)
-
-    existing: set[str] = set()
-    for directory, basenames in basenames_by_directory.items():
-        try:
-            _, listed = storage.listdir(directory)
-        except FileNotFoundError, NotImplementedError, OSError:
-            existing.update(
-                _join_path(directory, basename) for basename in basenames if storage.exists(_join_path(directory, basename))
-            )
-            continue
-        existing.update(_join_path(directory, basename) for basename in basenames.intersection(listed))
-    return existing
 
 
 class Command(BaseCommand):
@@ -102,7 +65,7 @@ class Command(BaseCommand):
 
         file_field = model._meta.get_field('file')
         assert isinstance(file_field, FileField)
-        existing = _existing_names(file_field.storage, set(names_by_pk.values()))
+        existing = existing_names(file_field.storage, set(names_by_pk.values()))
         missing = {pk: name for pk, name in names_by_pk.items() if name not in existing}
         for pk, name in sorted(missing.items(), key=lambda item: str(item[0])):
             self.stderr.write(self.style.ERROR(f'{model.__name__} {pk}: file {name!r} is missing from storage'))
