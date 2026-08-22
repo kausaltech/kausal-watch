@@ -195,6 +195,22 @@ def version_sha1(client: Any, bucket: str, key: str, version: dict) -> str:
     return version['sha1']
 
 
+def distinct_contents(client: Any, bucket: str, key: str, versions: list[dict]) -> set[str]:
+    """
+    Return the distinct SHA-1s across `versions`, hashing only when ETags leave the question open.
+
+    Equal ETags prove equal content, so one hash stands for the whole history. Unequal ETags prove
+    nothing -- multipart uploads of identical bytes differ in ETag when their part sizes differ,
+    which happens readily when one version was PUT and another was produced by a server-side copy.
+    Treating that as "the content changed" would strand recoverable keys, so the bytes decide.
+    """
+    if not versions:
+        return set()
+    if not content_ever_changed(versions):
+        return {version_sha1(client, bucket, key, current_version(versions) or versions[-1])}
+    return {version_sha1(client, bucket, key, version) for version in versions}
+
+
 def match_version_for_row(client: Any, bucket: str, key: str, row: dict, versions: list[dict]) -> str | None:
     """
     Return the id of the version holding the bytes `row` recorded, or None if that can't be settled.
@@ -207,13 +223,17 @@ def match_version_for_row(client: Any, bucket: str, key: str, row: dict, version
     a single content is *not* evidence that the content is this row's: where versioning was switched
     on after the overwrite, the only surviving content is the sibling's, and the row's hash is the
     one thing that reveals it. The single-content inference is therefore reserved for rows that
-    never recorded a hash, where nothing better exists.
+    never recorded a hash, where nothing better exists -- and even then the history is judged by
+    content rather than by ETag, so identical bytes uploaded with different part sizes still count
+    as one content.
     """
     if not versions:
         return None
     file_hash = row.get('file_hash')
     if not file_hash:
-        if content_ever_changed(versions):
+        # Nothing recorded to match against, so the row resolves only if the history holds a single
+        # content. ETags alone cannot establish that, so disagreeing ones are checked by hashing.
+        if len(distinct_contents(client, bucket, key, versions)) > 1:
             return None
         only = current_version(versions) or versions[-1]
         return only['VersionId']

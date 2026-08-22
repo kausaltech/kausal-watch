@@ -76,6 +76,7 @@ class FakeClient:
         stale_marker: bool = False,
         same_timestamp: bool = False,
         api_order: str = 'oldest_first',
+        multipart: bool = False,
     ) -> None:
         base = datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
         self.bodies = {f'v{i}': data for i, data in enumerate(contents)}
@@ -84,7 +85,9 @@ class FakeClient:
             {
                 'Key': key,
                 'VersionId': f'v{i}',
-                'ETag': sha1_hex(data)[:32],
+                # A multipart ETag is not a digest of the content, so identical bytes uploaded
+                # with different part sizes carry different ETags.
+                'ETag': f'{sha1_hex(data)[:24]}-{i + 1}' if multipart else sha1_hex(data)[:32],
                 'Size': len(data),
                 'LastModified': base if same_timestamp else base + datetime.timedelta(minutes=i),
                 'IsLatest': i == newest and not deleted,

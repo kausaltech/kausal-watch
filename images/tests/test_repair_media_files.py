@@ -273,3 +273,32 @@ def test_allocation_gives_up_on_a_storage_that_will_not_de_duplicate():
 
     with pytest.raises(CommandError, match='Could not allocate a key distinct'):
         Command().allocate_key(CollapsingStorage(), FILE_FIELD, 'documents/report.pdf', set())
+
+
+def test_blank_hash_rows_resolve_when_differing_etags_hide_identical_bytes():
+    """
+    A multipart ETag is not a digest of the content.
+
+    Identical bytes stored with different part sizes carry different ETags — readily produced when
+    one version was uploaded and another made by a server-side copy. Reading that as an overwrite
+    would strand a group that is entirely recoverable.
+    """
+    rows = _shared_images(2, hashes=['', ''])
+    name = rows[0]['file']
+    client = FakeClient(name, [b'same', b'same'], multipart=True)
+
+    assert _unshare(client, rows) == (1, 0)
+
+    assert AplansImage.objects.get(pk=rows[0]['pk']).file.name == name
+    assert AplansImage.objects.get(pk=rows[1]['pk']).file.name == moved(name, 1)
+
+
+def test_blank_hash_rows_are_still_rejected_when_the_bytes_really_differ():
+    rows = _shared_images(2, hashes=['', ''])
+    name = rows[0]['file']
+    client = FakeClient(name, [b'one', b'two'], multipart=True)
+
+    assert _unshare(client, rows) == (0, 2)
+
+    assert client.copies == []
+    assert [AplansImage.objects.get(pk=row['pk']).file.name for row in rows] == [name] * 2

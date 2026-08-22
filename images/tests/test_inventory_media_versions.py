@@ -47,6 +47,7 @@ def test_lossless_groups_need_no_restore_but_still_need_the_bytes_present():
         'rows': rows,
         'matched': {'1': ['v1'], '2': ['v1']},
         'content_ever_changed': False,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is True
@@ -56,7 +57,7 @@ def test_lossless_groups_need_no_restore_but_still_need_the_bytes_present():
 
 def test_missing_file_is_recoverable_only_if_a_version_survives():
     rows = [_row(1, '')]
-    base = {'kind': MISSING, 'rows': rows, 'matched': {}, 'content_ever_changed': False}
+    base = {'kind': MISSING, 'rows': rows, 'matched': {}, 'content_ever_changed': False, 'distinct_contents': None}
     assert Command().is_recoverable({**base, 'versions': []}) is False
     assert Command().is_recoverable({**base, 'versions': [{'VersionId': 'v1'}]}) is True
 
@@ -69,6 +70,7 @@ def test_overwritten_group_needs_a_matching_version_for_every_row():
         'rows': rows,
         'matched': {'1': ['v1'], '2': []},
         'content_ever_changed': True,
+        'distinct_contents': None,
     }
     assert Command().is_recoverable(entry) is False
 
@@ -113,6 +115,7 @@ def test_group_with_one_content_is_recoverable_even_when_hashes_are_unknown():
         'rows': [_row(1, ''), _row(2, '')],
         'matched': {},
         'content_ever_changed': False,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is True
@@ -125,6 +128,7 @@ def test_group_with_unknown_hashes_and_changed_content_needs_review():
         'rows': [_row(1, ''), _row(2, '')],
         'matched': {'1': [], '2': []},
         'content_ever_changed': True,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is False
@@ -143,6 +147,7 @@ def test_missing_file_needs_a_version_matching_what_the_row_recorded():
         'rows': rows,
         'matched': {'1': []},
         'content_ever_changed': True,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is False
@@ -158,6 +163,7 @@ def test_missing_file_with_a_single_content_is_recoverable_by_elimination():
         'rows': [_row(1, '')],
         'matched': {'1': []},
         'content_ever_changed': False,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is True
@@ -171,6 +177,7 @@ def test_a_single_content_does_not_vouch_for_a_row_that_recorded_a_different_has
         'rows': [_row(1, 'abc')],
         'matched': {'1': []},
         'content_ever_changed': False,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is False
@@ -190,6 +197,7 @@ def test_lossless_group_whose_hash_matches_no_surviving_version_is_not_recoverab
         'rows': rows,
         'matched': {'1': [], '2': []},
         'content_ever_changed': False,
+        'distinct_contents': None,
     }
 
     assert Command().is_recoverable(entry) is False
@@ -210,4 +218,18 @@ def test_verify_hashes_reaches_a_version_beneath_a_delete_marker():
 
     assert entry['deleted'] is True
     assert entry['matched']['1'] == ['v0']
+    assert entry['recoverable'] is True
+
+
+def test_verified_hashes_outrank_etags_for_a_blank_hash_row():
+    """`--verify-hashes` has the bytes in hand, so it must not defer to the ETag-derived flag."""
+    content = b'identical-bytes'
+    name = 'documents/big.pdf'
+    rows = [{'pk': 1, 'file': name, 'file_hash': '', 'file_size': len(content)}]
+    client = FakeClient(name, [content, content], multipart=True)
+
+    entry = Command().inspect(client, FakeStorage(), BUCKET, name, rows, shared=False, verify_hashes=True)
+
+    assert entry['content_ever_changed'] is True  # the ETags disagree
+    assert entry['distinct_contents'] == 1  # the bytes do not
     assert entry['recoverable'] is True

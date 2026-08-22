@@ -131,6 +131,7 @@ class Command(BaseCommand):
         entry['deleted'] = is_currently_deleted(versions, markers)
 
         entry['verified'] = bool(verify_hashes)
+        entry['distinct_contents'] = None
         if verify_hashes and versions:
             # With a single content spanning the history, hashing one version settles every row;
             # only a history that actually changed needs each version fetched. A delete marker on
@@ -140,6 +141,7 @@ class Command(BaseCommand):
             targets = versions if changed else [representative]
             for version in targets:
                 version_sha1(client, bucket, key, version)
+            entry['distinct_contents'] = len({v['sha1'] for v in versions if 'sha1' in v})
 
         # Reported after any hashing, so the digests travel with the versions into the JSON report.
         reported_fields = ('VersionId', 'Size', 'ETag', 'LastModified', 'IsLatest', 'sha1')
@@ -180,8 +182,20 @@ class Command(BaseCommand):
         surviving bytes are then the sibling's.
         """
         if not row['file_hash']:
-            return not entry['content_ever_changed']
+            return not self.content_differs(entry)
         return bool(entry['matched'].get(str(row['pk'])))
+
+    def content_differs(self, entry: dict[str, Any]) -> bool:
+        """
+        Return whether the key's history really holds more than one content.
+
+        Hashes settle it when they were computed. Otherwise the ETag flag stands in, which can say
+        "changed" for identical bytes stored with different part sizes -- so an unverified run may
+        send a recoverable key to review, which is what `--verify-hashes` is for.
+        """
+        if entry['distinct_contents'] is not None:
+            return entry['distinct_contents'] > 1
+        return entry['content_ever_changed']
 
     def report(self, entry: dict[str, Any]) -> None:
         pks = [row['pk'] for row in entry['rows']]
