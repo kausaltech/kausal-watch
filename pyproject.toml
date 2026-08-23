@@ -37,6 +37,7 @@ dependencies = [
   "django-prometheus",
   "django-oauth-toolkit",
   "django-parler",
+  "django-pydantic-field",
   "django-redis",
   "django-relations-iterator",
   "django-reversion",
