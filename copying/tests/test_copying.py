@@ -12,7 +12,7 @@ from wagtail.rich_text import RichText
 
 import pytest
 
-from kausal_common.datasets.models import DatasetMetricComputation, DatasetSchema
+from kausal_common.datasets.models import DatasetMetricComputation, DatasetMetricValidationRule, DatasetSchema
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
@@ -550,6 +550,11 @@ def test_copy_indicator_dataset_schema(plan_with_pages, indicator):
     operand_a = DatasetMetricFactory.create(schema=schema, label='Operand A')
     operand_b = DatasetMetricFactory.create(schema=schema, label='Operand B')
     target_metric = DatasetMetricFactory.create(schema=schema, label='Target')
+    validation_rule = DatasetMetricValidationRule.objects.create(
+        metric=operand_a,
+        rule={'kind': 'value_range', 'enforcement': 'block_edit', 'min': 0},
+        order=0,
+    )
     computation = DatasetMetricComputation.objects.create(
         schema=schema,
         target_metric=target_metric,
@@ -575,6 +580,11 @@ def test_copy_indicator_dataset_schema(plan_with_pages, indicator):
     assert set(metric_copies) == {'Operand A', 'Operand B', 'Target'}
     for metric in metric_copies.values():
         assert metric.uuid not in {operand_a.uuid, operand_b.uuid, target_metric.uuid}
+
+    validation_rule_copy = metric_copies['Operand A'].validation_rules.get()
+    assert validation_rule_copy != validation_rule
+    assert validation_rule_copy.uuid != validation_rule.uuid
+    assert validation_rule_copy.rule == validation_rule.rule
 
     computation_copy = schema_copy.computations.get()
     assert computation_copy != computation
