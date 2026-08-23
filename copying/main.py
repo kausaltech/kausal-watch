@@ -29,6 +29,7 @@ from relations_iterator import AbstractVisitor, ConfigurableRelationTree, Relati
 from kausal_common.datasets.models import (
     DatasetMetric,
     DatasetMetricComputation,
+    DatasetMetricValidationRule,
     DatasetSchema,
     Dimension as DatasetDimension,
 )
@@ -276,6 +277,7 @@ DATASET_SCHEMA_CLONE_STRUCTURE: CloneStructure = {
     'metrics': {
         'computed_by': EXCLUDED,  # DatasetMetricComputation is copied via DatasetSchema → computations
         'data_points': EXCLUDED,  # actual dataset values are not part of the schema definition
+        'validation_rules': {},  # declarative metric validation is part of the schema definition
     },
     'computations': {},
     'dimensions': {},  # copies through model instances, not dataset Dimension instances
@@ -332,6 +334,9 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
     },
     DatasetMetricComputation: {
         'target_metric': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
+    DatasetMetricValidationRule: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
     DatasetSchema: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
