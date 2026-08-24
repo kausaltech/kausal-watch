@@ -82,6 +82,7 @@ dependencies = [
   "psutil",
   "psycopg[binary,pool]",
   "pycryptodome",
+  "pydantic==2.12.5", # 2.13.4 leaks memory
   "pygithub",
   "pygments-graphql",
   "pytest-cov",
