@@ -9,6 +9,7 @@ from kausal_common.models.permission_policy import ModelPermissionPolicy, Permis
 
 if typing.TYPE_CHECKING:
     from kausal_common.models.permission_policy import BaseObjectAction, ObjectSpecificAction
+    from kausal_common.users import UserOrAnon
 
     from actions.models import Plan
     from actions.models.plan import PlanQuerySet  # noqa: F401
@@ -85,6 +86,20 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
                 return obj.published_at is not None and obj.published_at <= timezone.now()
             return True  # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
         return False
+
+    def user_can_view_restricted(self, user: UserOrAnon | None, obj: Plan) -> bool:
+        """
+        Check whether the user has explicit access to a plan that is not publicly visible.
+
+        Unlike `user_has_perm`, this ignores
+        `expose_unpublished_plan_only_to_authenticated_user`: it answers only whether this
+        particular user is authorized, never whether the plan is public.
+        """
+        if not obj.is_active:
+            return False
+        if user is None or user.is_anonymous:
+            return False
+        return user.can_access_public_site(obj)
 
     def user_can_create(self, user: User, context: None) -> bool:
         """Check if user can create new plans."""

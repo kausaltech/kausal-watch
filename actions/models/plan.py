@@ -1097,6 +1097,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             user = AnonymousUser()
         return self.permission_policy().user_has_permission_for_instance(user, 'view', self)
 
+    def is_visible_for_authorized_user(self, user: UserOrAnon | None) -> bool:
+        """
+        Check whether this user is explicitly authorized to view the plan.
+
+        Unlike `is_visible_for_user`, this does not consider the plan publicly visible just
+        because `expose_unpublished_plan_only_to_authenticated_user` is off.
+        """
+        return self.permission_policy().user_can_view_restricted(user, self)
+
     def get_optional_locale_prefix(self, locale: str):
         if locale.lower() == self.primary_language.lower():
             return ''

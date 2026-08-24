@@ -326,21 +326,21 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
     @classmethod
     def resolve_type(cls, instance: Plan, info: GQLInfo) -> type[RestrictedPlanNode | PlanNode]:
         context_hostname = getattr(info.context, '_plan_hostname', None)
-        if context_hostname is None:
+        if context_hostname is None or not instance.is_active:
             return RestrictedPlanNode
 
+        user = info.context.user
         domains = _get_plan_domains_for_hostname(instance, context_hostname)
         if domains:
-            first_domain = domains[0]
-            override = first_domain.publication_status_override
-            if override is not None:
-                if override == PublicationStatus.PUBLISHED:
-                    return PlanNode
-                if override == PublicationStatus.UNPUBLISHED:
-                    return RestrictedPlanNode
-        if instance.is_visible_for_user(info.context.user):
-            return PlanNode
-        return RestrictedPlanNode
+            # Explicit production domain: the domain's publication status is authoritative, so
+            # `expose_unpublished_plan_only_to_authenticated_user` cannot make an unpublished site
+            # public. `publication_status_override` is already folded into `PlanDomain.status`.
+            if domains[0].status == PublicationStatus.PUBLISHED:
+                return PlanNode
+            return PlanNode if instance.is_visible_for_authorized_user(user) else RestrictedPlanNode
+
+        # Implicit / wildcard hostname (staging, previews): the feature flag decides.
+        return PlanNode if instance.is_visible_for_user(user) else RestrictedPlanNode
 
     @staticmethod
     def resolve_status_message(root: Plan, info: GQLInfo, hostname=None) -> str | None:

@@ -204,11 +204,12 @@ def test_plan_type_respects_publication_visibility(
 
     if domain_kind == 'published_override':
         is_visible = True
-    elif domain_kind == 'unpublished_override':
-        is_visible = False
-    elif domain_kind == 'explicit':
-        # Explicit production domain: the feature flag must not make an unpublished site public.
-        is_visible = publication_state == 'published' or user_kind in ('plan_admin', 'superuser')
+    elif domain_kind in ('explicit', 'unpublished_override'):
+        # Explicit production domain: the domain's publication status decides, and the feature
+        # flag must not make an unpublished site public. An authorized user may still sign in and
+        # see a restricted plan.
+        domain_published = domain_kind == 'explicit' and publication_state == 'published'
+        is_visible = domain_published or user_kind in ('plan_admin', 'superuser')
     elif not expose_flag or publication_state == 'published':  # implicit / wildcard hostname
         is_visible = True
     else:
