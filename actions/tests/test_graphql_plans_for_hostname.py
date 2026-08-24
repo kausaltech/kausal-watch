@@ -122,8 +122,8 @@ def test_get_plans_by_hostname(
             'publishedAt': published_at.isoformat() if published_at else None,
         },
     ]
-    publication_status_gates_visibility = expose_flag or publication_status_override is not None
-    if expected_publication_status == PublicationStatus.PUBLISHED or not publication_status_gates_visibility:
+    # The domain is explicit here, so the domain's publication status is always authoritative.
+    if expected_publication_status == PublicationStatus.PUBLISHED:
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected
@@ -157,7 +157,7 @@ def test_plans_for_hostname_reuses_prefetched_domains(
 @pytest.mark.parametrize('publication_state', ['published', 'scheduled', 'unpublished'])
 @pytest.mark.parametrize('user_kind', ['anonymous', 'plan_admin', 'superuser'])
 @pytest.mark.parametrize('expose_flag', [True, False])
-def test_plan_type_respects_publication_visibility(  # noqa: PLR0917
+def test_plan_type_respects_publication_visibility(
     client,
     graphql_client_query_data,
     person_factory,
@@ -206,13 +206,46 @@ def test_plan_type_respects_publication_visibility(  # noqa: PLR0917
         is_visible = True
     elif domain_kind == 'unpublished_override':
         is_visible = False
-    elif not expose_flag or publication_state == 'published':
+    elif domain_kind == 'explicit':
+        # Explicit production domain: the feature flag must not make an unpublished site public.
+        is_visible = publication_state == 'published' or user_kind in ('plan_admin', 'superuser')
+    elif not expose_flag or publication_state == 'published':  # implicit / wildcard hostname
         is_visible = True
     else:
         is_visible = user_kind in ('plan_admin', 'superuser')
 
     expected_type = 'Plan' if is_visible else 'RestrictedPlanNode'
     assert data['plansForHostname'][0]['__typename'] == expected_type
+
+
+def test_unpublished_explicit_domain_stays_restricted_with_expose_flag_off(
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+):
+    """
+    Regression test: an unpublished plan on an explicit production domain must not be public.
+
+    `expose_unpublished_plan_only_to_authenticated_user = False` only relaxes visibility on
+    implicit (wildcard preview) hostnames, never on an explicit PlanDomain.
+    """
+    plan = plan_factory(published_at=None)
+    plan.features.expose_unpublished_plan_only_to_authenticated_user = False
+    plan.features.save()
+    domain = plan_domain_factory(plan=plan, publication_status_override=None)
+
+    data = graphql_client_query_data(
+        GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME,
+        variables={'hostname': domain.hostname},
+    )
+    assert data['plansForHostname'][0]['__typename'] == 'RestrictedPlanNode'
+
+    data = graphql_client_query_data(
+        GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE,
+        variables={'hostname': domain.hostname},
+    )
+    assert data['plansForHostname'][0]['domains'][0]['status'] == PublicationStatus.UNPUBLISHED.name
+    assert data['plansForHostname'][0]['domains'][0]['statusMessage'] is not None
 
 
 @pytest.mark.parametrize(
