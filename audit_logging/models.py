@@ -118,6 +118,11 @@ class PlanScopedModelLogEntry(BaseLogEntry[User]):
 
 
 class PlanScopedPageLogEntryQuerySet(LogEntryQuerySet['PlanScopedPageLogEntry']):
+    if TYPE_CHECKING:
+
+        @classmethod
+        def as_manager(cls) -> models.Manager[PlanScopedPageLogEntry]: ...  # type: ignore[override]
+
     def get_content_type_ids(self):
         if self.exists():
             return {ContentType.objects.get_for_model(Page).pk}
