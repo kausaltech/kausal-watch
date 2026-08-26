@@ -167,6 +167,7 @@ class IndicatorShowcaseBlockFactory(StructBlockFactory):
     body = RichText('<p>Indicator showcase block body</p>')
     indicator = SubFactory[IndicatorShowcaseBlock, Indicator](IndicatorFactory)
     link_button = SubFactory[IndicatorShowcaseBlock, PageLinkBlock](PageLinkBlockFactory)
+    indicator_is_normalized = True
 
 
 class RelatedIndicatorFactory(DjangoModelFactory[RelatedIndicator]):

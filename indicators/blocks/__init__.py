@@ -136,7 +136,16 @@ class IndicatorShowcaseBlock(StructBlock):
     )
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
     # PageLinkBlock.
-    indicator_is_normalized = BooleanBlock(required=False)
+    # The field name is kept for backwards compatibility with existing page content.
+    indicator_is_normalized = BooleanBlock(
+        required=False,
+        label=_('Show per capita values by default'),
+        help_text=_(
+            'Show the indicator divided by population when the page is opened. Visitors can switch between '
+            'the absolute and the per capita view regardless of this setting. Has no effect unless population '
+            'data is available for the whole series, the goal included.'
+        ),
+    )
 
     class Meta:
         label = _('Indicator showcase')

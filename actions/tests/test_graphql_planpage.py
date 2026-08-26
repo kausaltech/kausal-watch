@@ -314,6 +314,7 @@ def test_indicator_showcase_block(graphql_client_query_data, plan_with_pages, in
         block_fields="""
             title
             body
+            indicatorIsNormalized
             indicator {
               id
             }
@@ -321,6 +322,7 @@ def test_indicator_showcase_block(graphql_client_query_data, plan_with_pages, in
         expected={
             'title': indicator_showcase_block['title'],
             'body': str(indicator_showcase_block['body']),
+            'indicatorIsNormalized': indicator_showcase_block['indicator_is_normalized'],
             'indicator': {'id': str(indicator_showcase_block['indicator'].id)},
         },
     )
