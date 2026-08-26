@@ -264,8 +264,8 @@ class PlanCreateView(AplansCreateView[Plan]):
 class PlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
-        old_common_category_types = self.instance.common_category_types.all()
-        new_common_category_types = form.cleaned_data['common_category_types']
+        old_common_category_types = self.instance.common_category_types.order_by()
+        new_common_category_types = form.cleaned_data['common_category_types'].order_by()
         for added_cct in new_common_category_types.difference(old_common_category_types):
             # Create category type corresponding to this common category type and link it to this plan
             ct = added_cct.instantiate_for_plan(self.instance)
