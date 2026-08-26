@@ -81,6 +81,7 @@ from admin_site.wagtail import (
     AplansModelAdmin,
     CondensedInlinePanel,
     SuccessUrlEditPageModelAdminMixin,
+    diff_common_category_types,
     insert_model_translation_panels,
 )
 from copying.views import PlanCopyView
@@ -264,15 +265,16 @@ class PlanCreateView(AplansCreateView[Plan]):
 class PlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
-        old_common_category_types = self.instance.common_category_types.all()
-        new_common_category_types = form.cleaned_data['common_category_types']
-        for added_cct in new_common_category_types.difference(old_common_category_types):
+        added_ccts, removed_ccts = diff_common_category_types(
+            self.instance.common_category_types.all(), form.cleaned_data['common_category_types']
+        )
+        for added_cct in added_ccts:
             # Create category type corresponding to this common category type and link it to this plan
             ct = added_cct.instantiate_for_plan(self.instance)
             # Create categories for the common categories having that common category type
             for common_category in added_cct.categories.all():
                 common_category.instantiate_for_category_type(ct)
-        for removed_cct in old_common_category_types.difference(new_common_category_types):
+        for removed_cct in removed_ccts:
             try:
                 self.instance.category_types.filter(common=removed_cct).delete()
             except ProtectedError:

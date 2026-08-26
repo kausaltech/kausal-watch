@@ -47,7 +47,7 @@ from actions.models.plan import Plan
 from .utils import FieldLabelRenderer, admin_req
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from django.forms.models import ModelChoiceField
     from django.http import HttpRequest
@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
 
     from actions.models import AttributeType
+    from actions.models.category import CommonCategoryType
     from users.models import User
 
     class ViewMixinBase[M: Model](WMABaseView[M]):
@@ -841,18 +842,36 @@ class InitializeFormWithUserMixin[M: Model](ModelFormViewMixin[M]):
         return kwargs
 
 
+def diff_common_category_types(
+    old_ccts: Iterable[CommonCategoryType], new_ccts: Iterable[CommonCategoryType]
+) -> tuple[list[CommonCategoryType], list[CommonCategoryType]]:
+    """
+    Return the common category types that were added and removed.
+
+    Compares by primary key in Python instead of using `QuerySet.difference()`,
+    because an empty operand (`pk__in=[]`) makes Django emit an `EXCEPT` with a
+    nested `ORDER BY`, which PostgreSQL rejects.
+    """
+    old_by_pk = {cct.pk: cct for cct in old_ccts}
+    new_by_pk = {cct.pk: cct for cct in new_ccts}
+    added = [cct for pk, cct in new_by_pk.items() if pk not in old_by_pk]
+    removed = [cct for pk, cct in old_by_pk.items() if pk not in new_by_pk]
+    return added, removed
+
+
 class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
     @transaction.atomic()
     def form_valid(self, form):
-        old_common_category_types = self.instance.common_category_types.all()
-        new_common_category_types = form.cleaned_data['common_category_types']
-        for added_cct in new_common_category_types.difference(old_common_category_types):
+        added_ccts, removed_ccts = diff_common_category_types(
+            self.instance.common_category_types.all(), form.cleaned_data['common_category_types']
+        )
+        for added_cct in added_ccts:
             # Create category type corresponding to this common category type and link it to this plan
             ct = added_cct.instantiate_for_plan(self.instance)
             # Create categories for the common categories having that common category type
             for common_category in added_cct.categories.all():
                 common_category.instantiate_for_category_type(ct)
-        for removed_cct in old_common_category_types.difference(new_common_category_types):
+        for removed_cct in removed_ccts:
             try:
                 self.instance.category_types.filter(common=removed_cct).delete()
             except ProtectedError:
