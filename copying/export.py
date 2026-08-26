@@ -15,7 +15,7 @@ See ``docs/architecture/single-tenant-export.md`` for the design.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.core import serializers
 from wagtail.models import Page
@@ -306,18 +306,18 @@ def collect_export_instances(
 def _uncollected_referenced_pks(
     instances: list[Model],
     seen: set[tuple[type[Model], object]],
-    model: type[Model],
-) -> set[object]:
+    model: type[Indicator | Dimension],
+) -> set[int]:
     """Return the PKs of ``model`` instances referenced by a collected instance but not yet collected."""
     return {
-        target.pk
+        cast('int', target.pk)
         for instance in list(instances)
         for target in _iter_relational_reference_targets(instance)
         if type(target) is model and (model, target.pk) not in seen
     }
 
 
-def _includable_indicator_ids(pks: set[object], plan: Plan) -> set[object]:
+def _includable_indicator_ids(pks: set[int], plan: Plan) -> set[int]:
     """Drop indicators owned by another plan (their data is that tenant's, not ours)."""
     other_plan_ids = set(
         Indicator.objects.filter(id__in=pks, plans__isnull=False).exclude(plans=plan).values_list('id', flat=True)
@@ -325,12 +325,10 @@ def _includable_indicator_ids(pks: set[object], plan: Plan) -> set[object]:
     return pks - other_plan_ids
 
 
-def _includable_dimension_ids(pks: set[object], plan: Plan) -> set[object]:
+def _includable_dimension_ids(pks: set[int], plan: Plan) -> set[int]:
     """Drop dimensions owned by another plan (linked via PlanDimension to a different plan only)."""
     other_plan_ids = set(
-        Dimension.objects.filter(id__in=pks, plans__isnull=False)
-        .exclude(plans__plan=plan)
-        .values_list('id', flat=True)
+        Dimension.objects.filter(id__in=pks, plans__isnull=False).exclude(plans__plan=plan).values_list('id', flat=True)
     )
     return pks - other_plan_ids
 
