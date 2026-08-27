@@ -78,6 +78,7 @@ class AdminMiddleware(MiddlewareMixin):
         else:
             profile.preferred_language = plan.primary_language
             profile.save(update_fields=['preferred_language'])
+            activate(plan.primary_language)
 
         # Inject the helper function into the request object
         request.get_active_admin_plan = get_active_admin_plan.__get__(request, WatchAdminRequest)  # type: ignore[method-assign]
