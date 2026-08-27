@@ -51,8 +51,10 @@ def existing_names(storage: Storage, names: set[str]) -> set[str]:
 
 
 # Environment variables holding an operator credential for the versioning API. The application's
-# own key is not necessarily allowed to read version history: on de-prod the bucket policy grants
-# it `s3:ListBucket` but not `s3:ListBucketVersions`, so the two have to be kept separate.
+# own key is not necessarily allowed to read version history: the Hetzner buckets were provisioned
+# with policies granting it `s3:ListBucket` but not `s3:ListBucketVersions`, so the two have to be
+# kept separate. Those policies have since been fixed, but a bucket whose policy cannot be changed
+# still needs this -- and note that a repair run uses this credential for its writes too.
 RECOVERY_ACCESS_KEY_ENV = 'MEDIA_RECOVERY_S3_ACCESS_KEY_ID'
 RECOVERY_SECRET_KEY_ENV = 'MEDIA_RECOVERY_S3_SECRET_ACCESS_KEY'  # noqa: S105 -- a variable name, not a secret
 

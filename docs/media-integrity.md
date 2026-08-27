@@ -20,29 +20,58 @@ The result is that two rows end up pointing at one S3 object, with two distinct 
 The second one is easy to miss: a shared key is not only a future hazard, it may already be data
 loss that happened months ago.
 
-### The two code paths that caused it
+### The three code paths that caused it
 
 **Chooser re-uploads.** Uploading a file whose name already exists writes over the existing object.
 Wagtail then notices the contents match and offers to reuse the existing image; confirming that
-deletes the row it just created — along with the file both rows point at.
+deletes the row it just created — along with the file both rows point at. Reconstructed from
+`LoggedRequest` on de-prod, 30 July 2026: a `chooser/create/` POST for
+`Landwirtschaft_ohne Credis_Canva.jpg` created image 9269, a `9269/delete/` POST five seconds later
+took the file away from image 9257, and the first 404 for 9257 followed two minutes after that.
 
 **Plan copying.** `copying/main.py:copy_collection_with_contents` duplicates a collection's images
 and documents with `file.save(filename, content_file)`. With `file_overwrite=True`, that "copy"
-wrote straight over the source object and left both rows on one key. This is the larger cause by
-volume, and it is recognisable in the data: the affected PKs come in contiguous blocks mapping onto
-scattered older PKs, rather than in same-session pairs.
+wrote straight over the source object and left both rows on one key. This is much the largest cause
+by volume, and it is recognisable in the data: the affected PKs come in contiguous blocks mapping
+onto scattered older PKs, rather than in same-session pairs, and the two plans differ by a
+`-copy1`-style suffix. Copying a plan is also how tenants were moved between clusters, which is why
+the regional clusters inherited both the originals and the copies (see Cluster ancestry below).
+
+**Filename truncation.** `images/models.py:truncate_filename` trims an upload path to 94 characters
+so it fits the `file` column, and the date directory is already part of the path when it does
+(`insert_date_directory_to_path`). With `original_images/YYYY-MM/` taking 24 of those, filenames are
+cut to 70 characters — so two *different* images whose names agree for the first 66 characters land
+on one key. Long descriptive names make this ordinary rather than exotic: on us-prod,
+`Energy_Use_of_Benchmarking_Building_Compared_to_all_Commercial_and.JPG` and
+`Greenhouse_Gas_Emissions_from_Benchmarking_Buildings_Compared_to_C.JPG` are both exactly 94
+characters long with the date directory, each having collided with a different chart of its own.
+Unlike the other two paths, this one destroys content with no duplicate-detection prompt and no
+copy operation to hint at what happened.
+
+**Rendition stem truncation.** Renditions have a collision mechanism of their own.
+`Image.generate_rendition_file` names a rendition by cutting the original's stem to
+`59 - len(output_extension)` characters (`wagtail/images/models.py:889`), so two originals whose
+names diverge only past that cut land on one rendition key — and a long filter spec cuts deeper.
+On ca-prod, `City_of_Surrey_Municipal_Hall_Theatre_APR1…` and `…APR14-…` are different photographs
+sharing a rendition, and `SD_COMM_CofSWasteManagement_1…` collides with `…_13…`. The cut is also
+long enough to remove the de-duplication suffix that makes two *originals* distinct, so fixing the
+originals does not by itself keep their renditions apart. This is contained rather than fixed:
+`get_available_name` now suffixes a taken rendition key, so new renditions stay distinct.
 
 Documents collide far more often than images because they land in a flat `documents/` prefix, while
-images get a `original_images/YYYY-MM/` date directory (`images/models.py:insert_date_directory_to_path`).
-On the fi-prod scan the split was 39 document groups to 4 image groups.
+images get a `original_images/YYYY-MM/` date directory. Across the four production clusters the
+split was 95 document groups to 16 image groups, plus 22 shared rendition keys on ca-prod alone.
 
 ### What is already fixed
 
-Both fixes are on `fix/shared-media-file-deletion`:
+Both fixes went to production with 423552039 on 2026-08-24, and `file_overwrite` reads `False` on
+all four clusters:
 
 - **`kausal_common/storage/storage_classes.py`** sets `file_overwrite = False` on
-  `MediaFilesS3Storage`, restoring filename de-duplication. This fixes both code paths above,
-  including plan copying.
+  `MediaFilesS3Storage`, restoring filename de-duplication. This closes all three code paths above,
+  truncation included: the de-duplicating suffix is applied after the name has been trimmed. Beware
+  that the value can be overridden per deployment, since `storage_settings_from_s3_url` passes every
+  query parameter of `S3_MEDIA_STORAGE_URL` through as a storage option.
 - **`aplans/media_cleanup.py`** replaces Wagtail's `post_delete_file_cleanup` receivers with
   `guarded_post_delete_file_cleanup`, which refuses to delete a file another row still references.
 
@@ -52,19 +81,29 @@ That is what `repair_media_files` is for.
 
 ## Storage situation
 
-| | fi-prod | de-prod |
-|---|---|---|
-| Backend | self-hosted MinIO | Hetzner Object Storage (Ceph RGW) |
-| Endpoint | `https://s3.kausal.tech` | `https://fsn1.your-objectstorage.com` |
-| Bucket | `watch-media-prod` | `kausal-watch-media-de` |
-| Versioning | enabled | enabled |
-| Lifecycle rules | none | none |
-| App key reads version history | yes | **no** |
+| | fi-prod | de-prod | us-prod | ca-prod |
+|---|---|---|---|---|
+| Backend | self-hosted MinIO | Hetzner (Ceph RGW) | Hetzner (Ceph RGW) | Hetzner (Ceph RGW) |
+| Endpoint | `s3.kausal.tech` | `fsn1.your-objectstorage.com` | `fsn1.your-objectstorage.com` | `fsn1.your-objectstorage.com` |
+| Bucket | `watch-media-prod` | `kausal-watch-media-de` | `kausal-watch-media-us` | `kausal-watch-media-ca` |
+| Versioning | enabled | enabled | enabled | enabled |
+| Lifecycle rules | none | none | none | none |
+| App key reads version history | yes | yes, since the policy fix | yes, since the policy fix | yes, since the policy fix |
 
-Both buckets retain full version history: versioning is on and no lifecycle rule expires noncurrent
-versions, so overwritten content and deleted objects are both recoverable. How far back that reaches
-depends on when versioning was switched on, which no API reports — the inventory command answers it
-empirically per key.
+Every bucket retains full version history from the point versioning was enabled: no lifecycle rule
+expires noncurrent versions, so overwritten content and deleted objects are both recoverable within
+that window. How far back it reaches is not reported by any API, but the 2026-08 recovery pinned it
+down on `watch-media-prod`: every object from 2026 carries a real version id, while the surviving
+renditions of images from 2024-06 through 2025-05 all report `VersionId: null` — the marker for an
+object written before versioning existed on the bucket. **Versioning was therefore switched on
+between roughly 2025-05 and 2026-06, and anything deleted before that is gone.** Every file deleted
+after it was recoverable; none deleted before it was.
+
+Each cluster has its own bucket, which matters more than it sounds: the delete guard and the
+repair's notion of "every row on this key" are both scoped to one database, so a bucket shared
+between clusters would silently defeat both. Verify it before repairing, with
+`print(default_storage.bucket_name, default_storage.endpoint_url, default_storage.file_overwrite)`
+in a shell on each cluster.
 
 Configuration comes from a single environment variable, `S3_MEDIA_STORAGE_URL`, parsed by
 `kausal_common/storage/__init__.py:storage_settings_from_s3_url`:
@@ -75,16 +114,38 @@ s3://ACCESS_KEY:SECRET@/BUCKET?endpoint_url=https://s3.kausal.tech&addressing_st
 
 The host part is empty; the endpoint arrives as a query parameter.
 
-### de-prod needs a second credential
+### The Hetzner buckets needed a policy fix
 
-The bucket policy on `kausal-watch-media-de` grants the application principal `s3:ListBucket`,
-`s3:GetBucketLocation` and `s3:DeleteObject` at the bucket level — but not `s3:ListBucketVersions`
-or `s3:GetBucketVersioning`. The app key can therefore list objects but cannot read version history
-at all.
+All three Hetzner buckets were provisioned with a policy that granted their application principal
+`s3:ListBucket`, `s3:GetBucketLocation` and `s3:DeleteObject` at the bucket level but not
+`s3:ListBucketVersions` or `s3:GetBucketVersioning`. Those keys could therefore list objects while
+being unable to read version history at all — `ListObjectVersions` returned `AccessDenied`. Only
+fi-prod's MinIO allowed it. This was not a de-prod misconfiguration, as first assumed; it is how
+Hetzner per-bucket keys come.
 
-A credential from the project that *owns* the bucket can read version history (scoped to a known
-prefix) but cannot `ListBucket`. So on de-prod the two capabilities live in different keys, which is
-why the tooling takes an operator credential separately from the application's own.
+That mattered for every shared key, not just the ones needing recovery: `unshare` lists versions
+before it does anything else, and every copy it makes pins a `VersionId`, so the repair could not
+run at all on those clusters.
+
+The fix, applied to all three on 2026-08-26, adds the two read actions to the existing bucket-level
+statement for the app principal; the object-level statement already granted it `s3:*`, which covers
+`s3:GetObjectVersion`. Nothing else changed. Two properties of these policies are worth knowing
+before editing one again:
+
+- **No policy grants anonymous read.** No statement names `Principal: "*"`, so replacing one of
+  these documents cannot take the public site down. Media reaches browsers through presigned URLs
+  instead: on fi-prod an unsigned GET of a media object returns 403 while `file.url` hands out a
+  signed URL, which makes the `public-read` ACL that `MediaFilesS3Storage.default_acl` sets
+  effectively vestigial. `repair_media_files.copy_extra` still passes it on every copy, so a copy is
+  no less reachable than its original either way. Verified on fi-prod; the Hetzner policies have the
+  same shape, but confirm with an unsigned GET before assuming it.
+- **`mcli anonymous set-json` replaces the whole document** rather than merging. Take a backup with
+  `mcli anonymous get-json` first, edit the backup, and diff before applying.
+
+The operator credential the tooling accepts (`MEDIA_RECOVERY_S3_*`, see `recovery_client`) is no
+longer needed anywhere. It is kept because it costs nothing and covers the case of a bucket whose
+policy cannot be changed; note that it is used for *all* S3 calls in a repair run, writes included,
+so such a credential needs `CopyObject` and `PutObjectAcl` and not only version reads.
 
 ### Tooling notes
 
@@ -97,9 +158,47 @@ why the tooling takes an operator credential separately from the application's o
 
 ## Known damage
 
-The fi-prod scan on 2026-08-18 (renditions not included) found 62 problems: 4 shared image keys,
-15 missing images, 39 shared document keys, 4 missing documents. de-prod has not been scanned yet;
-the plan-copying path ran there too, so expect a similar document-heavy pattern.
+All four production clusters were scanned on 2026-08-26, renditions not included. 140 problems:
+111 shared keys and 29 missing files.
+
+| | shared keys (img / doc) | missing files (img / doc) | `SAME` | `DIFFER` | `UNKNOWN` |
+|---|---|---|---|---|---|
+| fi-prod | 43 (4 / 39) | 19 (15 / 4) | 40 | 3 | 0 |
+| de-prod | 13 (3 / 10) | 6 (3 / 3) | 10 | 3 | 0 |
+| us-prod | 51 (6 / 45) | 2 (2 / 0) | 47 | 4 | 0 |
+| ca-prod | 4 (3 / 1) | 2 (2 / 0) | 3 | 1 | 0 |
+
+The `SAME`/`DIFFER` columns come from `triage_shared_media`, which compares what the rows on a key
+recorded at upload time. **100 of the 111 shared keys lost no content** — they are plan copies that
+need nothing but keys of their own, repairable without consulting version history for anything
+except the hash check. Only 11 keys, holding 26 rows and 13 distinct contents, are real overwrites.
+No row anywhere has a blank `file_hash`, so nothing falls into `UNKNOWN`.
+
+The 29 missing files are mostly recent (all but four are from 2026-05 or later, well inside version
+history); the doubtful ones are from 2024-06, 2024-07, 2024-12 and 2025-05.
+
+### Cluster ancestry
+
+fi-prod seeded the other three, so the same damaged rows appear in several clusters *with identical
+PKs*: `documents/Bilanzteil_Koln_2019.pdf` `[425, 426]` is in all four, the San Diego document
+groups are in fi-prod and us-prod, and the Köln, Potsdam and Ludwigsburg ones are in fi-prod and
+de-prod. Deduplicated, the 140 problems are about 115 distinct incidents.
+
+Which cluster should repair a given row follows from where its plan is actually served, and **the
+database cannot answer that**: `PlanDomain` rows were seeded along with everything else, so fi-prod
+still lists `climatedashboard.sandiego.gov`, `klima-monitor.potsdam.de`, `ziele.ludwigsburg.de` and
+the Köln hostnames even though DNS resolves all of them to `watch-prod.us` or `watch-prod.de`. Check
+DNS, not `PlanDomain`. On that basis fi-prod's copies of those four plans are stale, which removes 23
+of its 43 shared keys from the work — all of them `SAME`, so the question gates nothing expensive.
+
+A shared key whose rows are all `NO-PLAN` is a residue signal but not proof, and
+`documents/Bilanzteil_Koln_2019.pdf` `[425, 426]` shows why: its rows are in the shared
+`Common Categories` collection, which belongs to the common-category framework rather than to any
+plan, which is how it reached all four clusters. Nothing references either row — checked with
+`ReferenceIndex` plus a raw column scan, since the index does not cover `Action`, `Indicator`, the
+attribute value models or draft revisions. The cheapest fix for such a pair is to delete *one* row:
+the key stops being shared, and the delete guard keeps the file because the survivor still
+references it, so nothing leaves storage at all.
 
 ## The commands
 
@@ -115,6 +214,33 @@ beyond the application's own.
   original survives. They are still worth checking periodically: a shared *rendition* key is the
   same hazard, and now that the delete guard is in place it will never clear itself.
 - Exits non-zero via `CommandError`, so it works unmodified as a Kubernetes CronJob alert.
+
+### `triage_shared_media`
+
+*Sorts the shared keys by how much they cost to repair*, from the database alone — no S3 access, no
+version history, seconds to run. For each key it compares the `file_hash` and `file_size` its rows
+recorded and reports `SAME`, `DIFFER` or `UNKNOWN`, and it attributes every row to a plan via
+`Plan.root_collection` and the collection tree.
+
+This is the cheapest thing to run first, and on the production data it moved 90% of the shared keys
+into a category that needs no recovery work at all. It answers a different question from
+`inventory_media_versions`: what the *rows* claim, rather than what the *bucket* holds. A `SAME`
+verdict says the rows agree on their content, not that those bytes are still stored — a group can
+agree on a hash whose bytes are nowhere in the history, if versioning began after a sibling had
+already overwritten the key. The repair verifies against the bytes regardless.
+
+```
+--emit-keys DIR     write same-keys.txt, differ-keys.txt, unknown-keys.txt, residue-keys.txt and
+                    (with --include-missing) missing-keys.txt, ready for --keys-file
+--include-missing   also attribute rows whose file is gone. Needs `s3:ListBucket`, which the pure
+                    database triage does not.
+```
+
+Every file is rewritten on each run, empty ones included, so a verdict that no longer has findings
+truncates its file rather than leaving an earlier run's keys to be repaired a second time — these
+files are fed straight to `--keys-file`, and `repair_media_files` rejects an empty one outright.
+`missing-keys.txt` is *deleted* rather than emptied when `--include-missing` was not passed, since an
+empty file would claim nothing is missing when the question was never asked.
 
 ### `inventory_media_versions`
 
@@ -155,7 +281,10 @@ database rows recorded. Read-only — it writes nothing to S3 or the database.
 - **`--keys-file` skips discovery**, so the credential in use never needs `s3:ListBucket`.
 - **Operator credentials** come from `MEDIA_RECOVERY_S3_ACCESS_KEY_ID` and
   `MEDIA_RECOVERY_S3_SECRET_ACCESS_KEY`. When set, they are used *only* for the versioning API;
-  discovery still goes through the application's storage. This matches de-prod exactly.
+  discovery still goes through the application's storage. No cluster needs this any more, since
+  every app credential can now read version history. If one ever does, don't pass the secret via
+  `kubectl exec env` — it lands in the pod's process arguments, readable by anything that can see
+  `/proc`. Use a temporary Kubernetes secret, or run the command locally against the endpoint.
 
 ### `repair_media_files`
 
@@ -199,10 +328,17 @@ Design decisions:
   is both. `restore_missing` consults only the first row, so sending it there would copy that row's
   bytes onto the key and leave every row still sharing them. `--only missing` therefore skips such
   a key and says so, rather than repairing it wrongly.
-- **Rows are updated with `update()`, not `save()`.** The bytes are unchanged, so `file_hash` and
-  `file_size` still hold, and there is no reason to churn revisions or re-render renditions.
-  Renditions are unaffected by an original's key changing: they are separate objects, and Wagtail's
-  rendition cache key uses `file_hash`, not the path.
+- **Rows are updated with `update()`, not `save()`.** The bytes a row *recorded* are unchanged, so
+  `file_hash` and `file_size` still hold, and there is no reason to churn revisions. A key change
+  alone leaves renditions correct: they are separate objects, and neither
+  `find_existing_rendition` — which matches on `(image, filter_spec, focal_point_key)` — nor the
+  rendition cache key `[image.id, image.file_hash, filter_cache_key, filter_spec]` involves the path.
+- **But restoring an image's *content* leaves its renditions stale**, and nothing here fixes that.
+  Where the rows disagreed on their hash, a row's renditions may have been generated while a
+  sibling's bytes occupied the shared key, and because `file_hash` is unchanged by the repair —
+  it always described this row's own content — the lookup and the cache key both still hit the old
+  rendition. Purge renditions for every row in such a group afterwards, keeper included, with
+  `image.renditions.all().delete()`; they regenerate on demand. Documents are unaffected.
 - **The original key counts as taken when allocating a copy's key**, even when storage says it is
   free. A key with a delete marker on top reads as free, and on a dry run the keeper's content has
   not been restored onto it yet — so asking storage would hand back the very key the row is being
@@ -214,83 +350,112 @@ Design decisions:
 
 ## Procedure
 
-### fi-prod
-
-The application's own credential can do everything here.
+Now that every app credential can read version history, all four clusters follow one sequence, with
+the application's own credential throughout.
 
 ```fish
-# 1. Deploy fix/shared-media-file-deletion first. The repair refuses to run otherwise,
-#    and without it new uploads keep colliding.
+# 1. Deploy the de-duplicating storage settings first. The repair refuses to run otherwise,
+#    and without them new uploads keep colliding.
 
 # 2. Confirm the current damage
 python manage.py check_media_integrity
 
-# 3. Classify what is recoverable
-python manage.py inventory_media_versions --json /tmp/fi-inventory.json
+# 3. Sort it by cost, and get the key files the later steps take
+python manage.py triage_shared_media --include-missing --emit-keys /tmp
 
-# 4. Review the plan — read this carefully, it is the last checkpoint
-python manage.py repair_media_files
+# 4. Repair the keys that lost nothing. Read the dry run before adding --execute.
+python manage.py repair_media_files --keys-file /tmp/same-keys.txt --only shared
+python manage.py repair_media_files --keys-file /tmp/same-keys.txt --only shared --execute
 
-# 5. Apply, shared keys first
-python manage.py repair_media_files --execute --only shared
-python manage.py repair_media_files --execute --only missing
+# 5. Classify what is recoverable for the rest
+python manage.py inventory_media_versions --keys-file /tmp/differ-keys.txt --verify-hashes \
+    --json /tmp/inventory.json
 
-# 6. Verify, this time including renditions
+# 6. Repair the rest, reading each dry run first
+python manage.py repair_media_files --keys-file /tmp/differ-keys.txt --only shared
+python manage.py repair_media_files --keys-file /tmp/missing-keys.txt --only missing
+
+# 7. Verify, this time including renditions
 python manage.py check_media_integrity --include-renditions
 ```
 
-Take a database snapshot before step 5. S3 version history can undo the object writes; it cannot
-undo the row updates.
+Take a database snapshot before the first `--execute`. S3 version history can undo the object
+writes; it cannot undo the row updates.
 
-### de-prod
+Start on the smallest cluster and with a one-key file, not with a whole cluster: the S3 call paths
+have far less test coverage than the decision logic, and a single group's dry run shows the whole
+shape of what a real run does.
 
-Same sequence, with three differences.
+**Always pair `--keys-file` with `--only`.** Given an explicit key list, `find_missing` treats every
+non-shared key in it as missing rather than listing the bucket, so a stray line in a file fed to a
+`missing` run would send a healthy key down the restore path.
 
-**Discovery and version reads use different credentials.** Run `check_media_integrity` with the
-application's credential, then feed the affected keys to the other two commands with the operator
-credential:
+Passing a key file to a pod without quoting anything:
 
 ```fish
-python manage.py check_media_integrity                       # app credential
-python manage.py inventory_media_versions --keys-file /tmp/keys.txt --json /tmp/de-inventory.json
-python manage.py repair_media_files --keys-file /tmp/keys.txt
+kubectl -n <namespace> exec -i deploy/<deployment> -- \
+    sh -c 'cat > /tmp/keys.txt && python manage.py repair_media_files --keys-file /tmp/keys.txt --only shared' \
+    < /tmp/local-keys.txt
 ```
 
-with `MEDIA_RECOVERY_S3_ACCESS_KEY_ID` and `MEDIA_RECOVERY_S3_SECRET_ACCESS_KEY` set to the
-owner-project key.
-
-**Do not pass the operator secret via `kubectl exec env`** — it lands in the pod's process arguments
-and is readable by anything that can see `/proc`. Use a temporary Kubernetes secret, or run the
-command locally against the endpoint.
-
-**Verify the operator key can write before running the repair.** It is confirmed to read version
-history, but its ability to `CopyObject` into the bucket has not been established, and the repair
-uses one credential for both. Test with a throwaway key first. The cleaner long-term fix is to add
-`s3:ListBucketVersions` and `s3:GetObjectVersion` to the application principal in the bucket policy,
-after which de-prod needs no operator credential at all and its procedure becomes identical to
-fi-prod's.
-
-Editing that policy carries real risk: `mcli anonymous set-json` **replaces** the whole document
-rather than merging, and the bucket serves public media for a live site. Back it up with
-`mcli anonymous get-json` first and edit the backup.
+Which cluster repairs which rows depends on where each plan is served; see Cluster ancestry above,
+and check DNS rather than `PlanDomain`.
 
 ## Follow-ups
 
 - **Deny `s3:DeleteObjectVersion` to the application principal.** Wagtail's delete path only ever
   calls `DeleteObject`, which under versioning creates a recoverable delete marker; it never needs
   to purge a version. An explicit `Deny` makes version history tamper-proof against exactly this
-  class of bug, at no functional cost.
+  class of bug, at no functional cost. Note that the Hetzner policies grant the app principal
+  `s3:*` on `bucket/*`, so it *can* purge versions today — and an `Allow` that broad can only be
+  narrowed by an explicit `Deny` statement. Add it after the repairs are done, since the repair
+  itself never deletes a version.
 - **Run `check_media_integrity` as a CronJob.** It already exits non-zero on findings.
-- **Scan renditions** with `--include-renditions` once the originals are repaired.
-- **de-prod has no independent backup** of its media bucket. Versioning protects against
-  application-level mistakes, not against bucket loss.
-- **Original-size renditions are a last-resort recovery source** for images with no surviving
-  version. Willow re-encodes, so a rendition is not byte-identical, JPEGs take a second lossy pass,
-  and EXIF is gone — acceptable for display, not a true restore.
+- **Scan renditions** with `--include-renditions` once the originals are repaired, and **delete the
+  affected ones rather than repairing them** — `purge_renditions.py` does this. Three reasons, the
+  second decisive: renditions are derived data, so regeneration is cheap and correct; on a shared
+  rendition key some rows serve *another image's* rendering, which re-keying would faithfully
+  preserve and only regeneration fixes; and `repair_media_files` does not handle renditions at all,
+  iterating only `AplansImage` and `AplansDocument`. Purge after restoring originals, not before, or
+  a rendition whose original is still missing cannot regenerate.
+- **The Hetzner buckets have no independent backup.** Versioning protects against application-level
+  mistakes, not against bucket loss.
+- **Reconsider the developer credential's read access to production media.**
+  `_init_hetzner_media_bucket` grants a development principal `readonly` on all three regional
+  buckets, so one credential can read every region's media. That is deliberate and lives in IaC
+  rather than being an accident, but it deserves a decision rather than an assumption.
+- **Renditions are a last-resort recovery source** for images with no surviving version, and the one
+  that actually paid off: on fi-prod the four images deleted before versioning existed still had
+  renditions, including a `max-1600x1600` for a 2048×1365 original. Willow re-encodes, so a rendition
+  is not byte-identical, JPEGs take a second lossy pass, and EXIF is gone — acceptable for display,
+  not a true restore. Probe by S3 prefix (`images/<image created month>/<stem>`) rather than through
+  the rendition rows, which may have been purged; under versioning a deleted rendition is still there
+  beneath its delete marker. Replace the original through the Wagtail admin so `file_hash`,
+  `file_size` and the dimensions are recomputed, then purge that image's renditions. Note the
+  substitution somewhere durable: afterwards nothing in the database records that the image was lost.
 
 ## Testing
 
 The classification and repair decision logic is covered by unit tests, including keeper selection,
 restore-from-own-version, unresolvable groups, delete-marker restore, dry-run inertness, and the
-`file_overwrite` guard. The S3 call paths themselves — `copy_object`, ACL handling, pagination — are
-exercised only against a fake client. Treat the first production dry run as the real smoke test.
+`file_overwrite` guard. `triage_shared_media` needs no S3 at all, so its verdicts, plan attribution
+and key files are covered directly. The S3 call paths themselves — `copy_object`, ACL handling,
+pagination — are exercised only against a fake client, which has been wrong about real S3 twice
+(multipart ETags, delete-marker visibility). Treat the first run on a given backend as the real smoke
+test, on a one-key run rather than a whole cluster.
+
+First live results, 2026-08-26. Every `SAME` group outside fi-prod's migrated tenants is repaired:
+74 keys, 100 rows moved, no group left for review anywhere, and every cluster's problem count landed
+on the number predicted beforehand — fi-prod 62 → 45, ca-prod 6 → 4, de-prod 19 → 10, us-prod
+53 → 7. No repaired key was subsequently reported as missing or shared.
+
+Two properties held on both backends, MinIO and Ceph RGW: copies came back byte-identical by ETag
+*and* SHA-1, and `copy_object` preserved `ContentType`. The latter is worth keeping in mind if the
+copy call is ever edited — `MetadataDirective` defaults to `COPY`, and switching it to `REPLACE`
+would turn every copied PDF into `binary/octet-stream`.
+
+The allocated names can look strange, and correctly so. Django 6 computes the extension as
+`"".join(PurePath(name).suffixes)`, i.e. *every* suffix, so the random component lands before the
+whole chain: `South_St._Anthony_Rec_Center_solar_overview.pdf` becomes
+`South_St_qqhR5ys._Anthony_Rec_Center_solar_overview.pdf`. The real extension always survives, so
+content types and Wagtail's filename handling are unaffected; only the download filename looks odd.
