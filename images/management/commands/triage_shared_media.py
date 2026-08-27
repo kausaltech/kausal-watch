@@ -51,10 +51,12 @@ class PlanAttributor:
     """
 
     def __init__(self) -> None:
-        roots = (
-            (plan.root_collection.path, plan.identifier)
-            for plan in Plan.objects.filter(root_collection__isnull=False).select_related('root_collection')
-        )
+        roots = []
+        for plan in Plan.objects.filter(root_collection__isnull=False).select_related('root_collection'):
+            root_collection = plan.root_collection
+            if root_collection is None:
+                continue
+            roots.append((root_collection.path, plan.identifier))
         # Longest path first, so a plan nested under another plan's collection wins over its ancestor.
         self.roots = sorted(roots, key=lambda root: -len(root[0]))
         self.paths: dict[Any, str] = dict(Collection.objects.values_list('pk', 'path'))
