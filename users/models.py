@@ -168,10 +168,7 @@ class User(AbstractUser):
         # FIXME: Remove this and fix dark mode support
         UserProfile.objects.get_or_create(
             user=self,
-            defaults={
-                'theme': UserProfile.AdminColorThemes.LIGHT,
-                'preferred_language': 'en',
-            },
+            defaults={'theme': UserProfile.AdminColorThemes.LIGHT},
         )
         return result
 
