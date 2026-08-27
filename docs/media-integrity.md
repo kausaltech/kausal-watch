@@ -20,14 +20,15 @@ The result is that two rows end up pointing at one S3 object, with two distinct 
 The second one is easy to miss: a shared key is not only a future hazard, it may already be data
 loss that happened months ago.
 
-### The three code paths that caused it
+### The code paths that caused it
 
 **Chooser re-uploads.** Uploading a file whose name already exists writes over the existing object.
 Wagtail then notices the contents match and offers to reuse the existing image; confirming that
 deletes the row it just created — along with the file both rows point at. Reconstructed from
-`LoggedRequest` on de-prod, 30 July 2026: a `chooser/create/` POST for
-`Landwirtschaft_ohne Credis_Canva.jpg` created image 9269, a `9269/delete/` POST five seconds later
-took the file away from image 9257, and the first 404 for 9257 followed two minutes after that.
+`LoggedRequest` on de-prod, 30 July 2026: a `chooser/create/` POST created a new image, a
+`.../delete/?next=.../chooser/chosen/<other-pk>/` POST five seconds later took the file away from
+the image being chosen, and the first 404 for it followed two minutes after that. The `next`
+parameter in the delete URL is what identifies this sequence in a request log.
 
 **Plan copying.** `copying/main.py:copy_collection_with_contents` duplicates a collection's images
 and documents with `file.save(filename, content_file)`. With `file_overwrite=True`, that "copy"
@@ -37,26 +38,37 @@ onto scattered older PKs, rather than in same-session pairs, and the two plans d
 `-copy1`-style suffix. Copying a plan is also how tenants were moved between clusters, which is why
 the regional clusters inherited both the originals and the copies (see Cluster ancestry below).
 
+**Deleting a copied plan's source.** The worst single loss found had this shape: a plan was created
+by copying another, so its rows pointed at the source's objects, and the source plan was then
+deleted. `Plan.delete()` cascades to `root_collection.delete()` (`actions/models/plan.py:1499`),
+which deletes the source's documents and — before the guard existed — their files, leaving the
+copy's rows dangling. It is recognisable in the data as one collection losing every file it holds
+while its siblings are intact, and as a `-copy1` plan with no original. This is the case the
+`post_delete` guard exists for, and the only one of these mechanisms where the storage change alone
+would not have helped.
+
 **Filename truncation.** `images/models.py:truncate_filename` trims an upload path to 94 characters
 so it fits the `file` column, and the date directory is already part of the path when it does
 (`insert_date_directory_to_path`). With `original_images/YYYY-MM/` taking 24 of those, filenames are
 cut to 70 characters — so two *different* images whose names agree for the first 66 characters land
-on one key. Long descriptive names make this ordinary rather than exotic: on us-prod,
-`Energy_Use_of_Benchmarking_Building_Compared_to_all_Commercial_and.JPG` and
-`Greenhouse_Gas_Emissions_from_Benchmarking_Buildings_Compared_to_C.JPG` are both exactly 94
-characters long with the date directory, each having collided with a different chart of its own.
-Unlike the other two paths, this one destroys content with no duplicate-detection prompt and no
-copy operation to hint at what happened.
+on one key. Long descriptive names make this ordinary rather than exotic: two chart exports whose
+titles differed only in their last words were found sharing a key, both paths exactly 94 characters
+long, each having overwritten a different image. Look for stored paths of exactly 94 characters:
+that length is the signature, since an untruncated name almost never lands on the cap precisely.
+Unlike the paths above, this one destroys content with no duplicate-detection prompt and no copy
+operation to hint at what happened.
 
 **Rendition stem truncation.** Renditions have a collision mechanism of their own.
 `Image.generate_rendition_file` names a rendition by cutting the original's stem to
 `59 - len(output_extension)` characters (`wagtail/images/models.py:889`), so two originals whose
-names diverge only past that cut land on one rendition key — and a long filter spec cuts deeper.
-On ca-prod, `City_of_Surrey_Municipal_Hall_Theatre_APR1…` and `…APR14-…` are different photographs
-sharing a rendition, and `SD_COMM_CofSWasteManagement_1…` collides with `…_13…`. The cut is also
-long enough to remove the de-duplication suffix that makes two *originals* distinct, so fixing the
-originals does not by itself keep their renditions apart. This is contained rather than fixed:
-`get_available_name` now suffixes a taken rendition key, so new renditions stay distinct.
+names diverge only past that cut land on one rendition key — and a long filter spec cuts deeper. A
+`fill-1200x627-c50` spec with a focal-point key leaves 29 characters of stem, and a `max-1600x1600`
+leaves 42; every shared rendition key found in the 2026-08 scans had a stem of exactly that length
+for its spec, so the arithmetic is the diagnostic. Distinct photographs whose names agreed up to the
+cut were sharing one rendering. The cut is also long enough to remove the de-duplication suffix that
+makes two *originals* distinct, so fixing the originals does not by itself keep their renditions
+apart. This is contained rather than fixed: `get_available_name` now suffixes a taken rendition key,
+so new renditions stay distinct.
 
 Documents collide far more often than images because they land in a flat `documents/` prefix, while
 images get a `original_images/YYYY-MM/` date directory. Across the four production clusters the
@@ -68,7 +80,7 @@ Both fixes went to production with 423552039 on 2026-08-24, and `file_overwrite`
 all four clusters:
 
 - **`kausal_common/storage/storage_classes.py`** sets `file_overwrite = False` on
-  `MediaFilesS3Storage`, restoring filename de-duplication. This closes all three code paths above,
+  `MediaFilesS3Storage`, restoring filename de-duplication. This closes every collision path above,
   truncation included: the de-duplicating suffix is applied after the name has been trimmed. Beware
   that the value can be overridden per deployment, since `storage_settings_from_s3_url` passes every
   query parameter of `S3_MEDIA_STORAGE_URL` through as a storage option.
@@ -78,6 +90,9 @@ all four clusters:
 Neither repairs existing rows. Note also that the guard makes already-shared rows *permanently*
 conjoined: nothing will ever delete their shared object, so they stay shared until split explicitly.
 That is what `repair_media_files` is for.
+
+Every shared key found in the 2026-08 scans predates that deploy, the ones created in 2026-08
+included, so the fixes are doing their job: nothing new has collided since.
 
 ## Storage situation
 
@@ -116,6 +131,15 @@ The host part is empty; the endpoint arrives as a query parameter.
 
 ### The Hetzner buckets needed a policy fix
 
+**These policies are infrastructure as code, so do not edit them by hand.**
+`_init_hetzner_media_bucket` in the pulumi repo (`python/kausal_services/projects.py`) calls
+`grant_bucket_access` for `kausal-watch-media-{de,us,ca}`, which re-renders the whole document from
+`MINIO_BUCKET_ACCESS_POLICY` in `python/common_services/minio.py`. A change made with
+`mcli anonymous set-json` therefore survives only until the next `pulumi up`, which will revert it
+silently — the tooling then starts failing with `AccessDenied` again with nothing to explain why.
+fi-prod's MinIO bucket goes through `create_bucket` and a per-bucket IAM policy rendered from
+`MINIO_RW_POLICY` instead, so it needs the equivalent change in that template.
+
 All three Hetzner buckets were provisioned with a policy that granted their application principal
 `s3:ListBucket`, `s3:GetBucketLocation` and `s3:DeleteObject` at the bucket level but not
 `s3:ListBucketVersions` or `s3:GetBucketVersioning`. Those keys could therefore list objects while
@@ -153,6 +177,9 @@ so such a credential needs `CopyObject` and `PutObjectAcl` and not only version 
   `<Message></Message>`, and `awscli/customizations/s3errormsg.py` does a substring test on it,
   crashing with `TypeError: argument of type 'NoneType' is not a container or iterable`. The real
   error is only visible under `--debug`, in the logged response body. Use `mcli` or boto3 instead.
+- **A directory-like prefix can appear at the bucket root** where a single document object should
+  be. One was found on the 2026-08 sweep, matches no upload path the code generates, and was never
+  explained. Nothing depended on it, but do not assume such a prefix is a real directory.
 - **`mcli` prints non-errors with an `<ERROR>` prefix.** `NoSuchLifecycleConfiguration` from
   `mcli ilm rule ls` means "no lifecycle rules are configured", which is an answer, not a failure.
 
@@ -180,25 +207,28 @@ history); the doubtful ones are from 2024-06, 2024-07, 2024-12 and 2025-05.
 ### Cluster ancestry
 
 fi-prod seeded the other three, so the same damaged rows appear in several clusters *with identical
-PKs*: `documents/Bilanzteil_Koln_2019.pdf` `[425, 426]` is in all four, the San Diego document
-groups are in fi-prod and us-prod, and the Köln, Potsdam and Ludwigsburg ones are in fi-prod and
-de-prod. Deduplicated, the 140 problems are about 115 distinct incidents.
+PKs* — one document group was present in all four. Deduplicated, the 140 problems of the 2026-08
+scans were about 115 distinct incidents.
+
+This happened because the seeding path is not plan-scoped: `destructively_trim_db` followed by
+`dumpdata` carries every tenant's rows, not just the one being moved, along with shared framework
+content and `wagtail_localize` records. `export_plan` is the leak-free route, and any cluster seeded
+the other way reproduces this. Repairing the same logical damage in two clusters is the visible
+cost; one region's bucket holding another region's customer files is the less visible one.
 
 Which cluster should repair a given row follows from where its plan is actually served, and **the
-database cannot answer that**: `PlanDomain` rows were seeded along with everything else, so fi-prod
-still lists `climatedashboard.sandiego.gov`, `klima-monitor.potsdam.de`, `ziele.ludwigsburg.de` and
-the Köln hostnames even though DNS resolves all of them to `watch-prod.us` or `watch-prod.de`. Check
-DNS, not `PlanDomain`. On that basis fi-prod's copies of those four plans are stale, which removes 23
-of its 43 shared keys from the work — all of them `SAME`, so the question gates nothing expensive.
+database cannot answer that**: `PlanDomain` rows were seeded along with everything else, so a
+cluster still claims production hostnames that resolve elsewhere. **Check DNS, not `PlanDomain`.**
+On that basis fi-prod's copies of four migrated plans were stale, which removed 23 of its 43 shared
+keys from the work — all of them `SAME`, so the question gated nothing expensive.
 
-A shared key whose rows are all `NO-PLAN` is a residue signal but not proof, and
-`documents/Bilanzteil_Koln_2019.pdf` `[425, 426]` shows why: its rows are in the shared
-`Common Categories` collection, which belongs to the common-category framework rather than to any
-plan, which is how it reached all four clusters. Nothing references either row — checked with
-`ReferenceIndex` plus a raw column scan, since the index does not cover `Action`, `Indicator`, the
-attribute value models or draft revisions. The cheapest fix for such a pair is to delete *one* row:
-the key stops being shared, and the delete guard keeps the file because the survivor still
-references it, so nothing leaves storage at all.
+A shared key whose rows are all `NO-PLAN` is a residue signal but not proof. The clearest case found
+was a pair whose rows sat in the shared `Common Categories` collection, which belongs to the
+common-category framework rather than to any plan, which is how it reached all four clusters.
+Nothing referenced either row — checked with `ReferenceIndex` plus a raw column scan, since the
+index does not cover `Action`, `Indicator`, the attribute value models or draft revisions. The
+cheapest fix for such a pair is to delete *one* row: the key stops being shared, and the delete
+guard keeps the file because the survivor still references it, so nothing leaves storage at all.
 
 ## The commands
 
@@ -386,6 +416,12 @@ Start on the smallest cluster and with a one-key file, not with a whole cluster:
 have far less test coverage than the decision logic, and a single group's dry run shows the whole
 shape of what a real run does.
 
+To scope a run to what an earlier inventory flagged, rather than to a fresh triage:
+
+```fish
+jq -r '.[].entries[] | select(.kind != "intact") | .file' /tmp/inventory.json > /tmp/keys.txt
+```
+
 **Always pair `--keys-file` with `--only`.** Given an explicit key list, `find_missing` treats every
 non-shared key in it as missing rather than listing the bucket, so a stray line in a file fed to a
 `missing` run would send a healthy key down the restore path.
@@ -408,16 +444,19 @@ and check DNS rather than `PlanDomain`.
   to purge a version. An explicit `Deny` makes version history tamper-proof against exactly this
   class of bug, at no functional cost. Note that the Hetzner policies grant the app principal
   `s3:*` on `bucket/*`, so it *can* purge versions today — and an `Allow` that broad can only be
-  narrowed by an explicit `Deny` statement. Add it after the repairs are done, since the repair
-  itself never deletes a version.
+  narrowed by an explicit `Deny` statement. Written but not yet applied: both policy templates in the
+  pulumi repo carry it on a `chore/` branch, awaiting a `pulumi preview` and a check that nothing
+  prunes the database-backup buckets by deleting versions rather than by lifecycle rule.
 - **Run `check_media_integrity` as a CronJob.** It already exits non-zero on findings.
 - **Scan renditions** with `--include-renditions` once the originals are repaired, and **delete the
-  affected ones rather than repairing them** — `purge_renditions.py` does this. Three reasons, the
-  second decisive: renditions are derived data, so regeneration is cheap and correct; on a shared
-  rendition key some rows serve *another image's* rendering, which re-keying would faithfully
-  preserve and only regeneration fixes; and `repair_media_files` does not handle renditions at all,
-  iterating only `AplansImage` and `AplansDocument`. Purge after restoring originals, not before, or
-  a rendition whose original is still missing cannot regenerate.
+  affected ones rather than repairing them.** Deleting means: select the rendition rows whose `file`
+  is shared by more than one row or is missing from storage, and delete those rows, so each
+  regenerates from its own original on the next request. Three reasons, the second decisive:
+  renditions are derived data, so regeneration is cheap and correct; on a shared rendition key some
+  rows serve *another image's* rendering, which re-keying would faithfully preserve and only
+  regeneration fixes; and `repair_media_files` does not handle renditions at all, iterating only
+  `AplansImage` and `AplansDocument`. Purge after restoring originals, not before, or a rendition
+  whose original is still missing cannot regenerate.
 - **The Hetzner buckets have no independent backup.** Versioning protects against application-level
   mistakes, not against bucket loss.
 - **Reconsider the developer credential's read access to production media.**
@@ -444,18 +483,28 @@ pagination — are exercised only against a fake client, which has been wrong ab
 (multipart ETags, delete-marker visibility). Treat the first run on a given backend as the real smoke
 test, on a one-key run rather than a whole cluster.
 
-First live results, 2026-08-26. Every `SAME` group outside fi-prod's migrated tenants is repaired:
-74 keys, 100 rows moved, no group left for review anywhere, and every cluster's problem count landed
-on the number predicted beforehand — fi-prod 62 → 45, ca-prod 6 → 4, de-prod 19 → 10, us-prod
-53 → 7. No repaired key was subsequently reported as missing or shared.
+First live results, 2026-08-26 and 2026-08-27, run on all four clusters. Every path is now proven
+against real storage on both backends:
 
-Two properties held on both backends, MinIO and Ceph RGW: copies came back byte-identical by ETag
-*and* SHA-1, and `copy_object` preserved `ContentType`. The latter is worth keeping in mind if the
-copy call is ever edited — `MetadataDirective` defaults to `COPY`, and switching it to `REPLACE`
-would turn every copied PDF into `binary/octet-stream`.
+- **Shared keys:** all 111 split, across 137 rows. No group was ever left for review, and every
+  cluster's problem count landed on the number predicted beforehand — the strongest evidence that
+  the planning and the execution agree.
+- **Missing files:** 17 restored from noncurrent versions sitting beneath delete markers, each
+  matched by hash rather than by recency, and each verified afterwards by re-hashing the restored
+  bytes.
+- **Renditions:** every shared rendition key purged and regenerated.
+- One cluster reached zero findings including renditions; the rest are held open only by files
+  deleted before versioning existed.
+
+Copies came back byte-identical by ETag *and* SHA-1 on both backends, and `copy_object` preserved
+`ContentType`. The latter is worth keeping in mind if the copy call is ever edited —
+`MetadataDirective` defaults to `COPY`, and switching it to `REPLACE` would turn every copied PDF
+into `binary/octet-stream`.
 
 The allocated names can look strange, and correctly so. Django 6 computes the extension as
 `"".join(PurePath(name).suffixes)`, i.e. *every* suffix, so the random component lands before the
-whole chain: `South_St._Anthony_Rec_Center_solar_overview.pdf` becomes
-`South_St_qqhR5ys._Anthony_Rec_Center_solar_overview.pdf`. The real extension always survives, so
-content types and Wagtail's filename handling are unaffected; only the download filename looks odd.
+whole chain — a name containing an early dot has the suffix inserted at that dot rather than before
+the real extension, which can leave most of the name looking like an extension. The real extension
+always survives, so content types and Wagtail's filename handling are unaffected; only the download
+filename looks odd. The same applies to `max_length`: a name at the 100-character cap has its root
+trimmed further to make room for the suffix.
