@@ -73,6 +73,7 @@ from reports.views import MarkActionAsCompleteView
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .admin_utils import change_log_message_url_or_none
+from .bulk_approve import BulkApproveView
 from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask
 
 if typing.TYPE_CHECKING:
@@ -876,6 +877,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
     unpublish_view_class = UnpublishView
     collect_workflow_action_data_view_class = CollectWorkflowActionDataView
     confirm_workflow_cancellation_view_class = ConfirmWorkflowCancellationView
+    bulk_approve_view_class = BulkApproveView
 
     basic_panels: Sequence[Panel[Action]] = (
         CustomizableBuiltInFieldPanel[Action]('identifier'),
@@ -1288,6 +1290,10 @@ class ActionAdmin(AplansModelAdmin[Action]):
     def confirm_workflow_cancellation_view(self):
         return self.confirm_workflow_cancellation_view_class.as_view(model=self.model)
 
+    @property
+    def bulk_approve_in_moderation_view(self):
+        return self.bulk_approve_view_class.as_view(model=self.model)
+
     def get_admin_urls_for_registration(self):
         urls: tuple[URLPattern, ...] = super().get_admin_urls_for_registration()
         mark_as_complete_url = re_path(
@@ -1317,6 +1323,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
             'unpublish': '<str:pk>',
             'collect_workflow_action_data': '<str:pk>/<slug:action_name>/<int:task_state_id>',
             'confirm_workflow_cancellation': '<str:pk>',
+            'bulk_approve_in_moderation': '',
         }
         snippet_view_urls: tuple[URLPattern, ...] = tuple(
             path(

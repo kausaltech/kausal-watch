@@ -7,6 +7,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
+from wagtail.admin.menu import MenuItem
 from wagtail.admin.search import SearchArea
 from wagtail.admin.site_summary import SummaryItem
 
@@ -82,6 +83,27 @@ def register_documents_search_area():
         name='actions',
         icon_name='kausal-action',
         order=200,
+    )
+
+
+class BulkApproveMenuItem(MenuItem):
+    def is_shown(self, request):
+        user = user_or_none(request.user)
+        if user is None:
+            return False
+        plan = get_admin_cache(request).plan
+        if plan is None or plan.features.moderation_workflow is None:
+            return False
+        return user.is_superuser
+
+
+@hooks.register('register_settings_menu_item')
+def register_bulk_approve_menu_item():
+    return BulkApproveMenuItem(
+        _('Release actions from moderation'),
+        reverse('actions_action_modeladmin_bulk_approve_in_moderation'),
+        icon_name='lock-open',
+        order=210,
     )
 
 

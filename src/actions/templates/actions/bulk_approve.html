@@ -1,0 +1,121 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags %}
+
+{% block titletag %}{{ view.get_page_title }}{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title=view.get_page_title icon=view.header_icon %}
+
+    <div class="nice-padding">
+        <p class="help-block">
+            {% trans "Selected actions will be published and marked as approved, skipping any remaining moderation tasks." %}
+        </p>
+
+        {% if not in_progress_rows and not needs_changes_rows %}
+            <p>{% trans "There are no actions currently in moderation for this plan." %}</p>
+            <a href="{{ index_url }}" class="button button-secondary">{% trans "Back to actions" %}</a>
+        {% else %}
+            <form method="POST" action="{{ request.path }}">
+                {% csrf_token %}
+
+                {% if in_progress_rows %}
+                    <h2>{% trans "In progress" %}</h2>
+                    <p>
+                        <button type="button" class="button button-small button-secondary" data-select-all="in-progress">
+                            {% trans "Select all in progress" %}
+                        </button>
+                    </p>
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th class="check"><span class="visuallyhidden">{% trans "Select" %}</span></th>
+                                <th>{% trans "Identifier" %}</th>
+                                <th>{% trans "Name" %}</th>
+                                <th>{% trans "Current task" %}</th>
+                                <th>{% trans "Submitted by" %}</th>
+                                <th>{% trans "Submitted at" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in in_progress_rows %}
+                                <tr>
+                                    <td class="check">
+                                        <input
+                                            type="checkbox"
+                                            name="workflow_state_pks"
+                                            value="{{ row.workflow_state.pk }}"
+                                            data-group="in-progress"
+                                        />
+                                    </td>
+                                    <td>{{ row.action.identifier }}</td>
+                                    <td>{{ row.action.name }}</td>
+                                    <td>{% if row.current_task %}{{ row.current_task.name }}{% else %}&mdash;{% endif %}</td>
+                                    <td>{% if row.requested_by %}{{ row.requested_by }}{% else %}&mdash;{% endif %}</td>
+                                    <td>{{ row.submitted_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if needs_changes_rows %}
+                    <h2>{% trans "Needs changes (not releasable)" %}</h2>
+                    <p class="help-block">
+                        {% trans "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually." %}
+                    </p>
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Identifier" %}</th>
+                                <th>{% trans "Name" %}</th>
+                                <th>{% trans "Current task" %}</th>
+                                <th>{% trans "Submitted by" %}</th>
+                                <th>{% trans "Submitted at" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in needs_changes_rows %}
+                                <tr>
+                                    <td>{{ row.action.identifier }}</td>
+                                    <td>{{ row.action.name }}</td>
+                                    <td>{% if row.current_task %}{{ row.current_task.name }}{% else %}&mdash;{% endif %}</td>
+                                    <td>{% if row.requested_by %}{{ row.requested_by }}{% else %}&mdash;{% endif %}</td>
+                                    <td>{{ row.submitted_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if in_progress_rows %}
+                    <div style="margin-top: 1.5em;">
+                        <label>
+                            <input type="checkbox" name="send_notifications" />
+                            {% trans "Send notification emails to contact persons" %}
+                        </label>
+                    </div>
+
+                    <div style="margin-top: 1em;">
+                        <button type="submit" class="button button-primary">
+                            {% trans "Release selected" %}
+                        </button>
+                        <a href="{{ index_url }}" class="button button-secondary">{% trans "Cancel" %}</a>
+                    </div>
+                {% endif %}
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('[data-select-all]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var group = btn.getAttribute('data-select-all');
+                    var boxes = document.querySelectorAll('input[type=checkbox][data-group="' + group + '"]');
+                    var target = Array.prototype.some.call(boxes, function (b) { return !b.checked; });
+                    boxes.forEach(function (b) { b.checked = target; });
+                });
+            });
+        })();
+    </script>
+{% endblock %}
