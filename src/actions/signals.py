@@ -4,6 +4,8 @@ from typing import Any
 
 from django.db.models.signals import m2m_changed, post_delete, post_migrate, post_save, pre_save
 from django.dispatch import receiver
+from wagtail.admin.signal_handlers import workflow_approval_email_notifier as _wagtail_workflow_approval_notifier
+from wagtail.models import WorkflowState
 from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
 from anymail.signals import post_send, pre_send
@@ -84,6 +86,7 @@ def fix_deleted_responsible_party_in_draft(sender, instance, **kwargs):
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
 workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
+
 
 MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
     Person,
@@ -220,8 +223,14 @@ def register_signal_handlers():
         action_moderator_cancel_task_submission_email_notifier,
         dispatch_uid='action_moderator_cancel_task_submitted_email_notification',
     )
+    workflow_approved.disconnect(
+        _wagtail_workflow_approval_notifier,
+        sender=WorkflowState,
+        dispatch_uid='workflow_state_approved_email_notification',
+    )
     workflow_approved.connect(
         workflow_approval_email_notifier,
+        sender=WorkflowState,
         dispatch_uid='workflow_state_approved_email_notification',
     )
     post_migrate.connect(sync_permissions, dispatch_uid='sync_app_permissions')
