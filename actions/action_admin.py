@@ -8,7 +8,6 @@ from typing import Any, Unpack, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import BaseModelFormSet
 from django.urls import path, re_path, reverse
@@ -64,6 +63,7 @@ from admin_site.wagtail import (
     InitializeFormWithInitialPlanMixin,
     PlanFilteredFieldPanel,
     PlanRelatedModelAdminPermissionHelper,
+    gate_panel_visibility,
     get_translation_tabs,
     insert_model_translation_panels,
 )
@@ -81,7 +81,6 @@ if typing.TYPE_CHECKING:
     from django.db.models import Model
     from django.http import HttpRequest
     from django.urls import URLPattern
-    from django.utils.functional import Promise
     from django.utils.safestring import SafeString
     from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
@@ -1048,7 +1047,6 @@ class ActionAdmin(AplansModelAdmin[Action]):
 
         render_field_label = FieldLabelRenderer(plan)
 
-        task_panels: list[Panel[Any]] = list(insert_model_translation_panels(ActionTask, self.task_panels, request, plan))
         draft_attributes = instance_being_edited.draft_attributes if instance_being_edited else None
         attribute_panels = instance.get_attribute_panels(user, draft_attributes)
         main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
@@ -1147,18 +1145,24 @@ class ActionAdmin(AplansModelAdmin[Action]):
             )
         )
 
-        all_tabs += [
-            ObjectList(
-                [
-                    CondensedInlinePanel(
-                        'tasks',
-                        panels=task_panels,
-                    ),
-                ],
-                heading=plan.general_content.get_action_task_term_display_plural(),
-                help_text=render_field_label('', public=True),
-            ),
-        ]
+        # Leaving out the tab also leaves the tasks formset out of the form, so tasks of an action whose tasks are not
+        # visible for the user can't be changed either. Note that `label_override` and `help_text_override` of a
+        # customization for `tasks` have no effect since the tab heading comes from the plan's general content.
+        tasks_visible, _unused = BuiltInFieldCustomization.get_field_access(user, plan, Action, 'tasks', instance)
+        if tasks_visible:
+            task_panels = list(insert_model_translation_panels(ActionTask, self.task_panels, request, plan))
+            all_tabs += [
+                ObjectList(
+                    [
+                        CondensedInlinePanel(
+                            'tasks',
+                            panels=task_panels,
+                        ),
+                    ],
+                    heading=plan.general_content.get_action_task_term_display_plural(),
+                    help_text=render_field_label('', public=True),
+                ),
+            ]
 
         reporting_panels: list[Panel] = [cast('Panel', panel) for panel in reporting_attribute_panels]
         help_panels_for_field: dict[int, list[Panel]] = {}
@@ -1339,7 +1343,6 @@ class ActionAdmin(AplansModelAdmin[Action]):
         field_name: str,
         relation_name: str,
         model_cls: type[ModelWithRole[Any]],
-        heading: str | Promise,
         get_editable_roles_method: str,
     ) -> list[Panel]:
         """
@@ -1349,35 +1352,19 @@ class ActionAdmin(AplansModelAdmin[Action]):
         """
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
-        ct = ContentType.objects.get_for_model(Action)
 
-        try:
-            customization = BuiltInFieldCustomization.objects.get(plan=plan, content_type=ct, field_name=field_name)
-
-            is_visible = customization.is_instance_visible_for(user, plan, instance)
-            is_editable = customization.is_instance_editable_by(user, plan, instance)
-
-            # if instance is editable, it should be visible too
-            if is_editable:
-                is_visible = True
-        except BuiltInFieldCustomization.DoesNotExist:
+        is_visible, is_editable = BuiltInFieldCustomization.get_field_access(user, plan, Action, field_name, instance)
+        # if instance is editable, it should be visible too
+        if is_editable:
             is_visible = True
-            is_editable = True
 
         if plan.features.has_action_contact_person_roles or is_editable:
             editable_roles = getattr(request.user, get_editable_roles_method)(instance)
         else:
             editable_roles = []
 
-        class VisibilityAwarePanel(RelatedModelWithRolePanel):
-            _is_visible = is_visible
-
-            class BoundPanel(RelatedModelWithRolePanel.BoundPanel[Any, Any, Any]):
-                def is_shown(self) -> bool:
-                    original_result = super().is_shown()
-                    return original_result and self.panel._is_visible
-
-        panel = VisibilityAwarePanel(
+        panel_cls = gate_panel_visibility(RelatedModelWithRolePanel, is_visible=is_visible)
+        panel = panel_cls(
             action=instance,
             relation_name=relation_name,
             _cls=model_cls,
@@ -1393,7 +1380,6 @@ class ActionAdmin(AplansModelAdmin[Action]):
             field_name='contact_persons',
             relation_name='contact_persons',
             model_cls=ActionContactPerson,
-            heading=_('Contact persons'),
             get_editable_roles_method='get_editable_contact_person_roles',
         )
 
@@ -1404,7 +1390,6 @@ class ActionAdmin(AplansModelAdmin[Action]):
             field_name='responsible_parties',
             relation_name='responsible_parties',
             model_cls=ActionResponsibleParty,
-            heading=_('Responsible parties'),
             get_editable_roles_method='get_editable_responsible_party_roles',
         )
 
