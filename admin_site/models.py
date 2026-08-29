@@ -196,6 +196,36 @@ class BuiltInFieldCustomization(
             ),
         ]
 
+    @classmethod
+    def get_field_access(
+        cls,
+        user: User,
+        plan: Plan,
+        model: type[models.Model],
+        field_name: str,
+        instance: models.Model | None,
+    ) -> tuple[bool, bool]:
+        """
+        Return `(is_visible, is_editable)` for a built-in field of `model` in `plan`.
+
+        Both default to True if there is no customization for the field. The values are returned as
+        they are; it is up to the caller to decide whether editability should imply visibility. Note
+        that `instances_editable_by` defaults to "authenticated", so a caller that lets editability
+        imply visibility will effectively ignore a restricted `instances_visible_for`.
+        """
+        try:
+            customization = cls.objects.get(
+                plan=plan,
+                content_type=ContentType.objects.get_for_model(model),
+                field_name=field_name,
+            )
+        except cls.DoesNotExist:
+            return (True, True)
+        return (
+            customization.is_instance_visible_for(user, plan, instance),
+            customization.is_instance_editable_by(user, plan, instance),
+        )
+
     def clean(self):
         # Note that this will only be called when saving the instance using a form, not when doing it with save(). Since
         # for now we don't have an model admin class for this model but rely on creating instances manually in the REPL,
