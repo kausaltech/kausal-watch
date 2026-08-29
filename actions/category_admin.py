@@ -158,6 +158,7 @@ class CategoryTypeAdmin(AplansModelAdmin[CategoryType]):
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
         FieldPanel('help_text'),
+        FieldPanel('admin_help_text'),
         FieldPanel('hide_category_identifiers'),
         FieldPanel('select_widget'),
         MultiFieldPanel(
@@ -586,6 +587,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin[CommonCategoryType]):
         FieldPanel('hide_category_identifiers'),
         FieldPanel('lead_paragraph'),
         FieldPanel('help_text'),
+        FieldPanel('admin_help_text'),
         FieldPanel('primary_language'),
         FieldPanel('select_widget'),
         FieldPanel('has_collection'),

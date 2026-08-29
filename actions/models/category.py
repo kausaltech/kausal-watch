@@ -30,6 +30,7 @@ from kausal_common.models.types import manager_from_mlqs
 from aplans.utils import (
     IdentifierField,
     InstancesEditableByMixin,
+    ModelWithAdminHelpText,
     OrderedModel,
     PlanRelatedModelWithRevision,
     ReferenceIndexedModelMixin,
@@ -66,7 +67,7 @@ if TYPE_CHECKING:
 skip_page_synchronization_ctx: ContextVar[bool] = ContextVar('skip_page_synchronization_ctx', default=False)
 
 
-class CategoryTypeBase(models.Model):
+class CategoryTypeBase(ModelWithAdminHelpText):
     class SelectWidget(models.TextChoices):
         SINGLE = 'single', _('Single')
         MULTIPLE = 'multiple', _('Multiple')
@@ -79,7 +80,6 @@ class CategoryTypeBase(models.Model):
         help_text=_('Set if the categories do not have meaningful identifiers'),
     )
     lead_paragraph = models.TextField(verbose_name=_('lead paragraph'), null=True, blank=True)
-    help_text = models.TextField(verbose_name=_('help text'), blank=True)
     usable_for_actions = models.BooleanField(
         default=False,
         verbose_name=_('usable for action categorization'),
@@ -151,7 +151,10 @@ class CommonCategoryType(CategoryTypeBase, ModelWithPrimaryLanguage):
         default='en',
         verbose_name=_('primary language'),
     )
-    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='primary_language_lowercase')
+    i18n = TranslationField(
+        fields=('name', 'lead_paragraph', 'help_text', 'admin_help_text'),
+        default_language_field='primary_language_lowercase',
+    )
 
     # type annotations
 
@@ -246,7 +249,8 @@ class CategoryType(
         help_text=_('Set if categories of this type should be synchronized with pages'),
     )
     i18n = TranslationField(
-        fields=('name', 'lead_paragraph', 'help_text'), default_language_field='plan__primary_language_lowercase'
+        fields=('name', 'lead_paragraph', 'help_text', 'admin_help_text'),
+        default_language_field='plan__primary_language_lowercase',
     )
 
     attribute_types: RevManyQS[AttributeTypeModel, AttributeTypeQuerySet] = GenericRelation(  # type: ignore[assignment]  # pyright: ignore[reportAssignmentType]

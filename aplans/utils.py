@@ -519,6 +519,37 @@ class InstancesEditableByMixin(models.Model):
         raise Exception(msg)
 
 
+class ModelWithAdminHelpText(models.Model):
+    """
+    Mixin for models whose help text is split between two audiences.
+
+    `help_text` is public-facing and shown in the public UI. Admin users see
+    `admin_help_text` instead whenever it has content. Models using this must
+    register both fields in their `TranslationField` to have them translated.
+    """
+
+    help_text = models.TextField(
+        verbose_name=_('help text'),
+        blank=True,
+        help_text=_('A help text shown to visitors of the site'),
+    )
+    admin_help_text = models.TextField(
+        verbose_name=_('help text for the admin UI'),
+        blank=True,
+        help_text=_('If set, these instructions are shown to admin users instead of the help text'),
+    )
+
+    help_text_i18n: str
+    admin_help_text_i18n: str
+
+    class Meta:
+        abstract = True
+
+    @property
+    def effective_admin_help_text(self) -> str:
+        return self.admin_help_text_i18n or self.help_text_i18n
+
+
 class InstancesVisibleForMixin(models.Model):
     """
     Mixin for models such as AttributeType to restrict visibility of attributes.

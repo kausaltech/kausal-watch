@@ -30,6 +30,7 @@ from aplans.utils import (
     ChoiceArrayField,
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
+    ModelWithAdminHelpText,
     OrderedModel,
     PlanRelatedModelWithRevision,
     ReferenceIndexedModelMixin,
@@ -84,6 +85,7 @@ else:
 class AttributeType(  # type: ignore[django-manager-missing]
     InstancesEditableByMixin,
     InstancesVisibleForMixin,
+    ModelWithAdminHelpText,
     ReferenceIndexedModelMixin,
     ClusterableModel,
     OrderedModel,
@@ -122,7 +124,6 @@ class AttributeType(  # type: ignore[django-manager-missing]
         populate_from='name',
         unique_with=('object_content_type', 'scope_content_type', 'scope_id'),
     )
-    help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField[AttributeFormat, AttributeFormat](
         max_length=50,
         choices=AttributeFormat.choices,
@@ -180,7 +181,7 @@ class AttributeType(  # type: ignore[django-manager-missing]
     )
 
     i18n = TranslationField(
-        fields=('name', 'help_text'),
+        fields=('name', 'help_text', 'admin_help_text'),
         # FIXME: This unfortunately duplicates the primary language of the plan of `scope` because we have no way of
         # easily accessing it with modeltrans. It should be kept in sync with the language of the plan of `scope`, but
         # it isn't at the moment because we hopefully will never change the primary language of a plan.

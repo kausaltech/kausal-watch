@@ -66,6 +66,7 @@ def _get_category_fields[M: Model](plan: Plan, model: type[M], obj: M | None, wi
         field = field_class(
             qs,
             label=cat_type.name,
+            help_text=cat_type.effective_admin_help_text,
             initial=initial,
             required=False,
             widget=widget,

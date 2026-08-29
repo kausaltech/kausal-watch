@@ -49,7 +49,7 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
         # or otherwise Wagtail starts introspecting for a modelfield
         # for this attribute
         self.icon = 'placeholder'
-        self.help_text = attribute_type.instance.help_text or ' '
+        self.help_text = attribute_type.instance.effective_admin_help_text or ' '
 
     def clone_kwargs(self):
         kwargs = super().clone_kwargs()
@@ -640,7 +640,7 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
             choice_options,
             initial=initial_choice,
             required=False,
-            help_text=self.instance.help_text_i18n,
+            help_text=self.instance.effective_admin_help_text,
         )
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         return [
@@ -710,7 +710,7 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
             categories,
             initial=initial_categories,
             required=False,
-            help_text=self.instance.help_text_i18n,
+            help_text=self.instance.effective_admin_help_text,
             widget=autocomplete.ModelSelect2Multiple(
                 url='category-autocomplete',
                 forward=(
@@ -803,7 +803,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             choice_options,
             initial=initial_choice,
             required=False,
-            help_text=self.instance.help_text_i18n,
+            help_text=self.instance.effective_admin_help_text,
         )
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         fields: list[FormField] = []
@@ -829,7 +829,9 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
                 initial_text = draft_attribute.text_vals.get(attribute_text_field_name)
             elif committed_attribute:
                 initial_text = getattr(committed_attribute, attribute_text_field_name)
-            form_field_kwargs: dict[str, Any] = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            form_field_kwargs: dict[str, Any] = dict(
+                initial=initial_text, required=False, help_text=self.instance.effective_admin_help_text
+            )
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             text_field = cast(
@@ -929,7 +931,9 @@ class GenericTextAttributeType(AttributeType[T]):
             elif committed_attribute:
                 initial_text = getattr(committed_attribute, attribute_text_field_name)
 
-            form_field_kwargs: dict[str, Any] = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            form_field_kwargs: dict[str, Any] = dict(
+                initial=initial_text, required=False, help_text=self.instance.effective_admin_help_text
+            )
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             db_field = cast('Field', self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name))
@@ -1018,7 +1022,7 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
             committed_attribute = self.get_attributes(obj).first()
             if committed_attribute:
                 initial_value = committed_attribute.value
-        field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
+        field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.effective_admin_help_text)
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         return [
             FormField(
