@@ -799,6 +799,37 @@ class CondensedInlinePanel[M: Model, RelatedM: Model](InlinePanel[M, RelatedM]):
     pass
 
 
+_hidden_panel_classes: dict[type[Any], type[Any]] = {}
+
+
+def _hidden_panel_class(panel_cls: type[Any]) -> type[Any]:
+    """Return (and cache) a subclass of `panel_cls` whose bound panel is never shown."""
+    hidden_cls = _hidden_panel_classes.get(panel_cls)
+    if hidden_cls is not None:
+        return hidden_cls
+
+    def is_shown(self) -> bool:
+        return False
+
+    bound_panel_cls = type('BoundPanel', (panel_cls.BoundPanel,), {'is_shown': is_shown})
+    hidden_cls = type(f'Hidden{panel_cls.__name__}', (panel_cls,), {'BoundPanel': bound_panel_cls})
+    _hidden_panel_classes[panel_cls] = hidden_cls
+    return hidden_cls
+
+
+def gate_panel_visibility[P: Panel](panel_cls: type[P], *, is_visible: bool) -> type[P]:
+    """
+    Return `panel_cls` if the panel should be visible, otherwise a subclass that is never shown.
+
+    Use this to hide a panel whose visibility is restricted, e.g. by a `BuiltInFieldCustomization`.
+    Note that hiding a panel this way keeps its fields and formsets in the form; remove the panel
+    from the edit handler altogether if the data must not be editable either.
+    """
+    if is_visible:
+        return panel_cls
+    return cast('type[P]', _hidden_panel_class(panel_cls))
+
+
 if TYPE_CHECKING:
 
     class ModelFormViewMixin[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[M]](ModelFormView[M, FormT]):
