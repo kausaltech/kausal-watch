@@ -4,8 +4,9 @@ import pytest
 
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.models import ActionContactPerson
+from actions.models import Action, ActionContactPerson
 from actions.tests.factories import ActionContactFactory
+from admin_site.models import BuiltInFieldCustomization
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory
 
 pytestmark = pytest.mark.django_db
@@ -114,3 +115,42 @@ def test_built_in_field_customization_accepts_any_editability(editable_by):
 )
 def test_built_in_field_customization_accepts_any_visibility(visible_for):
     BuiltInFieldCustomizationFactory.create(instances_visible_for=visible_for).full_clean()
+
+
+def test_get_field_access_without_customization(action, plan_admin_user):
+    assert BuiltInFieldCustomization.get_field_access(plan_admin_user, action.plan, Action, 'tasks', action) == (
+        True,
+        True,
+    )
+
+
+def test_get_field_access_returns_raw_visibility_and_editability(action, plan_admin_user):
+    contact_person = ActionContactFactory.create(action=action).person
+    contact_user = contact_person.user
+    assert contact_user is not None
+    BuiltInFieldCustomizationFactory.create(
+        plan=action.plan,
+        field_name='tasks',
+        instances_visible_for=InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.AUTHENTICATED,
+    )
+    # Editability must not be allowed to imply visibility; the caller decides that.
+    assert BuiltInFieldCustomization.get_field_access(contact_user, action.plan, Action, 'tasks', action) == (False, True)
+    assert BuiltInFieldCustomization.get_field_access(plan_admin_user, action.plan, Action, 'tasks', action) == (
+        True,
+        True,
+    )
+
+
+def test_get_field_access_uses_field_name_and_model(action, plan_admin_user):
+    BuiltInFieldCustomizationFactory.create(
+        plan=action.plan,
+        field_name='tasks',
+        instances_visible_for=InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.NOT_EDITABLE,
+    )
+    # A customization for another field must not affect this one
+    assert BuiltInFieldCustomization.get_field_access(plan_admin_user, action.plan, Action, 'links', action) == (
+        True,
+        True,
+    )
