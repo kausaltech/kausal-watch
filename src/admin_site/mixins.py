@@ -116,20 +116,16 @@ class ContinueEditingMixin:
         return context
 
 
-class PlanRelatedViewMixin:
+class OfferPlanSwitchMixin:
+    """
+    Offer to switch the active plan when the object being acted on belongs to another one.
+
+    Split out of `PlanRelatedViewMixin` so that views without a model form -- the delete view, whose
+    form is a plain `Form` -- can offer the switch too. Without it such a view can only refuse, and
+    the user is left with an object they may administer but cannot act on.
+    """
+
     request: HttpRequest
-
-    def form_valid(self, form, *args, **kwargs):
-        obj = form.instance
-        if isinstance(obj, PlanRelatedModel):
-            # Sanity check to ensure we're saving the model to a currently active
-            # action plan.
-            active_plan = cast('WatchAdminRequest', self.request).user.get_active_admin_plan()
-            plans = obj.get_plans()
-            if len(plans):
-                assert active_plan in plans
-
-        return super().form_valid(form, *args, **kwargs)  # type: ignore[misc]
 
     def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
         user = request.user
@@ -153,6 +149,20 @@ class PlanRelatedViewMixin:
                 return HttpResponseRedirect(url + '?' + querystring.urlencode())
 
         return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class PlanRelatedViewMixin(OfferPlanSwitchMixin):
+    def form_valid(self, form, *args, **kwargs):
+        obj = form.instance
+        if isinstance(obj, PlanRelatedModel):
+            # Sanity check to ensure we're saving the model to a currently active
+            # action plan.
+            active_plan = cast('WatchAdminRequest', self.request).user.get_active_admin_plan()
+            plans = obj.get_plans()
+            if len(plans):
+                assert active_plan in plans
+
+        return super().form_valid(form, *args, **kwargs)  # type: ignore[misc]
 
 
 class ActivatePermissionHelperPlanContextMixin:

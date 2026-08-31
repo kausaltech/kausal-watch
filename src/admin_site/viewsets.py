@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models import Model, ProtectedError, QuerySet
 from django.forms.models import ModelForm
 from django.urls import reverse
+from django.utils.functional import classproperty
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
@@ -14,6 +15,8 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.models import Page
+from wagtail.snippets.bulk_actions.delete import DeleteBulkAction
+from wagtail.snippets.models import get_snippet_models
 from wagtail.snippets.views.snippets import (
     CreateView,
     DeleteView as SnippetDeleteView,
@@ -34,6 +37,7 @@ from admin_site.forms import WatchAdminModelForm
 from admin_site.mixins import (
     ActivatePermissionHelperPlanContextMixin,
     ContinueEditingMixin,
+    OfferPlanSwitchMixin,
     PlanRelatedViewMixin,
 )
 from admin_site.permissions import PlanRelatedPermissionPolicy
@@ -186,7 +190,14 @@ class InstancePermissionCheckedMixin(PermissionCheckedMixin):
 
 
 class WatchDeleteView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
-    InstancePermissionCheckedMixin, SnippetDeleteView[ModelT, FormT]
+    # `OfferPlanSwitchMixin` comes first so that it can offer to switch the active plan before the
+    # permission check refuses outright, the same way the edit view behaves. Without it, an object
+    # belonging to another of the user's own plans is simply undeletable: the plan check says no and
+    # nothing tells the user that switching plans is what they need. Switching is only offered for
+    # plans the user may administer, since `change_admin_plan` rejects the rest.
+    OfferPlanSwitchMixin,
+    InstancePermissionCheckedMixin,
+    SnippetDeleteView[ModelT, FormT],
 ):
     pass
 
@@ -205,6 +216,41 @@ class WatchInspectView[ModelT: Model](InstancePermissionCheckedMixin, InspectVie
 
 class WatchRevisionsCompareView[ModelT: Model](InstancePermissionCheckedMixin, RevisionsCompareView[ModelT]):
     pass
+
+
+class PlanAwareSnippetDeleteBulkAction(DeleteBulkAction):
+    """
+    Make the listing's bulk delete obey the snippet's permission policy.
+
+    Wagtail's own bulk delete asks `user.has_perm('<app>.delete_<model>')` and nothing else, on the
+    stated assumption that "snippets permissions are not enforced per object". For plan-related
+    snippets both halves of that are wrong: a plan admin may delete without holding the Django model
+    permission, and holding it must still not allow deleting another plan's object. The result was a
+    bulk action that refused legitimate deletions and permitted cross-plan ones.
+
+    Registered for the snippet models whose viewset uses a `PlanRelatedPermissionPolicy`; every other
+    snippet keeps Wagtail's behaviour.
+    """
+
+    @classproperty
+    def models(cls) -> list[type[Model]]:  # noqa: N805
+        return [model for model in get_snippet_models() if _has_plan_related_policy(model)]
+
+    def check_perm(self, snippet: Model) -> bool:
+        viewset = getattr(snippet, 'snippet_viewset', None)
+        if viewset is None:  # not a registered snippet after all; leave the decision to Wagtail
+            return super().check_perm(snippet)
+        return viewset.permission_policy.user_has_permission_for_instance(self.request.user, 'delete', snippet)
+
+
+def _has_plan_related_policy(model: type[Model]) -> bool:
+    viewset = getattr(model, 'snippet_viewset', None)
+    if viewset is None:
+        return False
+    try:
+        return isinstance(viewset.permission_policy, PlanRelatedPermissionPolicy)
+    except Exception:
+        return False
 
 
 class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](SnippetViewSet[ModelT, FormT]):

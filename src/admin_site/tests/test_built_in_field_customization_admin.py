@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from django import forms
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, reverse, reverse_lazy
 from wagtail.admin.menu import admin_menu, settings_menu
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
+from wagtail.admin.views.bulk_action.registry import bulk_action_registry
 
 import pytest
 
@@ -27,8 +29,12 @@ from admin_site.field_customization import (
 )
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory, ClientPlanFactory
+from admin_site.viewsets import PlanAwareSnippetDeleteBulkAction
 from admin_site.wagtail import CustomizableBuiltInFieldPanel, CustomizableBuiltInPlanFilteredFieldPanel
 from indicators.models import Indicator
+from people.tests.factories import PersonFactory
+from users.models import User
+from users.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -187,11 +193,41 @@ def test_a_customization_of_another_plan_cannot_be_edited(admin_client, other_pl
     assert other_plan_customization.label_override == before
 
 
-def test_a_customization_of_another_plan_cannot_be_deleted(admin_client, other_plan_customization):
-    response = admin_client.post(reverse(DELETE_URL_NAME, args=[other_plan_customization.pk]))
-    # Wagtail turns the PermissionDenied into a redirect; asserting `!= 200` would also pass on a 500.
-    assert response.status_code == 302
+def test_a_customization_of_another_plan_cannot_be_deleted(admin_client, other_plan_customization, plan, plan_admin_user):
+    """
+    The delete view offers to switch plans, and the switch is refused for a plan the user cannot administer.
+
+    Following the redirect matters: stopping at the 302 would not distinguish "offered a switch the
+    user cannot take" from "switched and deleted".
+    """
+    response = admin_client.post(reverse(DELETE_URL_NAME, args=[other_plan_customization.pk]), follow=True)
+    assert response.status_code == 400
     assert BuiltInFieldCustomization.objects.filter(pk=other_plan_customization.pk).exists()
+    assert plan_admin_user.get_active_admin_plan() == plan
+
+
+def test_deleting_a_customization_of_another_own_plan_offers_a_plan_switch(client):
+    """
+    An admin of several plans must be offered the switch rather than simply refused.
+
+    Refusing outright leaves them with an object they are entitled to delete but cannot, with
+    nothing to indicate that the active plan is what stands in the way.
+    """
+    plan_a, plan_b = PlanFactory.create(), PlanFactory.create()
+    ClientPlanFactory.create(plan=plan_a)
+    ClientPlanFactory.create(plan=plan_b)
+    user = UserFactory.create()
+    PersonFactory.create(user=user, general_admin_plans=[plan_a, plan_b])
+    client.force_login(user)
+    active = user.get_active_admin_plan()
+    other = plan_a if active == plan_b else plan_b
+    customization = BuiltInFieldCustomizationFactory.create(plan=other, field_name='identifier')
+
+    response = client.post(reverse(DELETE_URL_NAME, args=[customization.pk]))
+
+    assert response.status_code == 302
+    assert response['Location'].startswith(reverse('change-admin-plan', kwargs={'plan_id': other.pk}))
+    assert BuiltInFieldCustomization.objects.filter(pk=customization.pk).exists()
 
 
 @pytest.mark.parametrize('url_name', [HISTORY_URL_NAME, USAGE_URL_NAME, HISTORY_RESULTS_URL_NAME])
@@ -507,6 +543,8 @@ def test_field_choice_labels_are_consistently_capitalized():
     labels = [label for _group, choices in get_field_choices() for _value, label in choices]
     assert labels
     assert [label for label in labels if not label[:1].isupper()] == []
+
+
 def test_the_listing_links_each_row_to_its_edit_view(admin_client, plan):
     """
     Wagtail builds the linked title column only from a `list_display` entry given as a name.
@@ -518,3 +556,41 @@ def test_the_listing_links_each_row_to_its_edit_view(admin_client, plan):
     html = admin_client.get(reverse(LIST_URL_NAME)).content.decode()
     assert f'href="{reverse(EDIT_URL_NAME, args=[customization.pk])}"' in html
     assert f'href="{reverse(DELETE_URL_NAME, args=[customization.pk])}"' in html
+
+
+BULK_DELETE_URL = reverse_lazy('wagtail_bulk_action', args=('admin_site', 'builtinfieldcustomization', 'delete'))
+
+
+def test_bulk_delete_uses_the_plan_aware_action():
+    """Wagtail's own delete action must be replaced for this model, but left alone for others."""
+    action = bulk_action_registry.get_bulk_action_class('admin_site', 'builtinfieldcustomization', 'delete')
+    assert action is PlanAwareSnippetDeleteBulkAction
+    unrelated = bulk_action_registry.get_bulk_action_class('admin_site', 'client', 'delete')
+    assert unrelated is not PlanAwareSnippetDeleteBulkAction
+
+
+def test_a_plan_admin_can_bulk_delete_a_customization(admin_client, plan, plan_admin_user):
+    """
+    Wagtail's bulk delete only asks for the Django model permission, which plan admins do not hold.
+
+    Deleting one row at a time was allowed while the listing's bulk action refused the same object.
+    """
+    assert not plan_admin_user.has_perm('admin_site.delete_builtinfieldcustomization')
+    customization = BuiltInFieldCustomizationFactory.create(plan=plan, field_name='identifier')
+
+    admin_client.post(f'{BULK_DELETE_URL}?id={customization.pk}')
+
+    assert not BuiltInFieldCustomization.objects.filter(pk=customization.pk).exists()
+
+
+def test_bulk_delete_does_not_cross_plans(client, plan, plan_admin_user, other_plan_customization):
+    """Holding the Django permission must still not allow bulk deleting another plan's object."""
+    ClientPlanFactory.create(plan=plan)
+    plan_admin_user.user_permissions.add(
+        Permission.objects.get(codename='delete_builtinfieldcustomization', content_type__app_label='admin_site')
+    )
+    client.force_login(User.objects.get(pk=plan_admin_user.pk))  # rebuild the permission cache
+
+    client.post(f'{BULK_DELETE_URL}?id={other_plan_customization.pk}')
+
+    assert BuiltInFieldCustomization.objects.filter(pk=other_plan_customization.pk).exists()
