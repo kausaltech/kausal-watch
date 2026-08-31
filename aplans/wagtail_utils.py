@@ -10,6 +10,8 @@ from actions.models.category import CategoryType
 from indicators.models import Indicator
 
 if TYPE_CHECKING:
+    from kausal_common.users import UserOrAnon
+
     from actions.models.plan import Plan
 
 
@@ -32,7 +34,18 @@ class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
 M = TypeVar('M', bound=Model)
 
 
-def _get_category_fields[M: Model](plan: Plan, model: type[M], obj: M | None, with_initial: bool = False) -> dict:
+def _get_category_fields[M: Model](
+    plan: Plan,
+    model: type[M],
+    obj: M | None,
+    with_initial: bool = False,
+    user: UserOrAnon | None = None,
+) -> dict:
+    """
+    Build the form fields for the category types of `plan` that apply to `model`.
+
+    If `user` is given, only category types whose instances the user may edit are included.
+    """
     fields = {}
     if model == Action:
         filter_name = 'editable_for_actions'
@@ -44,6 +57,9 @@ def _get_category_fields[M: Model](plan: Plan, model: type[M], obj: M | None, wi
     assert isinstance(obj, (Action | Indicator))
 
     for cat_type in plan.category_types.filter(**{filter_name: True}):
+        # Category type editability does not depend on a specific action, so no holder is passed
+        if user is not None and not cat_type.is_instance_editable_by(user, plan, None):
+            continue
         qs = cat_type.categories.all()
         if obj and obj.pk and with_initial:
             initial = obj.categories.filter(type=cat_type)

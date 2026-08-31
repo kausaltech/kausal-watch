@@ -276,7 +276,7 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
 
         # Update categories
         plan = obj.plan
-        for field_name, field in _get_category_fields(plan, Action, obj).items():
+        for field_name, field in _get_category_fields(plan, Action, obj, user=self._user).items():
             field_data = self.cleaned_data.get(field_name)
             if field_data is None:
                 continue
@@ -614,10 +614,7 @@ class ActionEditHandler(
         instance = ctx_instance.get_as_type(Action)
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Action, instance, with_initial=True)
-        else:
-            cat_fields = {}
+        cat_fields = _get_category_fields(plan, Action, instance, with_initial=True, user=user)
 
         if instance is not None:
             attribute_types = instance.get_visible_attribute_types(user)
@@ -1068,13 +1065,12 @@ class ActionAdmin(AplansModelAdmin[Action]):
 
         panels += main_attribute_panels
 
-        if is_general_admin:
-            cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
-            cat_panels = []
-            for key, field in cat_fields.items():
-                cat_panels.append(FieldPanel[Action](key, heading=render_field_label(field.label, public=False)))
-            if cat_panels:
-                panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
+        cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True, user=user)
+        cat_panels = []
+        for key, field in cat_fields.items():
+            cat_panels.append(FieldPanel[Action](key, heading=render_field_label(field.label, public=False)))
+        if cat_panels:
+            panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
 
         for panel in self.basic_related_panels:
             panels.append(panel)
