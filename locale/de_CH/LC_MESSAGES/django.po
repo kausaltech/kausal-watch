@@ -28,12 +28,12 @@ msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
 #: actions/action_admin.py
 #, python-format
 msgid "%s is listed multiple times in the action."
-msgstr ""
+msgstr "%s wird mehrfach in der Massnahme aufgeführt."
 
 #: actions/action_admin.py
 #, python-format
 msgid "While editing this action you have switched to a different plan. This action was still saved with the original plan \"%s\"."
-msgstr ""
+msgstr "Während der Bearbeitung dieser Massnahme haben Sie zu einem anderen Plan gewechselt. Diese Massnahme wurde noch mit dem ursprünglichen Plan \"%s\" gespeichert."
 
 #: actions/action_admin.py actions/models/action.py
 msgid "Unspecified"
@@ -52,7 +52,7 @@ msgstr ""
 #: actions/action_admin.py
 #, python-format
 msgid "Mark as complete for report %s"
-msgstr ""
+msgstr "Abschliessen für Bericht %s"
 
 #: actions/action_admin.py
 #, python-format
@@ -62,7 +62,7 @@ msgstr "Markiere diese Massnahme für den Bericht %s als abgeschlossen"
 #: actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
-msgstr ""
+msgstr "Abschliessen für Bericht %s rückgängig machen"
 
 #: actions/action_admin.py
 #, python-format
@@ -77,8 +77,6 @@ msgstr ""
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 #: content/models.py indicators/wagtail_admin.py
 #: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#, fuzzy
-#| msgid "Actions"
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Massnahmen"
@@ -128,10 +126,8 @@ msgid "Reporting"
 msgstr ""
 
 #: actions/action_admin.py
-#, fuzzy
-#| msgid "Merged actions"
 msgid "Dependent actions"
-msgstr "Zusammengeführte Massnahmen"
+msgstr "Abhängige Massnahmen"
 
 #: actions/action_admin.py
 msgid "Dependencies"
@@ -229,10 +225,8 @@ msgid "Edit"
 msgstr ""
 
 #: actions/action_fields.py actions/tests/fixtures_stream_block.py
-#, fuzzy
-#| msgid "Action schedules"
 msgid "Action dependencies"
-msgstr "Massnahmenzeitpläne"
+msgstr "Massnahmenabhängigkeiten"
 
 #: actions/action_fields.py actions/tests/fixtures_stream_block.py
 msgid "Merged actions"
@@ -312,12 +306,12 @@ msgstr ""
 #: actions/api.py
 #, python-format
 msgid "You do not have permission to change contact persons with role \"%(role)s\" on action \"%(action)s\"."
-msgstr ""
+msgstr "Sie haben keine Berechtigung, Ansprechpersonen mit der Rolle „%(role)s” für die Massnahme „%(action)s” zu ändern."
 
 #: actions/api.py
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
-msgstr ""
+msgstr "Sie haben keine Berechtigung, die zuständigen Stellen mit der Rolle „%(role)s” für die Massnahme „%(action)s” zu ändern."
 
 #: actions/api.py actions/models/action.py
 msgid "Non-completed tasks cannot have a completion date"
@@ -335,12 +329,11 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: actions/attribute_type_admin.py
-#, fuzzy, python-format
-#| msgid "continuous action"
+#, python-format
 msgid "%(count)d published action"
 msgid_plural "%(count)d published actions"
-msgstr[0] "laufende Massnahme"
-msgstr[1] "laufende Massnahme"
+msgstr[0] "%(count)d veröffentlichte Massnahme"
+msgstr[1] "%(count)d veröffentlichte Massnahmen"
 
 #: actions/attribute_type_admin.py
 #, fuzzy, python-format
@@ -361,8 +354,8 @@ msgstr[1] ""
 #, python-format
 msgid "%(count)d action draft"
 msgid_plural "%(count)d action drafts"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(count)d Massnahmenentwurf"
+msgstr[1] "%(count)d Massnahmenentwürfe"
 
 #: actions/attribute_type_admin.py
 msgid "Object type"
@@ -653,13 +646,11 @@ msgstr "Massnahmen-Highlights"
 
 #: actions/blocks/action_list.py
 msgid "What heading should be used in the public UI for the Action list?"
-msgstr ""
+msgstr "Welche Überschrift soll in der öffentlichen Benutzeroberfläche für die Massnahmenliste verwendet werden?"
 
 #: actions/blocks/action_list.py
-#, fuzzy
-#| msgid "Set if action identifiers should be visible in the public UI"
 msgid "Help text for the Action list to be shown in the public UI"
-msgstr "Setzen, wenn die Massnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
+msgstr "In Benutzeroberfläche anzuzeigender Hilfetext für die Massnahmenliste"
 
 #: actions/blocks/action_list.py
 msgid "Filter on category"
@@ -728,7 +719,7 @@ msgstr ""
 
 #: actions/blocks/category_list.py actions/blocks/category_page_layout.py
 msgid "Kausal Paths target node ID used to calculate action impacts. If not set, the default outcome node will be used."
-msgstr ""
+msgstr "Kausal Paths Zielknoten-ID, die zur Berechnung der Auswirkungen von Massnahmen verwendet wird. Wenn diese nicht festgelegt ist, wird der Standard-Ergebnisknoten verwendet."
 
 #: actions/blocks/category_list.py
 msgid "Category level list"
@@ -799,8 +790,6 @@ msgid "Schedule"
 msgstr ""
 
 #: actions/blocks/filters.py reports/report_formatters.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "Continuous Action"
 msgstr "laufende Massnahme"
 
@@ -1065,8 +1054,6 @@ msgid "specifier for status"
 msgstr ""
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Describe the reason why this action has has this status"
 msgid "Describe the reason why this action has this status"
 msgstr "Beschreiben Sie den Grund, warum diese Massnahme diesen Status hat"
 
@@ -1150,7 +1137,7 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
-msgstr ""
+msgstr "Format des Start- und Enddatums von Massnahmen, das in der öffentlichen Benutzeroberfläche angezeigt wird.             Der Standard für alle Massnahmen kann auf der Massnahmenseite festgelegt werden."
 
 #: actions/models/action.py
 msgctxt "action"
@@ -1167,20 +1154,16 @@ msgid "copy of"
 msgstr ""
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Set if this action is superseded by another action"
 msgid "Set if this action has been created by copying another action"
-msgstr "Setzen, wenn diese Massnahme durch eine andere Massnahme ersetzt worden ist"
+msgstr "Setzen, wenn diese Massnahme durch Kopieren einer anderen Massnahme erstellt wurde"
 
 #: actions/models/action.py
 msgid "Role in dependencies"
 msgstr ""
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Set if this action is merged with another action"
 msgid "Set if this action has the same role in all its dependency relationships with other actions"
-msgstr "Setzen, wenn diese Massnahme mit einer anderen Massnahme zusammengeführt ist"
+msgstr "Setzen, wenn diese Massnahme in allen ihren Abhängigkeitsbeziehungen mit anderen Massnahmen die gleiche Rolle hat"
 
 #: actions/models/action.py
 msgctxt "partitive"
@@ -1188,15 +1171,11 @@ msgid "action"
 msgstr "Massnahme"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "action"
 msgctxt "Action model"
 msgid "action"
 msgstr "Massnahme"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "actions"
 msgctxt "Action model"
 msgid "actions"
 msgstr "Massnahmen"
@@ -1211,7 +1190,7 @@ msgstr "Andere Massnahme ist mit dieser zusammengeführt"
 
 #: actions/models/action.py
 msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr ""
+msgstr "Leitabsatz ist für Massnahmen in diesem Plan nicht zulässig"
 
 #: actions/models/action.py
 msgid "Has contact persons"
@@ -1374,7 +1353,7 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
-msgstr ""
+msgstr "Format des Start- und Enddatums von Aufgaben von Massnahmen, das in der öffentlichen Benutzeroberfläche angezeigt wird.             Der Standard für alle Massnahmen kann auf der Massnahmenseite festgelegt werden."
 
 #: actions/models/action.py
 msgid "completion date"
@@ -1419,8 +1398,6 @@ msgid "action impact classes"
 msgstr "Massnahmenauswirkungsklassen"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "action"
 msgctxt "action model"
 msgid "action"
 msgstr "Massnahme"
@@ -1452,18 +1429,14 @@ msgid "The revision this change history message is associated with"
 msgstr "Massnahmenzeitpläne"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Action schedules"
 msgctxt "verbose name of model"
 msgid "action change history message"
-msgstr "Massnahmenzeitpläne"
+msgstr "Eintrag im Massnahmenänderungsverlauf"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Action schedules"
 msgctxt "verbose name plural of model"
 msgid "action change history messages"
-msgstr "Massnahmenzeitpläne"
+msgstr "Einträge im Massnahmenänderungsverlauf"
 
 #: actions/models/action.py indicators/models/action_links.py
 #: indicators/models/contact_persons.py indicators/models/indicator.py
@@ -1540,16 +1513,12 @@ msgid "Request changes"
 msgstr ""
 
 #: actions/models/action_deps.py
-#, fuzzy
-#| msgid "related actions"
 msgid "Preceding action"
-msgstr "verbundene Massnahmen"
+msgstr "Vorangehende Massnahme"
 
 #: actions/models/action_deps.py
-#, fuzzy
-#| msgid "Merged actions"
 msgid "Dependent action"
-msgstr "Zusammengeführte Massnahmen"
+msgstr "Abhängige Massnahme"
 
 #: actions/models/action_deps.py
 msgid "Maximum dependency chain length exceeded."
@@ -1641,7 +1610,7 @@ msgstr ""
 
 #: actions/models/attributes.py
 msgid "This value is only allowed for action fields."
-msgstr ""
+msgstr "Dieser Wert ist nur für Massnahmenfelder zulässig."
 
 #: actions/models/attributes.py
 msgid "The icon must be an SVG file."
@@ -2009,10 +1978,8 @@ msgid "Indicator order"
 msgstr "Indikator für Massnahmen"
 
 #: actions/models/features.py
-#, fuzzy
-#| msgid "action contact persons"
 msgid "Choose how to order indicators in the action pages"
-msgstr "Massnahmenansprechpersonen"
+msgstr "Wählen Sie, wie die Indikatoren auf den Massnahmenseiten sortiert werden sollen"
 
 #: actions/models/features.py
 msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
@@ -2028,11 +1995,11 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Include action print layout in reports"
-msgstr ""
+msgstr "Massnahmen-Drucklayout in Berichte einbeziehen"
 
 #: actions/models/features.py
 msgid "In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing."
-msgstr ""
+msgstr "Füge der Tabellenausgabe des Berichts ein Blatt hinzu, das alle Massnahmen in einem für den Druck optimierten Layout enthält."
 
 #: actions/models/features.py
 msgid "Password protected"
@@ -2060,7 +2027,7 @@ msgstr "Massnahmenzeitpläne"
 
 #: actions/models/features.py
 msgid "Prompt users to add a public change history message after editing actions, indicators, or categories."
-msgstr ""
+msgstr "Fordere Benutzer auf, nach der Bearbeitung von Massnahmen, Indikatoren oder Kategorien einen öffentlichen Eintrag im Änderungsverlauf hinzuzufügen."
 
 #: actions/models/features.py
 msgid "Enable community engagement"
@@ -2072,11 +2039,11 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
-msgstr ""
+msgstr "PDF-Export von Massnahmen in der öffentlichen Benutzeroberfläche ermöglichen"
 
 #: actions/models/features.py
 msgid "Enable users of the public UI to export actions to PDF."
-msgstr ""
+msgstr "Nutzern der öffentlichen Benutzeroberfläche die Möglichkeit geben, Massnahmen als PDF zu exportieren."
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -2167,10 +2134,8 @@ msgid "If unsure, use the default value representing customer use. For statistic
 msgstr ""
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "Exclude from plan"
 msgid "exclude from search"
-msgstr "Aus Plan ausschliessen"
+msgstr "von Suche ausschliessen"
 
 #: actions/models/plan.py
 msgid "Should information related to the plan be excluded from search results?"
@@ -2224,20 +2189,16 @@ msgid "parent"
 msgstr ""
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "The primary action classification"
 msgid "Primary action classification"
-msgstr "Die primäre Massnahmenklassifizierung"
+msgstr "Primäre Massnahmenklassifizierung"
 
 #: actions/models/plan.py
 msgid "Used for primary navigation and grouping of actions"
 msgstr "Verwendet für primäre Navigation und Gruppieren von Massnahmen"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "A secondary action classification"
 msgid "Secondary action classification"
-msgstr "Eine sekundäre Massnahmenklassifizierung"
+msgstr "Sekundäre Massnahmenklassifizierung"
 
 #: actions/models/plan.py
 msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
@@ -2563,7 +2524,7 @@ msgstr ""
 
 #: actions/models/pledge.py
 msgid "environmental impact at scale"
-msgstr ""
+msgstr "Umweltauswirkungen in grossem Massstab"
 
 #: actions/models/pledge.py
 msgid "Describe the total environmental benefit if this many residents commit. Include specific numbers and units. Start with \"We save\" or \"We reduce\" for consistency. Example: \"We save 9,200kg CO₂e each year.\""
@@ -2578,16 +2539,12 @@ msgid "Translate the environmental impact into something relatable and specific 
 msgstr ""
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "actions"
 msgid "actions"
 msgstr "Massnahmen"
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "Action list pages"
 msgid "Actions this pledge supports"
-msgstr "Massnahmenlistenseiten"
+msgstr "Massnahmen, die diese Mitmach-Aktion unterstützt"
 
 #: actions/models/pledge.py feedback/models.py
 msgid "pledge"
@@ -2630,16 +2587,12 @@ msgid "pledge commitments"
 msgstr ""
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "Merged actions"
 msgid "pledge action"
-msgstr "Zusammengeführte Massnahmen"
+msgstr "Massnahme der Mitmach-Aktion"
 
 #: actions/models/pledge.py
-#, fuzzy
-#| msgid "Merged actions"
 msgid "pledge actions"
-msgstr "Zusammengeführte Massnahmen"
+msgstr "Massnahmen der Mitmach-Aktion"
 
 #: actions/pledge_admin.py
 #, fuzzy
@@ -2714,15 +2667,7 @@ msgid "Community Impact Visualization"
 msgstr "Indikator für Massnahmen"
 
 #: actions/templates/site_summary/actions.html
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "        <span>%(n)s</span> active action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
-#| msgid_plural ""
-#| "\n"
-#| "        <span>%(n)s</span> active actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
-#| "    "
+#, python-format
 msgid ""
 "\n"
 "        <span>%(n)s</span> active action <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
@@ -2733,11 +2678,11 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 "\n"
-"        <span>%(n)s</span> aktive Massnahme <span class=\"visuallyhidden\">überwacht in %(plan.name)s</span>\n"
+"        <span> %(n)s </span> aktive Massnahme <span class=\"w-sr-only\"> überwacht in %(plan)s </span>\n"
 "    "
 msgstr[1] ""
 "\n"
-"        <span>%(n)s</span> aktive Massnahmen <span class=\"visuallyhidden\">überwacht in %(plan.name)s</span>\n"
+"        <span> %(n)s </span> aktive Massnahmen <span class=\"w-sr-only\"> überwacht in %(plan)s </span>\n"
 "    "
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
@@ -2899,10 +2844,8 @@ msgid "Action schedules"
 msgstr "Massnahmenzeitpläne"
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Action schedules"
 msgid "Action dependency roles"
-msgstr "Massnahmenzeitpläne"
+msgstr "Massnahmenabhängigkeitsrollen"
 
 #: actions/wagtail_admin.py
 msgid "Action classifications"
@@ -3026,11 +2969,9 @@ msgid "Plans"
 msgstr ""
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Action schedules"
 msgctxt "menu label"
 msgid "Action change history messages"
-msgstr "Massnahmenzeitpläne"
+msgstr "Einträge im Massnahmenänderungsverlauf"
 
 #: actions/wagtail_admin.py
 #, fuzzy
@@ -3055,8 +2996,6 @@ msgid "Plan unpublished"
 msgstr ""
 
 #: actions/wagtail_hooks.py templates/modeladmin/create.html
-#, fuzzy
-#| msgid "Actions"
 msgid "Actions"
 msgstr "Massnahmen"
 
@@ -3074,7 +3013,7 @@ msgstr ""
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr ""
+msgstr "Sie haben keinen Admin-Zugang. Ihr Administrator muss Ihnen möglicherweise eine Massnahme oder einen Indikator zuweisen oder Ihnen den Status eines Plan-Admins gewähren."
 
 #: admin_site/api.py
 msgid "Cannot determine authentication method. The email address domain may be unknown."
@@ -3460,7 +3399,7 @@ msgstr ""
 
 #: aplans/settings.py
 msgid "Hmong (White)"
-msgstr ""
+msgstr "Hmong (Weiss)"
 
 #: aplans/settings.py
 msgid "Portuguese"
@@ -3619,8 +3558,6 @@ msgid "Content"
 msgstr ""
 
 #: content/models.py feedback/models.py reports/spreadsheets/excel_report.py
-#, fuzzy
-#| msgid "Action"
 msgctxt "Action model"
 msgid "Action"
 msgstr "Massnahme"
@@ -3801,16 +3738,12 @@ msgid "Set if the copy should supersede the original plan"
 msgstr "Setzen, wenn diese Massnahme durch eine andere Massnahme ersetzt worden ist"
 
 #: copying/views.py
-#, fuzzy
-#| msgid "editable for actions"
 msgid "Supersede original actions"
-msgstr "veränderbar für Massnahmen"
+msgstr "Ersetze Originalmassnahmen"
 
 #: copying/views.py
-#, fuzzy
-#| msgid "Set if this action is superseded by another action"
 msgid "Set if copies of actions should supersede their original"
-msgstr "Setzen, wenn diese Massnahme durch eine andere Massnahme ersetzt worden ist"
+msgstr "Setzen, wenn Kopien von Massnahmen das Original ersetzen sollen"
 
 #: copying/views.py
 #, fuzzy
@@ -4203,10 +4136,8 @@ msgid "Indicator visualization"
 msgstr "Indikator für Massnahmen"
 
 #: indicators/blocks/layout.py
-#, fuzzy
-#| msgid "related actions"
 msgid "Connected actions"
-msgstr "verbundene Massnahmen"
+msgstr "Verbundene Massnahmen"
 
 #: indicators/blocks/layout.py
 msgid "Category level"
@@ -4463,10 +4394,8 @@ msgid "dataset"
 msgstr ""
 
 #: indicators/models/goal_data_point.py
-#, fuzzy
-#| msgid "Choose a quantity"
 msgid "metric"
-msgstr "Wähle eine Grösse"
+msgstr "Messgrösse"
 
 #: indicators/models/goal_data_point.py
 #, fuzzy
@@ -4654,7 +4583,7 @@ msgstr "Gesamtlinie anzeigen"
 
 #: indicators/models/indicator.py
 msgid "Data categories can be summed to form total for the indicator (draw stacked chart as default)"
-msgstr ""
+msgstr "Datenkategorien können summiert werden, um den Gesamtwert für den Indikator zu bilden (standardmässig als gestapeltes Diagramm dargestellt)"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -4672,7 +4601,7 @@ msgstr ""
 
 #: indicators/models/indicator.py
 msgid "Data categories can be summed to form a total for the indicator (draw a stacked chart as default)"
-msgstr ""
+msgstr "Datenkategorien können summiert werden, um einen Gesamtwert für den Indikator zu bilden (standardmässig als gestapeltes Diagramm dargestellt)"
 
 #: indicators/models/indicator.py
 #, fuzzy
@@ -5315,10 +5244,8 @@ msgid "The content of the notification"
 msgstr "Die Auswirkungen dieser Massnahme"
 
 #: notifications/models.py
-#, fuzzy
-#| msgid "action contact persons"
 msgid "send to action contact persons"
-msgstr "Massnahmenansprechpersonen"
+msgstr "an Massnahmen-Ansprechpersonen senden"
 
 #: notifications/models.py
 #, fuzzy
@@ -5548,10 +5475,8 @@ msgid "Add organization to active plan"
 msgstr ""
 
 #: orgs/views.py
-#, fuzzy
-#| msgid "Exclude this organization from the active plan"
 msgid "Exclude organization from active plan"
-msgstr "Schliesse diese Organisation aus aktivem Plan aus"
+msgstr "Organisation aus aktivem Plan ausschliessen"
 
 #: orgs/views.py
 #, python-format
@@ -5649,10 +5574,8 @@ msgid "Include this organization in the active plan"
 msgstr ""
 
 #: orgs/wagtail_admin.py
-#, fuzzy
-#| msgid "Exclude from plan"
 msgid "Exclude from active plan"
-msgstr "Aus Plan ausschliessen"
+msgstr "Aus aktivem Plan ausschliessen"
 
 #: orgs/wagtail_admin.py
 msgid "Exclude this organization from the active plan"
@@ -5688,7 +5611,7 @@ msgstr "gross"
 
 #: pages/blocks.py
 msgid "Size"
-msgstr ""
+msgstr "Grösse"
 
 #: pages/blocks.py
 msgid "The source URL of the embed is invalid or not supported."
@@ -5714,7 +5637,7 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Show the image at its exact scaled dimensions; it will never be cropped"
-msgstr ""
+msgstr "Das Bild wird in seiner exakten skalierten Grösse angezeigt; es wird niemals beschnitten"
 
 #: pages/blocks.py
 msgid "Show image accent"
@@ -5744,7 +5667,7 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Large image: image above, content below"
-msgstr ""
+msgstr "Grosses Bild: Bild oben, Inhalt darunter"
 
 #: pages/blocks.py
 msgid "Side-by-side: image left, content right"
@@ -5936,7 +5859,7 @@ msgstr ""
 
 #: pages/models.py
 msgid "icon size"
-msgstr ""
+msgstr "Symbolgrösse"
 
 #: pages/models.py
 msgid "Category page"
@@ -5975,26 +5898,20 @@ msgid "Depth of category hierarchy to present as subheadings starting from the r
 msgstr ""
 
 #: pages/models.py
-#, fuzzy
-#| msgid "Action category"
 msgid "Action date format"
-msgstr "Massnahmenkategorie"
+msgstr "Massnahmendatumsformat"
 
 #: pages/models.py
-#, fuzzy
-#| msgid "Set if action identifiers should be visible in the public UI"
 msgid "Default format of action start and end dates shown in the public UI."
-msgstr "Setzen, wenn die Massnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
+msgstr "Standardformat des Start- und Enddatums von Massnahmen, das in der öffentlichen Benutzeroberfläche angezeigt wird."
 
 #: pages/models.py
 msgid "Task due date format"
 msgstr ""
 
 #: pages/models.py
-#, fuzzy
-#| msgid "Set if action identifiers should be visible in the public UI"
 msgid "Default format of action task due dates shown in the public UI."
-msgstr "Setzen, wenn die Massnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
+msgstr "Standardformat der Fälligkeitsdaten von Aufgaben von Massnahmen, die in der öffentlichen Benutzeroberfläche angezeigt werden."
 
 #: pages/models.py
 msgid "Include related plans"
@@ -6014,7 +5931,7 @@ msgstr ""
 
 #: pages/models.py
 msgid "Advanced filters (hidden by default)"
-msgstr ""
+msgstr "Fortgeschrittene Filter (standardmässig ausgeblendet)"
 
 #: pages/models.py
 msgid "Action list filters"
@@ -6262,7 +6179,7 @@ msgstr ""
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
-msgstr ""
+msgstr "Bitte achten Sie darauf, dass niemand ausser %(person)s Zugriff auf den Link erhält. Zur zusätzlichen Sicherheit wird der Link in %(days_until_expiration)s Tagen ablaufen."
 
 #: people/views.py people/wagtail_admin.py
 msgid "View as user"
@@ -6342,7 +6259,7 @@ msgstr ""
 
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
-msgstr ""
+msgstr "Diese Person hat keinen Zugriff auf die Verwaltungsoberfläche. Dies liegt in der Regel daran, dass ihr keine Massnahmen oder Indikatoren zugewiesen sind."
 
 #: people/wagtail_admin.py
 msgid "first name"
@@ -6401,10 +6318,8 @@ msgid "Choose another report type"
 msgstr ""
 
 #: reports/models.py
-#, fuzzy
-#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
 msgid "Only plan admins can mark actions as complete for reports of this type"
-msgstr "Bestätige das Rückgängigmachen des Markierens der Massnahme %(action)s als abgeschlossen für den Bericht %(report)s"
+msgstr "Nur Planadministratoren können Massnahmen für Berichte dieses Typs als abgeschlossen markieren"
 
 #: reports/models.py
 msgid "report type"
@@ -6441,7 +6356,7 @@ msgstr ""
 
 #: reports/models.py
 msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
-msgstr ""
+msgstr "Setzen, wenn die Werte aus diesem Bericht bei der Bearbeitung der Massnahme in der Registerkarte „Berichterstattung“ angezeigt werden sollen. Die Werte werden nur angezeigt, wenn dieser Bericht als abgeschlossen markiert wurde."
 
 #: reports/models.py
 msgid "report"
@@ -6706,7 +6621,7 @@ msgstr ""
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
 msgid "This plan is already scheduled for publication: %(bold_open)s%(info)s%(bold_close)s. Publishing now will override the scheduled date and make the plan public immediately."
-msgstr ""
+msgstr "Die Veröffentlichung dieses Plans ist bereits geplant: %(bold_open)s%(info)s%(bold_close)s. Durch die sofortige Veröffentlichung wird das geplante Datum ausser Kraft gesetzt und der Plan sofort öffentlich zugänglich gemacht."
 
 #: templates/aplans/plan_publish_confirmation.html
 msgctxt "URLs"

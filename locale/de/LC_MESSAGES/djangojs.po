@@ -19,4 +19,4 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 #: admin_site/static/admin_site/js/accessibility.js:88
 msgid "Please enter a search term"
-msgstr ""
+msgstr "Bitte geben Sie einen Suchbegriff ein"

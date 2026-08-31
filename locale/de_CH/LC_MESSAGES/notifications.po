@@ -21,7 +21,7 @@ msgstr ""
 #: notifications/mjml-templates/not_enough_tasks.mjml
 #, python-format
 msgid "Action %(identifier)s. %(name)s"
-msgstr ""
+msgstr "Massnahme %(identifier)s. %(name)s"
 
 #: notifications/mjml-templates/action_not_updated.mjml
 #, python-format
@@ -41,7 +41,7 @@ msgstr ""
 #: notifications/mjml-templates/task_late.mjml
 #, python-format
 msgid "Action %(identifier)s"
-msgstr ""
+msgstr "Massnahme %(identifier)s"
 
 #: notifications/mjml-templates/task_due_soon.mjml
 #: notifications/mjml-templates/task_late.mjml
@@ -96,7 +96,7 @@ msgstr ""
 
 #: notifications/mjml-templates/includes/modify_action_button.mjml
 msgid "Edit action"
-msgstr ""
+msgstr "Massnahme bearbeiten"
 
 #: notifications/mjml-templates/includes/modify_indicator_button.mjml
 msgid "Edit indicator data"
