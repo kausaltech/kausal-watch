@@ -16,7 +16,6 @@ from loguru import logger
 
 from kausal_common.debugging.perf import ModelCreationCounter
 from kausal_common.deployment import env_bool
-from kausal_common.i18n.helpers import get_default_language
 from kausal_common.strawberry.context import GraphQLContext
 from kausal_common.strawberry.extensions import AuthenticationExtension, ExecutionCacheExtension, SchemaExtension
 from kausal_common.users import user_or_none
@@ -213,7 +212,14 @@ class DeterminePlanContextExtension(WatchSchemaExtension):
                     locale = plan.primary_language
 
         if locale is None:
-            locale = get_default_language()
+            # Not `LANGUAGES[0]`: that list is ordered, not ranked, so its head is
+            # whichever language happens to sort first, not a sensible default.
+            # Mutations reach this branch as a matter of course -- they name their plan
+            # in the input, not in a directive -- so a wrong default here decides the
+            # language every mutation runs under, and locale-sensitive writes
+            # (modeltrans fields) land in that language's slot.
+            assert settings.LANGUAGE_CODE.lower() in SUPPORTED_LANGUAGES
+            locale = settings.LANGUAGE_CODE
 
         ctx = self.get_context()
         ctx.graphql_query_language = locale
