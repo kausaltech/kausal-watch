@@ -17,6 +17,7 @@ from kausal_common.users import user_or_bust
 from aplans.context_vars import get_admin_cache
 
 from actions.models import CommonCategoryType
+from admin_site.viewsets import PlanAwareSnippetDeleteBulkAction
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -367,6 +368,11 @@ def preserve_active_tab_on_save():
         });
         </script>
         """)
+
+
+# Registered with a high order so that it replaces Wagtail's own delete action in the bulk action
+# registry, which keys on (app label, model, action type) and keeps the last registration.
+hooks.register('register_bulk_action', PlanAwareSnippetDeleteBulkAction, order=1000)
 
 
 # Imported at the end because wagtail.snippets triggers re-entrant hook
