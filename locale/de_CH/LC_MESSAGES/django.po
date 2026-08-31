@@ -5321,7 +5321,7 @@ msgstr "erhalte Massnahmen-Feedback-Benachrichtigungen"
 #: notifications/notifications.py
 msgctxt "task_late"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
-msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Massahme im Massnahmenplan. Es gibt eine Massnahme, deren Frist abgelaufen ist. Die Massahme wird als verspätet angezeigt, bis Sie sie als erledigt markieren und Details eingeben."
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Massnahme im Massnahmenplan. Es gibt eine Massnahme, deren Frist abgelaufen ist. Die Massnahme wird als verspätet angezeigt, bis Sie sie als erledigt markieren und Details eingeben."
 
 #: notifications/notifications.py
 msgid "Task is late"
@@ -5343,7 +5343,7 @@ msgstr ""
 #: notifications/notifications.py
 msgctxt "task_due_soon"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
-msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Massnahme im Massnahmenplan. Es gibt eine Massahme im Massnahmenplan, deren Frist näher rückt. Bitte denken Sie daran, die Aufgabe als erledigt zu markieren, sobald sie abgeschlossen ist. Nach Ablauf der Frist wird die Massnahme als verspätet markiert. Sie können die Aufgabendetails über den Link unten bearbeiten."
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Massnahme im Massnahmenplan. Es gibt eine Massnahme im Massnahmenplan, deren Frist näher rückt. Bitte denken Sie daran, die Aufgabe als erledigt zu markieren, sobald sie abgeschlossen ist. Nach Ablauf der Frist wird die Massnahme als verspätet markiert. Sie können die Aufgabendetails über den Link unten bearbeiten."
 
 #: notifications/notifications.py
 msgid "Updated indicator values are due soon"
