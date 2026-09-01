@@ -47,6 +47,7 @@ from aplans.wagtail_utils import _get_category_fields
 from actions.chooser import ActionChooser
 from actions.models.action import _renormalize_pks_for_unique_constraint
 from actions.models.plan import Plan
+from admin_site.field_customization import collect_customizable_field_names, register_customizable_fields
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.utils import FieldLabelRenderer
 from admin_site.wagtail import (
@@ -1397,6 +1398,30 @@ class ActionAdmin(AplansModelAdmin[Action]):
             model_cls=ActionResponsibleParty,
             get_editable_roles_method='get_editable_responsible_party_roles',
         )
+
+
+# Built-in fields of actions and action tasks that plan admins may customize. The panel-backed names
+# are derived from the panel declarations above so they cannot drift apart; the rest have to be
+# listed explicitly because their panels are built per request.
+register_customizable_fields(
+    Action,
+    [
+        *collect_customizable_field_names([
+            *ActionAdmin.basic_panels,
+            *ActionAdmin.basic_related_panels,
+            *ActionAdmin.basic_related_panels_general_admin,
+            *ActionAdmin.progress_panels,
+        ]),
+        'dependency_role',
+        # Relations that get a tab or panel of their own. Only their access rights are customizable;
+        # `label_override` and `help_text_override` have no effect on them.
+        'tasks',
+        'contact_persons',
+        'responsible_parties',
+    ],
+)
+
+register_customizable_fields(ActionTask, collect_customizable_field_names(ActionAdmin.task_panels))
 
 
 @hooks.register('construct_snippet_action_menu')

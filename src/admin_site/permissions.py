@@ -130,6 +130,27 @@ class PlanRelatedPermissionPolicy(ModelPermissionPolicy):
         return self._obj_matches_active_plan(user, instance)
 
 
+class PlanAdminOnlyPermissionPolicy(PlanRelatedPermissionPolicy):
+    """
+    Restrict every action on a plan-related model to plan admins (and superusers).
+
+    Unlike `PlanRelatedPermissionPolicy`, this ignores the Django model permissions entirely: being
+    a general admin for the active plan is both necessary and sufficient. Use it for models that
+    configure the admin UI itself, where handing out the permission per user group would be too
+    fine-grained to be useful.
+    """
+
+    def user_has_permission(self, user, action):
+        if not isinstance(user, User):
+            return False
+        if user.is_superuser:
+            return True
+        plan = user.get_active_admin_plan(required=False)
+        if plan is None:
+            return False
+        return user.is_general_admin_for_plan(plan)
+
+
 def superusers_only_hijack(*, hijacker: User, hijacked: User):
     """Only superusers may hijack other users."""
     return hijacked.is_active and hijacker.is_superuser and not getattr(hijacker, 'is_hijacked', False) and hijacker != hijacked

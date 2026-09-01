@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, ClassVar, Self
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.core.exceptions import FieldDoesNotExist, ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.utils import formats
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
@@ -24,6 +24,7 @@ from aplans.utils import (
     PlanRelatedModelWithRevision,
 )
 
+from admin_site.field_customization import get_content_type_label, get_field_label, humanize_field_name
 from users.models import User
 
 if TYPE_CHECKING:
@@ -189,6 +190,9 @@ class BuiltInFieldCustomization(
     label_override = models.TextField(verbose_name=_('label'), blank=True)
 
     class Meta:
+        verbose_name = _('field customization')
+        verbose_name_plural = _('field customizations')
+        ordering = ('content_type', 'field_name')
         constraints = [
             models.UniqueConstraint(
                 fields=['plan', 'content_type', 'field_name'],
@@ -227,11 +231,21 @@ class BuiltInFieldCustomization(
         )
 
     def clean(self):
-        # Note that this will only be called when saving the instance using a form, not when doing it with save(). Since
-        # for now we don't have an model admin class for this model but rely on creating instances manually in the REPL,
-        # we must manually trigger the validation by calling full_clean().
-        model = self.content_type.model_class()
-        assert model is not None
+        # Note that this will only be called when saving the instance using a form, not when doing it with save(). When
+        # creating instances programmatically (e.g., in the REPL), we must trigger the validation by calling
+        # full_clean() ourselves.
+        try:
+            content_type = self.content_type
+        except ObjectDoesNotExist:
+            # No model chosen yet; the missing value is reported by the field-level validation.
+            return
+        if not self.field_name:
+            return
+        model = content_type.model_class()
+        if model is None:
+            raise ValidationError({
+                'content_type': _("The model '%(model)s' does not exist any more") % {'model': str(content_type)}
+            })
         try:
             model._meta.get_field(self.field_name)
         except FieldDoesNotExist as err:
@@ -239,23 +253,33 @@ class BuiltInFieldCustomization(
                 'field_name': _("%(field)s is not a valid field in the model '%(model)s'")
                 % {
                     'field': self.field_name,
-                    'model': self.content_type.model,
+                    'model': content_type.model,
                 }
             }) from err
-        return self.field_name
+
+    @property
+    def content_type_label(self) -> str:
+        """Return the human-readable label of the customized model."""
+        return get_content_type_label(self.content_type)
+
+    @property
+    def field_label(self) -> str:
+        """
+        Return the human-readable label of the customized field.
+
+        Degrades to the bare field name when the model itself is gone, so that a customization
+        pointing at a stale content type stays listable and can be deleted.
+        """
+        model = self.content_type.model_class()
+        if model is None:
+            return humanize_field_name(self.field_name)
+        return get_field_label(model, self.field_name)
 
     def __str__(self):
         model = self.content_type.model_class()
-        assert model is not None
-        model_name = model._meta.verbose_name
-        target_field = model._meta.get_field(self.field_name)
-        if isinstance(target_field, models.Field):
-            field_label = target_field.verbose_name
-        else:
-            # ForeignObjectRel or GenericForeignKey
-            field_label = self.field_name
+        model_name = model._meta.verbose_name if model is not None else str(self.content_type)
         return _("Field '%(field)s' in model '%(model)s' of plan '%(plan)s'") % {
-            'field': field_label,
+            'field': self.field_label,
             'model': model_name,
             'plan': str(self.plan),
         }

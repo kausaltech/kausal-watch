@@ -47,6 +47,7 @@ from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields
 
 from actions.models.plan import Plan
+from admin_site.field_customization import register_customizable_fields
 from admin_site.utils import admin_req
 from admin_site.wagtail import (
     AplansAdminModelForm,
@@ -65,7 +66,7 @@ from admin_site.wagtail import (
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.panels import IndicatorMetricsInlinePanel
 
-from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from .models.goal_data_point import IndicatorGoalDataPoint
 
 if TYPE_CHECKING:
@@ -1312,3 +1313,33 @@ class IndicatorGroup(ModelAdminGroup):
 
 
 modeladmin_register(IndicatorGroup)
+
+
+# Built-in fields of indicators that plan admins may customize. These mirror the
+# `CustomizableBuiltInFieldPanel` declarations in `IndicatorAdmin`, which are built per request and
+# hence cannot be derived automatically.
+register_customizable_fields(
+    Indicator,
+    [
+        'name',
+        'time_resolution',
+        # 'level' is deliberately absent: it is a form-only field backed by `IndicatorLevel`, so a
+        # customization for it could not pass `BuiltInFieldCustomization.clean()`.
+        'visibility',
+        'description',
+        'reference',
+        'min_value',
+        'max_value',
+        'ticks_count',
+        'ticks_rounding',
+        'value_rounding',
+        'show_total_line',
+        'show_trendline',
+        'desired_trend',
+        'data_categories_are_stackable',
+        'internal_notes',
+        'updated_values_due_at',
+    ],
+)
+
+register_customizable_fields(ActionIndicator, ['action', 'effect_type', 'indicates_action_progress'])

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -12,8 +12,19 @@ from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
+from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.models import Page
-from wagtail.snippets.views.snippets import CreateView, DeleteView as SnippetDeleteView, EditView, IndexView, SnippetViewSet
+from wagtail.snippets.views.snippets import (
+    CreateView,
+    DeleteView as SnippetDeleteView,
+    EditView,
+    HistoryView,
+    IndexView,
+    InspectView,
+    RevisionsCompareView,
+    SnippetViewSet,
+    UsageView,
+)
 
 from kausal_common.users import user_or_bust
 
@@ -30,6 +41,8 @@ from admin_site.utils import admin_req
 from admin_site.wagtail import execute_admin_post_save_tasks
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from django.http import HttpRequest
 
     from actions.models.action import BaseChangeLogMessage
@@ -136,10 +149,86 @@ class WatchIndexView[ModelT: Model, QS: QuerySet[Any] = QuerySet[ModelT]](
     pass
 
 
+class InstancePermissionCheckedMixin(PermissionCheckedMixin):
+    """
+    Make Wagtail's permission checks consult the object being acted on, not just its model.
+
+    `PermissionCheckedMixin` only asks the permission policy whether the user may perform the action
+    on *some* instance of the model, so a policy that restricts access per object -- such as
+    `PlanRelatedPermissionPolicy`, which requires the object to belong to the active plan -- has no
+    effect on views that operate on a single object. Without this, knowing the URL of an object in
+    another plan is enough to delete or inspect it.
+
+    Only applies to views that make the object available as `self.object` before `dispatch()` runs.
+    The delete, history, usage, inspect and revisions-compare views all do so in `setup()`; the copy
+    view does not, which is one of the reasons `WatchViewSet` disables it. Anything mixed in here
+    that resolves its object later silently falls back to the model-level check, so check `setup()`
+    before adding a view class to `WatchViewSet`.
+    """
+
+    request: HttpRequest
+
+    def _permission_for_instance(self, permission: str, instance: Model) -> bool:
+        assert self.permission_policy is not None
+        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, instance)
+
+    def user_has_permission(self, permission: str) -> bool:
+        instance = getattr(self, 'object', None)
+        if self.permission_policy is None or instance is None:
+            return super().user_has_permission(permission)
+        return self._permission_for_instance(permission, instance)
+
+    def user_has_any_permission(self, permissions: Iterable[str]) -> bool:
+        instance = getattr(self, 'object', None)
+        if self.permission_policy is None or instance is None:
+            return super().user_has_any_permission(permissions)
+        return any(self._permission_for_instance(permission, instance) for permission in permissions)
+
+
+class WatchDeleteView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
+    InstancePermissionCheckedMixin, SnippetDeleteView[ModelT, FormT]
+):
+    pass
+
+
+class WatchHistoryView(InstancePermissionCheckedMixin, HistoryView):
+    pass
+
+
+class WatchUsageView[ModelT: Model](InstancePermissionCheckedMixin, UsageView[ModelT]):
+    pass
+
+
+class WatchInspectView[ModelT: Model](InstancePermissionCheckedMixin, InspectView[ModelT]):
+    pass
+
+
+class WatchRevisionsCompareView[ModelT: Model](InstancePermissionCheckedMixin, RevisionsCompareView[ModelT]):
+    pass
+
+
 class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](SnippetViewSet[ModelT, FormT]):
     index_view_class = WatchIndexView
     add_view_class = WatchCreateView  # type: ignore[assignment]
     edit_view_class = WatchEditView  # type: ignore[assignment]
+    # The edit view is instead guarded by `PlanRelatedViewMixin`, which offers to switch the active
+    # plan rather than denying access -- links in notification emails rely on that.
+    # Annotated with the same types the base class declares, rather than letting the assignment
+    # narrow them: subclasses supply their own delete views, and inferring `type[WatchDeleteView]`
+    # here would make every one of those assignments a type error.
+    delete_view_class: ClassVar[type[SnippetDeleteView[Any, Any]]] = WatchDeleteView
+    history_view_class: ClassVar[type[HistoryView]] = WatchHistoryView
+    usage_view_class: ClassVar[type[UsageView[Any]]] = WatchUsageView
+    # Dead configuration while `inspect_view_enabled` stays False, but keeps the view safe by
+    # default for any subclass that turns it on.
+    inspect_view_class: ClassVar[type[InspectView[Any]]] = WatchInspectView
+    revisions_compare_view_class: ClassVar[type[RevisionsCompareView[Any]]] = WatchRevisionsCompareView
+
+    # Wagtail's copy view is a plain `CreateView`, so it bypasses `WatchCreateView` entirely: the
+    # form never receives the active plan, `initialize_plan_defaults()` never runs, and neither the
+    # plan guard nor the instance permission check applies -- copying another plan's object renders
+    # its data and saving raises. A subclass that wants copying has to provide a plan-aware view.
+    copy_view_enabled = False
 
     @property
     def permission_policy(self):
