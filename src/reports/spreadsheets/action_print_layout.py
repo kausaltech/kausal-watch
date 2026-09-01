@@ -32,6 +32,8 @@ from loguru import logger
 from .cursor_writer import Cell, CellBase, CursorWriter
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Collection
+
     import polars as pl
 
     from actions.models import Plan
@@ -131,6 +133,37 @@ class NewPageMarker(CellBase):
         return True
 
 
+def _build_grid_layout(
+    keys_to_column_count: list[tuple[str, int | None]],
+    filter_out: Collection[str],
+    max_columns: int,
+) -> list[list[str]]:
+    """
+    Pack labels into rows of at most `max_columns` columns.
+
+    Never emits an empty row: `grid_layout_to_grid_values` has no output for one, and
+    a field wider than a whole row (or an input consisting only of `filter_out` labels)
+    would otherwise flush one into the layout.
+    """
+    grid_layout: list[list[str]] = []
+    current_row: list[str] = []
+    cols_left_in_row = max_columns
+    for label, cols in keys_to_column_count:
+        if label in filter_out:
+            continue
+        assert cols is not None
+        if cols > cols_left_in_row:
+            if current_row:
+                grid_layout.append(current_row)
+            current_row = []
+            cols_left_in_row = max_columns
+        current_row.append(label)
+        cols_left_in_row -= cols
+    if current_row:
+        grid_layout.append(current_row)
+    return grid_layout
+
+
 def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -> None:  # noqa: C901, PLR0915
     keys_with_total_length = _keys_with_total_length(action_df)
 
@@ -177,20 +210,7 @@ def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -
     keys_to_column_count: list[tuple[str, int | None]] = [
         (label, map_length(length)[1]) for label, length in keys_with_total_length
     ]
-    grid_layout: list[list[str]] = []
-    current_row: list[str] = []
-    cols_left_in_row = MAX_COLUMNS
-    for label, cols in keys_to_column_count:
-        if label in FILTER_OUT:
-            continue
-        assert cols is not None
-        if cols > cols_left_in_row:
-            grid_layout.append(current_row)
-            current_row = []
-            cols_left_in_row = MAX_COLUMNS
-        current_row.append(label)
-        cols_left_in_row -= cols
-    grid_layout.append(current_row)
+    grid_layout = _build_grid_layout(keys_to_column_count, FILTER_OUT, MAX_COLUMNS)
 
     def pop_value_from_action(action: dict[str, Any], field_name: str) -> Any:
         label = get_single_field_label(field_name)
@@ -244,7 +264,12 @@ def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -
 
             assert len(label_row) == len(value_row)
             if len(label_row) == 0:
-                label_row = tuple()
+                # Nothing to emit for this row. `i` MUST be advanced here:
+                # `label_row` is already empty, so without it the next
+                # iteration re-reads the same grid_layout[i], rebuilds the same
+                # empty tuple and spins forever, burning a worker thread that
+                # nothing cancels when the client disconnects.
+                i += 1
                 continue
 
             if len(label_row) == 1:
