@@ -11,7 +11,7 @@
     "@types/node": "^25.5.0",
     "eslint": "^10.1.0"
   },
-  "packageManager": "pnpm@11.19.0",
+  "packageManager": "pnpm@11.25.0",
   "dependencies": {
     "@apollo/client": "^4.1.6",
     "@playwright/test": "^1.62.0",

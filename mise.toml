@@ -2,17 +2,16 @@
 [settings]
 python.uv_venv_auto = "source"
 experimental = true
+idiomatic_version_file_enable_tools = ['pnpm', 'node']
 
 [tools]
 prek = "latest"
 vault = "latest"
 fnox = "latest"
-node = { version = "latest", postinstall = "pnpm install" }
 
 [env]
 _.python.venv = { path = ".venv", create = true, uv_create_args = [] }
 _.fnox-env = { tools = true }
-PYTHONPATH = "{{ config_root }}"
 SENTRY_ORG = "kausal"
 SENTRY_PROJECT = "watch-backend"
 
@@ -33,6 +32,11 @@ fnox-env = "https://github.com/jdx/mise-env-fnox"
 description = "Refresh the Vault token in the keychain"
 run = "vault login -address=https://vault.kausal.tech -path=keycloak -method=oidc -token-only | fnox set -p keychain FNOX_VAULT_TOKEN"
 
+[tasks.portless]
+description = "Run the backend with Portless"
+env = { PORTLESS_WILDCARD = "1", "PORTLESS_TLD" = "test" }
+run = "portless --name watch-backend --app-port 8042 kausal_common/development/tools/portless-backend.sh"
+raw = true
 
 [tasks.export-graphql-schema]
 description = "Export the GraphQL schema from the Django project"
@@ -41,8 +45,3 @@ run = [
   'python manage.py export_schema aplans.schema > __generated__/schema.graphql',
   'ENABLE_TEST_MODE=1 python manage.py export_schema aplans.schema > __generated__/schema-test-mode.graphql'
 ]
-
-[tasks.portless]
-description = "Run the backend with Portless"
-run = "portless --name watch-backend --app-port 8042 kausal_common/development/tools/portless-backend.sh"
-raw = true
