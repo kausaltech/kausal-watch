@@ -489,7 +489,10 @@ if REDIS_URL:
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
-                'hosts': [REDIS_URL],
+                # Must exceed RedisChannelLayer.brpop_timeout (5 seconds), so
+                # an empty blocking receive completes before redis-py's socket
+                # read deadline.
+                'hosts': [{'address': REDIS_URL, 'socket_timeout': 10}],
                 'prefix': f'{PROJECT_NAME}-asgi',
             },
         },
