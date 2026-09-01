@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from django.urls import reverse
+from wagtail.log_actions import registry as log_registry
 from wagtail.models import TaskState, WorkflowState
 from wagtail.signals import task_submitted, workflow_approved
 
@@ -232,3 +233,88 @@ def test_bulk_release_ignores_workflow_states_from_other_plans(
 
     ws_other.refresh_from_db()
     assert ws_other.status == WorkflowState.STATUS_IN_PROGRESS
+
+
+def _task_states_by_task_name(ws):
+    return {ts.task.name: ts for ts in TaskState.objects.filter(workflow_state=ws).select_related('task')}
+
+
+def test_bulk_release_records_skip_and_final_approval(client, multi_task_moderation_plan, bulk_approve_url):
+    admin = make_plan_admin(multi_task_moderation_plan)
+    admin.is_superuser = True
+    admin.save(update_fields=['is_superuser'])
+    action = multi_task_moderation_plan.actions.first()
+    ws = _submit_to_moderation(multi_task_moderation_plan, action, admin)
+    workflow_tasks = list(ws.workflow.tasks.all())
+    first_task, final_task = workflow_tasks[0], workflow_tasks[-1]
+
+    client.force_login(admin)
+    client.post(bulk_approve_url, data={'workflow_state_pks': [str(ws.pk)]})
+
+    ws.refresh_from_db()
+    assert ws.status == WorkflowState.STATUS_APPROVED
+    states = _task_states_by_task_name(ws)
+    # The task the operator bypassed is recorded as skipped, not as an approval they never made.
+    assert states[first_task.name].status == TaskState.STATUS_SKIPPED
+    assert states[first_task.name].finished_by == admin
+    # The final task carries the operator's actual approval.
+    assert states[final_task.name].status == TaskState.STATUS_APPROVED
+    assert states[final_task.name].finished_by == admin
+
+
+def test_bulk_release_at_final_task_records_plain_approval(client, multi_task_moderation_plan, bulk_approve_url):
+    admin = make_plan_admin(multi_task_moderation_plan)
+    admin.is_superuser = True
+    admin.save(update_fields=['is_superuser'])
+    action = multi_task_moderation_plan.actions.first()
+    ws = _submit_to_moderation(multi_task_moderation_plan, action, admin)
+    # Approve the first task normally, so the workflow is already at the final task.
+    ws.current_task_state.approve(user=admin)
+    ws.refresh_from_db()
+
+    client.force_login(admin)
+    client.post(bulk_approve_url, data={'workflow_state_pks': [str(ws.pk)]})
+
+    ws.refresh_from_db()
+    assert ws.status == WorkflowState.STATUS_APPROVED
+    statuses = {ts.status for ts in TaskState.objects.filter(workflow_state=ws)}
+    assert statuses == {TaskState.STATUS_APPROVED}
+
+
+def test_bulk_release_writes_workflow_log_entries(client, multi_task_moderation_plan, bulk_approve_url):
+    admin = make_plan_admin(multi_task_moderation_plan)
+    admin.is_superuser = True
+    admin.save(update_fields=['is_superuser'])
+    action = multi_task_moderation_plan.actions.first()
+    ws = _submit_to_moderation(multi_task_moderation_plan, action, admin)
+
+    client.force_login(admin)
+    client.post(bulk_approve_url, data={'workflow_state_pks': [str(ws.pk)]})
+
+    log_actions = set(log_registry.get_logs_for_instance(action).values_list('action', flat=True))
+    assert 'wagtail.workflow.approve' in log_actions
+    assert 'actions.workflow.skip' in log_actions
+
+
+def test_bulk_release_leaves_no_partial_state_on_failure(client, multi_task_moderation_plan, bulk_approve_url):
+    admin = make_plan_admin(multi_task_moderation_plan)
+    admin.is_superuser = True
+    admin.save(update_fields=['is_superuser'])
+    action = multi_task_moderation_plan.actions.first()
+    ws = _submit_to_moderation(multi_task_moderation_plan, action, admin)
+    client.force_login(admin)
+
+    def boom(self, user=None):
+        raise RuntimeError('boom')
+
+    with (
+        patch('actions.bulk_approve.sentry_sdk.capture_exception'),
+        patch.object(WorkflowState, 'finish', boom),
+    ):
+        client.post(bulk_approve_url, data={'workflow_state_pks': [str(ws.pk)]})
+
+    ws.refresh_from_db()
+    assert ws.status == WorkflowState.STATUS_IN_PROGRESS
+    # No task state may be left marked skipped or approved when the release did not go through.
+    statuses = {ts.status for ts in TaskState.objects.filter(workflow_state=ws)}
+    assert statuses == {TaskState.STATUS_IN_PROGRESS}
