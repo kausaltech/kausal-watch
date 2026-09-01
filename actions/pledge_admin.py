@@ -15,6 +15,7 @@ from wagtail.admin.panels import (
     FieldPanel,
     MultiFieldPanel,
     ObjectList,
+    TabbedInterface,
 )
 from wagtail.admin.ui.components import Component
 from wagtail.admin.ui.menus import MenuItem
@@ -180,7 +181,12 @@ class PledgeViewMixin:
         # Add remaining panels
         panels.extend(PledgeViewSet.panels[pos:])
 
-        return ObjectList(panels).bind_to_model(self.model)
+        from actions.pledge_participants_admin import PledgeParticipantsPanel
+
+        return TabbedInterface([
+            ObjectList(panels, heading=_('Pledge')),
+            PledgeParticipantsPanel(heading=_('Participants')),
+        ]).bind_to_model(self.model)
 
 
 class PledgeCreateView(PledgeViewMixin, WatchCreateView[Pledge]):
@@ -388,7 +394,11 @@ class PledgeViewSet(WatchViewSet[Pledge]):
     icon = 'kausal-pledge'
     menu_icon = 'kausal-pledge'
     menu_order = 41  # After Indicators (40)
-    add_to_admin_menu = True
+    # Pledges menu is registered as a submenu (Pledges + Participants) via the
+    # register_pledges_submenu hook in actions/wagtail_hooks.py, so we don't
+    # let the SnippetViewSet auto-add a top-level menu item.
+    add_to_admin_menu = False
+    menu_item_is_registered = True
     list_display = [
         'name',
         Column('commitment_count', label=_('Commitments'), sort_key='commitment_count'),

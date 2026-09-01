@@ -14,9 +14,11 @@ import strawberry as sb
 import strawberry_django
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Count, IntegerField, OuterRef, Prefetch, Q, Subquery, prefetch_related_objects
 from django.db.models.functions import Coalesce
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import get_language, gettext, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
@@ -40,6 +42,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
+from aplans.graphene_views import PUBLIC_USER_TOKEN_HEADER
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
     DjangoNode,
@@ -111,8 +114,20 @@ from .models import (
     IndicatorChangeLogMessage,
     PledgeCommitment,
     PublicUser,
+    PublicUserSignInAttempt,
 )
-from .models.pledge import hash_user_token
+from .models.public_user import SIGNIN_COOLDOWN, SIGNUP_COOLDOWN, hash_user_token
+from .public_user_auth import (
+    SIGN_IN_RATE_LIMIT,
+    SIGN_UP_RATE_LIMIT,
+    VERIFY_PIN_RATE_LIMIT,
+    enforce_rate_limit,
+    issue_signin_pin,
+    issue_signup_pin,
+    merge_anon_into_verified,
+    normalize_email,
+    require_request_client,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
@@ -1303,9 +1318,28 @@ class PublicUserNode(DjangoNode[PublicUser]):
         fields = [
             'id',
             'uuid',
+            'email',
             'user_data',
+            'email_verified_at',
             'created_at',
         ]
+
+    @staticmethod
+    def _token_owner_matches(root: PublicUser, info: GQLInfo) -> bool:
+        token_owner = _resolve_public_user_from_token(info)
+        return token_owner is not None and token_owner.pk == root.pk
+
+    @staticmethod
+    def resolve_email(root: PublicUser, info: GQLInfo) -> str | None:
+        if not PublicUserNode._token_owner_matches(root, info):
+            return None
+        return root.email
+
+    @staticmethod
+    def resolve_email_verified_at(root: PublicUser, info: GQLInfo):
+        if not PublicUserNode._token_owner_matches(root, info):
+            return None
+        return root.email_verified_at
 
     @staticmethod
     def resolve_commitments(root: PublicUser, info: GQLInfo, plan: str | None = None):
@@ -2157,23 +2191,40 @@ class Query:
 
     public_user = graphene.Field(
         PublicUserNode,
-        uuid=graphene.UUID(required=True),
-        description='Get a public user by UUID to retrieve their commitments',
+        uuid=graphene.UUID(required=False),
+        description=(
+            'Get a public user. Anonymous users are identified by the uuid argument; '
+            'signed-up users are identified by the X-Public-User-Token header (uuid '
+            'is then optional).'
+        ),
     )
 
     @staticmethod
-    def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID) -> PublicUser | None:
+    def resolve_public_user(_root: Query, info: GQLInfo, uuid: uuid.UUID | None = None) -> PublicUser | None:
         """
         Look up a PublicUser.
 
-        Anonymous users (no user_token) are identified by the UUID argument.
-        Once a user has signed up, the bearer token is the identifier instead.
+        Token identifies the caller when present. The uuid argument is a
+        fallback for anonymous callers: anonymous rows (no user_token) are
+        addressed by uuid; token-bearing rows require the bearer.
         """
+        # Per-user response; opt out of the shared cache.
+        info.context.graphql_cache_key = None
+        info.context.graphql_no_cache_reason = 'publicUser is per-user'
+        token_owner = _resolve_public_user_from_token(info)
+        if token_owner is not None:
+            return token_owner
+        if uuid is None:
+            return None
         matched = PublicUser.objects.filter(uuid=uuid).first()
-        if matched is None or matched.user_token is None:
-            return matched
-        bearer_user = _resolve_public_user_from_bearer(info)
-        if bearer_user is None or bearer_user.pk != matched.pk:
+        if matched is None or matched.user_token is not None:
+            return None
+        request_plan = info.context.request_plan
+        if (
+            request_plan is None
+            or request_plan.primary_client_id is None
+            or request_plan.primary_client_id != matched.client_id
+        ):
             return None
         return matched
 
@@ -2445,22 +2496,30 @@ class Query:
         )
 
 
-def _resolve_public_user_from_bearer(info: GQLInfo) -> PublicUser | None:
+def _resolve_public_user_from_token(info: GQLInfo) -> PublicUser | None:
     """
-    Look up the PublicUser identified by an `Authorization: Bearer <token>` header.
+    Look up the PublicUser identified by the X-Public-User-Token header.
 
-    The DB stores HMAC hashes of user tokens, so the incoming bearer value is
-    hashed before lookup. Returns None when no Bearer header is present or the
-    token doesn't match any row.
+    The DB stores HMAC hashes of user tokens, so the incoming value is hashed
+    before lookup. Returns None when no token header is present or the token
+    doesn't match any row. A separate header (not Authorization: Bearer) is
+    used so the PublicUser credential never collides with the platform's
+    OAuth/OIDC bearer-token middleware.
+
+    The lookup is scoped to the request plan's client so a token issued on one
+    tenant cannot be presented on another tenant's site.
     """
     headers = info.context.get_request_headers()
-    auth_header = headers.get('authorization') or headers.get('Authorization')
-    if not auth_header:
+    token = headers.get(PUBLIC_USER_TOKEN_HEADER)
+    if not token:
         return None
-    prefix, _, token = auth_header.partition(' ')
-    if prefix.lower() != 'bearer' or not token:
+    request_plan = info.context.request_plan
+    if request_plan is None or request_plan.primary_client_id is None:
         return None
-    return PublicUser.objects.filter(user_token=hash_user_token(token)).first()
+    return PublicUser.objects.filter(
+        user_token=hash_user_token(token),
+        client_id=request_plan.primary_client_id,
+    ).first()
 
 
 def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUser:
@@ -2472,17 +2531,30 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
     UUID-arg fallback is rejected so the bearer credential can't be bypassed
     by anyone who knows the UUID.
     """
-    public_user = _resolve_public_user_from_bearer(info)
+    public_user = _resolve_public_user_from_token(info)
     if public_user is not None:
         return public_user
     if user_uuid is None:
-        raise GraphQLError('Authentication required: provide an Authorization: Bearer token or userUuid')
+        raise GraphQLError(
+            'Authentication required: provide an X-Public-User-Token header or userUuid',
+            extensions={'code': 'AUTHENTICATION_REQUIRED'},
+        )
     try:
         public_user = PublicUser.objects.get(uuid=user_uuid)
     except PublicUser.DoesNotExist:
-        raise GraphQLError('PublicUser not found') from None
+        raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'}) from None
     if public_user.user_token is not None:
-        raise GraphQLError('Authentication required: this account requires an Authorization: Bearer header')
+        raise GraphQLError(
+            'Authentication required: this account requires an X-Public-User-Token header',
+            extensions={'code': 'TOKEN_REQUIRED'},
+        )
+    request_plan = info.context.request_plan
+    if (
+        request_plan is None
+        or request_plan.primary_client_id is None
+        or request_plan.primary_client_id != public_user.client_id
+    ):
+        raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'})
     return public_user
 
 
@@ -2498,8 +2570,9 @@ class RegisterPublicUserMutation(graphene.Mutation):
     Output = RegisterPublicUserPayload
 
     @classmethod
-    def mutate(cls, _root, _info: GQLInfo) -> RegisterPublicUserPayload:
-        public_user = PublicUser.objects.create()
+    def mutate(cls, _root, info: GQLInfo) -> RegisterPublicUserPayload:
+        client = require_request_client(info)
+        public_user = PublicUser.objects.create(client=client)
         return RegisterPublicUserPayload(uuid=public_user.uuid)
 
 
@@ -2533,8 +2606,15 @@ class CommitToPledgeMutation(graphene.Mutation):
     ) -> CommitToPledgePayload:
         public_user = _resolve_public_user(info, user_uuid)
 
+        request_plan = info.context.request_plan
+        pledge_qs = Pledge.objects.select_related('plan__features')
+        if request_plan is not None and request_plan.primary_client_id is not None:
+            pledge_qs = pledge_qs.filter(
+                plan__clients__is_primary=True,
+                plan__clients__client_id=request_plan.primary_client_id,
+            )
         try:
-            pledge = Pledge.objects.select_related('plan__features').get(id=pledge_id)
+            pledge = pledge_qs.get(id=pledge_id)
         except Pledge.DoesNotExist:
             raise GraphQLError('Pledge not found') from None
 
@@ -2594,6 +2674,359 @@ class SetUserDataMutation(graphene.Mutation):
         return SetUserDataPayload(uuid=public_user.uuid)
 
 
+class SignUpPayload(graphene.ObjectType[Any]):
+    """Payload returned after a SignUp request."""
+
+    sent = graphene.Boolean(required=True)
+
+
+class SignUpMutation(graphene.Mutation):
+    """
+    Register a new PublicUser by email and send a PIN to verify it.
+
+    Errors if an account already exists for the given email.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address to register.')
+        terms_accepted = graphene.Boolean(
+            required=True,
+            description='Must be true; the user has accepted the terms.',
+        )
+        marketing_accepted = graphene.Boolean(
+            required=True,
+            description='Whether the user opted in to marketing emails.',
+        )
+        anon_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the anonymous PublicUser to merge into this account once the PIN is verified.',
+        )
+
+    Output = SignUpPayload
+
+    @classmethod
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        email: str,
+        terms_accepted: bool,
+        marketing_accepted: bool,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> SignUpPayload:
+        enforce_rate_limit(info, group='public_user_sign_up', rate=SIGN_UP_RATE_LIMIT)
+        if not terms_accepted:
+            raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
+
+        client = require_request_client(info)
+        normalized = normalize_email(email)
+        now = timezone.now()
+        try:
+            with transaction.atomic():
+                # Check existence inside the transaction. A concurrent
+                # VerifyPin may have consumed a pending attempt and created
+                # the PublicUser between this mutation entering and the
+                # attempt being written. Under READ COMMITTED isolation each
+                # statement here sees the latest committed state, so this
+                # observes the VerifyPin commit; without this re-check, the
+                # SignUp would create a fresh email-only attempt for an
+                # address that now has an account, and the resulting PIN
+                # would be unusable because VerifyPin's existing-user path
+                # ignores email-only attempts.
+                if PublicUser.objects.filter(email=normalized, client=client).exists():
+                    raise GraphQLError(  # noqa: TRY301
+                        'An account with this email already exists.',
+                        extensions={'code': 'ACCOUNT_EXISTS'},
+                    )
+                existing_attempt = (
+                    PublicUserSignInAttempt.objects
+                    .select_for_update()
+                    .filter(email=normalized, client=client, public_user__isnull=True)
+                    .first()
+                )
+                # Re-check after the attempt lock: a concurrent verifyPin
+                # may have consumed the pending attempt while we were waiting.
+                if PublicUser.objects.filter(email=normalized, client=client).exists():
+                    raise GraphQLError(  # noqa: TRY301
+                        'An account with this email already exists.',
+                        extensions={'code': 'ACCOUNT_EXISTS'},
+                    )
+                if existing_attempt and existing_attempt.issued_at > now - SIGNUP_COOLDOWN:
+                    raise GraphQLError(  # noqa: TRY301
+                        'Please wait a moment before requesting another PIN.',
+                        extensions={'code': 'COOLDOWN_ACTIVE'},
+                    )
+                issue_signup_pin(
+                    email=normalized,
+                    client=client,
+                    terms_accepted_at=now,
+                    marketing_consented_at=now if marketing_accepted else None,
+                    anon_uuid=anon_uuid,
+                    plan=info.context.request_plan,
+                )
+        except GraphQLError as err:
+            logger.info('signup_rejected code={code}', code=err.extensions.get('code') if err.extensions else None)
+            raise
+        except Exception as exc:
+            logger.exception('SignUp failed during PIN email delivery')
+            raise GraphQLError(
+                'Could not send verification email. Please try again.',
+                extensions={'code': 'EMAIL_SEND_FAILED'},
+            ) from exc
+        logger.info(
+            'signup_pin_issued plan={plan} has_anon_uuid={has_anon}',
+            plan=info.context.request_plan.identifier if info.context.request_plan else None,
+            has_anon=bool(anon_uuid),
+        )
+        return SignUpPayload(sent=True)
+
+
+class SignInPayload(graphene.ObjectType[Any]):
+    """Payload returned after a SignIn request."""
+
+    sent = graphene.Boolean(required=True)
+
+
+class SignInMutation(graphene.Mutation):
+    """
+    Sign in to an existing PublicUser by email; sends a PIN to verify.
+
+    Errors if no account exists for the given email; never registers a new
+    user as a side effect.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address of the account to sign into.')
+        anon_uuid = graphene.UUID(
+            required=False,
+            description='UUID of the anonymous PublicUser to merge into this account once the PIN is verified.',
+        )
+
+    Output = SignInPayload
+
+    @classmethod
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        email: str,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> SignInPayload:
+        enforce_rate_limit(info, group='public_user_sign_in', rate=SIGN_IN_RATE_LIMIT)
+        client = require_request_client(info)
+        normalized = normalize_email(email)
+        try:
+            public_user = PublicUser.objects.get(email=normalized, client=client)
+        except PublicUser.DoesNotExist:
+            logger.info('signin_rejected code={code}', code='ACCOUNT_NOT_FOUND')
+            raise GraphQLError(
+                'No account found for this email.',
+                extensions={'code': 'ACCOUNT_NOT_FOUND'},
+            ) from None
+
+        try:
+            with transaction.atomic():
+                # Lock the user row so concurrent SignIns for the same account
+                # serialize; the cooldown re-check below then sees an up-to-date
+                # state and can't be bypassed by a parallel request.
+                PublicUser.objects.select_for_update().filter(pk=public_user.pk).first()
+                existing = PublicUserSignInAttempt.objects.filter(public_user=public_user).first()
+                if existing and existing.issued_at > timezone.now() - SIGNIN_COOLDOWN:
+                    raise GraphQLError(  # noqa: TRY301
+                        'Please wait a moment before requesting another PIN.',
+                        extensions={'code': 'COOLDOWN_ACTIVE'},
+                    )
+                issue_signin_pin(public_user, anon_uuid=anon_uuid, plan=info.context.request_plan)
+        except GraphQLError as err:
+            logger.info('signin_rejected code={code}', code=err.extensions.get('code') if err.extensions else None)
+            raise
+        except Exception as exc:
+            logger.exception('SignIn failed during PIN email delivery')
+            raise GraphQLError(
+                'Could not send verification email. Please try again.',
+                extensions={'code': 'EMAIL_SEND_FAILED'},
+            ) from exc
+        logger.info(
+            'signin_pin_issued plan={plan} public_user_pk={pk} has_anon_uuid={has_anon}',
+            plan=info.context.request_plan.identifier if info.context.request_plan else None,
+            pk=public_user.pk,
+            has_anon=bool(anon_uuid),
+        )
+        return SignInPayload(sent=True)
+
+
+class VerifyPinPayload(graphene.ObjectType[Any]):
+    """Payload returned after a successful VerifyPin call."""
+
+    user_token = graphene.String(required=True)
+    pledge_ids = graphene.List(graphene.NonNull(graphene.ID), required=True)
+
+
+class VerifyPinMutation(graphene.Mutation):
+    """
+    Validate a PIN issued by SignIn or SignUp.
+
+    On success, rotates the PublicUser's bearer token, merges any anonymous
+    pledge commitments captured at sign-in time, and returns the new token
+    along with the user's current pledge IDs.
+    """
+
+    class Arguments:
+        email = graphene.String(required=True, description='Email address of the PublicUser to verify.')
+        pin = graphene.String(required=True, description='6-digit PIN delivered by email.')
+        anon_uuid = graphene.UUID(
+            required=False,
+            description=(
+                'Anonymous UUID for the verifying browser. Must match the value passed to signIn/signUp; '
+                'binds verification to the initiating session.'
+            ),
+        )
+
+    Output = VerifyPinPayload
+
+    @staticmethod
+    def _consume_attempt(
+        attempt: PublicUserSignInAttempt,
+        existing_user: PublicUser | None,
+        normalized_email: str,
+    ) -> tuple[PublicUser, str]:
+        """
+        Apply the successful-PIN side effects atomically inside the caller's transaction.
+
+        For pending SignUp attempts (existing_user is None), creates the
+        PublicUser using the attempt's stored consent timestamps so consent
+        is only persisted once the verifier proves mailbox control. For
+        SignIn attempts, reuses the existing user and stamps
+        email_verified_at on first verification.
+        """
+        anon_uuid = attempt.anon_uuid
+        if existing_user is None:
+            pending_terms_accepted_at = attempt.pending_terms_accepted_at
+            pending_marketing_consented_at = attempt.pending_marketing_consented_at
+            attempt_client = attempt.client
+            attempt.delete()
+            public_user = PublicUser.objects.create(
+                email=normalized_email,
+                client=attempt_client,
+                terms_accepted_at=pending_terms_accepted_at,
+                marketing_consented_at=pending_marketing_consented_at,
+                email_verified_at=timezone.now(),
+            )
+        else:
+            attempt.delete()
+            public_user = existing_user
+            if public_user.email_verified_at is None:
+                public_user.email_verified_at = timezone.now()
+                public_user.save(update_fields=['email_verified_at'])
+        if anon_uuid is not None:
+            merge_anon_into_verified(public_user, anon_uuid)
+        return public_user, public_user.regenerate_user_token()
+
+    @classmethod
+    def mutate(
+        cls,
+        _root,
+        info: GQLInfo,
+        email: str,
+        pin: str,
+        anon_uuid: uuid.UUID | None = None,
+    ) -> VerifyPinPayload:
+        enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
+        client = require_request_client(info)
+        normalized = normalize_email(email)
+        # Look up the user first to decide which attempt-finder path to take:
+        # if there's a verified PublicUser, this is a SignIn verification;
+        # otherwise it's a SignUp verification (attempt exists by email,
+        # user hasn't been created yet).
+        existing_user = PublicUser.objects.filter(email=normalized, client=client).first()
+
+        # Lock the user row (when one exists) before the attempt row so a
+        # parallel SignIn+VerifyPin pair can't deadlock - SignIn locks the
+        # user then writes the attempt. The locks also serialize parallel
+        # correct-PIN verifies so they don't both rotate user_token. Errors
+        # are stored and raised outside the block so the wrong-PIN
+        # attempts-counter increment commits with the transaction instead of
+        # being rolled back.
+        verify_error: GraphQLError | None = None
+        raw_token: str | None = None
+        public_user: PublicUser | None = None
+        with transaction.atomic():
+            locked_user: PublicUser | None = None
+            if existing_user is not None:
+                locked_user = PublicUser.objects.select_for_update().filter(pk=existing_user.pk).first()
+                attempt = PublicUserSignInAttempt.objects.select_for_update().filter(public_user=locked_user).first()
+            else:
+                attempt = (
+                    PublicUserSignInAttempt.objects
+                    .select_for_update()
+                    .filter(email=normalized, client=client, public_user__isnull=True)
+                    .first()
+                )
+            if attempt is None:
+                verify_error = GraphQLError(
+                    'No active sign-in attempt for this email. Please sign in again.',
+                    extensions={'code': 'NO_ACTIVE_ATTEMPT'},
+                )
+            elif attempt.anon_uuid != anon_uuid:
+                verify_error = GraphQLError(
+                    'This sign-in was started from a different browser. Please request a new PIN from this browser.',
+                    extensions={'code': 'SESSION_MISMATCH'},
+                )
+            elif attempt.is_expired:
+                verify_error = GraphQLError(
+                    'PIN has expired. Please request a new one.',
+                    extensions={'code': 'PIN_EXPIRED'},
+                )
+            elif attempt.attempts_exhausted:
+                verify_error = GraphQLError(
+                    'Too many attempts. Please request a new PIN.',
+                    extensions={'code': 'PIN_LOCKED'},
+                )
+            elif not attempt.verify(pin):
+                verify_error = GraphQLError('Invalid PIN.', extensions={'code': 'INVALID_PIN'})
+            else:
+                public_user, raw_token = cls._consume_attempt(attempt, locked_user, normalized)
+
+        if verify_error is not None:
+            logger.info(
+                'pin_verify_failed code={code}',
+                code=verify_error.extensions.get('code') if verify_error.extensions else None,
+            )
+            raise verify_error
+        assert raw_token is not None
+        assert public_user is not None
+
+        logger.info(
+            'pin_verified flow={flow} public_user_pk={pk}',
+            flow='signup' if existing_user is None else 'signin',
+            pk=public_user.pk,
+        )
+
+        # Commitments are stored against the primary translation of each
+        # Pledge, but the frontend lists pledges in the active locale
+        # (plan.pledges filters by active locale, with locale-specific PKs).
+        # Returning raw PledgeCommitment.pledge_id would give the client
+        # primary-language IDs that don't match the Pledge rows it sees, so
+        # an existing commitment wouldn't be recognized after sign-in. Route
+        # each commitment through get_translation_for_language so the IDs
+        # line up with what plan.pledges returns. Scope to the request plan
+        # and to plans with community engagement enabled, matching
+        # PublicUserNode.resolve_commitments and PledgeCommitmentNode.
+        language = get_language()
+        committed_pledges = Pledge.objects.filter(
+            commitments__public_user=public_user,
+            plan__features__enable_community_engagement=True,
+        )
+        request_plan = info.context.request_plan
+        if request_plan is not None:
+            committed_pledges = committed_pledges.filter(plan=request_plan)
+        pledge_ids = [str(p.get_translation_for_language(language).pk) for p in committed_pledges]
+        return VerifyPinPayload(
+            user_token=raw_token,
+            pledge_ids=pledge_ids,
+        )
+
+
 class PledgeMutations(graphene.ObjectType[Any]):
     """Mutations related to pledges and community engagement."""
 
@@ -2605,6 +3038,15 @@ class PledgeMutations(graphene.ObjectType[Any]):
     )
     set_user_data = SetUserDataMutation.Field(
         description="Set a key-value pair in a PublicUser's user_data.",
+    )
+    sign_up = SignUpMutation.Field(
+        description='Register a new PublicUser by email and send a verification PIN.',
+    )
+    sign_in = SignInMutation.Field(
+        description='Sign in to an existing PublicUser by email and send a verification PIN.',
+    )
+    verify_pin = VerifyPinMutation.Field(
+        description='Validate a PIN, rotate the user token, and return authentication details.',
     )
 
 

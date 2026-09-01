@@ -20,7 +20,7 @@ from kausal_common.strawberry.context import GraphQLContext
 from kausal_common.strawberry.extensions import AuthenticationExtension, ExecutionCacheExtension, SchemaExtension
 from kausal_common.users import user_or_none
 
-from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER
+from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER, PUBLIC_USER_TOKEN_HEADER
 
 from actions.models import Plan
 
@@ -330,13 +330,8 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             return None
 
         headers = exec_ctx.get_request_headers()
-        auth = headers.get('authorization') or headers.get('Authorization', '')
-        if auth.lower().startswith('bearer '):
-            self.set_reason('public-user bearer auth present')
-            return None
-
-        if 'publicUser' in (self.execution_context.query or ''):
-            self.set_reason('publicUser query is identity-sensitive and not cached')
+        if headers.get(PUBLIC_USER_TOKEN_HEADER):
+            self.set_reason('public-user token present')
             return None
 
         parts = [str(plan.identifier), plan.cache_invalidated_at.isoformat()]

@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import hashlib
-import hmac
-import secrets
 import uuid
 from typing import TYPE_CHECKING, ClassVar, Self
 
 import reversion
-from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
@@ -28,6 +24,7 @@ from search.models import SearchableModel
 
 from .attributes import ModelWithAttributes
 from .plan import Plan
+from .public_user import PublicUser
 
 if TYPE_CHECKING:
     from typing import Any
@@ -341,83 +338,6 @@ class Pledge(
             for lang, lang_panels in i18n.items():
                 i18n_panels.setdefault(lang, []).extend(lang_panels)
         return (main_panels, i18n_panels)
-
-
-def _generate_user_token() -> str:
-    return secrets.token_urlsafe(48)
-
-
-def _get_user_token_pepper() -> bytes:
-    """
-    Derive a per-app HMAC key from SECRET_KEY.
-
-    Scoping with a label prevents the pepper from being equivalent to keys used
-    elsewhere with SECRET_KEY. Rotating SECRET_KEY rotates all user_token hashes,
-    invalidating outstanding bearer credentials, which is the intended behavior.
-    """
-    return hashlib.sha256(b'kausal-watch:public_user_token_pepper:' + settings.SECRET_KEY.encode()).digest()
-
-
-def hash_user_token(raw_token: str) -> str:
-    """Return the HMAC-SHA256 hex digest of a raw user token."""
-    return hmac.new(_get_user_token_pepper(), raw_token.encode(), hashlib.sha256).hexdigest()
-
-
-@reversion.register(exclude=['user_token'])
-class PublicUser(models.Model):
-    """
-    A public-facing user identity.
-
-    PublicUser represents community members who participate in public-facing
-    features such as pledges without requiring a full user account. Anonymous
-    users are identified by uuid; user_token is set only after the user
-    verifies an email (i.e., signs up), and is then used as a bearer
-    credential for authenticated requests.
-    """
-
-    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    user_data = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name=_('user data'),
-        help_text=_('Freeform key-value data about the user (e.g., zip_code)'),
-    )
-    user_token = models.CharField(
-        max_length=64,
-        unique=True,
-        null=True,
-        blank=True,
-        editable=False,
-        verbose_name=_('user token'),
-        help_text=_('Opaque secret used as a bearer credential after the user signs up.'),
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_('created at'),
-    )
-
-    objects: ClassVar[Manager[Self]]
-
-    commitments: RevMany[PledgeCommitment]
-
-    class Meta:
-        verbose_name = _('public user')
-        verbose_name_plural = _('public users')
-
-    def __str__(self) -> str:
-        return str(self.uuid)
-
-    def regenerate_user_token(self) -> str:
-        """
-        Mint a new raw bearer token, store its HMAC hash on the row, and return the raw value.
-
-        The raw token is returned to the caller exactly once (typically to the
-        client via a mutation payload). The database only ever holds the hash.
-        """
-        raw_token = _generate_user_token()
-        self.user_token = hash_user_token(raw_token)
-        self.save(update_fields=['user_token'])
-        return raw_token
 
 
 @reversion.register()

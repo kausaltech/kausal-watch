@@ -1,0 +1,33 @@
+{% extends "bookended_base.mjml" %}
+
+{% block notification_content %}
+<mj-section mj-class="notification-content-section">
+    <mj-column>
+        <mj-text align="left">
+            <p>
+                {% trans plan_name=plan.name %}Here is your sign-in code for the {{ plan_name }}:{% endtrans %}
+            </p>
+        </mj-text>
+        <mj-text align="center" font-size="32px" font-weight="bold" letter-spacing="6px" padding="16px 32px">
+            {{ raw_pin }}
+        </mj-text>
+        <mj-text align="left">
+            <p>
+                {% trans minutes=pin_ttl_minutes %}Enter this code when prompted. It expires in {{ minutes }} minutes.{% endtrans %}
+            </p>
+            <p>
+                {% trans %}If you didn't request this code, you can ignore this email.{% endtrans %}
+            </p>
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section>
+    <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+            {% trans %}Powered by Kausal Watch{% endtrans %}<br>
+            <a href="https://kausal.tech">kausal.tech</a>
+        </mj-text>
+    </mj-column>
+</mj-section>
+{% endblock %}

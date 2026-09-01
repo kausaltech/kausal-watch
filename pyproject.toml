@@ -38,6 +38,7 @@ dependencies = [
   "django-oauth-toolkit",
   "django-parler",
   "django-pydantic-field",
+  "django-ratelimit",
   "django-redis",
   "django-relations-iterator",
   "django-reversion",
@@ -189,6 +190,12 @@ extend-exclude = [
   "./mcp_server/__generated__",
   "./paths_integration/_generated_",
 ]
+
+[tool.ruff.lint]
+# PLR0917 is a ruff preview rule; CI runs ruff with preview enabled and
+# flags too-many-positional-arguments, but our local ruff doesn't. Marking
+# it external keeps `# noqa: PLR0917` from being stripped locally.
+external = ["PLR0917"]
 
 [tool.mypy]
 plugins = [ "mypy_django_plugin.main", "kausal_common.development.mypy_plugin", "pydantic.mypy" ]

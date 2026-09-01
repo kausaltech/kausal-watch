@@ -16,7 +16,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from graphene_django.views import GraphQLView
-from graphql import ExecutionContext
+from graphql import ExecutionContext, OperationType, get_operation_ast, parse
 from graphql.error import GraphQLError
 from graphql.language.ast import StringValueNode, VariableNode
 from graphql.type import GraphQLResolveInfo
@@ -54,6 +54,7 @@ SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
 PLAN_DOMAIN_HEADER = 'x-cache-plan-domain'
 WILDCARD_DOMAIN_HEADER = 'x-wildcard-domains'
+PUBLIC_USER_TOKEN_HEADER = 'x-public-user-token'  # noqa: S105
 
 
 class APITokenMiddleware:
@@ -212,11 +213,24 @@ class SentryGraphQLView(GraphQLView):
             kwargs['middleware'] = middleware
         super().__init__(*args, **kwargs)
 
-    def get_cache_key(self, request: WatchAPIRequest, data, query, variables):
+    def get_cache_key(self, request: WatchAPIRequest, data, query, variables, operation_name):
         plan_identifier = request.headers.get(PLAN_IDENTIFIER_HEADER)
         plan_domain = request.headers.get(PLAN_DOMAIN_HEADER)
         if not plan_identifier and not plan_domain:
             logger.info('Skipping cache; required HTTP headers missing')
+            return None
+
+        try:
+            document = parse(query)
+        except GraphQLError:
+            return None
+        operation = get_operation_ast(document, operation_name)
+        if operation is not None and operation.operation != OperationType.QUERY:
+            return None
+
+        if 'publicUser' in query:
+            return None
+        if request.headers.get(PUBLIC_USER_TOKEN_HEADER):
             return None
 
         qs: PlanQuerySet = Plan.objects.get_queryset()
@@ -280,7 +294,7 @@ class SentryGraphQLView(GraphQLView):
         *args,
         **kwargs,
     ) -> ExecutionResult:
-        key = self.get_cache_key(request, data, query, variables)
+        key = self.get_cache_key(request, data, query, variables, operation_name)
         span.set_tag('cache_key', key)
         if key:
             result = self.get_from_cache(key)
