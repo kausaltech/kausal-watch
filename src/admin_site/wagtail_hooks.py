@@ -371,4 +371,4 @@ def preserve_active_tab_on_save():
 
 # Imported at the end because wagtail.snippets triggers re-entrant hook
 # discovery, and all hooks above must be registered before that happens.
-import admin_site.wagtail_admin  # noqa: E402, F401
+from admin_site import built_in_field_customization_admin, wagtail_admin  # noqa: E402, F401
