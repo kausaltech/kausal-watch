@@ -16,10 +16,10 @@ python run_tests.py
 pytest --reuse-db
 
 # Run specific test file
-pytest --reuse-db actions/tests/test_models.py
+pytest --reuse-db src/actions/tests/test_models.py
 
 # Run specific test
-pytest --reuse-db actions/tests/test_models.py::test_action_can_be_saved
+pytest --reuse-db src/actions/tests/test_models.py::test_action_can_be_saved
 ```
 
 ### Pytest Configuration
@@ -44,7 +44,7 @@ Key pytest plugins used:
 Tests are organized within each Django app:
 
 ```
-actions/
+src/actions/
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py          # Fixtures used across multiple test files

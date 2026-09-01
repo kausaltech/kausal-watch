@@ -370,7 +370,7 @@ def n_of_a_kind(factory, count, context=None):
 
 
 @pytest.fixture
-def actions_having_attributes(  # noqa: PLR0913, PLR0917
+def actions_having_attributes(  # noqa: PLR0913
     plan,
     category_type,
     category_factory,

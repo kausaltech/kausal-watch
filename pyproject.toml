@@ -1,6 +1,34 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = [ "setuptools>=61.2" ]
+build-backend = "uv_build"
+requires = [ "uv_build<0.13" ]
+
+[tool.uv.build-backend]
+module-name = [
+  "actions",
+  "admin_site",
+  "aplans",
+  "audit_logging",
+  "budget",
+  "content",
+  "copying",
+  "datasets",
+  "documentation",
+  "documents",
+  "feedback",
+  "images",
+  "indicators",
+  "insight",
+  "mcp_server",
+  "notifications",
+  "orgs",
+  "pages",
+  "paths_integration",
+  "people",
+  "reports",
+  "request_log",
+  "search",
+  "users",
+]
 
 [project]
 name = "kausal-watch"
@@ -166,10 +194,6 @@ prod = [
   "uvicorn-worker",
 ]
 
-[tool.setuptools]
-include-package-data = false
-py-modules = []
-
 [tool.uv]
 sources.django-modeltrans = { url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" }
 sources.graphene-django-optimizer = { url = "https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip" }
@@ -186,13 +210,13 @@ environments = [
 [tool.ruff]
 extend = "./kausal_common/configs/ruff.toml"
 extend-exclude = [
-  "./mcp_server/__generated__",
-  "./paths_integration/_generated_",
+  "./src/mcp_server/__generated__",
+  "./src/paths_integration/__generated__",
 ]
 
 [tool.mypy]
 plugins = [ "mypy_django_plugin.main", "kausal_common.development.mypy_plugin", "pydantic.mypy" ]
-mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings"
+mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings:$MYPY_CONFIG_FILE_DIR/src"
 exclude = [
   "/migrations/",
   "^Attic/",
@@ -278,6 +302,7 @@ module = [ "mcp_server.__generated__.*", "paths_integration.__generated__.*" ]
 ignore_errors = true
 
 [tool.pyright]
+extraPaths = [ "src" ]
 exclude = [
   ".*",
   "**/__pycache__",
@@ -317,13 +342,14 @@ reportUnusedImport = false
 defineConstant = { IS_PATHS = false, IS_WATCH = true, IS_MYPY = false }
 
 [tool.ty]
-environment.extra-paths = [ "kausal_common/typings" ]
+environment.extra-paths = [ "kausal_common/typings", "src" ]
 
 [tool.django-stubs]
 django_settings_module = "aplans.settings"
 
 [tool.pytest]
 DJANGO_SETTINGS_MODULE = "aplans.settings"
+pythonpath = [ "src" ]
 norecursedirs = [
   ".*",
   ".direnv",

@@ -28,7 +28,7 @@ MJML_CMD = [
 
 
 def make_jinja_environment():
-    loader = FileSystemLoader(Path(settings.BASE_DIR) / 'notifications' / 'mjml-templates')
+    loader = FileSystemLoader(Path(__file__).parent / 'mjml-templates')
     env = SandboxedEnvironment(
         trim_blocks=True,
         lstrip_blocks=True,

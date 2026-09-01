@@ -182,10 +182,7 @@ class TestSharedObjectClosure:
         child_org = OrganizationFactory.create(parent=parent_org)
         plan = PlanFactory.create(organization=child_org)
 
-        with_shared = {
-            (r['model'], r['pk'])
-            for r in json.loads(serialize_plan(plan, include_referenced_shared_objects=True))
-        }
+        with_shared = {(r['model'], r['pk']) for r in json.loads(serialize_plan(plan, include_referenced_shared_objects=True))}
         # The referenced org and its ancestor are both pulled in.
         assert ('orgs.organization', child_org.pk) in with_shared
         assert ('orgs.organization', parent_org.pk) in with_shared
@@ -306,9 +303,7 @@ class TestMediaViaReferenceIndex:
         image = AplansImageFactory.create(collection=Collection.get_first_root_node(), title='embedded')
         # An image embedded in rich text (tracked only by the ReferenceIndex, not a plain FK),
         # living outside the plan's own collection.
-        action.description = (
-            f'<p data-block-key="k"><embed embedtype="image" format="fullwidth" id="{image.pk}" alt="x"/></p>'
-        )
+        action.description = f'<p data-block-key="k"><embed embedtype="image" format="fullwidth" id="{image.pk}" alt="x"/></p>'
         action.save()
         ReferenceIndex.create_or_update_for_object(action)
 

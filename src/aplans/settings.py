@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 # TODO: Rename to `watch`. But then we need to also rename the `aplans` directory and references.
 PROJECT_NAME = 'aplans'
 
-root = environ.Path(__file__) - 2  # two folders back
+root = environ.Path(__file__) - 3  # repository root
 env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),

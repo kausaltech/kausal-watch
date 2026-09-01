@@ -157,7 +157,7 @@ def test_plans_for_hostname_reuses_prefetched_domains(
 @pytest.mark.parametrize('publication_state', ['published', 'scheduled', 'unpublished'])
 @pytest.mark.parametrize('user_kind', ['anonymous', 'plan_admin', 'superuser'])
 @pytest.mark.parametrize('expose_flag', [True, False])
-def test_plan_type_respects_publication_visibility(  # noqa: PLR0917
+def test_plan_type_respects_publication_visibility(
     client,
     graphql_client_query_data,
     person_factory,

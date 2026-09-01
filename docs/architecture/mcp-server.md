@@ -14,7 +14,7 @@ Kausal Watch exposes an MCP (Model Context Protocol) server at `/mcp` to enable 
 ## File Structure
 
 ```
-mcp_server/
+src/mcp_server/
 ├── __init__.py              # Package init
 ├── server.py                # FastMCP app, resource & tool registration
 ├── queries.graphql          # GraphQL queries and mutations for MCP tools
@@ -35,7 +35,7 @@ mcp_server/
 
 ### Adding a Read Tool (Query)
 
-1. **Add the GraphQL query** to `mcp_server/queries.graphql`:
+1. **Add the GraphQL query** to `src/mcp_server/queries.graphql`:
 
    ```graphql
    query MCPGetPlan($identifier: ID!) @context(input: {identifier: $identifier}) {
@@ -59,10 +59,10 @@ mcp_server/
    kausal_common/development/tools/generate-mcp-schema.sh
    ```
 
-   This generates typed Pydantic models in `mcp_server/__generated__/schema.py`.
+   This generates typed Pydantic models in `src/mcp_server/__generated__/schema.py`.
    Query operations generate classes inheriting from `QueryModel`.
 
-3. **Add the tool** to the appropriate file in `mcp_server/tools/`:
+3. **Add the tool** to the appropriate file in `src/mcp_server/tools/`:
 
    ```python
    from mcp_server.__generated__.schema import MCPGetPlan
@@ -83,7 +83,7 @@ mcp_server/
 Write tools follow the same first two steps (add operation to `queries.graphql`,
 regenerate). The key differences are in the GraphQL operation and the tool implementation.
 
-1. **Add the GraphQL mutation** to `mcp_server/queries.graphql`.
+1. **Add the GraphQL mutation** to `src/mcp_server/queries.graphql`.
    Mutations that can return validation errors use a union return type — include
    `...OpInfo` alongside the result fields:
 
@@ -165,16 +165,16 @@ The `mcp_client_tool.py` script provides a simple way to test the MCP server:
 
 ```bash
 # List available tools
-uv run mcp_server/mcp_client_tool.py --list-tools
+uv run src/mcp_server/mcp_client_tool.py --list-tools
 
 # Call a tool
-uv run mcp_server/mcp_client_tool.py --call list_plans
+uv run src/mcp_server/mcp_client_tool.py --call list_plans
 
 # Call with arguments
-uv run mcp_server/mcp_client_tool.py --call hello_world --args '{"name": "World"}'
+uv run src/mcp_server/mcp_client_tool.py --call hello_world --args '{"name": "World"}'
 
 # Get raw JSON output
-uv run mcp_server/mcp_client_tool.py --call list_plans --raw
+uv run src/mcp_server/mcp_client_tool.py --call list_plans --raw
 ```
 
 **Prerequisites**: Set `MCP_CLIENT_TOKEN` in your `.env` file with a valid OAuth2 access token.

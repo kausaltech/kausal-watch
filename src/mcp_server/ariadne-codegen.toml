@@ -1,9 +1,9 @@
 [tool.ariadne-codegen]
-queries_path = "mcp_server/queries.graphql"
+queries_path = "src/mcp_server/queries.graphql"
 # remote_schema_url = 'http://localhost:8000/v1/graphql/'
 schema_path = 'schema.graphql'
 client_name = 'MCPClient'
-target_package_path = 'mcp_server/_generated_'
+target_package_path = 'src/mcp_server/__generated__'
 base_client_name = 'DirectSchemaClient'
-base_client_file_path = 'mcp_server/base_graphql_client.py'
+base_client_file_path = 'src/mcp_server/base_graphql_client.py'
 plugins = ['kausal_common.strawberry.ariadne_plugins.IncludeDescriptionsPlugin']

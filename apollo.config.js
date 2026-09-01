@@ -1,6 +1,6 @@
 function getPathsConfig() {
   return {
-    includes: ["./paths_integration/**/*.graphql"],
+    includes: ["./src/paths_integration/**/*.graphql"],
     service: {
       name: "PathsClient",
       url:
@@ -14,7 +14,7 @@ function getWatchConfig() {
   const fs = require("fs");
   if (!fs.existsSync("./__generated__/schema.graphql")) return null;
   return {
-    includes: ["./mcp_server/**/*.graphql"],
+    includes: ["./src/mcp_server/**/*.graphql"],
     service: {
       name: "WatchClient",
       localSchemaFile: "./__generated__/schema.graphql",
