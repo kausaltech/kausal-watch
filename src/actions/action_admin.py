@@ -1327,7 +1327,9 @@ class ActionAdmin(AplansModelAdmin[Action]):
         }
         snippet_view_urls: tuple[URLPattern, ...] = tuple(
             path(
-                f'{self.opts.app_label}/{self.opts.model_name}/{view_name}/{route}/',
+                # A view without route parameters must not produce a doubled slash: proxies in front of the
+                # application merge duplicate slashes, and the merged path would no longer match.
+                f'{self.opts.app_label}/{self.opts.model_name}/{view_name}/' + (f'{route}/' if route else ''),
                 getattr(self, f'{view_name}_view'),
                 name=self.url_helper.get_action_url_name(view_name),
             )
