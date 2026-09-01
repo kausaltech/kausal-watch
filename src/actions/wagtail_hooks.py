@@ -18,6 +18,7 @@ from aplans.context_vars import get_admin_cache
 from admin_site.wagtail import execute_admin_post_save_tasks
 
 from . import wagtail_admin  # noqa: F401
+from .bulk_approve import SKIP_LOG_ACTION
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -63,6 +64,7 @@ def after_edit_snippet(request, snippet):
 def register_plan_log_actions(actions: LogActionRegistry):
     actions.register_action('plan.publish', _('Publish plan'), _('Plan published'))
     actions.register_action('plan.unpublish', _('Unpublish plan'), _('Plan unpublished'))
+    actions.register_action(SKIP_LOG_ACTION, _('Skip moderation task'), _('Moderation task skipped'))
 
 
 class ActionsSearchArea(SearchArea):

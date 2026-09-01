@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import F
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -17,7 +18,8 @@ from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.views.generic.base import WagtailAdminTemplateMixin
-from wagtail.models import TaskState, WorkflowState
+from wagtail.log_actions import log
+from wagtail.models import Task, TaskState, WorkflowState
 
 import sentry_sdk
 from loguru import logger
@@ -33,6 +35,9 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan
 
 logger = logger.bind(name='actions.bulk_approve')
+
+SKIP_LOG_ACTION = 'actions.workflow.skip'
+"""Log action recorded for a moderation task that a bulk release bypassed."""
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -93,6 +98,71 @@ class BulkApproveView(WagtailAdminTemplateMixin, TemplateView):
             })
         return rows
 
+    def _skip_task_state(self, task_state: TaskState, user) -> None:
+        """
+        Record a moderation task as bypassed rather than as an approval nobody made.
+
+        Wagtail treats a skipped task state the same as an approved one when looking for
+        the next task, so this advances the workflow exactly like an approval would.
+        """
+        task_state.status = TaskState.STATUS_SKIPPED
+        task_state.finished_at = timezone.now()
+        task_state.finished_by = user
+        task_state.save()
+        log(
+            instance=task_state.revision.as_object(),
+            action=SKIP_LOG_ACTION,
+            user=user,
+            data={
+                'workflow': {
+                    'id': task_state.workflow_state.workflow.pk,
+                    'title': task_state.workflow_state.workflow.name,
+                    'status': task_state.status,
+                    'task_state_id': task_state.pk,
+                    'task': {'id': task_state.task.pk, 'title': task_state.task.name},
+                },
+            },
+            revision=task_state.revision,
+        )
+        task_state.workflow_state.update(user=user)
+
+    def _release_workflow_state(self, ws: WorkflowState, user) -> None:
+        """
+        Release a workflow state as if the user had approved its final task.
+
+        Tasks the workflow has not reached yet are recorded as skipped, and the final task
+        carries the user's approval, so the moderation history and the audit log say what
+        actually happened. Publishing is left to Wagtail's own approval path.
+        """
+        # Order the tasks the same way Wagtail picks the next one, with an explicit tie-break
+        # so a workflow whose tasks have no sort order still has a well-defined final task.
+        active_tasks: list[Task] = list(
+            ws.workflow.tasks.filter(active=True).order_by(F('workflow_tasks__sort_order').asc(nulls_last=True), 'pk'),
+        )
+        if not active_tasks:
+            ws.finish(user=user)
+            return
+        final_task = active_tasks[-1]
+
+        # Each round either advances the workflow by one task or finishes it, so the number
+        # of tasks bounds the loop; the extra round is the one that finishes the workflow.
+        for _attempt in range(len(active_tasks) + 1):
+            if ws.status != WorkflowState.STATUS_IN_PROGRESS:
+                return
+            task_state = ws.current_task_state
+            if task_state is None or task_state.status != TaskState.STATUS_IN_PROGRESS:
+                # Not sitting on a task: let Wagtail start the next one (or finish the workflow).
+                ws.update(user=user)
+                ws.refresh_from_db()
+                continue
+            if task_state.task.pk == final_task.pk:
+                task_state.approve(user=user)
+                return
+            self._skip_task_state(task_state, user)
+            ws.refresh_from_db()
+
+        raise RuntimeError(f'Workflow state {ws.pk} did not finish while being released')
+
     def get_index_url(self) -> str:
         return reverse('actions_action_modeladmin_index')
 
@@ -143,23 +213,13 @@ class BulkApproveView(WagtailAdminTemplateMixin, TemplateView):
                     continue
                 try:
                     with transaction.atomic():
-                        ws.finish(user=request.user)
+                        self._release_workflow_state(ws, request.user)
                     released.append(action)
                     released_ws_ids.append(ws.pk)
                 except Exception as e:
                     logger.exception(f'Bulk release failed for action {action.pk}')
                     sentry_sdk.capture_exception(e)
                     errors.append((action, e))
-
-            if released_ws_ids:
-                TaskState.objects.filter(
-                    workflow_state_id__in=released_ws_ids,
-                    status=TaskState.STATUS_IN_PROGRESS,
-                ).update(
-                    status=TaskState.STATUS_APPROVED,
-                    finished_at=timezone.now(),
-                    finished_by=request.user,
-                )
 
         if released:
             messages.success(
