@@ -365,4 +365,7 @@ norecursedirs = [
 ]
 filterwarnings = [ "ignore::DeprecationWarning:easy_thumbnails" ]
 testpaths = [ "**/tests" ]
-env = [ "ENV_FILE=.env.test" ]
+# RUNNING_TESTS is how the settings module recognises a test run. Setting it here rather than
+# sniffing for pytest at import time keeps test-only settings — a cheap password hasher, no
+# Sentry — from leaking into any other process that happens to import pytest.
+env = [ "ENV_FILE=.env.test", "RUNNING_TESTS=1" ]

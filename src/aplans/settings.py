@@ -36,6 +36,7 @@ env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),
     ENABLE_TEST_MODE=(bool, False),
+    RUNNING_TESTS=(bool, False),
     DEPLOYMENT_TYPE=(str, 'development'),
     DEPLOYMENT_REGION=(str, None),
     KUBERNETES_MODE=(bool, False),
@@ -139,6 +140,12 @@ DEBUG = cast('bool', env('DEBUG'))
 DEPLOYMENT_TYPE = cast('str', env('DEPLOYMENT_TYPE'))
 DEPLOYMENT_REGION = cast('str | None', env('DEPLOYMENT_REGION'))
 ENABLE_TEST_MODE = cast('bool', env('ENABLE_TEST_MODE'))
+
+# Set from the pytest configuration in pyproject.toml, and nowhere else. Unlike
+# ENABLE_TEST_MODE — which turns on the test-mode GraphQL API and is a product feature — this
+# says only "the settings are being loaded to run the test suite", and is used below to pick
+# test-only variants of settings that would be wrong or unsafe anywhere else.
+RUNNING_TESTS = cast('bool', env('RUNNING_TESTS'))
 
 if DEPLOYMENT_TYPE in ('production', 'staging') and ENABLE_TEST_MODE:
     raise ImproperlyConfigured('Test mode cannot be enabled in production or staging')
@@ -397,11 +404,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Under pytest, prepend a deliberately cheap hasher. The suite performs ~950 password hashes
-# per run (every UserFactory, and Person.save() sets a password for each new person), and one
-# PBKDF2 hash costs a few hundred milliseconds — around a third of the total run time. The
-# production hashers stay in the list so already-encoded passwords keep validating.
-if 'pytest' in sys.modules:
+# When running the test suite, prepend a deliberately cheap hasher. The suite performs ~950
+# password hashes per run (every UserFactory, and Person.save() sets a password for each new
+# person), and one PBKDF2 hash costs a few hundred milliseconds — around a third of the total
+# run time. The production hashers stay in the list so already-encoded passwords keep
+# validating.
+if RUNNING_TESTS:
     PASSWORD_HASHERS = [
         'django.contrib.auth.hashers.MD5PasswordHasher',
         *global_settings.PASSWORD_HASHERS,
@@ -1022,12 +1030,12 @@ REQUEST_LOG_IGNORE_PATHS = env('REQUEST_LOG_IGNORE_PATHS')
 REQUEST_LOG_MAX_BODY_SIZE = 100 * 1024
 
 
-# Leave Sentry uninitialised under pytest. Its Django and psycopg integrations open a span
-# per query, which costs roughly four times the query itself and adds a few percent to the
-# suite. Leaving SENTRY_DSN empty does not avoid that: the integrations are installed either
-# way and only the delivery of events is dropped. Skipping the init also keeps test runs from
-# reporting to Sentry at all.
-if 'pytest' not in sys.modules:
+# Leave Sentry uninitialised for the test suite. Its Django and psycopg integrations open a
+# span per query, which costs roughly four times the query itself and adds a few percent to
+# the suite. Leaving SENTRY_DSN empty does not avoid that: the integrations are installed
+# either way and only the delivery of events is dropped. Skipping the init also keeps test
+# runs from reporting to Sentry at all.
+if not RUNNING_TESTS:
     init_sentry(SENTRY_DSN, DEPLOYMENT_TYPE)
 
 
