@@ -7,6 +7,7 @@ Kausal Watch is a service for administrating and monitoring action plans. It has
 
 The service was first used to implement monitoring for the [Carbon-neutral Helsinki 2035 action plan](https://www.stadinilmasto.fi/files/2018/03/Executive_summary_HNH2035.pdf). The [ReactJS UI code](https://github.com/City-of-Helsinki/cnh-ui) is also open source.
 
+
 ## Installation
 
 ### Run in Docker locally
