@@ -1022,9 +1022,12 @@ REQUEST_LOG_IGNORE_PATHS = env('REQUEST_LOG_IGNORE_PATHS')
 REQUEST_LOG_MAX_BODY_SIZE = 100 * 1024
 
 
-if True:
-    from kausal_common.sentry.init import init_sentry
-
+# Leave Sentry uninitialised under pytest. Its Django and psycopg integrations open a span
+# per query, which costs roughly four times the query itself and adds a few percent to the
+# suite. Leaving SENTRY_DSN empty does not avoid that: the integrations are installed either
+# way and only the delivery of events is dropped. Skipping the init also keeps test runs from
+# reporting to Sentry at all.
+if 'pytest' not in sys.modules:
     init_sentry(SENTRY_DSN, DEPLOYMENT_TYPE)
 
 
