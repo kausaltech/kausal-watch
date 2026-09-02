@@ -15,6 +15,9 @@ _.fnox-env = { tools = true }
 SENTRY_ORG = "kausal"
 SENTRY_PROJECT = "watch-backend"
 
+# The providers that build the private extensions (client bundles, translations) live in the
+# submodule and are loaded through the symlink in `mise/conf.d/`. They are no-ops when the
+# submodule is not checked out.
 [deps.uv]
 auto = false
 run = "uv sync --all-groups --all-extras"

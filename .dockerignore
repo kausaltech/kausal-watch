@@ -13,7 +13,14 @@ db.sqlite3
 env
 /media/
 /venv/
-/kausal_watch_extensions/
+# Build outputs and unneeded parts of the private extensions submodule
+private/extensions/client/node_modules/
+private/extensions/client/.playwright-mcp/
+private/extensions/*/build/
+private/extensions/*/dist/
+private/extensions/watch/kausal_watch_extensions/static/
+private/extensions/paths/
+private/extensions/site-archiver/
 /Attic/
 /tmp/
 /node_modules/

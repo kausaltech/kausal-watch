@@ -147,7 +147,6 @@ dependencies = [
   "wagtailgeowidget",
   "xlsxwriter",
 ]
-optional-dependencies.kausal = [ "kausal-watch-extensions>=0.3.2" ]
 
 [dependency-groups]
 dev = [
@@ -168,13 +167,16 @@ dev = [
   "viztracer",
   "watchfiles",
 ]
-kausal = [ "kausal-watch-extensions" ]
+l10n = [
+    "anthropic<1",
+]
 lint = [
   "celery-stubs",
   "django-stubs",
   "djangorestframework-stubs",
   "graphene-stubs",
   "isort",
+  "lxml-stubs>=0.5.1",
   "mypy[faster-cache]>2",
   "ondivi",
   "ruff",
@@ -185,6 +187,9 @@ lint = [
   "types-python-dateutil",
   "types-requests>=2.32.4.20260107",
   "types-uwsgi",
+  # The type checker needs everything the checked code imports, and `content_l10n/llm/client.py`
+  # imports `anthropic`, which lives in the `l10n` group so the web and worker images skip it.
+  { include-group = "l10n" },
 ]
 prod = [
   "gunicorn",
@@ -197,11 +202,6 @@ prod = [
 [tool.uv]
 sources.django-modeltrans = { url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" }
 sources.graphene-django-optimizer = { url = "https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip" }
-sources.kausal-paths-extensions = { index = "kausal" }
-index = [
-  { url = "https://pypi.org/simple" },
-  { name = "kausal", url = "https://pypi.kausal.tech", authenticate = "always" }
-]
 environments = [
   "python_full_version >= '3.14' and sys_platform == 'darwin' and platform_machine == 'arm64'",
   "python_full_version >= '3.14' and sys_platform == 'linux' and platform_machine == 'x86_64'",
@@ -210,6 +210,12 @@ environments = [
 [tool.ruff]
 extend = "./kausal_common/configs/ruff.toml"
 extend-exclude = [
+  # Ruff does not follow the `src/kausal_watch_extensions` symlink, so the extension is linted at
+  # its real path inside the submodule. Only the parts that are not ours are excluded.
+  "./private/extensions/client",
+  "./private/extensions/paths",
+  "./private/extensions/site-archiver",
+  "./private/extensions/*/setup.py",
   "./src/mcp_server/__generated__",
   "./src/paths_integration/__generated__",
 ]
@@ -220,6 +226,7 @@ mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings:$MYPY_CONFIG_FILE_DIR/s
 exclude = [
   "/migrations/",
   "^Attic/",
+  "^private/",
   "^local_settings\\.py$",
   "^typings/",
   "^kausal_common/deployment/gunicorn\\.py$",
@@ -309,6 +316,7 @@ exclude = [
   "**/migrations",
   "**/node_modules",
   "Attic/",
+  "private/",
   "local_settings.py",
 ]
 stubPath = "kausal_common/typings"
@@ -361,10 +369,14 @@ norecursedirs = [
   "Attic",
   "data",
   "node_modules",
+  "private",
   "venv",
 ]
 filterwarnings = [ "ignore::DeprecationWarning:easy_thumbnails" ]
-testpaths = [ "**/tests" ]
+# Deliberately not `**/tests`: that would also expand into the `private/` submodule, which
+# carries the Paths extension and shared tests that cannot import here. The Watch extension is
+# covered through the `src/kausal_watch_extensions` symlink.
+testpaths = [ "src/**/tests", "kausal_common/**/tests", "e2e-tests/tests" ]
 # RUNNING_TESTS is how the settings module recognises a test run. Setting it here rather than
 # sniffing for pytest at import time keeps test-only settings — a cheap password hasher, no
 # Sentry — from leaking into any other process that happens to import pytest.

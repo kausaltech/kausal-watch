@@ -28,7 +28,6 @@ data/**
 .venv/**
 .git
 /docker-compose.override.yml
-/kausal_watch_extensions
 /.coverage
 requirements-local.in
 requirements-local.txt
@@ -53,3 +52,4 @@ __generated__/
 /e2e-tests/playwright-report/
 /e2e-tests/playwright-state/
 /e2e-tests/test-results/
+/.mypy_worker*

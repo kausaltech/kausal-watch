@@ -52,18 +52,16 @@ Install the required Python packages:
 uv sync
 ```
 
-If you have access to the Kausal private extensions, you should configure the PyPI index URL in your `.envrc` file:
+If you have access to the Kausal private extensions, check out the optional submodule.
+A plain `git submodule update --init` skips it on purpose, so it needs an explicit `--checkout`:
 
 ```shell
-export UV_INDEX_KAUSAL_USERNAME=...
-export UV_INDEX_KAUSAL_PASSWORD=...
+git submodule update --init --checkout private/extensions
 ```
 
-Then install the dependencies like this:
-
-```shell
-uv sync --extra kausal
-```
+The `kausal_watch_extensions` package then becomes importable through the committed
+`src/kausal_watch_extensions` symlink. When the submodule is absent, the symlink dangles and
+the extension is simply not installed.
 
 #### Setup
 
@@ -76,14 +74,17 @@ AZURE_AD_CLIENT_ID=
 AZURE_AD_CLIENT_SECRET=
 ```
 
-Build the Kausal extensions:
+Build the Kausal extensions (only relevant when the submodule is checked out):
 
-1. Clone the [kausal-extensions](https://github.com/kausaltech/kausal-extensions) repo
-2. Follow the [kausal-extensions instructions](https://github.com/kausaltech/kausal-extensions#building) to build the client
-3. Create a symlink in the root of kausal-watch
-   ```shell
-   ln -s ../kausal-extensions/watch/kausal_watch_extensions .
-   ```
+```shell
+mise deps
+```
+
+This installs the extension client's Node dependencies, builds its bundles into the extension's
+`static/` directory, and compiles its translations. The provider configuration lives in the
+submodule (`private/extensions/mise/watch.toml`) and is loaded through `mise/conf.d/`. Whenever a
+submodule update changes the client sources or translation files, `mise` reminds you to rerun it
+and `mise run` does so automatically.
 
 Collect static files:
 
