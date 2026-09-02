@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from django.conf import global_settings
 from django.utils.translation import gettext_lazy as _
 
 import environ
@@ -395,6 +396,16 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# Under pytest, prepend a deliberately cheap hasher. The suite performs ~950 password hashes
+# per run (every UserFactory, and Person.save() sets a password for each new person), and one
+# PBKDF2 hash costs a few hundred milliseconds — around a third of the total run time. The
+# production hashers stay in the list so already-encoded passwords keep validating.
+if 'pytest' in sys.modules:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+        *global_settings.PASSWORD_HASHERS,
+    ]
 
 # Authentication
 
