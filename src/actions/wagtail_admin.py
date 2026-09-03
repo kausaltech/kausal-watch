@@ -580,6 +580,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('indicator_ordering'),
         FieldPanel('indicators_open_in_modal'),
         FieldPanel('enable_change_log'),
+        FieldPanel('hide_from_search_engines'),
     ]
 
     # Arbitrary string as the 'permission' parameter, here 'superuser', can

@@ -183,6 +183,11 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Enable PDF export of actions in public UI'),
         help_text=_('Enable users of the public UI to export actions to PDF.'),
     )
+    hide_from_search_engines = models.BooleanField(
+        default=False,
+        verbose_name=_('Hide from search engines'),
+        help_text=_('If set, the public website will instruct search engines not to index any of its pages.'),
+    )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'
@@ -236,4 +241,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_community_engagement',
         'enable_action_pdf_export_in_public_ui',
         'enable_indicator_factors',
+        'hide_from_search_engines',
     ]
