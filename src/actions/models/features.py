@@ -185,8 +185,11 @@ class PlanFeatures(PlanRelatedModelWithRevision):
     )
     hide_from_search_engines = models.BooleanField(
         default=False,
-        verbose_name=_('Hide from search engines'),
-        help_text=_('If set, the public website will instruct search engines not to index any of its pages.'),
+        verbose_name=_('Hide published plan from search engines'),
+        help_text=_(
+            'If set, the public production site of a published plan will instruct search engines not to index any of its pages. '
+            'Unpublished plans and preview sites are always excluded from indexing regardless of this setting.'
+        ),
     )
 
     class AccessibilityConformanceLevel(models.TextChoices):
