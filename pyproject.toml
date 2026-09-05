@@ -159,10 +159,8 @@ dev = [
   "ipdb",
   "ipython",
   "pdbr>=0.9.7",
-  "prek>=0.2.12",
   "turms>=0.10.1",
   "types-factory-boy>=0.4.1",
-  "uv",
   "virtualenvwrapper>=6.1.1",
   "viztracer",
   "watchfiles",
@@ -171,7 +169,7 @@ l10n = [
     "anthropic<1",
 ]
 lint = [
-  "celery-stubs",
+  "celery-types>=0.26.0",
   "django-stubs",
   "djangorestframework-stubs",
   "graphene-stubs",
