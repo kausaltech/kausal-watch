@@ -134,16 +134,17 @@ services:
     command: --enable-events
 
   elasticsearch:
-    image: ${ELASTICSEARCH_IMAGE-kausal-watch-elasticsearch}
-    build:
-      context: ./docker/elasticsearch
-      dockerfile: ./Dockerfile
+    image: harbor.kausal.tech/library/elasticsearch-elastic:8.19.4
     <<: *common-runtime
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
+      - "cluster.routing.allocation.disk.watermark.low=90%"
+      - "cluster.routing.allocation.disk.watermark.high=95%"
+      # - "cluster.routing.allocation.disk.watermark.low.max_headroom=10gb"
+      - "indices.merge.disk.watermark.high=10GB"
       - "ES_JAVA_OPTS=-Xms1g -Xmx2g"
       - ELASTIC_PASSWORD
     deploy:
