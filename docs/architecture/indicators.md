@@ -15,7 +15,7 @@ The italic values are computed: `units × factor → total`. All of these metric
 
 ## Current State: Two Data Systems
 
-### Legacy indicator values (`indicators/`)
+### Legacy indicator values (`src/indicators/`)
 
 - `IndicatorValue` — a single `float` per (indicator, date, dimension-categories)
 - `IndicatorGoal` — a single `float` per (indicator, date)
@@ -174,7 +174,7 @@ The resolver is configured via `kausal_common/datasets/config.py`, which imports
 
 #### Virtual datapoints in the dataset editor
 
-The dataset editor UI displays all data in a unified table — including the virtual metric's values that come from `IndicatorValue` rows rather than `DataPoint` rows. Hooks in `aplans/dataset_config.py` synthesize a virtual metric definition and synthetic datapoint dicts from the indicator's values, shaped identically to real metrics and datapoints so the editor can render them in the same table. The synthetic entries use deterministic UUIDs (`uuid5`) so their identities are stable across requests. Virtual datapoints are read-only in the editor.
+The dataset editor UI displays all data in a unified table — including the virtual metric's values that come from `IndicatorValue` rows rather than `DataPoint` rows. Hooks in `src/aplans/dataset_config.py` synthesize a virtual metric definition and synthetic datapoint dicts from the indicator's values, shaped identically to real metrics and datapoints so the editor can render them in the same table. The synthetic entries use deterministic UUIDs (`uuid5`) so their identities are stable across requests. Virtual datapoints are read-only in the editor.
 
 ##### Date convention mismatch
 
@@ -239,10 +239,10 @@ No attempt is made to unify them now. When the eventual full migration happens, 
 
 | Model | Location | Role |
 |-------|----------|------|
-| `Indicator` | `indicators/models/indicator.py` | Core indicator entity |
-| `IndicatorValue` | `indicators/models/values.py` | Legacy single-float time series |
-| `IndicatorGoal` | `indicators/models/values.py` | Legacy target values |
-| `indicators.Dimension` | `indicators/models/dimensions.py` | Legacy classification axes |
+| `Indicator` | `src/indicators/models/indicator.py` | Core indicator entity |
+| `IndicatorValue` | `src/indicators/models/values.py` | Legacy single-float time series |
+| `IndicatorGoal` | `src/indicators/models/values.py` | Legacy target values |
+| `indicators.Dimension` | `src/indicators/models/dimensions.py` | Legacy classification axes |
 | `DatasetSchema` | `kausal_common/datasets/models.py` | Table shape definition |
 | `DatasetMetric` | `kausal_common/datasets/models.py` | Column in a schema |
 | `Dataset` | `kausal_common/datasets/models.py` | Table instance |
@@ -258,7 +258,7 @@ No attempt is made to unify them now. When the eventual full migration happens, 
 | Change | Location | Role |
 |--------|----------|------|
 | `DataPointBase` | `kausal_common/datasets/models.py` | Abstract base: dataset FK, date, metric, value, dimension_categories |
-| `Indicator.dataset_schema` | `indicators/models/indicator.py` | OneToOneField linking indicator to its dataset schema |
-| `IndicatorGoalDataPoint` | `indicators/models/` (new) | Concrete `DataPointBase` subclass for goal/target values; no comments or source references |
-| `DatasetMetricComputation` | `indicators/models/` (new) | Defines a computed metric as a binary operation on two other metrics |
+| `Indicator.dataset_schema` | `src/indicators/models/indicator.py` | OneToOneField linking indicator to its dataset schema |
+| `IndicatorGoalDataPoint` | `src/indicators/models/` (new) | Concrete `DataPointBase` subclass for goal/target values; no comments or source references |
+| `DatasetMetricComputation` | `src/indicators/models/` (new) | Defines a computed metric as a binary operation on two other metrics |
 | Scope type extensions | `kausal_common/datasets/models.py` | Add `Indicator` to `DatasetScopeType` and `DatasetSchemaScopeType` |

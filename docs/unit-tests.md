@@ -24,12 +24,20 @@ pytest --reuse-db src/actions/tests/test_models.py::test_action_can_be_saved
 
 ### Pytest Configuration
 
-Configuration is in `pyproject.toml` under `[tool.pytest.ini_options]`:
+Configuration is in `pyproject.toml` under `[tool.pytest]`:
 
 - **DJANGO_SETTINGS_MODULE**: `aplans.settings`
-- **testpaths**: `**/tests` - Discovers all test files in `tests/` directories
-- **Test environment**: Uses `.env.test` via `pytest-env`
-- **Database**: Search index auto-update is disabled for tests
+- **pythonpath**: `[ "src" ]` - the Watch apps live under `src/` (see the repository layout in
+  [CLAUDE.md](../CLAUDE.md))
+- **testpaths**: `src/**/tests`, `kausal_common/**/tests`, `e2e-tests/tests`. Deliberately not a
+  bare `**/tests`: that would expand into the `private/` submodule, which carries the Paths
+  extension and shared tests that cannot import here. The Watch extension's own tests are reached
+  through the `src/kausal_watch_extensions` symlink.
+- **Test environment**: sets `ENV_FILE=.env.test` and `RUNNING_TESTS=1` via `pytest-env`.
+  `RUNNING_TESTS` is how the settings module recognises a test run, which keeps test-only
+  settings - a cheap password hasher, no Sentry - out of any other process that imports pytest.
+- **Database**: Search index auto-update is disabled for tests, by the autouse
+  `_disable_search_autoupdate` fixture in `src/aplans/pytest_fixtures.py`
 
 Key pytest plugins used:
 - `pytest-django` - Django integration
@@ -76,7 +84,7 @@ src/actions/
 
 ### The ModelFactory Base Class
 
-Kausal Watch uses a custom `ModelFactory[T]` base class (defined in `aplans/factories.py`) that supports generic type hints:
+Kausal Watch uses a custom `ModelFactory[T]` base class (defined in `src/aplans/factories.py`) that supports generic type hints:
 
 ```python
 from aplans.factories import ModelFactory
@@ -96,7 +104,7 @@ action = ActionFactory.create()  # Type checker knows this is an Action
 
 ### Factory Definitions
 
-Factories are defined in `<app>/tests/factories.py`. Example from `actions/tests/factories.py`:
+Factories are defined in `<app>/tests/factories.py`. Example from `src/actions/tests/factories.py`:
 
 ```python
 from __future__ import annotations

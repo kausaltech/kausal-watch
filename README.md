@@ -59,6 +59,11 @@ Install the required Python packages:
 uv sync
 ```
 
+The Django apps live under `src/` (a src layout), and `uv sync` installs the project itself in
+editable mode, which is what puts `src/` on the import path. The apps are enumerated in
+`[tool.uv.build-backend] module-name` in `pyproject.toml`, so a newly added app has to be listed
+there as well. `manage.py`, `conftest.py`, `templates/` and `locale/` stay at the repo root.
+
 If you have access to the Kausal private extensions, check out the optional submodule.
 A plain `git submodule update --init` skips it on purpose, so it needs an explicit `--checkout`:
 
@@ -153,7 +158,7 @@ python manage.py runserver
 ### Production
 
 The project is containerized using Docker Compose. You will still need to set some
-variables in your environment; see the first few lines in `aplans/settings.py`.
+variables in your environment; see the first few lines in `src/aplans/settings.py`.
 
 In particular, you will need to set the database credentials; for example:
 

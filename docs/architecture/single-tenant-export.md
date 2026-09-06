@@ -21,7 +21,7 @@ It is fragile by construction. Deleting a plan leaves behind orphaned Wagtail pa
 `wagtail_localize` translation metadata (which carries the *source text* of deleted
 objects), and shared common-indicator library data — each of which had to be cleaned up
 by hand-written passes (see `delete_orphaned_plan_pages`, `delete_orphaned_translation_data`,
-and `prune_unused_common_indicators` in `actions/management/commands/destructively_trim_db.py`).
+and `prune_unused_common_indicators` in `src/actions/management/commands/destructively_trim_db.py`).
 Every new model or relation risks a new leak that the cleanup code has to catch up to.
 
 `export_plan` is instead an **allowlist**: it walks *only* the objects that provably
@@ -172,9 +172,9 @@ and audit logs are excluded unless their flag is given.
 
 ## Code layout
 
-- `copying/main.py` — existing clone structures and `iter_plan_owned_instances` (reused).
-- `copying/export.py` — `EXPORT_PLAN_STRUCTURE`, page/collection/media collectors, the
+- `src/copying/main.py` — existing clone structures and `iter_plan_owned_instances` (reused).
+- `src/copying/export.py` — `EXPORT_PLAN_STRUCTURE`, page/collection/media collectors, the
   reference-consistency closures (referenced indicators/dimensions, referenced media), the
   shared-object pull, and the serializer.
-- `copying/management/commands/export_plan.py` — the command.
-- `copying/tests/test_export.py` — coverage, tenant-isolation, and round-trip tests.
+- `src/copying/management/commands/export_plan.py` — the command.
+- `src/copying/tests/test_export.py` — coverage, tenant-isolation, and round-trip tests.

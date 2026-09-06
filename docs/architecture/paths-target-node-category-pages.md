@@ -8,7 +8,7 @@ Editors want a **single Kausal Paths target node ID** for impacts across **categ
 
 ## What the field is
 
-- Defined on the **`CategoryTypeLevelListBlock`** Wagtail struct block in `actions/blocks/category_list.py`.
+- Defined on the **`CategoryTypeLevelListBlock`** Wagtail struct block in `src/actions/blocks/category_list.py`.
 - Optional string (`max_length=200`), editor label **“Kausal Paths target node ID”**.
 - Help text states that if it is not set, **“the default outcome node will be used.”** That default is **not** implemented as a separate plan-level setting in this Django codebase; it is either **frontend (Watch UI) behaviour** and/or **Kausal Paths** instance behaviour.
 
@@ -21,7 +21,7 @@ Editors want a **single Kausal Paths target node ID** for impacts across **categ
 | Category page | `CategoryPage` | **No** — different block set; has **Category list**, not **Category level list** |
 | Front page | `PlanRootPage` | No (other blocks only) |
 
-Relevant code: `pages/models.py` — `StaticPage.body` includes `('category_level_list', CategoryTypeLevelListBlock())`; `CategoryPage.body` does not.
+Relevant code: `src/pages/models.py` — `StaticPage.body` includes `('category_level_list', CategoryTypeLevelListBlock())`; `CategoryPage.body` does not.
 
 ## Where to edit in Wagtail admin
 
@@ -29,12 +29,12 @@ Relevant code: `pages/models.py` — `StaticPage.body` includes `('category_leve
 - It does **not** appear on **Category page** (e.g. a strategy page like “Strom”), by design.
 - An **empty Body** on a category type page only means no blocks were added yet; use **Add block → Category level list** and fill the fields, then **Publish**.
 
-**Category type pages** are real pages (`CategoryTypePage`). They are often **created automatically** when a `CategoryType` has **“Synchronize with pages”** enabled (`actions/models/category.py` — `synchronize_pages`). They live under the plan root and are titled from the category type name. They can also be created manually if your permissions allow **Add page → Category type page**.
+**Category type pages** are real pages (`CategoryTypePage`). They are often **created automatically** when a `CategoryType` has **“Synchronize with pages”** enabled (`src/actions/models/category.py` — `synchronize_pages`). They live under the plan root and are titled from the category type name. They can also be created manually if your permissions allow **Add page → Category type page**.
 
 ## Caching (Kausal Watch backend)
 
-- GraphQL execution caching (e.g. Strawberry `WatchExecutionCacheExtension` in `aplans/schema_context.py`) keys off **`plan.cache_invalidated_at`**.
-- Successful **POST** requests from **`/admin/`** or **`/wadmin/`** trigger **`plan.invalidate_cache()`** on commit (`aplans/middleware.py`), which bumps that timestamp and **invalidates** those cache entries for subsequent requests.
+- GraphQL execution caching (e.g. Strawberry `WatchExecutionCacheExtension` in `src/aplans/schema_context.py`) keys off **`plan.cache_invalidated_at`**.
+- Successful **POST** requests from **`/admin/`** or **`/wadmin/`** trigger **`plan.invalidate_cache()`** on commit (`src/aplans/middleware.py`), which bumps that timestamp and **invalidates** those cache entries for subsequent requests.
 
 So after **Publish** from Wagtail, **stale server-side GraphQL cache** is an unlikely explanation if the UI actually requested updated fields.
 
@@ -64,10 +64,10 @@ Inspect GraphQL responses (browser Network tab on the public site, or GraphiQL/V
 
 ## Code references (this repo)
 
-- Block definition: `actions/blocks/category_list.py` — `CategoryTypeLevelListBlock`, `paths_target_node_id`.
-- StreamField placement: `pages/models.py` — `StaticPage.body` includes `category_level_list`; `CategoryPage.body` does not.
-- Category type page model: `pages/models.py` — `CategoryTypePage`.
-- Auto page creation: `actions/models/category.py` — `CategoryType.synchronize_pages()`.
+- Block definition: `src/actions/blocks/category_list.py` — `CategoryTypeLevelListBlock`, `paths_target_node_id`.
+- StreamField placement: `src/pages/models.py` — `StaticPage.body` includes `category_level_list`; `CategoryPage.body` does not.
+- Category type page model: `src/pages/models.py` — `CategoryTypePage`.
+- Auto page creation: `src/actions/models/category.py` — `CategoryType.synchronize_pages()`.
 
 ---
 

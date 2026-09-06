@@ -30,7 +30,7 @@ deletes the row it just created — along with the file both rows point at. Reco
 the image being chosen, and the first 404 for it followed two minutes after that. The `next`
 parameter in the delete URL is what identifies this sequence in a request log.
 
-**Plan copying.** `copying/main.py:copy_collection_with_contents` duplicates a collection's images
+**Plan copying.** `src/copying/main.py:copy_collection_with_contents` duplicates a collection's images
 and documents with `file.save(filename, content_file)`. With `file_overwrite=True`, that "copy"
 wrote straight over the source object and left both rows on one key. This is much the largest cause
 by volume, and it is recognisable in the data: the affected PKs come in contiguous blocks mapping
@@ -40,14 +40,14 @@ the regional clusters inherited both the originals and the copies (see Cluster a
 
 **Deleting a copied plan's source.** The worst single loss found had this shape: a plan was created
 by copying another, so its rows pointed at the source's objects, and the source plan was then
-deleted. `Plan.delete()` cascades to `root_collection.delete()` (`actions/models/plan.py:1499`),
+deleted. `Plan.delete()` cascades to `root_collection.delete()` (`src/actions/models/plan.py:1499`),
 which deletes the source's documents and — before the guard existed — their files, leaving the
 copy's rows dangling. It is recognisable in the data as one collection losing every file it holds
 while its siblings are intact, and as a `-copy1` plan with no original. This is the case the
 `post_delete` guard exists for, and the only one of these mechanisms where the storage change alone
 would not have helped.
 
-**Filename truncation.** `images/models.py:truncate_filename` trims an upload path to 94 characters
+**Filename truncation.** `src/images/models.py:truncate_filename` trims an upload path to 94 characters
 so it fits the `file` column, and the date directory is already part of the path when it does
 (`insert_date_directory_to_path`). With `original_images/YYYY-MM/` taking 24 of those, filenames are
 cut to 70 characters — so two *different* images whose names agree for the first 66 characters land
@@ -84,7 +84,7 @@ all four clusters:
   truncation included: the de-duplicating suffix is applied after the name has been trimmed. Beware
   that the value can be overridden per deployment, since `storage_settings_from_s3_url` passes every
   query parameter of `S3_MEDIA_STORAGE_URL` through as a storage option.
-- **`aplans/media_cleanup.py`** replaces Wagtail's `post_delete_file_cleanup` receivers with
+- **`src/aplans/media_cleanup.py`** replaces Wagtail's `post_delete_file_cleanup` receivers with
   `guarded_post_delete_file_cleanup`, which refuses to delete a file another row still references.
 
 Neither repairs existing rows. Note also that the guard makes already-shared rows *permanently*

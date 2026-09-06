@@ -63,25 +63,39 @@ eval "$(mise activate bash)"
 - **Redis** for caching and Celery task queue
 - **Elasticsearch** for search functionality
 
+### Repository Layout
+The Watch Python packages live under `src/`, following a src layout:
+
+- `src/<app>/` - every Django app in this repo (`actions`, `aplans`, `indicators`, ...)
+- `kausal_common/` - git submodule, at the repo root, shared between Kausal Paths and Kausal Watch
+- `private/extensions/` - optional git submodule with the closed-source extensions (see below)
+- `manage.py`, `conftest.py`, `run_tests.py`, `templates/`, `locale/`, `docs/` - repo root
+
+`src/` is not added to `sys.path` by `manage.py`. It gets there through the editable install
+that `uv sync` performs: `pyproject.toml` uses the `uv_build` backend and lists every app in
+`[tool.uv.build-backend] module-name`. **A new Django app must be added to that list**, or it
+will not be importable. `pytest` gets the same path via `pythonpath = [ "src" ]`, and mypy /
+ty / pyright each have `src` in their extra paths.
+
 ### Key Django Apps Structure
-- `actions/` - Core action plan management (actions, categories, plans)
-- `aplans/` - Main Django project settings and shared utilities
-- `indicators/` - Performance indicators and metrics
-- `orgs/` - Organization management
-- `people/` - Person and user management
-- `pages/` - Wagtail CMS pages and content blocks
-- `reports/` - Report generation and export functionality
-- `notifications/` - Email notification system using MJML templates
-- `admin_site/` - Custom admin interface extensions
+- `src/actions/` - Core action plan management (actions, categories, plans)
+- `src/aplans/` - Main Django project settings and shared utilities
+- `src/indicators/` - Performance indicators and metrics
+- `src/orgs/` - Organization management
+- `src/people/` - Person and user management
+- `src/pages/` - Wagtail CMS pages and content blocks
+- `src/reports/` - Report generation and export functionality
+- `src/notifications/` - Email notification system using MJML templates
+- `src/admin_site/` - Custom admin interface extensions
 - `kausal_common/` - git submodule for code that is shared between Kausal Paths and Kausal Watch
-- `mcp_server/` - MCP server for AI assistant integration (see [architecture docs](docs/architecture/mcp-server.md))
+- `src/mcp_server/` - MCP server for AI assistant integration (see [architecture docs](docs/architecture/mcp-server.md))
 
 ### GraphQL Schema Architecture
 The application provides dual GraphQL implementations:
 - **Graphene Django** (legacy) - Located in various `schema.py` files
 - **Strawberry GraphQL** (modern) - Gradually replacing Graphene
-- Main schema entry: `aplans/schema.py`
-- Execution context: `aplans/schema_context.py` with `WatchGraphQLContext`
+- Main schema entry: `src/aplans/schema.py`
+- Execution context: `src/aplans/schema_context.py` with `WatchGraphQLContext`
 
 ### Django App File Conventions
 Each Django app follows consistent naming conventions for different functionality:
@@ -197,12 +211,12 @@ def process_request(request):
 - If there is a factory (e.g., `ModelFactory`) registered as a fixture (e.g., `model_factory`), prefer creating objects via `ModelFactory.create()` over `model_factory()`.
 
 ### Key Models Hierarchy
-- `actions/models/plan.py` - Plan, PlanDomain, PlanFeatures
-- `actions/models/action.py` - Action (main entity)
-- `actions/models/category.py` - CategoryType, Category for action organization
-- `actions/models/attributes.py` - Dynamic attributes system
-- `orgs/models.py` - Organization hierarchy
-- `people/models.py` - Person, User extensions
+- `src/actions/models/plan.py` - Plan, PlanDomain, PlanFeatures
+- `src/actions/models/action.py` - Action (main entity)
+- `src/actions/models/category.py` - CategoryType, Category for action organization
+- `src/actions/models/attributes.py` - Dynamic attributes system
+- `src/orgs/models.py` - Organization hierarchy
+- `src/people/models.py` - Person, User extensions
 
 ### Multi-tenancy via Plan Domains
 - Plans are isolated by domain via `PlanDomain` model
@@ -230,7 +244,7 @@ def process_request(request):
 
 ### Test Configuration
 - Uses pytest with Django integration
-- Configuration in `pyproject.toml` under `[tool.pytest.ini_options]`
+- Configuration in `pyproject.toml` under `[tool.pytest]` (`testpaths` points at `src/**/tests`, and `pythonpath = [ "src" ]` covers the src layout)
 - Factory Boy for test data generation
 - Coverage reporting available
 
@@ -257,9 +271,9 @@ def process_request(request):
 ## Content Management
 
 ### Wagtail CMS Integration
-- Page models in `pages/models.py`
+- Page models in `src/pages/models.py`
 - Custom Wagtail blocks in various `blocks/` directories
-- Admin interface customizations in `*_wagtail.py` files
+- Admin interface customizations in `wagtail_admin.py` / `wagtail_hooks.py` files
 - Custom choosers for plan-specific content
 
 ### Rich Content Blocks
@@ -274,5 +288,8 @@ For in-depth implementation details on specific subsystems, see:
 
 - [MCP Server](docs/architecture/mcp-server.md) - Adding tools, GraphQL integration, authentication flow
 - [Plan Metadata Model](docs/architecture/plan-metadata.md) - How climate action plans are structured, including CategoryTypes, Attributes, and common classification systems
+- [Indicator Data Architecture](docs/architecture/indicators.md) - Legacy `IndicatorValue` time series vs. the `kausal_common.datasets` system, computed metrics, and virtual metrics in the dataset editor
+- [Paths Target Node and Category Pages](docs/architecture/paths-target-node-category-pages.md) - How `paths_target_node_id` relates to Wagtail category pages, and the GraphQL cache invalidation that makes admin edits look inert
+- [Single-Tenant Data Export](docs/architecture/single-tenant-export.md) - The `export_plan` command: what counts as plan-owned, how shared rows are handled, and tenant isolation
 - [Unit Testing Guide](docs/unit-tests.md) - Comprehensive guide to testing practices, Factory Boy patterns, fixtures, and type annotations in tests
 - [Media File Integrity](docs/media-integrity.md) - Why media objects came to share S3 keys, the storage/versioning situation per cluster, and the check/inventory/repair commands
