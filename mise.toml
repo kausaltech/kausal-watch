@@ -1,9 +1,2 @@
 #:schema https://mise.jdx.dev/schema/mise.json
-min_version = { hard = "2026-08-01" }
-
-[settings]
-idiomatic_version_file_enable_tools = ['pnpm', 'node']
-lockfile = true
-
-[tools]
-python = "latest"
+# Common backend configuration is linked from kausal_common into mise/.

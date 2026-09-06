@@ -1,0 +1,7 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+
+[vars]
+product_name = "Watch"
+backend_name = "watch-backend"
+portless_backend_port = "8042"
+graphql_schema = "aplans.schema"

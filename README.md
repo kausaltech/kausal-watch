@@ -39,6 +39,13 @@ and log in using the password you provided.
 
 #### Installation
 
+Initialize the required shared-code submodule. It also provides the mise configuration shared
+with Kausal Paths through the symlinks in `mise/`:
+
+```shell
+git submodule update --init kausal_common
+```
+
 In the project root directory, create and activate a Python virtual environment:
 
 ```shell
