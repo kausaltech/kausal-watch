@@ -7,6 +7,18 @@ from notifications.engine import NotificationEngine
 from ._notification_args import add_notification_delivery_arguments
 
 
+def _get_ignored_identifiers(plan: Plan, option: str | None, relation_name: str, item_name: str) -> list[str]:
+    ignore_opt = option.split(',') if option else []
+    ignored = []
+    related_objects = getattr(plan, relation_name)
+    for identifier in ignore_opt:
+        item = related_objects.filter(identifier=identifier).first()
+        if item is None:
+            raise CommandError('%s %s does not exist' % (item_name, identifier))
+        ignored.append(item.identifier)
+    return ignored
+
+
 class Command(BaseCommand):
     help = 'Sends notifications for a single plan'
 
@@ -27,21 +39,8 @@ class Command(BaseCommand):
         plan = Plan.objects.get(identifier=options['plan'])
         translation.activate(plan.primary_language)
 
-        ignore_actions = []
-        ignore_opt = options['ignore_actions'].split(',') if options['ignore_actions'] else []
-        for act_id in ignore_opt:
-            act = plan.actions.filter(identifier=act_id).first()
-            if act is None:
-                raise CommandError('Action %s does not exist' % act_id)
-            ignore_actions.append(act.identifier)
-
-        ignore_indicators = []
-        ignore_opt = options['ignore_indicators'].split(',') if options['ignore_indicators'] else []
-        for indicator_id in ignore_opt:
-            indicator = plan.indicators.filter(identifier=indicator_id).first()
-            if indicator is None:
-                raise CommandError('Indicator %s does not exist' % indicator_id)
-            ignore_indicators.append(indicator.identifier)
+        ignore_actions = _get_ignored_identifiers(plan, options['ignore_actions'], 'actions', 'Action')
+        ignore_indicators = _get_ignored_identifiers(plan, options['ignore_indicators'], 'indicators', 'Indicator')
 
         if options['time']:
             now = plan.to_local_timezone(options['time'])
