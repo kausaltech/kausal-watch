@@ -7,9 +7,11 @@ import json
 import typing
 from typing import Any, Protocol
 
+from django.conf import settings as django_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.urls import reverse
+from django.utils import translation
 from graphene_django.utils.testing import graphql_query
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -35,6 +37,8 @@ from people.tests import factories as people_factories
 from users.tests import factories as users_factories
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Generator
+
     import django.test.client
     from django.db.models import Model
 
@@ -241,6 +245,20 @@ def contains_error():
 def _disable_search_autoupdate(settings) -> None:
     for conf in settings.WAGTAILSEARCH_BACKENDS.values():
         conf['AUTO_UPDATE'] = False
+
+
+@pytest.fixture(autouse=True)
+def _reset_active_language() -> Generator[None]:
+    """
+    Start each test with the default language active.
+
+    Handling a request activates the language of the plan or the user for the whole
+    thread and nothing deactivates it afterwards, so without this a test that goes
+    through the admin leaves its language active for every test that runs after it.
+    """
+    translation.activate(django_settings.LANGUAGE_CODE)
+    yield
+    translation.deactivate()
 
 
 class ModelAdminEditTest(Protocol):
