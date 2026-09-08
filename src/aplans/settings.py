@@ -542,9 +542,6 @@ CORS_ALLOW_HEADERS = (
 #
 GRAPHENE = {
     'SCHEMA': f'{PROJECT_NAME}.schema.schema',
-    'MIDDLEWARE': [
-        f'{PROJECT_NAME}.graphene_views.APITokenMiddleware',
-    ],
     'DJANGO_CHOICE_FIELD_ENUM_V2_NAMING': True,
 }
 

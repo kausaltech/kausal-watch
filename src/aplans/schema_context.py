@@ -20,8 +20,6 @@ from kausal_common.strawberry.context import GraphQLContext
 from kausal_common.strawberry.extensions import AuthenticationExtension, ExecutionCacheExtension, SchemaExtension
 from kausal_common.users import user_or_none
 
-from aplans.graphene_views import PLAN_DOMAIN_HEADER, PLAN_IDENTIFIER_HEADER
-
 from actions.models import Plan
 
 from .cache import WatchObjectCache
@@ -38,6 +36,9 @@ if TYPE_CHECKING:
     from .cache import PlanSpecificCache
 
 logger = logger.bind(markup=True)
+
+PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
+PLAN_DOMAIN_HEADER = 'x-cache-plan-domain'
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
