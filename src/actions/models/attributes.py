@@ -47,8 +47,9 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
     from kausal_common.users import UserOrAnon
 
-    from actions.attributes import AttributeType as AttributeTypeWrapper, DraftAttributes
+    from actions.attributes import AttributeFieldPanel, AttributeType as AttributeTypeWrapper, DraftAttributes
     from images.models import AplansImage
+    from users.models import User
 
     from .category import CategoryType
     from .plan import Plan
@@ -718,6 +719,30 @@ class AttributeNumericValue(Attribute):
 type SetAttributeReturn = (
     tuple[Literal['create', 'delete'], Attribute] | tuple[Literal['update'], Attribute, list[str]] | tuple[None, None]
 )
+
+
+def build_attribute_panels(
+    obj: ModelWithAttributes, user: User
+) -> tuple[list[AttributeFieldPanel[Any]], dict[str, list[AttributeFieldPanel[Any]]]]:
+    """
+    Build the attribute panels for a model whose attributes all live on a single tab.
+
+    Returns a pair `(main_panels, i18n_panels)`, where `main_panels` is a list of panels to be put on the
+    main tab, and `i18n_panels` is a dict mapping a non-primary language to a list of panels to be put on
+    the tab for that language.
+
+    `Action` does not use this: its attribute types are split between the main and the reporting tab, so it
+    builds its panels itself.
+    """
+    main_panels: list[AttributeFieldPanel[Any]] = []
+    i18n_panels: dict[str, list[AttributeFieldPanel[Any]]] = {}
+    plan = user.get_active_admin_plan()  # not sure if this is reasonable...
+    for attribute_type in obj.get_visible_attribute_types(user):
+        main, i18n = attribute_type.get_panels(user, plan, obj)
+        main_panels.extend(main)
+        for lang, lang_panels in i18n.items():
+            i18n_panels.setdefault(lang, []).extend(lang_panels)
+    return (main_panels, i18n_panels)
 
 
 class ModelWithAttributes(ClusterableModel):

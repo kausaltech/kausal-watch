@@ -38,7 +38,7 @@ from aplans.utils import (
 )
 
 from ..attributes import AttributeType
-from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes, build_attribute_panels
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -55,7 +55,6 @@ if TYPE_CHECKING:
     from indicators.models import Indicator
     from pages.models import CategoryPage, CategoryTypePage, CategoryTypePageLevelLayout
 
-    from ..attributes import AttributeFieldPanel
     from .action import Action, ActionCategoryThrough, ActionQuerySet
     from .attributes import AttributeTypeQuerySet
 
@@ -741,44 +740,30 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             return self.common.get_icon(language)
         return None
 
-    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
-        category_ct = ContentType.objects.get_for_model(Category)
-        category_type_ct = ContentType.objects.get_for_model(self.type)
-        at_qs = AttributeTypeModel.objects.filter(
-            object_content_type=category_ct,
-            scope_content_type=category_type_ct,
+    def _get_attribute_types_in_scope(self) -> models.QuerySet[AttributeTypeModel]:
+        """Get the attribute types scoped to this category's own category type."""
+        return AttributeTypeModel.objects.filter(
+            object_content_type=ContentType.objects.get_for_model(Category),
+            scope_content_type=ContentType.objects.get_for_model(self.type),
             scope_id=self.type.pk,
         )
-        attribute_types = (at for at in at_qs if at.is_instance_editable_by(user, self.type.plan, None))
+
+    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
+        attribute_types = (
+            at for at in self._get_attribute_types_in_scope() if at.is_instance_editable_by(user, self.type.plan, None)
+        )
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
     def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
-        category_ct = ContentType.objects.get_for_model(Category)
-        category_type_ct = ContentType.objects.get_for_model(self.type)
-        at_qs = AttributeTypeModel.objects.filter(
-            object_content_type=category_ct,
-            scope_content_type=category_type_ct,
-            scope_id=self.type.pk,
+        attribute_types = (
+            at for at in self._get_attribute_types_in_scope() if at.is_instance_visible_for(user, self.type.plan, None)
         )
-        attribute_types = (at for at in at_qs if at.is_instance_visible_for(user, self.type.plan, None))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
     def get_attribute_panels(self, user):
-        # Return a triple `(main_panels, i18n_panels)`, where `main_panels` is a list of panels to be put on the main
-        # tab, and `i18n_panels` is a dict mapping a non-primary language to a list of panels to be put on the tab for
-        # that language.
-        main_panels = []
-        i18n_panels: dict[str, list[AttributeFieldPanel[Any]]] = {}
-        attribute_types = self.get_visible_attribute_types(user)
-        plan = user.get_active_admin_plan()  # not sure if this is reasonable...
-        for attribute_type in attribute_types:
-            main, i18n = attribute_type.get_panels(user, plan, self)
-            main_panels.extend(main)
-            for lang, lang_panels in i18n.items():
-                i18n_panels.setdefault(lang, []).extend(lang_panels)
-        return (main_panels, i18n_panels)
+        return build_attribute_panels(self, user)
 
     def get_siblings(self, force_refresh: bool = False):  # pyright: ignore[reportUnusedParameter]
         return Category.objects.filter(type=self.type, parent=self.parent)

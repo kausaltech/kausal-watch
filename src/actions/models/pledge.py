@@ -26,7 +26,7 @@ from aplans.utils import PlanRelatedModelQuerySet, PlanRelatedOrderedModel
 from pages.blocks import LargeImageBlock, QuestionAnswerBlock
 from search.models import SearchableModel
 
-from .attributes import ModelWithAttributes
+from .attributes import ModelWithAttributes, build_attribute_panels
 from .plan import Plan
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, M2MQS, RevMany
     from kausal_common.users import UserOrAnon
 
-    from actions.attributes import AttributeFieldPanel, AttributeType
+    from actions.attributes import AttributeType
     from actions.models.action import Action, ActionQuerySet
     from images.models import AplansImage
 
@@ -285,62 +285,16 @@ class Pledge(
 
     def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
         """Get attribute types editable for this pledge and user."""
-        from django.contrib.contenttypes.models import ContentType
-
-        from actions.attributes import AttributeType
-        from actions.models import AttributeType as AttributeTypeModel
-
-        pledge_ct = ContentType.objects.get_for_model(Pledge)
-        plan_ct = ContentType.objects.get_for_model(Plan)
-
-        at_qs = AttributeTypeModel.objects.filter(
-            object_content_type=pledge_ct,
-            scope_content_type=plan_ct,
-            scope_id=self.plan.pk,
-        )
-
-        attribute_types = (at for at in at_qs if at.is_instance_editable_by(user, self.plan, None))
-        # Convert to wrapper objects
-        return [AttributeType.from_model_instance(at) for at in attribute_types]
+        attribute_types = self.get_attribute_types_for_plan(self.plan)
+        return [at for at in attribute_types if at.instance.is_instance_editable_by(user, self.plan, None)]
 
     def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeType[Any]]:
         """Get attribute types visible for this pledge and user."""
-        from django.contrib.contenttypes.models import ContentType
-
-        from actions.attributes import AttributeType
-        from actions.models import AttributeType as AttributeTypeModel
-
-        pledge_ct = ContentType.objects.get_for_model(Pledge)
-        plan_ct = ContentType.objects.get_for_model(Plan)
-
-        at_qs = AttributeTypeModel.objects.filter(
-            object_content_type=pledge_ct,
-            scope_content_type=plan_ct,
-            scope_id=self.plan.pk,
-        )
-
-        attribute_types = (at for at in at_qs if at.is_instance_visible_for(user, self.plan, None))
-        # Convert to wrapper objects
-        return [AttributeType.from_model_instance(at) for at in attribute_types]
+        attribute_types = self.get_attribute_types_for_plan(self.plan)
+        return [at for at in attribute_types if at.instance.is_instance_visible_for(user, self.plan, None)]
 
     def get_attribute_panels(self, user):
-        """
-        Return attribute panels for the Pledge edit form.
-
-        Returns a tuple (main_panels, i18n_panels), where:
-        - main_panels: list of panels for the main Attributes tab
-        - i18n_panels: dict mapping language code to list of panels for that language's tab
-        """
-        main_panels = []
-        i18n_panels: dict[str, list[AttributeFieldPanel[Any]]] = {}
-        attribute_types = self.get_visible_attribute_types(user)
-        plan = user.get_active_admin_plan()
-        for attribute_type in attribute_types:
-            main, i18n = attribute_type.get_panels(user, plan, self)
-            main_panels.extend(main)
-            for lang, lang_panels in i18n.items():
-                i18n_panels.setdefault(lang, []).extend(lang_panels)
-        return (main_panels, i18n_panels)
+        return build_attribute_panels(self, user)
 
 
 def _generate_user_token() -> str:

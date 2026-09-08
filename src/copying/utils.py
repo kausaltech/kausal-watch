@@ -171,39 +171,26 @@ def remove_reference_from_html(
     """Remove a reference to an image, document, or indicator from a given HTML string."""
     if isinstance(referenced_object, AplansDocument):
         pattern = r'<a\s+[^>]*linktype="document"[^>]*>.*?</a>'
-
-        def replace_document_reference(match: re.Match) -> str:
-            tag = match.group(0)
-            if not _tag_references_object(tag, referenced_object):
-                return tag
-            inner_match = re.match(r'<a\s+[^>]*>(?P<inner>.*?)</a>', tag, flags=re.DOTALL)
-            assert inner_match is not None
-            return inner_match.group('inner')
-
-        return re.sub(pattern, replace_document_reference, html, flags=re.DOTALL)
-    if isinstance(referenced_object, AplansImage):
+    elif isinstance(referenced_object, AplansImage):
         pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
-
-        def replace_image_reference(match: re.Match) -> str:
-            tag = match.group(0)
-            if not _tag_references_object(tag, referenced_object):
-                return tag
-            return ''
-
-        return re.sub(pattern, replace_image_reference, html)
-    if isinstance(referenced_object, Indicator):
+    elif isinstance(referenced_object, Indicator):
         pattern = r'<a\s+[^>]*linktype="indicator"[^>]*>.*?</a>'
+    else:
+        raise TypeError(f'referenced_object has unexpected type {type(referenced_object)}')
 
-        def replace_indicator_reference(match: re.Match) -> str:
-            tag = match.group(0)
-            if not _tag_references_object(tag, referenced_object):
-                return tag
-            inner_match = re.match(r'<a\s+[^>]*>(?P<inner>.*?)</a>', tag, flags=re.DOTALL)
-            assert inner_match is not None
-            return inner_match.group('inner')
+    def replace_reference(match: re.Match) -> str:
+        tag = match.group(0)
+        if not _tag_references_object(tag, referenced_object):
+            return tag
+        if isinstance(referenced_object, AplansImage):
+            # An image embed is a void element; there is no link text to keep.
+            return ''
+        # Unwrap the link, keeping the text it wrapped.
+        inner_match = re.match(r'<a\s+[^>]*>(?P<inner>.*?)</a>', tag, flags=re.DOTALL)
+        assert inner_match is not None
+        return inner_match.group('inner')
 
-        return re.sub(pattern, replace_indicator_reference, html, flags=re.DOTALL)
-    raise TypeError(f'referenced_object has unexpected type {type(referenced_object)}')
+    return re.sub(pattern, replace_reference, html, flags=re.DOTALL)
 
 
 def update_reference_in_html(

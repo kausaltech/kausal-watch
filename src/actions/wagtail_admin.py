@@ -70,6 +70,7 @@ from admin_site.viewsets import (
     BaseChangeLogMessageDeleteView,
     BaseChangeLogMessageEditView,
     BaseChangeLogMessageViewSet,
+    ChangeLogMessageRelatedObjectMixin,
     WatchEditView,
     WatchViewSet,
 )
@@ -1117,18 +1118,22 @@ class PlanViewSet(SnippetViewSet[Plan]):
 register_snippet(PlanViewSet)
 
 
-class ActionChangeLogMessageCreateView(
-    BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action, WagtailAdminModelForm[ActionChangeLogMessage]]
-):
+class ActionChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Action]):
     related_field_name = 'action'
-    success_url_name = 'actions_action_modeladmin_index'
+    related_model = Action
 
     @override
-    def get_related_object_by_pk(self, pk: str) -> Action | None:
-        try:
-            return Action.objects.get(pk=pk)
-        except Action.DoesNotExist:
-            return None
+    def check_related_object_permission(self, related_obj: Action | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
+
+
+class ActionChangeLogMessageCreateView(
+    ActionChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action, WagtailAdminModelForm[ActionChangeLogMessage]],
+):
+    success_url_name = 'actions_action_modeladmin_index'
 
     def get_revision_id(self) -> str | None:
         """Get revision ID from GET params or POST data (hidden field)."""
@@ -1160,29 +1165,17 @@ class ActionChangeLogMessageCreateView(
         context['revision_id'] = revision.pk if revision else None
         return context
 
-    def check_related_object_permission(self, related_obj: Action | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
-
-class ActionChangeLogMessageEditView(BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]):
-    related_field_name = 'action'
+class ActionChangeLogMessageEditView(
+    ActionChangeLogMessageRelatedObjectMixin, BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]
+):
     success_url_name = 'actions_action_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: Action | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
-
-class ActionChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[ActionChangeLogMessage, Action]):
-    related_field_name = 'action'
-
-    def check_related_object_permission(self, related_obj: Action | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_action(action=related_obj)
+class ActionChangeLogMessageDeleteView(
+    ActionChangeLogMessageRelatedObjectMixin, BaseChangeLogMessageDeleteView[ActionChangeLogMessage, Action]
+):
+    pass
 
 
 class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogMessage]):
@@ -1197,8 +1190,22 @@ class ActionChangeLogMessageViewSet(BaseChangeLogMessageViewSet[ActionChangeLogM
 register_snippet(ActionChangeLogMessageViewSet)
 
 
-class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[IndicatorChangeLogMessage, Indicator]):
+class IndicatorChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Indicator]):
     related_field_name = 'indicator'
+    related_model = Indicator
+
+    @override
+    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
+        if related_obj is None:
+            return False
+        user = user_or_bust(self.request.user)
+        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
+
+
+class IndicatorChangeLogMessageCreateView(
+    IndicatorChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageCreateView[IndicatorChangeLogMessage, Indicator],
+):
     success_url_name = 'indicators_indicator_modeladmin_index'
 
     def _get_indicator_edit_url(self) -> str | None:
@@ -1217,38 +1224,19 @@ class IndicatorChangeLogMessageCreateView(BaseChangeLogMessageCreateView[Indicat
     def get_skip_url(self) -> str:
         return self._get_indicator_edit_url() or super().get_skip_url()
 
-    def get_related_object_by_pk(self, pk: str) -> Indicator | None:
-        try:
-            return Indicator.objects.get(pk=pk)
-        except Indicator.DoesNotExist:
-            return None
 
-    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
-        if related_obj is None:
-            return False
-        user = user_or_bust(self.request.user)
-        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
-
-
-class IndicatorChangeLogMessageEditView(BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator]):
-    related_field_name = 'indicator'
+class IndicatorChangeLogMessageEditView(
+    IndicatorChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator],
+):
     success_url_name = 'indicators_indicator_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
-        if related_obj is None:
-            return False
-        user = user_or_bust(self.request.user)
-        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
 
-
-class IndicatorChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage, Indicator]):
-    related_field_name = 'indicator'
-
-    def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
-        if related_obj is None:
-            return False
-        user = user_or_bust(self.request.user)
-        return user.can_modify_indicator(indicator=related_obj, plan=user.get_active_admin_plan())
+class IndicatorChangeLogMessageDeleteView(
+    IndicatorChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageDeleteView[IndicatorChangeLogMessage, Indicator],
+):
+    pass
 
 
 class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChangeLogMessage]):
@@ -1263,39 +1251,36 @@ class IndicatorChangeLogMessageViewSet(BaseChangeLogMessageViewSet[IndicatorChan
 register_snippet(IndicatorChangeLogMessageViewSet)
 
 
-class CategoryChangeLogMessageCreateView(BaseChangeLogMessageCreateView[CategoryChangeLogMessage, Category]):
+class CategoryChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Category]):
     related_field_name = 'category'
+    related_model = Category
+
+    @override
+    def check_related_object_permission(self, related_obj: Category | None) -> bool:
+        if related_obj is None:
+            return False
+        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
+
+
+class CategoryChangeLogMessageCreateView(
+    CategoryChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageCreateView[CategoryChangeLogMessage, Category],
+):
     success_url_name = 'actions_category_modeladmin_index'
 
-    def get_related_object_by_pk(self, pk: str) -> Category | None:
-        try:
-            return Category.objects.get(pk=pk)
-        except Category.DoesNotExist:
-            return None
 
-    def check_related_object_permission(self, related_obj: Category | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
-
-
-class CategoryChangeLogMessageEditView(BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category]):
-    related_field_name = 'category'
+class CategoryChangeLogMessageEditView(
+    CategoryChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category],
+):
     success_url_name = 'actions_category_modeladmin_edit'
 
-    def check_related_object_permission(self, related_obj: Category | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
 
-
-class CategoryChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[CategoryChangeLogMessage, Category]):
-    related_field_name = 'category'
-
-    def check_related_object_permission(self, related_obj: Category | None) -> bool:
-        if related_obj is None:
-            return False
-        return user_or_bust(self.request.user).can_modify_category(category=related_obj)
+class CategoryChangeLogMessageDeleteView(
+    CategoryChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageDeleteView[CategoryChangeLogMessage, Category],
+):
+    pass
 
 
 class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChangeLogMessage]):
