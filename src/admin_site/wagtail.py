@@ -314,6 +314,17 @@ else:
         pass
 
 
+def _translated_field_names_by_original(model: type[Model]) -> dict[str, list[str]]:
+    """Map each translated field of `model` to the modeltrans field names that carry its languages."""
+    i18n_field = get_i18n_field(model)
+    if i18n_field is None:
+        return {}
+    names_by_original: dict[str, list[str]] = {}
+    for field in i18n_field.get_translated_fields():
+        names_by_original.setdefault(field.original_name, []).append(field.name)
+    return names_by_original
+
+
 class BuiltInFieldCustomizationAwareEditHandlerMixin[M: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](
     TabbedInterfaceMixinBase[M, FormT]
 ):
@@ -339,7 +350,16 @@ class BuiltInFieldCustomizationAwareEditHandlerMixin[M: Model, FormT: ModelForm[
                 plan=plan,
                 content_type=ContentType.objects.get_for_model(model),
             )
-            customizations: dict[str, BuiltInFieldCustomization] = {c.field_name: c for c in customizations_qs}
+            # A customization names the untranslated field, but modeltrans gives a translated field
+            # one form field per language, and the translation tabs render those with plain panels
+            # of their own. Without applying the customization to them as well, restricting
+            # `description` would still leave `description_fi` on the Finnish tab for everyone.
+            translated_names = _translated_field_names_by_original(model)
+            customizations: dict[str, BuiltInFieldCustomization] = {}
+            for customization in customizations_qs:
+                customizations[customization.field_name] = customization
+                for translated_name in translated_names.get(customization.field_name, ()):
+                    customizations[translated_name] = customization
             for field_name in list(form_class.base_fields.keys()):
                 customization = customizations.get(field_name)
                 if customization:

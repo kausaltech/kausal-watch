@@ -135,3 +135,52 @@ def test_existing_tasks_survive_saving_when_tasks_are_hidden(client, action, act
 
     assert response.status_code == 302
     assert list(action.tasks.all()) == [task]
+
+
+def _form_class(rf, user, action):
+    request = _admin_request(rf, user, action.plan)
+    with ctx_request.activate(request), ctx_instance.activate(action):
+        return ActionAdmin().get_edit_handler().bind_to_model(Action).get_form_class()
+
+
+@pytest.mark.parametrize('field_name', ['name', 'description'])
+def test_restricting_a_translated_field_also_hides_its_translations(
+    rf, action, action_contact_person_user, plan_admin_user, field_name
+):
+    """
+    A customization names the untranslated field, but modeltrans adds one field per language.
+
+    The translation tabs render those with panels of their own, so leaving them alone would keep the
+    restricted content on display -- most visibly for rich text fields such as `description`.
+    """
+    translated_name = f'{field_name}_{action.plan.other_languages[0]}'
+    assert translated_name in _form_class(rf, action_contact_person_user, action).base_fields
+
+    _restrict(action, field_name)
+
+    restricted_fields = _form_class(rf, action_contact_person_user, action).base_fields
+    assert field_name not in restricted_fields
+    assert translated_name not in restricted_fields
+    # A plan admin keeps both, and an unrelated translated field is untouched either way.
+    admin_fields = _form_class(rf, plan_admin_user, action).base_fields
+    assert field_name in admin_fields
+    assert translated_name in admin_fields
+
+
+def test_a_read_only_field_also_disables_its_translations(rf, action, action_contact_person_user):
+    BuiltInFieldCustomizationFactory.create(
+        plan=action.plan,
+        field_name='description',
+        instances_visible_for=InstancesVisibleForMixin.VisibleFor.PUBLIC,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+    )
+    base_fields = _form_class(rf, action_contact_person_user, action).base_fields
+    translated_name = f'description_{action.plan.other_languages[0]}'
+    assert base_fields['description'].disabled
+    assert base_fields[translated_name].disabled
+
+
+def test_restricting_a_field_leaves_other_translations_alone(rf, action, action_contact_person_user):
+    _restrict(action, 'name')
+    base_fields = _form_class(rf, action_contact_person_user, action).base_fields
+    assert f'official_name_{action.plan.other_languages[0]}' in base_fields
