@@ -279,8 +279,6 @@ def write_action_summaries(excel_report: ExcelReport, action_df: pl.DataFrame) -
             else:
                 approximate_lines_so_far += 2
 
-            MIN_SPLIT_CHARS = 500
-
             if approximate_lines_so_far > approximate_lines_per_page:
                 last_element_value = value_row[-1].value
                 approximate_lines_last_el = int(len(last_element_value) / approximate_chars_per_line)
