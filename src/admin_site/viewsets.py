@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -288,12 +288,30 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
         return super().get_form_class(for_update)
 
 
+class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLogMessage]:
+    """
+    Tie a change log message view to the object the message is about.
+
+    Subclasses implement `check_related_object_permission` (the check that gates access in the
+    views' `dispatch`) and either set `related_model` or override `get_related_object_by_pk`.
+    """
+
+    request: HttpRequest
+    related_field_name: str
+    related_model: type[Model]
+
+    def get_related_object_by_pk(self, pk: str) -> RelatedModel | None:
+        return cast('RelatedModel | None', self.related_model._default_manager.filter(pk=pk).first())
+
+    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
+        raise NotImplementedError
+
+
 class BaseChangeLogMessageCreateView[
     M: models.Model,
     RelatedModel: ObjectWithPublicChangeLogMessage,
     FormT: ModelForm[Any] = WagtailAdminModelForm[Any],
-](WatchCreateView[M, FormT]):
-    related_field_name: str
+](ChangeLogMessageRelatedObjectMixin[RelatedModel], WatchCreateView[M, FormT]):
     success_url_name: str
 
     def get_related_id(self) -> str | None:
@@ -316,12 +334,6 @@ class BaseChangeLogMessageCreateView[
         if isinstance(related_object, Page):
             related_object = related_object.get_specific()
         return related_object.get_public_change_log_message()
-
-    def get_related_object_by_pk(self, _pk: str) -> RelatedModel | None:
-        raise NotImplementedError
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
 
     def dispatch(self, request, *args, **kwargs):
         related_obj = self.get_related_object()
@@ -358,19 +370,23 @@ class BaseChangeLogMessageCreateView[
         return reverse(self.success_url_name)
 
 
-class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](WatchEditView[M]):
-    related_field_name: str
-    success_url_name: str
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
+class ChangeLogMessageInstanceViewMixin[RelatedModel: ObjectWithPublicChangeLogMessage](
+    ChangeLogMessageRelatedObjectMixin[RelatedModel]
+):
+    """Gate a view that operates on an existing change log message on the related object's permissions."""
 
     def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
+        self.object = self.get_object()  # type: ignore[attr-defined]
         related_obj = getattr(self.object, self.related_field_name, None)
         if not self.check_related_object_permission(related_obj):
             raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
+    ChangeLogMessageInstanceViewMixin[RelatedModel], WatchEditView[M]
+):
+    success_url_name: str
 
     def get_success_url(self):
         assert self.object is not None
@@ -378,18 +394,10 @@ class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPubl
         return reverse(self.success_url_name, args=[related_obj.pk])
 
 
-class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](SnippetDeleteView):
-    related_field_name: str
-
-    def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
-        raise NotImplementedError
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        related_obj = getattr(self.object, self.related_field_name, None)
-        if not self.check_related_object_permission(related_obj):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
+class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
+    ChangeLogMessageInstanceViewMixin[RelatedModel], SnippetDeleteView
+):
+    pass
 
 
 class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):

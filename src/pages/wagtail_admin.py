@@ -14,6 +14,7 @@ from admin_site.viewsets import (
     BaseChangeLogMessageDeleteView,
     BaseChangeLogMessageEditView,
     BaseChangeLogMessageViewSet,
+    ChangeLogMessageRelatedObjectMixin,
 )
 from pages.models import AplansPage, PageChangeLogMessage, PlanRootPage, StaticPage
 
@@ -76,15 +77,11 @@ def redirect_to_change_log_after_publish(request, page):
     return HttpResponseRedirect(redirect_url)
 
 
-class PageChangeLogMessageCreateView(BaseChangeLogMessageCreateView[PageChangeLogMessage, AplansPage]):
+class PageChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[AplansPage]):
     related_field_name = 'page'
-    success_url_name = 'wagtailadmin_explore_root'
-
-    def get_related_object_by_pk(self, pk: str) -> Page | None:
-        try:
-            return Page.objects.get(pk=pk)
-        except Page.DoesNotExist:
-            return None
+    # Change log messages can be attached to any page, not just `AplansPage` subclasses, so look
+    # the related object up through the base `Page` model rather than through `related_model`.
+    related_model = Page
 
     def check_related_object_permission(self, related_obj: Page | None) -> bool:
         if related_obj is None:
@@ -94,6 +91,13 @@ class PageChangeLogMessageCreateView(BaseChangeLogMessageCreateView[PageChangeLo
             return False
         page_perms = related_obj.permissions_for_user(user)
         return page_perms.can_edit()
+
+
+class PageChangeLogMessageCreateView(
+    PageChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageCreateView[PageChangeLogMessage, AplansPage],
+):
+    success_url_name = 'wagtailadmin_explore_root'
 
     def get_revision_id(self) -> str | None:
         """Get revision ID from GET params or POST data (hidden field)."""
@@ -118,31 +122,18 @@ class PageChangeLogMessageCreateView(BaseChangeLogMessageCreateView[PageChangeLo
         return context
 
 
-class PageChangeLogMessageEditView(BaseChangeLogMessageEditView[PageChangeLogMessage, AplansPage]):
-    related_field_name = 'page'
+class PageChangeLogMessageEditView(
+    PageChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageEditView[PageChangeLogMessage, AplansPage],
+):
     success_url_name = 'wagtailadmin_pages:edit'
 
-    def check_related_object_permission(self, related_obj: Page | None) -> bool:
-        if related_obj is None:
-            return False
-        user = user_or_none(self.request.user)
-        if user is None:
-            return False
-        page_perms = related_obj.permissions_for_user(user)
-        return page_perms.can_edit()
 
-
-class PageChangeLogMessageDeleteView(BaseChangeLogMessageDeleteView[PageChangeLogMessage, AplansPage]):
-    related_field_name = 'page'
-
-    def check_related_object_permission(self, related_obj: Page | None) -> bool:
-        if related_obj is None:
-            return False
-        user = user_or_none(self.request.user)
-        if user is None:
-            return False
-        page_perms = related_obj.permissions_for_user(user)
-        return page_perms.can_edit()
+class PageChangeLogMessageDeleteView(
+    PageChangeLogMessageRelatedObjectMixin,
+    BaseChangeLogMessageDeleteView[PageChangeLogMessage, AplansPage],
+):
+    pass
 
 
 class PageChangeLogMessageViewSet(BaseChangeLogMessageViewSet[PageChangeLogMessage]):
