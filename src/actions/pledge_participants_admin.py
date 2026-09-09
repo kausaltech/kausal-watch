@@ -21,6 +21,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.urls import path, reverse
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 from wagtail.admin.panels import Panel
@@ -38,6 +39,8 @@ from .models import Pledge
 from .models.pledge import PublicUser
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
     from django.db.models import QuerySet
     from django.http import HttpRequest
@@ -78,10 +81,26 @@ def _get_participants_queryset(plan: Plan, pledge: Pledge | None = None) -> Quer
     )
 
 
+def _opted_in_participants(plan: Plan, pledge: Pledge | None = None) -> list[dict[str, Any]]:
+    """Return opted-in participants (email + user_data), sorted by email."""
+    qs = _get_participants_queryset(plan, pledge).filter(marketing_consented_at__isnull=False).exclude(email__isnull=True)
+    participants = (p for p in qs.values('email', 'user_data') if p['email'])
+    return sorted(participants, key=lambda p: p['email'])
+
+
 def _opted_in_emails(plan: Plan, pledge: Pledge | None = None) -> list[str]:
     """Return emails of participants who have opted in to marketing, sorted."""
-    qs = _get_participants_queryset(plan, pledge).filter(marketing_consented_at__isnull=False).exclude(email__isnull=True)
-    return sorted(email for email in qs.values_list('email', flat=True) if email)
+    return [p['email'] for p in _opted_in_participants(plan, pledge)]
+
+
+def _user_data_keys(user_data_values: Iterable[dict[str, Any] | None]) -> list[str]:
+    """Return the sorted union of keys across the given user_data dicts."""
+    return sorted({key for data in user_data_values if data for key in data})
+
+
+def _humanize_user_data_key(key: str) -> str:
+    """Turn a freeform user_data key (e.g. 'zip_code') into a column label ('Zip code')."""
+    return capfirst(key.replace('_', ' '))
 
 
 class ParticipantsPermissionPolicy(PlanRelatedPermissionPolicy):
@@ -120,7 +139,16 @@ class ParticipantsIndexView(WatchIndexView[PublicUser]):
     @cached_property
     def columns(self):  # type: ignore[override]
         # Bulk actions aren't available for now
-        return [column for column in super().columns if column.name != 'bulk_actions']
+        columns = [column for column in super().columns if column.name != 'bulk_actions']
+        columns += [
+            Column(
+                f'user_data:{key}',
+                label=_humanize_user_data_key(key),
+                accessor=lambda obj, key=key: (obj.user_data or {}).get(key, ''),
+            )
+            for key in _user_data_keys(self.get_queryset().values_list('user_data', flat=True))
+        ]
+        return columns
 
     def get_queryset(self) -> QuerySet[PublicUser]:
         user = user_or_bust(self.request.user)
@@ -239,12 +267,15 @@ class _ParticipantsCsvView(View):
         else:
             filename = f'pledge-participants-opted-in-emails-{plan.identifier}.csv'
 
-        emails = _opted_in_emails(plan, pledge)
+        participants = _opted_in_participants(plan, pledge)
+        user_data_keys = _user_data_keys(p['user_data'] for p in participants)
 
         def _stream() -> Any:
             writer = csv.writer(Echo())
-            for email in emails:
-                yield writer.writerow([email])
+            yield writer.writerow([str(_('Email')), *(_humanize_user_data_key(key) for key in user_data_keys)])
+            for participant in participants:
+                user_data = participant['user_data'] or {}
+                yield writer.writerow([participant['email'], *(user_data.get(key, '') for key in user_data_keys)])
 
         response = HttpResponse(_stream(), content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
