@@ -89,13 +89,12 @@ def _build_ratelimit_request(req: Any) -> Any:
     """
     Return an object django-ratelimit can read as a Django request.
 
-    is_ratelimited only touches .method and .META (for the 'ip' key it
-    reads META['REMOTE_ADDR']). For ASGI/Channels/Starlette requests
+    is_ratelimited only touches .method and .META (the 'ip' key resolves
+    through settings.RATELIMIT_IP_META_KEY, which reads X-Forwarded-For
+    with a REMOTE_ADDR fallback). For ASGI/Channels/Starlette requests
     served by Daphne, .request isn't a Django HttpRequest, so we build a
     minimal shim populated from the underlying ASGI scope. Returns the
-    original request unchanged when it's already a Django HttpRequest, so
-    the WSGI/sync path keeps using django-ratelimit's full IP handling
-    (RATELIMIT_TRUSTED_PROXIES, RATELIMIT_IP_META, etc).
+    original request unchanged when it's already a Django HttpRequest.
     """
     if isinstance(req, HttpRequest):
         return req

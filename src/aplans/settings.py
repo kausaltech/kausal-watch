@@ -912,6 +912,7 @@ MEDIA_ROOT = env('MEDIA_ROOT')
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+RATELIMIT_IP_META_KEY = 'aplans.ratelimit.client_ip_for_ratelimit'
 
 SENTRY_DSN = cast('str', env('SENTRY_DSN'))
 
