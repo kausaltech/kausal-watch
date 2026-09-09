@@ -213,6 +213,21 @@ class TestParticipantsIndexView:
         # Wagtail's permission system returns 302 or 403 when denied; either is fine.
         assert response.status_code in (302, 403, 404)
 
+    def test_view_includes_user_data_columns(self, client, plan_admin_user, active_plan):
+        pledge = PledgeFactory.create(plan=active_plan)
+        alice = _make_participant('alice@example.com', marketing=True)
+        alice.user_data = {'zip_code': '95616'}
+        alice.save(update_fields=['user_data'])
+        PledgeCommitment.objects.create(pledge=pledge, public_user=alice)
+        client.force_login(plan_admin_user)
+
+        response = client.get(self._list_url())
+
+        assert response.status_code == 200
+        body = response.content.decode('utf-8')
+        assert 'Zip code' in body
+        assert '95616' in body
+
     def test_sort_by_commitment_count(self, client, plan_admin_user, active_plan):
         many = PledgeFactory.create(plan=active_plan)
         few = PledgeFactory.create(plan=active_plan)
@@ -303,8 +318,28 @@ class TestCsvExportEndpoint:
         assert response.status_code == 200
         assert response['Content-Type'] == 'text/csv'
         body = response.content.decode('utf-8')
+        assert body.splitlines()[0] == 'Email'
         assert 'alice@example.com' in body
         assert 'bob@example.com' not in body
+
+    def test_csv_includes_user_data_columns(self, client, plan_admin_user, active_plan):
+        pledge = PledgeFactory.create(plan=active_plan)
+        alice = _make_participant('alice@example.com', marketing=True)
+        alice.user_data = {'zip_code': '95616'}
+        alice.save(update_fields=['user_data'])
+        bob = _make_participant('bob@example.com', marketing=True)
+        PledgeCommitment.objects.create(pledge=pledge, public_user=alice)
+        PledgeCommitment.objects.create(pledge=pledge, public_user=bob)
+        client.force_login(plan_admin_user)
+
+        response = client.get(reverse('pledge_participants_export_csv'))
+
+        assert response.status_code == 200
+        lines = response.content.decode('utf-8').splitlines()
+        assert lines[0] == 'Email,Zip code'
+        rows = dict(line.split(',', 1) for line in lines[1:])
+        assert rows['alice@example.com'] == '95616'
+        assert rows['bob@example.com'] == ''
 
     def test_per_pledge_csv_scoped_to_pledge(self, client, plan_admin_user, active_plan):
         pledge_a = PledgeFactory.create(plan=active_plan)
@@ -355,4 +390,4 @@ class TestCsvExportEndpoint:
 
         assert response.status_code == 200
         body = response.content.decode('utf-8')
-        assert body.strip() == ''  # no opted-in users
+        assert body.strip() == 'Email'  # header only; no opted-in users
