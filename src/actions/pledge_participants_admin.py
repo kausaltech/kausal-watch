@@ -84,7 +84,7 @@ def _get_participants_queryset(plan: Plan, pledge: Pledge | None = None) -> Quer
 def _opted_in_participants(plan: Plan, pledge: Pledge | None = None) -> list[dict[str, Any]]:
     """Return opted-in participants (email + user_data), sorted by email."""
     qs = _get_participants_queryset(plan, pledge).filter(marketing_consented_at__isnull=False).exclude(email__isnull=True)
-    participants = (p for p in qs.values('email', 'user_data') if p['email'])
+    participants = (cast('dict[str, Any]', p) for p in qs.values('email', 'user_data') if p['email'])
     return sorted(participants, key=lambda p: p['email'])
 
 
