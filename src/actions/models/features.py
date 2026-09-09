@@ -191,6 +191,14 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             'Unpublished plans and preview sites are always excluded from indexing regardless of this setting.'
         ),
     )
+    show_parent_plan_in_plan_switcher = models.BooleanField(
+        default=False,
+        verbose_name=_('Show the parent plan in the plan switcher'),
+        help_text=_(
+            'By default, the plan switcher in the public UI lists all related plans except the parent plan. '
+            'If set, the parent plan is shown as well.'
+        ),
+    )
 
     class AccessibilityConformanceLevel(models.TextChoices):
         DEFAULT = 'default', 'No extra accessibility fixes active'
@@ -245,4 +253,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_action_pdf_export_in_public_ui',
         'enable_indicator_factors',
         'hide_from_search_engines',
+        'show_parent_plan_in_plan_switcher',
     ]
