@@ -103,6 +103,17 @@ def _humanize_user_data_key(key: str) -> str:
     return capfirst(key.replace('_', ' '))
 
 
+_CSV_FORMULA_LEADING = ('=', '+', '-', '@', '\t', '\r')
+
+
+def _csv_safe(value: object) -> str:
+    """Prefix formula-leading cell values with `'` so spreadsheets don't evaluate them."""
+    text = '' if value is None else str(value)
+    if text.startswith(_CSV_FORMULA_LEADING):
+        return "'" + text
+    return text
+
+
 class ParticipantsPermissionPolicy(PlanRelatedPermissionPolicy):
     """
     Read-only for plan admins on plans that have community engagement enabled.
@@ -272,10 +283,13 @@ class _ParticipantsCsvView(View):
 
         def _stream() -> Any:
             writer = csv.writer(Echo())
-            yield writer.writerow([str(_('Email')), *(_humanize_user_data_key(key) for key in user_data_keys)])
+            yield writer.writerow([str(_('Email')), *(_csv_safe(_humanize_user_data_key(key)) for key in user_data_keys)])
             for participant in participants:
                 user_data = participant['user_data'] or {}
-                yield writer.writerow([participant['email'], *(user_data.get(key, '') for key in user_data_keys)])
+                yield writer.writerow([
+                    _csv_safe(participant['email']),
+                    *(_csv_safe(user_data.get(key, '')) for key in user_data_keys),
+                ])
 
         response = HttpResponse(_stream(), content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
