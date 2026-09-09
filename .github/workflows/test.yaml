@@ -80,6 +80,10 @@ jobs:
           # Run the suite across this many pytest-xdist workers. Locally 8 was the sweet spot
           # (2.9x over a single process); 16 was slower again, on database contention.
           PYTEST_WORKERS: 8
+          # Measure coverage through sys.monitoring rather than coverage.py's trace function.
+          # Over the full suite at eight workers the trace core takes the run from 91 to 206
+          # seconds; this one takes it to 135, for the same statement and branch totals.
+          COVERAGE_CORE: sysmon
 
       - uses: actions/upload-artifact@v7
         if: always()
