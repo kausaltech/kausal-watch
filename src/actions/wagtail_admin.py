@@ -611,6 +611,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('enable_community_engagement', permission='superuser'),
         FieldPanel('enable_action_pdf_export_in_public_ui', permission='superuser'),
         FieldPanel('enable_indicator_factors', permission='superuser'),
+        FieldPanel('show_parent_plan_in_plan_switcher', permission='superuser'),
     ]
 
     # Define all panels explicitly to prevent Wagtail from auto-generating form fields
