@@ -119,6 +119,7 @@ dependencies = [
   "pytest-env",
   "pytest-factoryboy",
   "pytest-html",
+  "pytest-xdist",
   "pyyaml",
   "requests",
   "rich",
