@@ -155,8 +155,7 @@ def export_report_view(request, plan_identifier):
         return HttpResponseBadRequest(f'Invalid format. Allowed values: {", ".join(sorted(ALLOWED_EXPORT_FORMATS))}.')
 
     plan = get_object_or_404(Plan, identifier=plan_identifier)
-    if not plan.is_live():
-        # TODO: authorization relative to user once plan visibility is merged
+    if not plan.is_visible_for_user(request.user):
         raise Http404
 
     # Possibly restrict which actions are included
@@ -172,7 +171,7 @@ def export_report_view(request, plan_identifier):
     try:
         output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids)
     except ActionListPageNotFoundError as e:
-        # A live plan should always have an ActionListPage; if it doesn't, that's a
+        # A visible plan should always have an ActionListPage; if it doesn't, that's a
         # misconfiguration we want to learn about rather than serve a 500 to the user.
         sentry_sdk.capture_exception(e)
         raise Http404 from e

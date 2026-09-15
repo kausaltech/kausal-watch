@@ -76,11 +76,11 @@ def mock_export():
 
 @pytest.mark.django_db
 class TestExportReportView:
-    def _get(self, rf, plan_identifier, **params):
+    def _get(self, rf, plan_identifier, user=None, **params):
         from reports.views import export_report_view
 
         request = rf.get(f'/report_export/{plan_identifier}/', params)
-        request.user = AnonymousUser()
+        request.user = user if user is not None else AnonymousUser()
         return export_report_view(request, plan_identifier=plan_identifier)
 
     @pytest.mark.parametrize('format', ['pdf', 'json', 'xml'])
@@ -104,10 +104,20 @@ class TestExportReportView:
         with pytest.raises(Http404):
             self._get(rf, 'does-not-exist')
 
-    def test_non_live_plan_raises_404(self, rf):
-        plan = PlanFactory.create(published_at=None)
+    def test_unpublished_plan_hidden_from_anonymous_user_raises_404(self, rf):
+        plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
         with pytest.raises(Http404):
             self._get(rf, plan.identifier)
+
+    def test_inactive_plan_raises_404(self, rf, user_factory):
+        plan = PlanFactory.create(is_active=False)
+        with pytest.raises(Http404):
+            self._get(rf, plan.identifier, user=user_factory(is_superuser=True))
+
+    def test_unpublished_plan_is_exported_for_user_who_may_view_it(self, rf, mock_export, user_factory):
+        plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
+        response = self._get(rf, plan.identifier, user=user_factory(is_superuser=True))
+        assert response.status_code == 200
 
     @pytest.mark.parametrize(
         ('format', 'expected_content_type'),
