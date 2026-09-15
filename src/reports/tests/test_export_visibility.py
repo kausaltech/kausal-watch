@@ -218,3 +218,10 @@ class TestLookupsAreScopedToTheReport:
         exporter = report.get_xlsx_exporter(user=plan_admin_user)
 
         assert exporter.visible_indicator_ids(frozenset({candidate.id})) == {candidate.id}
+
+    def test_visible_action_ids_are_narrowed_by_the_action_id_filter(self, report, plan, plan_admin_user):
+        included = ActionFactory.create(plan=plan)
+        ActionFactory.create(plan=plan)
+        exporter = report.get_xlsx_exporter(action_ids=[included.id], user=plan_admin_user)
+
+        assert exporter._visible_action_ids() == [str(included.id)]
