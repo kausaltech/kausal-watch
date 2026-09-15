@@ -134,6 +134,14 @@ class TestRelatedQuerySetsFollowTheSameRule:
     def test_levels_show_internal_indicators_to_plan_staff(self, public_indicator, internal_indicator, plan_admin_user):
         assert self._indicator_level_ids(plan_admin_user) == {public_indicator.id, internal_indicator.id}
 
+    def test_levels_of_a_plan_hidden_from_the_user_are_excluded(self, plan_admin_user, public_indicator):
+        """The plan constraint must apply to authenticated users too, not only anonymous ones."""
+        hidden_plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
+        elsewhere = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        IndicatorLevelFactory.create(indicator=elsewhere, plan=hidden_plan)
+
+        assert self._indicator_level_ids(plan_admin_user) == {public_indicator.id}
+
 
 class TestPlanIndicatorsQueryVisibility:
     """The same rule must hold at the GraphQL endpoint."""
