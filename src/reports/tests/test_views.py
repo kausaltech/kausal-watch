@@ -186,3 +186,27 @@ class TestGenerateForPlanDashboard:
         report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
         with pytest.raises(ActionListPageNotFoundError):
             report_type.get_action_list_page()
+
+
+@pytest.mark.django_db
+class TestExportVisibilityForUser:
+    """The export must contain the actions of a plan the user is allowed to see, published or not."""
+
+    def _unpublished_plan(self, plan_with_pages):
+        plan = plan_with_pages
+        plan.published_at = None
+        plan.save()
+        plan.features.expose_unpublished_plan_only_to_authenticated_user = True
+        plan.features.save()
+        return plan
+
+    def test_unpublished_plan_export_contains_actions_for_permitted_user(self, plan_with_pages, user_factory):
+        from actions.tests.factories import ActionFactory
+        from reports.export import export_dashboard_report_for_plan
+
+        plan = self._unpublished_plan(plan_with_pages)
+        action = ActionFactory.create(plan=plan)
+        user = user_factory(is_superuser=True)
+
+        output, _filename = export_dashboard_report_for_plan(plan, 'csv', user)
+        assert action.name in output

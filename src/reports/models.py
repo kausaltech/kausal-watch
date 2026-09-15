@@ -250,36 +250,35 @@ class Report(PlanRelatedModelWithRevision):
     def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[Report]) -> models.QuerySet[Report]:
         return qs.filter(type__plan=plan)
 
-    def get_xlsx_exporter(self, action_ids: list[int] | None = None) -> ExcelReport:
-        self.xlsx_exporter = ExcelReport(self, action_ids=action_ids)
+    def get_xlsx_exporter(self, action_ids: list[int] | None = None, user: UserOrAnon | None = None) -> ExcelReport:
+        self.xlsx_exporter = ExcelReport(self, action_ids=action_ids, user=user)
         return self.xlsx_exporter
 
     def _raise_complete(self) -> Never:
         raise ValueError(_('The report is already marked as complete.'))
 
-    def get_live_versions(self, action_ids: list[int] | None = None) -> LiveVersions:  # noqa: C901
+    def get_live_versions(self, action_ids: list[int] | None = None, user: UserOrAnon | None = None) -> LiveVersions:  # noqa: C901
         """
         Return action versions and related object versions for an incomplete report.
 
         The versions are similar to those that would be saved to the database when completing a report.
 
         If `action_ids` is not None, the included actions are restricted to those with the given IDs.
+
+        Only plans and actions visible to `user` are included; `None` means an anonymous viewer.
         """
         if self.is_complete:
             self._raise_complete()
 
         if (
-            (child_plans := self.type.plan.children.get_queryset().live().values_list('id', flat=True))
-            and
-            # TODO: add .visible_for_user() when it is implemented
-            self.type.get_action_list_page().include_related_plans
-        ):
+            child_plans := self.type.plan.children.get_queryset().visible_for_user(user).values_list('id', flat=True)
+        ) and self.type.get_action_list_page().include_related_plans:
             plans = list(child_plans) + [self.type.plan.id]
             actions_to_snapshot = (
                 Action.objects
                 .get_queryset()
                 .filter(plan__in=plans)
-                .visible_for_user(None)
+                .visible_for_user(user)
                 .prefetch_related(
                     'responsible_parties__organization',
                     'categories__type',
@@ -297,7 +296,7 @@ class Report(PlanRelatedModelWithRevision):
             actions_to_snapshot = (
                 self.type.plan.actions
                 .get_queryset()
-                .visible_for_user(None)
+                .visible_for_user(user)
                 .prefetch_related(
                     'responsible_parties__organization',
                     'categories__type',

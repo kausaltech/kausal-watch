@@ -28,6 +28,8 @@ if typing.TYPE_CHECKING:
 
     from django.db.models import Model, QuerySet
 
+    from kausal_common.users import UserOrAnon
+
     from actions.models.action import ActionImplementationPhase, ActionStatus
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan
@@ -96,7 +98,12 @@ class ExcelReport:
             return {el.pk: el for el in seq}
 
     def __init__(
-        self, report: Report, language: str | None = None, is_dynamic: bool = False, action_ids: list[int] | None = None
+        self,
+        report: Report,
+        language: str | None = None,
+        is_dynamic: bool = False,
+        action_ids: list[int] | None = None,
+        user: UserOrAnon | None = None,
     ):
         # Currently only language None is properly supported, defaulting
         # to the plan's primary language. When implementing support for
@@ -116,6 +123,7 @@ class ExcelReport:
         self.formats = ExcelFormats(self.workbook)
         self.plan = self.report.type.plan
         self.action_ids = action_ids
+        self.user = user
         if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
@@ -124,11 +132,12 @@ class ExcelReport:
             self.has_macros = False
 
         if (
-            child_plans := report.type.plan.children.get_queryset().prefetch_related(
-                'category_types', 'action_implementation_phases', 'action_statuses', 'related_organizations'
-            )
+            child_plans := report.type.plan.children
+            .get_queryset()
+            .visible_for_user(user)
+            .prefetch_related('category_types', 'action_implementation_phases', 'action_statuses', 'related_organizations')
         ) and report.type.get_action_list_page().include_related_plans:
-            self.child_plans = list(child_plans)  # TODO: add .visible_for_user() when it is implemented
+            self.child_plans = list(child_plans)
             self.plan_current_related_objects = self.PlanRelatedObjects(self.report, self.child_plans)
         else:
             self.child_plans = []
@@ -287,7 +296,7 @@ class ExcelReport:
             return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
-        live_versions = self.report.get_live_versions(action_ids=self.action_ids)
+        live_versions = self.report.get_live_versions(action_ids=self.action_ids, user=self.user)
         serialized_actions = [SerializedActionVersion.from_version(v) for v in live_versions.actions]
         serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in live_versions.related]
         return serialized_actions, serialized_related
