@@ -32,9 +32,11 @@ class ActionIndicatorQuerySet(models.QuerySet['ActionIndicator']):
 
         A None value is interpreted identically to a non-authenticated user
         """
+        from indicators.models.indicator import Indicator
+
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return self
+        return self.filter(indicator__in=Indicator.objects.get_queryset().visible_for_user(user))
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
