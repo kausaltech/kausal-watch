@@ -148,6 +148,10 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
         """
         Filter by visibility for the current user in a plan context.
 
+        Actions marked as internal are only shown to the staff of their own plan, i.e. to
+        users with admin access to it. Being authenticated is not by itself enough, and
+        staff of one plan gain no access to the internal actions of another.
+
         A None value is interpreted identically a non-authenticated user.
         """
         from actions.models.plan import Plan
@@ -161,9 +165,10 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
             plans = Plan.objects.qs.visible_for_user(user)
 
         qs = self.filter(plan__in=plans)
+        is_public = Q(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         if user is None or not user.is_authenticated:
-            qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return qs
+            return qs.filter(is_public)
+        return qs.filter(is_public | Q(plan__in=user.get_adminable_plans()))
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
