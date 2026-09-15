@@ -332,20 +332,24 @@ class IndicatorNode(DjangoNode[Indicator]):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='levels',
+        # `levels` is prefetched by name rather than declared as the `model_field`, which would
+        # fetch nothing but the ids and leave every column below to a query of its own.
+        prefetch_related=('levels', 'plans'),
+        only=('visibility',),
     )
     def resolve_level(root: Indicator, info, plan) -> str | None:
+        if plan is None:
+            return None
         if not root.is_visible_for_user(info.context.user):
             return None
-        if plan is not None:
-            plan_obj = get_plan_from_context(info, plan)
-            if not plan_obj or not plan_obj.is_visible_for_user(info.context.user):
-                return None
-        try:
-            obj = root.levels.get(plan__identifier=plan)
-        except IndicatorLevel.DoesNotExist:
+        plan_obj = get_plan_from_context(info, plan)
+        if not plan_obj or not plan_obj.is_visible_for_user(info.context.user):
             return None
-        return obj.level
+        # Matched in Python so that the prefetched levels are used as they are.
+        level = next((level for level in root.levels.all() if level.plan_id == plan_obj.pk), None)
+        if level is None:
+            return None
+        return level.level
 
     @staticmethod
     @gql_optimizer.resolver_hints(

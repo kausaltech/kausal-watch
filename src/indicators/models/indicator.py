@@ -772,7 +772,10 @@ class Indicator(
             return False
         if user.is_superuser:
             return True
-        return self.plans.filter(pk__in=user.get_adminable_plans().values('pk')).exists()
+        # Both sides are read through their caches, so that a caller resolving a list of
+        # indicators can prefetch `plans` and pay nothing per indicator.
+        adminable_plan_ids = {plan.pk for plan in user.get_adminable_plans()}
+        return any(plan.pk in adminable_plan_ids for plan in self.plans.all())
 
     def is_visible_for_public(self) -> bool:
         return self.is_visible_for_user(None)
