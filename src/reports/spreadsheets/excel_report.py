@@ -282,7 +282,7 @@ class ExcelReport:
             serialized_actions: list[SerializedActionVersion] = []
             snapshots = self.report.action_snapshots.all()
             if self.action_ids is not None:
-                snapshots.filter(action_version__object_id__in=self.action_ids)
+                snapshots = snapshots.filter(action_version__object_id__in=self.action_ids)
             snapshots = snapshots.select_related('action_version__revision__user').prefetch_related(
                 'action_version__revision__version_set'
             )
