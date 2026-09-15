@@ -21,7 +21,7 @@ def export_dashboard_report_for_plan(
     report.disable_title_sheet = True
     report.disable_summary_sheets = True
     report.disable_macros = True
-    exporter = report.get_xlsx_exporter(action_ids=action_ids)
+    exporter = report.get_xlsx_exporter(action_ids=action_ids, user=user)
     output: str | bytes
     if format == 'xlsx':
         output = exporter.generate_xlsx()

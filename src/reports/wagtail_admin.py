@@ -231,7 +231,7 @@ class ReportAdmin(AplansModelAdmin):
 
     def download_report_view(self, request, instance_pk):
         report = Report.objects.get(pk=instance_pk)
-        exporter = report.get_xlsx_exporter()
+        exporter = report.get_xlsx_exporter(user=request.user)
         output = exporter.generate_xlsx()
         response = HttpResponse(
             output,
