@@ -278,19 +278,20 @@ class ExcelReport:
 
     def _visible_action_ids(self) -> list[str]:
         """
-        Return the ids of the report's actions that `self.user` is allowed to see.
+        Return the ids of the actions to export that `self.user` is allowed to see.
+
+        The ids the export was asked for narrow the query, so that a request for a few
+        actions does not list every action of the plan.
 
         Snapshots reference their action through a reversion `Version`, whose `object_id`
         is a string, so the ids are returned as strings.
         """
         visible_actions = (
-            Action.objects
-            .get_queryset()
-            .visible_for_user(self.user)
-            .filter(plan__in=[self.plan, *self.child_plans])
-            .values_list('id', flat=True)
+            Action.objects.get_queryset().visible_for_user(self.user).filter(plan__in=[self.plan, *self.child_plans])
         )
-        return [str(pk) for pk in visible_actions]
+        if self.action_ids is not None:
+            visible_actions = visible_actions.filter(id__in=self.action_ids)
+        return [str(pk) for pk in visible_actions.values_list('id', flat=True)]
 
     def visible_indicator_ids(self, candidate_ids: frozenset[int]) -> set[int]:
         """
@@ -313,8 +314,6 @@ class ExcelReport:
         if self.report.is_complete:
             serialized_actions: list[SerializedActionVersion] = []
             snapshots = self.report.action_snapshots.filter(action_version__object_id__in=self._visible_action_ids())
-            if self.action_ids is not None:
-                snapshots = snapshots.filter(action_version__object_id__in=self.action_ids)
             snapshots = snapshots.select_related('action_version__revision__user').prefetch_related(
                 'action_version__revision__version_set'
             )
