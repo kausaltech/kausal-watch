@@ -198,3 +198,23 @@ class TestRelatedIndicatorsField:
         ActionIndicatorFactory.create(action=action_with_indicators, indicator=unrelated)
 
         assert self._indicator_columns(indicator_report, plan_admin_user) == ['2', 'Yes']
+
+
+class TestLookupsAreScopedToTheReport:
+    """
+    The exporter must ask the database only about the rows the report actually contains.
+
+    Otherwise a single export grows a query listing every action or indicator in the
+    database, regardless of how few of them end up in the file.
+    """
+
+    def test_visible_indicators_are_looked_up_only_among_the_given_candidates(self, report, plan, plan_admin_user):
+        from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
+
+        candidate = IndicatorFactory.create(organization=plan.organization)
+        IndicatorLevelFactory.create(indicator=candidate, plan=plan)
+        elsewhere = IndicatorFactory.create(organization=plan.organization)
+        IndicatorLevelFactory.create(indicator=elsewhere, plan=plan)
+        exporter = report.get_xlsx_exporter(user=plan_admin_user)
+
+        assert exporter.visible_indicator_ids(frozenset({candidate.id})) == {candidate.id}
