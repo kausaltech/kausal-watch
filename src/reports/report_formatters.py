@@ -371,13 +371,11 @@ class ActionIndicatorsFormatter(ActionManyToOneFieldFormatter):
             apps.get_model('indicators', 'IndicatorGoal'),
         )
         available_organizations = report.plan_current_related_objects.organizations
-        indicators_available_for_plan = {
-            i.data['id']: i
-            for i in indicators
-            if (i.data['organization_id'] in available_organizations and i.data['id'] in report.visible_indicator_ids)
-        }
+        candidates = {i.data['id']: i for i in indicators if i.data['organization_id'] in available_organizations}
         # An indicator the requester may not see must not be counted either, since the count
         # would disclose its existence.
+        visible_ids = report.visible_indicator_ids(frozenset(candidates))
+        indicators_available_for_plan = {pk: i for pk, i in candidates.items() if pk in visible_ids}
         indicators_for_this_action = [
             indicator
             for ai in action_indicators

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pathlib
 import typing
-from functools import cached_property
 from io import BytesIO
 from typing import Any
 
@@ -125,6 +124,7 @@ class ExcelReport:
         self.plan = self.report.type.plan
         self.action_ids = action_ids
         self.user = user
+        self._visible_indicator_ids: dict[frozenset[int], set[int]] = {}
         if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
@@ -292,12 +292,20 @@ class ExcelReport:
         )
         return [str(pk) for pk in visible_actions]
 
-    @cached_property
-    def visible_indicator_ids(self) -> set[int]:
-        """Return the ids of the indicators `self.user` is allowed to see."""
+    def visible_indicator_ids(self, candidate_ids: frozenset[int]) -> set[int]:
+        """
+        Return those of `candidate_ids` that identify an indicator `self.user` may see.
+
+        The candidates are the indicators of the report, which is a far smaller set than
+        every indicator in the database. The answer is memoised, because the formatters ask
+        for it once per exported action.
+        """
         from indicators.models.indicator import Indicator
 
-        return set(Indicator.objects.get_queryset().visible_for_user(self.user).values_list('id', flat=True))
+        if candidate_ids not in self._visible_indicator_ids:
+            visible = Indicator.objects.get_queryset().visible_for_user(self.user).filter(id__in=candidate_ids)
+            self._visible_indicator_ids[candidate_ids] = set(visible.values_list('id', flat=True))
+        return self._visible_indicator_ids[candidate_ids]
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
         from reports.types import SerializedActionVersion, SerializedVersion
