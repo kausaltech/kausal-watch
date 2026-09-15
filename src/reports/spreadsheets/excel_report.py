@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 import typing
+from functools import cached_property
 from io import BytesIO
 from typing import Any
 
@@ -290,6 +291,13 @@ class ExcelReport:
             .values_list('id', flat=True)
         )
         return [str(pk) for pk in visible_actions]
+
+    @cached_property
+    def visible_indicator_ids(self) -> set[int]:
+        """Return the ids of the indicators `self.user` is allowed to see."""
+        from indicators.models.indicator import Indicator
+
+        return set(Indicator.objects.get_queryset().visible_for_user(self.user).values_list('id', flat=True))
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
         from reports.types import SerializedActionVersion, SerializedVersion

@@ -12,7 +12,7 @@ from wagtail import fields
 
 from grapple.models import GraphQLForeignKey
 
-from aplans.utils import RestrictedVisibilityModel, convert_html_to_text
+from aplans.utils import convert_html_to_text
 
 from actions.attributes import AttributeType
 from actions.models.action import (
@@ -374,16 +374,17 @@ class ActionIndicatorsFormatter(ActionManyToOneFieldFormatter):
         indicators_available_for_plan = {
             i.data['id']: i
             for i in indicators
-            if (
-                i.data['organization_id'] in available_organizations
-                and i.data['visibility'] == RestrictedVisibilityModel.VisibilityState.PUBLIC
-            )
+            if (i.data['organization_id'] in available_organizations and i.data['id'] in report.visible_indicator_ids)
         }
-        indicators_for_this_action = [indicators_available_for_plan.get(ai.data['indicator_id']) for ai in action_indicators]
+        # An indicator the requester may not see must not be counted either, since the count
+        # would disclose its existence.
+        indicators_for_this_action = [
+            indicator
+            for ai in action_indicators
+            if (indicator := indicators_available_for_plan.get(ai.data['indicator_id'])) is not None
+        ]
         indicators_with_goals = [
-            i
-            for i in indicators_for_this_action
-            if (i is not None and any(ig.data['indicator_id'] == i.data['id'] for ig in indicator_goals))
+            i for i in indicators_for_this_action if any(ig.data['indicator_id'] == i.data['id'] for ig in indicator_goals)
         ]
         return [len(indicators_for_this_action), gettext('Yes') if len(indicators_with_goals) > 0 else gettext('No')]
 

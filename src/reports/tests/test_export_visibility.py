@@ -129,3 +129,72 @@ class TestVisibilityFilter:
         report.mark_as_complete(user)
 
         assert exported_action_ids(report, action_ids=[public.id, internal.id], user=None) == {public.id}
+
+
+@pytest.fixture
+def indicator_report(plan, report_type_factory, report_factory):
+    """Build a report whose single field is the related-indicators summary."""
+    report_type = report_type_factory(plan=plan, fields__0='related_indicators')
+    report = report_factory(type=report_type)
+    report.fields = report_type.fields
+    report.save()
+    return report
+
+
+class TestRelatedIndicatorsField:
+    """
+    The related-indicators column must describe only the indicators the requester may see.
+
+    The column reports how many indicators an action has and whether any of them has a goal,
+    so counting an indicator the requester cannot see discloses its existence.
+    """
+
+    @pytest.fixture
+    def action_with_indicators(self, plan):
+        from aplans.utils import RestrictedVisibilityModel
+
+        from indicators.tests.factories import (
+            ActionIndicatorFactory,
+            IndicatorFactory,
+            IndicatorGoalFactory,
+            IndicatorLevelFactory,
+        )
+
+        action = ActionFactory.create(plan=plan)
+        for visibility in (
+            RestrictedVisibilityModel.VisibilityState.PUBLIC,
+            RestrictedVisibilityModel.VisibilityState.INTERNAL,
+        ):
+            indicator = IndicatorFactory.create(organization=plan.organization, visibility=visibility)
+            IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+            ActionIndicatorFactory.create(action=action, indicator=indicator)
+            if visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL:
+                IndicatorGoalFactory.create(indicator=indicator)
+        return action
+
+    def _indicator_columns(self, report, user) -> list[str]:
+        """Return the related-indicator cells of the single exported action row."""
+        csv = report.get_xlsx_exporter(user=user).generate_csv()
+        header, row = (line.split(',') for line in csv.strip().splitlines())
+        return row[header.index('Indicators') :]
+
+    def test_anonymous_viewer_does_not_see_internal_indicators(self, indicator_report, action_with_indicators):
+        assert self._indicator_columns(indicator_report, None) == ['1', 'No']
+
+    def test_authenticated_non_staff_does_not_see_internal_indicators(
+        self, indicator_report, action_with_indicators, user, person
+    ):
+        assert self._indicator_columns(indicator_report, user) == ['1', 'No']
+
+    def test_plan_staff_see_internal_indicators(self, indicator_report, action_with_indicators, plan_admin_user):
+        assert self._indicator_columns(indicator_report, plan_admin_user) == ['2', 'Yes']
+
+    def test_indicators_of_unrelated_organizations_are_not_counted(
+        self, indicator_report, action_with_indicators, plan_admin_user
+    ):
+        from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory
+
+        unrelated = IndicatorFactory.create()
+        ActionIndicatorFactory.create(action=action_with_indicators, indicator=unrelated)
+
+        assert self._indicator_columns(indicator_report, plan_admin_user) == ['2', 'Yes']
