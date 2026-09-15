@@ -61,9 +61,9 @@ class TestVisibilityFilter:
     """
     The exporter must show each requester only the actions they are allowed to see.
 
-    `ActionQuerySet.visible_for_user` restricts to plans visible to the user and, for
-    anonymous requesters only, to actions whose visibility is public. Both the live and
-    the completed branch of the exporter must apply it identically.
+    `ActionQuerySet.visible_for_user` restricts to plans visible to the user, and shows
+    internal actions only to the staff of their own plan. Both the live and the completed
+    branch of the exporter must apply it identically.
     """
 
     def _public_and_internal_actions(self, plan):
@@ -84,16 +84,27 @@ class TestVisibilityFilter:
 
         assert exported_action_ids(report, user=None) == {public.id}
 
-    def test_incomplete_report_shows_internal_actions_to_authenticated_user(self, report, plan, user, person):
-        public, internal = self._public_and_internal_actions(plan)
+    def test_incomplete_report_hides_internal_actions_from_authenticated_non_staff(self, report, plan, user, person):
+        public, _internal = self._public_and_internal_actions(plan)
 
-        assert exported_action_ids(report, user=user) == {public.id, internal.id}
+        assert exported_action_ids(report, user=user) == {public.id}
 
-    def test_completed_report_shows_internal_actions_to_authenticated_user(self, report, plan, user, person):
-        public, internal = self._public_and_internal_actions(plan)
+    def test_completed_report_hides_internal_actions_from_authenticated_non_staff(self, report, plan, user, person):
+        public, _internal = self._public_and_internal_actions(plan)
         report.mark_as_complete(user)
 
-        assert exported_action_ids(report, user=user) == {public.id, internal.id}
+        assert exported_action_ids(report, user=user) == {public.id}
+
+    def test_incomplete_report_shows_internal_actions_to_plan_staff(self, report, plan, plan_admin_user):
+        public, internal = self._public_and_internal_actions(plan)
+
+        assert exported_action_ids(report, user=plan_admin_user) == {public.id, internal.id}
+
+    def test_completed_report_shows_internal_actions_to_plan_staff(self, report, plan, plan_admin_user):
+        public, internal = self._public_and_internal_actions(plan)
+        report.mark_as_complete(plan_admin_user)
+
+        assert exported_action_ids(report, user=plan_admin_user) == {public.id, internal.id}
 
     def test_incomplete_report_of_hidden_plan_is_empty_for_anonymous_viewer(self, report, hidden_plan):
         self._public_and_internal_actions(hidden_plan)
