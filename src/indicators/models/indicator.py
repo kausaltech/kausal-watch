@@ -125,11 +125,20 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         """
         Filter by visibility for a specific user.
 
+        Indicators marked as internal are only shown to the staff of a plan that uses them,
+        i.e. to users with admin access to it. Being authenticated is not by itself enough.
+
         A None value is interpreted identically to a non-authenticated user
         """
+        is_public = Q(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         if user is None or not user.is_authenticated:
-            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return self
+            return self.filter(is_public)
+        if user.is_superuser:
+            return self
+        # A subquery so that the filter needs no join, which would list an indicator
+        # once per plan that has connected it.
+        staff_indicators = Indicator.objects.qs.filter(plans__in=user.get_adminable_plans())
+        return self.filter(is_public | Q(pk__in=staff_indicators.values('pk')))
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
@@ -753,16 +762,17 @@ class Indicator(
         """
         Determine if this indicator is visible for a user.
 
+        An internal indicator is visible only to the staff of a plan that uses it.
+
         A None value is interpreted identically to a non-authenticated user.
         """
-
-        if (
-            (user is None or not user.is_authenticated)
-            and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC
-            and not cast('PlanQuerySet', self.plans.get_queryset()).visible_for_user(user).exists()
-        ):
+        if self.visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
+            return True
+        if user is None or not user.is_authenticated:
             return False
-        return True
+        if user.is_superuser:
+            return True
+        return self.plans.filter(pk__in=user.get_adminable_plans().values('pk')).exists()
 
     def is_visible_for_public(self) -> bool:
         return self.is_visible_for_user(None)
@@ -873,7 +883,7 @@ class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet['Indicator
             plans = list(Plan.objects.qs.visible_for_user(user))
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC, plan__in=plans)
-        return self
+        return self.filter(indicator__in=Indicator.objects.get_queryset().visible_for_user(user))
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
