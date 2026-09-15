@@ -167,3 +167,72 @@ class TestPlanIndicatorsQueryVisibility:
         client.force_login(plan_admin_user)
 
         assert self._query(graphql_client_query, plan) == {public_indicator.identifier, internal_indicator.identifier}
+
+
+RELATED_PLAN_INDICATORS_QUERY = """
+query relatedPlanIndicators($plan: ID!, $first: Int) {
+  relatedPlanIndicators(plan: $plan, first: $first) {
+    identifier
+  }
+}
+"""
+
+
+class TestRelatedPlanIndicatorsQueryVisibility:
+    """`relatedPlanIndicators` must follow the same rule as `planIndicators`."""
+
+    @pytest.fixture
+    def related_plan(self, plan):
+        other_plan = PlanFactory.create()
+        other_plan.related_plans.add(plan)
+        return other_plan
+
+    @pytest.fixture
+    def related_indicators(self, related_plan):
+        public = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        internal = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+        for indicator in (public, internal):
+            IndicatorLevelFactory.create(indicator=indicator, plan=related_plan)
+        return public, internal
+
+    def _query(self, graphql_client_query, plan, **variables) -> set[str]:
+        response = graphql_client_query(RELATED_PLAN_INDICATORS_QUERY, variables={'plan': plan.identifier, **variables})
+        assert 'errors' not in response, json.dumps(response)
+        return {indicator['identifier'] for indicator in response['data']['relatedPlanIndicators']}
+
+    def test_anonymous_user_sees_only_public_indicators(self, plan, related_indicators, graphql_client_query):
+        public, _internal = related_indicators
+
+        assert self._query(graphql_client_query, plan) == {public.identifier}
+
+    def test_authenticated_user_without_a_role_sees_only_public_indicators(
+        self, plan, related_indicators, client, user, person, graphql_client_query
+    ):
+        public, _internal = related_indicators
+        client.force_login(user)
+
+        assert self._query(graphql_client_query, plan) == {public.identifier}
+
+    def test_staff_of_the_queried_plan_do_not_see_another_plans_internal_indicators(
+        self, plan, related_indicators, client, plan_admin_user, graphql_client_query
+    ):
+        public, _internal = related_indicators
+        client.force_login(plan_admin_user)
+
+        assert self._query(graphql_client_query, plan) == {public.identifier}
+
+    def test_staff_of_the_related_plan_see_its_internal_indicators(
+        self, plan, related_plan, related_indicators, client, person_factory, graphql_client_query
+    ):
+        public, internal = related_indicators
+        staff = person_factory(general_admin_plans=[related_plan])
+        client.force_login(staff.user)
+
+        assert self._query(graphql_client_query, plan) == {public.identifier, internal.identifier}
+
+    def test_first_limits_the_number_of_indicators(self, plan, related_plan, graphql_client_query):
+        for _ in range(2):
+            indicator = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+            IndicatorLevelFactory.create(indicator=indicator, plan=related_plan)
+
+        assert len(self._query(graphql_client_query, plan, first=1)) == 1

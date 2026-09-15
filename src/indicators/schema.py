@@ -499,7 +499,7 @@ class Query:
         if not plan_obj.is_visible_for_user(info.context.user):
             return None
         plans = plan_obj.get_all_related_plans().visible_for_user(info.context.user)
-        qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
+        qs = plans_indicators_queryset(plans=plans, user=info.context.user, **kwargs)
         return gql_optimizer.query(qs, info)
 
     def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs) -> Indicator | None:
@@ -550,12 +550,7 @@ class Query:
 def plans_indicators_queryset(plans, user, **kwargs) -> IndicatorQuerySet:
     first = kwargs.get('first')
     order_by = kwargs.get('order_by')
-    restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)
-    qs = Indicator.objects.get_queryset()
-    if restrict_to_publicly_visible:
-        qs = qs.visible_for_public()
-    else:
-        qs = qs.visible_for_user(user)
+    qs = Indicator.objects.get_queryset().visible_for_user(user)
     qs = qs.filter(plans__in=plans)
 
     if isinstance(plans, list) and len(plans) == 1:
