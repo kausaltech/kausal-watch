@@ -19,6 +19,14 @@ on:
         description: 'S3 bucket'
         required: false
         type: string
+      browsers:
+        description: >-
+          Comma-separated Playwright browsers to run (chromium, firefox). Each one re-runs
+          the whole suite, so keep this to chromium unless the extra coverage is worth the
+          wall clock.
+        required: false
+        type: string
+        default: chromium
 
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -87,17 +95,20 @@ jobs:
     env:
       CI: "1"
       TEST_BASE_URL: http://localhost:8000
+      E2E_BROWSERS: ${{ inputs.browsers }}
 
     steps:
       - name: Check out code
         uses: actions/checkout@v7
 
-      - name: Wait for backend
-        run: wait-for-it.sh -t 180 localhost:8000
-
       - name: Install Playwright dependencies
         run: corepack enable pnpm && pnpm install --prod --frozen-lockfile
         working-directory: ./e2e-tests
+
+      # Deliberately after the install above, so the dependency fetch overlaps with the
+      # backend container restoring the test database dump.
+      - name: Wait for backend
+        run: wait-for-it.sh -t 180 localhost:8000
 
       - name: Start coverage tracking
         continue-on-error: true
