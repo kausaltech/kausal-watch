@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
 import pytest
 
 from aplans.utils import RestrictedVisibilityModel
@@ -236,3 +239,56 @@ class TestRelatedPlanIndicatorsQueryVisibility:
             IndicatorLevelFactory.create(indicator=indicator, plan=related_plan)
 
         assert len(self._query(graphql_client_query, plan, first=1)) == 1
+
+
+INDICATOR_LEVELS_QUERY = """
+query planIndicators($plan: ID!) {
+  planIndicators(plan: $plan) {
+    identifier
+    level(plan: $plan)
+  }
+}
+"""
+
+
+class TestVisibilityChecksDoNotScaleWithIndicatorCount:
+    """
+    Checking visibility must not cost a query per indicator.
+
+    `Indicator.is_visible_for_user` is called once per node while resolving a list of
+    indicators, so it has to answer from data the caller already fetched.
+    """
+
+    def _indicators(self, plan, count, visibility):
+        for _ in range(count):
+            indicator = IndicatorFactory.create(visibility=visibility)
+            IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+
+    def test_is_visible_for_user_needs_no_query_when_plans_are_prefetched(self, plan, plan_admin_user, django_assert_num_queries):
+        self._indicators(plan, 3, RestrictedVisibilityModel.VisibilityState.INTERNAL)
+        indicators = list(Indicator.objects.get_queryset().visible_for_user(plan_admin_user).prefetch_related('plans'))
+        assert len(indicators) == 3
+        list(plan_admin_user.get_adminable_plans())  # The adminable plans are cached per user, not per indicator.
+
+        with django_assert_num_queries(0):
+            assert all(indicator.is_visible_for_user(plan_admin_user) for indicator in indicators)
+
+    def _query_count(self, graphql_client_query, plan, count, visibility) -> int:
+        self._indicators(plan, count, visibility)
+        graphql_client_query(INDICATOR_LEVELS_QUERY, variables={'plan': plan.identifier})  # Warm the per-user caches.
+        with CaptureQueriesContext(connection) as queries:
+            response = graphql_client_query(INDICATOR_LEVELS_QUERY, variables={'plan': plan.identifier})
+        assert 'errors' not in response, json.dumps(response)
+        assert len(response['data']['planIndicators']) == count
+        return len(queries.captured_queries)
+
+    @pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
+    def test_resolving_levels_costs_the_same_for_one_indicator_and_for_many(
+        self, plan, client, plan_admin_user, graphql_client_query, visibility
+    ):
+        client.force_login(plan_admin_user)
+        one = self._query_count(graphql_client_query, plan, 1, visibility)
+        Indicator.objects.all().delete()
+        many = self._query_count(graphql_client_query, plan, 5, visibility)
+
+        assert many == one
