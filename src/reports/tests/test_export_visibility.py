@@ -45,3 +45,76 @@ class TestActionIdsFilter:
         report.mark_as_complete(user)
 
         assert exported_action_ids(report) == {action.id for action in actions}
+
+
+@pytest.fixture
+def hidden_plan(plan, plan_features):
+    """Make `plan` unpublished and reachable only by authenticated users who may view it."""
+    plan.published_at = None
+    plan.save()
+    plan.features.expose_unpublished_plan_only_to_authenticated_user = True
+    plan.features.save()
+    return plan
+
+
+class TestVisibilityFilter:
+    """
+    The exporter must show each requester only the actions they are allowed to see.
+
+    `ActionQuerySet.visible_for_user` restricts to plans visible to the user and, for
+    anonymous requesters only, to actions whose visibility is public. Both the live and
+    the completed branch of the exporter must apply it identically.
+    """
+
+    def _public_and_internal_actions(self, plan):
+        from aplans.utils import RestrictedVisibilityModel
+
+        public = ActionFactory.create(plan=plan, visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        internal = ActionFactory.create(plan=plan, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+        return public, internal
+
+    def test_incomplete_report_hides_internal_actions_from_anonymous_viewer(self, report, plan):
+        public, _internal = self._public_and_internal_actions(plan)
+
+        assert exported_action_ids(report, user=None) == {public.id}
+
+    def test_completed_report_hides_internal_actions_from_anonymous_viewer(self, report, plan, user):
+        public, _internal = self._public_and_internal_actions(plan)
+        report.mark_as_complete(user)
+
+        assert exported_action_ids(report, user=None) == {public.id}
+
+    def test_incomplete_report_shows_internal_actions_to_authenticated_user(self, report, plan, user, person):
+        public, internal = self._public_and_internal_actions(plan)
+
+        assert exported_action_ids(report, user=user) == {public.id, internal.id}
+
+    def test_completed_report_shows_internal_actions_to_authenticated_user(self, report, plan, user, person):
+        public, internal = self._public_and_internal_actions(plan)
+        report.mark_as_complete(user)
+
+        assert exported_action_ids(report, user=user) == {public.id, internal.id}
+
+    def test_incomplete_report_of_hidden_plan_is_empty_for_anonymous_viewer(self, report, hidden_plan):
+        self._public_and_internal_actions(hidden_plan)
+
+        assert exported_action_ids(report, user=None) == set()
+
+    def test_completed_report_of_hidden_plan_is_empty_for_anonymous_viewer(self, report, hidden_plan, user):
+        self._public_and_internal_actions(hidden_plan)
+        report.mark_as_complete(user)
+
+        assert exported_action_ids(report, user=None) == set()
+
+    def test_completed_report_of_hidden_plan_is_exported_for_permitted_user(self, report, hidden_plan, user_factory):
+        public, internal = self._public_and_internal_actions(hidden_plan)
+        superuser = user_factory(is_superuser=True)
+        report.mark_as_complete(superuser)
+
+        assert exported_action_ids(report, user=superuser) == {public.id, internal.id}
+
+    def test_completed_report_action_ids_and_visibility_filters_combine(self, report, plan, user):
+        public, internal = self._public_and_internal_actions(plan)
+        report.mark_as_complete(user)
+
+        assert exported_action_ids(report, action_ids=[public.id, internal.id], user=None) == {public.id}
