@@ -54,6 +54,10 @@ eval "$(mise activate bash)"
 - `ruff check --fix <file>` – Autofix import sorts etc. No need to fix these manually.
 - `ruff format <file>` – Prettify after edits
 
+### Version Control
+- Do not mention customer names in commit messages or PR descriptions. This repo is public; describe the
+  affected plan or tenant in generic terms instead (e.g. "a customer's plan", "one tenant").
+
 ## Architecture Overview
 
 ### Core Technologies
