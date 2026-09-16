@@ -192,12 +192,17 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             'Unpublished plans and preview sites are always excluded from indexing regardless of this setting.'
         ),
     )
-    show_parent_plan_in_plan_switcher = models.BooleanField(
+    show_parent_plan_as_sibling = models.BooleanField(
         default=False,
-        verbose_name=_('Show the parent plan in the plan switcher'),
+        # The column keeps the name the field was born with: renaming it would
+        # break pods still running the previous release, which select it by
+        # name, and there is nothing to gain from that.
+        db_column='show_parent_plan_in_plan_switcher',
+        verbose_name=_('Show the parent plan as a sibling plan'),
         help_text=_(
-            'By default, the plan switcher in the public UI lists all related plans except the parent plan. '
-            'If set, the parent plan is shown as well.'
+            'By default, the public UI treats the parent plan as the plan this one belongs to: the plan switcher '
+            'leaves it out, and the related plans block uses its name as the heading instead of listing it. '
+            'If set, the parent plan is listed alongside the sibling plans in both places.'
         ),
     )
 
@@ -261,5 +266,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_action_pdf_export_in_public_ui',
         'enable_indicator_factors',
         'hide_from_search_engines',
-        'show_parent_plan_in_plan_switcher',
+        'show_parent_plan_as_sibling',
     ]

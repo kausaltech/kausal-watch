@@ -412,3 +412,42 @@ def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
         },
     }
     assert data == expected
+
+
+@pytest.mark.parametrize('show_parent_plan_as_sibling', [True, False])
+def test_plan_show_parent_plan_as_sibling(graphql_client_query_data, plan, show_parent_plan_as_sibling):
+    plan.features.show_parent_plan_as_sibling = show_parent_plan_as_sibling
+    plan.features.save()
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          plan(id: $plan) {
+            features {
+              showParentPlanAsSibling
+            }
+          }
+        }
+        """,
+        variables=dict(plan=plan.identifier),
+    )
+    assert data == {'plan': {'features': {'showParentPlanAsSibling': show_parent_plan_as_sibling}}}
+
+
+@pytest.mark.parametrize('show_parent_plan_as_sibling', [True, False])
+def test_plan_show_parent_plan_in_plan_switcher_alias(graphql_client_query_data, plan, show_parent_plan_as_sibling):
+    """The pre-rename field name keeps working, so a UI release can lag the backend."""
+    plan.features.show_parent_plan_as_sibling = show_parent_plan_as_sibling
+    plan.features.save()
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          plan(id: $plan) {
+            features {
+              showParentPlanInPlanSwitcher
+            }
+          }
+        }
+        """,
+        variables=dict(plan=plan.identifier),
+    )
+    assert data == {'plan': {'features': {'showParentPlanInPlanSwitcher': show_parent_plan_as_sibling}}}

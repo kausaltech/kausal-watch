@@ -201,6 +201,14 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     enable_moderation_workflow = graphene.Boolean(required=True)
     enable_community_engagement = graphene.Boolean(required=True)
     enable_indicator_factors = graphene.Boolean(required=True)
+    # The UI is released independently of the backend, so keep the pre-rename
+    # name resolvable: a query naming a field the schema doesn't have fails
+    # validation, taking the whole plan context query down with it. Remove once
+    # every deployed UI asks for `showParentPlanAsSibling`.
+    show_parent_plan_in_plan_switcher = graphene.Boolean(
+        required=True,
+        deprecation_reason="Renamed to 'showParentPlanAsSibling', which also governs the related plans block.",
+    )
 
     class Meta:
         model = PlanFeatures
@@ -209,6 +217,10 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     @staticmethod
     def resolve_public_contact_persons(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.public_contact_persons
+
+    @staticmethod
+    def resolve_show_parent_plan_in_plan_switcher(root: PlanFeatures, _info: GQLInfo) -> bool:
+        return root.show_parent_plan_as_sibling
 
     @staticmethod
     def resolve_enable_moderation_workflow(root: PlanFeatures, _info: GQLInfo) -> bool:
