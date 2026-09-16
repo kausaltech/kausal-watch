@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
+from grapple.models import GraphQLString
 
 from actions.blocks.action_content import (
     ActionAsideContentBlock,
@@ -118,6 +119,38 @@ def get_default_action_filter_blocks(plan: Plan) -> dict[str, blocks.StreamValue
 
 
 @register_streamfield_block
-class RelatedPlanListBlock(blocks.StaticBlock):  # type: ignore[misc]
+class RelatedPlanListBlock(blocks.StructBlock):  # type: ignore[misc]
+    heading = blocks.CharBlock(
+        label=_('Heading'),
+        required=False,
+        help_text=_(
+            "Leave empty to fall back to the parent plan's name, or to this plan's own short name.",
+        ),
+    )
+
     class Meta:
         label = _('Related plans')
+
+    graphql_fields = [
+        GraphQLString('heading'),
+    ]
+
+    @classmethod
+    def construct_from_lookup(cls, lookup: Any, child_blocks: Any = None, **kwargs: Any) -> Any:
+        # Migrations written while this was a StaticBlock refer to the class
+        # itself and pass no child blocks, which a StructBlock otherwise
+        # requires. The declared heading is the right value for them.
+        return super().construct_from_lookup(lookup, child_blocks, **kwargs)
+
+    # The block had no heading to begin with, and a StaticBlock stores its
+    # value as null. Pages and page revisions saved back then still hold that
+    # null, so read it as a heading-less block instead of rewriting every
+    # StreamField in the database.
+    def to_python(self, value: Any) -> Any:
+        return super().to_python({} if value is None else value)
+
+    def bulk_to_python(self, values: Any) -> Any:
+        return super().bulk_to_python([{} if value is None else value for value in values])
+
+    def normalize(self, value: Any) -> Any:
+        return super().normalize({} if value is None else value)

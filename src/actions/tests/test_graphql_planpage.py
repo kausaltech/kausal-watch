@@ -348,6 +348,53 @@ def test_related_plan_list_block(graphql_client_query_data, plan_with_pages):
     plan = plan_with_pages
     page = plan.root_page
     page.body = [
+        ('related_plans', {'heading': 'Liittyvät ohjelmat'}),
+    ]
+    page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_fields="""
+            __typename
+            ... on RelatedPlanListBlock {
+                heading
+            }
+        """,
+        expected={
+            '__typename': 'RelatedPlanListBlock',
+            'heading': 'Liittyvät ohjelmat',
+        },
+    )
+
+
+def test_related_plan_list_block_without_heading(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
+    page = plan.root_page
+    page.body = [
+        ('related_plans', {}),
+    ]
+    page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_fields="""
+            __typename
+            ... on RelatedPlanListBlock {
+                heading
+            }
+        """,
+        expected={
+            '__typename': 'RelatedPlanListBlock',
+            'heading': None,
+        },
+    )
+
+
+def test_related_plan_list_block_from_before_it_had_a_heading(graphql_client_query_data, plan_with_pages):
+    """The block used to be a StaticBlock, so pages saved back then store a null value for it."""
+    plan = plan_with_pages
+    page = plan.root_page
+    page.body = [
         ('related_plans', None),
     ]
     page.save()
@@ -356,9 +403,13 @@ def test_related_plan_list_block(graphql_client_query_data, plan_with_pages):
         plan=plan,
         block_fields="""
             __typename
+            ... on RelatedPlanListBlock {
+                heading
+            }
         """,
         expected={
             '__typename': 'RelatedPlanListBlock',
+            'heading': None,
         },
     )
 
