@@ -896,6 +896,36 @@ def test_rest_api_shows_task_contact_persons_to_an_authenticated_user(
     assert [cp['person'] for cp in payload['contact_persons']] == [assignment.person_id]
 
 
+def test_rest_api_does_not_authorize_once_per_assignment(api_client, plan, action, action_task_list_url, user):
+    """
+    A public-site viewer must not cost one authorization query per contact person.
+
+    `Person.visible_for_user()` depends only on the user and the plan, but it is asked per row, and under
+    "authenticated only" it reaches `Person.is_public_site_viewer()`, which queries.
+    """
+    from actions.models.plan import PlanPublicSiteViewer
+
+    viewer = PersonFactory.create(organization=plan.organization, user=user)
+    PlanPublicSiteViewer.objects.create(plan=plan, person=viewer)
+    plan.features.contact_persons_public_data = PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED
+    plan.features.save()
+
+    def count_queries_for(assignment_count: int) -> int:
+        task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+        for _i in range(assignment_count):
+            ActionTaskContactFactory.create(task=task)
+        api_client.force_login(user)
+        with CaptureQueriesContext(connection) as ctx:
+            response = api_client.get(action_task_list_url)
+        assert response.status_code == 200
+        return len(ctx)
+
+    few = count_queries_for(2)
+    many = count_queries_for(6)
+
+    assert many <= few, f'{many} queries with four more assignments than the {few} needed before'
+
+
 def test_a_person_assigned_only_to_a_task_stays_available_to_the_plan(plan, action):
     """
     An external consultant may end up assigned to a task but to no action.

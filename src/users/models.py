@@ -125,6 +125,8 @@ class UserRelatedModelsCache:
     _contact_for_actions: set[int]
     _contact_for_indicators: set[int]
     _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
+    # Plan IDs for which the user's person is a public site viewer
+    _public_site_viewer_plan_ids: set[int]
     _contact_for_plan_actions: dict[int, set[int]]
     _contact_for_plan_indicators: dict[int, set[int]]
     _general_admin_for_plans: set[int]
@@ -506,7 +508,18 @@ class User(AbstractUser):
         """Can the user access the public site (authenticated) in general or for a given plan."""
         if self.can_access_admin(plan):
             return True
-        return self.person.is_public_site_viewer(plan)
+        # Cached for the request, like the adminable plans above. A plan that shows contact persons only
+        # to authenticated users has this checked once per contact person, and the lookup below is a
+        # query each time, so a list of assignments would otherwise cost one authorization query per row.
+        cache = self.get_cache()
+        if not hasattr(cache, '_public_site_viewer_plan_ids'):
+            person = getattr(self, 'person', None)
+            cache._public_site_viewer_plan_ids = (
+                set(person.plans_with_public_site_access.values_list('plan_id', flat=True)) if person else set()
+            )
+        if plan is None:
+            return bool(cache._public_site_viewer_plan_ids)
+        return plan.pk in cache._public_site_viewer_plan_ids
 
     def can_modify_action(self, action: Action | None = None, plan: Plan | None = None):
         if self.is_superuser:
