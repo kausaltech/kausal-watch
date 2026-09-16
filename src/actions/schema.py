@@ -2008,7 +2008,17 @@ class ActionContactPersonNode(DjangoNode[ActionContactPerson]):
     @staticmethod
     def resolve_person(root: ActionContactPerson, info: GQLInfo) -> Person:
         cache = info.context.cache.for_plan_id(root.action.plan_id)
-        person = cache.get_person(root.person_id) or root.person
+        # Only read the cache when the plan publishes contact persons in full. Under a narrower setting
+        # `Action.get_redacted_contact_persons()` has already replaced `root.person` with a redacted copy,
+        # and the cache holds the unredacted record — swapping it back in here published the very fields
+        # the setting removes.
+        if cache.plan.features.contact_persons_public_data in (
+            PlanFeatures.ContactPersonsPublicData.ALL,
+            PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
+            person = cache.get_person(root.person_id) or root.person
+        else:
+            person = root.person
         person_organization = cache.get_organization(person.organization_id)
         if person_organization is not None:
             person.organization = person_organization
