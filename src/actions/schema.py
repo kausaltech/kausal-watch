@@ -2242,11 +2242,7 @@ class Query:
         if matched is None or matched.user_token is not None:
             return None
         request_plan = info.context.request_plan
-        if (
-            request_plan is None
-            or request_plan.primary_client_id is None
-            or request_plan.primary_client_id != matched.client_id
-        ):
+        if request_plan is None or request_plan.primary_client_id is None or request_plan.primary_client_id != matched.client_id:
             return None
         return matched
 
@@ -2571,11 +2567,7 @@ def _resolve_public_user(info: GQLInfo, user_uuid: uuid.UUID | None) -> PublicUs
             extensions={'code': 'TOKEN_REQUIRED'},
         )
     request_plan = info.context.request_plan
-    if (
-        request_plan is None
-        or request_plan.primary_client_id is None
-        or request_plan.primary_client_id != public_user.client_id
-    ):
+    if request_plan is None or request_plan.primary_client_id is None or request_plan.primary_client_id != public_user.client_id:
         raise GraphQLError('PublicUser not found', extensions={'code': 'PUBLIC_USER_NOT_FOUND'})
     return public_user
 
