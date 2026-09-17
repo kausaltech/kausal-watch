@@ -145,6 +145,13 @@ del _OrganizationManager
 
 @reversion.register()
 class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[OrganizationQuerySet], PermissionedModel):
+    # Treebeard expects the default manager to order by `path` (that is what `MP_NodeManager`
+    # does, and how Wagtail orders its own trees). Our manager doesn't, so without this the
+    # rows come back in the database's physical order. Inherit the base Meta to keep the
+    # translated verbose names.
+    class Meta(BaseOrganization.Meta):
+        ordering = ['path']
+
     VIEWSET_CLASS = 'orgs.wagtail_admin.OrganizationViewSet'  # for AdminButtonsMixin
 
     _reported_missing_parent_paths: ClassVar[set[str]] = set()

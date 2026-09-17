@@ -62,6 +62,23 @@ def test_organization_queryset_available_for_plan(plan: Plan):
     assert result_set == {plan_org, sub_org1, org, sub_org2}
 
 
+def test_organization_queryset_is_ordered_by_tree_path(plan: Plan):
+    """
+    Organizations must come back in tree order, not in whatever order the database yields.
+
+    Without a default ordering the rows arrive in PostgreSQL's physical heap order, which
+    depends on unrelated earlier activity in the same database.
+    """
+    assert plan.organization
+    plan_org = plan.organization
+    plan_org.refresh_from_db()
+    sub_org = OrganizationFactory.create(parent=plan_org)
+    qs = Organization.objects.qs.available_for_plan(plan)
+    assert qs.ordered
+    # A descendant always sorts after its ancestor, whatever the rows' physical order is.
+    assert list(qs) == [plan_org, sub_org]
+
+
 def test_organization_queryset_editable_by_user_related_plan_general_plan_admin_false(person):
     # plan = PlanFactory()
     # organization = OrganizationFactory()
