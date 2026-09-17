@@ -48,6 +48,8 @@ from .models import (
     ActionStatus,
     ActionStatusUpdate,
     ActionTask,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
     AttributeChoice,
     AttributeRichText,
     AttributeType,
@@ -143,7 +145,7 @@ def get_action_contact_person_perms():
 
     perm_q |= get_wagtail_contact_person_q()
 
-    for model in (ActionResponsibleParty,):
+    for model in (ActionResponsibleParty, ActionTaskResponsibleParty, ActionTaskContactPerson):
         perm_q |= _get_perm_obj_q(model, ALL_PERMS)
     perm_q |= _get_perm_obj_q(Organization, ('view',))
 

@@ -120,7 +120,10 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'related_indicators': {},
         'responsible_parties': {},
         'status_updates': {},
-        'tasks': {},
+        'tasks': {
+            'responsible_parties': {},
+            'contact_persons': {},
+        },
         'preceding_relationships': EXCLUDED,  # reverse of dependent_relationships; already covered from the dependent side
         'merged_actions': EXCLUDED,
         'superseded_actions': EXCLUDED,

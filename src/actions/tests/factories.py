@@ -33,6 +33,8 @@ from actions.models import (
     ActionStatus,
     ActionStatusUpdate,
     ActionTask,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
     AttributeCategoryChoice,
     AttributeChoice,
     AttributeChoiceWithText,
@@ -421,6 +423,20 @@ class ActionTaskFactory(ModelFactory[ActionTask]):
     completed_by: Person | None = None
     # created_at = None  # Should be set automatically
     # modified_at = None  # Should be set automatically
+
+
+class ActionTaskResponsiblePartyFactory(ModelFactory[ActionTaskResponsibleParty]):
+    task = SubFactory[ActionTaskResponsibleParty, ActionTask](ActionTaskFactory)
+    organization = SubFactory[ActionTaskResponsibleParty, Organization](OrganizationFactory)
+
+
+# The factory name does not correspond to the model name for the same reason as `ActionContactFactory`
+# below: `ActionTaskContactPersonFactory` would suggest that it builds a Person.
+class ActionTaskContactFactory(ModelFactory[ActionTaskContactPerson]):
+    task = SubFactory[ActionTaskContactPerson, ActionTask](ActionTaskFactory)
+    person = SubFactory[ActionTaskContactPerson, Person](
+        PersonFactory, organization=SelfAttribute('..task.action.plan.organization')
+    )
 
 
 class ImpactGroupActionFactory(ModelFactory[ImpactGroupAction]):

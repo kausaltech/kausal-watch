@@ -4,12 +4,13 @@ import json
 import logging
 import typing
 from functools import cached_property
-from typing import Any, Unpack, cast
+from typing import Any, ClassVar, Unpack, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
-from django.forms import BaseModelFormSet
+from django.db.models import Q
+from django.forms import BaseModelFormSet, ModelChoiceField
 from django.urls import path, re_path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
@@ -69,13 +70,19 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 from orgs.models import Organization
+from people.chooser import TaskPersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .admin_utils import change_log_message_url_or_none
 from .bulk_approve import BulkApproveView
-from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask
+from .models.action import (
+    Action,
+    ActionContactPerson,
+    ActionResponsibleParty,
+    ActionTask,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -857,6 +864,75 @@ class ActionEditView(
         return edit_handler.bind_to_model(self.model_admin.model)
 
 
+# Task relations that are edited in an inline panel of their own inside the tasks tab.
+TASK_ASSIGNMENT_RELATIONS = ('responsible_parties', 'contact_persons')
+
+
+class PlanScopedAssignmentForm(WagtailAdminModelForm):
+    """
+    Child form for a task assignment whose assignee must belong to the plan.
+
+    The chooser and the autocomplete only filter what is *offered*; the generated `ModelChoiceField`
+    still accepts every Person or Organization in the database, so an editor could assign another
+    tenant's person by posting its id and have it published through the task API. Narrowing the
+    queryset makes the field reject those ids during validation.
+    """
+
+    plan: ClassVar[Plan | None] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        plan = self.plan
+        if plan is None:
+            return
+        person_field = self.fields.get('person')
+        if isinstance(person_field, ModelChoiceField):
+            # Same candidates as `TaskPersonChooser`, including the plan's contact persons from
+            # organizations that are not related to it.
+            person_field.queryset = Person.objects.available_for_plan(plan, include_contact_persons=True)
+        organization_field = self.fields.get('organization')
+        if isinstance(organization_field, ModelChoiceField):
+            # An organization can leave the plan's hierarchy while a task is still assigned to it, so the
+            # value this row already holds stays valid; otherwise the action could not be saved again
+            # until the assignment was removed. Only that one value, though: accepting every
+            # organization historically assigned in the plan would let a departed one be posted onto any
+            # other task, which is the cross-plan assignment this queryset exists to prevent.
+            allowed = Q(pk__in=Organization.objects.available_for_plan(plan).values('pk'))
+            stored_organization_id = getattr(self.instance, 'organization_id', None)
+            if stored_organization_id is not None:
+                allowed |= Q(pk=stored_organization_id)
+            organization_field.queryset = Organization.objects.filter(allowed)
+
+
+class TaskAssignmentInlinePanel(InlinePanel):
+    """Inline panel for a task assignment relation, with its child form scoped to `plan`."""
+
+    def __init__(self, relation_name: str, *args, plan: Plan | None = None, **kwargs):
+        self.plan = plan
+        super().__init__(relation_name, *args, **kwargs)
+
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        kwargs['plan'] = self.plan
+        return kwargs
+
+    def bound_to_plan(self, plan: Plan) -> TaskAssignmentInlinePanel:
+        """Return a copy of this panel whose child form accepts only `plan`'s assignees."""
+        kwargs = self.clone_kwargs()
+        kwargs['plan'] = plan
+        return type(self)(**kwargs)
+
+    def get_form_options(self):
+        options = super().get_form_options()
+        if self.plan is not None:
+            options['formsets'][self.relation_name]['form'] = type(
+                'PlanScopedAssignmentForm',
+                (PlanScopedAssignmentForm,),
+                {'plan': self.plan},
+            )
+        return options
+
+
 @modeladmin_register
 class ActionAdmin(AplansModelAdmin[Action]):
     model = Action
@@ -919,6 +995,18 @@ class ActionAdmin(AplansModelAdmin[Action]):
         CustomizableBuiltInFieldPanel('state'),
         CustomizableBuiltInFieldPanel('completed_at'),
         CustomizableBuiltInFieldPanel('details'),
+        TaskAssignmentInlinePanel(
+            'responsible_parties',
+            panels=[FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))],
+            heading=_('Responsible parties'),
+        ),
+        TaskAssignmentInlinePanel(
+            'contact_persons',
+            # `TaskPersonChooser`, not `PersonChooser`: task assignment must also reach the plan's contact
+            # persons from unrelated organizations (see `src/people/chooser.py`).
+            panels=[FieldPanel('person', widget=TaskPersonChooser)],
+            heading=_('Contact persons'),
+        ),
     ]
 
     task_header_from_js = """
@@ -1149,7 +1237,9 @@ class ActionAdmin(AplansModelAdmin[Action]):
         # customization for `tasks` have no effect since the tab heading comes from the plan's general content.
         tasks_visible, _unused = BuiltInFieldCustomization.get_field_access(user, plan, Action, 'tasks', instance)
         if tasks_visible:
-            task_panels = list(insert_model_translation_panels(ActionTask, self.task_panels, request, plan))
+            task_panels = list(
+                insert_model_translation_panels(ActionTask, self.get_task_panels(user, plan, instance), request, plan)
+            )
             all_tabs += [
                 ObjectList(
                     [
@@ -1389,6 +1479,40 @@ class ActionAdmin(AplansModelAdmin[Action]):
             get_editable_roles_method='get_editable_contact_person_roles',
         )
 
+    def get_task_panels(self, user: User, plan: Plan, instance: Action | None) -> list[Panel[Any]]:
+        """
+        Return the task panels, with each assignment panel gated by its own customization.
+
+        `collect_customizable_field_names()` only picks up `CustomizableBuiltInFieldPanel`s, so an
+        `InlinePanel` over a relation is not customizable by declaration alone: the relation name has to
+        be registered explicitly (see `register_customizable_fields()` below) and gated here.
+
+        `get_field_access()` returns visibility and editability independently, and editability defaults
+        to "authenticated", so neither flag may be read on its own:
+
+        - not visible: drop the panel entirely. That also drops its formset, which is what makes the
+          relation non-editable — as for the `tasks` tab, a hidden relation must not be editable either,
+          no matter what the (defaulted) editability says.
+        - visible but not editable: swap in a `ReadOnlyInlinePanel`, which renders the rows without form
+          inputs. Merely hiding the panel would keep the formset in the form and leave the rows writable.
+        - both: the editable `InlinePanel` as declared.
+        """
+        panels: list[Panel[Any]] = []
+        for panel in self.task_panels:
+            relation_name = getattr(panel, 'relation_name', None)
+            if relation_name not in TASK_ASSIGNMENT_RELATIONS:
+                panels.append(panel)
+                continue
+            is_visible, is_editable = BuiltInFieldCustomization.get_field_access(user, plan, ActionTask, relation_name, instance)
+            if not is_visible:
+                continue
+            if not is_editable:
+                panels.append(ReadOnlyInlinePanel(relation_name, heading=panel.heading))
+                continue
+            # Bind the plan so the child form rejects assignees from outside it.
+            panels.append(panel.bound_to_plan(plan) if isinstance(panel, TaskAssignmentInlinePanel) else panel)
+        return panels
+
     def get_responsible_parties_panels(self, request: HttpRequest, instance: Action):
         return self._get_field_customization_panels(
             request=request,
@@ -1421,7 +1545,15 @@ register_customizable_fields(
     ],
 )
 
-register_customizable_fields(ActionTask, collect_customizable_field_names(ActionAdmin.task_panels))
+register_customizable_fields(
+    ActionTask,
+    [
+        *collect_customizable_field_names(ActionAdmin.task_panels),
+        # Relations edited in a panel of their own. As for the action-level relations above, only their
+        # access rights are customizable; `label_override` and `help_text_override` have no effect.
+        *TASK_ASSIGNMENT_RELATIONS,
+    ],
+)
 
 
 @hooks.register('construct_snippet_action_menu')

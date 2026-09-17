@@ -27,7 +27,7 @@ from kausal_common.users import user_or_none
 
 from aplans.utils import IndirectPlanRelatedModel
 
-from actions.models import ActionContactPerson, PlanFeatures
+from actions.models import ActionContactPerson, ActionTaskContactPerson, PlanFeatures
 from admin_site.models import Client, ClientPlan
 from orgs.models import Organization
 from search.models import SearchableModel
@@ -91,6 +91,9 @@ class PersonQuerySet(MultilingualQuerySet['Person']):
             q |= Q(organization__path__startswith=org.path)
         if include_contact_persons:
             q |= Q(id__in=ActionContactPerson.objects.filter(action__plan=plan).values_list('person'))
+            # Someone can be responsible for a task without being a contact person of the action itself,
+            # and dropping them here would make the admin reject their own stored assignment.
+            q |= Q(id__in=ActionTaskContactPerson.objects.filter(task__action__plan=plan).values_list('person'))
         return self.filter(q)
 
     def is_action_contact_person(self, plan: Plan):
