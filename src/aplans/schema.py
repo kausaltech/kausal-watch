@@ -195,6 +195,11 @@ class Query(
                 )
             )
 
+        # The annotations above introduce a GROUP BY, and Django discards a model's default
+        # ordering whenever the query has one. Order explicitly so that the result doesn't
+        # depend on which count fields the client happened to request.
+        qs = qs.order_by('path')
+
         qs = gql_optimizer.query(qs, info)
 
         if with_ancestors:

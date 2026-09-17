@@ -1743,6 +1743,8 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
         return context
 
     def get_queryset(self):
+        # Order by `id`, not by the model's default `path`: bulk updates move nodes one at a
+        # time, so the paths change while the queryset is being iterated.
         queryset = super().get_queryset().order_by('id')
         plan = self.get_plan()
         if plan is None:
