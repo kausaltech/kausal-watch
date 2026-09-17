@@ -281,6 +281,10 @@ class Report(PlanRelatedModelWithRevision):
                 .visible_for_user(user)
                 .prefetch_related(
                     'responsible_parties__organization',
+                    # Reversion follows these from every task, and names each one through `__str__`,
+                    # so the assignees come along too.
+                    'tasks__responsible_parties__organization',
+                    'tasks__contact_persons__person',
                     'categories__type',
                     'choice_attributes__choice',
                     'choice_with_text_attributes__choice',
@@ -299,6 +303,10 @@ class Report(PlanRelatedModelWithRevision):
                 .visible_for_user(user)
                 .prefetch_related(
                     'responsible_parties__organization',
+                    # Reversion follows these from every task, and names each one through `__str__`,
+                    # so the assignees come along too.
+                    'tasks__responsible_parties__organization',
+                    'tasks__contact_persons__person',
                     'categories__type',
                     'choice_attributes__choice',
                     'choice_with_text_attributes__choice',
@@ -387,7 +395,14 @@ class Report(PlanRelatedModelWithRevision):
         """
         if self.is_complete:
             self._raise_complete()
-        actions_to_snapshot = self.type.plan.actions.exclude(id__in=Action.objects.get_queryset().complete_for_report(self))
+        actions_to_snapshot = self.type.plan.actions.exclude(
+            id__in=Action.objects.get_queryset().complete_for_report(self),
+        ).prefetch_related(
+            # Reversion follows these from every task while the revision is built, and names each one
+            # through `__str__`, so the assignees come along too.
+            'tasks__responsible_parties__organization',
+            'tasks__contact_persons__person',
+        )
         with reversion.create_revision():
             reversion.set_comment(_("Marked report '%s' as complete") % self)
             reversion.set_user(user)

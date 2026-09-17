@@ -17,6 +17,7 @@ from loguru import logger
 
 from actions.models.action import Action
 from orgs.models import Organization
+from people.models import Person
 from reports.utils import get_field_unique_key, group_by_model
 
 from .action_print_layout import write_action_summaries
@@ -66,6 +67,9 @@ class ExcelReport:
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
         organizations: dict[int, Organization]
+        persons: dict[int, Person]
+        organizations_by_plan: dict[int, dict[int, Organization]]
+        persons_by_plan: dict[int, dict[int, Person]]
         categories: dict[int, Category]
         category_types: dict[int, CategoryType]
         statuses: dict[int, ActionStatus]
@@ -79,7 +83,13 @@ class ExcelReport:
             self.categories = self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()])
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
-            self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
+            # Kept per plan as well as merged: a report can include a parent and its children, and
+            # whether someone still belongs to a plan is a question about that plan alone.
+            self.organizations_by_plan = {}
+            self.persons_by_plan = {}
+            self.organizations = {}
+            self.persons = {}
+            self._add_people_of_plan(plan)
             self.action_content_type = ContentType.objects.get_for_model(Action)
             # Aggregate related objects from child plans
             for child_plan in child_plans:
@@ -87,11 +97,22 @@ class ExcelReport:
                 self.categories.update(self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()]))
                 self.implementation_phases.update(self._keyed_dict(child_plan.action_implementation_phases.all()))
                 self.statuses.update(self._keyed_dict(child_plan.action_statuses.all()))
-                self.organizations.update(self._keyed_dict(Organization.objects.available_for_plan(child_plan)))
+                self._add_people_of_plan(child_plan)
 
             self.category_level_category_mappings = {
                 ct.pk: ct.categories_projected_by_level() for ct in self.category_types.values()
             }
+
+        def _add_people_of_plan(self, plan: Plan) -> None:
+            """Record the organizations and people available to `plan`, per plan and merged."""
+            organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
+            # Task-level contact persons are rendered by name in the export, so the report needs the
+            # same id -> instance lookup for people as it has for organizations.
+            persons = self._keyed_dict(Person.objects.available_for_plan(plan, include_contact_persons=True))
+            self.organizations_by_plan[plan.pk] = organizations
+            self.persons_by_plan[plan.pk] = persons
+            self.organizations.update(organizations)
+            self.persons.update(persons)
 
         @staticmethod
         def _keyed_dict[T: Model](seq: Iterable[T]) -> dict[int, T]:

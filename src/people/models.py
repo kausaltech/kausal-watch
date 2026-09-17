@@ -353,13 +353,11 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
         self.delete()
 
     def visible_for_user(self, user: UserOrAnon | None, *, plan: Plan | None = None, **kwargs) -> bool:
+        if plan is not None:
+            # The rule lives on the plan; the report export asks it without having a Person at hand.
+            return plan.contact_persons_visible_for(user)
         user = user_or_none(user)
-        if not plan or not plan.features.public_contact_persons:
-            if user is None:
-                return False
-            if not user.can_access_public_site(plan):
-                return False
-        return True
+        return user is not None and user.can_access_public_site(None)
 
     def is_public_site_viewer(self, plan: Plan | None = None) -> bool:
         if plan is None:
