@@ -14,6 +14,7 @@ from actions.models import Action, ActionContactPerson
 from actions.tests.factories import (
     ActionContactFactory,
     ActionDependencyRelationshipFactory,
+    ActionDependencyRoleFactory,
     ActionFactory,
     ActionImpactFactory,
     ActionLinkFactory,
@@ -158,6 +159,40 @@ def test_action_can_be_saved_after_child_was_cascade_deleted(
     assert response.status_code == 302
     new_draft = Action.objects.get(pk=action.pk).get_latest_revision_as_object()
     assert list(new_draft.related_indicators.all()) == []
+
+
+@pytest.mark.parametrize(('delete_dependent', 'expected_forms'), [(False, 1), (True, 0)])
+def test_cascade_deleted_relationship_is_absent_from_the_dependencies_formset(
+    plan_admin_user: User,
+    action: Action,
+    client: django.test.client.Client,
+    delete_dependent: bool,
+    expected_forms: int,
+):
+    """
+    A relationship cascade-deleted with its dependent action does not reach the form.
+
+    Unlike the other child relations, `dependent_relationships` is rendered as a formset, so a
+    stale row would show up here as a hidden `id` the formset cannot resolve.
+    """
+    ClientPlanFactory.create(plan=action.plan)
+    ActionDependencyRoleFactory.create(plan=action.plan)  # the panel is built only for a plan with roles
+    enable_moderation_workflow(action.plan)
+    relationship = ActionDependencyRelationshipFactory.create(preceding=action)
+    action.save_revision()
+
+    if delete_dependent:
+        relationship.dependent.delete()  # cascades to the relationship
+
+    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    client.force_login(plan_admin_user)
+
+    response = client.get(edit_url)
+
+    assert response.status_code == 200
+    formsets = response.context['form'].formsets
+    assert 'dependent_relationships' in formsets
+    assert formsets['dependent_relationships'].initial_form_count() == expected_forms
 
 
 DRAFT_ACTIONS_QUERY = """
