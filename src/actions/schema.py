@@ -74,6 +74,8 @@ from actions.models import (
     ActionStatus,
     ActionStatusUpdate,
     ActionTask,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
     AttributeCategoryChoice,
     AttributeChoice as AttributeChoiceModel,
     AttributeChoiceWithText,
@@ -1393,12 +1395,78 @@ class MonitoringQualityPointNode(DjangoNode[MonitoringQualityPoint]):
         return root.plan.get_if_visible(info.context.user)
 
 
+def _plan_cache_for_task(task: ActionTask, info: GQLInfo) -> PlanSpecificCache | None:
+    """
+    Return the cache of the plan that owns `task`, or None if that plan is not visible to the user.
+
+    The plan is resolved from the task, not from the query context: `relatedPlanActions(plan: A)`
+    returns actions belonging to plans related to A while leaving A in the context, so trusting the
+    context would apply A's contact-person privacy settings to another plan's people.
+
+    This costs no query per row — the action is already attached to the task by the related manager and
+    `plan_id` is a column on it — and `for_plan_id()` caches one plan per request.
+    """
+    _populate_plan_people_cache(info, task.action.plan_id)
+    cache = info.context.cache.for_plan_id(task.action.plan_id)
+    if not cache.plan.is_visible_for_user(info.context.user):
+        return None
+    return cache
+
+
+class ActionTaskResponsiblePartyNode(DjangoNode[ActionTaskResponsibleParty]):
+    class Meta:
+        model = ActionTaskResponsibleParty
+        fields = public_fields(ActionTaskResponsibleParty)
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(model_field='organization')
+    def resolve_organization(root: ActionTaskResponsibleParty, info: GQLInfo) -> Organization:
+        # Take the plan from the query context where there is one: walking `task.action.plan_id` costs a
+        # query per row, which turns a task list into an N+1.
+        cache = _plan_cache_for_task(root.task, info)
+        if cache is None:
+            return root.organization
+        return cache.get_organization(root.organization_id) or root.organization
+
+
+class ActionTaskContactPersonNode(DjangoNode[ActionTaskContactPerson]):
+    class Meta:
+        model = ActionTaskContactPerson
+        fields = public_fields(ActionTaskContactPerson)
+
+    @staticmethod
+    def resolve_person(root: ActionTaskContactPerson, info: GQLInfo) -> Person:
+        # Serve the person from the plan cache to avoid fetching the FK once per row — but only when the
+        # plan publishes contact persons in full. Otherwise `ActionTaskNode.resolve_contact_persons` has
+        # already replaced `root.person` with a redacted copy, and reading the cache here would put the
+        # full record back. The plan is the task's own, for the reason given in `_plan_cache_for_task()`.
+        cache = _plan_cache_for_task(root.task, info)
+        if cache is None:
+            return root.person
+        if cache.plan.features.contact_persons_public_data not in (
+            PlanFeatures.ContactPersonsPublicData.ALL,
+            PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
+            return root.person
+        return cache.get_person(root.person_id) or root.person
+
+
 class ActionTaskNode(DjangoNode[ActionTask]):
     class Meta:
         model = ActionTask
         fields = public_fields(ActionTask)
 
     comment = graphene.String(deprecation_reason='Use "details" instead')
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='contact_persons',
+    )
+    def resolve_contact_persons(root: ActionTask, info: GQLInfo):
+        cache = _plan_cache_for_task(root, info)
+        if cache is None:
+            return []
+        return root.get_redacted_contact_persons(info.context.user, cache)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -2059,6 +2127,47 @@ class ActionLinkNode(DjangoNode[ActionLink]):
         return root.title_i18n
 
 
+def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
+    """
+    Load a plan's contact people and organizations into the request cache, once per request.
+
+    Every resolver that serves one of them falls back to a query per row when they are missing. Filling
+    a plan costs a handful of queries, so it happens on first use rather than for every plan a resolver
+    might return: a regional deployment relates dozens of plans, and `relatedPlanActions` would
+    otherwise pay for all of them even when the query asks for nothing that needs them.
+    """
+    if plan_id in info.context.cache.plans_with_people_loaded:
+        return
+    info.context.cache.plans_with_people_loaded.add(plan_id)
+    cache = info.context.cache.for_plan_id(plan_id)
+    plan = cache.plan
+    # Task-level assignees have to be in the cache too, or each one costs a query when its resolver
+    # falls back to the database.
+    persons_queryset = (
+        Person.objects.get_queryset()
+        .filter(
+            Q(actioncontactperson__action__plan=plan) | Q(contact_for_action_tasks__task__action__plan=plan),
+        )
+        .distinct()
+        # `Person.get_redacted_copy()` builds the copy with the person's organization, so without this
+        # the redacting levels cost a query per contact person.
+        .select_related('organization')
+    )
+    cache.populate_persons(persons_queryset)
+    cache.populate_organizations(
+        Organization.objects
+        .get_queryset()
+        .filter(
+            Q(responsible_actions__action__plan=plan)
+            | Q(responsible_action_tasks__task__action__plan=plan)
+            | Q(people__in=persons_queryset),
+        )
+        .distinct()
+        .select_related('logo')
+        .prefetch_related(Prefetch('logo__renditions', to_attr='prefetched_renditions'))
+    )
+
+
 def plans_actions_queryset(
     plans: Iterable[Plan], category: str | None, first: int | None, order_by: str | None, user: User | None
 ) -> ActionQuerySet:
@@ -2393,16 +2502,7 @@ class Query:
         )
 
         cache = info.context.cache.for_plan(plan_obj)
-        persons_queryset = Person.objects.get_queryset().filter(actioncontactperson__action__plan=plan_obj).distinct()
-        cache.populate_persons(persons_queryset)
-        cache.populate_organizations(
-            Organization.objects
-            .get_queryset()
-            .filter(Q(responsible_actions__action__plan=plan_obj) | Q(people__in=persons_queryset))
-            .distinct()
-            .select_related('logo')
-            .prefetch_related(Prefetch('logo__renditions', to_attr='prefetched_renditions'))
-        )
+        _populate_plan_people_cache(info, plan_obj.pk)
         if not is_authenticated(user):
             workflow_state = WorkflowStateEnum.PUBLISHED
         elif not user.can_access_public_site(plan=plan_obj):

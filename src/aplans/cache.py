@@ -310,6 +310,9 @@ class WatchObjectCache:
     query_workflow_state: WorkflowStateEnum
     organization_action_count_cache: OrganizationActionCountCache | None
     user: User | None
+    # Plans whose contact people and organizations have been loaded; see `populate_people_of_plan()`
+    # in `actions.schema`, which is what fills them.
+    plans_with_people_loaded: set[int]
 
     def __init__(self, user: User | None = None) -> None:
         self.plan_caches = {}
@@ -318,6 +321,7 @@ class WatchObjectCache:
         self.query_workflow_state = WorkflowStateEnum.PUBLISHED
         self.user = user
         self.organization_action_count_cache = None
+        self.plans_with_people_loaded = set()
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)
