@@ -1312,7 +1312,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         else:
             q |= Q(id=self.id)
 
-        qs: PlanQuerySet = Plan.objects.qs.filter(q)
+        # The related_plans join multiplies rows for a plan holding more than
+        # one such link, and the other alternatives above are true of every one
+        # of those rows, so the plan would come back once per link.
+        qs: PlanQuerySet = Plan.objects.qs.filter(q).distinct()
 
         return qs
 
