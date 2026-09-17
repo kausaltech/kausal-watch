@@ -96,6 +96,23 @@ def test_deleted_child_is_dereferenced_in_draft(plan: Plan, relation: str, creat
     assert [item['pk'] for item in action.latest_revision.content[relation]] == [None]
 
 
+def test_cascade_deleted_child_leaves_the_draft_untouched(plan: Plan):
+    """
+    A cascade writes no revision: the orphaned row is dropped when the draft is read.
+
+    Repairing it would cost a query per deleted row, and one indicator can be linked from
+    an action in every plan that uses it.
+    """
+    action = ActionFactory.create(plan=plan)
+    action_indicator = ActionIndicatorFactory.create(action=action)
+    revision = action.save_revision()
+
+    action_indicator.indicator.delete()  # cascades to the link between the action and the indicator
+
+    revision.refresh_from_db()
+    assert [row['pk'] for row in revision.content['related_indicators']] == [action_indicator.pk]
+
+
 def test_action_can_be_saved_after_contact_person_was_deleted(
     plan_admin_user: User, action: Action, client: django.test.client.Client
 ):

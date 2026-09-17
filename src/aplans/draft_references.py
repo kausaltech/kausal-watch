@@ -43,7 +43,7 @@ def draft_parent_relations(model: type[Model]) -> list[ParentalKey[Any, Any]]:
     ]
 
 
-def clear_deleted_child_from_draft(sender: type[Model], instance: Any, **_kwargs: Any) -> None:
+def clear_deleted_child_from_draft(sender: type[Model], instance: Any, origin: Any = None, **_kwargs: Any) -> None:
     """
     Drop the primary key of a just-deleted child object from its parent's draft.
 
@@ -54,9 +54,25 @@ def clear_deleted_child_from_draft(sender: type[Model], instance: Any, **_kwargs
     says nothing about the cause. Clearing the primary key turns the stale row into a new
     one, so publishing the draft recreates the child object instead of trying to update a
     deleted one.
+
+    A child that went away with a cascade is left alone: whatever it points at is gone as
+    well, so deserialization drops the row whichever way the draft is read. Repairing those
+    would cost a query per deleted row, and deleting one indicator or organization can
+    cascade to a row in every action that refers to it.
     """
+    if not _was_deleted_directly(sender, instance, origin):
+        return
     for relation in draft_parent_relations(sender):
         _clear_child_pk(relation, instance)
+
+
+def _was_deleted_directly(sender: type[Model], instance: Any, origin: Any) -> bool:
+    """Tell whether `delete()` was called on the child itself rather than on something that cascaded to it."""
+    if origin is None:  # a sender that does not report where the deletion came from
+        return True
+    if origin is instance:  # Model.delete()
+        return True
+    return getattr(origin, 'model', None) is sender  # QuerySet.delete()
 
 
 def _clear_child_pk(relation: ParentalKey[Any, Any], child: Any) -> None:
