@@ -22,6 +22,8 @@ from actions.models.action import (
     ActionResponsibleParty,
     ActionStatus,
     ActionTask,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
 )
 from actions.models.attributes import (
     AttributeType as AttributeTypeModel,
@@ -53,6 +55,7 @@ if typing.TYPE_CHECKING:
         CategoryLevel,
     )
     from orgs.models import OrganizationQuerySet
+    from people.models import Person
     from reports.models import ActionSnapshot
     from reports.spreadsheets import ExcelReport
     from reports.types import AttributePath, SerializedAttributeVersion
@@ -325,10 +328,78 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
             else:
                 due_date = data['due_at']
                 state += f', {_("due date")}: {date_format(due_date)}'
-            formatted.append(
-                f'• {data["name"]} [{state}]',
-            )
+            line = f'• {data["name"]} [{state}]'
+            assignees = self._format_assignees(report, related_objects, int(data['id']), action)
+            if assignees:
+                line += f' — {assignees}'
+            formatted.append(line)
         return ['\n'.join(formatted)]
+
+    @staticmethod
+    def _plan_of_action(report: ExcelReport, action: dict) -> Plan | None:
+        """
+        Return the plan the serialized action belongs to, or None if it cannot be identified.
+
+        A report may include actions from child plans, and each plan carries its own contact-person
+        setting, so the parent's cannot stand in for all of them.
+        """
+        plan_id = action.get('plan_id')
+        for plan in (report.plan, *report.child_plans):
+            if plan.pk == plan_id:
+                return plan
+        return None
+
+    @staticmethod
+    def _organizations_of_plan(report: ExcelReport, plan: Plan) -> dict[int, Organization]:
+        return report.plan_current_related_objects.organizations_by_plan.get(plan.pk, {})
+
+    @staticmethod
+    def _persons_of_plan(report: ExcelReport, plan: Plan) -> dict[int, Person]:
+        return report.plan_current_related_objects.persons_by_plan.get(plan.pk, {})
+
+    @staticmethod
+    def _format_assignees(
+        report: ExcelReport,
+        related_objects: dict[str, list[SerializedVersion]],
+        task_id: int,
+        action: dict,
+    ) -> str:
+        """
+        Return the task's responsible organizations and contact persons as one comma-separated string.
+
+        The assignment rows reach the snapshot because reversion's `follow` is transitive: `Action` follows
+        `tasks` and `ActionTask` follows both assignment relations. They are keyed by their own foreign key,
+        so they are matched on `task_id` rather than on the `action_id` used for the tasks themselves.
+
+        A snapshot taken before this feature existed simply has no such versions, and one whose organization
+        or person has since left the plan resolves to nothing; both cases render the task as before.
+        """
+        # Resolved against the plan that owns the action, not the report's merged lookups: a report can
+        # include a parent and its children, and someone who has left this plan should not be named here
+        # just because a sibling plan still has them.
+        plan = ActionTasksFormatter._plan_of_action(report, action)
+        names: list[str] = []
+        if plan is None:
+            return ''
+        organizations = ActionTasksFormatter._organizations_of_plan(report, plan)
+        for version in get_related_model_instances_for_action(
+            ('task_id', task_id), related_objects, ActionTaskResponsibleParty
+        ):
+            organization = organizations.get(version.data['organization_id'])
+            if organization is not None:
+                names.append(str(organization))
+        # An export of a public plan can be downloaded anonymously, so the people are named only when the
+        # setting of the plan that owns this action allows this reader to see them.
+        if not plan.contact_persons_published_to(report.user):
+            return ', '.join(names)
+        persons = ActionTasksFormatter._persons_of_plan(report, plan)
+        for version in get_related_model_instances_for_action(
+            ('task_id', task_id), related_objects, ActionTaskContactPerson
+        ):
+            person = persons.get(version.data['person_id'])
+            if person is not None:
+                names.append(str(person))
+        return ', '.join(names)
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
         return GrapheneValueClassProperties(
