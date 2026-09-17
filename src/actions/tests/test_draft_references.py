@@ -6,12 +6,16 @@ from django.urls import reverse
 
 import pytest
 
+from aplans.draft_references import strip_missing_references
+
 from actions.action_admin import ActionAdmin
+from actions.attributes import DraftAttributes
 from actions.models import Action, ActionContactPerson
 from actions.tests.factories import (
     ActionContactFactory,
     ActionDependencyRelationshipFactory,
     ActionFactory,
+    ActionImpactFactory,
     ActionLinkFactory,
     ActionResponsiblePartyFactory,
     ActionTaskFactory,
@@ -20,15 +24,19 @@ from actions.tests.factories import (
 )
 from admin_site.tests.factories import ClientPlanFactory
 from indicators.tests.factories import ActionIndicatorFactory
+from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
+from users.tests.factories import UserFactory
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     import django.test.client
     from django.db.models import Model
+    from wagtail.models import Workflow
 
     from actions.models import Plan
+    from people.models import Person
     from users.models import User
 
 pytestmark = pytest.mark.django_db
@@ -56,11 +64,12 @@ def edit_post_data(action: Action, **overrides: object) -> dict[str, object]:
     return data | overrides
 
 
-def enable_moderation_workflow(plan: Plan) -> None:
+def enable_moderation_workflow(plan: Plan) -> Workflow:
     workflow = WorkflowFactory.create()
     WorkflowTaskFactory.create(workflow=workflow)
     plan.features.moderation_workflow = workflow
     plan.features.save()
+    return workflow
 
 
 CHILD_RELATIONS: list[tuple[str, Callable[[Action], Model]]] = [
@@ -149,3 +158,54 @@ def test_action_can_be_saved_after_child_was_cascade_deleted(
     assert response.status_code == 302
     new_draft = Action.objects.get(pk=action.pk).get_latest_revision_as_object()
     assert list(new_draft.related_indicators.all()) == []
+
+
+DRAFT_ACTIONS_QUERY = """
+  query ($plan: ID!, $lang: String!) @locale(lang: $lang) @workflow(state: DRAFT) {
+    planActions(plan: $plan) {
+      name
+      responsibleParties { organization { name } }
+    }
+  }
+"""
+
+
+def test_draft_listing_survives_a_deleted_organization(graphql_client_query, plan: Plan, person: Person, client):
+    workflow = enable_moderation_workflow(plan)
+    organization = OrganizationFactory.create()
+    plan.related_organizations.add(organization)
+    action = ActionFactory.create(plan=plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=organization)
+    action.draft_attributes = DraftAttributes()
+    action.save_revision(user=person.user)
+    workflow.start(action, user=person.user)
+
+    organization.delete()
+
+    person.general_admin_plans.add(plan)
+    person.save()
+    client.force_login(person.user)
+    response = graphql_client_query(DRAFT_ACTIONS_QUERY, variables={'plan': plan.identifier, 'lang': 'en'})
+
+    assert 'errors' not in response
+    assert response['data']['planActions'] == [{'name': action.name, 'responsibleParties': []}]
+
+
+def test_strip_missing_references_nulls_what_it_can_and_drops_the_rest(plan: Plan):
+    impact = ActionImpactFactory.create(plan=plan)
+    action = ActionFactory.create(plan=plan, impact=impact)
+    ActionContactFactory.create(action=action)
+    task = ActionTaskFactory.create(action=action)
+    task.completed_by = UserFactory.create()
+    task.save()
+    content = dict(action.save_revision().content)
+
+    impact.delete()
+    action.contact_persons.get().person.delete()
+    task.completed_by.delete()
+
+    strip_missing_references(Action, [content])
+
+    assert content['impact'] is None  # the action can live without it
+    assert content['contact_persons'] == []  # the row cannot live without its person
+    assert [row['completed_by'] for row in content['tasks']] == [None]  # the task can
