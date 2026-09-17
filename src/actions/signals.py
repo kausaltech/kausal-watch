@@ -10,6 +10,8 @@ from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
 from anymail.signals import post_send, pre_send
 
+from aplans.draft_references import register_draft_reference_cleanup
+
 from indicators.models import Indicator, IndicatorContactPerson, IndicatorLevel
 from notifications.models import NotificationSettings
 from orgs.models import Organization, OrganizationPlanAdmin
@@ -70,21 +72,9 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
         )
 
 
-@receiver(post_delete, sender=ActionContactPerson)
-def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):
-    # When deleting an ActionContactPerson, drafts of that action may reference the deleted instance, which causes an
-    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
-    # draft is published, the ActionContactPerson is created anew instead of trying (and failing) to change the one that
-    # doesn't exist anymore.
-    # TODO: This may need to be done for other models as well; investigate.
-    assert isinstance(instance, ActionContactPerson)
-    instance.fix_action_draft_after_deletion()
-
-
 @receiver(post_delete, sender=ActionTaskResponsibleParty)
 def fix_deleted_task_responsible_party_in_draft(sender, instance, **kwargs):
-    # Same as for the action-level models below, one level down: a draft that still references the
-    # deleted row fails to publish, so clear the pk and let publishing recreate the row.
+    # Nested under tasks in the action's draft, so not covered by register_draft_reference_cleanup().
     assert isinstance(instance, ActionTaskResponsibleParty)
     instance.fix_action_draft_after_deletion()
 
@@ -92,17 +82,6 @@ def fix_deleted_task_responsible_party_in_draft(sender, instance, **kwargs):
 @receiver(post_delete, sender=ActionTaskContactPerson)
 def fix_deleted_task_contact_person_in_draft(sender, instance, **kwargs):
     assert isinstance(instance, ActionTaskContactPerson)
-    instance.fix_action_draft_after_deletion()
-
-
-@receiver(post_delete, sender=ActionResponsibleParty)
-def fix_deleted_responsible_party_in_draft(sender, instance, **kwargs):
-    # When deleting an ActionResponsibleParty, drafts of that action may reference the deleted instance, which causes an
-    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
-    # draft is published, the ActionResponsibleParty is created anew instead of trying (and failing) to change the one
-    # that doesn't exist anymore.
-    # TODO: This may need to be done for other models as well; investigate.
-    assert isinstance(instance, ActionResponsibleParty)
     instance.fix_action_draft_after_deletion()
 
 
@@ -242,6 +221,7 @@ def sync_permissions(sender, **kwargs):
 
 
 def register_signal_handlers():
+    register_draft_reference_cleanup()
     task_submitted.connect(
         action_moderator_approval_task_submission_email_notifier,
         dispatch_uid='action_moderator_approval_task_submitted_email_notification',
