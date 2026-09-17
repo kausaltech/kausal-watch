@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pytest
 
+from actions.models import Plan
+
 pytestmark = pytest.mark.django_db
 
 
@@ -81,3 +83,18 @@ def test_child_linked_to_two_other_plans_is_listed_once(plan_factory):
     child.related_plans.add(plan_factory())
 
     assert list(parent.get_all_related_plans()) == [child]
+
+
+def test_related_plans_queryset_can_be_combined_with_another(plan_factory):
+    """
+    The result must stay combinable with `|`.
+
+    Django refuses to combine a distinct queryset with a plain one, and the
+    people admin builds its contact person filter that way.
+    """
+    parent = plan_factory()
+    child = plan_factory(parent=parent)
+
+    combined = Plan.objects.filter(pk=child.pk) | child.get_all_related_plans()
+
+    assert sorted(combined.values_list('pk', flat=True)) == sorted([child.pk, parent.pk])

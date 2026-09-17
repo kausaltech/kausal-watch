@@ -1300,7 +1300,13 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             A queryset of related plans.
 
         """
-        q = Q(related_plans=self)
+        # Match the explicitly related plans by primary key rather than by joining the
+        # m2m: the join yields one row per link the candidate holds, and the alternatives
+        # below are true of every one of those rows, so a plan reached through the
+        # hierarchy would be returned once per link. Filtering after the fact with
+        # `distinct()` would fix the duplicates but make the queryset impossible to
+        # combine with `|`, which callers do. See also `PlanChooserMixin`.
+        q = Q(id__in=self.related_plans.values_list('pk', flat=True))
         if self.parent_id:
             q |= Q(id=self.parent_id)
             q |= Q(parent=self.parent_id)
@@ -1312,10 +1318,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         else:
             q |= Q(id=self.id)
 
-        # The related_plans join multiplies rows for a plan holding more than
-        # one such link, and the other alternatives above are true of every one
-        # of those rows, so the plan would come back once per link.
-        qs: PlanQuerySet = Plan.objects.qs.filter(q).distinct()
+        qs: PlanQuerySet = Plan.objects.qs.filter(q)
 
         return qs
 
