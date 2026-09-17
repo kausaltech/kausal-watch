@@ -75,6 +75,13 @@ def test_action_no_duplicate_identifier_per_plan(plan):
         Action.objects.create(plan=plan, name='Test action 2', identifier='id')
 
 
+def test_action_with_lead_paragraph_validates_when_feature_is_disabled():
+    action = ActionFactory.create(lead_paragraph='A summary')
+    action.plan.features.has_action_lead_paragraph = False
+    action.plan.features.save()
+    action.full_clean()
+
+
 @pytest.mark.parametrize('color', ['invalid', '#fffffg', '#00'])
 def test_category_color_invalid(color):
     category = CategoryFactory.create()
