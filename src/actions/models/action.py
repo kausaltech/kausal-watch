@@ -889,8 +889,6 @@ class Action(
             other = self.merged_with
             if other.merged_with == self:
                 raise ValidationError({'merged_with': _('Other action is merged with this one')})
-        if self.lead_paragraph and not self.plan.features.has_action_lead_paragraph:
-            raise ValidationError({'lead_paragraph': _('Lead paragraph is not allowed for actions in this plan')})
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
         # same action plan.
 

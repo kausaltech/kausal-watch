@@ -412,6 +412,8 @@ class ActionMutations:
             action.description = input.description
             updated = True
         if input.lead_paragraph is not sb.UNSET:
+            if input.lead_paragraph and not action.plan.features.has_action_lead_paragraph:
+                raise ValidationError('Action lead paragraphs are not enabled for this plan.')
             action.lead_paragraph = input.lead_paragraph
             updated = True
         if input.primary_org_id is not sb.UNSET:
