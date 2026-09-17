@@ -414,29 +414,29 @@ def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
     assert data == expected
 
 
-@pytest.mark.parametrize('show_parent_plan_as_sibling', [True, False])
-def test_plan_show_parent_plan_as_sibling(graphql_client_query_data, plan, show_parent_plan_as_sibling):
-    plan.features.show_parent_plan_as_sibling = show_parent_plan_as_sibling
+@pytest.mark.parametrize('present_plan_hierarchy_as_peers', [True, False])
+def test_plan_present_plan_hierarchy_as_peers(graphql_client_query_data, plan, present_plan_hierarchy_as_peers):
+    plan.features.present_plan_hierarchy_as_peers = present_plan_hierarchy_as_peers
     plan.features.save()
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
           plan(id: $plan) {
             features {
-              showParentPlanAsSibling
+              presentPlanHierarchyAsPeers
             }
           }
         }
         """,
         variables=dict(plan=plan.identifier),
     )
-    assert data == {'plan': {'features': {'showParentPlanAsSibling': show_parent_plan_as_sibling}}}
+    assert data == {'plan': {'features': {'presentPlanHierarchyAsPeers': present_plan_hierarchy_as_peers}}}
 
 
-@pytest.mark.parametrize('show_parent_plan_as_sibling', [True, False])
-def test_plan_show_parent_plan_in_plan_switcher_alias(graphql_client_query_data, plan, show_parent_plan_as_sibling):
+@pytest.mark.parametrize('present_plan_hierarchy_as_peers', [True, False])
+def test_plan_show_parent_plan_in_plan_switcher_alias(graphql_client_query_data, plan, present_plan_hierarchy_as_peers):
     """The pre-rename field name keeps working, so a UI release can lag the backend."""
-    plan.features.show_parent_plan_as_sibling = show_parent_plan_as_sibling
+    plan.features.present_plan_hierarchy_as_peers = present_plan_hierarchy_as_peers
     plan.features.save()
     data = graphql_client_query_data(
         """
@@ -450,4 +450,4 @@ def test_plan_show_parent_plan_in_plan_switcher_alias(graphql_client_query_data,
         """,
         variables=dict(plan=plan.identifier),
     )
-    assert data == {'plan': {'features': {'showParentPlanInPlanSwitcher': show_parent_plan_as_sibling}}}
+    assert data == {'plan': {'features': {'showParentPlanInPlanSwitcher': present_plan_hierarchy_as_peers}}}
