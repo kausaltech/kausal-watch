@@ -22,7 +22,16 @@ from .mail import (
     ActionModeratorCancelTaskStateSubmissionEmailNotifier,
     WorkflowStateApprovalWithCommentEmailNotifier,
 )
-from .models import Action, ActionContactPerson, ActionResponsibleParty, GeneralPlanAdmin, Plan, PlanFeatures
+from .models import (
+    Action,
+    ActionContactPerson,
+    ActionResponsibleParty,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
+    GeneralPlanAdmin,
+    Plan,
+    PlanFeatures,
+)
 from .perms import get_people_with_login_rights, sync_all_group_permissions_for_plan, sync_group_permissions
 
 logger = logging.getLogger(__name__)
@@ -69,6 +78,20 @@ def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):
     # doesn't exist anymore.
     # TODO: This may need to be done for other models as well; investigate.
     assert isinstance(instance, ActionContactPerson)
+    instance.fix_action_draft_after_deletion()
+
+
+@receiver(post_delete, sender=ActionTaskResponsibleParty)
+def fix_deleted_task_responsible_party_in_draft(sender, instance, **kwargs):
+    # Same as for the action-level models below, one level down: a draft that still references the
+    # deleted row fails to publish, so clear the pk and let publishing recreate the row.
+    assert isinstance(instance, ActionTaskResponsibleParty)
+    instance.fix_action_draft_after_deletion()
+
+
+@receiver(post_delete, sender=ActionTaskContactPerson)
+def fix_deleted_task_contact_person_in_draft(sender, instance, **kwargs):
+    assert isinstance(instance, ActionTaskContactPerson)
     instance.fix_action_draft_after_deletion()
 
 

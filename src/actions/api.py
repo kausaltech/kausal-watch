@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast, override
 from uuid import UUID
 
 import rest_framework.fields
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
@@ -52,6 +53,8 @@ from .models import (
     ActionSchedule,
     ActionStatus,
     ActionTask,
+    ActionTaskContactPerson,
+    ActionTaskResponsibleParty,
     Category,
     CategoryType,
     ImpactGroup,
@@ -1886,13 +1889,49 @@ class I18nFieldPlanLanguagesSerializerMixin[M: Model](ModelSerializerMixin[M]):
                 )
 
 
+class ActionTaskResponsiblePartySerializer(serializers.ModelSerializer[ActionTaskResponsibleParty]):
+    """An organization responsible for a task, identified by the organization rather than by the row."""
+
+    class Meta:
+        model = ActionTaskResponsibleParty
+        fields = ('id', 'organization')
+
+
+class ActionTaskContactPersonSerializer(serializers.ModelSerializer[ActionTaskContactPerson]):
+    """A person responsible for a task, identified by the person rather than by the row."""
+
+    class Meta:
+        model = ActionTaskContactPerson
+        fields = ('id', 'person')
+
+
 class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], serializers.ModelSerializer[ActionTask]):
     """Serializer for the ActionTask model."""
+
+    # Declared explicitly: the generated fields would serialize the primary keys of the join rows, which
+    # identify nothing, since those models have no endpoint of their own. They are read-only because this
+    # endpoint writes its tasks through a bulk list serializer, where rows of a through model would need
+    # create, update and delete handling of their own; assignments are edited in the admin.
+    responsible_parties = ActionTaskResponsiblePartySerializer(many=True, read_only=True)
+    contact_persons = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionTask
         list_serializer_class = BulkListSerializer
         fields = public_fields(ActionTask)
+
+    def get_contact_persons(self, obj: ActionTask) -> list[dict[str, Any]]:
+        """
+        Return the task's contact persons as the plan's privacy setting allows them to be seen.
+
+        This endpoint is readable anonymously, so the check has to be the model's: testing for "do not
+        show contact persons" alone would still hand out person ids under "show all information but only
+        for authenticated users", for which `PlanFeatures.public_contact_persons` is equally false.
+        """
+        request = self.context.get('request')
+        user = request.user if request is not None else AnonymousUser()
+        visible = obj.get_redacted_contact_persons(user)
+        return list(ActionTaskContactPersonSerializer(visible, many=True).data)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1932,7 +1971,19 @@ class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[Act
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
             raise exceptions.NotFound(detail='Plan not found')
-        qs = ActionTask.objects.filter(action__plan=plan_pk)
+        # The assignment fields read the task's plan and its assignees, so fetch them with the tasks
+        # rather than once per row.
+        qs = ActionTask.objects.filter(action__plan=plan_pk).select_related('action__plan__features')
+        qs = qs.prefetch_related(
+            'responsible_parties',
+            # With the person's organization: below the "show all information" level the serializer
+            # goes through redacted copies, which carry the organization, so leaving it out costs a
+            # query per assignment.
+            Prefetch(
+                'contact_persons',
+                queryset=ActionTaskContactPerson.objects.select_related('person__organization'),
+            ),
+        )
         action_id = self.request.query_params.get('action')
         if action_id:
             qs = qs.filter(action_id=action_id)
