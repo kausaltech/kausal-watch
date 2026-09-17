@@ -700,12 +700,50 @@ class Action(
             get_wrapped_id_target=get_wrapped_id_dict,
         )
 
+    def _renormalize_task_revision_items(self, revision: Revision[Self]) -> None:
+        """
+        Renormalize the PKs of the task-level assignment rows in revision content.
+
+        The same swap problem as `_renormalize_revision_items()`, one level down: these rows live under
+        `content['tasks'][i]`, have their own `(task, assignee)` unique constraints, and are saved one by
+        one when the cluster is committed, so a draft that swaps two assignees would hit the constraint
+        halfway through.
+        """
+        for task_dict in revision.content.get('tasks', []):
+            task_pk = task_dict.get('pk')
+            if task_pk is None:
+                # A task that does not exist yet has no rows to collide with.
+                continue
+            for content_key, wrapped_attr, model in (
+                ('responsible_parties', 'organization', ActionTaskResponsibleParty),
+                ('contact_persons', 'person', ActionTaskContactPerson),
+            ):
+                target_items = task_dict.get(content_key, [])
+                if not target_items:
+                    continue
+                def get_wrapped_id_db(item: Any, attr: str = wrapped_attr) -> int | None:
+                    return getattr(item, f'{attr}_id')
+
+                def get_wrapped_id_target(item: dict, attr: str = wrapped_attr) -> int | None:
+                    return item.get(attr)
+
+                _renormalize_pks_for_unique_constraint(
+                    db_items=list(model.objects.filter(task_id=task_pk)),
+                    target_items=target_items,
+                    get_pk_db=lambda item: item.pk,
+                    get_wrapped_id_db=get_wrapped_id_db,
+                    get_pk_target=lambda item: item.get('pk'),
+                    set_pk_target=lambda item, pk: item.__setitem__('pk', pk),
+                    get_wrapped_id_target=get_wrapped_id_target,
+                )
+
     def publish(self, revision: Revision[Self], user: User | None = None, **kwargs) -> None:  # type: ignore[override]
         attributes = revision.content.pop('attributes')
         self.refresh_from_db(fields=['order'])
         revision.content['order'] = self.order
         self._renormalize_revision_items(revision, 'responsible_parties', 'organization')
         self._renormalize_revision_items(revision, 'contact_persons', 'person')
+        self._renormalize_task_revision_items(revision)
         super().publish(revision, user=user, **kwargs)
         self.commit_attributes(attributes, user)
 
@@ -1914,11 +1952,17 @@ class ActionRelatedModelTransModelMixin:
         for f in to_delete:
             del data[f]
         data.pop('action', None)
+        # For a clusterable model (e.g. ActionTask, whose responsible parties and contact persons are
+        # cluster children of their own), defer to ClusterableModel so the nested children are restored;
+        # `model_from_serializable_data()` alone would silently drop them.
+        parent_impl = getattr(super(), 'from_serializable_data', None)
+        if parent_impl is not None:
+            return parent_impl(data, check_fks=check_fks, strict_fks=strict_fks)
         return model_from_serializable_data(cls, data, check_fks=check_fks, strict_fks=strict_fks)
 
 
-@reversion.register()
-class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
+@reversion.register(follow=['responsible_parties', 'contact_persons'])
+class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelatedModel):
     """
     A task that should be completed during the execution of an action.
 
@@ -1999,6 +2043,8 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
         'completed_at',
         'created_at',
         'modified_at',
+        'responsible_parties',
+        'contact_persons',
     ]
 
     class Meta:
@@ -2041,6 +2087,36 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
     def initialize_plan_defaults(self, plan: Plan):
         pass
 
+    def get_redacted_contact_persons(self, user: UserOrAnon, cache: PlanSpecificCache | None = None):
+        """
+        Get the task's contact persons, redacted according to the plan's contact-person features.
+
+        Task-level contact persons are ordinary people, so they follow exactly the same privacy rules as
+        the action-level ones; see `Action.get_redacted_contact_persons()`.
+        """
+        plan = cache.plan if cache is not None else self.action.plan
+        if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
+            return []
+
+        # Keep the person that was resolved here: re-reading `atcp.person` below would go back to the
+        # database once per assignment, because the relation is not selected with its person.
+        visible: list[tuple[ActionTaskContactPerson, Person]] = []
+        for atcp in self.contact_persons.all():
+            person = (cache.get_person(atcp.person_id) if cache is not None else None) or atcp.person
+            if not person.visible_for_user(user=user, plan=plan):
+                continue
+            visible.append((atcp, person))
+
+        if plan.features.contact_persons_public_data in (
+            PlanFeatures.ContactPersonsPublicData.ALL,
+            PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
+            return [atcp for atcp, _person in visible]
+
+        for atcp, person in visible:
+            atcp.person = person.get_redacted_copy(plan)
+        return [atcp for atcp, _person in visible]
+
     def get_notification_context(self, plan=None):
         if plan is None:
             plan = self.action.plan
@@ -2050,6 +2126,117 @@ class ActionTask(ActionRelatedModelTransModelMixin, PlanRelatedModel):
             'due_at': self.due_at,
             'state': self.state,
         }
+
+
+def _fix_task_child_draft_after_deletion(child: ActionTaskResponsibleParty | ActionTaskContactPerson, relation_name: str) -> None:
+    """
+    Drop a deleted task child's pk from the action's draft so publishing recreates it.
+
+    Mirrors `ActionResponsibleParty.fix_action_draft_after_deletion()` one level down: these rows live
+    under `content['tasks'][i][relation_name]`, not at the top level of the revision content.
+    """
+    revision = child.task.action.latest_revision
+    if not revision:
+        return
+    assert isinstance(revision, Revision)
+    changed = False
+    for task_dict in revision.content.get('tasks', []):
+        for child_dict in task_dict.get(relation_name, []):
+            if child_dict.get('pk') == child.pk:
+                child_dict['pk'] = None
+                changed = True
+    if changed:
+        revision.save()
+
+
+@reversion.register()
+class ActionTaskResponsibleParty(models.Model):
+    """An organization responsible for carrying out an action task."""
+
+    task: PK[ActionTask] = ParentalKey(
+        ActionTask,
+        on_delete=models.CASCADE,
+        related_name='responsible_parties',
+        verbose_name=_('action task'),
+    )
+    organization: FK[Organization] = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='responsible_action_tasks',
+        verbose_name=_('organization'),
+    )
+    organization_id: int
+
+    objects: ClassVar[models.Manager[Self]]
+
+    public_fields: ClassVar = [
+        'id',
+        'task',
+        'organization',
+    ]
+
+    class Meta:
+        unique_together = (('task', 'organization'),)
+        verbose_name = _('action task responsible party')
+        verbose_name_plural = _('action task responsible parties')
+
+    def __str__(self):
+        return str(self.organization)
+
+    def get_label(self):
+        return ''
+
+    def get_value(self):
+        return self.organization.name
+
+    def fix_action_draft_after_deletion(self):
+        # This should only be called after self just got deleted
+        _fix_task_child_draft_after_deletion(self, 'responsible_parties')
+
+
+@reversion.register()
+class ActionTaskContactPerson(models.Model):
+    """A person responsible for carrying out an action task."""
+
+    task: PK[ActionTask] = ParentalKey(
+        ActionTask,
+        on_delete=models.CASCADE,
+        related_name='contact_persons',
+        verbose_name=_('action task'),
+    )
+    person: FK[Person] = models.ForeignKey(
+        'people.Person',
+        on_delete=models.CASCADE,
+        related_name='contact_for_action_tasks',
+        verbose_name=_('person'),
+    )
+    person_id: int
+
+    objects: ClassVar[models.Manager[Self]]
+
+    public_fields: ClassVar = [
+        'id',
+        'task',
+        'person',
+    ]
+
+    class Meta:
+        unique_together = (('task', 'person'),)
+        verbose_name = _('action task contact person')
+        verbose_name_plural = _('action task contact persons')
+
+    def __str__(self):
+        return str(self.person)
+
+    def get_label(self):
+        return ''
+
+    def get_value(self):
+        return str(self.person)
+
+    def fix_action_draft_after_deletion(self):
+        # This should only be called after self just got deleted
+        _fix_task_child_draft_after_deletion(self, 'contact_persons')
 
 
 class ActionImpact(PlanRelatedModelWithRevision, OrderedModel):

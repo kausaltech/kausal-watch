@@ -27,7 +27,7 @@ from kausal_common.users import user_or_none
 
 from aplans.utils import IndirectPlanRelatedModel
 
-from actions.models import ActionContactPerson, PlanFeatures
+from actions.models import ActionContactPerson, ActionTaskContactPerson, PlanFeatures
 from admin_site.models import Client, ClientPlan
 from orgs.models import Organization
 from search.models import SearchableModel
@@ -91,6 +91,9 @@ class PersonQuerySet(MultilingualQuerySet['Person']):
             q |= Q(organization__path__startswith=org.path)
         if include_contact_persons:
             q |= Q(id__in=ActionContactPerson.objects.filter(action__plan=plan).values_list('person'))
+            # Someone can be responsible for a task without being a contact person of the action itself,
+            # and dropping them here would make the admin reject their own stored assignment.
+            q |= Q(id__in=ActionTaskContactPerson.objects.filter(task__action__plan=plan).values_list('person'))
         return self.filter(q)
 
     def is_action_contact_person(self, plan: Plan):
@@ -350,13 +353,11 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
         self.delete()
 
     def visible_for_user(self, user: UserOrAnon | None, *, plan: Plan | None = None, **kwargs) -> bool:
+        if plan is not None:
+            # The rule lives on the plan; the report export asks it without having a Person at hand.
+            return plan.contact_persons_visible_for(user)
         user = user_or_none(user)
-        if not plan or not plan.features.public_contact_persons:
-            if user is None:
-                return False
-            if not user.can_access_public_site(plan):
-                return False
-        return True
+        return user is not None and user.can_access_public_site(None)
 
     def is_public_site_viewer(self, plan: Plan | None = None) -> bool:
         if plan is None:

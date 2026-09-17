@@ -43,6 +43,7 @@ from kausal_common.i18n.helpers import convert_language_code, get_default_langua
 from kausal_common.models.language import ModelWithPrimaryLanguage
 from kausal_common.models.permissions import PermissionedModel, PermissionedQuerySet
 from kausal_common.models.types import MLModelManager
+from kausal_common.users import user_or_none
 
 from aplans.utils import (
     ChoiceArrayField,
@@ -58,6 +59,8 @@ from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
 from search.models import SearchableModel
+
+from .features import PlanFeatures
 
 if TYPE_CHECKING:
     from django_stubs_ext import StrOrPromise
@@ -89,7 +92,6 @@ if TYPE_CHECKING:
 
     from .action import Action, ActionImplementationPhase, ActionStatus
     from .category import CategoryType
-    from .features import PlanFeatures
     from .pledge import Pledge
 
 
@@ -1108,6 +1110,33 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         if user is None:  # TODO: remove this once all places where None is used are fixed
             user = AnonymousUser()
         return self.permission_policy().user_has_permission_for_instance(user, 'view', self)
+
+    def contact_persons_visible_for(self, user: UserOrAnon | None) -> bool:
+        """
+        Return whether `user` may see this plan's contact persons at all.
+
+        The single home for the rule, because several places ask it: the GraphQL and REST APIs, and the
+        report export. Both "do not show contact persons" and "show all information but only for
+        authenticated users" make `PlanFeatures.public_contact_persons` false, so neither setting may be
+        checked on its own.
+        """
+        if self.features.public_contact_persons:
+            return True
+        user = user_or_none(user)
+        return user is not None and user.can_access_public_site(self)
+
+    def contact_persons_published_to(self, user: UserOrAnon | None) -> bool:
+        """
+        Return whether contact persons appear in output published to `user`.
+
+        Stricter than `contact_persons_visible_for()`: "do not show contact persons" keeps them out of
+        the public UI, the APIs and the exports even for an administrator, who reaches them through the
+        admin interface instead. `Action.get_redacted_contact_persons()` makes that exception explicit
+        for its callers, which is why the looser check cannot simply be tightened.
+        """
+        if self.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
+            return False
+        return self.contact_persons_visible_for(user)
 
     def get_optional_locale_prefix(self, locale: str):
         if locale.lower() == self.primary_language.lower():
