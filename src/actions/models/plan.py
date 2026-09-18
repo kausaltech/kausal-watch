@@ -50,6 +50,7 @@ from aplans.utils import (
     IdentifierField,
     OrderedModel,
     PlanRelatedModelWithRevision,
+    RestrictedVisibilityModel,
     get_default_country,
     matches_hostname_pattern,
 )
@@ -349,6 +350,25 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     published_at = models.DateTimeField(null=True, blank=True, verbose_name=_('published at'))
+    # The single gate on who may read this plan, applied wherever a plan is read: GraphQL by
+    # hostname or identifier, REST, search and exports. It is independent of `published_at`,
+    # which says only whether the production surface has been switched on.
+    #
+    # The vocabulary is shared with `RestrictedVisibilityModel`, which gives indicators and
+    # attribute types the same two states one level down. That mixin defaults to PUBLIC and
+    # filters objects within a plan the viewer can already reach; this field gates the plan
+    # itself and so defaults to INTERNAL, which is why the choices are reused but the mixin
+    # is not inherited.
+    visibility = models.CharField(
+        max_length=20,
+        choices=RestrictedVisibilityModel.VisibilityState.choices,
+        default=RestrictedVisibilityModel.VisibilityState.INTERNAL,
+        verbose_name=_('visibility'),
+        help_text=_(
+            'Internal: only signed-in users who have been granted access to this plan can view it. '
+            'Public: anyone can view it, without signing in.',
+        ),
+    )
     archived_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name=_('archived at'))
 
     usage_status = models.CharField(
