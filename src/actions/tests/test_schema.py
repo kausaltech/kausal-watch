@@ -8,6 +8,8 @@ from django.utils import timezone
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.models.features import OrderBy, PlanFeatures
 from actions.tests.factories import (
     ActionContactFactory,
@@ -71,14 +73,13 @@ def test_plan_domain_node(graphql_client_query_data):
 
 
 @pytest.mark.parametrize('published', [False, True])
-@pytest.mark.parametrize('expose_to_auth_only', [False, True])
-def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose_to_auth_only):
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
+def test_plan_node(graphql_client_query_data, plan_with_pages, published, visibility):
     plan = plan_with_pages
+    plan.visibility = visibility
     if not published:
         plan.published_at = None
-        plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_to_auth_only
-        plan.features.save()
-        plan.save()
+    plan.save()
     domain = PlanDomainFactory.create(plan=plan)
     action_schedule = ActionScheduleFactory.create(plan=plan)
     action = ActionFactory.create(plan=plan, schedule=[action_schedule])
@@ -290,24 +291,22 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose
             'kausalPathsInstanceUuid': plan.kausal_paths_instance_uuid,
         },
     }
-    if not published and expose_to_auth_only:
+    if visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected = {'plan': None}  # type: ignore[dict-item]
 
     assert data == expected
 
 
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
-def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose_to_authenticated_only):
+@pytest.mark.parametrize('visibilities', itertools.product(RestrictedVisibilityModel.VisibilityState, repeat=2))
+def test_plan_node_superseded_by(graphql_client_query_data, published_at, visibilities):
     published_at1, published_at2 = published_at
-    exposed_auth_only1, exposed_auth_only2 = expose_to_authenticated_only
-    plan1 = PlanFactory(
-        published_at=published_at1, features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only1
-    )
+    visibility1, visibility2 = visibilities
+    plan1 = PlanFactory(published_at=published_at1, visibility=visibility1)
     plan2 = PlanFactory(
         superseded_by=plan1,
         published_at=published_at2,
-        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only2,
+        visibility=visibility2,
     )
 
     data = graphql_client_query_data(
@@ -337,11 +336,11 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose
                 '__typename': 'Plan',
                 'id': plan1.identifier,
             }
-            if published_at1 or not exposed_auth_only1
+            if visibility1 == RestrictedVisibilityModel.VisibilityState.PUBLIC
             else None,
             'supersededPlans': [],
         }
-        if published_at2 or not exposed_auth_only2
+        if visibility2 == RestrictedVisibilityModel.VisibilityState.PUBLIC
         else None,
     }
     assert data == expected
@@ -349,17 +348,15 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose
 
 @pytest.mark.parametrize('recursive', [False, True])
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
-def test_plan_node_superseding_plans(graphql_client_query_data, recursive, published_at, expose_to_authenticated_only):
+@pytest.mark.parametrize('visibilities', itertools.product(RestrictedVisibilityModel.VisibilityState, repeat=2))
+def test_plan_node_superseding_plans(graphql_client_query_data, recursive, published_at, visibilities):
     published_at1, published_at2 = published_at
-    expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
-    plan1 = PlanFactory(
-        published_at=published_at1, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1
-    )
+    visibility1, visibility2 = visibilities
+    plan1 = PlanFactory(published_at=published_at1, visibility=visibility1)
     plan2 = PlanFactory(
         superseded_by=plan1,
         published_at=published_at2,
-        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2,
+        visibility=visibility2,
     )
     plan3 = PlanFactory(superseded_by=plan2)
 
@@ -380,9 +377,9 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive, publi
     )
 
     expected_superseding_plans = []
-    if published_at2 or not expose_to_auth_only2:
+    if visibility2 == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected_superseding_plans.append(plan2)
-    if recursive and (published_at1 or not expose_to_auth_only1):
+    if recursive and visibility1 == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected_superseding_plans.append(plan1)
 
     expected = {
@@ -403,20 +400,20 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive, publi
 
 @pytest.mark.parametrize('recursive', [False, True])
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
-def test_plan_node_superseded_plans(graphql_client_query_data, recursive, published_at, expose_to_authenticated_only):
+@pytest.mark.parametrize('visibilities', itertools.product(RestrictedVisibilityModel.VisibilityState, repeat=2))
+def test_plan_node_superseded_plans(graphql_client_query_data, recursive, published_at, visibilities):
     published_at1, published_at2 = published_at
-    expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
+    visibility1, visibility2 = visibilities
     plan1 = PlanFactory()
     plan2 = PlanFactory(
         superseded_by=plan1,
         published_at=published_at1,
-        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1,
+        visibility=visibility1,
     )
     plan3 = PlanFactory(
         superseded_by=plan2,
         published_at=published_at2,
-        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2,
+        visibility=visibility2,
     )
 
     data = graphql_client_query_data(
@@ -439,9 +436,9 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive, publis
         variables={'plan': plan1.identifier, 'recursive': recursive},
     )
     expected_superseded_plans = []
-    if published_at1 or not expose_to_auth_only1:
+    if visibility1 == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected_superseded_plans = [plan2]
-    if recursive and (published_at2 or not expose_to_auth_only2):
+    if recursive and visibility2 == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected_superseded_plans.append(plan3)
     expected = {
         'plan': {
@@ -903,7 +900,7 @@ def test_category_type_node(
 
 
 @pytest.mark.parametrize('published', [False, True])
-@pytest.mark.parametrize('expose_to_authenticated_only', [False, True])
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_category_node(
     graphql_client_query_data,
     plan_with_pages: Plan,
@@ -913,12 +910,11 @@ def test_category_node(
     attribute_rich_text,
     attribute_choice,
     published,
-    expose_to_authenticated_only,
+    visibility,
 ):
     plan = plan_with_pages
     plan.published_at = timezone.now() - timedelta(days=1) if published else None
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_to_authenticated_only
-    plan.features.save()
+    plan.visibility = visibility
     plan.save()
 
     child_category = CategoryFactory.create(parent=category)
@@ -968,7 +964,7 @@ def test_category_node(
         variables={'plan': plan.identifier, 'lang': plan.primary_language},
     )
 
-    if not published and expose_to_authenticated_only:
+    if visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
         assert data['planCategories'] is None
         return
 

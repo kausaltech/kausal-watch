@@ -7,6 +7,8 @@ from django.http import Http404
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.tests.factories import PlanFactory
 
 
@@ -105,7 +107,7 @@ class TestExportReportView:
             self._get(rf, 'does-not-exist')
 
     def test_unpublished_plan_hidden_from_anonymous_user_raises_404(self, rf):
-        plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
+        plan = PlanFactory.create(published_at=None, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
         with pytest.raises(Http404):
             self._get(rf, plan.identifier)
 
@@ -115,7 +117,7 @@ class TestExportReportView:
             self._get(rf, plan.identifier, user=user_factory(is_superuser=True))
 
     def test_unpublished_plan_is_exported_for_user_who_may_view_it(self, rf, mock_export, user_factory):
-        plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
+        plan = PlanFactory.create(published_at=None, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
         response = self._get(rf, plan.identifier, user=user_factory(is_superuser=True))
         assert response.status_code == 200
 
@@ -195,9 +197,8 @@ class TestExportVisibilityForUser:
     def _unpublished_plan(self, plan_with_pages):
         plan = plan_with_pages
         plan.published_at = None
+        plan.visibility = RestrictedVisibilityModel.VisibilityState.INTERNAL
         plan.save()
-        plan.features.expose_unpublished_plan_only_to_authenticated_user = True
-        plan.features.save()
         return plan
 
     def test_unpublished_plan_export_contains_actions_for_permitted_user(self, plan_with_pages, user_factory):

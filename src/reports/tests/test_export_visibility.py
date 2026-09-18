@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.tests.factories import ActionFactory
 
 from .fixtures import *
@@ -49,11 +51,10 @@ class TestActionIdsFilter:
 
 @pytest.fixture
 def hidden_plan(plan, plan_features):
-    """Make `plan` unpublished and reachable only by authenticated users who may view it."""
+    """Make `plan` reachable only by authenticated users who may view it."""
     plan.published_at = None
+    plan.visibility = RestrictedVisibilityModel.VisibilityState.INTERNAL
     plan.save()
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = True
-    plan.features.save()
     return plan
 
 

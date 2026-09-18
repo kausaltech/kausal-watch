@@ -6,6 +6,8 @@ from django.utils import timezone
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.models.features import PlanFeatures
 from actions.tests.factories import ActionContactFactory, ActionFactory, ActionResponsiblePartyFactory, PlanFactory
 from orgs.tests.factories import OrganizationClassFactory, OrganizationFactory
@@ -77,15 +79,15 @@ def test_person_node(action_contact_person_user: User, graphql_client_query_data
 
 
 @pytest.mark.parametrize('published', [False, True])
-@pytest.mark.parametrize('expose_to_auth_only', [False, True])
-def test_organization_class_node(graphql_client_query_data, published, expose_to_auth_only):
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
+def test_organization_class_node(graphql_client_query_data, published, visibility):
     org_class = OrganizationClassFactory.create()
     organization = OrganizationFactory.create(classification=org_class)
 
     plan = PlanFactory.create(
         organization=organization,
         published_at=timezone.now() - timedelta(days=1) if published else None,
-        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only,
+        visibility=visibility,
     )
     action = ActionFactory.create(plan=plan)
     ActionResponsiblePartyFactory.create(action=action, organization=organization)
@@ -115,7 +117,7 @@ def test_organization_class_node(graphql_client_query_data, published, expose_to
                 },
             }
         ]
-        if published or not expose_to_auth_only
+        if visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
         else [],
     }
 
@@ -124,21 +126,22 @@ def test_organization_class_node(graphql_client_query_data, published, expose_to
 
 @pytest.mark.parametrize(('main_plan_published', 'arp_plan_published'), list(itertools.product([False, True], repeat=2)))
 @pytest.mark.parametrize(
-    ('main_plan_exposed_only_to_auth', 'arp_plan_exposed_only_to_auth'), list(itertools.product([False, True], repeat=2))
+    ('main_plan_visibility', 'arp_plan_visibility'),
+    list(itertools.product(RestrictedVisibilityModel.VisibilityState, repeat=2)),
 )
 def test_organization_node(
     graphql_client_query_data,
     main_plan_published,
     arp_plan_published,
-    main_plan_exposed_only_to_auth,
-    arp_plan_exposed_only_to_auth,
+    main_plan_visibility,
+    arp_plan_visibility,
 ):
     organization = OrganizationFactory.create()
 
     plan = PlanFactory.create(
         organization=organization,
         published_at=timezone.now() - timedelta(days=1) if main_plan_published else None,
-        features__expose_unpublished_plan_only_to_authenticated_user=main_plan_exposed_only_to_auth,
+        visibility=main_plan_visibility,
     )
 
     action = ActionFactory.create(plan=plan)
@@ -149,7 +152,7 @@ def test_organization_node(
     arp = ActionResponsiblePartyFactory.create(
         organization=organization,
         action__plan__published_at=timezone.now() - timedelta(days=1) if arp_plan_published else None,
-        action__plan__features__expose_unpublished_plan_only_to_authenticated_user=arp_plan_exposed_only_to_auth,
+        action__plan__visibility=arp_plan_visibility,
     )
     plan_with_action_responsiblity = arp.action.plan
     assert plan_with_action_responsiblity != plan
@@ -182,19 +185,19 @@ def test_organization_node(
     )
     expected_plans = []
 
-    if not main_plan_published and main_plan_exposed_only_to_auth:
+    if main_plan_visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
         assert data['planOrganizations'] == []
         return
-    # FIXME?: Not sure if this is the correct behavior, but it is what we have now.
-    # Plans dont show up in the plansWithActionResponsibilities field if they are not published,
-    # even if the expose_unpublished_plan_only_to_authenticated_user feature is false.
+    # `plansWithActionResponsibilities` requires both halves: the plan must be readable
+    # (visibility) and its production surface must be switched on (published_at), because the
+    # field lists plans a visitor could actually follow. See resolve_plans_with_action_responsibilities.
     if main_plan_published:
         expected_plans.append({
             '__typename': 'Plan',
             'id': str(plan.identifier),
         })
 
-    if arp_plan_published:
+    if arp_plan_published and arp_plan_visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         expected_plans.append({
             '__typename': 'Plan',
             'id': str(plan_with_action_responsiblity.identifier),

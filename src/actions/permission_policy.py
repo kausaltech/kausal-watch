@@ -3,9 +3,10 @@ from __future__ import annotations
 import typing
 
 from django.db.models import Q
-from django.utils import timezone
 
 from kausal_common.models.permission_policy import ModelPermissionPolicy, PermissionBlock
+
+from aplans.utils import RestrictedVisibilityModel
 
 if typing.TYPE_CHECKING:
     from kausal_common.models.permission_policy import BaseObjectAction, ObjectSpecificAction
@@ -36,14 +37,12 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
         """
         Construct permission query for anonymous users.
 
-        Allow viewing of plans if the expose_unpublished_plan_only_to_authenticated_user flag is False.
-        If the expose_unpublished_plan_only_to_authenticated_user flag is True, only allow viewing of published plans.
+        `visibility` is the whole answer: a public plan is readable by anyone, an internal one
+        by nobody who is not signed in. Whether the plan has been published is a property of its
+        production surface and says nothing about who may read the plan.
         """
         if action == 'view':
-            return Q(features__expose_unpublished_plan_only_to_authenticated_user=False) | Q(
-                published_at__isnull=False,
-                published_at__lte=timezone.now(),
-            )
+            return Q(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return None
 
     def construct_perm_q(self, user: User, action: ObjectSpecificAction) -> Q | None:
@@ -56,11 +55,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
             # get_adminable_plans() already filters out inactive plans for non-superusers,
             # and get_viewable_plans() also excludes inactive plans.
             viewable_plans = user.get_adminable_plans().union(user.get_viewable_plans()).values_list('id', flat=True)
-            return (
-                Q(id__in=viewable_plans)
-                | Q(published_at__isnull=False, published_at__lte=timezone.now())
-                | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
-            )
+            return Q(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC) | Q(id__in=viewable_plans)
         return None
 
     def user_has_perm(self, user: User, action: ObjectSpecificAction, obj: Plan) -> bool:
@@ -68,11 +63,9 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
         if action == 'view':
             if not obj.is_active:
                 return False
-            if user.can_access_public_site(obj):
+            if obj.visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
                 return True
-            if obj.features.expose_unpublished_plan_only_to_authenticated_user:
-                return obj.published_at is not None and obj.published_at <= timezone.now()
-            return True  # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
+            return user.can_access_public_site(obj)
         # Add other permission checks when needed
         return False
 
@@ -81,9 +74,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
         if action == 'view':
             if not obj.is_active:
                 return False
-            if obj.features.expose_unpublished_plan_only_to_authenticated_user:
-                return obj.published_at is not None and obj.published_at <= timezone.now()
-            return True  # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
+            return obj.visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
         return False
 
     def user_can_create(self, user: User, context: None) -> bool:

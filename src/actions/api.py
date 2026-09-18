@@ -178,9 +178,10 @@ class PlanViewSet(viewsets.ModelViewSet[Plan]):
 
         queryset = queryset.select_related('organization')
 
-        if user is not None:
-            return queryset.live() | queryset.filter(id__in=user.get_adminable_plans())
-        return queryset.live()
+        # `visible_for_user` is the single gate (PlanPermissionPolicy). This used to derive its
+        # own answer as `live() | adminable`, which was equivalent only while a launched plan was
+        # necessarily public; it would now serve an internal plan that has launched.
+        return queryset.visible_for_user(user if user is not None else AnonymousUser())
 
     @classmethod
     def get_default_plan(

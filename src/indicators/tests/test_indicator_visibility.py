@@ -139,7 +139,7 @@ class TestRelatedQuerySetsFollowTheSameRule:
 
     def test_levels_of_a_plan_hidden_from_the_user_are_excluded(self, plan_admin_user, public_indicator):
         """The plan constraint must apply to authenticated users too, not only anonymous ones."""
-        hidden_plan = PlanFactory.create(published_at=None, features__expose_unpublished_plan_only_to_authenticated_user=True)
+        hidden_plan = PlanFactory.create(published_at=None, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
         elsewhere = IndicatorFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         IndicatorLevelFactory.create(indicator=elsewhere, plan=hidden_plan)
 

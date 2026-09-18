@@ -17,6 +17,7 @@ from factory.declarations import LazyAttribute, RelatedFactory, SelfAttribute, S
 from factory.helpers import post_generation
 
 from aplans.factories import ModelFactory
+from aplans.utils import RestrictedVisibilityModel
 
 from actions.blocks.action_list import ActionListBlock
 from actions.blocks.category_list import CategoryListBlock
@@ -97,6 +98,8 @@ class PlanFactory(ModelFactory[Plan]):
     other_languages = ['fi']
     country = 'FI'
     published_at = make_aware(datetime.datetime(2021, 1, 1))  # noqa: DTZ001
+    # To make testing easier, change the default in tests
+    visibility = RestrictedVisibilityModel.VisibilityState.PUBLIC
     general_content = RelatedFactory[Plan, SiteGeneralContent](
         'content.tests.factories.SiteGeneralContentFactory', factory_related_name='plan'
     )
@@ -131,8 +134,6 @@ class PlanFactory(ModelFactory[Plan]):
 @mute_signals(post_save)
 class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
     plan = SubFactory[PlanFeatures, Plan](PlanFactory, features=None)
-    # To make testing easier, change the default in tests
-    expose_unpublished_plan_only_to_authenticated_user = False
 
 
 @mute_signals(post_save)

@@ -14,6 +14,8 @@ from django.utils import timezone
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 pytestmark = pytest.mark.django_db
 
 PARENT_QUERY = """
@@ -54,23 +56,21 @@ CHILDREN_QUERY = """
 
 
 def _make_published_plan(plan_factory, **kwargs):
-    plan = plan_factory(
+    """Build a plan anyone may read, whose site has also launched."""
+    return plan_factory(
         published_at=timezone.now() - timedelta(days=1),
+        visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
         **kwargs,
     )
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = False
-    plan.features.save()
-    return plan
 
 
 def _make_unpublished_plan(plan_factory, **kwargs):
-    plan = plan_factory(
+    """Build a plan only users with access may read, whose site has not launched."""
+    return plan_factory(
         published_at=None,
+        visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL,
         **kwargs,
     )
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = True
-    plan.features.save()
-    return plan
 
 
 class TestParentPlanVisibility:

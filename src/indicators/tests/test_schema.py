@@ -146,12 +146,10 @@ def test_related_indicator_node(graphql_client_query_data):
 
 
 @pytest.mark.parametrize('published_at', [None, timezone.now() - timedelta(days=1)])
-@pytest.mark.parametrize('expose_to_auth_only', [False, True])
-def test_action_indicator_node(graphql_client_query_data, published_at, expose_to_auth_only):
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
+def test_action_indicator_node(graphql_client_query_data, published_at, visibility):
     indicator = IndicatorFactory.create()
-    plan = PlanFactory.create(
-        published_at=published_at, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only
-    )
+    plan = PlanFactory.create(published_at=published_at, visibility=visibility)
     action = ActionFactory.create(plan=plan)
     action_indicator = ActionIndicatorFactory.create(indicator=indicator, action=action)
     data = graphql_client_query_data(
@@ -195,7 +193,7 @@ def test_action_indicator_node(graphql_client_query_data, published_at, expose_t
                     'indicatesActionProgress': action_indicator.indicates_action_progress,
                 }
             ]
-            if published_at or not expose_to_auth_only
+            if visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
             else [],
         },
     }
@@ -1022,12 +1020,10 @@ def test_related_indicators_visibility(graphql_client_query_data):
         None,  # Unpublished
     ],
 )
-@pytest.mark.parametrize('expose_to_auth_only', [False, True])
-def test_indicator_plans_visibility(graphql_client_query_data, published_at, expose_to_auth_only):
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
+def test_indicator_plans_visibility(graphql_client_query_data, published_at, visibility):
     """Test plan visibility in indicator's plans field for unauthenticated users."""
-    plan = PlanFactory.create(
-        published_at=published_at, features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only
-    )
+    plan = PlanFactory.create(published_at=published_at, visibility=visibility)
     indicator = IndicatorFactory.create()
     indicator.plans.add(plan)
 
@@ -1051,7 +1047,7 @@ def test_indicator_plans_visibility(graphql_client_query_data, published_at, exp
                     'id': plan.identifier,
                 }
             ]
-            if published_at or not expose_to_auth_only
+            if visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
             else [],
         }
     }

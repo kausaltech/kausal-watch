@@ -6,6 +6,8 @@ from django.utils import timezone
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.models.plan import PublicationStatus
 
 pytestmark = pytest.mark.django_db
@@ -76,7 +78,7 @@ GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME = """
         (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED, 'test_redirect.com'),
     ],
 )
-@pytest.mark.parametrize(argnames='expose_flag', argvalues=[True, False])
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_get_plans_by_hostname(
     graphql_client_query_data,
     plan_factory,
@@ -85,7 +87,7 @@ def test_get_plans_by_hostname(
     delta_minutes,
     expected_publication_status,
     redirect_to,
-    expose_flag,
+    visibility,
 ):
     """
     Test getPlansByHostname query with excplicit PlanDomains and without authentication.
@@ -96,9 +98,7 @@ def test_get_plans_by_hostname(
     published_at = None
     if delta_minutes is not None:
         published_at = timezone.now() + timedelta(minutes=delta_minutes)
-    plan = plan_factory(published_at=published_at)
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_flag
-    plan.features.save()
+    plan = plan_factory(published_at=published_at, visibility=visibility)
 
     domain = plan_domain_factory(
         plan=plan, publication_status_override=publication_status_override, redirect_to_hostname=redirect_to
@@ -122,8 +122,13 @@ def test_get_plans_by_hostname(
             'publishedAt': published_at.isoformat() if published_at else None,
         },
     ]
-    publication_status_gates_visibility = expose_flag or publication_status_override is not None
-    if expected_publication_status == PublicationStatus.PUBLISHED or not publication_status_gates_visibility:
+    if publication_status_override == PublicationStatus.PUBLISHED:
+        is_visible = True
+    elif publication_status_override == PublicationStatus.UNPUBLISHED:
+        is_visible = False
+    else:
+        is_visible = visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
+    if is_visible:
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected
@@ -156,7 +161,7 @@ def test_plans_for_hostname_reuses_prefetched_domains(
 )
 @pytest.mark.parametrize('publication_state', ['published', 'scheduled', 'unpublished'])
 @pytest.mark.parametrize('user_kind', ['anonymous', 'plan_admin', 'superuser'])
-@pytest.mark.parametrize('expose_flag', [True, False])
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_plan_type_respects_publication_visibility(
     client,
     graphql_client_query_data,
@@ -168,16 +173,14 @@ def test_plan_type_respects_publication_visibility(
     domain_kind,
     publication_state,
     user_kind,
-    expose_flag,
+    visibility,
 ):
     published_at = {
         'published': timezone.now() - timedelta(minutes=5),
         'scheduled': timezone.now() + timedelta(minutes=5),
         'unpublished': None,
     }[publication_state]
-    plan = plan_factory(published_at=published_at)
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_flag
-    plan.features.save()
+    plan = plan_factory(published_at=published_at, visibility=visibility)
 
     override = None
     if domain_kind == 'implicit':
@@ -206,7 +209,7 @@ def test_plan_type_respects_publication_visibility(
         is_visible = True
     elif domain_kind == 'unpublished_override':
         is_visible = False
-    elif not expose_flag or publication_state == 'published':
+    elif visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         is_visible = True
     else:
         is_visible = user_kind in ('plan_admin', 'superuser')
@@ -262,20 +265,18 @@ def hostname_plan_domains_without_country_wildcard(request, settings):
 
 
 @pytest.mark.parametrize('delta_minutes', [-5, 5, None])
-@pytest.mark.parametrize(argnames='expose_flag', argvalues=[True, False])
+@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_plans_for_hostname_without_domains(
     graphql_client_query_data,
     hostname_plan_domains_without_country_wildcard,
     plan_factory,
     delta_minutes,
-    expose_flag,
+    visibility,
 ):
     published_at = None
     if delta_minutes is not None:
         published_at = timezone.now() + timedelta(minutes=delta_minutes)
-    plan = plan_factory(published_at=published_at)
-    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_flag
-    plan.features.save()
+    plan = plan_factory(published_at=published_at, visibility=visibility)
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
         variables={'hostname': f'{plan.identifier}.dummy.io'},
@@ -283,8 +284,7 @@ def test_plans_for_hostname_without_domains(
     )
     planData = data['plansForHostname'][0]
     assert len(planData['domains']) == 0
-    plan_is_published = delta_minutes is not None and delta_minutes < 0
-    if expose_flag is False or plan_is_published:
+    if visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
         assert planData['identifier'] == plan.identifier
     else:
         assert 'identifier' not in planData
