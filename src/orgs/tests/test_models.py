@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from django.contrib.gis.geos import Point
+
 import pytest
 
 from actions.tests.factories import PlanFactory
@@ -12,6 +14,27 @@ if TYPE_CHECKING:
     from users.models import User
 
 pytestmark = pytest.mark.django_db
+
+
+def test_organization_coordinates_follow_location():
+    organization = OrganizationFactory.create(location=Point(24.9384, 60.1699, srid=4326))
+
+    assert organization.latitude == 60.1699
+    assert organization.longitude == 24.9384
+
+    organization.location = Point(25.0, 61.0, srid=4326)
+    organization.save(update_fields={'location'})
+    organization.refresh_from_db()
+
+    assert organization.latitude == 61.0
+    assert organization.longitude == 25.0
+
+    organization.location = None
+    organization.save(update_fields={'location'})
+    organization.refresh_from_db()
+
+    assert organization.latitude is None
+    assert organization.longitude is None
 
 
 def test_organization_user_can_edit_related_plan_general_plan_admin_false(person: Person):
