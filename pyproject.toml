@@ -200,8 +200,8 @@ prod = [
 ]
 
 [tool.uv]
-sources.django-modeltrans = { url = "https://github.com/kausaltech/django-modeltrans/archive/37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84.zip" }
-sources.graphene-django-optimizer = { url = "https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip" }
+sources.django-modeltrans = { git = "https://github.com/kausaltech/django-modeltrans", rev = "37ed924498fa0e6a431e0b6fc1e6982a3f3b3a84" }
+sources.graphene-django-optimizer = { git = "https://github.com/kausaltech/graphene-django-optimizer", rev = "f18d827d0d58c1148288b6b886c167dd2fc1931a" }
 environments = [
   "python_full_version >= '3.14' and sys_platform == 'darwin' and platform_machine == 'arm64'",
   "python_full_version >= '3.14' and sys_platform == 'linux' and platform_machine == 'x86_64'",
