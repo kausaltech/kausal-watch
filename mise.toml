@@ -1,2 +1,8 @@
 #:schema https://mise.jdx.dev/schema/mise.json
 # Common backend configuration is linked from kausal_common into mise/.
+
+[vars]
+product_name = "Watch"
+backend_name = "watch-backend"
+portless_backend_port = "8042"
+graphql_schema = "aplans.schema"
