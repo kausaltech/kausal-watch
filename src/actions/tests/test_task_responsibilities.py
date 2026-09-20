@@ -649,18 +649,14 @@ def _plan_with_tasks(plan_factory, action_factory, task_count: int):
     return plan
 
 
-def test_graphql_task_assignments_cost_at_most_one_query_per_task(graphql_client_query_data, plan_factory, action_factory):
+def test_graphql_task_assignments_do_not_scale_with_task_count(graphql_client_query_data, plan_factory, action_factory):
     """
-    Pin the known query cost of task assignments: one query per task, and nothing worse.
+    Task assignments must cost the same however many tasks an action has.
 
-    Responsible parties are prefetched and cost nothing per task. Contact persons cost one query each,
-    because `ActionTaskNode.resolve_contact_persons` is a custom resolver (it applies the privacy
-    redaction) and graphene-django-optimizer does not apply a nested type's prefetch hints to one — the
-    relation is fetched per task no matter which hint form is used. Removing the custom resolver removes
-    the per-task query entirely, which is the measurement behind the two options recorded in the plan.
-
-    A budget of zero extra queries is the goal; this test exists so the cost cannot quietly grow past one
-    per task (it was two before the person FK was served from the plan cache).
+    The optimizer builds the nested prefetch for the responsible parties by itself, but not for the
+    contact persons, whose resolver is custom because it applies the redaction; those are loaded for
+    the whole plan into the request cache instead. Without either, an action list costs one query per
+    task.
     """
     task_counts = (2, 8)
     small = _plan_with_tasks(plan_factory, action_factory, task_counts[0])
@@ -669,10 +665,31 @@ def test_graphql_task_assignments_cost_at_most_one_query_per_task(graphql_client
     small_count = _query_count_for_plan(graphql_client_query_data, small)
     large_count = _query_count_for_plan(graphql_client_query_data, large)
 
-    extra_tasks = task_counts[1] - task_counts[0]
-    assert large_count - small_count <= extra_tasks, (
-        f'{large_count} queries for {task_counts[1]} tasks vs {small_count} for {task_counts[0]}: more than one query per task'
+    assert large_count == small_count, (
+        f'{large_count} queries for {task_counts[1]} tasks vs {small_count} for {task_counts[0]}'
     )
+
+
+def test_an_action_query_does_not_read_the_contact_person_table(graphql_client_query_data, plan, action):
+    """
+    A query that asks nothing about a task's contact persons must not read them.
+
+    The plan's people are loaded for the contact persons of its actions. Reaching the ones assigned to
+    its tasks from there adds no query, which is why it is easy to miss, but it makes every action
+    query scan and materialize rows that only a task's own resolver ever needs.
+    """
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskContactFactory.create(task=task)
+
+    with CaptureQueriesContext(connection) as ctx:
+        data = graphql_client_query_data(
+            'query($plan: ID!) { planActions(plan: $plan) { tasks { name } } }',
+            variables={'plan': plan.identifier},
+        )
+    assert data['planActions']
+
+    reading_assignments = [query['sql'] for query in ctx.captured_queries if 'actiontaskcontactperson' in query['sql']]
+    assert not reading_assignments, f'{len(reading_assignments)} of the queries read the contact person table'
 
 
 def test_cross_plan_task_contacts_use_their_own_plans_privacy_setting(
@@ -1072,8 +1089,8 @@ def test_related_plan_actions_do_not_query_a_person_per_assignment(
     `relatedPlanActions` returns other plans' actions, whose people also have to come from the cache.
 
     Each plan holds its own cache, so a resolver that reaches across plans has to fill all of them. The
-    budget is the same one per task that `test_graphql_task_assignments_cost_at_most_one_query_per_task`
-    pins; without the caches it was one more per assignment on top.
+    budget is the same one that `test_graphql_task_assignments_do_not_scale_with_task_count` pins;
+    without the caches each assignment cost a query of its own on top.
     """
 
     def related_plan_with_tasks(task_count: int):
@@ -1101,11 +1118,7 @@ def test_related_plan_actions_do_not_query_a_person_per_assignment(
     small = count_queries_for(related_plan_with_tasks(task_counts[0]))
     large = count_queries_for(related_plan_with_tasks(task_counts[1]))
 
-    extra_tasks = task_counts[1] - task_counts[0]
-    assert large - small <= extra_tasks, (
-        f'{large} queries for {task_counts[1]} tasks vs {small} for {task_counts[0]}: '
-        'more than one query per task'
-    )
+    assert large == small, f'{large} queries for {task_counts[1]} tasks vs {small} for {task_counts[0]}'
 
 
 def test_related_plan_actions_do_not_load_people_of_untouched_plans(
@@ -1139,3 +1152,35 @@ def test_related_plan_actions_do_not_load_people_of_untouched_plans(
     many = count_queries_for(parent_with_related_plans(6))
 
     assert many <= few, f'{many} queries for six related plans against {few} for two'
+
+
+def test_a_query_without_assignee_fields_does_not_load_them(graphql_client_query_data, plan, action):
+    """
+    Assignments are loaded only when a query asks for them.
+
+    Most action queries ask nothing about assignees, and every query against a plan without the feature
+    asks nothing that can be answered, so neither should pay for loading them.
+    """
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task)
+
+    def count_queries_for(query: str) -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            data = graphql_client_query_data(query, variables={'plan': plan.identifier})
+        assert data['planActions']
+        return len(ctx)
+
+    without = count_queries_for('query($plan: ID!) { planActions(plan: $plan) { tasks { name } } }')
+    with_assignees = count_queries_for(
+        """
+        query($plan: ID!) {
+          planActions(plan: $plan) { tasks { responsibleParties { id } contactPersons { id } } }
+        }
+        """
+    )
+
+    assert with_assignees > without, 'the assignments are loaded when they are asked for'
+    assert with_assignees - without == 2, (
+        f'{with_assignees - without} extra queries; one per relation is expected'
+    )

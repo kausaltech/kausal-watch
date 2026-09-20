@@ -1416,9 +1416,9 @@ def _plan_cache_for_task(task: ActionTask, info: GQLInfo) -> PlanSpecificCache |
     context would apply A's contact-person privacy settings to another plan's people.
 
     This costs no query per row — the action is already attached to the task by the related manager and
-    `plan_id` is a column on it — and `for_plan_id()` caches one plan per request.
+    `plan_id` is a column on it — and `for_plan_id()` caches one plan per request. It deliberately loads
+    nothing: the caller decides whether to, and the rows it then loads carry their own person.
     """
-    _populate_plan_people_cache(info, task.action.plan_id)
     cache = info.context.cache.for_plan_id(task.action.plan_id)
     if not cache.plan.is_visible_for_user(info.context.user):
         return None
@@ -1471,14 +1471,14 @@ class ActionTaskNode(DjangoNode[ActionTask]):
     comment = graphene.String(deprecation_reason='Use "details" instead')
 
     @staticmethod
-    @gql_optimizer.resolver_hints(
-        model_field='contact_persons',
-    )
     def resolve_contact_persons(root: ActionTask, info: GQLInfo):
         cache = _plan_cache_for_task(root, info)
         if cache is None:
             return []
-        return root.get_redacted_contact_persons(info.context.user, cache)
+        from_revision = root.assignments_from_revision('contact_persons')
+        if from_revision is None:
+            _populate_task_contact_persons(info, cache.plan.pk)
+        return root.get_redacted_contact_persons(info.context.user, cache, rows=from_revision)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -2163,13 +2163,14 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
     info.context.cache.plans_with_people_loaded.add(plan_id)
     cache = info.context.cache.for_plan_id(plan_id)
     plan = cache.plan
-    # Task-level assignees have to be in the cache too, or each one costs a query when its resolver
-    # falls back to the database.
+    # Only the contact persons of the plan's actions: the people assigned to its tasks are loaded by
+    # the resolver that serves them, which selects each row with its person, so reaching them from
+    # here would make every action query pay for rows that nothing here needs. The organizations
+    # responsible for its tasks are still taken in below, because those rows are prefetched by the
+    # optimizer, which does not select the organization with them.
     persons_queryset = (
         Person.objects.get_queryset()
-        .filter(
-            Q(actioncontactperson__action__plan=plan) | Q(contact_for_action_tasks__task__action__plan=plan),
-        )
+        .filter(actioncontactperson__action__plan=plan)
         .distinct()
         # `Person.get_redacted_copy()` builds the copy with the person's organization, so without this
         # the redacting levels cost a query per contact person.
@@ -2187,6 +2188,28 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
         .distinct()
         .select_related('logo')
         .prefetch_related(Prefetch('logo__renditions', to_attr='prefetched_renditions'))
+    )
+
+
+
+def _populate_task_contact_persons(info: GQLInfo, plan_id: int) -> None:
+    """
+    Load a plan's task contact persons into the request cache, once per request.
+
+    Called from the resolver that serves them rather than with the plan's people: a query that selects
+    nothing about a task's contact persons, which is most of them, should not pay for this.
+
+    The rows are selected with their task and action, because they do not come from a task's own
+    relation and the node resolvers read the owning plan through them.
+    """
+    if plan_id in info.context.cache.plans_with_task_contact_persons_loaded:
+        return
+    info.context.cache.plans_with_task_contact_persons_loaded.add(plan_id)
+    cache = info.context.cache.for_plan_id(plan_id)
+    cache.populate_task_contact_persons(
+        ActionTaskContactPerson.objects.filter(task__action__plan=cache.plan).select_related(
+            'person__organization', 'task__action'
+        ),
     )
 
 
