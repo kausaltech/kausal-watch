@@ -2087,7 +2087,25 @@ class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelate
     def initialize_plan_defaults(self, plan: Plan):
         pass
 
-    def get_redacted_contact_persons(self, user: UserOrAnon, cache: PlanSpecificCache | None = None):
+    def assignments_from_revision(self, relation_name: str) -> list[Any] | None:
+        """
+        Return the assignments this task carries in memory, or None if it was loaded from the database.
+
+        An action requested at a draft workflow state is rebuilt from its revision, and its tasks carry
+        the assignments the draft holds. Those have to win over anything loaded from the database, which
+        still holds what was last published.
+        """
+        cluster = getattr(self, '_cluster_related_objects', None)
+        if cluster is None or relation_name not in cluster:
+            return None
+        return list(getattr(self, relation_name).all())
+
+    def get_redacted_contact_persons(
+        self,
+        user: UserOrAnon,
+        cache: PlanSpecificCache | None = None,
+        rows: list[ActionTaskContactPerson] | None = None,
+    ):
         """
         Get the task's contact persons, redacted according to the plan's contact-person features.
 
@@ -2100,8 +2118,14 @@ class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelate
 
         # Keep the person that was resolved here: re-reading `atcp.person` below would go back to the
         # database once per assignment, because the relation is not selected with its person.
+        # The cache holds the plan's assignments grouped by task, so a list of tasks does not read the
+        # relation once per task; see `PlanSpecificCache.populate_task_contact_persons()`.
+        if rows is None:
+            rows = (
+                cache.task_contact_persons.get(self.pk, []) if cache is not None else list(self.contact_persons.all())
+            )
         visible: list[tuple[ActionTaskContactPerson, Person]] = []
-        for atcp in self.contact_persons.all():
+        for atcp in rows:
             person = (cache.get_person(atcp.person_id) if cache is not None else None) or atcp.person
             if not person.visible_for_user(user=user, plan=plan):
                 continue

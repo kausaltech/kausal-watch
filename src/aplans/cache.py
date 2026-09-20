@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -26,6 +26,8 @@ from pages.models import ActionListPage, IndicatorListPage
 from reports.models import Report
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from django.db.models.base import Model
     from wagtail.models import Page
 
@@ -51,6 +53,7 @@ class PlanSpecificCache:
     persons: dict[int, Person] = field(default_factory=dict)
     organization_action_count_cache: OrganizationActionCountCache | None = None
     schemas_by_model: dict[type[Model], DatasetSchemaQuerySet] = field(default_factory=dict)
+    task_contact_persons: dict[int, list[Any]] = field(default_factory=dict)
 
     @cached_property
     def category_types(self) -> list[CategoryType]:
@@ -225,6 +228,18 @@ class PlanSpecificCache:
         for person in list(persons):
             self.persons[person.pk] = person
 
+    def populate_task_contact_persons(self, contact_persons: Iterable[Any]) -> None:
+        """
+        Group a plan's task contact persons by task.
+
+        Their resolver has to be custom, because it applies the contact-person redaction, and a custom
+        resolver is one the query optimizer will not build a nested prefetch for — so it would otherwise
+        read the relation once per task. Prefetching on the action queryset instead collides with the
+        prefetches the optimizer does register, which vary with the shape of the query.
+        """
+        for assignment in contact_persons:
+            self.task_contact_persons.setdefault(assignment.task_id, []).append(assignment)
+
     def get_organization(self, pk: int) -> Organization | None:
         return self.organizations.get(pk)
 
@@ -313,6 +328,8 @@ class WatchObjectCache:
     # Plans whose contact people and organizations have been loaded; see `populate_people_of_plan()`
     # in `actions.schema`, which is what fills them.
     plans_with_people_loaded: set[int]
+    # Plans whose task contact persons have been loaded, by the resolver that serves them
+    plans_with_task_contact_persons_loaded: set[int]
 
     def __init__(self, user: User | None = None) -> None:
         self.plan_caches = {}
@@ -322,6 +339,7 @@ class WatchObjectCache:
         self.user = user
         self.organization_action_count_cache = None
         self.plans_with_people_loaded = set()
+        self.plans_with_task_contact_persons_loaded = set()
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)
