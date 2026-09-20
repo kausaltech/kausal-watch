@@ -64,7 +64,9 @@ class ReportType(PlanRelatedModelWithRevision):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
     only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
-        default=False, help_text=_('Only plan admins can mark actions as complete for reports of this type')
+        default=False,
+        verbose_name=_('Only plan admins can mark actions as complete'),
+        help_text=_('Only plan admins can mark actions as complete for reports of this type'),
     )
     public_fields: ClassVar[list[str]] = [
         'id',
