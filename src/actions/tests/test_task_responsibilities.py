@@ -48,6 +48,17 @@ from people.tests.factories import PersonFactory
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _task_assignees_enabled(monkeypatch):
+    """
+    Give every plan in this module the task-assignee feature; it is off by default.
+
+    Patching the field default covers the plans these tests create as they go. The tests about a plan
+    that does not have the feature turn it off again on their own plan.
+    """
+    monkeypatch.setattr(PlanFeatures._meta.get_field('has_action_task_assignees'), 'default', True)
+
+
 def _edit_url(action: Action) -> str:
     return reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
 
@@ -653,10 +664,10 @@ def test_graphql_task_assignments_do_not_scale_with_task_count(graphql_client_qu
     """
     Task assignments must cost the same however many tasks an action has.
 
-    The optimizer builds the nested prefetch for the responsible parties by itself, but not for the
-    contact persons, whose resolver is custom because it applies the redaction; those are loaded for
-    the whole plan into the request cache instead. Without either, an action list costs one query per
-    task.
+    Neither relation is served by the optimizer's nested prefetch, because both resolvers are custom:
+    one applies the contact-person redaction, and both answer nothing for a plan without the feature.
+    The rows are loaded for the whole plan into the request cache instead; without that, an action
+    list costs one query per task.
     """
     task_counts = (2, 8)
     small = _plan_with_tasks(plan_factory, action_factory, task_counts[0])
@@ -670,15 +681,17 @@ def test_graphql_task_assignments_do_not_scale_with_task_count(graphql_client_qu
     )
 
 
-def test_an_action_query_does_not_read_the_contact_person_table(graphql_client_query_data, plan, action):
+def test_an_action_query_does_not_read_the_assignment_tables(graphql_client_query_data, plan, action):
     """
-    A query that asks nothing about a task's contact persons must not read them.
+    A query that asks nothing about a task's assignees must not read them at all.
 
-    The plan's people are loaded for the contact persons of its actions. Reaching the ones assigned to
-    its tasks from there adds no query, which is why it is easy to miss, but it makes every action
-    query scan and materialize rows that only a task's own resolver ever needs.
+    The plan's people and organizations are loaded for the contact persons and responsible parties of
+    its actions. Reaching the ones assigned to its tasks from there adds no query, which is why it is
+    easy to miss, but it makes every action query — including every query against a plan without the
+    feature — scan and materialize rows that only a task's own resolvers ever need.
     """
     task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
     ActionTaskContactFactory.create(task=task)
 
     with CaptureQueriesContext(connection) as ctx:
@@ -688,8 +701,12 @@ def test_an_action_query_does_not_read_the_contact_person_table(graphql_client_q
         )
     assert data['planActions']
 
-    reading_assignments = [query['sql'] for query in ctx.captured_queries if 'actiontaskcontactperson' in query['sql']]
-    assert not reading_assignments, f'{len(reading_assignments)} of the queries read the contact person table'
+    reading_assignments = [
+        query['sql']
+        for query in ctx.captured_queries
+        if 'actiontaskresponsibleparty' in query['sql'] or 'actiontaskcontactperson' in query['sql']
+    ]
+    assert not reading_assignments, f'{len(reading_assignments)} of the queries read the assignment tables'
 
 
 def test_cross_plan_task_contacts_use_their_own_plans_privacy_setting(
@@ -1154,6 +1171,74 @@ def test_related_plan_actions_do_not_load_people_of_untouched_plans(
     assert many <= few, f'{many} queries for six related plans against {few} for two'
 
 
+def _disable_task_assignees(plan) -> None:
+    plan.features.has_action_task_assignees = False
+    plan.features.save()
+
+
+def test_the_feature_is_off_by_default(plan_factory, monkeypatch):
+    """Existing and new customers must not get the feature until someone turns it on for them."""
+    monkeypatch.undo()  # drop this module's autouse override of the field default
+
+    assert plan_factory().features.has_action_task_assignees is False
+
+
+def test_the_assignment_panels_are_absent_without_the_feature(rf, action, plan_admin_user):
+    _disable_task_assignees(action.plan)
+
+    nested = _form_class(rf, plan_admin_user, action).formsets['tasks'].form.formsets
+
+    assert 'responsible_parties' not in nested
+    assert 'contact_persons' not in nested
+
+
+def test_graphql_hides_assignments_without_the_feature(graphql_client_query_data, plan, action):
+    """A plan that loses the feature must stop publishing the assignments it already has."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task)
+    _disable_task_assignees(plan)
+
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            tasks { responsibleParties { id } contactPersons { id } }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+
+    tasks = [t for a in data['planActions'] for t in a['tasks']]
+    assert tasks[0]['responsibleParties'] == []
+    assert tasks[0]['contactPersons'] == []
+
+
+def test_rest_api_hides_assignments_without_the_feature(api_client, plan, action, action_task_list_url):
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task)
+    _disable_task_assignees(plan)
+
+    response = api_client.get(action_task_list_url)
+
+    assert response.status_code == 200
+    (payload,) = [t for t in response.json()['results'] if t['id'] == task.pk]
+    assert payload['responsible_parties'] == []
+    assert payload['contact_persons'] == []
+
+
+def test_the_feature_flag_is_exposed_to_the_public_ui(graphql_client_query_data, plan):
+    """The public UI branches on the plan's features, so the flag has to be readable there."""
+    data = graphql_client_query_data(
+        'query($plan: ID!) { plan(id: $plan) { features { hasActionTaskAssignees } } }',
+        variables={'plan': plan.identifier},
+    )
+
+    assert data['plan']['features']['hasActionTaskAssignees'] is True
+
+
 def test_a_query_without_assignee_fields_does_not_load_them(graphql_client_query_data, plan, action):
     """
     Assignments are loaded only when a query asks for them.
@@ -1184,3 +1269,126 @@ def test_a_query_without_assignee_fields_does_not_load_them(graphql_client_query
     assert with_assignees - without == 2, (
         f'{with_assignees - without} extra queries; one per relation is expected'
     )
+
+
+def test_a_plan_without_the_feature_does_not_load_assignments(graphql_client_query_data, plan, action):
+    """Selecting the fields on a plan that lacks the feature costs nothing: the answer is empty."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task)
+    query = """
+        query($plan: ID!) {
+          planActions(plan: $plan) { tasks { responsibleParties { id } contactPersons { id } } }
+        }
+    """
+
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            graphql_client_query_data(query, variables={'plan': plan.identifier})
+        return len(ctx)
+
+    with_feature = count_queries()
+    _disable_task_assignees(plan)
+    without_feature = count_queries()
+
+    assert without_feature < with_feature
+
+
+def test_rest_api_does_not_read_assignments_of_a_plan_without_the_feature(
+    api_client, plan, action, action_task_list_url
+):
+    """A plan without the feature answers with empty lists, so its assignments are not worth reading."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task)
+
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert api_client.get(action_task_list_url).status_code == 200
+        return len(ctx)
+
+    with_feature = count_queries()
+    _disable_task_assignees(plan)
+    without_feature = count_queries()
+
+    assert without_feature < with_feature
+
+
+def test_a_task_assignee_is_not_a_plan_person_without_the_feature(plan, action):
+    """
+    A person whose only tie to the plan is a hidden assignment must not be reachable through its people.
+
+    `available_for_plan(include_contact_persons=True)` feeds the person endpoints and the choosers, so
+    counting them there would expose exactly what the feature is off to hide.
+    """
+    consultant = PersonFactory.create()
+    task = ActionTaskFactory.create(action=action)
+    ActionTaskContactFactory.create(task=task, person=consultant)
+    assert consultant in Person.objects.available_for_plan(plan, include_contact_persons=True)
+
+    _disable_task_assignees(plan)
+
+    assert consultant not in Person.objects.available_for_plan(plan, include_contact_persons=True)
+
+
+def test_a_draft_shows_its_own_task_assignments(graphql_client_query_data, client, plan, action, plan_admin_user):
+    """
+    An action asked for at a draft state is rebuilt from its revision, assignments and all.
+
+    Serving them from the plan cache would answer with what is published, so an assignee added in the
+    draft would be missing and one removed there would still be listed. The revision content is edited
+    directly, as the other revision tests do, so that it genuinely differs from the database.
+    """
+    from wagtail.models import Revision
+
+    published_org = OrganizationFactory.create()
+    draft_org = OrganizationFactory.create()
+    plan.related_organizations.add(published_org, draft_org)
+    published_person = PersonFactory.create(organization=plan.organization)
+    draft_person = PersonFactory.create(organization=plan.organization)
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task, organization=published_org)
+    ActionTaskContactFactory.create(task=task, person=published_person)
+    action.refresh_from_db()
+
+    content = action.serializable_data()
+    content.setdefault('attributes', {})
+    (party,) = content['tasks'][0]['responsible_parties']
+    party['organization'] = draft_org.pk
+    (contact,) = content['tasks'][0]['contact_persons']
+    contact['person'] = draft_person.pk
+    base_revision = action.save_revision(user=plan_admin_user)
+    revision: Revision = Revision(
+        content_type=base_revision.content_type,
+        base_content_type=base_revision.base_content_type,
+        object_id=str(action.pk),
+    )
+    revision.content = content
+    revision.save()
+    action.latest_revision = revision
+    action.has_unpublished_changes = True
+    action.save(update_fields=['latest_revision', 'has_unpublished_changes'])
+    assert [rp.organization for rp in task.responsible_parties.all()] == [published_org], 'the database is unchanged'
+    # A draft is only served to someone who may see it; anonymous callers get the published action.
+    client.force_login(plan_admin_user)
+
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) @workflow(state: DRAFT) {
+          planActions(plan: $plan) {
+            tasks {
+              responsibleParties { organization { name } }
+              contactPersons { person { firstName } }
+            }
+          }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+
+    names = [
+        rp['organization']['name'] for a in data['planActions'] for t in a['tasks'] for rp in t['responsibleParties']
+    ]
+    assert names == [draft_org.name], f'the draft holds {draft_org.name}, the database {published_org.name}'
+    people = [cp['person']['firstName'] for a in data['planActions'] for t in a['tasks'] for cp in t['contactPersons']]
+    assert people == [draft_person.first_name]

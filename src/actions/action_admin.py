@@ -1503,6 +1503,10 @@ class ActionAdmin(AplansModelAdmin[Action]):
             if relation_name not in TASK_ASSIGNMENT_RELATIONS:
                 panels.append(panel)
                 continue
+            if not plan.features.has_action_task_assignees:
+                # The plan does not have the feature at all; the per-plan customization below only
+                # decides who may see it in a plan that does.
+                continue
             is_visible, is_editable = BuiltInFieldCustomization.get_field_access(user, plan, ActionTask, relation_name, instance)
             if not is_visible:
                 continue

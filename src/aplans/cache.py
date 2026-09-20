@@ -53,6 +53,8 @@ class PlanSpecificCache:
     persons: dict[int, Person] = field(default_factory=dict)
     organization_action_count_cache: OrganizationActionCountCache | None = None
     schemas_by_model: dict[type[Model], DatasetSchemaQuerySet] = field(default_factory=dict)
+    # Task assignments of the plan, keyed by task id; see `populate_task_assignments()`
+    task_responsible_parties: dict[int, list[Any]] = field(default_factory=dict)
     task_contact_persons: dict[int, list[Any]] = field(default_factory=dict)
 
     @cached_property
@@ -240,6 +242,11 @@ class PlanSpecificCache:
         for assignment in contact_persons:
             self.task_contact_persons.setdefault(assignment.task_id, []).append(assignment)
 
+    def populate_task_responsible_parties(self, responsible_parties: Iterable[Any]) -> None:
+        """Group a plan's task responsible parties by task, for the reason given above."""
+        for assignment in responsible_parties:
+            self.task_responsible_parties.setdefault(assignment.task_id, []).append(assignment)
+
     def get_organization(self, pk: int) -> Organization | None:
         return self.organizations.get(pk)
 
@@ -328,8 +335,9 @@ class WatchObjectCache:
     # Plans whose contact people and organizations have been loaded; see `populate_people_of_plan()`
     # in `actions.schema`, which is what fills them.
     plans_with_people_loaded: set[int]
-    # Plans whose task contact persons have been loaded, by the resolver that serves them
+    # Plans whose task assignments have been loaded, per relation, by the resolvers that serve them
     plans_with_task_contact_persons_loaded: set[int]
+    plans_with_task_responsible_parties_loaded: set[int]
 
     def __init__(self, user: User | None = None) -> None:
         self.plan_caches = {}
@@ -340,6 +348,7 @@ class WatchObjectCache:
         self.organization_action_count_cache = None
         self.plans_with_people_loaded = set()
         self.plans_with_task_contact_persons_loaded = set()
+        self.plans_with_task_responsible_parties_loaded = set()
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)

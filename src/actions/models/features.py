@@ -192,6 +192,16 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             'Unpublished plans and preview sites are always excluded from indexing regardless of this setting.'
         ),
     )
+    has_action_task_assignees = models.BooleanField(
+        default=False,
+        verbose_name=_('Assign responsible parties and contact persons to tasks'),
+        help_text=_(
+            'Should the organizations and people responsible for an individual task be recorded? '
+            'Off by default; the assignments are hidden everywhere while it is off, including in plans '
+            'that already have some.'
+        ),
+    )
+
     present_plan_hierarchy_as_peers = models.BooleanField(
         default=False,
         # The column keeps the name the field was born with: renaming it would
@@ -268,4 +278,5 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_indicator_factors',
         'hide_from_search_engines',
         'present_plan_hierarchy_as_peers',
+        'has_action_task_assignees',
     ]
