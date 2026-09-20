@@ -26,6 +26,12 @@ from .fixtures import *
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _task_assignees_enabled(monkeypatch):
+    """Give every plan in this module the task-assignee feature; it is off by default."""
+    monkeypatch.setattr(PlanFeatures._meta.get_field('has_action_task_assignees'), 'default', True)
+
+
 def _format_tasks(report, action, user=None) -> str:
     """Run the tasks formatter over the action's snapshot the way the exporter does."""
     snapshot = ActionSnapshot.objects.get(action_version__object_id=str(action.pk))
@@ -271,3 +277,22 @@ def test_export_does_not_name_a_person_who_left_the_actions_plan(plan, plan_fact
 
     assert ActionTasksFormatter._persons_of_plan(exporter, plan) == {}
     assert ActionTasksFormatter._persons_of_plan(exporter, other_plan) == {outsider.pk: outsider}
+
+
+def test_export_omits_assignees_without_the_feature(plan, action, user, report_with_tasks, plan_admin_user):
+    """A plan that loses the feature must stop exporting the assignments it already has."""
+    organization = OrganizationFactory.create(name='Department of Heat')
+    plan.related_organizations.add(organization)
+    person = PersonFactory.create(organization=plan.organization, first_name='Ada', last_name='Byron')
+    task = ActionTaskFactory.create(action=action, name='Insulate the depot', due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsibleParty.objects.create(task=task, organization=organization)
+    ActionTaskContactPerson.objects.create(task=task, person=person)
+    report_with_tasks.mark_as_complete(user)
+    plan.features.has_action_task_assignees = False
+    plan.features.save()
+
+    value = _format_tasks(report_with_tasks, action, user=plan_admin_user)
+
+    assert value.startswith('• Insulate the depot [')
+    assert 'Department of Heat' not in value
+    assert 'Ada Byron' not in value

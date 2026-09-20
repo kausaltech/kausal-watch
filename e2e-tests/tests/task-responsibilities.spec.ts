@@ -12,6 +12,10 @@ import crypto from 'node:crypto';
  * models, the formsets, the per-plan gating — is covered by `src/actions/tests/test_task_responsibilities.py`,
  * but only a browser exercises the nested formset's JavaScript: the "Add" button of a nested panel
  * clones an empty-form template, and a task row is itself such a clone.
+ *
+ * The panels are behind a plan feature that is off by default, and the E2E database is restored from a
+ * snapshot taken before it existed, so the plan has to be given the feature first — and left as it was
+ * found, because the specs share one database.
  */
 
 const listActionsPath = '/admin/actions/action/';
@@ -23,6 +27,17 @@ const testOrganization = 'E2E test data: Test organization 1';
 const suffix = crypto.randomInt(10, 100000);
 const actionName = `Task responsibilities ${suffix}`;
 const taskName = `Insulate the depot ${suffix}`;
+
+const setTaskAssigneesFlag = async (page: Page, enabled: boolean) => {
+  await page.goto('/admin/');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Plan features', exact: true }).click();
+  const checkbox = page.getByLabel('Assign responsible parties and contact persons to tasks');
+  if (enabled !== await checkbox.isChecked()) {
+    enabled ? await checkbox.check() : await checkbox.uncheck();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+  }
+};
 
 const openTasksTab = async (page: Page) => {
   await page.goto(listActionsPath);
@@ -40,6 +55,8 @@ test.describe('Assigning responsibilities to tasks', () => {
   test.describe.configure({ mode: 'serial', timeout: 30000 });
 
   test('Create an action to hold the task', async ({ page }) => {
+    await setTaskAssigneesFlag(page, true);
+
     await page.goto(listActionsPath);
     await page.getByRole('link', { name: 'Add action' }).click();
     await page.getByRole('textbox', { name: 'Identifier' }).fill(`TR${suffix}`);
@@ -80,5 +97,13 @@ test.describe('Assigning responsibilities to tasks', () => {
     await expect(
       page.locator('#id_tasks-0-responsible_parties-FORMS'),
     ).toContainText(testOrganization);
+  });
+
+  test('Turning the feature off takes the panels away again', async ({ page }) => {
+    await setTaskAssigneesFlag(page, false);
+    await openTasksTab(page);
+
+    await expect(page.locator('#id_tasks-0-name')).toHaveValue(taskName);
+    await expect(page.locator('#id_tasks-0-responsible_parties-FORMS')).toHaveCount(0);
   });
 });

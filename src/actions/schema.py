@@ -1417,7 +1417,8 @@ def _plan_cache_for_task(task: ActionTask, info: GQLInfo) -> PlanSpecificCache |
 
     This costs no query per row — the action is already attached to the task by the related manager and
     `plan_id` is a column on it — and `for_plan_id()` caches one plan per request. It deliberately loads
-    nothing: the caller decides whether to, and the rows it then loads carry their own person.
+    nothing: the caller decides whether the plan's assignments are to be served at all, and the rows it
+    then loads carry their own organization and person.
     """
     cache = info.context.cache.for_plan_id(task.action.plan_id)
     if not cache.plan.is_visible_for_user(info.context.user):
@@ -1471,9 +1472,20 @@ class ActionTaskNode(DjangoNode[ActionTask]):
     comment = graphene.String(deprecation_reason='Use "details" instead')
 
     @staticmethod
+    def resolve_responsible_parties(root: ActionTask, info: GQLInfo):
+        cache = _plan_cache_for_task(root, info)
+        if cache is None or not cache.plan.features.has_action_task_assignees:
+            return []
+        from_revision = root.assignments_from_revision('responsible_parties')
+        if from_revision is not None:
+            return from_revision
+        _populate_task_responsible_parties(info, cache.plan.pk)
+        return cache.task_responsible_parties.get(root.pk, [])
+
+    @staticmethod
     def resolve_contact_persons(root: ActionTask, info: GQLInfo):
         cache = _plan_cache_for_task(root, info)
-        if cache is None:
+        if cache is None or not cache.plan.features.has_action_task_assignees:
             return []
         from_revision = root.assignments_from_revision('contact_persons')
         if from_revision is None:
@@ -2163,11 +2175,9 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
     info.context.cache.plans_with_people_loaded.add(plan_id)
     cache = info.context.cache.for_plan_id(plan_id)
     plan = cache.plan
-    # Only the contact persons of the plan's actions: the people assigned to its tasks are loaded by
-    # the resolver that serves them, which selects each row with its person, so reaching them from
-    # here would make every action query pay for rows that nothing here needs. The organizations
-    # responsible for its tasks are still taken in below, because those rows are prefetched by the
-    # optimizer, which does not select the organization with them.
+    # Only the people of the plan's actions: a task's assignees are loaded by the resolvers that serve
+    # them, which select each row with its person or organization, so widening these queries to reach
+    # them would make every action query pay for rows that nothing here needs.
     persons_queryset = (
         Person.objects.get_queryset()
         .filter(actioncontactperson__action__plan=plan)
@@ -2180,11 +2190,7 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
     cache.populate_organizations(
         Organization.objects
         .get_queryset()
-        .filter(
-            Q(responsible_actions__action__plan=plan)
-            | Q(responsible_action_tasks__task__action__plan=plan)
-            | Q(people__in=persons_queryset),
-        )
+        .filter(Q(responsible_actions__action__plan=plan) | Q(people__in=persons_queryset))
         .distinct()
         .select_related('logo')
         .prefetch_related(Prefetch('logo__renditions', to_attr='prefetched_renditions'))
@@ -2197,7 +2203,8 @@ def _populate_task_contact_persons(info: GQLInfo, plan_id: int) -> None:
     Load a plan's task contact persons into the request cache, once per request.
 
     Called from the resolver that serves them rather than with the plan's people: a query that selects
-    nothing about a task's contact persons, which is most of them, should not pay for this.
+    nothing about task assignees — which is most of them, and every query against a plan without the
+    feature — should not pay for this.
 
     The rows are selected with their task and action, because they do not come from a task's own
     relation and the node resolvers read the owning plan through them.
@@ -2210,6 +2217,22 @@ def _populate_task_contact_persons(info: GQLInfo, plan_id: int) -> None:
         ActionTaskContactPerson.objects.filter(task__action__plan=cache.plan).select_related(
             'person__organization', 'task__action'
         ),
+    )
+
+
+def _populate_task_responsible_parties(info: GQLInfo, plan_id: int) -> None:
+    """Load a plan's task responsible parties into the request cache, once per request, as above."""
+    if plan_id in info.context.cache.plans_with_task_responsible_parties_loaded:
+        return
+    info.context.cache.plans_with_task_responsible_parties_loaded.add(plan_id)
+    cache = info.context.cache.for_plan_id(plan_id)
+    cache.populate_task_responsible_parties(
+        # The organization comes with its logo and renditions, as it does when it is served from the
+        # plan's own organization cache: a custom resolver gets no help from the optimizer, so a query
+        # reaching into the organization would otherwise pay per assignment.
+        ActionTaskResponsibleParty.objects.filter(task__action__plan=cache.plan)
+        .select_related('organization__logo', 'task__action')
+        .prefetch_related(Prefetch('organization__logo__renditions', to_attr='prefetched_renditions')),
     )
 
 

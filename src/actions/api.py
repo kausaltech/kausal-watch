@@ -1912,13 +1912,28 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
     # identify nothing, since those models have no endpoint of their own. They are read-only because this
     # endpoint writes its tasks through a bulk list serializer, where rows of a through model would need
     # create, update and delete handling of their own; assignments are edited in the admin.
-    responsible_parties = ActionTaskResponsiblePartySerializer(many=True, read_only=True)
+    responsible_parties = serializers.SerializerMethodField()
     contact_persons = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionTask
         list_serializer_class = BulkListSerializer
         fields = public_fields(ActionTask)
+
+    def get_responsible_parties(self, obj: ActionTask) -> list[dict[str, Any]]:
+        """
+        Return the task's responsible organizations, or nothing if the plan lacks the feature.
+
+        An organization that has since left the plan is still named: availability governs what may be
+        chosen, not what may be read, and an assignment the admin form deliberately keeps should not
+        vanish from the API that reports it. This is what an action's own responsible parties do.
+        """
+        if not self._plan_of(obj).features.has_action_task_assignees:
+            return []
+        return list(ActionTaskResponsiblePartySerializer(obj.responsible_parties.all(), many=True).data)
+
+    def _plan_of(self, obj: ActionTask) -> Plan:
+        return self.context.get('plan') or obj.action.plan
 
     def get_contact_persons(self, obj: ActionTask) -> list[dict[str, Any]]:
         """
@@ -1928,6 +1943,8 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         show contact persons" alone would still hand out person ids under "show all information but only
         for authenticated users", for which `PlanFeatures.public_contact_persons` is equally false.
         """
+        if not self._plan_of(obj).features.has_action_task_assignees:
+            return []
         request = self.context.get('request')
         user = request.user if request is not None else AnonymousUser()
         visible = obj.get_redacted_contact_persons(user)
@@ -1971,19 +1988,21 @@ class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[Act
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
             raise exceptions.NotFound(detail='Plan not found')
-        # The assignment fields read the task's plan and its assignees, so fetch them with the tasks
-        # rather than once per row.
+        # The assignment fields read the task's plan, so fetch that with the tasks rather than once per
+        # row. The assignments themselves are only worth fetching for a plan that has the feature: for
+        # any other the serializer answers with empty lists.
         qs = ActionTask.objects.filter(action__plan=plan_pk).select_related('action__plan__features')
-        qs = qs.prefetch_related(
-            'responsible_parties',
-            # With the person's organization: below the "show all information" level the serializer
-            # goes through redacted copies, which carry the organization, so leaving it out costs a
-            # query per assignment.
-            Prefetch(
-                'contact_persons',
-                queryset=ActionTaskContactPerson.objects.select_related('person__organization'),
-            ),
-        )
+        if plan.features.has_action_task_assignees:
+            qs = qs.prefetch_related(
+                'responsible_parties',
+                # With the person's organization: below the "show all information" level the serializer
+                # goes through redacted copies, which carry the organization, so leaving it out costs a
+                # query per assignment.
+                Prefetch(
+                    'contact_persons',
+                    queryset=ActionTaskContactPerson.objects.select_related('person__organization'),
+                ),
+            )
         action_id = self.request.query_params.get('action')
         if action_id:
             qs = qs.filter(action_id=action_id)

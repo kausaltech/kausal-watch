@@ -92,8 +92,11 @@ class PersonQuerySet(MultilingualQuerySet['Person']):
         if include_contact_persons:
             q |= Q(id__in=ActionContactPerson.objects.filter(action__plan=plan).values_list('person'))
             # Someone can be responsible for a task without being a contact person of the action itself,
-            # and dropping them here would make the admin reject their own stored assignment.
-            q |= Q(id__in=ActionTaskContactPerson.objects.filter(task__action__plan=plan).values_list('person'))
+            # and dropping them here would make the admin reject their own stored assignment. Only while
+            # the plan has the feature, though: otherwise a person whose sole tie to the plan is an
+            # assignment it now hides would still be reachable through its people.
+            if plan.features.has_action_task_assignees:
+                q |= Q(id__in=ActionTaskContactPerson.objects.filter(task__action__plan=plan).values_list('person'))
         return self.filter(q)
 
     def is_action_contact_person(self, plan: Plan):

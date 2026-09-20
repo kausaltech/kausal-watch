@@ -379,7 +379,7 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         # just because a sibling plan still has them.
         plan = ActionTasksFormatter._plan_of_action(report, action)
         names: list[str] = []
-        if plan is None:
+        if plan is None or not plan.features.has_action_task_assignees:
             return ''
         organizations = ActionTasksFormatter._organizations_of_plan(report, plan)
         for version in get_related_model_instances_for_action(
