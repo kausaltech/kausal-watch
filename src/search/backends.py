@@ -4,6 +4,7 @@ import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
+from django.core.exceptions import FieldDoesNotExist
 from django.utils import translation
 from modeltrans.translator import get_i18n_field
 from wagtail.search.backends.elasticsearch8 import (
@@ -17,6 +18,7 @@ from wagtail.search.backends.elasticsearch8 import (
 from elasticsearch import dsl as es_dsl
 from elasticsearch.dsl.types import LikeDocument
 from modelsearch import index
+from modelsearch.backends.base import FilterFieldError
 from modelsearch.backends.database.postgres.postgres import PostgresSearchBackend
 from modelsearch.backends.elasticsearch8 import Elasticsearch8Mapping
 from modelsearch.backends.elasticsearchbase import ElasticsearchAtomicIndexRebuilder, ElasticsearchIndexRebuilder
@@ -71,24 +73,48 @@ class WatchSearchAtomicRebuilder(ElasticsearchAtomicIndexRebuilder):
         self.lang_context.__exit__(None, None, None)
 
 
-class WatchSearchQueryCompiler(Elasticsearch8SearchQueryCompiler):
-    def _process_filter(self, field_attname, lookup, value, check_only=False):  # noqa: ANN202
-        from indicators.models import Indicator
+class M2MFilterFieldCompilerMixin:
+    """
+    Let a plain ``FilterField`` serve a filter that spans an M2M through table.
 
-        # Work around Wagtail problem with M2M relationships
-        if self.queryset.model == Indicator and field_attname == 'plan_id':
-            field_attname = 'plans'
-        return super()._process_filter(field_attname, lookup, value, check_only)
+    modelsearch resolves such a filter by walking the query's joins and expects a
+    ``RelatedFields`` entry for each of them, so ``Indicator.objects.filter(plans__in=...)``
+    is rejected even though ``FilterField('plans')`` indexes exactly those ids.
+    """
+
+    queryset: QuerySet
+
+    def _get_filter_field_path_for_column(self, column) -> list[index.BaseField]:
+        try:
+            return super()._get_filter_field_path_for_column(column)  # type: ignore[misc]
+        except FilterFieldError:
+            field = self._get_m2m_filter_field_for_column(column)
+            if field is None:
+                raise
+            return [field]
+
+    def _get_m2m_filter_field_for_column(self, column) -> index.FilterField | None:
+        model = self.queryset.model
+        for search_field in model.get_search_fields():
+            if not isinstance(search_field, index.FilterField):
+                continue
+            try:
+                m2m_field = model._meta.get_field(search_field.field_name)
+            except FieldDoesNotExist:
+                continue
+            if not m2m_field.many_to_many:
+                continue
+            if column.target.model is m2m_field.remote_field.through and column.target.name == m2m_field.m2m_reverse_field_name():
+                return search_field
+        return None
 
 
-class WatchAutocompleteQueryCompiler(Elasticsearch8AutocompleteQueryCompiler):
-    def _process_filter(self, field_attname, lookup, value, check_only=False):  # noqa: ANN202
-        from indicators.models import Indicator
+class WatchSearchQueryCompiler(M2MFilterFieldCompilerMixin, Elasticsearch8SearchQueryCompiler):
+    pass
 
-        # Work around Wagtail problem with M2M relationships
-        if self.queryset.model == Indicator and field_attname == 'plan_id':
-            field_attname = 'plans'
-        return super()._process_filter(field_attname, lookup, value, check_only)
+
+class WatchAutocompleteQueryCompiler(M2MFilterFieldCompilerMixin, Elasticsearch8AutocompleteQueryCompiler):
+    pass
 
 
 def es_results_from_hits[M: Model](hits: list[dict[str, Any]], qs: QuerySet[M], score_field: str | None = None) -> Generator[M]:
