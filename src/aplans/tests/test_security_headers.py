@@ -14,7 +14,7 @@ def liveness_url():
 def test_hsts_header_set_on_secure_request(client, liveness_url):
     response = client.get(liveness_url, secure=True)
 
-    assert response.headers['Strict-Transport-Security'] == 'max-age=31536000; includeSubDomains'
+    assert response.headers['Strict-Transport-Security'] == 'max-age=300; includeSubDomains'
 
 
 @pytest.mark.django_db

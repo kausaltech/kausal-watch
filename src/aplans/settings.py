@@ -44,7 +44,7 @@ env = environ.FileAwareEnv(
     SECRET_KEY=(str, ''),
     SECRET_KEY_FALLBACKS=(list, []),
     ALLOWED_HOSTS=(list, []),
-    SECURE_HSTS_SECONDS=(int, 31536000),
+    SECURE_HSTS_SECONDS=(int, 300),
     CONFIGURE_LOGGING=(bool, True),
     DATABASE_URL=(str, 'postgresql:///watch'),
     DATABASE_CONN_MAX_AGE=(int, 20),
@@ -914,7 +914,7 @@ MEDIA_ROOT = env('MEDIA_ROOT')
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Only emitted on requests Django considers secure, so local HTTP development is unaffected.
+# Emitted only on secure requests, so local HTTP development is unaffected. Set to 0 to disable.
 SECURE_HSTS_SECONDS = cast('int', env('SECURE_HSTS_SECONDS'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 RATELIMIT_IP_META_KEY = 'aplans.ratelimit.client_ip_for_ratelimit'
