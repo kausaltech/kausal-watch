@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import graphene
 from django.db.models import Q
@@ -86,6 +86,7 @@ class SearchResults(graphene.ObjectType[Any]):
     @staticmethod
     def resolve_hits(root, _info: GQLInfo) -> list[SearchHitObj]:
         hits = root['hits']
+        plan_ids = set(root.get('plan_ids') or [])
         res = []
         for obj in hits:
             if isinstance(obj, Action):
@@ -96,14 +97,16 @@ class SearchResults(graphene.ObjectType[Any]):
                     object=obj,
                 )
             elif isinstance(obj, Indicator):
-                plan = obj.plans.first()
+                # An indicator can be connected to several plans, only some of which the
+                # search was authorized for.
+                plan = next((p for p in obj.plans.all() if p.pk in plan_ids), None)
                 if not plan:
-                    logger.warning('Indicator %d has no plan' % obj.pk)
+                    logger.warning('Indicator %d has no plan the search covers' % obj.pk)
                     continue
                 hit = SearchHitObj(
                     id='ind-%d' % obj.pk,
                     title=str(obj),
-                    plan=cast('Plan', obj.plans.first()),
+                    plan=plan,
                     object=obj,
                 )
             elif isinstance(obj, AplansPage):
@@ -222,4 +225,4 @@ class Query:
         # Store only_other_plans in the context for use in resolve_url
         info.context.only_other_plans = only_other_plans
 
-        return dict(hits=all_results)
+        return dict(hits=all_results, plan_ids=plan_ids)
