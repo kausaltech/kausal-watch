@@ -13,11 +13,9 @@ from wagtail.admin.widgets.button import ListingButton
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 
-from wagtailgeowidget import __version__ as wagtailgeowidget_version
-
 from kausal_common.i18n.panels import TranslatedFieldPanel
 from kausal_common.models.permission_policy import ModelPermissionPolicy
-from kausal_common.organizations.forms import NodeForm
+from kausal_common.organizations.forms import NodeForm, OrganizationLocationField, OrganizationLocationFormMixin
 from kausal_common.people.chooser import PersonChooser
 
 from aplans.context_vars import get_admin_cache
@@ -48,12 +46,6 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.models.plan import Plan
-
-
-if int(wagtailgeowidget_version.split('.')[0]) >= 7:
-    from wagtailgeowidget.panels import GoogleMapsPanel
-else:
-    from wagtailgeowidget.edit_handlers import GoogleMapsPanel
 
 
 class OrganizationPermissionPolicy(ModelPermissionPolicy[Organization, Any, OrganizationQuerySet]):
@@ -110,7 +102,8 @@ class OrganizationPermissionPolicy(ModelPermissionPolicy[Organization, Any, Orga
         raise NotImplementedError
 
 
-class OrganizationForm(NodeForm[Organization]):
+class OrganizationForm(OrganizationLocationFormMixin, NodeForm[Organization]):
+    coordinate_location = OrganizationLocationField()
     user: User
 
     def __init__(self, *args, **kwargs):
@@ -202,7 +195,7 @@ class OrganizationViewSet(SnippetViewSet[Organization, OrganizationForm, Organiz
         FieldPanel('url'),
         FieldPanel('email'),
         FieldPanel('primary_language', read_only=True),  # read-only for now because changes could cause trouble
-        GoogleMapsPanel('location', permission='superuser'),
+        FieldPanel('coordinate_location', permission='superuser'),
     ]
 
     permissions_panels: list[Panel] = [

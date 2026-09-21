@@ -8,6 +8,7 @@ from graphql.error import GraphQLError
 
 import graphene_django_optimizer as gql_optimizer
 
+from kausal_common.graphql_gis import PointScalar
 from kausal_common.organizations.schema import (
     OrganizationClassNode as BaseOrganizationClassNode,
     OrganizationNode as BaseOrganizationNode,
@@ -38,6 +39,7 @@ class OrganizationClassNode(BaseOrganizationClassNode, DjangoNode[OrganizationCl
 
 @register_django_node
 class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organization]):
+    location = PointScalar(description='The organization location as a GeoJSON point')
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization',
@@ -67,6 +69,13 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organ
     )
     def resolve_contact_person_count(parent: Organization, info) -> int:
         return getattr(parent, 'contact_person_count', 0)
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(only=('latitude', 'longitude'))
+    def resolve_location(parent: Organization, info: GQLInfo) -> tuple[float, float] | None:
+        if parent.latitude is None or parent.longitude is None:
+            return None
+        return parent.longitude, parent.latitude
 
     @gql_optimizer.resolver_hints(
         only=('logo',),
@@ -111,7 +120,6 @@ class OrganizationNode(AdminButtonsMixin, BaseOrganizationNode, DjangoNode[Organ
             'email',
             'classification',
             'distinct_name',
-            'location',
         ]
 
 

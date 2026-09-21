@@ -102,6 +102,33 @@ def test_resolve_organization_returns_org_in_current_plan(graphql_client_query_d
     assert response == {'organization': {'id': str(org.id)}}
 
 
+def test_resolve_organization_location_from_coordinates(graphql_client_query_data):
+    plan = PlanFactory.create()
+    org = OrganizationFactory.create(latitude=60.1699, longitude=24.9384)
+    plan.related_organizations.add(org)
+
+    response = graphql_client_query_data(
+        """
+        query($id: ID!) {
+          organization(id: $id) {
+            location
+          }
+        }
+        """,
+        variables={'id': str(org.id)},
+        headers={'X-Cache-Plan-Identifier': plan.identifier},
+    )
+
+    assert response == {
+        'organization': {
+            'location': {
+                'type': 'Point',
+                'coordinates': [24.9384, 60.1699],
+            }
+        }
+    }
+
+
 ORGANIZATION_QUERY_WITH_PLAN = """
     query($id: ID!, $plan: ID!) {
       organization(id: $id, plan: $plan) {
