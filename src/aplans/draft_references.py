@@ -14,7 +14,7 @@ from wagtail.models import DraftStateMixin, Page, Revision
 from loguru import logger
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Sequence
 
     from django.db.models import ForeignKey
 
@@ -34,13 +34,27 @@ def keeps_children_in_drafts(model: type[Model]) -> bool:
 
 
 @cache
-def draft_parent_relations(model: type[Model]) -> list[ParentalKey[Any, Any]]:
-    """Return the `ParentalKey`s of `model` that point to a model keeping drafts."""
-    return [
-        field
-        for field in model._meta.get_fields()
-        if isinstance(field, ParentalKey) and keeps_children_in_drafts(field.related_model)
-    ]
+def draft_parent_paths(model: type[Model]) -> tuple[tuple[ParentalKey[Any, Any], ...], ...]:
+    """
+    Return every chain of `ParentalKey`s leading from `model` up to a model that keeps drafts.
+
+    A chain has more than one link for a model nested deeper in the cluster, such as an
+    assignment of an action task, which the draft of an action holds inside its task.
+    """
+    return tuple(_parent_paths(model, ()))
+
+
+def _parent_paths(model: type[Model], seen: tuple[type[Model], ...]) -> Iterator[tuple[ParentalKey[Any, Any], ...]]:
+    if model in seen:  # a cycle of parental keys cannot lead anywhere new
+        return
+    for field in model._meta.get_fields():
+        if not isinstance(field, ParentalKey):
+            continue
+        if keeps_children_in_drafts(field.related_model):
+            yield (field,)
+            continue
+        for path in _parent_paths(field.related_model, (*seen, model)):
+            yield (field, *path)
 
 
 def clear_deleted_child_from_draft(sender: type[Model], instance: Any, origin: Any = None, **_kwargs: Any) -> None:
@@ -62,8 +76,8 @@ def clear_deleted_child_from_draft(sender: type[Model], instance: Any, origin: A
     """
     if not _was_deleted_directly(sender, instance, origin):
         return
-    for relation in draft_parent_relations(sender):
-        _clear_child_pk(relation, instance)
+    for path in draft_parent_paths(sender):
+        _clear_child_pk(path, instance)
 
 
 def _was_deleted_directly(sender: type[Model], instance: Any, origin: Any) -> bool:
@@ -75,35 +89,52 @@ def _was_deleted_directly(sender: type[Model], instance: Any, origin: Any) -> bo
     return getattr(origin, 'model', None) is sender  # QuerySet.delete()
 
 
-def _clear_child_pk(relation: ParentalKey[Any, Any], child: Any) -> None:
-    parent_id = getattr(child, relation.attname)
-    if parent_id is None:
+def _clear_child_pk(path: tuple[ParentalKey[Any, Any], ...], child: Any) -> None:
+    owner_id = _draft_owner_id(path, child)
+    if owner_id is None:
         return
-    parent_model = relation.related_model
-    latest_revision = parent_model._base_manager.filter(pk=parent_id).values('latest_revision_id')
+    owner_model = path[-1].related_model
+    latest_revision = owner_model._base_manager.filter(pk=owner_id).values('latest_revision_id')
     revision = Revision.objects.filter(pk__in=latest_revision).first()
     if revision is None:
         return
 
-    relation_name = relation.remote_field.get_accessor_name()
-    assert relation_name is not None
-    stale = [item for item in revision.content.get(relation_name, []) if item.get('pk') == child.pk]
+    relation_names = [link.remote_field.get_accessor_name() for link in reversed(path)]
+    stale = [row for row in _rows_at(revision.content, relation_names) if row.get('pk') == child.pk]
     if not stale:
         return
 
-    for item in stale:
-        item['pk'] = None
+    for row in stale:
+        row['pk'] = None
     revision.save(update_fields=['content'])
     logger.info(
-        f'Cleared reference to deleted {child._meta.label} {child.pk} from {relation_name} in revision {revision.pk} '
-        f'of {parent_model._meta.label} {parent_id}',
+        f'Cleared reference to deleted {child._meta.label} {child.pk} from {".".join(relation_names)} in revision '
+        f'{revision.pk} of {owner_model._meta.label} {owner_id}',
     )
+
+
+def _draft_owner_id(path: tuple[ParentalKey[Any, Any], ...], child: Any) -> Any:
+    """Follow the chain up from the deleted child to the primary key of the model keeping the draft."""
+    owner_id = getattr(child, path[0].attname)
+    for link in path[1:]:
+        if owner_id is None:
+            return None
+        owner_id = link.model._base_manager.filter(pk=owner_id).values_list(link.attname, flat=True).first()
+    return owner_id
+
+
+def _rows_at(content: Mapping[str, Any], relation_names: Sequence[str | None]) -> list[dict[str, Any]]:
+    """Return the serialized rows that `relation_names` leads to, descending one relation at a time."""
+    rows: list[Any] = [content]
+    for name in relation_names:
+        rows = [nested for row in rows for nested in (row.get(name) or ())]
+    return rows
 
 
 def register_draft_reference_cleanup() -> None:
     """Connect `clear_deleted_child_from_draft` for every model that can appear in a draft as a child object."""
     for model in apps.get_models():
-        if not draft_parent_relations(model):
+        if not draft_parent_paths(model):
             continue
         post_delete.connect(clear_deleted_child_from_draft, sender=model, dispatch_uid=_DISPATCH_UID)
 
@@ -131,12 +162,14 @@ def _referenced_pks(model: type[Model], contents: Iterable[Mapping[str, Any]]) -
             if pk is not None:
                 referenced[field.related_model].add(pk)
 
-    child_relations = get_all_child_relations(model)
+    def walk(child_model: type[Model], data: Mapping[str, Any]) -> None:
+        collect(_reference_fields(child_model), data)
+        for relation in get_all_child_relations(child_model):
+            for row in data.get(relation.get_accessor_name()) or ():
+                walk(relation.related_model, row)
+
     for content in contents:
-        collect(_reference_fields(model), content)
-        for relation in child_relations:
-            for row in content.get(relation.get_accessor_name()) or ():
-                collect(_reference_fields(relation.related_model), row)
+        walk(model, content)
     return referenced
 
 
@@ -171,22 +204,33 @@ def _strip_content_references(model: type[Model], content: MutableMapping[str, A
         rows: list[dict[str, Any]] | None = content.get(relation_name)
         if not rows:
             continue
-        fields = _reference_fields(relation.related_model)
-        kept = (_row_without_missing_references(row, fields, existing) for row in rows)
-        content[relation_name] = [row for row in kept if row is not None]
+        child_model = relation.related_model
+        fields = _reference_fields(child_model)
+        kept: list[dict[str, Any]] = []
+        for row in rows:
+            stripped = _row_without_missing_references(row, fields, existing)
+            if stripped is None:
+                continue
+            # A child can hold children of its own, such as the assignments of an action task
+            _strip_content_references(child_model, stripped, existing)
+            kept.append(stripped)
+        content[relation_name] = kept
 
 
 def _row_without_missing_references(
     row: dict[str, Any], fields: tuple[ForeignKey[Any, Any], ...], existing: ExistingPks
 ) -> dict[str, Any] | None:
-    """Return `row` with unresolvable nullable references cleared, or None if it needs one that is gone."""
-    kept = row
+    """
+    Return a copy of `row` with unresolvable nullable references cleared, or None to drop it.
+
+    The copy is unconditional because the caller descends into the result and replaces the
+    lists of its children, and `row` itself belongs to the revision this must not write to.
+    """
+    kept = dict(row)
     for field in fields:
         if not _is_missing(field, row, existing):
             continue
         if not field.null:
             return None
-        if kept is row:
-            kept = dict(row)
         kept[field.name] = None
     return kept
