@@ -720,9 +720,12 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 return self.icons.get(language__isnull=True)
             except CategoryIcon.DoesNotExist:
                 return None
-        # At this point, language is not None
+        # At this point, language is not None.
+        # Match case-insensitively: icons store the language code as it appears in
+        # settings.LANGUAGES, which spells regions in upper case (es-US, sv-FI), while
+        # callers pass `get_language()`, which is always lower-cased by Django.
         try:
-            return self.icons.get(language=language)
+            return self.icons.get(language__iexact=language)
         except CategoryIcon.DoesNotExist:
             return self._get_icon_without_fallback_to_common_category(language=None)
 
