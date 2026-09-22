@@ -44,9 +44,11 @@ from actions.models import (
     AttributeType,
     AttributeTypeChoiceOption,
     Category,
+    CategoryIcon,
     CategoryLevel,
     CategoryType,
     CommonCategory,
+    CommonCategoryIcon,
     CommonCategoryType,
     ImpactGroup,
     ImpactGroupAction,
@@ -241,6 +243,18 @@ class CategoryFactory(ModelFactory[Category]):
     lead_paragraph = 'foo'
     help_text = 'bar'
     kausal_paths_node_uuid = 'kausal_paths_node_uuid'
+
+
+class CommonCategoryIconFactory(ModelFactory[CommonCategoryIcon]):
+    common_category = SubFactory[CommonCategoryIcon, CommonCategory](CommonCategoryFactory)
+    image = SubFactory[CommonCategoryIcon, AplansImage](AplansImageFactory)
+    language = None
+
+
+class CategoryIconFactory(ModelFactory[CategoryIcon]):
+    category = SubFactory[CategoryIcon, Category](CategoryFactory)
+    image = SubFactory[CategoryIcon, AplansImage](AplansImageFactory)
+    language = None
 
 
 class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):
