@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING
 
 from django.urls import reverse
@@ -10,7 +11,7 @@ from aplans.draft_references import strip_missing_references
 
 from actions.action_admin import ActionAdmin
 from actions.attributes import DraftAttributes
-from actions.models import Action, ActionContactPerson
+from actions.models import Action, ActionContactPerson, ActionTaskResponsibleParty
 from actions.tests.factories import (
     ActionContactFactory,
     ActionDependencyRelationshipFactory,
@@ -241,6 +242,42 @@ def test_draft_listing_survives_a_deleted_organization(graphql_client_query, pla
 
     assert 'errors' not in response
     assert response['data']['planActions'] == [{'name': action.name, 'responsibleParties': []}]
+
+
+NESTED_DRAFT_ACTIONS_QUERY = """
+  query ($plan: ID!, $lang: String!) @locale(lang: $lang) @workflow(state: DRAFT) {
+    planActions(plan: $plan) {
+      name
+      tasks { responsibleParties { organization { name } } }
+    }
+  }
+"""
+
+
+def test_draft_listing_survives_a_deleted_organization_of_a_task(
+    graphql_client_query, plan: Plan, action: Action, person: Person, client
+):
+    """The same repair one level down, where a task holds the assignment."""
+    plan.features.has_action_task_assignees = True
+    workflow = enable_moderation_workflow(plan)
+    organization = OrganizationFactory.create()
+    plan.related_organizations.add(organization)
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsibleParty.objects.create(task=task, organization=organization)
+    action.refresh_from_db()
+    action.draft_attributes = DraftAttributes()
+    action.save_revision(user=person.user)
+    workflow.start(action, user=person.user)
+
+    organization.delete()
+
+    person.general_admin_plans.add(plan)
+    person.save()
+    client.force_login(person.user)
+    response = graphql_client_query(NESTED_DRAFT_ACTIONS_QUERY, variables={'plan': plan.identifier, 'lang': 'en'})
+
+    assert 'errors' not in response
+    assert response['data']['planActions'] == [{'name': action.name, 'tasks': [{'responsibleParties': []}]}]
 
 
 def test_strip_missing_references_nulls_what_it_can_and_drops_the_rest(plan: Plan):
