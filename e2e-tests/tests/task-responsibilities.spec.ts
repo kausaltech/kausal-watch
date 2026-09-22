@@ -72,7 +72,17 @@ test.describe('Assigning responsibilities to tasks', () => {
     // cloned child form gets `<prefix>-0`.
     await page.locator('#id_tasks-ADD').click();
     await page.locator('#id_tasks-0-name').fill(taskName);
-    await page.locator('#id_tasks-0-due_at').fill('2027-01-01');
+
+    const dueAt = page.locator('#id_tasks-0-due_at');
+    await dueAt.fill('2027-01-01');
+    // Wagtail's date widget pops its picker open 100 ms after the field takes focus, and the picker
+    // covers what sits below the field — here the nested panel's "Add" button, so a click on it would
+    // be intercepted forever. Blurring closes the picker, but only once it is open: a blur before the
+    // timer fires leaves it to appear afterwards, with nothing left to dismiss it.
+    const openDatePicker = page.locator('.xdsoft_datetimepicker:visible');
+    await expect(openDatePicker).toHaveCount(1);
+    await dueAt.blur();
+    await expect(openDatePicker).toHaveCount(0);
 
     // The nested panel lives inside the task that was just added.
     await page.locator('#id_tasks-0-responsible_parties-ADD').click();
