@@ -177,32 +177,37 @@ and `uv sync -U` to upgrade all of them.
 
 ### Updating translations
 
-To extract translatable strings and update translations in the `locale` directory, run the following command (example for the `de` locale):
+To extract translatable strings and update every translation catalogue this repo owns, run:
 
 ```
-python manage.py makemessages --locale de --add-location=file --no-wrap --keep-pot
+mise run messages
 ```
 
-The option `--keep-pot` retains the `.pot` files that can be used as the source files for external translation services.
+This updates the Watch catalogues in `locale/` (the `django`, `djangojs` and `notifications`
+domains), the shared `kausal_common/locale/`, and, when the extensions submodule is checked
+out, the catalogue of the package named by `extension_package` in `mise.dev.toml`.
+`mise run messages-host`, `messages-common` and `messages-extensions` update one of them at a time.
+The tasks come from the shared mise config in `kausal_common` and all run
+`kausal_common/development/tools/makemessages.sh`.
 
-However, this does not update the translatable strings for the notification templates, which have the extension `.mjml`. To do this, run the following:
+Do not run a bare `python manage.py makemessages` from the repo root. Django walks every
+directory under the current one, so it would also rewrite the catalogues of `kausal_common`
+and the extensions submodule, and send strings from their shared modules into `locale/`. The
+script instead scopes each run to its own catalogue, and extracts `kausal_common` and the
+extensions from inside their own directories so that Watch and Paths produce identical
+catalogues for them.
 
-```
-pybabel extract -F babel.cfg --input-dirs=. -o locale/notifications.pot --add-location=file --no-wrap
-```
+Only languages that already have a catalogue are updated. To add a language, create its
+catalogue once by hand, for example
+`python manage.py makemessages -l de --add-location=file --no-wrap --ignore private --ignore kausal_common --ignore node_modules`.
 
-We use `pybabel` instead of `makemessages` because notification templates use Jinja2 and not the Django template language.
+The notification templates (`.mjml`) use Jinja2 rather than the Django template language,
+so their `notifications` domain is extracted with `pybabel` as configured in `babel.cfg`.
 
 To create a new message catalog (`.po` file) from the generated `.pot` file, you can run the following (example for the `de` locale):
 
 ```
 pybabel init -D notifications -i locale/notifications.pot -d locale -l de
-```
-
-For subsequently updating this catalog, run the following:
-
-```
-pybabel update -D notifications -i locale/notifications.pot -d locale -l de
 ```
 
 The equivalent of `compilemessages` for the MJML templates is the following (example for the `de` locale):
