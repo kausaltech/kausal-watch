@@ -11,8 +11,9 @@ migrates to `public` stops serving the site, which is the fix. So a plain diff i
 `--verify` takes the baseline, works out which surfaces are *expected* to change, and fails only
 on the ones that are not.
 
-    # before deploying, on the old revision (see the deploy plan for the snippet)
-    python manage.py shell_plus --quiet-load -c '<capture snippet>' > baseline.json
+    # before deploying, on the old revision, which lacks this command: run the capture
+    # snippet in docs/plan-visibility-rollout.md
+    python manage.py shell_plus --quiet-load -c "$(cat capture_baseline.py)" > baseline.json
 
     # after migrating; name any hostname added on purpose since the baseline
     python manage.py report_plan_visibility --verify baseline.json [--allow-new HOST ...]
