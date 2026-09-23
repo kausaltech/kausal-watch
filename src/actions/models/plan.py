@@ -746,7 +746,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def cached_actions(self):
         return self.actions.order_by('order')
 
-    def clean(self):
+    def clean(self):  # noqa: C901
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
