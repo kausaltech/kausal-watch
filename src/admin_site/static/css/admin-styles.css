@@ -87,7 +87,7 @@
   font-weight: bold;
 }
 
-.active-plan-live.public {
+.active-plan-live.live {
   color: var(--w-color-warning-100);
 }
 

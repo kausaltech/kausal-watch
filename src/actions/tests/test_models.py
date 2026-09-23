@@ -722,52 +722,52 @@ class TestPlanDefaultNameForCopying:
 
 
 class TestPlanPublicationStatus:
-    def test_publication_state_internal_when_not_published(self, plan):
+    def test_live_state_is_not_live_when_never_published(self, plan):
         plan.published_at = None
-        assert plan.publication_state == Plan.PublicationState.INTERNAL
+        assert plan.live_state == Plan.LiveState.NOT_LIVE
 
-    def test_publication_state_public_when_published_in_past(self, plan):
+    def test_live_state_is_live_when_published_in_past(self, plan):
         plan.published_at = timezone.now() - timedelta(days=1)
-        assert plan.publication_state == Plan.PublicationState.PUBLIC
+        assert plan.live_state == Plan.LiveState.LIVE
 
-    def test_publication_state_scheduled_when_published_in_future(self, plan):
+    def test_live_state_is_scheduled_when_published_in_future(self, plan):
         plan.published_at = timezone.now() + timedelta(days=1)
-        assert plan.publication_state == Plan.PublicationState.SCHEDULED
+        assert plan.live_state == Plan.LiveState.SCHEDULED
 
-    def test_publication_status_description_internal_when_not_published(self, plan):
+    def test_live_state_description_when_never_published(self, plan):
         plan.published_at = None
-        assert plan.publication_status_description == 'Internal'
+        assert plan.live_state_description == 'Not live'
 
-    def test_publication_status_description_shows_date_when_published(self, plan):
+    def test_live_state_description_shows_date_when_published(self, plan):
         plan.published_at = datetime(2025, 6, 15, 14, 30, tzinfo=UTC)
         expected_date = date_format(plan.published_at, 'SHORT_DATETIME_FORMAT')
-        assert plan.publication_status_description == f'{expected_date} (UTC)'
+        assert plan.live_state_description == f'{expected_date} (UTC)'
         with translation.override('en'):
-            assert plan.publication_status_description == '06/15/2025 2:30 p.m. (UTC)'
+            assert plan.live_state_description == '06/15/2025 2:30 p.m. (UTC)'
 
-    def test_publication_status_description_shows_time_remaining_days(self, plan):
+    def test_live_state_description_shows_time_remaining_days(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(days=2, hours=5)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_description
+            tooltip = plan.live_state_description
             assert 'Scheduled at:' in tooltip
             assert '2 days' in tooltip
             assert '5 hours' in tooltip
 
-    def test_publication_status_description_shows_time_remaining_hours(self, plan):
+    def test_live_state_description_shows_time_remaining_hours(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(hours=3, minutes=45)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_description
+            tooltip = plan.live_state_description
             assert 'Scheduled at:' in tooltip
             assert '3 hours' in tooltip
             assert '45 minutes' in tooltip
 
-    def test_publication_status_description_shows_time_remaining_minutes(self, plan):
+    def test_live_state_description_shows_time_remaining_minutes(self, plan):
         now = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
         plan.published_at = now + timedelta(minutes=30)
         with patch('django.utils.timezone.now', return_value=now):
-            tooltip = plan.publication_status_description
+            tooltip = plan.live_state_description
             assert 'Scheduled at:' in tooltip
             assert '30 minutes' in tooltip
 

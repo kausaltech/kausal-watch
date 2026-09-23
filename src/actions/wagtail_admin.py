@@ -53,6 +53,7 @@ from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.context_vars import ctx_instance, ctx_request
+from aplans.utils import RestrictedVisibilityModel
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
@@ -802,24 +803,31 @@ class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
 register_snippet(ActivePlanNotificationSettingsViewSet)
 
 
-class PublicationStatusColumn(Column):
+class LiveStateColumn(Column):
     cell_template_name = 'aplans/plan_publication_status_cell.html'
 
-    def __init__(self, name: str = 'publication_status', **kwargs):
-        super().__init__(name, label=_('Publication status'), **kwargs)
+    def __init__(self, name: str = 'live_state', **kwargs):
+        super().__init__(name, label=_('Site status'), **kwargs)
 
     def get_cell_context_data(self, instance: Plan, parent_context):
         context = super().get_cell_context_data(instance, parent_context)
-        state = instance.publication_state
-        tooltip = instance.publication_status_description
+        state = instance.live_state
+        tooltip = instance.live_state_description
 
         status_class_map = {
-            Plan.PublicationState.INTERNAL: 'w-status--internal',
-            Plan.PublicationState.PUBLIC: 'w-status--public',
-            Plan.PublicationState.SCHEDULED: 'w-status--scheduled',
+            Plan.LiveState.NOT_LIVE: 'w-status--not-live',
+            Plan.LiveState.LIVE: 'w-status--live',
+            Plan.LiveState.SCHEDULED: 'w-status--scheduled',
         }
         context['status_class'] = status_class_map[state]
         context['status_label'] = state.label
+        # A live plan that is still internal is the unusual one, so name it wherever plans are
+        # listed rather than leaving it to be discovered on the edit page.
+        context['visibility_label'] = (
+            instance.get_visibility_display()
+            if instance.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
+            else None
+        )
 
         context['tooltip'] = tooltip
         return context
@@ -1055,13 +1063,13 @@ class PlanPublishView(
             return None
 
     def is_scheduled(self):
-        return self.object.publication_state == Plan.PublicationState.SCHEDULED
+        return self.object.live_state == Plan.LiveState.SCHEDULED
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['production_urls'] = self.get_production_urls()
         context['is_scheduled'] = self.is_scheduled()
-        context['scheduled_info'] = self.object.publication_status_description if self.is_scheduled() else None
+        context['scheduled_info'] = self.object.live_state_description if self.is_scheduled() else None
         preview_url = self.get_preview_url()
         context['preview_url'] = preview_url
         context['preview_link_open'] = format_html('<strong><a href="{}" target="_blank">', preview_url)
@@ -1101,7 +1109,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
         'parent',
         'organization',
         'clients_as_string',
-        PublicationStatusColumn(),
+        LiveStateColumn(),
     ]
     filterset_class = PlanFilter
     list_per_page = None  # disable pagination

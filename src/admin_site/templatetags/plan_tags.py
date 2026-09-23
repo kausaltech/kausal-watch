@@ -9,4 +9,4 @@ register = template.Library()
 
 @register.filter
 def is_scheduled(plan: Plan) -> bool:
-    return plan.publication_state == Plan.PublicationState.SCHEDULED
+    return plan.live_state == Plan.LiveState.SCHEDULED

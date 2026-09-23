@@ -32,11 +32,11 @@
             {% endif %}
 
             <div>
-                <span class="active-plan-live {{ active_plan.publication_state }}"
+                <span class="active-plan-live {{ active_plan.live_state }}"
                     {% if active_plan|is_scheduled %}
-                        style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan.publication_status_description }}" data-w-tooltip-placement-value="top"
+                        style="cursor: pointer;" data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan.live_state_description }}" data-w-tooltip-placement-value="top"
                     {% endif %}>
-                    {{ active_plan.publication_state.label }}
+                    {{ active_plan.live_state.label }}
                 </span>
             </div>
         </div>

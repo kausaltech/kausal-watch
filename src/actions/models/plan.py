@@ -1086,24 +1086,32 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         now = self.now_in_local_timezone()
         return self.published_at is not None and self.published_at <= now and self.archived_at is None
 
-    class PublicationState(models.TextChoices):
-        INTERNAL = 'internal', _('Internal')
-        PUBLIC = 'public', _('Public')
+    class LiveState(models.TextChoices):
+        """
+        Whether the plan's site has launched.
+
+        Named for the site rather than for publication, because `visibility` answers the other
+        question in words — Public and Internal — and the two axes must not share a vocabulary.
+        This used to be labelled Internal/Public/Scheduled, which collided with exactly that.
+        """
+
+        NOT_LIVE = 'not_live', _('Not live')
+        LIVE = 'live', _('Live')
         SCHEDULED = 'scheduled', _('Scheduled')
 
     @property
-    def publication_state(self) -> PublicationState:
+    def live_state(self) -> LiveState:
         if self.published_at is None or self.archived_at is not None:
-            return self.PublicationState.INTERNAL
+            return self.LiveState.NOT_LIVE
         now = timezone.now()
         if self.published_at > now:
-            return self.PublicationState.SCHEDULED
-        return self.PublicationState.PUBLIC
+            return self.LiveState.SCHEDULED
+        return self.LiveState.LIVE
 
     @property
-    def publication_status_description(self) -> str:
+    def live_state_description(self) -> str:
         if self.published_at is None or self.archived_at is not None:
-            return str(self.PublicationState.INTERNAL.label)
+            return str(self.LiveState.NOT_LIVE.label)
 
         utc_time = self.published_at.astimezone(UTC)
         formatted_date = f'{date_format(utc_time, "SHORT_DATETIME_FORMAT")} (UTC)'
