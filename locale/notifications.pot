@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-06 23:23+0300\n"
+"POT-Creation-Date: 2026-09-23 09:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,6 +35,52 @@ msgstr ""
 
 #: src/notifications/mjml-templates/bookended_base.mjml
 msgid "Hi,"
+msgstr ""
+
+#: src/notifications/mjml-templates/pledge_participant_signup.mjml
+#, python-format
+msgid "%(count)s new resident created a pledge account on %(plan_name)s."
+msgid_plural "%(count)s new residents created a pledge account on %(plan_name)s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/notifications/mjml-templates/pledge_participant_signup.mjml
+#, python-format
+msgid " – signed up: %(signed_up_at)s"
+msgstr ""
+
+#: src/notifications/mjml-templates/pledge_participant_signup.mjml
+msgid " – marketing opt-in: Yes"
+msgstr ""
+
+#: src/notifications/mjml-templates/pledge_participant_signup.mjml
+msgid " – marketing opt-in: No"
+msgstr ""
+
+#: src/notifications/mjml-templates/pledge_participant_signup.mjml
+#, python-format
+msgid ""
+"\n"
+"                    You can view the full list of participants in the <a href=\"%(participants_url)s\">admin user interface</a>.\n"
+"                    "
+msgstr ""
+
+#: src/notifications/mjml-templates/public_user_pin.mjml
+#, python-format
+msgid "Here is your sign-in code for the %(plan_name)s:"
+msgstr ""
+
+#: src/notifications/mjml-templates/public_user_pin.mjml
+#, python-format
+msgid "Enter this code when prompted. It expires in %(minutes)s minutes."
+msgstr ""
+
+#: src/notifications/mjml-templates/public_user_pin.mjml
+msgid "If you didn't request this code, you can ignore this email."
+msgstr ""
+
+#: src/notifications/mjml-templates/public_user_pin.mjml
+msgid "Powered by Kausal Watch"
 msgstr ""
 
 #: src/notifications/mjml-templates/task_due_soon.mjml
