@@ -1026,11 +1026,22 @@ class PlanPublishView(
             'plan': self.object
         }
 
-    def do_publish(self):
+    def do_publish(self, *, keep_internal: bool = False):
+        """
+        Switch the production surface on, and open the plan up unless asked not to.
+
+        Publishing a plan that stays internal is a site every visitor must sign in to. It is a
+        real case but a rare one, so it has to be asked for; otherwise publishing means what
+        everyone takes it to mean.
+        """
         if self.object.is_live():
             raise ValueError(_('The plan is already published.'))
+        updated = ['published_at']
         self.object.published_at = timezone.now()
-        self.object.save(update_fields=['published_at'])
+        if not keep_internal:
+            self.object.visibility = RestrictedVisibilityModel.VisibilityState.PUBLIC
+            updated.append('visibility')
+        self.object.save(update_fields=updated)
         self.object.invalidate_cache()
         log(
             instance=self.object,
@@ -1039,6 +1050,9 @@ class PlanPublishView(
         )
 
     def do_unpublish(self):
+        # `visibility` is deliberately untouched: taking the site down says nothing about who may
+        # read the plan, and silently re-restricting it would be a larger action than the button
+        # offers.
         if not self.object.is_live():
             raise ValueError(_('The plan is already unpublished.'))
         self.object.published_at = None
@@ -1070,6 +1084,7 @@ class PlanPublishView(
         context['production_urls'] = self.get_production_urls()
         context['is_scheduled'] = self.is_scheduled()
         context['scheduled_info'] = self.object.live_state_description if self.is_scheduled() else None
+        context['plan_is_internal'] = self.object.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
         preview_url = self.get_preview_url()
         context['preview_url'] = preview_url
         context['preview_link_open'] = format_html('<strong><a href="{}" target="_blank">', preview_url)
@@ -1079,7 +1094,7 @@ class PlanPublishView(
     def post(self, request, *args, **kwargs):
         try:
             if self.publish:
-                self.do_publish()
+                self.do_publish(keep_internal=bool(request.POST.get('keep_internal')))
             else:
                 self.do_unpublish()
         except ValueError as e:

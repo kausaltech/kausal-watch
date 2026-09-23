@@ -52,6 +52,18 @@
             <form action="" method="POST">
                 {% csrf_token %}
                 {% if view.publish %}
+                    {% if plan_is_internal %}
+                        <div class="help-block help-info">
+                            <svg class="icon icon-info-circle icon" aria-hidden="true"><use href="#icon-info-circle"></use></svg>
+                            {% translate "This plan is currently internal, so publishing it will also make it visible to anyone." %}
+                            <p style="margin: 0.5em 0 0 0;">
+                                <label for="keep_internal">
+                                    <input type="checkbox" name="keep_internal" id="keep_internal" />
+                                    {% translate "Keep the plan internal, so that visitors have to sign in to see the site" %}
+                                </label>
+                            </p>
+                        </div>
+                    {% endif %}
                     <input type="submit" value="{% translate 'Yes, publish' %}" class="button button-primary" />
                 {% else %}
                     <input type="submit" value="{% translate 'Yes, unpublish' %}" class="button button--warning" />
