@@ -39,10 +39,14 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Show admin link'),
         help_text=_('Should the public website contain a link to the admin login?'),
     )
-    allow_public_site_login = models.BooleanField(
+    show_login_link_in_public_ui = models.BooleanField(
         default=True,
-        verbose_name=_('Allow logging in to the public website'),
-        help_text=_('Should users be able to have authenticated sessions in the public UI?'),
+        db_column='allow_public_site_login',
+        verbose_name=_('Show the sign-in link in the public UI'),
+        help_text=_(
+            'Should the public website offer a link to sign in? Signing in is always possible; '
+            'some plans simply have no use for the link and would rather not show it.'
+        ),
     )
 
     contact_persons_public_data = models.CharField(
@@ -263,7 +267,7 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'enable_indicator_comparison',
         'minimal_statuses',
         'has_action_contact_person_roles',
-        'allow_public_site_login',
+        'show_login_link_in_public_ui',
         'contact_persons_show_picture',
         'indicators_open_in_modal',
         'enable_change_log',

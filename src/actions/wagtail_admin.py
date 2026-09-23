@@ -648,7 +648,7 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
     superuser_only_panels = [
         FieldPanel('allow_images_for_actions', permission='superuser'),
         FieldPanel('show_admin_link', permission='superuser'),
-        FieldPanel('allow_public_site_login', permission='superuser'),
+        FieldPanel('show_login_link_in_public_ui', permission='superuser'),
         FieldPanel('contact_persons_public_data', permission='superuser'),
         FieldPanel('contact_persons_show_picture', permission='superuser'),
         FieldPanel('contact_persons_show_organization_ancestors', permission='superuser'),

@@ -217,6 +217,13 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
         required=True,
         deprecation_reason="Renamed to 'presentPlanHierarchyAsPeers', which also governs the related plans block.",
     )
+    allow_public_site_login = graphene.Boolean(
+        required=True,
+        deprecation_reason=(
+            "Renamed to 'showLoginLinkInPublicUi'. Signing in is possible for every plan; this only "
+            'governs whether the link is shown.'
+        ),
+    )
 
     class Meta:
         model = PlanFeatures
@@ -229,6 +236,10 @@ class PlanFeaturesNode(DjangoNode[PlanFeatures]):
     @staticmethod
     def resolve_show_parent_plan_in_plan_switcher(root: PlanFeatures, _info: GQLInfo) -> bool:
         return root.present_plan_hierarchy_as_peers
+
+    @staticmethod
+    def resolve_allow_public_site_login(root: PlanFeatures, _info: GQLInfo) -> bool:
+        return root.show_login_link_in_public_ui
 
     @staticmethod
     def resolve_enable_moderation_workflow(root: PlanFeatures, _info: GQLInfo) -> bool:

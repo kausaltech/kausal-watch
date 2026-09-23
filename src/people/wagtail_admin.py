@@ -182,15 +182,12 @@ class PersonFormForGeneralAdmin(PersonForm):
 
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
-        if plan.features.allow_public_site_login:
-            if initial.get('access_level') == self.AccessLevel.PUBLIC_SITE_ONLY:
-                del self.fields['organization_plan_admin_orgs']
-                del self.fields['is_admin_for_active_plan']
-                del self.fields['contact_for_actions_unordered']
-                del self.fields['participated_in_training']
-        elif initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
-            # Allow removing lingering public site restriction if public site login was recently removed
-            del self.fields['access_level']
+        # Public-site access is available for every plan, so the access level is always offered.
+        if initial.get('access_level') == self.AccessLevel.PUBLIC_SITE_ONLY:
+            del self.fields['organization_plan_admin_orgs']
+            del self.fields['is_admin_for_active_plan']
+            del self.fields['contact_for_actions_unordered']
+            del self.fields['participated_in_training']
         if 'organization_plan_admin_orgs' in self.fields:
             cast('ModelMultipleChoiceField[Any]', self.fields['organization_plan_admin_orgs']).queryset = (
                 Organization.objects.get_queryset().available_for_plan(self.plan).filter(dissolution_date=None)
