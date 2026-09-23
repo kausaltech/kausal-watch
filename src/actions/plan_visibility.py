@@ -29,6 +29,7 @@ class SurfaceReport:
     """What one hostname serves one viewer, and the state it derives from."""
 
     plan_identifier: str
+    visibility: str
     hostname: str
     base_path: str
     deployment_environment: str
@@ -54,6 +55,7 @@ class SurfaceReport:
         return {
             'key': self.key,
             'plan': self.plan_identifier,
+            'visibility': self.visibility,
             'hostname': self.hostname,
             'base_path': self.base_path or '',
             'deployment_environment': self.deployment_environment or '',
@@ -66,6 +68,7 @@ class SurfaceReport:
 def describe_surface(domain: PlanDomain, user: UserOrAnon | None) -> SurfaceReport:
     return SurfaceReport(
         plan_identifier=domain.plan.identifier,
+        visibility=domain.plan.visibility,
         hostname=domain.hostname,
         base_path=domain.base_path or '',
         deployment_environment=domain.deployment_environment or '',

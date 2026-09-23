@@ -92,3 +92,24 @@ class TestPlanSurfaces:
         keys = {plan_surfaces(d.plan, AnonymousUser())[0].key for d in (first, second)}
 
         assert keys == {f'{hostname}/one', f'{hostname}/two'}
+
+    def test_it_carries_the_visibility_so_a_consumer_can_tell_the_two_dark_states_apart(
+        self, plan_factory, plan_domain_factory,
+    ):
+        """
+        `UNAVAILABLE` does not imply the data is private.
+
+        A public plan that has not launched is still readable by identifier, by design; an
+        internal one is not. A check that conflated them would either miss a leak or chase one
+        that was never there.
+        """
+        unlaunched = plan_domain_factory(plan=_plan(plan_factory, PUBLIC, launched=False))
+        internal = plan_domain_factory(plan=_plan(plan_factory, INTERNAL, launched=False))
+
+        surfaces = {
+            d.hostname: plan_surfaces(d.plan, AnonymousUser())[0] for d in (unlaunched, internal)
+        }
+
+        assert surfaces[unlaunched.hostname].status == PlanDomainStatus.UNAVAILABLE
+        assert surfaces[unlaunched.hostname].visibility == PUBLIC
+        assert surfaces[internal.hostname].visibility == INTERNAL
