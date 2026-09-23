@@ -43,17 +43,15 @@ def _row(key, *, served, launched):
     return {'key': key, 'served_anonymously': served, 'launched': launched}
 
 
-def _verify(baseline_path) -> str:
+def _verify(baseline_path, **options) -> str:
     out = StringIO()
-    call_command('report_plan_visibility', verify=baseline_path, stdout=out)
+    call_command('report_plan_visibility', verify=baseline_path, stdout=out, **options)
     return out.getvalue()
 
 
 class TestReport:
     def test_it_reports_what_each_surface_serves(self, plan_factory, plan_domain_factory):
-        live = plan_domain_factory(
-            plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
-        )
+        live = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5)))
         dark = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=None))
 
         report = _report()
@@ -78,15 +76,16 @@ class TestReport:
 
 class TestVerify:
     def test_it_passes_when_nothing_changed(self, tmp_path, plan_factory, plan_domain_factory):
-        domain = plan_domain_factory(
-            plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
-        )
+        domain = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5)))
         baseline = _baseline(tmp_path, [_row(domain.hostname, served=True, launched=True)])
 
         assert 'No unexplained changes' in _verify(baseline)
 
     def test_an_unlaunched_production_site_going_dark_is_the_intended_change(
-        self, tmp_path, plan_factory, plan_domain_factory,
+        self,
+        tmp_path,
+        plan_factory,
+        plan_domain_factory,
     ):
         """The exposure being fixed: it served the site while its plan had never been published."""
         domain = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=None))
@@ -105,16 +104,17 @@ class TestVerify:
             _verify(baseline)
 
     def test_a_dark_site_becoming_public_fails_as_an_exposure(self, tmp_path, plan_factory, plan_domain_factory):
-        domain = plan_domain_factory(
-            plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
-        )
+        domain = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5)))
         baseline = _baseline(tmp_path, [_row(domain.hostname, served=False, launched=True)])
 
         with pytest.raises(CommandError):
             _verify(baseline)
 
     def test_a_preview_surface_going_dark_is_never_the_intended_change(
-        self, tmp_path, plan_factory, plan_domain_factory,
+        self,
+        tmp_path,
+        plan_factory,
+        plan_domain_factory,
     ):
         """
         The fix darkens production hostnames, never previews.
@@ -125,9 +125,7 @@ class TestVerify:
         exactly the case that would slip through unnoticed.
         """
         plan = plan_factory(visibility=INTERNAL, published_at=None)
-        domain = plan_domain_factory(
-            plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW
-        )
+        domain = plan_domain_factory(plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW)
         baseline = _baseline(tmp_path, [_row(domain.hostname, served=True, launched=False)])
 
         with pytest.raises(CommandError):
@@ -139,6 +137,33 @@ class TestVerify:
 
         with pytest.raises(CommandError):
             _verify(baseline)
+
+    def test_a_new_surface_serving_the_site_fails_as_an_exposure(self, tmp_path, plan_factory, plan_domain_factory):
+        """Nothing in the migration adds a hostname, so one that appeared and serves the plan is unexplained."""
+        domain = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5)))
+        baseline = _baseline(tmp_path, [])
+
+        with pytest.raises(CommandError):
+            _verify(baseline)
+        assert domain.hostname in _report()
+
+    def test_a_new_surface_that_serves_nothing_is_only_reported(self, tmp_path, plan_factory, plan_domain_factory):
+        domain = plan_domain_factory(plan=plan_factory(visibility=INTERNAL, published_at=None))
+        baseline = _baseline(tmp_path, [])
+
+        output = _verify(baseline)
+
+        assert domain.hostname in output
+        assert 'No unexplained changes' in output
+
+    def test_a_new_surface_can_be_explicitly_allowed(self, tmp_path, plan_factory, plan_domain_factory):
+        """A hostname added on purpose between baseline and verification must not block the deploy."""
+        domain = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5)))
+        baseline = _baseline(tmp_path, [])
+
+        output = _verify(baseline, allow_new=[domain.hostname])
+
+        assert 'No unexplained changes' in output
 
     def test_an_unreadable_baseline_is_reported_clearly(self, tmp_path):
         with pytest.raises(CommandError, match='Could not read the baseline'):

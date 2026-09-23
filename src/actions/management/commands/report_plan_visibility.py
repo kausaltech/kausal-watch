@@ -14,8 +14,8 @@ on the ones that are not.
     # before deploying, on the old revision (see the deploy plan for the snippet)
     python manage.py shell_plus --quiet-load -c '<capture snippet>' > baseline.json
 
-    # after migrating
-    python manage.py report_plan_visibility --verify baseline.json
+    # after migrating; name any hostname added on purpose since the baseline
+    python manage.py report_plan_visibility --verify baseline.json [--allow-new HOST ...]
 """
 
 from __future__ import annotations
@@ -51,6 +51,13 @@ class Command(BaseCommand):
             help='Compare against a baseline captured before the deploy, and fail on unexpected changes.',
         )
         parser.add_argument(
+            '--allow-new',
+            action='append',
+            default=[],
+            metavar='KEY',
+            help='Accept a surface added since the baseline that serves the site. Repeat for each one.',
+        )
+        parser.add_argument(
             '--include-inactive',
             action='store_true',
             help='Include plans marked inactive, which are never served.',
@@ -65,7 +72,7 @@ class Command(BaseCommand):
         surfaces = list(all_surfaces(plans, AnonymousUser()))
 
         if options['verify']:
-            self._verify(surfaces, options['verify'])
+            self._verify(surfaces, options['verify'], allowed_new=set(options['allow_new']))
             return
 
         json.dump(
@@ -76,7 +83,7 @@ class Command(BaseCommand):
         )
         self.stdout.write('')
 
-    def _verify(self, surfaces: list[SurfaceReport], baseline_path: str) -> None:
+    def _verify(self, surfaces: list[SurfaceReport], baseline_path: str, allowed_new: set[str]) -> None:
         try:
             with Path(baseline_path).open() as baseline_file:
                 baseline = {row['key']: row for row in json.load(baseline_file)['surfaces']}
@@ -105,7 +112,14 @@ class Command(BaseCommand):
             else:
                 unexpected.append((key, served_before, served_after))
 
+        # A surface with no baseline has no before to compare, so it stands on what it serves now.
+        # One that serves nothing is harmless; one that serves the site is an exposure the
+        # migration cannot explain, since nothing in it adds a hostname — unless it was added on
+        # purpose, which only the operator can say.
         appeared = sorted(set(current) - set(baseline))
+        unexpected.extend(
+            (key, False, True) for key in appeared if current[key].status == PlanDomainStatus.AVAILABLE and key not in allowed_new
+        )
 
         self._report(len(baseline), expected, unexpected, gone, appeared)
 
