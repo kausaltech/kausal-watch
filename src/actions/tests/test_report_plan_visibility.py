@@ -19,6 +19,8 @@ import pytest
 
 from aplans.utils import RestrictedVisibilityModel
 
+from actions.models.plan import PlanDomain
+
 pytestmark = pytest.mark.django_db
 
 INTERNAL = RestrictedVisibilityModel.VisibilityState.INTERNAL
@@ -107,6 +109,26 @@ class TestVerify:
             plan=plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
         )
         baseline = _baseline(tmp_path, [_row(domain.hostname, served=False, launched=True)])
+
+        with pytest.raises(CommandError):
+            _verify(baseline)
+
+    def test_a_preview_surface_going_dark_is_never_the_intended_change(
+        self, tmp_path, plan_factory, plan_domain_factory,
+    ):
+        """
+        The fix darkens production hostnames, never previews.
+
+        A preview surface is always launched, so it only goes dark when the plan itself stopped
+        being readable — an outage on a host somebody was using to look at the plan. The baseline
+        says the plan had not launched, which is the shape of the intended change, so this is
+        exactly the case that would slip through unnoticed.
+        """
+        plan = plan_factory(visibility=INTERNAL, published_at=None)
+        domain = plan_domain_factory(
+            plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW
+        )
+        baseline = _baseline(tmp_path, [_row(domain.hostname, served=True, launched=False)])
 
         with pytest.raises(CommandError):
             _verify(baseline)

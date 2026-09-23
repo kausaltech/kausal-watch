@@ -95,9 +95,12 @@ class Command(BaseCommand):
             served_after = after.status == PlanDomainStatus.AVAILABLE
             if served_before == served_after:
                 continue
-            # Losing the site is expected exactly where the plan had not launched; gaining it is
-            # never expected, because nothing in this change widens who may read a plan.
-            if not served_after and not before['launched']:
+            # Losing the site is expected on a production hostname whose plan had not launched,
+            # and nowhere else. A preview surface is always launched, so it goes dark only because
+            # the plan itself stopped being readable — an outage on a host somebody was using to
+            # look at the plan, and one that wears the same shape as the intended change.
+            # Gaining the site is never expected: nothing here widens who may read a plan.
+            if not served_after and not before['launched'] and not after.is_preview:
                 expected.append((key, EXPECTED_LOSS_REASON))
             else:
                 unexpected.append((key, served_before, served_after))
