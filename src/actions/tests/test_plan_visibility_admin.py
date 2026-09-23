@@ -73,9 +73,10 @@ class TestVisibilityPanel:
         """
         Narrowing a public plan back to internal is the transition nothing else in the admin offers.
 
-        The form is validated but not saved: saving a plan also renames its site, root pages and
-        groups, which leaves stale entries in the process-wide cache once the test's transaction
-        rolls back. Validation is where the form writes the submitted value onto the plan.
+        The form is validated but not saved. Saving it here made unrelated tests fail later in the
+        same worker process, through state that outlives the test's rolled-back transaction.
+        Validation is where the form writes the submitted value onto the plan, which is what this
+        test needs.
         """
         plan = plan_factory(visibility=before)
         # The form requires both, as every real plan has them.
