@@ -5,6 +5,10 @@ Publishing is the common way a plan goes live, and a plan that goes live is almo
 to be readable by anyone, so confirming a publish also sets its visibility to public. Keeping a
 plan internal through launch — a site every visitor must sign in to — stays possible, but only
 by asking for it on the confirmation screen.
+
+Unpublishing is the mirror image: it takes the production site down and leaves visibility alone,
+since a public plan's data was never gated on its launch. Restricting it as well is offered, but
+only done when asked for.
 """
 
 from __future__ import annotations
@@ -19,6 +23,7 @@ import pytest
 from aplans.utils import RestrictedVisibilityModel
 
 from actions.models import Plan
+from actions.tests.test_change_log_graphql import make_plan_admin
 
 pytestmark = pytest.mark.django_db
 
@@ -30,6 +35,15 @@ PUBLIC = RestrictedVisibilityModel.VisibilityState.PUBLIC
 def superuser_client(client, user_factory):
     client.force_login(user_factory(is_superuser=True))
     return client
+
+
+def _admin_page(client, plan: Plan, url: str) -> str:
+    """Render an admin page as a superuser who administers `plan`, which the admin chrome needs."""
+    user = make_plan_admin(plan)
+    user.is_superuser = True
+    user.save(update_fields=['is_superuser'])
+    client.force_login(user)
+    return client.get(url).content.decode()
 
 
 def _publish_url(plan: Plan) -> str:
@@ -74,6 +88,33 @@ class TestPublishing:
         plan.refresh_from_db()
         assert not plan.is_live()
         assert plan.visibility == PUBLIC
+
+    def test_unpublishing_can_make_the_plan_internal_when_asked(self, superuser_client, plan_factory):
+        """Taking the production site down leaves preview hosts and the API serving a public plan."""
+        plan = plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
+
+        superuser_client.post(_unpublish_url(plan), data={'make_internal': 'on'})
+
+        plan.refresh_from_db()
+        assert not plan.is_live()
+        assert plan.visibility == INTERNAL
+
+    def test_unpublishing_a_public_plan_says_it_stays_readable(self, client, plan_factory):
+        plan = plan_factory(visibility=PUBLIC, published_at=timezone.now() - timedelta(minutes=5))
+
+        content = _admin_page(client, plan, _unpublish_url(plan))
+
+        assert 'inaccessible to the public' not in content
+        assert 'The plan stays public' in content
+        assert 'name="make_internal"' in content
+
+    def test_unpublishing_an_internal_plan_offers_nothing_more(self, client, plan_factory):
+        plan = plan_factory(visibility=INTERNAL, published_at=timezone.now() - timedelta(minutes=5))
+
+        content = _admin_page(client, plan, _unpublish_url(plan))
+
+        assert 'The plan stays public' not in content
+        assert 'name="make_internal"' not in content
 
 
 class TestLiveState:

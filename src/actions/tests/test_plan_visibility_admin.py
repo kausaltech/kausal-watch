@@ -1,8 +1,8 @@
 """
 Tests for changing a plan's visibility in the admin.
 
-Publishing opens a plan up and unpublishing deliberately leaves it open, so the plan edit form is
-the one place visibility can be narrowed again. It is superuser-only, like the flag it replaced:
+Publishing opens a plan up, and unpublishing leaves it open unless asked otherwise, so the plan
+edit form is where visibility is set on its own. It is superuser-only, like the flag it replaced:
 who may read a plan is not a choice a plan's own admins make.
 """
 

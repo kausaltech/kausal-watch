@@ -1025,9 +1025,7 @@ class PlanPublishView(
     def confirmation_message(self):
         if self.publish:
             return _("Do you want to publish the plan '%(plan)s'? This will make it publicly accessible.") % {'plan': self.object}
-        return _("Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public.") % {
-            'plan': self.object
-        }
+        return _("Do you want to unpublish the plan '%(plan)s'? This will take its production site down.") % {'plan': self.object}
 
     def do_publish(self, *, keep_internal: bool = False):
         """
@@ -1052,14 +1050,22 @@ class PlanPublishView(
             user=self.request.user,
         )
 
-    def do_unpublish(self):
-        # `visibility` is deliberately untouched: taking the site down says nothing about who may
-        # read the plan, and silently re-restricting it would be a larger action than the button
-        # offers.
+    def do_unpublish(self, *, make_internal: bool = False):
+        """
+        Switch the production surface off, and restrict the plan too if asked.
+
+        Taking the site down says nothing about who may read the plan: a public plan stays
+        readable on its preview hosts and through the API. Restricting it as well is a larger
+        action than the button names, so it has to be asked for rather than done silently.
+        """
         if not self.object.is_live():
             raise ValueError(_('The plan is already unpublished.'))
+        updated = ['published_at']
         self.object.published_at = None
-        self.object.save(update_fields=['published_at'])
+        if make_internal:
+            self.object.visibility = RestrictedVisibilityModel.VisibilityState.INTERNAL
+            updated.append('visibility')
+        self.object.save(update_fields=updated)
         self.object.invalidate_cache()
         log(
             instance=self.object,
@@ -1099,7 +1105,7 @@ class PlanPublishView(
             if self.publish:
                 self.do_publish(keep_internal=bool(request.POST.get('keep_internal')))
             else:
-                self.do_unpublish()
+                self.do_unpublish(make_internal=bool(request.POST.get('make_internal')))
         except ValueError as e:
             messages.error(request, str(e))
             return redirect(self.index_url)

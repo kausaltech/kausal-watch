@@ -45,7 +45,10 @@
                 {% else %}
                     <div class="help-block help-critical">
                         <svg class="icon icon-warning icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                        {% translate "Unpublishing this plan will make it inaccessible to the public immediately." %}
+                        {% translate "Unpublishing this plan takes its production site down immediately." %}
+                        {% if not plan_is_internal %}
+                            {% translate "The plan stays public, so its preview addresses and the API still serve it to anyone." %}
+                        {% endif %}
                     </div>
                 {% endif %}
             {% endblock %}
@@ -66,6 +69,14 @@
                     {% endif %}
                     <input type="submit" value="{% translate 'Yes, publish' %}" class="button button-primary" />
                 {% else %}
+                    {% if not plan_is_internal %}
+                        <p>
+                            <label for="make_internal">
+                                <input type="checkbox" name="make_internal" id="make_internal" />
+                                {% translate "Also make the plan internal, so that only signed-in users with access can see it anywhere" %}
+                            </label>
+                        </p>
+                    {% endif %}
                     <input type="submit" value="{% translate 'Yes, unpublish' %}" class="button button--warning" />
                 {% endif %}
                 <a href="{{ view.index_url }}" class="button button-secondary">{% translate "Cancel" %}</a>
