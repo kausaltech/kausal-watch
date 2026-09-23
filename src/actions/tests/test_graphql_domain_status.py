@@ -40,23 +40,27 @@ WILDCARD_BASE = 'dummy.io'
 # surface:    production  — an explicit PlanDomain row, the customer's real hostname
 #             preview     — an explicit row tagged as a preview deployment
 #             wildcard    — no row at all; the hostname is synthesised from the plan identifier
-# user:       anonymous / with_access (a general admin of this plan)
+# user:       anonymous / with_access (a general admin of this plan) /
+#             without_access (signed in, but a general admin of another plan only)
 SURFACE_MATRIX = """
-    surface     visibility  launched  user          status            typename
-    production  public      +         anonymous     AVAILABLE         Plan
-    production  public      -         anonymous     UNAVAILABLE       RestrictedPlanNode
-    production  public      -         with_access   UNAVAILABLE       RestrictedPlanNode
-    production  internal    +         anonymous     SIGN_IN_REQUIRED  RestrictedPlanNode
-    production  internal    +         with_access   AVAILABLE         Plan
-    production  internal    -         anonymous     UNAVAILABLE       RestrictedPlanNode
-    production  internal    -         with_access   UNAVAILABLE       RestrictedPlanNode
-    preview     public      -         anonymous     AVAILABLE         Plan
-    preview     internal    -         anonymous     SIGN_IN_REQUIRED  RestrictedPlanNode
-    preview     internal    -         with_access   AVAILABLE         Plan
-    wildcard    public      -         anonymous     AVAILABLE         Plan
-    wildcard    public      +         anonymous     AVAILABLE         Plan
-    wildcard    internal    -         anonymous     SIGN_IN_REQUIRED  RestrictedPlanNode
-    wildcard    internal    -         with_access   AVAILABLE         Plan
+    surface     visibility  launched  user            status            typename
+    production  public      +         anonymous       AVAILABLE         Plan
+    production  public      -         anonymous       UNAVAILABLE       RestrictedPlanNode
+    production  public      -         with_access     UNAVAILABLE       RestrictedPlanNode
+    production  internal    +         anonymous       SIGN_IN_REQUIRED  RestrictedPlanNode
+    production  internal    +         with_access     AVAILABLE         Plan
+    production  internal    +         without_access  UNAVAILABLE       RestrictedPlanNode
+    production  internal    -         anonymous       UNAVAILABLE       RestrictedPlanNode
+    production  internal    -         with_access     UNAVAILABLE       RestrictedPlanNode
+    preview     public      -         anonymous       AVAILABLE         Plan
+    preview     internal    -         anonymous       SIGN_IN_REQUIRED  RestrictedPlanNode
+    preview     internal    -         with_access     AVAILABLE         Plan
+    preview     internal    -         without_access  UNAVAILABLE       RestrictedPlanNode
+    wildcard    public      -         anonymous       AVAILABLE         Plan
+    wildcard    public      +         anonymous       AVAILABLE         Plan
+    wildcard    internal    -         anonymous       SIGN_IN_REQUIRED  RestrictedPlanNode
+    wildcard    internal    -         with_access     AVAILABLE         Plan
+    wildcard    internal    -         without_access  UNAVAILABLE       RestrictedPlanNode
 """
 
 
@@ -70,14 +74,14 @@ def _setup(surface, visibility, launched, user, plan_factory, plan_domain_factor
         hostname = f'{plan.identifier}.{WILDCARD_BASE}'
     else:
         environment = (
-            PlanDomain.DeploymentEnvironment.PRODUCTION
-            if surface == 'production'
-            else PlanDomain.DeploymentEnvironment.PREVIEW
+            PlanDomain.DeploymentEnvironment.PRODUCTION if surface == 'production' else PlanDomain.DeploymentEnvironment.PREVIEW
         )
         hostname = plan_domain_factory(plan=plan, deployment_environment=environment).hostname
 
     if user == 'with_access':
         client.force_login(person_factory(general_admin_plans=[plan]).user)
+    elif user == 'without_access':
+        client.force_login(person_factory(general_admin_plans=[plan_factory()]).user)
     return hostname
 
 
@@ -97,7 +101,15 @@ def test_domain_status_names_the_page_to_render(
     typename,
 ):
     hostname = _setup(
-        surface, visibility, launched, user, plan_factory, plan_domain_factory, person_factory, client, settings,
+        surface,
+        visibility,
+        launched,
+        user,
+        plan_factory,
+        plan_domain_factory,
+        person_factory,
+        client,
+        settings,
     )
     data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': hostname})
     assert data['plansForHostname'][0]['domain']['status'] == status
@@ -119,7 +131,15 @@ def test_plan_type_agrees_with_domain_status(
     typename,
 ):
     hostname = _setup(
-        surface, visibility, launched, user, plan_factory, plan_domain_factory, person_factory, client, settings,
+        surface,
+        visibility,
+        launched,
+        user,
+        plan_factory,
+        plan_domain_factory,
+        person_factory,
+        client,
+        settings,
     )
     data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': hostname})
     assert data['plansForHostname'][0]['__typename'] == typename
@@ -144,7 +164,9 @@ def test_unlaunched_production_domain_hides_a_public_plan(graphql_client_query_d
 
 
 def test_login_is_offered_only_where_signing_in_leads_somewhere(
-    graphql_client_query_data, plan_factory, plan_domain_factory,
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
 ):
     """A hostname serving nothing must not offer a sign-in button that cannot reveal anything."""
     launched = timezone.now() - timedelta(minutes=5)
@@ -157,6 +179,30 @@ def test_login_is_offered_only_where_signing_in_leads_somewhere(
 
     assert login_enabled(unavailable.hostname) is False
     assert login_enabled(sign_in.hostname) is True
+
+
+def test_a_signed_in_viewer_without_access_is_not_asked_to_sign_in_again(
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+    person_factory,
+    client,
+):
+    """
+    Signing in has already happened, and it did not reveal the plan.
+
+    Asking again cannot change the answer, and the frontend treats an authenticated session on
+    the sign-in page as a sign-in that has just completed, so it would navigate back to the same
+    page over and over.
+    """
+    launched = timezone.now() - timedelta(minutes=5)
+    domain = plan_domain_factory(plan=plan_factory(visibility='internal', published_at=launched))
+    client.force_login(person_factory(general_admin_plans=[plan_factory()]).user)
+
+    plan_data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})['plansForHostname'][0]
+
+    assert plan_data['domain']['status'] == 'UNAVAILABLE'
+    assert plan_data['loginEnabled'] is False
 
 
 def test_status_message_is_null_but_still_queryable(graphql_client_query_data, plan_factory, plan_domain_factory):
@@ -179,7 +225,11 @@ def test_status_message_is_null_but_still_queryable(graphql_client_query_data, p
     ],
 )
 def test_publication_status_override_forces_the_launch_state_of_one_hostname(
-    graphql_client_query_data, plan_factory, plan_domain_factory, override, expected_status,
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+    override,
+    expected_status,
 ):
     """The per-domain override still forces whether a hostname is switched on, never who may read."""
     plan = plan_factory(

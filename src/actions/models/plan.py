@@ -1824,12 +1824,15 @@ class PlanDomain(models.Model):
 
         The two halves are independent: `is_launched` asks whether the hostname serves anything,
         `Plan.visibility` asks who may read the plan. A viewer sees the site only when both say
-        yes, and is offered a way in only when signing in could actually change the answer.
+        yes, and is offered a way in only when signing in could actually change the answer — which
+        it cannot for a viewer who has already signed in.
         """
         if not self.plan.is_active or not self.is_launched:
             return PlanDomainStatus.UNAVAILABLE
         if self.plan.is_visible_for_user(user):
             return PlanDomainStatus.AVAILABLE
+        if user is not None and user.is_authenticated:
+            return PlanDomainStatus.UNAVAILABLE
         return PlanDomainStatus.SIGN_IN_REQUIRED
 
     @property
