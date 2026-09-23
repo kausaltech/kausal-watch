@@ -236,7 +236,6 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
-    'django_prometheus',
     'kausal_common',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
@@ -314,7 +313,6 @@ WATCH_APPS = [
 INSTALLED_APPS += WATCH_APPS
 
 MIDDLEWARE = [
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     f'{PROJECT_NAME}.middleware.HostnameRedirectMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -331,7 +329,6 @@ MIDDLEWARE = [
     f'{PROJECT_NAME}.middleware.AdminMiddleware',
     'request_log.middleware.LogUnsafeRequestMiddleware',
     'hijack.middleware.HijackUserMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = f'{PROJECT_NAME}.urls'

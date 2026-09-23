@@ -62,7 +62,6 @@ dependencies = [
   "django-image-cropping",
   "django-modeltrans",
   "django-npm",
-  "django-prometheus",
   "django-oauth-toolkit",
   "django-parler",
   "django-pydantic-field",
@@ -98,7 +97,7 @@ dependencies = [
   "nanoid",
   "networkx",
   "opentelemetry-exporter-otlp-proto-http",
-  "opentelemetry-exporter-prometheus",
+  "opentelemetry-instrumentation-asgi",
   "opentelemetry-instrumentation-django",
   "opentelemetry-instrumentation-psycopg",
   "opentelemetry-instrumentation-redis",
@@ -193,7 +192,6 @@ lint = [
 ]
 prod = [
   "gunicorn",
-  "gunicorn-prometheus-exporter",
   "rustface>=0.1; sys_platform=='linux'",
   "uvicorn[standard]",
   "uvicorn-worker",
