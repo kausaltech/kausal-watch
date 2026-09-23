@@ -547,6 +547,9 @@ class PlanAdmin(AplansModelAdmin[Plan]):
             panels.append(FieldPanel('usage_status'))
             panels.append(FieldPanel('kausal_paths_instance_uuid'))
         if not creating and user.is_superuser:
+            # Publishing opens a plan up and unpublishing leaves it open, so this is where it is
+            # narrowed again. Who may read a plan is not for the plan's own admins to decide.
+            panels.append(FieldPanel('visibility'))
             panels.append(FieldPanel('theme_identifier'))
             panels.append(
                 InlinePanel(
