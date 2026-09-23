@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib
 from datetime import UTC, datetime, timedelta
 
+from django.db import connection
+
 import pytest
 
 from kausal_common.testing.utils import parse_table
@@ -60,3 +62,23 @@ def test_a_scheduled_plan_is_never_made_public_early(exposed):
     """
     visibility, _ = decide_visibility(FUTURE, exposed, NOW)
     assert visibility == 'internal'
+
+
+@pytest.mark.django_db
+def test_a_row_this_release_writes_hides_an_unpublished_plan_from_the_previous_one(plan_factory):
+    """
+    Keep the retired column safe for the release that still reads it.
+
+    This release no longer knows the field, so it omits the column when it creates a
+    `PlanFeatures` row. The previous release's pods, still running during a rollout or back after
+    a rollback, read the column as the answer to whether an unpublished plan is hidden from
+    anonymous visitors — so whatever the database fills in must be the answer that hides it.
+    """
+    plan = plan_factory()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            'SELECT expose_unpublished_plan_only_to_authenticated_user FROM actions_planfeatures WHERE plan_id = %s',
+            [plan.pk],
+        )
+        (exposed_only_to_authenticated,) = cursor.fetchone()
+    assert exposed_only_to_authenticated is True

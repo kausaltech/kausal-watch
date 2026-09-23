@@ -10,8 +10,10 @@ request, not some edge case.
 Keeping it needs one schema change to go with the state change. The column is ``NOT NULL`` with
 no database default (Django drops the default once it has backfilled), so a pod on this release,
 which no longer knows the field exists, would violate that constraint the moment it creates a
-`PlanFeatures` row. Making the column nullable lets both releases write: the old one keeps
-supplying a value, the new one omits it.
+`PlanFeatures` row. The column therefore gets a database default of true, the field's old
+default, which hides an unpublished plan from anonymous visitors. Making the column nullable
+instead would not do: the previous release reads NULL as false, which exposes an unpublished
+plan — and a row this release creates is exactly that, a new plan nobody has published.
 
 The column is dropped in a later release, once nothing is running that reads it.
 """
@@ -20,19 +22,12 @@ from django.db import migrations
 
 COLUMN = 'expose_unpublished_plan_only_to_authenticated_user'
 
-MAKE_NULLABLE = (
-    'ALTER TABLE "actions_planfeatures" '
-    'ALTER COLUMN "expose_unpublished_plan_only_to_authenticated_user" DROP NOT NULL;'
+SET_DEFAULT = (
+    'ALTER TABLE "actions_planfeatures" ALTER COLUMN "expose_unpublished_plan_only_to_authenticated_user" SET DEFAULT true;'
 )
 
-# Going back means the old code reads the column again, so every row needs a value. True was the
-# field's default, and it is the safe one: it hid an unpublished plan rather than exposing it.
-RESTORE_NOT_NULL = (
-    'UPDATE "actions_planfeatures" '
-    'SET "expose_unpublished_plan_only_to_authenticated_user" = true '
-    'WHERE "expose_unpublished_plan_only_to_authenticated_user" IS NULL;'
-    'ALTER TABLE "actions_planfeatures" '
-    'ALTER COLUMN "expose_unpublished_plan_only_to_authenticated_user" SET NOT NULL;'
+DROP_DEFAULT = (
+    'ALTER TABLE "actions_planfeatures" ALTER COLUMN "expose_unpublished_plan_only_to_authenticated_user" DROP DEFAULT;'
 )
 
 
@@ -45,7 +40,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL(sql=MAKE_NULLABLE, reverse_sql=RESTORE_NOT_NULL),
+                migrations.RunSQL(sql=SET_DEFAULT, reverse_sql=DROP_DEFAULT),
             ],
             state_operations=[
                 migrations.RemoveField(
