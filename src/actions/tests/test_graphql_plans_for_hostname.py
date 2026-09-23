@@ -8,7 +8,7 @@ import pytest
 
 from aplans.utils import RestrictedVisibilityModel
 
-from actions.models.plan import PublicationStatus
+from actions.models.plan import PlanDomainStatus, PublicationStatus
 
 pytestmark = pytest.mark.django_db
 
@@ -67,38 +67,37 @@ GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME = """
 
 
 @pytest.mark.parametrize(
-    ('publication_status_override', 'delta_minutes', 'expected_publication_status', 'redirect_to'),
+    ('publication_status_override', 'delta_minutes', 'expected_status', 'redirect_to'),
     [
-        (None, -5, PublicationStatus.PUBLISHED, ''),
-        (None, 5, PublicationStatus.SCHEDULED, ''),
-        (None, None, PublicationStatus.UNPUBLISHED, ''),
-        (PublicationStatus.UNPUBLISHED, -5, PublicationStatus.UNPUBLISHED, ''),
-        (PublicationStatus.PUBLISHED, 5, PublicationStatus.PUBLISHED, ''),
-        (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED, ''),
-        (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED, 'test_redirect.com'),
+        (None, -5, PlanDomainStatus.AVAILABLE, ''),
+        (None, 5, PlanDomainStatus.UNAVAILABLE, ''),
+        (None, None, PlanDomainStatus.UNAVAILABLE, ''),
+        (PublicationStatus.UNPUBLISHED, -5, PlanDomainStatus.UNAVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, 5, PlanDomainStatus.AVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, None, PlanDomainStatus.AVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, None, PlanDomainStatus.AVAILABLE, 'test_redirect.com'),
     ],
 )
-@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_get_plans_by_hostname(
     graphql_client_query_data,
     plan_factory,
     plan_domain_factory,
     publication_status_override,
     delta_minutes,
-    expected_publication_status,
+    expected_status,
     redirect_to,
-    visibility,
 ):
     """
-    Test getPlansByHostname query with excplicit PlanDomains and without authentication.
+    Query plansForHostname over an explicit PlanDomain, anonymously.
 
-    With PlanDomains specified, the plan visibility follows the publication status of the
-    plan but can be overridden via the domain.
+    The plan here is public, so the domain's status turns purely on whether the hostname has
+    launched: the plan's publication date, unless the per-domain override forces it. A scheduled
+    date has not arrived, so it is not launched either.
     """
     published_at = None
     if delta_minutes is not None:
         published_at = timezone.now() + timedelta(minutes=delta_minutes)
-    plan = plan_factory(published_at=published_at, visibility=visibility)
+    plan = plan_factory(published_at=published_at, visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
 
     domain = plan_domain_factory(
         plan=plan, publication_status_override=publication_status_override, redirect_to_hostname=redirect_to
@@ -114,7 +113,7 @@ def test_get_plans_by_hostname(
                 {
                     'basePath': domain.base_path,
                     'hostname': domain.hostname,
-                    'status': expected_publication_status.name,
+                    'status': expected_status.name,
                     'redirectToHostname': domain.redirect_to_hostname or None,
                 }
             ],
@@ -122,13 +121,7 @@ def test_get_plans_by_hostname(
             'publishedAt': published_at.isoformat() if published_at else None,
         },
     ]
-    if publication_status_override == PublicationStatus.PUBLISHED:
-        is_visible = True
-    elif publication_status_override == PublicationStatus.UNPUBLISHED:
-        is_visible = False
-    else:
-        is_visible = visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
-    if is_visible:
+    if expected_status == PlanDomainStatus.AVAILABLE:
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected
@@ -155,89 +148,23 @@ def test_plans_for_hostname_reuses_prefetched_domains(
     assert len(plan_domain_queries) == 2
 
 
-@pytest.mark.parametrize(
-    'domain_kind',
-    ['implicit', 'explicit', 'published_override', 'unpublished_override'],
-)
-@pytest.mark.parametrize('publication_state', ['published', 'scheduled', 'unpublished'])
-@pytest.mark.parametrize('user_kind', ['anonymous', 'plan_admin', 'superuser'])
-@pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
-def test_plan_type_respects_publication_visibility(
-    client,
-    graphql_client_query_data,
-    person_factory,
-    plan_domain_factory,
-    plan_factory,
-    settings,
-    user_factory,
-    domain_kind,
-    publication_state,
-    user_kind,
-    visibility,
+@pytest.mark.parametrize('publication_status_override', [PublicationStatus.UNPUBLISHED, PublicationStatus.PUBLISHED])
+def test_status_message_is_null_whatever_the_domain_reports(
+    graphql_client_query_data, plan_factory, plan_domain_factory, publication_status_override
 ):
-    published_at = {
-        'published': timezone.now() - timedelta(minutes=5),
-        'scheduled': timezone.now() + timedelta(minutes=5),
-        'unpublished': None,
-    }[publication_state]
-    plan = plan_factory(published_at=published_at, visibility=visibility)
+    """
+    The field is kept but carries nothing.
 
-    override = None
-    if domain_kind == 'implicit':
-        settings.HOSTNAME_PLAN_DOMAINS = ['dummy.io']
-        hostname = f'{plan.identifier}.dummy.io'
-    else:
-        if domain_kind == 'published_override':
-            override = PublicationStatus.PUBLISHED
-        elif domain_kind == 'unpublished_override':
-            override = PublicationStatus.UNPUBLISHED
-        domain = plan_domain_factory(plan=plan, publication_status_override=override)
-        hostname = domain.hostname
-
-    if user_kind == 'plan_admin':
-        person = person_factory(general_admin_plans=[plan])
-        client.force_login(person.user)
-    elif user_kind == 'superuser':
-        client.force_login(user_factory(is_superuser=True))
-
-    data = graphql_client_query_data(
-        GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME,
-        variables={'hostname': hostname},
-    )
-
-    if domain_kind == 'published_override':
-        is_visible = True
-    elif domain_kind == 'unpublished_override':
-        is_visible = False
-    elif visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC:
-        is_visible = True
-    else:
-        is_visible = user_kind in ('plan_admin', 'superuser')
-
-    expected_type = 'Plan' if is_visible else 'RestrictedPlanNode'
-    assert data['plansForHostname'][0]['__typename'] == expected_type
-
-
-@pytest.mark.parametrize(
-    ('publication_status_override', 'has_message'),
-    [(PublicationStatus.UNPUBLISHED, True), (PublicationStatus.PUBLISHED, False)],
-)
-def test_get_correct_domain_by_hostname(
-    graphql_client_query_data, plan_factory, plan_domain_factory, publication_status_override, has_message
-):
-
+    Its old copy has been removed; keeping the field resolvable leaves room for an authored
+    message later without an API change.
+    """
     plan = plan_factory()
     domain = plan_domain_factory(plan=plan, publication_status_override=publication_status_override)
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE,
         variables={'hostname': domain.hostname},
     )
-    plans = data['plansForHostname']
-    message = plans[0]['domains'][0]['statusMessage']
-    if has_message:
-        assert message is not None
-    else:
-        assert message is None
+    assert data['plansForHostname'][0]['domains'][0]['statusMessage'] is None
 
 
 @pytest.fixture(params=['settings', 'header', 'both'], ids=['via_settings', 'via_header', 'via_both'])

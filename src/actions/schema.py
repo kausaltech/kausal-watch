@@ -19,7 +19,7 @@ from django.db.models import Count, IntegerField, OuterRef, Prefetch, Q, Subquer
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import get_language, gettext, override
+from django.utils.translation import get_language
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
@@ -94,6 +94,7 @@ from actions.models import (
     MonitoringQualityPoint,
     Plan,
     PlanDomain,
+    PlanDomainStatus,
     PlanFeatures,
     Pledge,
     PublicationStatus,
@@ -155,11 +156,16 @@ if TYPE_CHECKING:
 
 logger = logger.bind(name='actions.schema')
 PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
+PlanDomainStatusNode = graphene.Enum.from_enum(PlanDomainStatus)
 
 
 class PlanDomainNode(DjangoNode[PlanDomain]):
-    status = PublicationStatusNode(source='status')
+    status = PlanDomainStatusNode()
     status_message = graphene.String(required=False, source='status_message')
+
+    @staticmethod
+    def resolve_status(root: PlanDomain, info: GQLInfo) -> PlanDomainStatus:
+        return root.status_for_user(info.context.user)
 
     class Meta:
         model = PlanDomain
@@ -322,23 +328,30 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         if explicit_domains:
             return explicit_domains[0]
 
+        # A hostname with no PlanDomain row is a wildcard preview host, so it is built as one:
+        # `is_preview_surface` then reports the truth without needing to know it was synthesised.
         implicit_domain = PlanDomain(
             plan=root,
             hostname=hostname,
             redirect_to_hostname=get_canonical_wildcard_hostname(hostname, root, request=info.context),
             base_path='',
             redirect_aliases=[],
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
         )
         return implicit_domain
 
     @staticmethod
-    @gql_optimizer.resolver_hints(
-        select_related=('features',),
-        only=('features__expose_unpublished_plan_only_to_authenticated_user',),
-    )
-    def resolve_login_enabled(root: Plan, _info: GQLInfo) -> bool:
-        # This indicates whether signing in may grant access to a restricted plan.
-        return root.features.expose_unpublished_plan_only_to_authenticated_user
+    def resolve_login_enabled(root: Plan, info: GQLInfo) -> bool:
+        """
+        Whether to offer this viewer a way to sign in.
+
+        A hostname that serves nothing must not offer a button that cannot reveal anything, so
+        this is true only where signing in could actually change what the viewer gets.
+        """
+        domain = PlanInterface.resolve_domain(root, info)
+        if domain is None:
+            return False
+        return domain.status_for_user(info.context.user) == PlanDomainStatus.SIGN_IN_REQUIRED
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -354,37 +367,30 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
 
     @classmethod
     def resolve_type(cls, instance: Plan, info: GQLInfo) -> type[RestrictedPlanNode | PlanNode]:
-        context_hostname = getattr(info.context, '_plan_hostname', None)
-        if context_hostname is None:
-            return RestrictedPlanNode
+        """
+        Serve the plan's body exactly when the hostname serves the plan to this viewer.
 
-        domains = _get_plan_domains_for_hostname(instance, context_hostname)
-        if domains:
-            first_domain = domains[0]
-            override = first_domain.publication_status_override
-            if override is not None:
-                if override == PublicationStatus.PUBLISHED:
-                    return PlanNode
-                if override == PublicationStatus.UNPUBLISHED:
-                    return RestrictedPlanNode
-        if instance.is_visible_for_user(info.context.user):
+        Deriving this from the same `status` the frontend reads is the point: the previous bug was
+        two derivations of the same question disagreeing, so that a production domain reported
+        itself unpublished while the plan resolved as fully readable.
+        """
+        domain = cls.resolve_domain(instance, info)
+        if domain is None:
+            return RestrictedPlanNode
+        if domain.status_for_user(info.context.user) == PlanDomainStatus.AVAILABLE:
             return PlanNode
         return RestrictedPlanNode
 
     @staticmethod
     def resolve_status_message(root: Plan, info: GQLInfo, hostname=None) -> str | None:
-        context_hostname = getattr(info.context, '_plan_hostname', None)
-        if not hostname:
-            hostname = context_hostname
-            if not hostname:
-                return None
-        domains = _get_plan_domains_for_hostname(root, hostname)
-        if domains:
-            return domains[0].status_message
-        if root.is_live():
-            return None
-        with override(root.primary_language):
-            return gettext('The site is not public at this time.')
+        """
+        Return a message to show instead of the site, or None for the default placeholder.
+
+        Kept resolvable although nothing produces one today, so an authored message can be added
+        later without an API change. See `PlanDomain.status_message`.
+        """
+        domain = PlanInterface.resolve_domain(root, info, hostname=hostname)
+        return domain.status_message if domain is not None else None
 
 
 @register_graphene_node

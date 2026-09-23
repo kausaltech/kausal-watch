@@ -1615,6 +1615,20 @@ class PublicationStatus(models.TextChoices):
         return [(c.value, c.label) for c in PublicationStatus if c != PublicationStatus.SCHEDULED]
 
 
+class PlanDomainStatus(models.TextChoices):
+    """
+    What a hostname serves a particular viewer, as the public UI needs to know it.
+
+    This is deliberately not the publication vocabulary above: on a preview hostname the answer
+    has nothing to do with whether the plan has been published, so saying "published" there would
+    be a lie. `PublicationStatus` stays as the manual per-domain override's choices.
+    """
+
+    AVAILABLE = 'available', _('Available')
+    UNAVAILABLE = 'unavailable', _('Unavailable')
+    SIGN_IN_REQUIRED = 'sign_in_required', _('Sign-in required')
+
+
 # ParentalManyToManyField  won't help, so we need the through model:
 # https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
 # Unfortunately the reverse accessors then point to instances of the through model, not the actual target.
@@ -1767,24 +1781,57 @@ class PlanDomain(models.Model):
         yield 'deployment_environment', self.deployment_environment
 
     @property
-    def status(self) -> PublicationStatus:
+    def is_preview_surface(self) -> bool:
+        """
+        Whether this hostname is a preview rather than the customer's real site.
+
+        A preview surface is never withheld while the plan waits to launch: it exists so the plan
+        can be looked at beforehand. Hostnames synthesised for a wildcard base are preview
+        surfaces by construction, and are built that way in `PlanInterface.resolve_domain`. A row
+        with no deployment environment set — most of the older ones — counts as production, which
+        is the cautious reading.
+        """
+        return self.deployment_environment in (
+            PlanDomain.DeploymentEnvironment.PREVIEW,
+            PlanDomain.DeploymentEnvironment.DEVELOPMENT,
+        )
+
+    @property
+    def is_launched(self) -> bool:
+        """
+        Whether this hostname serves the plan's site at all yet.
+
+        This is the launch half of the answer and says nothing about who may read the plan. The
+        per-domain override forces it for a single hostname, which is what that field is for.
+        """
         if self.publication_status_override is not None:
-            return PublicationStatus(self.publication_status_override)
-        published_at = self.plan.published_at
-        if published_at is None:
-            return PublicationStatus.UNPUBLISHED
-        now = self.plan.now_in_local_timezone()
-        if published_at <= now:
-            return PublicationStatus.PUBLISHED
-        if published_at > now:
-            return PublicationStatus.SCHEDULED
-        return PublicationStatus.UNPUBLISHED
+            return self.publication_status_override == PublicationStatus.PUBLISHED
+        if self.is_preview_surface:
+            return True
+        return self.plan.is_live()
+
+    def status_for_user(self, user: UserOrAnon | None) -> PlanDomainStatus:
+        """
+        Name the page the frontend should render for this viewer at this hostname.
+
+        The two halves are independent: `is_launched` asks whether the hostname serves anything,
+        `Plan.visibility` asks who may read the plan. A viewer sees the site only when both say
+        yes, and is offered a way in only when signing in could actually change the answer.
+        """
+        if not self.plan.is_active or not self.is_launched:
+            return PlanDomainStatus.UNAVAILABLE
+        if self.plan.is_visible_for_user(user):
+            return PlanDomainStatus.AVAILABLE
+        return PlanDomainStatus.SIGN_IN_REQUIRED
 
     @property
     def status_message(self) -> str | None:
-        if self.status != PublicationStatus.PUBLISHED:
-            with translation.override(self.plan.primary_language):
-                return gettext('The site is not public at this time.')
+        """
+        Return a message to show instead of the site, or None for the default placeholder.
+
+        Nothing produces one today. The field is kept so an authored, per-plan message can be
+        introduced later without an API change or a frontend release.
+        """
         return None
 
     def validate_hostname(self):
