@@ -4,11 +4,6 @@ Who may read a plan, and what each of its hostnames serves.
 
 ## Two independent questions
 
-Visibility used to be decided by four knobs in four places, re-derived in three code paths that
-could disagree — and did. A plan with no publication date became publicly readable on its
-production domain while that same domain reported itself unpublished, so a customer's site
-served a plan nobody had published.
-
 The model now separates the two questions that were tangled together, and answers each in one
 place.
 
@@ -22,9 +17,12 @@ GraphQL by identifier, REST, search, exports. Nothing widens it.
   admin gets nothing.
 - `public` — anyone can read it, without signing in.
 
-**`Plan.published_at`** says whether the production surface has been switched on. It says
-nothing about who may read the plan. A plan can be readable but not yet launched, which is the
-normal state of a site being prepared.
+**`Plan.published_at`** says whether the production surface has been
+switched on (has the plan launched). It says nothing about who may
+read the plan. A plan can be readable but not yet launched, which can
+be desirable if we want the site to be previewable with as little
+friction as possible. However, the default case is that during
+onboarding, the plan is internal.
 
 ## The four states
 
@@ -35,7 +33,7 @@ normal state of a site being prepared.
 | internal | yes | **sign-in page** → the site once signed in | sign-in page |
 | public | yes | site | site |
 
-No combination is forbidden, so nothing has to be enforced. The third row is the plan that stays
+No combination is forbidden. The third row is the plan that stays
 internal after launch — a site every visitor must sign in to. It is rare, but it is a state the
 model expresses rather than an exception bolted on.
 
@@ -50,9 +48,7 @@ needs, naming the page to render:
 - `UNAVAILABLE` — serve a placeholder, because nothing here will reveal anything yet
 
 `PlanInterface.resolve_type` returns the plan's body exactly when that status is `AVAILABLE`, so
-the two signals are one derivation with two consumers and cannot drift apart. Two derivations of
-the same question disagreeing is the precise mechanism of the original bug, which is why the
-frontend gates on this one value rather than combining it with anything else.
+the two signals are one derivation with two consumers and cannot drift apart.
 
 Its two halves:
 
