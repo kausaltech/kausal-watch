@@ -1073,11 +1073,20 @@ class PlanPublishView(
             user=self.request.user,
         )
 
-    def get_production_urls(self):
-        from actions.models.plan import PlanDomain
+    def get_production_urls(self) -> list[str]:
+        """
+        List the addresses that publishing will launch.
 
-        domains = self.object.domains.filter(deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION)
-        return [f'https://{domain.hostname}' for domain in domains]
+        This follows `PlanDomain.is_launched`: preview hosts serve the plan already, and a domain
+        whose override holds it back stays dark whatever the plan's launch state.
+        """
+        from actions.models.plan import PublicationStatus
+
+        return [
+            f'https://{domain.hostname}{domain.base_path or ""}'
+            for domain in self.object.domains.all()
+            if not domain.is_preview_surface and domain.publication_status_override != PublicationStatus.UNPUBLISHED
+        ]
 
     def get_preview_url(self):
         try:

@@ -23,6 +23,8 @@ import pytest
 from aplans.utils import RestrictedVisibilityModel
 
 from actions.models import Plan
+from actions.models.plan import PlanDomain, PublicationStatus
+from actions.tests.factories import PlanDomainFactory
 from actions.tests.test_change_log_graphql import make_plan_admin
 
 pytestmark = pytest.mark.django_db
@@ -115,6 +117,62 @@ class TestPublishing:
 
         assert 'The plan stays public' not in content
         assert 'name="make_internal"' not in content
+
+
+class TestPublishConfirmationAddresses:
+    """
+    The confirmation lists exactly the addresses that publishing will launch.
+
+    It has to agree with `PlanDomain.is_launched`, or the screen a superuser reads before making a
+    site public describes a different set of hostnames than the one that goes live.
+    """
+
+    def test_a_domain_with_no_environment_counts_as_production(self, client, plan_factory):
+        plan = plan_factory(published_at=None)
+        PlanDomainFactory.create(plan=plan, hostname='legacy.example.org', deployment_environment='')
+
+        content = _admin_page(client, plan, _publish_url(plan))
+
+        assert 'https://legacy.example.org' in content
+        assert 'no production domains have been configured' not in content
+
+    def test_preview_domains_are_not_listed(self, client, plan_factory):
+        plan = plan_factory(published_at=None)
+        PlanDomainFactory.create(
+            plan=plan, hostname='preview.example.org', deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW
+        )
+
+        content = _admin_page(client, plan, _publish_url(plan))
+
+        assert 'https://preview.example.org' not in content
+
+    def test_the_base_path_is_part_of_the_address(self, client, plan_factory):
+        """On a multi-plan site the hostname alone points at another plan."""
+        plan = plan_factory(published_at=None)
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='shared.example.org',
+            base_path='/this-plan',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+        )
+
+        content = _admin_page(client, plan, _publish_url(plan))
+
+        assert 'https://shared.example.org/this-plan' in content
+
+    def test_a_domain_held_back_by_its_override_is_not_listed(self, client, plan_factory):
+        """The per-domain override keeps that hostname dark whatever the plan's launch state."""
+        plan = plan_factory(published_at=None)
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='held.example.org',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+            publication_status_override=PublicationStatus.UNPUBLISHED,
+        )
+
+        content = _admin_page(client, plan, _publish_url(plan))
+
+        assert 'https://held.example.org' not in content
 
 
 class TestLiveState:
