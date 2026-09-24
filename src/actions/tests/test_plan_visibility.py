@@ -131,3 +131,63 @@ class TestRestApiFollowsVisibility:
         plan = _make_plan(plan_factory, visibility, launched)
         identifiers = [row['identifier'] for row in api_client.get(plan_list_url).json_data['results']]
         assert (plan.identifier in identifiers) is listed
+
+
+def _nested_urls(plan: Plan) -> dict[str, str]:
+    from django.urls import reverse
+
+    from actions.tests.factories import ActionImplementationPhaseFactory, ActionScheduleFactory
+    from indicators.tests.factories import IndicatorFactory
+
+    ActionScheduleFactory.create(plan=plan)
+    ActionImplementationPhaseFactory.create(plan=plan)
+    indicator = IndicatorFactory.create(organization=plan.organization, plans=[plan])
+    detail = {'plan_pk': plan.pk, 'pk': indicator.pk}
+    return {
+        'action_schedules': reverse('action_schedule-list', args=(plan.pk,)),
+        'action_implementation_phases': reverse('action_implementation_phase-list', args=(plan.pk,)),
+        'indicators': reverse('indicator-list', args=(plan.pk,)),
+        'indicator': reverse('indicator-detail', kwargs=detail),
+        'indicator_values': reverse('indicator-values', kwargs=detail),
+        'indicator_goals': reverse('indicator-goals', kwargs=detail),
+        'indicator_dimensions': reverse('indicator-dimensions', kwargs=detail),
+        'actions': reverse('action-list', args=(plan.pk,)),
+        'category_types': reverse('category-type-list', args=(plan.pk,)),
+        'action_tasks': reverse('action-task-list', args=(plan.pk,)),
+    }
+
+
+NESTED_ENDPOINTS = [
+    'action_schedules',
+    'action_implementation_phases',
+    'indicators',
+    'indicator',
+    'indicator_values',
+    'indicator_goals',
+    'indicator_dimensions',
+    'actions',
+    'category_types',
+    'action_tasks',
+]
+
+
+class TestNestedRestEndpointsFollowVisibility:
+    """
+    Every endpoint nested under a plan must gate on that plan's visibility.
+
+    A nested router does not run `PlanViewSet.get_queryset` for the parent, so each viewset has
+    to look its plan up through the gate itself. One that fetches the plan directly serves an
+    internal plan's data to anyone.
+    """
+
+    @pytest.mark.parametrize('endpoint', NESTED_ENDPOINTS)
+    def test_internal_plan_is_not_found_anonymously(self, api_client, plan_factory, endpoint):
+        plan = _make_plan(plan_factory, INTERNAL, launched=True)
+        url = _nested_urls(plan)[endpoint]
+        assert api_client.get(url).status_code == 404
+
+    @pytest.mark.parametrize('endpoint', NESTED_ENDPOINTS)
+    def test_public_plan_is_served_anonymously(self, api_client, plan_factory, endpoint):
+        plan = _make_plan(plan_factory, PUBLIC, launched=True)
+        url = _nested_urls(plan)[endpoint]
+        assert api_client.get(url).status_code == 200

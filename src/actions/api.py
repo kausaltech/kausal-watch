@@ -204,6 +204,19 @@ class PlanViewSet(viewsets.ModelViewSet[Plan]):
         qs = cast('PlanQuerySet', super().get_queryset())
         return self.get_available_plans(qs, self.request)
 
+    @classmethod
+    def get_visible_plan(cls, request: Request, plan_pk: int | str) -> Plan:
+        """
+        Return the parent plan of a nested endpoint, or raise 404 if the caller may not read it.
+
+        A nested router never runs this viewset's `get_queryset` for the parent, so every endpoint
+        under `plan/<plan_pk>/` must look its plan up through here rather than fetching it directly.
+        """
+        plan = cls.get_available_plans(request=request).filter(id=plan_pk).first()
+        if plan is None:
+            raise exceptions.NotFound(detail='Plan not found')
+        return plan
+
 
 router.register('plan', PlanViewSet, basename='plan')
 plan_router = NestedBulkRouter(router, 'plan', lookup='plan')
@@ -217,7 +230,8 @@ class ActionScheduleViewSet(viewsets.ModelViewSet[ActionSchedule]):
         if getattr(self, 'swagger_fake_view', False):
             # Called during schema generation
             return ActionSchedule.objects.none()
-        return ActionSchedule.objects.filter(plan=self.kwargs['plan_pk'])
+        plan = PlanViewSet.get_visible_plan(self.request, self.kwargs['plan_pk'])
+        return ActionSchedule.objects.filter(plan=plan)
 
 
 plan_router.register(
@@ -234,7 +248,8 @@ class ActionImplementationPhaseViewSet(viewsets.ModelViewSet[ActionImplementatio
         if getattr(self, 'swagger_fake_view', False):
             # Called during schema generation
             return ActionImplementationPhase.objects.none()
-        return ActionImplementationPhase.objects.filter(plan=self.kwargs['plan_pk'])
+        plan = PlanViewSet.get_visible_plan(self.request, self.kwargs['plan_pk'])
+        return ActionImplementationPhase.objects.filter(plan=plan)
 
 
 plan_router.register(
@@ -1427,9 +1442,7 @@ class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, AuditLogg
             # Called during schema generation
             return Action.objects.none()
         plan_pk = self.kwargs['plan_pk']
-        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
-        if plan is None:
-            raise exceptions.NotFound(detail='Plan not found')
+        plan = PlanViewSet.get_visible_plan(self.request, plan_pk)
         self.plan = plan
         # For caching reasons, we must query the actions through the
         # plan so all of the actions share the same Plan instance
@@ -1513,11 +1526,8 @@ class CategoryTypeViewSet(viewsets.ModelViewSet[CategoryType]):
         if getattr(self, 'swagger_fake_view', False):
             # Called during schema generation
             return CategoryType.objects.none()
-        plan_pk = self.kwargs['plan_pk']
-        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
-        if plan is None:
-            raise exceptions.NotFound(detail='Plan not found')
-        return CategoryType.objects.filter(plan=plan_pk).prefetch_related('categories')
+        plan = PlanViewSet.get_visible_plan(self.request, self.kwargs['plan_pk'])
+        return CategoryType.objects.filter(plan=plan).prefetch_related('categories')
 
 
 plan_router.register(
@@ -1986,9 +1996,7 @@ class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[Act
             # Called during schema generation
             return ActionTask.objects.none()
         plan_pk = self.kwargs['plan_pk']
-        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
-        if plan is None:
-            raise exceptions.NotFound(detail='Plan not found')
+        plan = PlanViewSet.get_visible_plan(self.request, plan_pk)
         # The assignment fields read the task's plan, so fetch that with the tasks rather than once per
         # row. The assignments themselves are only worth fetching for a plan that has the feature: for
         # any other the serializer answers with empty lists.

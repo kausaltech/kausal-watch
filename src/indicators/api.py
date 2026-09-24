@@ -22,7 +22,7 @@ from kausal_common.users import user_or_bust, user_or_none
 from aplans.permissions import WatchObjectPermissions
 from aplans.rest_api import get_plan_from_view
 
-from actions.api import AuditLoggingBulkModelViewSet, plan_router
+from actions.api import AuditLoggingBulkModelViewSet, PlanViewSet, plan_router
 from actions.models import Plan
 from people.models import Person
 
@@ -678,7 +678,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         plan_pk = self.kwargs.get('plan_pk')
         if not plan_pk:
             return None
-        return Plan.objects.get(pk=plan_pk)
+        return PlanViewSet.get_visible_plan(self.request, plan_pk)
 
     def get_queryset(self):
         plan = self.get_plan()
@@ -721,8 +721,8 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
-    def goals(self, request, pk=None):
-        indicator = Indicator.objects.get(pk=pk)
+    def goals(self, request, plan_pk: int | None = None, pk=None):
+        indicator = self.get_object()
         resp = [dict(date=obj.date, value=obj.value) for obj in indicator.goals.all().order_by('date')]
         return Response(resp)
 
@@ -763,7 +763,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         return Response({})
 
     @action(detail=True, methods=['get'])
-    def dimensions(self, request, pk=None):
+    def dimensions(self, request, plan_pk: int | None = None, pk=None):
         indicator = self.get_object()
         dimensions = [
             {
