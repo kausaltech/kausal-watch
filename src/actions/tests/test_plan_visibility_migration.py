@@ -29,30 +29,38 @@ FUTURE = NOW + timedelta(days=1)
 # `published` is the old publication date; `exposed` is the old
 # `expose_unpublished_plan_only_to_authenticated_user`, which hid an unpublished plan when true;
 # `override` says one of the plan's domains had `publication_status_override` forced to published.
-# `unscheduled` says the publication date is cleared as well.
+# `unscheduled` says the publication date is cleared as well; `review` says the plan is named in
+# the deploy output because an override made its hostname look published while the plan stayed
+# hidden, so only a person can say whether it was meant to be public.
 MAPPING = """
-    published  exposed  override  visibility  unscheduled
-    past       +        -         public      -
-    past       -        -         public      -
-    none       -        -         public      -           # the flag off meant anyone could read it
-    none       +        -         internal    -
-    future     +        -         internal    +           # scheduled: unscheduled rather than exposed early
-    future     -        -         public      -           # already readable, so it keeps its launch date
-    none       +        +         public      -           # the overridden domain served it to anyone
-    future     +        +         public      -           # likewise, and its other domains launch on schedule
+    published  exposed  override  visibility  unscheduled  review
+    past       +        -         public      -            -
+    past       -        -         public      -            -
+    none       -        -         public      -            -       # the flag off meant anyone could read it
+    none       +        -         internal    -            -
+    future     +        -         internal    +            -       # scheduled: unscheduled rather than exposed early
+    future     -        -         public      -            -       # already readable, so it keeps its launch date
+    none       +        +         internal    -            +       # the override never made the plan readable
+    future     +        +         internal    +            +       # likewise, and scheduled as above
+    past       +        +         public      -            -       # public anyway, so nothing to decide
+    none       -        +         public      -            -
 """
 
 DATES = {'past': PAST, 'future': FUTURE, 'none': None}
 
 
 @pytest.mark.parametrize(*parse_table(MAPPING))
-def test_the_old_rules_map_onto_visibility(published, exposed, override, visibility, unscheduled):
-    assert decide_visibility(DATES[published], exposed, override, NOW) == (visibility, unscheduled)
+def test_the_old_rules_map_onto_visibility(published, exposed, override, visibility, unscheduled, review):
+    assert decide_visibility(DATES[published], exposed, override, NOW) == (visibility, unscheduled, review)
 
 
 def test_a_plan_published_exactly_now_counts_as_published():
     """The old rule was `published_at <= now`, so the boundary belongs to the published side."""
-    assert decide_visibility(NOW, exposed_only_to_authenticated=True, has_published_override=False, now=NOW) == ('public', False)
+    assert decide_visibility(NOW, exposed_only_to_authenticated=True, has_published_override=False, now=NOW) == (
+        'public',
+        False,
+        False,
+    )
 
 
 def test_a_scheduled_plan_is_never_made_public_early():
@@ -63,8 +71,21 @@ def test_a_scheduled_plan_is_never_made_public_early():
     for, through every path that carries no hostname. This only applies when the flag hid the
     plan; with the flag off, its data was readable before the date anyway.
     """
-    visibility, _ = decide_visibility(FUTURE, exposed_only_to_authenticated=True, has_published_override=False, now=NOW)
+    visibility, _, _ = decide_visibility(FUTURE, exposed_only_to_authenticated=True, has_published_override=False, now=NOW)
     assert visibility == 'internal'
+
+
+def test_a_published_override_alone_never_makes_a_plan_public():
+    """
+    Guard against reading the override as consent to publish.
+
+    The old override only changed what the hostname lookup reported. Everything the site then
+    loads went through the plan's own gate, which the override never touched, so no anonymous
+    visitor ever saw the site. Marking the plan public would expose its data on every path at
+    once: its wildcard hosts, its identifier, REST and search.
+    """
+    visibility, _, review = decide_visibility(None, exposed_only_to_authenticated=True, has_published_override=True, now=NOW)
+    assert (visibility, review) == ('internal', True)
 
 
 @pytest.mark.django_db

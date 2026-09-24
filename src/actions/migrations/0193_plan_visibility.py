@@ -7,9 +7,15 @@ readable before:
 - a plan published in the past was already readable anonymously, so it becomes `public`;
 - a plan with `expose_unpublished_plan_only_to_authenticated_user` false was readable anonymously
   regardless of publication, so it becomes `public` too;
-- a plan with a domain whose `publication_status_override` forced it published was served to
-  anyone at that hostname, whatever the plan's own state, so it becomes `public` as well;
 - everything else becomes `internal`, the safe default.
+
+A domain whose `publication_status_override` forced it published does not count. It changed what
+the hostname lookup reported, but everything the site then loads went through the plan's own
+gate, which the override never touched, so no anonymous visitor ever saw the site. Making such a
+plan public would expose its data on every path at once — its wildcard hosts, its identifier,
+REST and search. It stays `internal`, and the migration names it in its output, because the
+override says somebody meant that hostname to launch and only a person can say whether the plan
+was meant to be public.
 
 Scheduled plans — a publication date still in the future — are the awkward case when the flag hid
 them, because the old rule gated on `published_at <= now` and the new model has no equivalent
@@ -38,14 +44,15 @@ def decide_visibility(published_at, exposed_only_to_authenticated, has_published
     """
     Apply the old access rules to one plan.
 
-    Returns the visibility it should have, and whether its publication date should be cleared.
-    Kept free of any model access so the rules can be read, and tested, on their own.
+    Returns the visibility it should have, whether its publication date should be cleared, and
+    whether it needs a person's decision because an override made one of its hostnames look
+    published. Kept free of any model access so the rules can be read, and tested, on their own.
     """
-    if has_published_override:
-        # The overridden hostname served the plan to anyone before any other rule was consulted.
-        # A schedule stays as it is: the plan was readable already, and its other domains launch
-        # on the date as before.
-        return 'public', False
+    visibility, clear_schedule = _decide_from_plan(published_at, exposed_only_to_authenticated, now)
+    return visibility, clear_schedule, has_published_override and visibility == 'internal'
+
+
+def _decide_from_plan(published_at, exposed_only_to_authenticated, now) -> tuple[str, bool]:
     if published_at is not None and published_at <= now:
         # Already published, so it was readable by anyone.
         return 'public', False
@@ -65,15 +72,18 @@ def set_visibility_from_previous_rules(apps, schema_editor):
     PlanDomain = apps.get_model('actions', 'PlanDomain')
     now = timezone.now()
     unscheduled = []
+    overridden_but_internal = []
     overridden = set(PlanDomain.objects.filter(publication_status_override='published').values_list('plan_id', flat=True))
 
     for plan in Plan.objects.select_related('features').iterator():
-        visibility, clear_schedule = decide_visibility(
+        visibility, clear_schedule, needs_review = decide_visibility(
             plan.published_at,
             plan.features.expose_unpublished_plan_only_to_authenticated_user,
             plan.pk in overridden,
             now,
         )
+        if needs_review:
+            overridden_but_internal.append(plan.identifier)
         fields = ['visibility']
         plan.visibility = visibility
         if clear_schedule:
@@ -89,6 +99,15 @@ def set_visibility_from_previous_rules(apps, schema_editor):
         )
         for identifier, published_at in sorted(unscheduled):
             print(f'  {identifier} (was scheduled for {published_at.isoformat()})')
+
+    if overridden_but_internal:
+        print(
+            f'\n{len(overridden_but_internal)} plan(s) have a domain forced to published but were '
+            'not readable anonymously, and have been left internal; their overridden hostnames now '
+            'ask visitors to sign in. Make each one public deliberately if it was meant to be:'
+        )
+        for identifier in sorted(overridden_but_internal):
+            print(f'  {identifier}')
 
 
 def clear_visibility(apps, schema_editor):
