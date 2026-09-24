@@ -1138,7 +1138,9 @@ class PlanViewSet(SnippetViewSet[Plan]):
         if request.user.is_anonymous:
             return Plan.objects.qs.none()
         user = user_or_bust(request.user)
-        qs = user.get_adminable_plans()
+        # Filter by id only: the adminable plans are found through joins to actions and
+        # indicators, which a search of the listing could not filter on.
+        qs = Plan.objects.qs.filter(id__in=user.get_adminable_plans().values('id'))
         # Non-superusers don't have access to the is_active filter, so show only active plans by default
         if not user.is_superuser:
             qs = qs.filter(is_active=True)
