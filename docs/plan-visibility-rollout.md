@@ -24,6 +24,17 @@ signing in would help, though, so it offers sign-in on every hostname that serve
 the old UI offered it only when the plan's settings allowed it. Nothing becomes readable that
 should not, but a visitor can be sent round a sign-in that leads back to the same placeholder.
 
+## Freeze plan publication for the deploy
+
+From capturing the baseline until the post-deploy `--verify` has passed, nobody publishes or
+unpublishes a plan, changes a plan's visibility, or changes a domain's publication override.
+
+The migration derives `visibility` once, from the state it finds. A previous-release pod that
+publishes a plan after that leaves it launched but `internal`, so its site asks visitors to sign
+in; the new release, for its part, does not keep the retired flag in step. Neither direction
+exposes anything, and the post-deploy `--verify` would catch the drift, but the freeze avoids
+having to untangle it. Publication is rare enough that this costs nothing.
+
 ## 1. Capture the baseline, before deploying
 
 On the **old** revision, against the database being migrated. That revision has neither
@@ -119,6 +130,30 @@ VISIBILITY_REPORT=visibility.json npx playwright test plan-visibility   # in kau
 
 The e2e specs take their expectations from the report rather than restating them, so the backend
 says what each address should do and the tests confirm it does.
+
+## Rolling back
+
+The previous release reads `published_at` and the retired
+`expose_unpublished_plan_only_to_authenticated_user` column, not `visibility`. It has no way to
+say *launched but internal*: any plan with a past publication date is public to it. So an
+`internal` plan becomes readable by anyone after a rollback if it has launched, or if its retired
+flag is false (a plan the migration made public for that reason, later made internal).
+
+Before rolling back, list them:
+
+```sql
+SELECT p.identifier, p.published_at, f.expose_unpublished_plan_only_to_authenticated_user
+FROM actions_plan p JOIN actions_planfeatures f ON f.plan_id = p.id
+WHERE p.visibility = 'internal'
+  AND (p.published_at <= now() OR NOT f.expose_unpublished_plan_only_to_authenticated_user);
+```
+
+For a flag that is false, set it to true, which is what `internal` means to the previous
+release. For a launched plan there is no equivalent: unpublish it first, or accept that it will
+be public until the new release is back.
+
+The opposite drift is harmless: a `public` plan that has not launched, with the flag true, is
+hidden by the previous release. That is an outage for its preview hosts and API, not an exposure.
 
 ## 4. Retiring the deprecated fields
 
