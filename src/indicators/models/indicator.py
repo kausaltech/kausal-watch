@@ -439,6 +439,8 @@ class Indicator(
         TranslatedSearchField('name', boost=10),
         TranslatedAutocompleteField('name'),
         TranslatedSearchField('description'),
+        # For the pk__in subquery with which visible_for_user() lets plan staff see internal indicators
+        index.FilterField('id'),
         index.FilterField('plans'),
         index.FilterField('visibility'),
     ]
