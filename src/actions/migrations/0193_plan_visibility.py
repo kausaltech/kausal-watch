@@ -9,16 +9,20 @@ readable before:
   regardless of publication, so it becomes `public` too;
 - everything else becomes `internal`, the safe default.
 
-Scheduled plans — a publication date still in the future — are the awkward case, because the old
-rule gated on `published_at <= now` and the new model has no equivalent auto-flip for *data*.
-Marking them `public` would expose their data immediately, before the date they were scheduled
-for. Marking them `internal` alone would be worse in a different way: the domain still launches
-on schedule, so at that moment the site would appear as a sign-in wall rather than as the plan.
+Scheduled plans — a publication date still in the future — are the awkward case when the flag hid
+them, because the old rule gated on `published_at <= now` and the new model has no equivalent
+auto-flip for *data*. Marking them `public` would expose their data immediately, before the date
+they were scheduled for. Marking them `internal` alone would be worse in a different way: the
+domain still launches on schedule, so at that moment the site would appear as a sign-in wall
+rather than as the plan.
 
 So their schedule is cleared along with it, leaving them plainly unpublished and internal. That
 cancels a schedule somebody set, which is why the affected plans are named in the migration
 output: each one needs publishing deliberately, and this is the only moment that knows which
 they were.
+
+A scheduled plan with the flag off needs none of this: its data was already readable, so it
+becomes `public` and keeps its date, and its domain launches on schedule as before.
 
 Note that clearing the date is not reversible: the backwards migration restores the visibility
 default but cannot restore a publication date it did not record.
@@ -38,9 +42,12 @@ def decide_visibility(published_at, exposed_only_to_authenticated, now):
     if published_at is not None and published_at <= now:
         # Already published, so it was readable by anyone.
         return 'public', False
+    if published_at is not None and not exposed_only_to_authenticated:
+        # Scheduled, but already readable by anyone; the launch date carries over as it is.
+        return 'public', False
     if published_at is not None:
-        # Scheduled. Neither answer preserves the old behaviour, so the schedule goes too; see
-        # this migration's docstring.
+        # Scheduled and hidden. Neither answer preserves the old behaviour, so the schedule goes
+        # too; see this migration's docstring.
         return 'internal', True
     # Never published: the flag decided, and it hid the plan when set.
     return ('internal' if exposed_only_to_authenticated else 'public'), False

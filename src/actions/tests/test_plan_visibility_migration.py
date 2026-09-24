@@ -36,7 +36,7 @@ MAPPING = """
     none       -        public      -           # the flag off meant anyone could read it
     none       +        internal    -
     future     +        internal    +           # scheduled: unscheduled rather than exposed early
-    future     -        internal    +
+    future     -        public      -           # already readable, so it keeps its launch date
 """
 
 DATES = {'past': PAST, 'future': FUTURE, 'none': None}
@@ -52,15 +52,15 @@ def test_a_plan_published_exactly_now_counts_as_published():
     assert decide_visibility(NOW, exposed_only_to_authenticated=True, now=NOW) == ('public', False)
 
 
-@pytest.mark.parametrize('exposed', [True, False])
-def test_a_scheduled_plan_is_never_made_public_early(exposed):
+def test_a_scheduled_plan_is_never_made_public_early():
     """
     Guard the point of this finding.
 
     Marking a future date public would expose the plan's data before the day it was scheduled
-    for, through every path that carries no hostname.
+    for, through every path that carries no hostname. This only applies when the flag hid the
+    plan; with the flag off, its data was readable before the date anyway.
     """
-    visibility, _ = decide_visibility(FUTURE, exposed, NOW)
+    visibility, _ = decide_visibility(FUTURE, exposed_only_to_authenticated=True, now=NOW)
     assert visibility == 'internal'
 
 
