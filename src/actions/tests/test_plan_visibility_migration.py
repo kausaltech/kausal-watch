@@ -27,29 +27,32 @@ PAST = NOW - timedelta(days=1)
 FUTURE = NOW + timedelta(days=1)
 
 # `published` is the old publication date; `exposed` is the old
-# `expose_unpublished_plan_only_to_authenticated_user`, which hid an unpublished plan when true.
+# `expose_unpublished_plan_only_to_authenticated_user`, which hid an unpublished plan when true;
+# `override` says one of the plan's domains had `publication_status_override` forced to published.
 # `unscheduled` says the publication date is cleared as well.
 MAPPING = """
-    published  exposed  visibility  unscheduled
-    past       +        public      -
-    past       -        public      -
-    none       -        public      -           # the flag off meant anyone could read it
-    none       +        internal    -
-    future     +        internal    +           # scheduled: unscheduled rather than exposed early
-    future     -        public      -           # already readable, so it keeps its launch date
+    published  exposed  override  visibility  unscheduled
+    past       +        -         public      -
+    past       -        -         public      -
+    none       -        -         public      -           # the flag off meant anyone could read it
+    none       +        -         internal    -
+    future     +        -         internal    +           # scheduled: unscheduled rather than exposed early
+    future     -        -         public      -           # already readable, so it keeps its launch date
+    none       +        +         public      -           # the overridden domain served it to anyone
+    future     +        +         public      -           # likewise, and its other domains launch on schedule
 """
 
 DATES = {'past': PAST, 'future': FUTURE, 'none': None}
 
 
 @pytest.mark.parametrize(*parse_table(MAPPING))
-def test_the_old_rules_map_onto_visibility(published, exposed, visibility, unscheduled):
-    assert decide_visibility(DATES[published], exposed, NOW) == (visibility, unscheduled)
+def test_the_old_rules_map_onto_visibility(published, exposed, override, visibility, unscheduled):
+    assert decide_visibility(DATES[published], exposed, override, NOW) == (visibility, unscheduled)
 
 
 def test_a_plan_published_exactly_now_counts_as_published():
     """The old rule was `published_at <= now`, so the boundary belongs to the published side."""
-    assert decide_visibility(NOW, exposed_only_to_authenticated=True, now=NOW) == ('public', False)
+    assert decide_visibility(NOW, exposed_only_to_authenticated=True, has_published_override=False, now=NOW) == ('public', False)
 
 
 def test_a_scheduled_plan_is_never_made_public_early():
@@ -60,7 +63,7 @@ def test_a_scheduled_plan_is_never_made_public_early():
     for, through every path that carries no hostname. This only applies when the flag hid the
     plan; with the flag off, its data was readable before the date anyway.
     """
-    visibility, _ = decide_visibility(FUTURE, exposed_only_to_authenticated=True, now=NOW)
+    visibility, _ = decide_visibility(FUTURE, exposed_only_to_authenticated=True, has_published_override=False, now=NOW)
     assert visibility == 'internal'
 
 

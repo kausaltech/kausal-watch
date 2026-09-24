@@ -7,6 +7,8 @@ readable before:
 - a plan published in the past was already readable anonymously, so it becomes `public`;
 - a plan with `expose_unpublished_plan_only_to_authenticated_user` false was readable anonymously
   regardless of publication, so it becomes `public` too;
+- a plan with a domain whose `publication_status_override` forced it published was served to
+  anyone at that hostname, whatever the plan's own state, so it becomes `public` as well;
 - everything else becomes `internal`, the safe default.
 
 Scheduled plans — a publication date still in the future — are the awkward case when the flag hid
@@ -32,13 +34,18 @@ from django.db import migrations, models
 from django.utils import timezone
 
 
-def decide_visibility(published_at, exposed_only_to_authenticated, now):
+def decide_visibility(published_at, exposed_only_to_authenticated, has_published_override, now):
     """
     Apply the old access rules to one plan.
 
     Returns the visibility it should have, and whether its publication date should be cleared.
     Kept free of any model access so the rules can be read, and tested, on their own.
     """
+    if has_published_override:
+        # The overridden hostname served the plan to anyone before any other rule was consulted.
+        # A schedule stays as it is: the plan was readable already, and its other domains launch
+        # on the date as before.
+        return 'public', False
     if published_at is not None and published_at <= now:
         # Already published, so it was readable by anyone.
         return 'public', False
@@ -55,13 +62,16 @@ def decide_visibility(published_at, exposed_only_to_authenticated, now):
 
 def set_visibility_from_previous_rules(apps, schema_editor):
     Plan = apps.get_model('actions', 'Plan')
+    PlanDomain = apps.get_model('actions', 'PlanDomain')
     now = timezone.now()
     unscheduled = []
+    overridden = set(PlanDomain.objects.filter(publication_status_override='published').values_list('plan_id', flat=True))
 
     for plan in Plan.objects.select_related('features').iterator():
         visibility, clear_schedule = decide_visibility(
             plan.published_at,
             plan.features.expose_unpublished_plan_only_to_authenticated_user,
+            plan.pk in overridden,
             now,
         )
         fields = ['visibility']
