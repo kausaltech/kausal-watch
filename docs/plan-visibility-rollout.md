@@ -10,10 +10,14 @@ dark — so every hostname's answer is recorded before the deploy and compared a
 
 ## Order
 
-Either repository can ship first. The deployed UI gates on `__typename` and ignores
-`domain.status`, so the backend is safe alone; and the new UI falls back to `__typename` when it
-meets a status it does not recognise, so it is safe against an older backend too. Backend first
-is still preferable, because it closes the exposure immediately.
+Ship the backend first. The deployed UI gates on `__typename` and ignores `domain.status`, so
+the backend is safe alone, and it closes the exposure immediately.
+
+The new UI does survive an older backend, which is what covers a backend rollback: it falls back
+to `__typename` when it meets a status it does not recognise. That fallback cannot tell whether
+signing in would help, though, so it offers sign-in on every hostname that serves no plan, where
+the old UI offered it only when the plan's settings allowed it. Nothing becomes readable that
+should not, but a visitor can be sent round a sign-in that leads back to the same placeholder.
 
 ## 1. Capture the baseline, before deploying
 
