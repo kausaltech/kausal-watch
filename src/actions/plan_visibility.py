@@ -83,6 +83,29 @@ def plan_surfaces(plan: Plan, user: UserOrAnon | None = None) -> list[SurfaceRep
     return [describe_surface(domain, user) for domain in plan.domains.all()]
 
 
+@dataclass(frozen=True)
+class PlanAccessReport:
+    """
+    Whether one viewer may read a plan where no hostname is involved.
+
+    `plan(id:)`, REST and search carry no hostname, and a wildcard host has no `PlanDomain` row,
+    so none of them is a surface of its own. All of them follow this one answer: a wildcard host is
+    a preview surface, always launched, so it serves the site exactly when the plan is readable.
+    """
+
+    plan_identifier: str
+    visibility: str
+    readable: bool
+
+
+def plan_access(plan: Plan, user: UserOrAnon | None = None) -> PlanAccessReport:
+    return PlanAccessReport(
+        plan_identifier=plan.identifier,
+        visibility=plan.visibility,
+        readable=plan.is_visible_for_user(user),
+    )
+
+
 def all_surfaces(plans: Iterable[Plan], user: UserOrAnon | None = None) -> Iterator[SurfaceReport]:
     """
     Report every hostname of every given plan.

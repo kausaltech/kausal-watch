@@ -48,8 +48,10 @@ from actions.models.plan import Plan, PublicationStatus
 
 anon = AnonymousUser()
 rows = []
+plans = []
 for plan in Plan.objects.filter(is_active=True).prefetch_related('domains'):
     visible = plan.is_visible_for_user(anon)
+    plans.append({'plan': plan.identifier, 'readable_anonymously': visible})
     for domain in plan.domains.all():
         override = domain.publication_status_override
         if override is None:
@@ -64,13 +66,17 @@ for plan in Plan.objects.filter(is_active=True).prefetch_related('domains'):
             'served_anonymously': served,
             'launched': launched,
         })
-print(json.dumps({'surfaces': rows}, indent=2, sort_keys=True))
+print(json.dumps({'surfaces': rows, 'plans': plans}, indent=2, sort_keys=True))
 ```
 
-`--verify` reads only `key`, `served_anonymously` and `launched`; `key` must match the report's
-own, which is the hostname followed by the base path. `launched` is the hostname's own launch
-state, so a domain whose override forces it published counts as launched even when its plan has
-never been published.
+`--verify` reads `key`, `plan`, `served_anonymously` and `launched` from each surface; `key` must
+match the report's own, which is the hostname followed by the base path. `launched` is the
+hostname's own launch state, so a domain whose override forces it published counts as launched
+even when its plan has never been published.
+
+`plans` covers everything a hostname row cannot: `plan(id:)`, REST, search, and the wildcard
+hosts, which have no row of their own and followed `is_visible_for_user` alone on the old
+revision as they follow `visibility` alone on the new one. A baseline without it is refused.
 
 ## 2. Dry-run on a restore
 
@@ -81,14 +87,25 @@ the new one, then:
 python manage.py report_plan_visibility --verify baseline.json
 ```
 
-It fails on any surface whose change the migration does not explain, labelled `OUTAGE` (a live
-site went dark) or `EXPOSURE` (a dark site became readable). Only one change is expected: a
-hostname that had not launched, which is the bug being fixed. **Triage that list before
-deploying** — each entry is a site that will go dark, and any that should stay up needs
-`visibility` or its publication date set by hand first.
+It fails on any surface or plan whose change the migration does not explain, labelled `OUTAGE`
+(a live site went dark, or a plan stopped being readable) or `EXPOSURE` (a dark site or a hidden
+plan became readable). A plan's anonymous readability is never expected to change. Two hostname
+changes are:
 
-The migration also clears the publication date of any plan that was scheduled for the future,
-and names each one in its output; those need publishing deliberately.
+- a hostname that had not launched, which is the bug being fixed;
+- a hostname forced to published whose plan was not readable anonymously. The override changed
+  only what the hostname lookup reported; the site's own queries go through the plan's gate, so
+  it never rendered for anyone there. It now asks visitors to sign in.
+
+**Triage that list before deploying** — each entry is a site that will go dark, and any that
+should stay up needs `visibility` or its publication date set by hand first.
+
+The migration names two kinds of plan in its output, and each needs a deliberate decision:
+
+- a plan that was scheduled for the future: its publication date is cleared, so it needs
+  publishing when it is due;
+- a plan with a domain forced to published that was not readable anonymously: it is left
+  `internal`, so it needs making `public` if it was meant to be.
 
 ## 3. After deploying
 

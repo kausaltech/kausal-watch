@@ -6,6 +6,10 @@ becoming publicly readable, or a live customer site going dark. Both are answers
 question — what does this hostname serve someone who is not signed in — so the check is to
 record that answer for every hostname before the deploy and compare after.
 
+Hostnames are not the only way in. A plan is also read by identifier, over REST and through
+search, and at wildcard hosts that have no row of their own, so the report records one more
+answer per plan — whether it is readable anonymously at all — and the check compares that too.
+
 The deploy deliberately changes some of them: an unlaunched production domain of a plan that
 migrates to `public` stops serving the site, which is the fix. So a plain diff is not the test;
 `--verify` takes the baseline, works out which surfaces are *expected* to change, and fails only
@@ -29,17 +33,64 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.management.base import BaseCommand, CommandError
 
 from actions.models.plan import Plan, PlanDomainStatus
-from actions.plan_visibility import all_surfaces
+from actions.plan_visibility import all_surfaces, plan_access
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
 
-    from actions.plan_visibility import SurfaceReport
+    from actions.plan_visibility import PlanAccessReport, SurfaceReport
 
 # A surface that served the site before and does not now is an outage; one that serves it now and
 # did not before is an exposure. Only the first is expected, and only where the hostname had not
 # launched — that is precisely the bug being fixed.
 EXPECTED_LOSS_REASON = 'hostname that has not launched'
+# The other expected loss: a hostname forced to published whose plan nobody could read
+# anonymously. The override changed only what the hostname lookup reported; everything the site
+# then loads went through the plan's own gate, so the site never rendered there for anyone.
+UNREADABLE_PLAN_REASON = 'its plan was not readable anonymously, so the site never rendered'
+
+
+def _plan_key(identifier: str) -> str:
+    return f'plan {identifier}'
+
+
+def _compare_plans(
+    baseline_readable: dict[str, bool],
+    access: list[PlanAccessReport],
+    allowed_new: set[str],
+) -> tuple[list[tuple[str, bool, bool]], list[str], list[str]]:
+    """
+    Compare whether each plan is readable anonymously, returning (unexpected, gone, appeared).
+
+    The migration never changes who may read a plan, so any change here is unexplained. A plan
+    added since the baseline stands on what it allows now, like a new surface.
+    """
+    readable_now = {report.plan_identifier: report.readable for report in access}
+    unexpected = [
+        (_plan_key(identifier), readable_before, readable_now[identifier])
+        for identifier, readable_before in baseline_readable.items()
+        if identifier in readable_now and readable_now[identifier] != readable_before
+    ]
+    gone = [_plan_key(identifier) for identifier in baseline_readable if identifier not in readable_now]
+    new_plans = sorted(set(readable_now) - set(baseline_readable))
+    appeared = [_plan_key(identifier) for identifier in new_plans]
+    unexpected.extend(
+        (_plan_key(identifier), False, True)
+        for identifier in new_plans
+        if readable_now[identifier] and _plan_key(identifier) not in allowed_new
+    )
+    return unexpected, gone, appeared
+
+
+def _describe_change(key: str, before: bool, after: bool) -> str:
+    marker = 'EXPOSURE' if after else 'OUTAGE'
+    if key.startswith(_plan_key('')):
+        was = 'was readable anonymously' if before else 'was not readable anonymously'
+        now = 'is' if after else 'is not'
+    else:
+        was = 'served the site' if before else 'was dark'
+        now = 'serves the site' if after else 'is dark'
+    return f'{marker}  {key} — {was}, now {now}'
 
 
 class Command(BaseCommand):
@@ -56,7 +107,10 @@ class Command(BaseCommand):
             action='append',
             default=[],
             metavar='KEY',
-            help='Accept a surface added since the baseline that serves the site. Repeat for each one.',
+            help=(
+                'Accept a surface added since the baseline that serves the site, or a plan added since '
+                'that is readable, given as "plan IDENTIFIER". Repeat for each one.'
+            ),
         )
         parser.add_argument(
             '--include-inactive',
@@ -70,24 +124,42 @@ class Command(BaseCommand):
             plans = plans.filter(is_active=True)
 
         # Anonymous is the viewer that matters: the question is what the public gets.
-        surfaces = list(all_surfaces(plans, AnonymousUser()))
+        anonymous = AnonymousUser()
+        surfaces = list(all_surfaces(plans, anonymous))
+        access = sorted((plan_access(plan, anonymous) for plan in plans), key=lambda report: report.plan_identifier)
 
         if options['verify']:
-            self._verify(surfaces, options['verify'], allowed_new=set(options['allow_new']))
+            self._verify(surfaces, access, options['verify'], allowed_new=set(options['allow_new']))
             return
 
         json.dump(
-            {'surfaces': [surface.as_dict() for surface in surfaces]},
+            {
+                'surfaces': [surface.as_dict() for surface in surfaces],
+                'plans': [
+                    {'plan': report.plan_identifier, 'visibility': report.visibility, 'readable_anonymously': report.readable}
+                    for report in access
+                ],
+            },
             self.stdout,
             indent=2,
             sort_keys=True,
         )
         self.stdout.write('')
 
-    def _verify(self, surfaces: list[SurfaceReport], baseline_path: str, allowed_new: set[str]) -> None:
+    def _verify(
+        self,
+        surfaces: list[SurfaceReport],
+        access: list[PlanAccessReport],
+        baseline_path: str,
+        allowed_new: set[str],
+    ) -> None:
+        # A baseline without `plans` predates the per-plan check, and would pass while comparing
+        # hostnames only, so it is refused rather than read as having no plans.
         try:
             with Path(baseline_path).open() as baseline_file:
-                baseline = {row['key']: row for row in json.load(baseline_file)['surfaces']}
+                content = json.load(baseline_file)
+            baseline = {row['key']: row for row in content['surfaces']}
+            baseline_readable = {row['plan']: row['readable_anonymously'] for row in content['plans']}
         except (OSError, KeyError, ValueError) as error:
             raise CommandError(f'Could not read the baseline {baseline_path}: {error}') from error
 
@@ -112,6 +184,8 @@ class Command(BaseCommand):
             # Gaining the site is never expected: nothing here widens who may read a plan.
             if not served_after and not before['launched'] and not after.is_launched:
                 expected.append((key, EXPECTED_LOSS_REASON))
+            elif not served_after and baseline_readable.get(before.get('plan', '')) is False:
+                expected.append((key, UNREADABLE_PLAN_REASON))
             else:
                 unexpected.append((key, served_before, served_after))
 
@@ -124,20 +198,25 @@ class Command(BaseCommand):
             (key, False, True) for key in appeared if current[key].status == PlanDomainStatus.AVAILABLE and key not in allowed_new
         )
 
-        self._report(len(baseline), expected, unexpected, gone, appeared)
+        plan_unexpected, plan_gone, plan_appeared = _compare_plans(baseline_readable, access, allowed_new)
+        unexpected.extend(plan_unexpected)
+        gone.extend(plan_gone)
+        appeared.extend(plan_appeared)
+
+        self._report((len(baseline), len(baseline_readable)), expected, unexpected, gone, appeared)
 
         if unexpected or gone:
             raise CommandError('Visibility changed in ways the migration does not explain.')
 
     def _report(
         self,
-        checked: int,
+        checked: tuple[int, int],
         expected: list[tuple[str, str]],
         unexpected: list[tuple[str, bool, bool]],
         gone: list[str],
         appeared: list[str],
     ) -> None:
-        self.stdout.write(f'Checked {checked} surfaces against the baseline.')
+        self.stdout.write(f'Checked {checked[0]} surfaces and {checked[1]} plans against the baseline.')
 
         if expected:
             self.stdout.write(self.style.WARNING(f'\n{len(expected)} stopped serving the site, as intended:'))
@@ -157,9 +236,6 @@ class Command(BaseCommand):
         if unexpected:
             self.stdout.write(self.style.ERROR(f'\n{len(unexpected)} changed unexpectedly:'))
             for key, before, after in sorted(unexpected):
-                was = 'served the site' if before else 'was dark'
-                now = 'serves the site' if after else 'is dark'
-                marker = 'EXPOSURE' if after else 'OUTAGE'
-                self.stdout.write(f'  {marker}  {key} — {was}, now {now}')
+                self.stdout.write(f'  {_describe_change(key, before, after)}')
         elif not gone:
             self.stdout.write(self.style.SUCCESS('\nNo unexplained changes.'))
