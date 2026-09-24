@@ -98,6 +98,7 @@ dependencies = [
   "networkx",
   "opentelemetry-exporter-otlp-proto-http",
   "opentelemetry-instrumentation-asgi",
+  "opentelemetry-instrumentation-celery",
   "opentelemetry-instrumentation-django",
   "opentelemetry-instrumentation-psycopg",
   "opentelemetry-instrumentation-redis",

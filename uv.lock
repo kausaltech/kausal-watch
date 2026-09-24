@@ -1952,6 +1952,7 @@ dependencies = [
     { name = "networkx" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-instrumentation-asgi" },
+    { name = "opentelemetry-instrumentation-celery" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "opentelemetry-instrumentation-psycopg" },
     { name = "opentelemetry-instrumentation-redis" },
@@ -2110,6 +2111,7 @@ requires-dist = [
     { name = "networkx" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-instrumentation-asgi" },
+    { name = "opentelemetry-instrumentation-celery" },
     { name = "opentelemetry-instrumentation-django" },
     { name = "opentelemetry-instrumentation-psycopg" },
     { name = "opentelemetry-instrumentation-redis" },
@@ -2657,6 +2659,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/17/83/8e8e83b7ac285281687c7be2fd305213ccccbb8c0a2dd4fb45a8ccaf12c7/opentelemetry_instrumentation_asgi-0.65b0.tar.gz", hash = "sha256:892bca67c56522ffa85a8a83cf934d7b50b3be2132e45cbee705825f0a5ba426", size = 26140, upload-time = "2026-07-16T15:25:54.544Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/9c/376962840b619d2d55fe8ee2285f8c70971c090e5fff614516fc654a6f3a/opentelemetry_instrumentation_asgi-0.65b0-py3-none-any.whl", hash = "sha256:3a845a8ebd1c4ef0d8263401e6545f5b219b2feee612090d50f578a87e71fd65", size = 15903, upload-time = "2026-07-16T15:24:57.198Z" },
+]
+
+[[package]]
+name = "opentelemetry-instrumentation-celery"
+version = "0.65b0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/ba/c4ef088927a6bf1b75916b3bfca93552526f0e3e85d19557666f858fc5b6/opentelemetry_instrumentation_celery-0.65b0.tar.gz", hash = "sha256:ff4d192b6371cfe06969005862dc558cc8b79b03b0bbdfbf65b9a59e4dcd7fee", size = 16071, upload-time = "2026-07-16T15:26:00.867Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/3a/3a53db4c82bd42f67a16c846aa972aef75043557e26e9d6a4ca8ffac9699/opentelemetry_instrumentation_celery-0.65b0-py3-none-any.whl", hash = "sha256:8510357a6a9e2cb1a6485fe98642a39f06c2970eb58656de06260b922ffe7888", size = 13556, upload-time = "2026-07-16T15:25:05.427Z" },
 ]
 
 [[package]]
