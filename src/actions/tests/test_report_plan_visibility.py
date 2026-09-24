@@ -19,7 +19,7 @@ import pytest
 
 from aplans.utils import RestrictedVisibilityModel
 
-from actions.models.plan import PlanDomain
+from actions.models.plan import PlanDomain, PublicationStatus
 
 pytestmark = pytest.mark.django_db
 
@@ -126,6 +126,27 @@ class TestVerify:
         """
         plan = plan_factory(visibility=INTERNAL, published_at=None)
         domain = plan_domain_factory(plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW)
+        baseline = _baseline(tmp_path, [_row(domain.hostname, served=True, launched=False)])
+
+        with pytest.raises(CommandError):
+            _verify(baseline)
+
+    def test_a_site_launched_by_its_override_going_dark_fails_as_an_outage(
+        self,
+        tmp_path,
+        plan_factory,
+        plan_domain_factory,
+    ):
+        """
+        A hostname forced to published is launched, whatever the plan's own date says.
+
+        Such a site going dark is not the intended change, which only darkens hostnames that have
+        not launched. The baseline cannot be trusted to say so: the plan never launched, and a
+        baseline that records the plan's launch rather than the hostname's looks exactly like the
+        intended change.
+        """
+        plan = plan_factory(visibility=INTERNAL, published_at=None)
+        domain = plan_domain_factory(plan=plan, publication_status_override=PublicationStatus.PUBLISHED)
         baseline = _baseline(tmp_path, [_row(domain.hostname, served=True, launched=False)])
 
         with pytest.raises(CommandError):

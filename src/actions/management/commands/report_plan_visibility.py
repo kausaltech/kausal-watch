@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     from actions.plan_visibility import SurfaceReport
 
 # A surface that served the site before and does not now is an outage; one that serves it now and
-# did not before is an exposure. Only the first is expected, and only where the plan had not
+# did not before is an exposure. Only the first is expected, and only where the hostname had not
 # launched — that is precisely the bug being fixed.
-EXPECTED_LOSS_REASON = 'production hostname of a plan that has not launched'
+EXPECTED_LOSS_REASON = 'hostname that has not launched'
 
 
 class Command(BaseCommand):
@@ -103,12 +103,14 @@ class Command(BaseCommand):
             served_after = after.status == PlanDomainStatus.AVAILABLE
             if served_before == served_after:
                 continue
-            # Losing the site is expected on a production hostname whose plan had not launched,
-            # and nowhere else. A preview surface is always launched, so it goes dark only because
-            # the plan itself stopped being readable — an outage on a host somebody was using to
-            # look at the plan, and one that wears the same shape as the intended change.
+            # Losing the site is expected on a hostname that had not launched and still has not,
+            # and nowhere else. The launch that counts is the hostname's own: an override forces
+            # it whatever the plan's date says, and a preview surface is always launched, so either
+            # one going dark means the plan itself stopped being readable — an outage that would
+            # wear the shape of the intended change if only the plan's launch were consulted.
+            # Both sides are checked, so a hostname that lost its launch in between is not excused.
             # Gaining the site is never expected: nothing here widens who may read a plan.
-            if not served_after and not before['launched'] and not after.is_preview:
+            if not served_after and not before['launched'] and not after.is_launched:
                 expected.append((key, EXPECTED_LOSS_REASON))
             else:
                 unexpected.append((key, served_before, served_after))

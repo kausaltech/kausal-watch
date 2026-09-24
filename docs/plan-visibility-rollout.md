@@ -41,15 +41,14 @@ anon = AnonymousUser()
 rows = []
 for plan in Plan.objects.filter(is_active=True).prefetch_related('domains'):
     visible = plan.is_visible_for_user(anon)
-    launched = plan.is_live()
     for domain in plan.domains.all():
         override = domain.publication_status_override
-        if override == PublicationStatus.PUBLISHED:
-            served = True
-        elif override == PublicationStatus.UNPUBLISHED:
-            served = False
-        else:
+        if override is None:
             served = visible
+            launched = plan.is_live()
+        else:
+            # The override decided both, whatever the plan's own state.
+            served = launched = override == PublicationStatus.PUBLISHED
         rows.append({
             'key': domain.hostname + (domain.base_path or ''),
             'plan': plan.identifier,
@@ -60,7 +59,9 @@ print(json.dumps({'surfaces': rows}, indent=2, sort_keys=True))
 ```
 
 `--verify` reads only `key`, `served_anonymously` and `launched`; `key` must match the report's
-own, which is the hostname followed by the base path.
+own, which is the hostname followed by the base path. `launched` is the hostname's own launch
+state, so a domain whose override forces it published counts as launched even when its plan has
+never been published.
 
 ## 2. Dry-run on a restore
 
@@ -73,9 +74,9 @@ python manage.py report_plan_visibility --verify baseline.json
 
 It fails on any surface whose change the migration does not explain, labelled `OUTAGE` (a live
 site went dark) or `EXPOSURE` (a dark site became readable). Only one change is expected: a
-production hostname of a plan that had not launched, which is the bug being fixed. **Triage that
-list before deploying** — each entry is a site that will go dark, and any that should stay up
-needs `visibility` or its publication date set by hand first.
+hostname that had not launched, which is the bug being fixed. **Triage that list before
+deploying** — each entry is a site that will go dark, and any that should stay up needs
+`visibility` or its publication date set by hand first.
 
 The migration also clears the publication date of any plan that was scheduled for the future,
 and names each one in its output; those need publishing deliberately.
