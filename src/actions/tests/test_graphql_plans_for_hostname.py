@@ -46,17 +46,6 @@ GET_PLANS_BY_HOSTNAME_QUERY = """
   }
 """
 
-GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = """
-  query GetPlansByHostname($hostname: String) {
-    plansForHostname(hostname: $hostname) {
-      domains {
-        status
-        statusMessage
-      }
-    }
-  }
-"""
-
 GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME = """
   query GetPlansByHostname($hostname: String) {
     plansForHostname(hostname: $hostname) {
@@ -146,25 +135,6 @@ def test_plans_for_hostname_reuses_prefetched_domains(
     assert len(data['plansForHostname']) == len(plans)
     plan_domain_queries = [query for query in queries if 'FROM "actions_plandomain"' in query['sql']]
     assert len(plan_domain_queries) == 2
-
-
-@pytest.mark.parametrize('publication_status_override', [PublicationStatus.UNPUBLISHED, PublicationStatus.PUBLISHED])
-def test_status_message_is_null_whatever_the_domain_reports(
-    graphql_client_query_data, plan_factory, plan_domain_factory, publication_status_override
-):
-    """
-    The field is kept but carries nothing.
-
-    Its old copy has been removed; keeping the field resolvable leaves room for an authored
-    message later without an API change.
-    """
-    plan = plan_factory()
-    domain = plan_domain_factory(plan=plan, publication_status_override=publication_status_override)
-    data = graphql_client_query_data(
-        GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE,
-        variables={'hostname': domain.hostname},
-    )
-    assert data['plansForHostname'][0]['domains'][0]['statusMessage'] is None
 
 
 @pytest.fixture(params=['settings', 'header', 'both'], ids=['via_settings', 'via_header', 'via_both'])

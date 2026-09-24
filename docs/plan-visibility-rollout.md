@@ -13,6 +13,11 @@ dark — so every hostname's answer is recorded before the deploy and compared a
 Ship the backend first. The deployed UI gates on `__typename` and ignores `domain.status`, so
 the backend is safe alone, and it closes the exposure immediately.
 
+That UI reads its sign-in button from `loginEnabled`, but forwards it to the placeholder page only
+alongside a non-empty `statusMessage`. The backend therefore still sends a message on every
+`SIGN_IN_REQUIRED` hostname, and only there; without one, that UI would hide the sign-in button
+from the viewers who need it. The newer UI shows the same message above its button.
+
 The new UI does survive an older backend, which is what covers a backend rollback: it falls back
 to `__typename` when it meets a status it does not recognise. That fallback cannot tell whether
 signing in would help, though, so it offers sign-in on every hostname that serves no plan, where
@@ -106,7 +111,8 @@ releases on the UI side:
 1. Once every deployed backend has `showLoginLinkInPublicUi`, switch the UI's plan-context query
    from `allowPublicSiteLogin` to it.
 2. Once that UI is deployed everywhere, delete `allowPublicSiteLogin` and `loginEnabled` from
-   the schema.
+   the schema, and stop sending the sign-in message: make `PlanDomain.status_message_for_user`
+   return None again.
 
 The UI's fallback to `__typename` for an unrecognised `domain.status` can go at the same time as
 step 1: by then no deployed backend answers with the old publication statuses.

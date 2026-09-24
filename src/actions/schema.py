@@ -161,11 +161,15 @@ PlanDomainStatusNode = graphene.Enum.from_enum(PlanDomainStatus)
 
 class PlanDomainNode(DjangoNode[PlanDomain]):
     status = PlanDomainStatusNode()
-    status_message = graphene.String(required=False, source='status_message')
+    status_message = graphene.String(required=False)
 
     @staticmethod
     def resolve_status(root: PlanDomain, info: GQLInfo) -> PlanDomainStatus:
         return root.status_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_status_message(root: PlanDomain, info: GQLInfo) -> str | None:
+        return root.status_message_for_user(info.context.user)
 
     class Meta:
         model = PlanDomain
@@ -397,11 +401,10 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         """
         Return a message to show instead of the site, or None for the default placeholder.
 
-        Kept resolvable although nothing produces one today, so an authored message can be added
-        later without an API change. See `PlanDomain.status_message`.
+        See `PlanDomain.status_message_for_user`.
         """
         domain = PlanInterface.resolve_domain(root, info, hostname=hostname)
-        return domain.status_message if domain is not None else None
+        return domain.status_message_for_user(info.context.user) if domain is not None else None
 
 
 @register_graphene_node

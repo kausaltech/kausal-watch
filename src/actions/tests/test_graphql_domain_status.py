@@ -205,16 +205,62 @@ def test_a_signed_in_viewer_without_access_is_not_asked_to_sign_in_again(
     assert plan_data['loginEnabled'] is False
 
 
-def test_status_message_is_null_but_still_queryable(graphql_client_query_data, plan_factory, plan_domain_factory):
-    """
-    The field survives its copy.
+STATUS_MESSAGE_QUERY = """
+  query GetPlansByHostname($hostname: String) {
+    plansForHostname(hostname: $hostname) {
+      loginEnabled
+      statusMessage
+      domain { status statusMessage }
+    }
+  }
+"""
 
-    Nothing produces a message today, but keeping the field resolvable means an authored one can
-    be introduced later without an API change or a frontend release.
+
+@pytest.mark.parametrize(*parse_table(SURFACE_MATRIX))
+def test_status_message_is_sent_only_where_sign_in_is_required(
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+    person_factory,
+    client,
+    settings,
+    surface,
+    visibility,
+    launched,
+    user,
+    status,
+    typename,
+):
     """
-    domain = plan_domain_factory(plan=plan_factory(visibility='public', published_at=None))
-    data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})
-    assert data['plansForHostname'][0]['domain']['statusMessage'] is None
+    A message accompanies the sign-in page, and nothing else.
+
+    The UI released before this model forwards `loginEnabled` to its placeholder only alongside a
+    non-empty message, so without one it would hide the sign-in button from viewers who need it.
+    Remove once no deployed UI predates `domain.status`.
+    """
+    hostname = _setup(
+        surface,
+        visibility,
+        launched,
+        user,
+        plan_factory,
+        plan_domain_factory,
+        person_factory,
+        client,
+        settings,
+    )
+    plan_data = graphql_client_query_data(STATUS_MESSAGE_QUERY, variables={'hostname': hostname})['plansForHostname'][0]
+
+    sign_in_required = status == 'SIGN_IN_REQUIRED'
+    assert bool(plan_data['domain']['statusMessage']) is sign_in_required
+    assert plan_data['statusMessage'] == plan_data['domain']['statusMessage']
+    assert plan_data['loginEnabled'] is sign_in_required
+
+
+def test_status_message_is_in_the_plan_language(graphql_client_query_data, plan_factory, plan_domain_factory):
+    domain = plan_domain_factory(plan=plan_factory(visibility='internal', primary_language='fi'))
+    data = graphql_client_query_data(STATUS_MESSAGE_QUERY, variables={'hostname': domain.hostname})
+    assert data['plansForHostname'][0]['domain']['statusMessage'] == 'Sivusto ei ole julkinen tällä hetkellä.'
 
 
 @pytest.mark.parametrize(

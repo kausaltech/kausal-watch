@@ -1835,15 +1835,19 @@ class PlanDomain(models.Model):
             return PlanDomainStatus.UNAVAILABLE
         return PlanDomainStatus.SIGN_IN_REQUIRED
 
-    @property
-    def status_message(self) -> str | None:
+    def status_message_for_user(self, user: UserOrAnon | None) -> str | None:
         """
         Return a message to show instead of the site, or None for the default placeholder.
 
-        Nothing produces one today. The field is kept so an authored, per-plan message can be
-        introduced later without an API change or a frontend release.
+        Only the sign-in page gets one, and only for the UI released before `status`: it forwards
+        `loginEnabled` to its placeholder solely alongside a non-empty message, so without one it
+        would hide the sign-in button from the viewers who need it. Remove once no deployed UI
+        predates `status`; the field itself stays, for an authored per-plan message later.
         """
-        return None
+        if self.status_for_user(user) != PlanDomainStatus.SIGN_IN_REQUIRED:
+            return None
+        with translation.override(self.plan.primary_language):
+            return gettext('The site is not public at this time.')
 
     def validate_hostname(self):
         dn = self.hostname
