@@ -106,3 +106,22 @@ def test_a_row_this_release_writes_hides_an_unpublished_plan_from_the_previous_o
         )
         (exposed_only_to_authenticated,) = cursor.fetchone()
     assert exposed_only_to_authenticated is True
+
+
+@pytest.mark.django_db
+def test_a_plan_the_previous_release_creates_comes_out_internal():
+    """
+    Give the new column a database default, so the previous release can still create plans.
+
+    Migrations run while the previous release's pods are still serving. Those pods do not know
+    `visibility`, so they omit it when they insert a plan; without a database default that insert
+    violates `NOT NULL`. The default must be the safe answer, since such a plan was never published.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+            'SELECT column_default FROM information_schema.columns WHERE table_name = %s AND column_name = %s',
+            ['actions_plan', 'visibility'],
+        )
+        (column_default,) = cursor.fetchone()
+    assert column_default is not None
+    assert column_default.startswith("'internal'")

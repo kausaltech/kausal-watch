@@ -363,6 +363,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         max_length=20,
         choices=RestrictedVisibilityModel.VisibilityState.choices,
         default=RestrictedVisibilityModel.VisibilityState.INTERNAL,
+        # Also in the database, so that pods on the previous release can still create plans
+        # while a rollout is under way; see migration 0193.
+        db_default=RestrictedVisibilityModel.VisibilityState.INTERNAL,
         verbose_name=_('visibility'),
         help_text=_(
             'Internal: only signed-in users who have been granted access to this plan can view it. '

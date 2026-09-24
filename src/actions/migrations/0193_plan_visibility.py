@@ -32,6 +32,11 @@ they were.
 A scheduled plan with the flag off needs none of this: its data was already readable, so it
 becomes `public` and keeps its date, and its domain launches on schedule as before.
 
+The column keeps a database default of `internal`, not only Django's: migrations run while the
+previous release is still serving, and its pods omit the column when they create a plan. Without
+the default that insert would fail `NOT NULL`; with it, the new plan is internal, which is what an
+unpublished plan it created meant anyway.
+
 Note that clearing the date is not reversible: the backwards migration restores the visibility
 default but cannot restore a publication date it did not record.
 """
@@ -127,6 +132,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 choices=[('internal', 'Internal'), ('public', 'Public')],
                 default='internal',
+                db_default='internal',
                 help_text=(
                     'Internal: only signed-in users who have been granted access to this plan can view it. '
                     'Public: anyone can view it, without signing in.'
