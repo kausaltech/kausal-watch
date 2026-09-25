@@ -6,6 +6,7 @@ from uuid import uuid4
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
+from django.utils import timezone
 from wagtail.models import Page, Revision
 from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
@@ -13,6 +14,8 @@ from wagtail.rich_text import RichText
 import pytest
 
 from kausal_common.datasets.models import DatasetMetricComputation, DatasetMetricValidationRule, DatasetSchema
+
+from aplans.utils import RestrictedVisibilityModel
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
@@ -147,6 +150,19 @@ def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, a
     assert isinstance(action_copy.latest_revision, Revision)
     action_copy.latest_revision.publish()
     assert action.contact_persons.exists()
+
+
+def test_copy_of_public_plan_is_internal_and_unpublished(plan_with_pages):
+    plan = plan_with_pages
+    plan.visibility = RestrictedVisibilityModel.VisibilityState.PUBLIC
+    plan.published_at = timezone.now()
+    plan.save(update_fields=['visibility', 'published_at'])
+    plan_copy = copy_plan(plan)
+    plan_copy.refresh_from_db()
+    assert plan_copy.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
+    assert plan_copy.published_at is None
+    plan.refresh_from_db()
+    assert plan.visibility == RestrictedVisibilityModel.VisibilityState.PUBLIC
 
 
 def test_category_type_copy_references_copied_plan(plan_with_pages, category_type):

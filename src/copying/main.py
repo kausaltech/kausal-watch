@@ -34,6 +34,8 @@ from kausal_common.datasets.models import (
     Dimension as DatasetDimension,
 )
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType, skip_page_synchronization_ctx
@@ -886,6 +888,9 @@ class CloneVisitor(AbstractVisitor):
         instance.site_url = f'https://{site_copy.hostname}'
         # TODO: Ideally it should be configurable whether 'published_at` is reset
         instance.published_at = None
+        # Clearing `published_at` only keeps the production hostname dark; the copy must also stop
+        # being anonymously readable, or it would be served through preview hosts and the APIs.
+        instance.visibility = RestrictedVisibilityModel.VisibilityState.INTERNAL
 
     @pre_visit.register
     def _(self, instance: Indicator) -> None:
