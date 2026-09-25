@@ -354,7 +354,9 @@ def generate_strawberry_schema() -> sb.Schema:
 
     from django.conf import settings
 
-    mutation_types: list[type] = [Mutation]
+    from access_requests.mutations import AccessRequestMutations
+
+    mutation_types: list[type] = [Mutation, AccessRequestMutations]
     if test_mode_enabled() or settings.ENABLE_TEST_MODE:
         mutation_types.append(WatchTestModeMutations)
     FinalMutation = merge_types('Mutation', tuple(mutation_types))
