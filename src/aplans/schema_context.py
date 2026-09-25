@@ -336,7 +336,14 @@ class WatchExecutionCacheExtension(ExecutionCacheExtension[WatchGraphQLContext])
             self.set_reason('public-user token present')
             return None
 
-        parts = [str(plan.identifier), plan.cache_invalidated_at.isoformat()]
+        # Saving the plan bumps `cache_invalidated_at`, but a scheduled launch happens without
+        # a save: the publication date just passes. Liveness is in the key so that a result
+        # cached before the launch is not served after it.
+        parts = [
+            str(plan.identifier),
+            plan.cache_invalidated_at.isoformat(),
+            'live' if plan.is_live() else 'not-live',
+        ]
         return parts
 
     def on_execute(self) -> Generator[None]:
