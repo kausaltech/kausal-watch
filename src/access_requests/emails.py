@@ -1,0 +1,126 @@
+"""
+Emails telling a visitor how their access request was decided.
+
+Sent synchronously after the decision has been committed, so the admin who decided can be told
+right away when an email could not be delivered.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.utils import translation
+from django.utils.translation import gettext as _
+
+import sentry_sdk
+from loguru import logger
+
+from aplans.email_sender import EmailSender
+
+from notifications.mjml import make_jinja_environment, render_mjml
+
+from .models import AccessRequest
+
+if TYPE_CHECKING:
+    from actions.models import Plan
+
+logger = logger.bind(name='access_requests.emails')
+
+
+class _Content(TypedDict):
+    subject: str
+    heading: str
+    paragraphs: list[str]
+
+
+def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
+    plan = req.plan
+    return {
+        'subject': _('Your access to %(plan_name)s has been approved') % {'plan_name': plan_name},
+        'heading': _('Your access has been approved'),
+        'paragraphs': [
+            _('Your request to view %(plan_name)s has been approved.') % {'plan_name': plan_name},
+            _('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url},
+        ],
+    }
+
+
+def _rejected_content(req: AccessRequest, plan_name: str) -> _Content:
+    plan = req.plan
+    paragraphs = [_('Your request to view %(plan_name)s has not been approved.') % {'plan_name': plan_name}]
+    if plan.access_request_eligibility_text_i18n:
+        paragraphs.append(plan.access_request_eligibility_text_i18n)
+    if plan.access_request_contact_email:
+        paragraphs.append(
+            _('If you think this is a mistake, or you need access for your work, please contact %(email)s.')
+            % {'email': plan.access_request_contact_email}
+        )
+    return {
+        'subject': _('Your request to access %(plan_name)s') % {'plan_name': plan_name},
+        'heading': _('Your request was not approved'),
+        'paragraphs': paragraphs,
+    }
+
+
+def _site_context(plan: Plan) -> dict[str, str]:
+    general_content = getattr(plan, 'general_content', None)
+    return {
+        'view_url': plan.site_url or '',
+        'title': (general_content.site_title if general_content else '') or plan.name_i18n,
+    }
+
+
+def _build_message(req: AccessRequest) -> EmailMessage:
+    plan = req.plan
+    plan_name = plan.name_i18n
+    if req.status == AccessRequest.Status.APPROVED:
+        content = _approved_content(req, plan_name)
+    elif req.status == AccessRequest.Status.REJECTED:
+        content = _rejected_content(req, plan_name)
+    else:
+        raise ValueError(f'Access request {req.pk} is still pending')
+
+    footer = _('You are receiving this email because an access request was made for this address on %(plan_name)s.') % {
+        'plan_name': plan_name
+    }
+    plain_body = '\n\n'.join([_('Hi,'), *content['paragraphs'], '—', footer, _('Powered by Kausal Watch')])
+
+    base_template = getattr(plan, 'notification_base_template', None)
+    if base_template is None:
+        return EmailMessage(subject=content['subject'], body=plain_body, to=[req.email])
+
+    context = {
+        'title': content['heading'],
+        'site': _site_context(plan),
+        'paragraphs': content['paragraphs'],
+        'footer': footer,
+        'content_blocks': {},
+        **base_template.get_notification_context(),
+    }
+    template = make_jinja_environment().get_template('access_request_decided.mjml')
+    html_body = render_mjml(template.render(context))
+    msg = EmailMultiAlternatives(subject=content['subject'], body=plain_body, to=[req.email])
+    msg.attach_alternative(html_body, 'text/html')
+    return msg
+
+
+def send_decision_email(req: AccessRequest) -> bool:
+    """
+    Email the requester how their request was decided; return whether it was sent.
+
+    A failure is reported to Sentry rather than raised: the decision stands either way.
+    """
+    plan = req.plan
+    with translation.override(plan.primary_language):
+        msg = _build_message(req)
+    sender = EmailSender(plan)
+    sender.queue(msg)
+    try:
+        sender.send_all()
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        logger.error(f'Could not send the decision email of access request {req.pk}')
+        return False
+    logger.info(f'Sent the decision email of access request {req.pk}')
+    return True
