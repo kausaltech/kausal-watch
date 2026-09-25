@@ -1,0 +1,43 @@
+{% extends "bookended_base.mjml" %}
+
+{% block notification_content %}
+<mj-section mj-class="notification-content-section">
+    <mj-column>
+        <mj-text align="left">
+            <p>
+                {% trans trimmed count=items|length, plan_name=plan_name %}
+                This person has asked to view {{ plan_name }}:
+                {% pluralize %}
+                These people have asked to view {{ plan_name }}:
+                {% endtrans %}
+            </p>
+            <ul>
+            {% for item in items %}
+                <li>
+                    {{ item.email|e }}{% if item.first_name or item.last_name %} ({{ item.first_name|e }} {{ item.last_name|e }}){% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+            <p>
+                {% trans trimmed count=items[0].waiting_count %}
+                {{ count }} request is waiting for review in total.
+                {% pluralize %}
+                {{ count }} requests are waiting for review in total.
+                {% endtrans %}
+            </p>
+        </mj-text>
+        <mj-button href="{{ admin_url ~ items[0].admin_path }}" align="left" background-color="{{ theme.brand_dark_color }}">
+            {% trans %}Review requests{% endtrans %}
+        </mj-button>
+    </mj-column>
+</mj-section>
+
+<mj-section>
+    <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+            {% trans plan_name=plan_name %}You are receiving this because you can approve access requests for {{ plan_name }}.{% endtrans %}<br>
+            {% trans %}Powered by Kausal Watch{% endtrans %}
+        </mj-text>
+    </mj-column>
+</mj-section>
+{% endblock %}
