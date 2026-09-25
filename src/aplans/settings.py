@@ -293,6 +293,7 @@ if env('ENABLE_WAGTAIL_STYLEGUIDE'):
 
 
 WATCH_APPS = [
+    'access_requests',
     'actions',
     'kausal_common.datasets',
     'content',

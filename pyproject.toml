@@ -4,6 +4,7 @@ requires = [ "uv_build<0.13" ]
 
 [tool.uv.build-backend]
 module-name = [
+  "access_requests",
   "actions",
   "admin_site",
   "aplans",
