@@ -4,6 +4,7 @@ from datetime import timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.utils import translation
 
@@ -11,13 +12,15 @@ from sentry_sdk import capture_exception
 
 from aplans.email_sender import EmailSender
 
+from access_requests.models import AccessRequest
 from actions.models import ActionContactPerson, ActionTask
 from actions.models.public_user import PublicUser
 from indicators.models import IndicatorContactPerson
 
 from .mjml import render_mjml_from_template
-from .models import ManuallyScheduledNotificationTemplate
+from .models import DEFAULT_FONT_FAMILY, ManuallyScheduledNotificationTemplate
 from .notifications import (
+    AccessRequestsReceivedNotification,
     ActionNotUpdatedNotification,
     ManuallyScheduledNotification,
     NotEnoughTasksNotification,
@@ -42,6 +45,15 @@ if TYPE_CHECKING:
     from .models import AutomaticNotificationTemplate
     from .notifications import Notification
     from .recipients import NotificationRecipient
+
+# The admin interface's look, for emails about the admin rather than the plan.
+ADMIN_THEME = {
+    'brand_dark_color': '#1b4d3e',
+    'font_family': None,
+    'font_family_with_fallback': DEFAULT_FONT_FAMILY,
+    'font_css_url': None,
+    'link_in_brand_bg_color': '#ffffff',
+}
 
 logger = getLogger(__name__)
 
@@ -244,6 +256,28 @@ class NotificationEngine:
             )
             notification.generate_notifications(self, recipients, now=self.now)
 
+    def generate_access_request_notifications(self):
+        notification_type = NotificationType.ACCESS_REQUESTS_RECEIVED
+        identifier = notification_type.identifier
+        if not notification_type.is_enabled_for(self.plan.features):
+            return
+        if self.only_type and self.only_type != identifier:
+            return
+        template = self.templates_by_type.get(identifier)
+        if template is None:
+            return
+        pending = AccessRequest.objects.qs.filter(plan=self.plan).pending()
+        waiting_count = pending.count()
+        recipients = template.get_recipients(
+            self.action_contact_person_recipients,
+            self.indicator_contact_person_recipients,
+            self.plan_admin_recipients,
+            self.organization_plan_admin_recipients,
+        )
+        for access_request in pending.exclude(sent_notifications__type=identifier):
+            notification = AccessRequestsReceivedNotification(self.plan, access_request, waiting_count)
+            notification.generate_notifications(self, recipients, now=self.now)
+
     def generate_manually_scheduled_notification(self, template: ManuallyScheduledNotificationTemplate):
         notification = ManuallyScheduledNotification(self.plan, template)
         recipients = template.get_recipients(
@@ -254,7 +288,7 @@ class NotificationEngine:
         )
         notification.generate_notifications(self, recipients, now=self.now)
 
-    def render(self, template, context, language_code=None):
+    def render(self, template, context, language_code=None, plan_theme=True):
         if not language_code:
             language_code = self.plan.primary_language
 
@@ -262,9 +296,10 @@ class NotificationEngine:
 
         rendered = {}
         with translation.override(language_code):
+            theme_context = template.base.get_notification_context() if plan_theme else {'theme': ADMIN_THEME}
             context = dict(
                 title=template.subject,
-                **template.base.get_notification_context(),
+                **theme_context,
                 **context,
             )
 
@@ -327,6 +362,8 @@ class NotificationEngine:
             for public_user in participants:
                 self.generate_pledge_signup_notifications(public_user)
 
+        self.generate_access_request_notifications()
+
         for manually_scheduled_notification_template in ManuallyScheduledNotificationTemplate.objects.filter(
             base__plan=self.plan
         ):
@@ -371,9 +408,19 @@ class NotificationEngine:
                         **recipient_context,
                     }
 
+                    if not notification.uses_plan_theme:
+                        # Presented as coming from the admin interface: no plan logo, and the header
+                        # leads to the admin rather than the plan's public site.
+                        context.pop('logo', None)
+                        context['site'] = {
+                            'title': f'Kausal Watch · {self.plan.name_i18n}',
+                            'view_url': settings.ADMIN_BASE_URL,
+                        }
+                        context['plan_name'] = self.plan.name_i18n
+
                     # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
                     # For now, use primary language of plan instead of the recipient's preferred language
-                    rendered = self.render(template, context)
+                    rendered = self.render(template, context, plan_theme=notification.uses_plan_theme)
 
                     if self.force_to:
                         to_email = self.force_to

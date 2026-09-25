@@ -14,6 +14,7 @@ from markupsafe import Markup
 if typing.TYPE_CHECKING:
     from django_stubs_ext import StrPromise
 
+    from access_requests.models import AccessRequest
     from actions.models import Action, ActionTask, Plan
     from actions.models.features import PlanFeatures
     from actions.models.public_user import PublicUser
@@ -32,6 +33,8 @@ class Notification(ABC):
     type: NotificationType
     plan: Plan
     obj: NotificationObject
+    # Whether the email is themed with the plan's notification base template.
+    uses_plan_theme: typing.ClassVar[bool] = True
 
     def __init__(self, type_: NotificationType, plan: Plan, obj: NotificationObject):
         self.type = type_
@@ -413,6 +416,58 @@ class PledgeParticipantSignupNotification(Notification):
         return features.enable_community_engagement
 
 
+class AccessRequestsReceivedNotification(Notification):
+    """Tells plan admins about access requests that arrived since the last digest."""
+
+    obj: AccessRequest
+    # The digest is about the admin interface, so it carries the admin's branding, not the plan's.
+    uses_plan_theme = False
+
+    def __init__(self, plan: Plan, access_request: AccessRequest, waiting_count: int):
+        super().__init__(NotificationType.ACCESS_REQUESTS_RECEIVED, plan, access_request)
+        self.waiting_count = waiting_count
+
+    def get_context(self):
+        return {
+            'email': self.obj.email,
+            'first_name': self.obj.first_name,
+            'last_name': self.obj.last_name,
+            'requested_at': self.obj.created_at,
+            'waiting_count': self.waiting_count,
+            'admin_path': reverse('wagtailadmin_home'),
+        }
+
+    def generate_notifications(
+        self,
+        engine: NotificationEngine,
+        recipients: typing.Sequence[NotificationRecipient],
+        now=None,
+    ):
+        if now is None:
+            now = self.plan.now_in_local_timezone()
+        # Each request is announced once, to everyone at the same time.
+        if self.days_since_notification_last_sent(now=now) is not None:
+            return
+        for recipient in recipients:
+            engine.queue_notification(self, recipient)
+
+    @classmethod
+    def get_verbose_name(cls) -> StrPromise:
+        return _('Access requests received')
+
+    @classmethod
+    def get_default_intro_text(cls) -> None:
+        return None
+
+    @classmethod
+    def get_default_subject(cls) -> str:
+        return pgettext('access_requests_received', 'New access requests')
+
+    @classmethod
+    def is_enabled_for(cls, features: PlanFeatures) -> bool:
+        return features.enable_access_requests
+
+
 class ManuallyScheduledNotification(Notification):
     obj: ManuallyScheduledNotificationTemplate
 
@@ -474,6 +529,7 @@ class NotificationType(Enum):
     UPDATED_INDICATOR_VALUES_DUE_SOON = UpdatedIndicatorValuesDueSoonNotification
     USER_FEEDBACK_RECEIVED = UserFeedbackReceivedNotification
     PLEDGE_PARTICIPANT_SIGNUP = PledgeParticipantSignupNotification
+    ACCESS_REQUESTS_RECEIVED = AccessRequestsReceivedNotification
     MANUALLY_SCHEDULED = ManuallyScheduledNotification
 
     @property
