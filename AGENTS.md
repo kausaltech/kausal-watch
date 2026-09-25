@@ -284,6 +284,7 @@ For in-depth implementation details on specific subsystems, see:
 
 - [MCP Server](docs/architecture/mcp-server.md) - Adding tools, GraphQL integration, authentication flow
 - [Plan Visibility](docs/architecture/plan-visibility.md) - Who may read a plan versus which of its hostnames serve it, the four states those two questions produce, and the single value the public UI gates on
+- [Access Requests](docs/architecture/access-requests.md) - How a visitor asks for access to an internal plan, how plan admins decide, and the emails on either side
 - [Plan Metadata Model](docs/architecture/plan-metadata.md) - How climate action plans are structured, including CategoryTypes, Attributes, and common classification systems
 - [Indicator Data Architecture](docs/architecture/indicators.md) - Legacy `IndicatorValue` time series vs. the `kausal_common.datasets` system, computed metrics, and virtual metrics in the dataset editor
 - [Paths Target Node and Category Pages](docs/architecture/paths-target-node-category-pages.md) - How `paths_target_node_id` relates to Wagtail category pages, and the GraphQL cache invalidation that makes admin edits look inert
