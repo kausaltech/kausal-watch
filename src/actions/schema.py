@@ -42,6 +42,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
+from aplans.draft_references import strip_missing_references
 from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
 from aplans.graphql_types import (
     DjangoNode,
@@ -2517,8 +2518,9 @@ class Query:
                 revision_pks = list(workflowstates.values_list('current_task_state__revision_id', flat=True))
         revision_qs = Revision.objects.filter(pk__in=revision_pks).prefetch_related('content_object__plan')
         actions: list[Action] = []
-        for rev in revision_qs:
-            content = SerializedDictWithRelatedObjectCache[str, Any](rev.content, cache=cache)
+        contents = [SerializedDictWithRelatedObjectCache[str, Any](rev.content, cache=cache) for rev in revision_qs]
+        strip_missing_references(Action, contents)
+        for content in contents:
             action = Action.from_serializable_data(content, check_fks=False, strict_fks=False)
             if action is not None:
                 cache.enrich_action(action)
