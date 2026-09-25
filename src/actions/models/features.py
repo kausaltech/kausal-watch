@@ -177,6 +177,15 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Enable community engagement'),
         help_text=_('Enable community engagement features such as pledges for this plan.'),
     )
+    enable_access_requests = models.BooleanField(
+        default=False,
+        # Pods of the previous release insert features rows without this column during the rollout.
+        db_default=False,
+        verbose_name=_('Enable access requests'),
+        help_text=_(
+            'Let visitors of an internal plan ask for access to its public site. Plan admins approve or reject the requests.'
+        ),
+    )
     enable_action_pdf_export_in_public_ui = models.BooleanField(
         default=False,
         verbose_name=_('Enable PDF export of actions in public UI'),
@@ -272,6 +281,7 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'indicators_open_in_modal',
         'enable_change_log',
         'enable_community_engagement',
+        'enable_access_requests',
         'enable_action_pdf_export_in_public_ui',
         'enable_indicator_factors',
         'hide_from_search_engines',
