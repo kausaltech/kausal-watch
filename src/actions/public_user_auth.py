@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
 
-    from aplans.graphql_types import GQLInfo
+    from aplans.graphql_types import GQLInfo, SBInfo
 
     from admin_site.models import Client
 
@@ -117,7 +117,7 @@ def _build_ratelimit_request(req: Any) -> Any:
     return SimpleNamespace(META=meta, method=method)
 
 
-def enforce_rate_limit(info: GQLInfo, group: str, rate: str) -> None:
+def enforce_rate_limit(info: GQLInfo | SBInfo, group: str, rate: str) -> None:
     """Throttle a mutation by client IP. Raises RATE_LIMITED when the limit is exceeded."""
     request = _build_ratelimit_request(info.context.request)
     if is_ratelimited(request, group=group, key='ip', rate=rate, method='POST', increment=True):
