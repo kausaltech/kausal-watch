@@ -198,6 +198,8 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     },
     'documentation_root_pages': EXCLUDED,  # handled separately by _copy_documentation_pages
     'user_feedbacks': EXCLUDED,
+    # Visitors' requests, not plan content; the access they led to is in public_site_viewers.
+    'access_requests': EXCLUDED,
     'plan_common_indicator_through': EXCLUDED,  # common indicator assignments are not plan-owned
     'indicators': EXCLUDED,  # handled separately via the copy_indicators parameter
     'notification_base_template': {
