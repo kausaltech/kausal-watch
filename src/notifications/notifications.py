@@ -5,8 +5,10 @@ import typing
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.db.models import Q
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _, pgettext
 
 from markupsafe import Markup
@@ -434,8 +436,13 @@ class AccessRequestsReceivedNotification(Notification):
             'last_name': self.obj.last_name,
             'requested_at': self.obj.created_at,
             'waiting_count': self.waiting_count,
-            'admin_path': reverse('wagtailadmin_home'),
+            'admin_path': self._review_path(),
         }
+
+    def _review_path(self) -> str:
+        # The requests are listed on the dashboard of the admin's active plan, so switch to this one first.
+        change_plan = reverse('change-admin-plan', kwargs={'plan_id': self.plan.pk})
+        return f'{change_plan}?{urlencode({REDIRECT_FIELD_NAME: reverse("wagtailadmin_home")})}'
 
     def generate_notifications(
         self,
