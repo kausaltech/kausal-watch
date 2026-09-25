@@ -1,0 +1,22 @@
+{% extends "bookended_base.mjml" %}
+
+{% block notification_content %}
+<mj-section mj-class="notification-content-section">
+    <mj-column>
+        <mj-text align="left">
+            {% for paragraph in paragraphs %}
+            <p>{{ paragraph }}</p>
+            {% endfor %}
+        </mj-text>
+    </mj-column>
+</mj-section>
+
+<mj-section>
+    <mj-column>
+        <mj-text align="center" font-size="12px" color="#666666">
+            {{ footer }}<br>
+            {% trans %}Powered by Kausal Watch{% endtrans %}
+        </mj-text>
+    </mj-column>
+</mj-section>
+{% endblock %}

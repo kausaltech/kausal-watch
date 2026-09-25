@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+from unittest.mock import patch
+
+from django.core import mail
+from django.core.mail import EmailMultiAlternatives
+
+import pytest
+
+from access_requests.emails import send_decision_email
+from access_requests.models import AccessRequest
+from access_requests.tests.factories import AccessRequestFactory
+from actions.tests.factories import PlanFactory
+from notifications.models import BaseTemplate
+
+pytestmark = pytest.mark.django_db
+
+
+def _approved(plan, **kwargs):
+    return AccessRequestFactory.create(plan=plan, status=AccessRequest.Status.APPROVED, **kwargs)
+
+
+def _rejected(plan, **kwargs):
+    return AccessRequestFactory.create(plan=plan, status=AccessRequest.Status.REJECTED, **kwargs)
+
+
+@pytest.fixture
+def plan():
+    return PlanFactory.create(
+        name='Example Climate Plan',
+        site_url='https://plan.example.com',
+        access_request_contact_email='access@example.com',
+        access_request_eligibility_text='Access is only given to staff of the ministry.',
+    )
+
+
+class TestApproved:
+    def test_tells_the_visitor_where_to_sign_in(self, plan):
+        req = _approved(plan, email='visitor@example.com')
+        mail.outbox.clear()
+
+        assert send_decision_email(req) is True
+
+        [msg] = mail.outbox
+        assert msg.to == ['visitor@example.com']
+        assert msg.subject == 'Your access to Example Climate Plan has been approved'
+        assert 'https://plan.example.com' in msg.body
+        assert 'set-password' not in msg.body
+
+    def test_is_in_the_plan_language(self, plan):
+        plan.primary_language = 'fi'
+        plan.other_languages = ['en']
+        plan.name_en = 'Example Climate Plan'
+        plan.name = 'Esimerkkisuunnitelma'
+        plan.save()
+        req = _approved(plan)
+        mail.outbox.clear()
+
+        send_decision_email(req)
+
+        [msg] = mail.outbox
+        assert 'Esimerkkisuunnitelma' in msg.subject
+
+
+class TestRejected:
+    def test_names_who_may_have_access_and_whom_to_ask(self, plan):
+        req = _rejected(plan, email='visitor@example.com')
+        mail.outbox.clear()
+
+        assert send_decision_email(req) is True
+
+        [msg] = mail.outbox
+        assert msg.to == ['visitor@example.com']
+        assert msg.subject == 'Your request to access Example Climate Plan'
+        assert 'not been approved' in msg.body
+        assert 'Access is only given to staff of the ministry.' in msg.body
+        assert 'access@example.com' in msg.body
+
+    def test_leaves_out_the_contact_sentence_without_a_contact_address(self, plan):
+        plan.access_request_contact_email = ''
+        plan.save()
+        req = _rejected(plan)
+        mail.outbox.clear()
+
+        send_decision_email(req)
+
+        [msg] = mail.outbox
+        assert 'contact' not in msg.body.lower()
+
+
+@pytest.mark.parametrize('status', [AccessRequest.Status.APPROVED, AccessRequest.Status.REJECTED])
+def test_attaches_plan_themed_html_when_the_plan_has_a_base_template(plan, status):
+    BaseTemplate.objects.create(plan=plan, brand_dark_color='#123456')
+    plan.refresh_from_db()
+    req = AccessRequestFactory.create(plan=plan, status=status)
+    mail.outbox.clear()
+
+    # The MJML compiler is not needed to check that the template renders with the context given.
+    with patch('access_requests.emails.render_mjml', side_effect=lambda mjml: mjml):
+        send_decision_email(req)
+
+    [msg] = mail.outbox
+    assert isinstance(msg, EmailMultiAlternatives)
+    [(html, mimetype)] = msg.alternatives
+    assert mimetype == 'text/html'
+    assert '#123456' in str(html)
+    assert 'Example Climate Plan' in str(html)
+
+
+def test_pending_request_is_not_emailed(plan):
+    req = AccessRequestFactory.create(plan=plan)
+    with pytest.raises(ValueError, match='pending'):
+        send_decision_email(req)
+
+
+def test_delivery_failure_is_reported_not_raised(plan):
+    req = _approved(plan)
+    with (
+        patch('access_requests.emails.EmailSender.send_all', side_effect=OSError('connection refused')),
+        patch('access_requests.emails.sentry_sdk.capture_exception') as captured,
+    ):
+        assert send_decision_email(req) is False
+    captured.assert_called_once()
