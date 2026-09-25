@@ -342,6 +342,12 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     status_message = graphene.String()
     login_enabled = graphene.Boolean()
+    access_requests_enabled = graphene.Boolean(
+        required=True, description='Whether a visitor without access may ask for it on the sign-in page.'
+    )
+    access_request_eligibility_text = graphene.String(
+        description='Who may be given access, in the active language; shown when requesting access.'
+    )
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -411,6 +417,14 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         if domain.availability_for_user(info.context.user) == PlanDomainAvailability.AVAILABLE:
             return PlanNode
         return RestrictedPlanNode
+
+    @staticmethod
+    def resolve_access_requests_enabled(root: Plan, info: GQLInfo) -> bool:
+        return root.features.enable_access_requests
+
+    @staticmethod
+    def resolve_access_request_eligibility_text(root: Plan, info: GQLInfo) -> str | None:
+        return root.access_request_eligibility_text_i18n or None
 
     @staticmethod
     def resolve_status_message(root: Plan, info: GQLInfo, hostname=None) -> str | None:

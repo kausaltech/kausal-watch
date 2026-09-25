@@ -458,6 +458,24 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         null=True,
         verbose_name=_('Link to accessibility statement'),
     )
+    # The database defaults keep plan inserts from pods of the previous release working during the rollout.
+    access_request_contact_email = models.EmailField(
+        blank=True,
+        db_default='',
+        verbose_name=_('Contact email for access requests'),
+        help_text=_('Where people whose access request was not approved can ask for more information.'),
+    )
+    # Nullable rather than a database default: modeltrans copies a db_default onto its virtual
+    # per-language fields, which have no column, and inserts then fail.
+    access_request_eligibility_text = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Who may be given access'),
+        help_text=_(
+            'Shown to people requesting access, and in the email telling them their request was not approved. '
+            'For example: "Access is only given to staff of the ministry."'
+        ),
+    )
     external_feedback_url = models.URLField(
         blank=True,
         null=True,
@@ -588,7 +606,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     )
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language_lowercase')
+    i18n = TranslationField(
+        fields=['name', 'short_name', 'access_request_eligibility_text'], default_language_field='primary_language_lowercase'
+    )
 
     action_attribute_types: RevMany[AttributeType] = GenericRelation(  # type: ignore  # pyright: ignore[reportAssignmentType]
         to='actions.AttributeType',
