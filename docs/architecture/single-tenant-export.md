@@ -74,6 +74,7 @@ from `PLAN_CLONE_STRUCTURE` with these reclassifications:
 | `pledges.commitments`, `pledges` | Depend on citizen approval | Include behind `--include-pledges` |
 | `user_feedbacks` | Not needed for a copy | Include behind `--include-feedback` |
 | `contact_persons.notification_preferences` | Personal runtime state | Include behind `--include-feedback` (PII-adjacent) |
+| `access_requests` | Visitors' requests, not plan content | **Drop** — unverified addresses; the access granted travels as `public_site_viewers` |
 | `domains` | Hostname must be unique per plan | **Drop** (client provisions their own) |
 | `monitoring_quality_points` | Legacy | **Drop** |
 | `mcp_write_authorization_grants` | Our-side auth grants | **Drop** |
