@@ -1,0 +1,93 @@
+{% load i18n wagtailadmin_tags %}
+<div class="panel access-requests-panel">
+    <section>
+        <h2>
+            {% trans "Access requests" %}
+            {% if waiting_count %}
+                <span class="w-status w-status--primary">{% blocktrans count counter=waiting_count %}{{ counter }} waiting{% plural %}{{ counter }} waiting{% endblocktrans %}</span>
+            {% endif %}
+        </h2>
+        <p class="help">
+            {% trans "People who have asked to view this plan. Approving sends them an email. Approved users will not have access to the admin interface." %}
+        </p>
+
+        {% if page_obj.object_list %}
+            <table class="listing">
+                <col />
+                <col width="20%" />
+                <col width="20%" />
+                <thead>
+                    <tr>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Requested" %}</th>
+                        <th><span class="visuallyhidden">{% trans "Actions" %}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in page_obj.object_list %}
+                        <tr>
+                            <td>
+                                {{ req.email }}
+                                {% if req.first_name or req.last_name %}<div class="help">{{ req.first_name }} {{ req.last_name }}</div>{% endif %}
+                                {% if req.previously_rejected_at %}
+                                    <div>
+                                        <span class="w-status w-status--label">{% trans "Requested again" %}</span>
+                                        <span class="help">{% blocktrans with date=req.previously_rejected_at|date:"SHORT_DATE_FORMAT" %}Previously rejected {{ date }}{% endblocktrans %}</span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="human-readable-date" title="{{ req.created_at|date:"DATETIME_FORMAT" }}">{% blocktrans with time_period=req.created_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'access_requests_approve' req.pk %}" style="display: inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="button button-small">{% trans "Approve" %}</button>
+                                </form>
+                                {% trans "Reject" as reject_label %}
+                                {% with pk_str=req.pk|stringformat:"s" %}
+                                    {% dialog_toggle dialog_id="reject-access-request-"|add:pk_str classname="button button-small button-secondary" text=reject_label %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% for req in page_obj.object_list %}
+                {% trans "Reject access request?" as dialog_title %}
+                {% with pk_str=req.pk|stringformat:"s" %}
+                {% dialog id="reject-access-request-"|add:pk_str title=dialog_title %}
+                    <p>
+                        {% blocktrans with email=req.email %}{{ email }} will receive an email saying their request has been rejected, with details of who to contact for more information.{% endblocktrans %}
+                    </p>
+                    <p class="help">
+                        {% trans 'If they request access again, their request will appear in this list marked "Requested again".' %}
+                    </p>
+                    <form method="post" action="{% url 'access_requests_reject' req.pk %}">
+                        {% csrf_token %}
+                        <button type="button" class="button button-secondary" data-action="w-dialog#hide">{% trans "Cancel" %}</button>
+                        <button type="submit" class="button no">{% trans "Reject request" %}</button>
+                    </form>
+                {% enddialog %}
+                {% endwith %}
+            {% endfor %}
+
+            {% if page_obj.paginator.num_pages > 1 %}
+                <nav class="pagination" aria-label="{% trans 'Access request pages' %}">
+                    {% if page_obj.has_previous %}
+                        <a href="?{{ page_param }}={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
+                    {% endif %}
+                    <span>{% blocktrans with page=page_obj.number num_pages=page_obj.paginator.num_pages %}Page {{ page }} of {{ num_pages }}{% endblocktrans %}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?{{ page_param }}={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="help-block">
+                {% trans "No access requests waiting. New requests will appear here, and you'll receive an email when they arrive." %}
+            </div>
+        {% endif %}
+    </section>
+</div>
