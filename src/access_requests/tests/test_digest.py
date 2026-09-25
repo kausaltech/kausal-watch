@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from django.core import mail
+from django.urls import reverse
 
 import pytest
 
@@ -129,3 +130,13 @@ def test_request_filed_after_a_run_is_in_the_next_digest(plan, admin):
     _run(plan, _now(plan, day=1) + timedelta(days=1))
     [msg] = mail.outbox
     assert 'late@example.com' in msg.body
+
+
+def test_review_link_switches_the_admin_to_the_digests_plan(plan, admin):
+    AccessRequestFactory.create(plan=plan)
+    mail.outbox.clear()
+
+    _run(plan, _now(plan))
+
+    [msg] = mail.outbox
+    assert reverse('change-admin-plan', kwargs={'plan_id': plan.pk}) in msg.body
