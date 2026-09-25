@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from unittest.mock import patch
 
 from django.core import mail
@@ -46,6 +47,18 @@ class TestApproved:
         assert msg.subject == 'Your access to Example Climate Plan has been approved'
         assert 'https://plan.example.com' in msg.body
         assert 'set-password' not in msg.body
+
+    def test_leaves_out_the_address_when_the_plan_has_no_site_url(self, plan):
+        plan.site_url = None
+        plan.save()
+        req = _approved(plan)
+        mail.outbox.clear()
+
+        send_decision_email(req)
+
+        [msg] = mail.outbox
+        assert 'None' not in msg.body
+        assert 'You can sign in with this email address.' in msg.body
 
     def test_is_in_the_plan_language(self, plan):
         plan.primary_language = 'fi'
@@ -107,6 +120,24 @@ def test_attaches_plan_themed_html_when_the_plan_has_a_base_template(plan, statu
     assert 'Example Climate Plan' in str(html)
 
 
+def test_admin_entered_text_is_escaped_in_the_html(plan):
+    BaseTemplate.objects.create(plan=plan)
+    plan.access_request_eligibility_text = 'Only staff of <department> & partners'
+    plan.save()
+    plan.refresh_from_db()
+    req = _rejected(plan)
+    mail.outbox.clear()
+
+    with patch('access_requests.emails.render_mjml', side_effect=lambda mjml: mjml):
+        send_decision_email(req)
+
+    [msg] = mail.outbox
+    assert isinstance(msg, EmailMultiAlternatives)
+    [(html, _mimetype)] = msg.alternatives
+    assert 'Only staff of &lt;department&gt; &amp; partners' in str(html)
+    assert '<department>' not in str(html)
+
+
 def test_pending_request_is_not_emailed(plan):
     req = AccessRequestFactory.create(plan=plan)
     with pytest.raises(ValueError, match='pending'):
@@ -121,3 +152,17 @@ def test_delivery_failure_is_reported_not_raised(plan):
     ):
         assert send_decision_email(req) is False
     captured.assert_called_once()
+
+
+def test_rendering_failure_is_reported_not_raised(plan):
+    BaseTemplate.objects.create(plan=plan)
+    plan.refresh_from_db()
+    req = _approved(plan)
+    mail.outbox.clear()
+    with (
+        patch('access_requests.emails.render_mjml', side_effect=subprocess.CalledProcessError(1, 'mjml')),
+        patch('access_requests.emails.sentry_sdk.capture_exception') as captured,
+    ):
+        assert send_decision_email(req) is False
+    captured.assert_called_once()
+    assert mail.outbox == []

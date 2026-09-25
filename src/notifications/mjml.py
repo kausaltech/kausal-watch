@@ -11,7 +11,6 @@ from django.utils.translation.trans_real import DjangoTranslation
 
 from jinja2 import FileSystemLoader, StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
-from sentry_sdk import capture_exception
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,7 @@ def render_mjml(mjml_in, dump=None):
         )
     except subprocess.CalledProcessError as e:
         logger.error(e.stderr)
-        capture_exception(e)
+        raise
 
     if dump:
         for idx, line in enumerate(mjml_in.splitlines()):
