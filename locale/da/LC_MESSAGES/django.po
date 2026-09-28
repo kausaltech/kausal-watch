@@ -12,15 +12,15 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-28 09:43+0300\n"
-"PO-Revision-Date: 2026-06-09 11:21+0000\n"
-"Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
+"PO-Revision-Date: 2026-09-28 07:51+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.17.1\n"
 
 #: src/actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -297,7 +297,7 @@ msgstr "Person optræder flere gange som kontaktperson"
 
 #: src/actions/api.py src/actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
-msgstr "Denne valgmulighed er arkiveret og kan ikke vælges som ny værdi."
+msgstr ""
 
 #: src/actions/api.py
 msgid "Identifier must be set"
@@ -376,7 +376,7 @@ msgstr "Felt for %s"
 #: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr "Valgmuligheden \"%(name)s\" er stadig i brug og blev derfor arkiveret i stedet for slettet. Eksisterende referencer virker fortsat, men muligheden vises ikke ved nye valg. Brug knappen \"Fjern fra arkiv\" på muligheden for at gendanne den."
+msgstr ""
 
 #: src/actions/attribute_type_admin.py
 #, python-format
@@ -394,7 +394,7 @@ msgstr "Hvis formatet er 'Numerisk', skal der angives en enhed"
 #: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Choice option '%s' has been restored."
-msgstr "Valgmuligheden \"%s\" er blevet gendannet."
+msgstr ""
 
 #: src/actions/attribute_type_admin.py src/actions/category_admin.py
 msgid "Order"
@@ -749,12 +749,14 @@ msgid "Status"
 msgstr "Status"
 
 #: src/actions/blocks/category_page_layout.py
+#, fuzzy
 msgid "What heading should be used in the public UI for the Paths node summary?"
-msgstr "Hvilken overskrift skal bruges i den offentlige brugergrænseflade til opsummeringen af Paths-knuden?"
+msgstr "Hvilken etiket skal bruges i den offentlige brugergrænseflade til det officielle navn"
 
 #: src/actions/blocks/category_page_layout.py
+#, fuzzy
 msgid "Paths node summary"
-msgstr "Opsummering af Paths-knuden"
+msgstr "Sammenfatning"
 
 #: src/actions/blocks/choosers.py
 msgid "Dataset Schema"
@@ -895,8 +897,9 @@ msgid "There is already a category with this identifier."
 msgstr "Der er allerede en kategori med denne identifikator."
 
 #: src/actions/category_admin.py
+#, fuzzy
 msgid "There is already a category type with this identifier."
-msgstr "Der er allerede en kategoritype med denne identifikator."
+msgstr "Der er allerede en kategori med denne identifikator."
 
 #: src/actions/category_admin.py
 #, python-format
@@ -1657,8 +1660,9 @@ msgid "The icon must be an SVG file."
 msgstr "Ikonet skal være en SVG-fil."
 
 #: src/actions/models/attributes.py
+#, fuzzy
 msgid "active"
-msgstr "aktiv"
+msgstr "Deaktiver"
 
 #: src/actions/models/attributes.py
 msgid "attribute choice option"
@@ -1995,12 +1999,14 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Indstil til at muliggøre sammenligning af indikatorer mellem organisationer"
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Enable indicator factors"
-msgstr "Aktiver indikatorfaktorer"
+msgstr "Aktiver indikatorsammenligning"
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Enable computed factor values for indicators."
-msgstr "Aktiver beregnede faktorværdier for indikatorer."
+msgstr "kontakt for indikatorer"
 
 #: src/actions/models/features.py
 msgid "Indicator order"
@@ -2064,11 +2070,11 @@ msgstr "Aktiver funktioner til borgerinddragelse, såsom løfter, for denne plan
 
 #: src/actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
-msgstr "Aktiver PDF-eksport af handlinger i den offentlige brugergrænseflade"
+msgstr ""
 
 #: src/actions/models/features.py
 msgid "Enable users of the public UI to export actions to PDF."
-msgstr "Giv brugere af den offentlige brugergrænseflade mulighed for at eksportere handlinger til PDF."
+msgstr ""
 
 #: src/actions/models/features.py
 msgid "Hide published plan from search engines"
@@ -2141,8 +2147,9 @@ msgid "The official plan name in full form"
 msgstr "Det officielle plannavn i fuld form"
 
 #: src/actions/models/plan.py
+#, fuzzy
 msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the site URL used during onboarding. Use lowercase letters and dashes."
-msgstr "En unik identifikator for planen, der bruges internt til at skelne mellem planer. Den bliver en del af webstedets URL, som bruges under onboarding. Brug små bogstaver og bindestreger."
+msgstr "En unik identifikator for planen, der bruges internt til at skelne mellem planer. Dette bliver en del af testwebstedets URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Brug små bogstaver og bindestreger."
 
 #: src/actions/models/plan.py src/indicators/models/metadata.py
 msgid "short name"
@@ -2604,8 +2611,9 @@ msgid "pledges"
 msgstr "løfter"
 
 #: src/actions/models/pledge.py src/actions/models/public_user.py
+#, fuzzy
 msgid "public user"
-msgstr "offentlig bruger"
+msgstr "er offentlig"
 
 #: src/actions/models/pledge.py
 msgid "pledge commitment"
@@ -2632,12 +2640,13 @@ msgid "Freeform key-value data about the user (e.g., zip_code)"
 msgstr "Frit formaterede nøgle-værdi-data om brugeren (f.eks. postnummer)"
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "user token"
-msgstr "brugertoken"
+msgstr "Har data"
 
 #: src/actions/models/public_user.py
 msgid "Opaque secret used as a bearer credential after the user signs up."
-msgstr "Uigennemsigtig hemmelighed, der bruges som bearer-legitimation efter brugerens tilmelding."
+msgstr ""
 
 #: src/actions/models/public_user.py
 msgid "email"
@@ -2674,8 +2683,9 @@ msgid "email verified at"
 msgstr "ændret kl"
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "public users"
-msgstr "offentlige brugere"
+msgstr "seere på offentlige steder"
 
 #: src/actions/models/public_user.py
 #, fuzzy
@@ -2712,40 +2722,47 @@ msgid "Pledges"
 msgstr "Løfter"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Export"
-msgstr "Eksportér"
+msgstr "rapport"
 
 #: src/actions/pledge_admin.py
 msgid "Export as Excel"
-msgstr "Eksportér som Excel"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 msgid "Export pledges as CSV"
-msgstr "Eksportér løfter som CSV"
+msgstr ""
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Export commitments as CSV"
-msgstr "Eksportér tilslutninger som CSV"
+msgstr "kommentar"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Pledge ID"
-msgstr "Løfte-ID"
+msgstr "opdateret af"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Pledge name"
-msgstr "Løftets navn"
+msgstr "Plannavn"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Commitment date"
-msgstr "Tilslutningsdato"
+msgstr "kommentar"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "User ID"
-msgstr "Bruger-ID"
+msgstr "Brugere"
 
 #: src/actions/pledge_admin.py
+#, fuzzy
 msgid "Pledge Commitments"
-msgstr "Løftetilslutninger"
+msgstr "kommentar"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2988,12 +3005,14 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr "%(model_name)s \"%(title)s\" er blevet godkendt i \"%(workflow)s\" med en kommentar."
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "New organization name"
-msgstr "Navn på ny organisation"
+msgstr "organisation"
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Create a new organization with this name"
-msgstr "Opret en ny organisation med dette navn"
+msgstr "Det er ikke tilladt at oprette nye indikatorer"
 
 #: src/actions/wagtail_admin.py
 msgid "Identifier already in use"
@@ -3021,16 +3040,16 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name for a new one."
-msgstr "Vælg en eksisterende organisation, eller indtast et navn til en ny."
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Cannot both select an existing organization and create a new one."
-msgstr "Du kan ikke både vælge en eksisterende organisation og oprette en ny."
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, python-format
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
-msgstr "Planens primære sprog (%(plan_lang)s) er forskelligt fra organisationens primære sprog (%(org_lang)s). Kontroller, at dette er tilsigtet."
+msgstr ""
 
 #: src/actions/wagtail_admin.py src/admin_site/wagtail.py
 msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
@@ -3045,8 +3064,9 @@ msgid "Only set if explicitly required by the customer. Use a color key from the
 msgstr "Angives kun, hvis kunden udtrykkeligt kræver det. Brug en farvenøgle fra UI-temaets graphColors, for eksempel red070 eller grey030."
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Choose an existing organization"
-msgstr "Vælg en eksisterende organisation"
+msgstr "Vælg en handling"
 
 #: src/actions/wagtail_admin.py
 msgid "Main organization"
@@ -3054,11 +3074,12 @@ msgstr "Hovedorganisation"
 
 #: src/actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name to create a new one."
-msgstr "Vælg en eksisterende organisation, eller indtast et navn for at oprette en ny."
+msgstr ""
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Client"
-msgstr "Kunde"
+msgstr "Kunder"
 
 #: src/actions/wagtail_admin.py
 msgid "Domains"
@@ -3102,7 +3123,7 @@ msgstr "Planfunktioner, som kun superbrugere må ændre"
 
 #: src/actions/wagtail_admin.py
 msgid "Notifications cannot be enabled for a plan that does not have a base notification template."
-msgstr "Meddelelser kan ikke aktiveres for en plan, der ikke har en grundskabelon til meddelelser."
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Plan notification settings"
@@ -3313,7 +3334,7 @@ msgstr "Hvad står der efter @ i medarbejdernes e-mailadresse i den organisation
 #: src/admin_site/chooser.py
 #, python-format
 msgid "The email domain \"%(domain)s\" is already in use by another client."
-msgstr "E-maildomænet \"%(domain)s\" er allerede i brug af en anden kunde."
+msgstr ""
 
 #: src/admin_site/chooser.py
 msgid "Choose a client"
@@ -3683,7 +3704,7 @@ msgstr "Lettisk"
 
 #: src/aplans/settings.py
 msgid "Hmong (White)"
-msgstr "Hmong (hvid)"
+msgstr ""
 
 #: src/aplans/settings.py
 msgid "Portuguese"
@@ -3695,7 +3716,7 @@ msgstr "Portugisisk (Brasilien)"
 
 #: src/aplans/settings.py
 msgid "Somali"
-msgstr "Somali"
+msgstr ""
 
 #: src/aplans/settings.py
 msgid "Swedish"
@@ -4360,8 +4381,9 @@ msgid "Indicator key figures"
 msgstr "Indikatorens nøgletal"
 
 #: src/indicators/blocks/__init__.py
+#, fuzzy
 msgid "Header"
-msgstr "Overskrift"
+msgstr "Sidehoved billede"
 
 #: src/indicators/blocks/__init__.py src/pages/models.py
 msgid "Paragraph"
@@ -4384,8 +4406,9 @@ msgid "Causality navigation"
 msgstr "Kausalitetsnavigation"
 
 #: src/indicators/blocks/layout.py
+#, fuzzy
 msgid "Value summary (by factors)"
-msgstr "Værdisammenfatning (efter faktorer)"
+msgstr "Sammenfatning"
 
 #: src/indicators/blocks/layout.py
 msgid "Indicator visualization"
@@ -4425,11 +4448,11 @@ msgstr "Standardår for værdien, der skal vælges til denne kolonne"
 
 #: src/indicators/blocks/layout.py
 msgid "Highlight if goal is met"
-msgstr "Fremhæv, når målet er nået"
+msgstr ""
 
 #: src/indicators/blocks/layout.py
 msgid "Show a tick next to the latest value when the indicator has reached its goal."
-msgstr "Vis et flueben ved den seneste værdi, når indikatoren har nået sit mål."
+msgstr ""
 
 #: src/indicators/blocks/layout.py
 msgid "Show reference value"
@@ -4465,11 +4488,11 @@ msgstr "Dette viser forskellen mellem målet og den aktuelle værdi."
 
 #: src/indicators/blocks/layout.py
 msgid "Show calculated values by factors"
-msgstr "Vis værdier beregnet efter faktorer"
+msgstr ""
 
 #: src/indicators/blocks/layout.py
 msgid "Include factor-computed values in the visualization."
-msgstr "Inkluder faktorberegnede værdier i visualiseringen."
+msgstr ""
 
 #: src/indicators/chooser.py
 msgid "Choose an indicator"
@@ -4673,19 +4696,19 @@ msgstr "Importlogge for indikatorværdier"
 
 #: src/indicators/models/indicator.py
 msgid "Bar chart"
-msgstr "Søjlediagram"
+msgstr ""
 
 #: src/indicators/models/indicator.py
 msgid "Line chart"
-msgstr "Linjediagram"
+msgstr ""
 
 #: src/indicators/models/indicator.py
 msgid "Area chart"
-msgstr "Arealdiagram"
+msgstr ""
 
 #: src/indicators/models/indicator.py
 msgid "Pie chart"
-msgstr "Cirkeldiagram"
+msgstr ""
 
 #: src/indicators/models/indicator.py src/reports/spreadsheets/excel_report.py
 msgid "Summary"
@@ -4724,8 +4747,9 @@ msgid "operational"
 msgstr "operationelle"
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "unspecified"
-msgstr "uspecificeret"
+msgstr "Uspecificeret"
 
 #: src/indicators/models/indicator.py
 msgid "minimum value"
@@ -4832,36 +4856,40 @@ msgid "Data categories can be summed to form a total for the indicator (draw a s
 msgstr "Datakategorier kan summeres til en total for indikatoren (tegn et stablet diagram som standard)"
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "default visualization type"
-msgstr "standardvisualiseringstype"
+msgstr "Indikator handlinger"
 
 #: src/indicators/models/indicator.py
 msgid "Default visualization type for this indicator on dashboards"
-msgstr "Standardvisualiseringstype for denne indikator på dashboards"
+msgstr ""
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "bar type"
-msgstr "søjletype"
+msgstr "Kategoritype"
 
 #: src/indicators/models/indicator.py
 msgid "Kind of bar chart (only meaningful when visualization type is bar chart)"
-msgstr "Type af søjlediagram (kun relevant, når visualiseringstypen er søjlediagram)"
+msgstr ""
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "grouping dimension"
-msgstr "grupperende dimension"
+msgstr "dimension"
 
 #: src/indicators/models/indicator.py
 msgid "Dimension used for grouping in the default visualization"
-msgstr "Dimension, der bruges til gruppering i standardvisualiseringen"
+msgstr ""
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "pie chart year"
-msgstr "år for cirkeldiagram"
+msgstr "standardvisning"
 
 #: src/indicators/models/indicator.py
 msgid "Year to display in pie chart visualization"
-msgstr "År, der skal vises i cirkeldiagramvisualiseringen"
+msgstr ""
 
 #: src/indicators/models/indicator.py
 msgid "non-quantified goal"
@@ -4913,7 +4941,7 @@ msgstr "Der er allerede en indikatorværdi for året før deadline"
 
 #: src/indicators/models/indicator.py
 msgid "The grouping dimension must be one of the dimensions associated with this indicator."
-msgstr "Den grupperende dimension skal være en af de dimensioner, der er knyttet til denne indikator."
+msgstr ""
 
 #: src/indicators/models/indicator.py
 #, python-format
@@ -5045,13 +5073,11 @@ msgstr[1] ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Result"
-msgstr "Resultat"
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgstr "Navnet på den beregnede værdi (indikatordata × faktor), der vises i diagrammer, f.eks. \"Køretøjsudledninger\""
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Show indicators"
@@ -5112,16 +5138,17 @@ msgstr "Dimensioner skal være de samme som i fælles indikator"
 
 #: src/indicators/wagtail_admin.py
 msgid "Please correct the errors in the factors section."
-msgstr "Ret venligst fejlene i faktorafsnittet."
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 #, python-format
 msgid "The factor \"%(label)s\" has data and cannot be deleted. Delete its data points first in the dataset editor."
-msgstr "Faktoren \"%(label)s\" har data og kan ikke slettes. Slet først dens datapunkter i datasæteditoren."
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
+#, fuzzy
 msgid "Indicator factors"
-msgstr "Indikatorfaktorer"
+msgstr "Indikator for handlinger"
 
 #: src/indicators/wagtail_admin.py
 #, python-format
@@ -5169,12 +5196,13 @@ msgid "Advanced settings"
 msgstr "Avancerede indstillinger"
 
 #: src/indicators/wagtail_admin.py
+#, fuzzy
 msgid "Edit factor data"
-msgstr "Rediger faktordata"
+msgstr "Rediger data"
 
 #: src/indicators/wagtail_admin.py
 msgid "Add factor data"
-msgstr "Tilføj faktordata"
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Indicator for actions"
@@ -5194,24 +5222,24 @@ msgstr "Andre indikatorer"
 
 #: src/indicators/wagtail_admin.py
 msgid "Factors cannot be added to indicators that have dimensions in their data."
-msgstr "Faktorer kan ikke tilføjes til indikatorer, der har dimensioner i deres data."
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 #, python-brace-format
 msgid "Factors are multiplied with this indicator's values to calculate a derived output, such as total emissions or cost. Add factor values to the {link_start}indicator data editor{link_end}."
-msgstr "Faktorer multipliceres med denne indikators værdier for at beregne et afledt resultat, såsom samlede udledninger eller omkostninger. Tilføj faktorværdier i {link_start}editoren for indikatordata{link_end}."
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "factor"
-msgstr "faktor"
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Save the indicator after adding a factor to enable the data editor."
-msgstr "Gem indikatoren, efter at du har tilføjet en faktor, for at aktivere dataeditoren."
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Factors"
-msgstr "Faktorer"
+msgstr ""
 
 #: src/indicators/wagtail_admin.py
 msgid "Relationships"
@@ -5630,8 +5658,9 @@ msgid "Notification preferences"
 msgstr "Notifikationspræferencer"
 
 #: src/orgs/chooser.py
+#, fuzzy
 msgid "Search term"
-msgstr "Søgeord"
+msgstr "Søg"
 
 #: src/orgs/chooser.py
 msgid "Search"
@@ -5794,11 +5823,11 @@ msgstr "Titel"
 
 #: src/pages/blocks.py
 msgid "Helps screen readers describe this embedded content"
-msgstr "Hjælper skærmlæsere med at beskrive dette indlejrede indhold"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Helps screen readers understand what this embed shows"
-msgstr "Hjælper skærmlæsere med at forstå, hvad denne indlejring viser"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "small"
@@ -5821,52 +5850,55 @@ msgid "Questions & Answers"
 msgstr "Spørgsmål & svar"
 
 #: src/pages/blocks.py
+#, fuzzy
 msgid "Background color"
-msgstr "Baggrundsfarve"
+msgstr "Stort billede"
 
 #: src/pages/blocks.py
 msgid "CSS color value, e.g. #FFFFFF or rgb(255, 255, 255)"
-msgstr "CSS-farveværdi, f.eks. #FFFFFF eller rgb(255, 255, 255)"
+msgstr ""
 
 #: src/pages/blocks.py
+#, fuzzy
 msgid "Fit image without clipping"
-msgstr "Tilpas billedet uden beskæring"
+msgstr "billedbeskæring"
 
 #: src/pages/blocks.py
 msgid "Show the image at its exact scaled dimensions; it will never be cropped"
-msgstr "Vis billedet i dets præcise skalerede mål; det bliver aldrig beskåret"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Show image accent"
-msgstr "Vis billedaccent"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Display a brand color accent bar below the image"
-msgstr "Vis en accentbjælke i brandfarven under billedet"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Background covers full block"
-msgstr "Baggrunden dækker hele blokken"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Extend the background color to cover the content below the image, not just the image area"
-msgstr "Udvid baggrundsfarven, så den dækker indholdet under billedet og ikke kun billedområdet"
+msgstr ""
 
 #: src/pages/blocks.py
+#, fuzzy
 msgid "Additional settings"
-msgstr "Yderligere indstillinger"
+msgstr "Indikator handlinger"
 
 #: src/pages/blocks.py
 msgid "Full-width: content over image"
-msgstr "Fuld bredde: indhold over billedet"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Large image: image above, content below"
-msgstr "Stort billede: billede øverst, indhold nederst"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Side-by-side: image left, content right"
-msgstr "Side om side: billede til venstre, indhold til højre"
+msgstr ""
 
 #: src/pages/blocks.py
 msgid "Front page hero block"
@@ -6585,8 +6617,9 @@ msgid "Other responsible parties"
 msgstr "Andre ansvarlige"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
 msgid "Page"
-msgstr "Side"
+msgstr "handlingslink"
 
 #: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
@@ -6753,36 +6786,39 @@ msgid "Skip"
 msgstr "Spring over"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
 msgid "Archived"
-msgstr "Arkiveret"
+msgstr "arkiveret kl"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
 msgid "This option is hidden from new selections but kept so existing references continue to resolve."
-msgstr "Denne mulighed vises ikke ved nye valg, men bevares, så eksisterende referencer fortsat virker."
+msgstr ""
 
 #: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
 msgid "Unarchive"
-msgstr "Fjern fra arkiv"
+msgstr "arkiveret kl"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
+#, fuzzy
 msgid "Failed to unarchive option."
-msgstr "Muligheden kunne ikke fjernes fra arkivet."
+msgstr "valgmulighed for attribut"
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "Currently used by:"
-msgstr "Bruges i øjeblikket af:"
+msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "Changing this choice option will change the choice in all these objects."
-msgstr "Hvis du ændrer denne valgmulighed, ændres valget i alle disse objekter."
+msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "If you would like to keep the current value in reports even after changing this choice option, please mark the reports using this choice option as complete."
-msgstr "Hvis du vil bevare den nuværende værdi i rapporterne, også efter at denne valgmulighed er ændret, skal du markere de rapporter, der bruger valgmuligheden, som afsluttede."
+msgstr ""
 
 #: templates/aplans/panels/choice_option_usage_panel.html
 msgid "This choice option is still in use. If you save after removing it, it will be archived instead of permanently deleted. Existing references will keep working, and the option will be hidden from new selections."
-msgstr "Denne valgmulighed er stadig i brug. Hvis du gemmer efter at have fjernet den, bliver den arkiveret i stedet for slettet permanent. Eksisterende referencer virker fortsat, og muligheden vises ikke ved nye valg."
+msgstr ""
 
 #: templates/aplans/paths_sync_confirmation.html
 msgid "Please verify the correct node is connected to the indicator."
