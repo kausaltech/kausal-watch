@@ -27,6 +27,7 @@ IDENTITY_QUERY = """
     plansForHostname(hostname: $hostname) {
       __typename
       name
+      identifier
       themeIdentifier
       domain { availability }
     }
@@ -62,6 +63,7 @@ def test_a_restricted_plan_names_and_themes_itself(graphql_client_query_data, pl
     assert plan_data['domain']['availability'] == 'SIGN_IN_REQUIRED'
     assert plan_data['__typename'] == 'RestrictedPlanNode'
     assert plan_data['name'] == plan.name
+    assert plan_data['identifier'] == plan.identifier
     assert plan_data['themeIdentifier'] == 'some-theme'
 
 
@@ -84,9 +86,7 @@ def test_a_restricted_plan_names_itself_in_its_own_language(
     plan.i18n = {'name_en': 'An English name'}
     plan.save()
 
-    asked_in_english = graphql_client_query_data(
-        TRANSLATED_IDENTITY_QUERY, variables={'hostname': domain.hostname, 'lang': 'en'}
-    )
+    asked_in_english = graphql_client_query_data(TRANSLATED_IDENTITY_QUERY, variables={'hostname': domain.hostname, 'lang': 'en'})
     asked_without_a_language = graphql_client_query_data(IDENTITY_QUERY, variables={'hostname': domain.hostname})
 
     assert asked_in_english['plansForHostname'][0]['name'] == 'Suomenkielinen nimi'

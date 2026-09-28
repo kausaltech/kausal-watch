@@ -337,6 +337,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
     # which plan is behind it and dress itself in that plan's theme. Both implementations carry
     # these, so the page needs no fragment per type.
     name = graphene.String(required=True)
+    identifier = graphene.String(required=True)
     theme_identifier = graphene.String(required=False)
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
@@ -2251,7 +2252,8 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
     # them, which select each row with its person or organization, so widening these queries to reach
     # them would make every action query pay for rows that nothing here needs.
     persons_queryset = (
-        Person.objects.get_queryset()
+        Person.objects
+        .get_queryset()
         .filter(actioncontactperson__action__plan=plan)
         .distinct()
         # `Person.get_redacted_copy()` builds the copy with the person's organization, so without this
@@ -2267,7 +2269,6 @@ def _populate_plan_people_cache(info: GQLInfo, plan_id: int) -> None:
         .select_related('logo')
         .prefetch_related(Prefetch('logo__renditions', to_attr='prefetched_renditions'))
     )
-
 
 
 def _populate_task_contact_persons(info: GQLInfo, plan_id: int) -> None:
@@ -2302,7 +2303,8 @@ def _populate_task_responsible_parties(info: GQLInfo, plan_id: int) -> None:
         # The organization comes with its logo and renditions, as it does when it is served from the
         # plan's own organization cache: a custom resolver gets no help from the optimizer, so a query
         # reaching into the organization would otherwise pay per assignment.
-        ActionTaskResponsibleParty.objects.filter(task__action__plan=cache.plan)
+        ActionTaskResponsibleParty.objects
+        .filter(task__action__plan=cache.plan)
         .select_related('organization__logo', 'task__action')
         .prefetch_related(Prefetch('organization__logo__renditions', to_attr='prefetched_renditions')),
     )
