@@ -8,14 +8,16 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-09-28 16:26+0200\n"
-"PO-Revision-Date: 2026-09-28 14:21+0000\n"
+"PO-Revision-Date: 2026-09-28 14:31+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/"
+"notifications/de/>\n"
 "Language: de\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/notifications/de/>\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.17.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: src/notifications/mjml-templates/action_not_updated.mjml
@@ -73,7 +75,7 @@ msgstr "Hier ist Ihr Anmeldecode:"
 #: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
 msgid "This code is for the website “%(plan_name)s”."
-msgstr ""
+msgstr "Dieser Code ist für die Website „%(plan_name)s”."
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
@@ -152,4 +154,3 @@ msgstr "Maßnahme bearbeiten"
 #: src/notifications/mjml-templates/includes/modify_indicator_button.mjml
 msgid "Edit indicator data"
 msgstr "Indikatordaten bearbeiten"
-
