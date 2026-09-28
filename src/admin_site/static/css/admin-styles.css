@@ -214,12 +214,12 @@ section[role='tabpanel'] .help-block:has(> .field-visibility-label) {
   border: 0 !important;
 }
 
-.w-status--internal {
+.w-status--not-live {
   background-color: var(--w-color-grey-400);
   color: var(--w-color-white);
 }
 
-.w-status--public {
+.w-status--live {
   background-color: #fef08a;
   color: #854d0e;
 }

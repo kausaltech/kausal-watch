@@ -14,7 +14,9 @@ only done when asked for.
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 
+from django.contrib.staticfiles import finders
 from django.urls import reverse
 from django.utils import timezone
 
@@ -26,6 +28,7 @@ from actions.models import Plan
 from actions.models.plan import PlanDomain, PublicationStatus
 from actions.tests.factories import PlanDomainFactory
 from actions.tests.test_change_log_graphql import make_plan_admin
+from actions.wagtail_admin import LiveStateColumn
 
 pytestmark = pytest.mark.django_db
 
@@ -202,3 +205,18 @@ class TestLiveState:
         assert str(state.label) == label
         visibility_labels = {str(choice.label) for choice in RestrictedVisibilityModel.VisibilityState}
         assert str(state.label) not in visibility_labels
+
+    @pytest.mark.parametrize(
+        'published_at_offset',
+        [timedelta(minutes=-5), None, timedelta(days=1)],
+        ids=['live', 'not-live', 'scheduled'],
+    )
+    def test_the_plan_listing_colours_every_state(self, plan_factory, published_at_offset):
+        published_at = timezone.now() + published_at_offset if published_at_offset is not None else None
+        plan = plan_factory(published_at=published_at)
+
+        status_class = LiveStateColumn().get_cell_context_data(plan, {'row': None, 'table': None})['status_class']
+
+        stylesheet = finders.find('css/admin-styles.css')
+        assert isinstance(stylesheet, str)
+        assert f'.{status_class} {{' in Path(stylesheet).read_text(encoding='utf-8')
