@@ -39,16 +39,23 @@ model expresses rather than an exception bolted on.
 
 ## One answer per hostname
 
-`PlanDomain.status_for_user` folds both halves back together into the single value the public UI
-needs, naming the page to render:
+`PlanDomain.availability_for_user` folds both halves back together into the single value the
+public UI needs, naming the page to render:
 
 - `AVAILABLE` — serve the site
 - `SIGN_IN_REQUIRED` — serve a sign-in page, because signing in would reveal the site to this
   viewer
 - `UNAVAILABLE` — serve a placeholder, because nothing here will reveal anything yet
 
-`PlanInterface.resolve_type` returns the plan's body exactly when that status is `AVAILABLE`, so
-the two signals are one derivation with two consumers and cannot drift apart.
+`PlanInterface.resolve_type` returns the plan's body exactly when that availability is
+`AVAILABLE`, so the two signals are one derivation with two consumers and cannot drift apart.
+
+It is availability and not a status because nothing about it is stored or settled: it is derived
+per request, and two viewers of the same hostname at the same moment get different answers. The
+GraphQL field was called `status` first and still answers under that name, marked deprecated,
+because the public UI is released separately and a query naming a field the schema does not have
+fails validation outright. Both names resolve through the same method, so a UI can migrate
+whenever it next ships.
 
 Its two halves:
 
@@ -62,6 +69,17 @@ Its two halves:
 A viewer is served the site only when both say yes, and is offered a way in only when signing in
 could change the answer — so a hostname serving nothing does not offer a sign-in button that
 cannot reveal anything.
+
+### What a hostname says when it is not serving the site
+
+A sign-in page and a placeholder are still pages, and they have to name the plan they stand in
+front of and wear its theme. `PlanInterface` therefore carries `name` and `themeIdentifier`, so
+the plan's body and the restricted stand-in both answer them and the page needs no fragment per
+type.
+
+This is a deliberate widening: a plan that is internal, or that has not launched, gives its name
+and theme to anyone who asks at its hostname. It reveals nothing about the plan's contents, and
+naming the plan is what the hostname exists to do.
 
 ## Which hostnames are previews
 
@@ -94,6 +112,10 @@ The two axes deliberately share no word, in any language, because the admin show
 A plan that has launched but stayed internal therefore reads as *Live · Internal*, which
 describes itself. "Live" is this axis's word throughout the model — `Plan.is_live()`, the
 `live()` queryset — while "publish" remains the verb, because it is the word customers use.
+
+Neither axis borrows `availability`, which is the third thing again: not who may read the plan
+and not whether the site has launched, but what one hostname shows one viewer once both have
+been answered.
 
 These labels are not superuser-only: the sidebar badge renders on every admin page for every
 user with an active plan, and the plan list is reachable by contact persons. Their audience is
