@@ -5,6 +5,7 @@ from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
+from sentry_sdk import capture_message
 
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 
@@ -20,6 +21,10 @@ class ReportComparisonBlock(blocks.StructBlock):
     def reports_to_compare(self, info, values):
         max_reports_to_compare = 5  # TODO: Make this configurable in block
         report_type = values['report_type']
+        if report_type is None:
+            # The report type has been deleted since the block was saved
+            capture_message('Report comparison block refers to a missing report type', level='warning')
+            return []
         reports = report_type.reports.filter(is_public=True).order_by('-start_date')[:max_reports_to_compare]
         return reports
 
