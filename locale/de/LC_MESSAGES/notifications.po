@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-09-23 09:47+0000\n"
-"PO-Revision-Date: 2026-09-28 07:49+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-09-28 14:21+0000\n"
+"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/"
 "notifications/de/>\n"
 "Language: de\n"
@@ -69,9 +69,9 @@ msgid ""
 msgstr ""
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
-#, python-format
+#, fuzzy, python-format
 msgid "Here is your sign-in code for the %(plan_name)s:"
-msgstr ""
+msgstr "Hier ist Ihr Anmeldecode für %(plan_name)s:"
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
@@ -81,10 +81,12 @@ msgstr ""
 #: src/notifications/mjml-templates/public_user_pin.mjml
 msgid "If you didn't request this code, you can ignore this email."
 msgstr ""
+"Wenn Sie diesen Code nicht angefordert haben, können Sie diese E-Mail "
+"ignorieren."
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 msgid "Powered by Kausal Watch"
-msgstr ""
+msgstr "Bereitgestellt von Kausal Watch"
 
 #: src/notifications/mjml-templates/task_due_soon.mjml
 #: src/notifications/mjml-templates/task_late.mjml
