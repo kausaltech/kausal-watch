@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 @register_django_node
 class ReportNode(DjangoNode[Report]):
     fields = graphene.List(graphene.NonNull(lambda: grapple_registry.streamfield_blocks.get(ReportFieldBlock)))
-    # values_for_action is null if there is no snapshot for the specified action and the report
+    # values_for_action is null if the action does not exist or has no snapshot for the report
     values_for_action = graphene.List(
         graphene.NonNull(ReportValueInterface),
         # Either action_id or action_identifier must be specified
@@ -47,10 +47,13 @@ class ReportNode(DjangoNode[Report]):
         if not root.type.plan.is_visible_for_user(info.context.user):
             return None
         plan_actions = Action.objects.filter(plan=root.type.plan)
-        if action_id:
-            action = plan_actions.get(id=action_id)
-        else:
-            action = plan_actions.get(identifier=action_identifier)
+        try:
+            if action_id:
+                action = plan_actions.get(id=action_id)
+            else:
+                action = plan_actions.get(identifier=action_identifier)
+        except Action.DoesNotExist, ValueError:
+            return None
         try:
             snapshot = action.get_latest_snapshot(root)
         except ActionSnapshot.DoesNotExist:
