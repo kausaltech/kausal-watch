@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2026-07-13 15:57+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -1217,10 +1217,6 @@ msgid "Other action is merged with this one"
 msgstr "Andere Maßnahme ist mit dieser zusammengeführt"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr "Leitabsatz ist für Maßnahmen in diesem Plan nicht zulässig"
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr "Hat Ansprechpersonen"
 
@@ -1368,7 +1364,7 @@ msgstr "Status"
 msgid "details"
 msgstr "Details"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "Frist"
 
@@ -2710,6 +2706,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Anzahl der Teilnahmen"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Mitmach-Aktionen"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Exportieren"
@@ -2742,9 +2742,9 @@ msgstr "Teilnahmedatum"
 msgid "User ID"
 msgstr "Benutzer-ID"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Mitmach-Aktionen"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Teilnahme-Erklärungen"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -5049,7 +5049,7 @@ msgstr "Ergebnis"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Bezeichnung des in Diagrammen dargestellten berechneten Werts (Indikatorwert × Faktor), z. B. „Fahrzeugemissionen“"
 
 #: src/indicators/wagtail_admin.py
@@ -6584,6 +6584,10 @@ msgid "Other responsible parties"
 msgstr "Andere Verantwortliche"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Seite"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Steckbriefe"
 
@@ -6838,8 +6842,8 @@ msgstr "Wird gespeichert…"
 msgid "Save"
 msgstr "Speichern"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Teilnahme-Erklärungen"
+#~ msgid "Lead paragraph is not allowed for actions in this plan"
+#~ msgstr "Leitabsatz ist für Maßnahmen in diesem Plan nicht zulässig"
 
 #, python-brace-format
 #~ msgid "Redirecting to {url} in {count}&nbsp;seconds..."
@@ -6856,9 +6860,6 @@ msgstr "Speichern"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Wir bitten um Entschuldigung, der Server hat vorübergehend Schwierigkeiten."
-
-#~ msgid "Page"
-#~ msgstr "Seite"
 
 #, fuzzy
 #~| msgid "Remove row"

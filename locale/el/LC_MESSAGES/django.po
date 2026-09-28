@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -1282,10 +1282,6 @@ msgid "Other action is merged with this one"
 msgstr "Η άλλη ενέργεια συγχωνεύεται με την παρούσα"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr ""
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr "Διαθέτει πρόσωπα επαφής"
 
@@ -1433,7 +1429,7 @@ msgstr "κράτος"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "ημερομηνία λήξης"
 
@@ -2875,6 +2871,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Όνομα του ιδιοκτήτη του χώρου"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2919,9 +2919,11 @@ msgstr "σχόλιο"
 msgid "User ID"
 msgstr "Χρήστες"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Pledge Commitments"
+msgstr "σχόλιο"
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -5481,7 +5483,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7085,6 +7087,12 @@ msgid "Other responsible parties"
 msgstr "Άλλοι υπεύθυνοι"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
+#| msgid "Page link"
+msgid "Page"
+msgstr "Σύνδεσμος σελίδας"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Προφίλ"
 
@@ -7361,18 +7369,8 @@ msgstr "Εξοικονόμηση…"
 msgid "Save"
 msgstr "Αποθήκευση"
 
-#, fuzzy
-#~| msgid "comment"
-#~ msgid "Pledge Commitments"
-#~ msgstr "σχόλιο"
-
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Ζητούμε συγγνώμη, ο διακομιστής αντιμετωπίζει προσωρινά δυσκολίες."
-
-#, fuzzy
-#~| msgid "Page link"
-#~ msgid "Page"
-#~ msgstr "Σύνδεσμος σελίδας"
 
 #, fuzzy
 #~| msgid "updated by"

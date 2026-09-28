@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1217,10 +1217,6 @@ msgid "Other action is merged with this one"
 msgstr "Andra åtgärder slås samman med den här"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr "Ingress är inte tillåten för åtgärder i denna plan"
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr "Har kontaktpersoner"
 
@@ -1368,7 +1364,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "förfallodatum"
 
@@ -2710,6 +2706,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Antal åtaganden"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Löften"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Exportera"
@@ -2742,9 +2742,9 @@ msgstr "Datum för åtagande"
 msgid "User ID"
 msgstr "Användar-ID"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Löften"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Löftesåtaganden"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -5049,7 +5049,7 @@ msgstr "Resultat"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Namnet på det beräknade värdet (indikatordata × faktor) som visas i diagram, t.ex. \"Fordonsutsläpp\""
 
 #: src/indicators/wagtail_admin.py
@@ -6584,6 +6584,10 @@ msgid "Other responsible parties"
 msgstr "Andra ansvariga"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Sida"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6838,8 +6842,8 @@ msgstr "Sparar…"
 msgid "Save"
 msgstr "Spara"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Löftesåtaganden"
+#~ msgid "Lead paragraph is not allowed for actions in this plan"
+#~ msgstr "Ingress är inte tillåten för åtgärder i denna plan"
 
 #, python-brace-format
 #~ msgid "Redirecting to {url} in {count}&nbsp;seconds..."
@@ -6856,9 +6860,6 @@ msgstr "Spara"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Vi ber om ursäkt, servern har för tillfället problem."
-
-#~ msgid "Page"
-#~ msgstr "Sida"
 
 #, fuzzy
 #~| msgid "Remove row"

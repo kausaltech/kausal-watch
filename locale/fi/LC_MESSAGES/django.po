@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2026-02-25 16:13+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1218,10 +1218,6 @@ msgid "Other action is merged with this one"
 msgstr "Toinen toimenpide on jo yhdistetty tähän"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr "Ingressi ei ole käytössä tämän toimenpideohjelman toimenpiteissä"
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr "Yhteyshenkilöt nimetty"
 
@@ -1369,7 +1365,7 @@ msgstr "tila"
 msgid "details"
 msgstr "lisätiedot"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
@@ -2711,6 +2707,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Liittymisten määrä"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Sitoumukset"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Vie"
@@ -2743,9 +2743,9 @@ msgstr "Liittymispäivä"
 msgid "User ID"
 msgstr "Käyttäjän tunniste"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Sitoumukset"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Sitoumukseen liittymiset"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -5050,7 +5050,7 @@ msgstr "Tulos"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Kaavioissa näytettävän lasketun arvon nimi (mittarin data × tekijä), esim. \"Ajoneuvojen päästöt\""
 
 #: src/indicators/wagtail_admin.py
@@ -6624,6 +6624,10 @@ msgid "Other responsible parties"
 msgstr "Muut vastuutahot"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Sivu"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiilit"
 
@@ -6878,8 +6882,8 @@ msgstr "Tallennetaan…"
 msgid "Save"
 msgstr "Tallenna ja poistu"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Sitoumukseen liittymiset"
+#~ msgid "Lead paragraph is not allowed for actions in this plan"
+#~ msgstr "Ingressi ei ole käytössä tämän toimenpideohjelman toimenpiteissä"
 
 #, python-brace-format
 #~ msgid "Redirecting to {url} in {count}&nbsp;seconds..."
@@ -6896,9 +6900,6 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Pahoittelut, palvelimella on väliaikaisia teknisiä ongelmia."
-
-#~ msgid "Page"
-#~ msgstr "Sivu"
 
 #, fuzzy
 #~| msgid "Remove row"

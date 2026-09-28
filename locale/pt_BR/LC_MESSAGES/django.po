@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -1402,10 +1402,6 @@ msgid "Other action is merged with this one"
 msgstr "Outra ação foi mesclada com esta"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr ""
-
-#: src/actions/models/action.py
 #, fuzzy
 msgid "Has contact persons"
 msgstr "Tem pessoas de contato"
@@ -1583,7 +1579,7 @@ msgstr "estado"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 #, fuzzy
 msgid "due date"
 msgstr "data de vencimento"
@@ -3160,6 +3156,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Nome do proprietário do site"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 msgid "Export"
@@ -3198,9 +3198,10 @@ msgstr "comentário"
 msgid "User ID"
 msgstr "Usuários"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge Commitments"
+msgstr "comentário"
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -5821,7 +5822,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7650,6 +7651,11 @@ msgid "Other responsible parties"
 msgstr "Outros responsáveis"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
+msgid "Page"
+msgstr "Link da página"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7935,16 +7941,8 @@ msgid "Save"
 msgstr "Salvar"
 
 #, fuzzy
-#~ msgid "Pledge Commitments"
-#~ msgstr "comentário"
-
-#, fuzzy
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Nossas desculpas, o servidor está temporariamente passando por dificuldades."
-
-#, fuzzy
-#~ msgid "Page"
-#~ msgstr "Link da página"
 
 #, fuzzy
 #~ msgid "Remove"

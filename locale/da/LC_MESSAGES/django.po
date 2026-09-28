@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -1218,10 +1218,6 @@ msgid "Other action is merged with this one"
 msgstr "Anden handling er sammenkoblet med denne"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr "Hovedafsnit er ikke tilladt for handlinger i denne plan"
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr "Har kontaktpersoner"
 
@@ -1369,7 +1365,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "Afleveringsdato"
 
@@ -2711,6 +2707,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Antal tilslutninger"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Løfter"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Eksportér"
@@ -2743,9 +2743,9 @@ msgstr "Tilslutningsdato"
 msgid "User ID"
 msgstr "Bruger-ID"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Løfter"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Løftetilslutninger"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -5050,7 +5050,7 @@ msgstr "Resultat"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Navnet på den beregnede værdi (indikatordata × faktor), der vises i diagrammer, f.eks. \"Køretøjsudledninger\""
 
 #: src/indicators/wagtail_admin.py
@@ -6585,6 +6585,10 @@ msgid "Other responsible parties"
 msgstr "Andre ansvarlige"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Side"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6839,8 +6843,8 @@ msgstr "Gemmer…"
 msgid "Save"
 msgstr "Gemme"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Løftetilslutninger"
+#~ msgid "Lead paragraph is not allowed for actions in this plan"
+#~ msgstr "Hovedafsnit er ikke tilladt for handlinger i denne plan"
 
 #, python-brace-format
 #~ msgid "Redirecting to {url} in {count}&nbsp;seconds..."
@@ -6857,9 +6861,6 @@ msgstr "Gemme"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Vi beklager, men serveren har midlertidigt problemer."
-
-#~ msgid "Page"
-#~ msgstr "Side"
 
 #, fuzzy
 #~| msgid "Remove row"

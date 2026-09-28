@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 12:47+0300\n"
+"POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: German (Switzerland) <https://weblate.kausal.tech/projects/watch/django/de_CH/>\n"
@@ -1234,10 +1234,6 @@ msgid "Other action is merged with this one"
 msgstr "Andere Massnahme ist mit dieser zusammengeführt"
 
 #: src/actions/models/action.py
-msgid "Lead paragraph is not allowed for actions in this plan"
-msgstr "Leitabsatz ist für Massnahmen in diesem Plan nicht zulässig"
-
-#: src/actions/models/action.py
 msgid "Has contact persons"
 msgstr ""
 
@@ -1385,7 +1381,7 @@ msgstr ""
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr ""
 
@@ -2759,6 +2755,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Für 'Massnahme' zu verwendender Begriff"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr ""
@@ -2793,9 +2793,11 @@ msgstr ""
 msgid "User ID"
 msgstr ""
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+#| msgid "Action list pages"
+msgid "Pledge Commitments"
+msgstr "Massnahmenlistenseiten"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -5208,7 +5210,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -6794,6 +6796,10 @@ msgid "Other responsible parties"
 msgstr ""
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr ""
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7051,6 +7057,9 @@ msgstr ""
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr ""
+
+#~ msgid "Lead paragraph is not allowed for actions in this plan"
+#~ msgstr "Leitabsatz ist für Massnahmen in diesem Plan nicht zulässig"
 
 #~ msgid "Big image"
 #~ msgstr "Grosses Bild"
