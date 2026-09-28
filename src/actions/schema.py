@@ -160,8 +160,18 @@ PlanDomainAvailabilityNode = graphene.Enum.from_enum(PlanDomainAvailability)
 
 
 class PlanDomainNode(DjangoNode[PlanDomain]):
-    status = PlanDomainAvailabilityNode()
+    availability = PlanDomainAvailabilityNode()
+    # The UI is released independently of the backend, so keep the pre-rename
+    # name resolvable: a query naming a field the schema doesn't have fails
+    # validation, taking the whole plan context query down with it. It answers
+    # exactly as `availability` does, so a UI can migrate whenever it next
+    # ships. Remove once every deployed UI asks for `availability`.
+    status = PlanDomainAvailabilityNode(deprecation_reason='Use "availability" instead')
     status_message = graphene.String(required=False)
+
+    @staticmethod
+    def resolve_availability(root: PlanDomain, info: GQLInfo) -> PlanDomainAvailability:
+        return root.availability_for_user(info.context.user)
 
     @staticmethod
     def resolve_status(root: PlanDomain, info: GQLInfo) -> PlanDomainAvailability:
@@ -180,6 +190,7 @@ class PlanDomainNode(DjangoNode[PlanDomain]):
             'base_path',
             'google_site_verification_tag',
             'matomo_analytics_url',
+            'availability',
             'status',
             'status_message',
         )

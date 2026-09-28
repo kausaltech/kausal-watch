@@ -1,14 +1,18 @@
 """
 Tests for the per-hostname signal the public UI gates on.
 
-`PlanDomain.status` names the page the frontend should render for this viewer at this hostname:
-`AVAILABLE` (the site), `SIGN_IN_REQUIRED` (a sign-in page) or `UNAVAILABLE` (a placeholder with
-no way in). It folds together the plan's visibility, the viewer's access, whether the production
-surface has launched, and whether the hostname is a production or a preview surface.
+`PlanDomain.availability` names the page the frontend should render for this viewer at this
+hostname: `AVAILABLE` (the site), `SIGN_IN_REQUIRED` (a sign-in page) or `UNAVAILABLE` (a
+placeholder with no way in). It folds together the plan's visibility, the viewer's access,
+whether the production surface has launched, and whether the hostname is a production or a
+preview surface.
 
-`__typename` follows the same answer — `Plan` exactly when the status is `AVAILABLE` — so the two
-can never disagree. Them disagreeing is what let a production domain serve a plan nobody had
-published while reporting itself unpublished.
+`__typename` follows the same answer — `Plan` exactly when the availability is `AVAILABLE` — so
+the two can never disagree. Them disagreeing is what let a production domain serve a plan nobody
+had published while reporting itself unpublished.
+
+The matrix asks for the deprecated `status` alongside `availability`, because the UI ships on its
+own schedule and a release still reading `status` must keep getting the same answer.
 """
 
 from __future__ import annotations
@@ -25,12 +29,12 @@ from actions.models.plan import PlanDomain, PublicationStatus
 
 pytestmark = pytest.mark.django_db
 
-STATUS_QUERY = """
+AVAILABILITY_QUERY = """
   query GetPlansByHostname($hostname: String) {
     plansForHostname(hostname: $hostname) {
       __typename
       loginEnabled
-      domain { status statusMessage }
+      domain { availability status statusMessage }
     }
   }
 """
@@ -43,7 +47,7 @@ WILDCARD_BASE = 'dummy.io'
 # user:       anonymous / with_access (a general admin of this plan) /
 #             without_access (signed in, but a general admin of another plan only)
 SURFACE_MATRIX = """
-    surface     visibility  launched  user            status            typename
+    surface     visibility  launched  user            availability      typename
     production  public      +         anonymous       AVAILABLE         Plan
     production  public      -         anonymous       UNAVAILABLE       RestrictedPlanNode
     production  public      -         with_access     UNAVAILABLE       RestrictedPlanNode
@@ -86,7 +90,7 @@ def _setup(surface, visibility, launched, user, plan_factory, plan_domain_factor
 
 
 @pytest.mark.parametrize(*parse_table(SURFACE_MATRIX))
-def test_domain_status_names_the_page_to_render(
+def test_domain_availability_names_the_page_to_render(
     graphql_client_query_data,
     plan_factory,
     plan_domain_factory,
@@ -97,7 +101,7 @@ def test_domain_status_names_the_page_to_render(
     visibility,
     launched,
     user,
-    status,
+    availability,
     typename,
 ):
     hostname = _setup(
@@ -111,12 +115,16 @@ def test_domain_status_names_the_page_to_render(
         client,
         settings,
     )
-    data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': hostname})
-    assert data['plansForHostname'][0]['domain']['status'] == status
+    domain_data = graphql_client_query_data(
+        AVAILABILITY_QUERY, variables={'hostname': hostname}
+    )['plansForHostname'][0]['domain']
+    assert domain_data['availability'] == availability
+    # The UI deploys separately, so the name it still reads has to give the same answer.
+    assert domain_data['status'] == availability
 
 
 @pytest.mark.parametrize(*parse_table(SURFACE_MATRIX))
-def test_plan_type_agrees_with_domain_status(
+def test_plan_type_agrees_with_domain_availability(
     graphql_client_query_data,
     plan_factory,
     plan_domain_factory,
@@ -127,7 +135,7 @@ def test_plan_type_agrees_with_domain_status(
     visibility,
     launched,
     user,
-    status,
+    availability,
     typename,
 ):
     hostname = _setup(
@@ -141,7 +149,7 @@ def test_plan_type_agrees_with_domain_status(
         client,
         settings,
     )
-    data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': hostname})
+    data = graphql_client_query_data(AVAILABILITY_QUERY, variables={'hostname': hostname})
     assert data['plansForHostname'][0]['__typename'] == typename
 
 
@@ -156,9 +164,9 @@ def test_unlaunched_production_domain_hides_a_public_plan(graphql_client_query_d
     plan = plan_factory(visibility='public', published_at=None)
     domain = plan_domain_factory(plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION)
 
-    plan_data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})['plansForHostname'][0]
+    plan_data = graphql_client_query_data(AVAILABILITY_QUERY, variables={'hostname': domain.hostname})['plansForHostname'][0]
 
-    assert plan_data['domain']['status'] == 'UNAVAILABLE'
+    assert plan_data['domain']['availability'] == 'UNAVAILABLE'
     assert plan_data['__typename'] == 'RestrictedPlanNode'
     assert plan_data['loginEnabled'] is False
 
@@ -174,7 +182,7 @@ def test_login_is_offered_only_where_signing_in_leads_somewhere(
     sign_in = plan_domain_factory(plan=plan_factory(visibility='internal', published_at=launched))
 
     def login_enabled(hostname):
-        data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': hostname})
+        data = graphql_client_query_data(AVAILABILITY_QUERY, variables={'hostname': hostname})
         return data['plansForHostname'][0]['loginEnabled']
 
     assert login_enabled(unavailable.hostname) is False
@@ -199,9 +207,9 @@ def test_a_signed_in_viewer_without_access_is_not_asked_to_sign_in_again(
     domain = plan_domain_factory(plan=plan_factory(visibility='internal', published_at=launched))
     client.force_login(person_factory(general_admin_plans=[plan_factory()]).user)
 
-    plan_data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})['plansForHostname'][0]
+    plan_data = graphql_client_query_data(AVAILABILITY_QUERY, variables={'hostname': domain.hostname})['plansForHostname'][0]
 
-    assert plan_data['domain']['status'] == 'UNAVAILABLE'
+    assert plan_data['domain']['availability'] == 'UNAVAILABLE'
     assert plan_data['loginEnabled'] is False
 
 
@@ -210,7 +218,7 @@ STATUS_MESSAGE_QUERY = """
     plansForHostname(hostname: $hostname) {
       loginEnabled
       statusMessage
-      domain { status statusMessage }
+      domain { availability statusMessage }
     }
   }
 """
@@ -228,7 +236,7 @@ def test_status_message_is_sent_only_where_sign_in_is_required(
     visibility,
     launched,
     user,
-    status,
+    availability,
     typename,
 ):
     """
@@ -236,7 +244,7 @@ def test_status_message_is_sent_only_where_sign_in_is_required(
 
     The UI released before this model forwards `loginEnabled` to its placeholder only alongside a
     non-empty message, so without one it would hide the sign-in button from viewers who need it.
-    Remove once no deployed UI predates `domain.status`.
+    Remove once no deployed UI predates `domain.availability`.
     """
     hostname = _setup(
         surface,
@@ -251,7 +259,7 @@ def test_status_message_is_sent_only_where_sign_in_is_required(
     )
     plan_data = graphql_client_query_data(STATUS_MESSAGE_QUERY, variables={'hostname': hostname})['plansForHostname'][0]
 
-    sign_in_required = status == 'SIGN_IN_REQUIRED'
+    sign_in_required = availability == 'SIGN_IN_REQUIRED'
     assert bool(plan_data['domain']['statusMessage']) is sign_in_required
     assert plan_data['statusMessage'] == plan_data['domain']['statusMessage']
     assert plan_data['loginEnabled'] is sign_in_required
@@ -264,7 +272,7 @@ def test_status_message_is_in_the_plan_language(graphql_client_query_data, plan_
 
 
 @pytest.mark.parametrize(
-    ('override', 'expected_status'),
+    ('override', 'expected_availability'),
     [
         (PublicationStatus.PUBLISHED, 'AVAILABLE'),
         (PublicationStatus.UNPUBLISHED, 'UNAVAILABLE'),
@@ -275,7 +283,7 @@ def test_publication_status_override_forces_the_launch_state_of_one_hostname(
     plan_factory,
     plan_domain_factory,
     override,
-    expected_status,
+    expected_availability,
 ):
     """The per-domain override still forces whether a hostname is switched on, never who may read."""
     plan = plan_factory(
@@ -283,15 +291,15 @@ def test_publication_status_override_forces_the_launch_state_of_one_hostname(
         published_at=None if override == PublicationStatus.PUBLISHED else timezone.now() - timedelta(minutes=5),
     )
     domain = plan_domain_factory(plan=plan, publication_status_override=override)
-    data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})
-    assert data['plansForHostname'][0]['domain']['status'] == expected_status
+    data = graphql_client_query_data(AVAILABILITY_QUERY, variables={'hostname': domain.hostname})
+    assert data['plansForHostname'][0]['domain']['availability'] == expected_availability
 
 
 SHARED_HOSTNAME_QUERY = """
   query GetPlansByHostname($hostname: String) {
     plansForHostname(hostname: $hostname) {
       __typename
-      domain { basePath status }
+      domain { basePath availability }
     }
   }
 """
@@ -329,7 +337,34 @@ def test_each_plan_on_a_shared_hostname_answers_for_itself(
     by_base_path = {plan['domain']['basePath']: plan for plan in data['plansForHostname']}
 
     assert by_base_path.keys() == {'/open', '/closed'}
-    assert by_base_path['/open']['domain']['status'] == 'AVAILABLE'
+    assert by_base_path['/open']['domain']['availability'] == 'AVAILABLE'
     assert by_base_path['/open']['__typename'] == 'Plan'
-    assert by_base_path['/closed']['domain']['status'] == 'SIGN_IN_REQUIRED'
+    assert by_base_path['/closed']['domain']['availability'] == 'SIGN_IN_REQUIRED'
     assert by_base_path['/closed']['__typename'] == 'RestrictedPlanNode'
+
+
+DEPRECATION_QUERY = """
+  query DomainFields {
+    __type(name: "PlanDomain") {
+      fields(includeDeprecated: true) {
+        name
+        deprecationReason
+        type { name }
+      }
+    }
+  }
+"""
+
+
+def test_status_is_deprecated_in_favour_of_availability(graphql_client_query_data):
+    """
+    Both names stay resolvable, but only one is the one to reach for.
+
+    The deprecation is the whole mechanism by which the backend can be renamed today and the UI
+    migrated whenever it next ships, so it is worth pinning rather than leaving to a comment.
+    """
+    fields = {field['name']: field for field in graphql_client_query_data(DEPRECATION_QUERY)['__type']['fields']}
+
+    assert fields['status']['deprecationReason'] == 'Use "availability" instead'
+    assert fields['availability']['deprecationReason'] is None
+    assert fields['availability']['type'] == fields['status']['type']

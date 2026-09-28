@@ -38,7 +38,7 @@ GET_PLANS_BY_HOSTNAME_QUERY = """
         hostname
         redirectToHostname
         basePath
-        status
+        availability
       }
       primaryLanguage
       publishedAt
@@ -79,7 +79,7 @@ def test_get_plans_by_hostname(
     """
     Query plansForHostname over an explicit PlanDomain, anonymously.
 
-    The plan here is public, so the domain's status turns purely on whether the hostname has
+    The plan here is public, so the domain's availability turns purely on whether the hostname has
     launched: the plan's publication date, unless the per-domain override forces it. A scheduled
     date has not arrived, so it is not launched either.
     """
@@ -102,7 +102,7 @@ def test_get_plans_by_hostname(
                 {
                     'basePath': domain.base_path,
                     'hostname': domain.hostname,
-                    'status': expected_availability.name,
+                    'availability': expected_availability.name,
                     'redirectToHostname': domain.redirect_to_hostname or None,
                 }
             ],
