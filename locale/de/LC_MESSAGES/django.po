@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-28 17:26+0300\n"
-"PO-Revision-Date: 2026-09-28 14:21+0000\n"
+"PO-Revision-Date: 2026-09-28 14:31+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
@@ -2650,9 +2650,8 @@ msgid "client"
 msgstr "Kunde"
 
 #: src/actions/models/public_user.py
-#, fuzzy
 msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
-msgstr "Mandant, zu dem dieses Konto gehört. Erforderlich für authentifizierte Einträge; leer für anonyme Einträge."
+msgstr "Mandant, zu dem dieses Konto gehört. Erforderlich für registrierte Nutzer; leer für anonyme Nutzer."
 
 #: src/actions/models/public_user.py
 msgid "terms accepted at"
@@ -2783,12 +2782,12 @@ msgstr "Marketing-Einwilligung"
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "%(plan_name)s: Your sign-in code"
-msgstr ""
+msgstr "%(plan_name)s: Ihr Anmeldecode"
 
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "This code is for the website “%(plan_name)s”."
-msgstr ""
+msgstr "Dieser Code ist für die Website „%(plan_name)s”."
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
@@ -5000,8 +4999,6 @@ msgid "Result"
 msgstr "Ergebnis"
 
 #: src/indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Bezeichnung des in Diagrammen dargestellten berechneten Werts (Indikatorwert × Faktor), z. B. „Fahrzeugemissionen“"
 
