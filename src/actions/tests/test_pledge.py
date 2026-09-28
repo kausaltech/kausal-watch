@@ -613,6 +613,7 @@ class TestSendPinEmail:
         msg = mail.outbox[0]
         assert 'Example Climate Plan' in msg.subject
         assert '222222' in msg.body
+        assert '“Example Climate Plan”' in msg.body
 
     def test_with_plan_and_base_template_attaches_html(self):
         plan = PlanFactory.create(name='Example Climate Plan')

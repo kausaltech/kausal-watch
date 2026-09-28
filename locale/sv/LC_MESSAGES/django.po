@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 14:53+0300\n"
+"POT-Creation-Date: 2026-09-28 17:18+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1364,7 +1364,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "förfallodatum"
 
@@ -2665,7 +2665,7 @@ msgid "client"
 msgstr "Kund"
 
 #: src/actions/models/public_user.py
-msgid "Tenant this account belongs to. Required for authed rows; null for anonymous rows."
+msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
 msgstr ""
 
 #: src/actions/models/public_user.py
@@ -2718,6 +2718,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Antal åtaganden"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Löften"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Exportera"
@@ -2750,9 +2754,9 @@ msgstr "Datum för åtagande"
 msgid "User ID"
 msgstr "Användar-ID"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Löften"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Löftesåtaganden"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2805,15 +2809,15 @@ msgid "Marketing opt-in"
 msgstr ""
 
 #: src/actions/public_user_auth.py
-#, fuzzy, python-format
-#| msgid "A shorter version of the plan name"
-msgid "Your sign-in code for the %(plan_name)s"
-msgstr "En kortare version av planens namn"
+#, python-format
+msgid "%(plan_name)s: Your sign-in code"
+msgstr ""
 
 #: src/actions/public_user_auth.py
-#, python-format
-msgid "Here is your sign-in code for the %(plan_name)s:"
-msgstr ""
+#, fuzzy, python-format
+#| msgid "A shorter version of the plan name"
+msgid "This code is for the website “%(plan_name)s”."
+msgstr "En kortare version av planens namn"
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
@@ -5061,7 +5065,7 @@ msgstr "Resultat"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Namnet på det beräknade värdet (indikatordata × faktor) som visas i diagram, t.ex. \"Fordonsutsläpp\""
 
 #: src/indicators/wagtail_admin.py
@@ -6596,6 +6600,10 @@ msgid "Other responsible parties"
 msgstr "Andra ansvariga"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Sida"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6878,18 +6886,12 @@ msgstr "Spara"
 #~ msgid "Should the plan be exposed only to authenticated users if not published?"
 #~ msgstr "Ska planen visas endast för autentiserade användare om den inte är publicerad?"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Löftesåtaganden"
-
 #~ msgid "Publication status"
 #~ msgstr "Publiceringsstatus"
 
 #, python-format
 #~ msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
 #~ msgstr "Vill du avpublicera planen '%(plan)s'? Den blir då otillgänglig för allmänheten."
-
-#~ msgid "Page"
-#~ msgstr "Sida"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Ingress är inte tillåten för åtgärder i denna plan"

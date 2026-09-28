@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 14:53+0300\n"
+"POT-Creation-Date: 2026-09-28 17:18+0300\n"
 "PO-Revision-Date: 2026-02-25 16:13+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1365,7 +1365,7 @@ msgstr "tila"
 msgid "details"
 msgstr "lisätiedot"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
@@ -2666,7 +2666,7 @@ msgid "client"
 msgstr "Asiakas"
 
 #: src/actions/models/public_user.py
-msgid "Tenant this account belongs to. Required for authed rows; null for anonymous rows."
+msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
 msgstr ""
 
 #: src/actions/models/public_user.py
@@ -2719,6 +2719,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Liittymisten määrä"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Sitoumukset"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Vie"
@@ -2751,9 +2755,9 @@ msgstr "Liittymispäivä"
 msgid "User ID"
 msgstr "Käyttäjän tunniste"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Sitoumukset"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Sitoumukseen liittymiset"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2806,15 +2810,15 @@ msgid "Marketing opt-in"
 msgstr ""
 
 #: src/actions/public_user_auth.py
-#, fuzzy, python-format
-#| msgid "A shorter version of the plan name"
-msgid "Your sign-in code for the %(plan_name)s"
-msgstr "Lyhyt versio toimenpideohjelman nimestä"
+#, python-format
+msgid "%(plan_name)s: Your sign-in code"
+msgstr ""
 
 #: src/actions/public_user_auth.py
-#, python-format
-msgid "Here is your sign-in code for the %(plan_name)s:"
-msgstr ""
+#, fuzzy, python-format
+#| msgid "A shorter version of the plan name"
+msgid "This code is for the website “%(plan_name)s”."
+msgstr "Lyhyt versio toimenpideohjelman nimestä"
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
@@ -5062,7 +5066,7 @@ msgstr "Tulos"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Kaavioissa näytettävän lasketun arvon nimi (mittarin data × tekijä), esim. \"Ajoneuvojen päästöt\""
 
 #: src/indicators/wagtail_admin.py
@@ -6636,6 +6640,10 @@ msgid "Other responsible parties"
 msgstr "Muut vastuutahot"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Sivu"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiilit"
 
@@ -6918,18 +6926,12 @@ msgstr "Tallenna ja poistu"
 #~ msgid "Should the plan be exposed only to authenticated users if not published?"
 #~ msgstr "Näytetäänkö julkaisematon toimenpideohjelma vain kirjautuneille käyttäjille?"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Sitoumukseen liittymiset"
-
 #~ msgid "Publication status"
 #~ msgstr "Julkaisutila"
 
 #, python-format
 #~ msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
 #~ msgstr "Haluatko perua toimenpideohjelman \"%(plan)s\" julkaisun? Se ei tällöin ole enää julkisesti saatavilla."
-
-#~ msgid "Page"
-#~ msgstr "Sivu"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Ingressi ei ole käytössä tämän toimenpideohjelman toimenpiteissä"

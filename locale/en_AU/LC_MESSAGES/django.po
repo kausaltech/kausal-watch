@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 14:53+0300\n"
+"POT-Creation-Date: 2026-09-28 17:18+0300\n"
 "PO-Revision-Date: 2026-09-28 07:54+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: English (Australia) <https://weblate.kausal.tech/projects/watch/django/en_AU/>\n"
@@ -1368,7 +1368,7 @@ msgstr ""
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr ""
 
@@ -2721,7 +2721,7 @@ msgid "client"
 msgstr ""
 
 #: src/actions/models/public_user.py
-msgid "Tenant this account belongs to. Required for authed rows; null for anonymous rows."
+msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
 msgstr ""
 
 #: src/actions/models/public_user.py
@@ -2766,6 +2766,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr ""
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr ""
@@ -2800,9 +2804,11 @@ msgstr ""
 msgid "User ID"
 msgstr ""
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "Pledge Commitments"
+msgstr "synchronise with pages"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2854,12 +2860,12 @@ msgstr ""
 
 #: src/actions/public_user_auth.py
 #, python-format
-msgid "Your sign-in code for the %(plan_name)s"
+msgid "%(plan_name)s: Your sign-in code"
 msgstr ""
 
 #: src/actions/public_user_auth.py
 #, python-format
-msgid "Here is your sign-in code for the %(plan_name)s:"
+msgid "This code is for the website “%(plan_name)s”."
 msgstr ""
 
 #: src/actions/public_user_auth.py
@@ -5151,7 +5157,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -6744,6 +6750,10 @@ msgid "Other responsible parties"
 msgstr "responsible organisations"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr ""
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7015,11 +7025,6 @@ msgstr ""
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr ""
-
-#, fuzzy
-#~| msgid "synchronize with pages"
-#~ msgid "Pledge Commitments"
-#~ msgstr "synchronise with pages"
 
 #, fuzzy
 #~| msgid "organizations"

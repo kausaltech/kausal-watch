@@ -5,13 +5,16 @@
     <mj-column>
         <mj-text align="left">
             <p>
-                {% trans plan_name=plan.name %}Here is your sign-in code for the {{ plan_name }}:{% endtrans %}
+                {% trans %}Here is your sign-in code:{% endtrans %}
             </p>
         </mj-text>
         <mj-text align="center" font-size="32px" font-weight="bold" letter-spacing="6px" padding="16px 32px">
             {{ raw_pin }}
         </mj-text>
         <mj-text align="left">
+            <p>
+                {% trans plan_name=plan.name %}This code is for the website “{{ plan_name }}”.{% endtrans %}
+            </p>
             <p>
                 {% trans minutes=pin_ttl_minutes %}Enter this code when prompted. It expires in {{ minutes }} minutes.{% endtrans %}
             </p>

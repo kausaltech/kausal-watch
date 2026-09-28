@@ -7,17 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 09:47+0000\n"
+"POT-Creation-Date: 2026-09-28 16:18+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Gabriel Siqueira <gabriel.siqueira@kausal.tech>\n"
-"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/"
-"watch/notifications/pt_BR/>\n"
 "Language: pt_BR\n"
+"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/notifications/pt_BR/>\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.17.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: src/notifications/mjml-templates/action_not_updated.mjml
@@ -70,8 +68,12 @@ msgid ""
 msgstr ""
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
+msgid "Here is your sign-in code:"
+msgstr ""
+
+#: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
-msgid "Here is your sign-in code for the %(plan_name)s:"
+msgid "This code is for the website “%(plan_name)s”."
 msgstr ""
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
@@ -155,3 +157,7 @@ msgstr "Editar ação"
 #, fuzzy
 msgid "Edit indicator data"
 msgstr "Processar dados do indicador"
+
+#~ msgid "Here is your sign-in code for the %(plan_name)s:"
+#~ msgstr ""
+

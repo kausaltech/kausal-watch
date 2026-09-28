@@ -253,21 +253,26 @@ def send_pin_email(to_email: str, raw_pin: str, plan: Plan | None = None) -> Non
     minutes = int(PIN_TTL.total_seconds() // 60)
     base_template = getattr(plan, 'notification_base_template', None) if plan else None
 
+    # The plan name only ever stands on its own or after a generic noun, never inside running
+    # text: languages like German and Finnish would need to inflect it, or the words around it,
+    # to fit the sentence.
     if plan is not None:
         plan_name = plan.name_i18n
-        subject = _('Your sign-in code for the %(plan_name)s') % {'plan_name': plan_name}
-        body_intro = _('Here is your sign-in code for the %(plan_name)s:') % {'plan_name': plan_name}
+        subject = _('%(plan_name)s: Your sign-in code') % {'plan_name': plan_name}
+        plan_note = _('This code is for the website “%(plan_name)s”.') % {'plan_name': plan_name}
     else:
         subject = _('Your sign-in code')
-        body_intro = _('Here is your sign-in code:')
+        plan_note = None
 
-    plain_body = '{intro}\n\n    {pin}\n\n{ttl}\n\n{ignore}\n\n—\n{powered_by}\nkausal.tech'.format(
-        intro=body_intro,
-        pin=raw_pin,
-        ttl=_('Enter this code when prompted. It expires in %(minutes)d minutes.') % {'minutes': minutes},
-        ignore=_("If you didn't request this code, you can ignore this email."),
-        powered_by=_('Powered by Kausal Watch'),
-    )
+    paragraphs = [
+        _('Here is your sign-in code:'),
+        f'    {raw_pin}',
+        plan_note,
+        _('Enter this code when prompted. It expires in %(minutes)d minutes.') % {'minutes': minutes},
+        _("If you didn't request this code, you can ignore this email."),
+        '—\n{powered_by}\nkausal.tech'.format(powered_by=_('Powered by Kausal Watch')),
+    ]
+    plain_body = '\n\n'.join(p for p in paragraphs if p)
 
     from_email = formataddr(('Kausal', settings.DEFAULT_FROM_EMAIL))
 

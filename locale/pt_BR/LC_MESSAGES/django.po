@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 14:53+0300\n"
+"POT-Creation-Date: 2026-09-28 17:18+0300\n"
 "PO-Revision-Date: 2026-09-28 07:47+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -1579,7 +1579,7 @@ msgstr "estado"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 #, fuzzy
 msgid "due date"
 msgstr "data de vencimento"
@@ -3114,7 +3114,7 @@ msgid "client"
 msgstr "Clientes"
 
 #: src/actions/models/public_user.py
-msgid "Tenant this account belongs to. Required for authed rows; null for anonymous rows."
+msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
 msgstr ""
 
 #: src/actions/models/public_user.py
@@ -3166,6 +3166,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Nome do proprietário do site"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 msgid "Export"
@@ -3204,9 +3208,10 @@ msgstr "comentário"
 msgid "User ID"
 msgstr "Usuários"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+msgid "Pledge Commitments"
+msgstr "comentário"
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3259,14 +3264,14 @@ msgid "Marketing opt-in"
 msgstr ""
 
 #: src/actions/public_user_auth.py
-#, fuzzy, python-format
-msgid "Your sign-in code for the %(plan_name)s"
-msgstr "Uma versão mais curta do nome do plano"
+#, python-format
+msgid "%(plan_name)s: Your sign-in code"
+msgstr ""
 
 #: src/actions/public_user_auth.py
-#, python-format
-msgid "Here is your sign-in code for the %(plan_name)s:"
-msgstr ""
+#, fuzzy, python-format
+msgid "This code is for the website “%(plan_name)s”."
+msgstr "Uma versão mais curta do nome do plano"
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
@@ -5832,7 +5837,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7661,6 +7666,11 @@ msgid "Other responsible parties"
 msgstr "Outros responsáveis"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
+msgid "Page"
+msgstr "Link da página"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7974,16 +7984,8 @@ msgstr "Salvar"
 #~ msgstr "Os usuários devem poder ter sessões autenticadas na UI pública?"
 
 #, fuzzy
-#~ msgid "Pledge Commitments"
-#~ msgstr "comentário"
-
-#, fuzzy
 #~ msgid "Publication status"
 #~ msgstr "status da ação"
-
-#, fuzzy
-#~ msgid "Page"
-#~ msgstr "Link da página"
 
 #, fuzzy
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
