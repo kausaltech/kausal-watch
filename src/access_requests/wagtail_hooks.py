@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django.core.paginator import Paginator
+from django.middleware.csrf import get_token
 from django.urls import path
 from wagtail import hooks
 
@@ -36,6 +37,9 @@ class AccessRequestsPanel(Component):
         ctx['page_obj'] = paginator.get_page(request.GET.get(PAGE_PARAM))
         ctx['page_param'] = PAGE_PARAM
         ctx['waiting_count'] = paginator.count
+        # The component renders its template without the request, so `{% csrf_token %}` has
+        # nothing to output unless the token is passed in; without it the forms fail CSRF checks.
+        ctx['csrf_token'] = get_token(request)
         return ctx
 
 
