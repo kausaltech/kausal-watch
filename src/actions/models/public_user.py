@@ -99,7 +99,7 @@ class PublicUser(models.Model):
         on_delete=models.PROTECT,
         related_name='public_users',
         verbose_name=_('client'),
-        help_text=_('Tenant this account belongs to. Required for authed rows; null for anonymous rows.'),
+        help_text=_('Tenant this account belongs to. Required for registered users; empty for anonymous users.'),
     )
     terms_accepted_at = models.DateTimeField(
         null=True,
