@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -1409,7 +1409,7 @@ msgstr "estado"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "fecha de vencimiento"
 
@@ -1957,24 +1957,14 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "¿Debería el sitio web público contener un enlace al inicio de sesión de administrador?"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr "Permitir el acceso al sitio web público"
-
-#: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"
-
-#: src/actions/models/features.py
 #, fuzzy
-#| msgid "Show all information but only for authenticated users"
-msgid "Expose unpublished plan only to authenticated users"
-msgstr "Mostrar toda la información pero sólo para usuarios autentificados"
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Show the sign-in link in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Should users be able to have authenticated sessions in the public UI?"
-msgid "Should the plan be exposed only to authenticated users if not published?"
-msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
+msgstr ""
 
 #: src/actions/models/features.py
 msgid "Publicly visible data about contact persons"
@@ -2270,6 +2260,14 @@ msgstr "Si este plan tiene varias versiones, nombre de esta versión"
 msgid "published at"
 msgstr "publicado en"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "visibilidad"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr ""
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "archivado en"
@@ -2459,13 +2457,15 @@ msgstr "Privacidad"
 msgid "Accessibility"
 msgstr "Accesibilidad"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
-msgstr "Interno"
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Not editable"
+msgid "Not live"
+msgstr "No editable"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Público"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2517,6 +2517,20 @@ msgstr "Publicado en"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Sin publicar"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Email required"
+msgid "Sign-in required"
+msgstr "Correo electrónico requerido"
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2602,7 +2616,7 @@ msgstr "dominio del plan"
 msgid "plan domains"
 msgstr "planificar dominios"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "El sitio no es público en este momento."
 
@@ -2847,10 +2861,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Nombre del propietario del sitio"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
-
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2895,11 +2905,9 @@ msgstr "comentario"
 msgid "User ID"
 msgstr "Usuarios"
 
-#: src/actions/pledge_admin.py
-#, fuzzy
-#| msgid "comment"
-msgid "Pledge Commitments"
-msgstr "comentario"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3288,9 +3296,9 @@ msgstr "Ajustes de notificación del plan"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
-#| msgid "action status"
-msgid "Publication status"
-msgstr "estado de la acción"
+#| msgid "Active tasks"
+msgid "Site status"
+msgstr "Tareas activas"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3373,7 +3381,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -3953,8 +3961,12 @@ msgid "order"
 msgstr "pedir"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "visibilidad"
+msgid "Internal"
+msgstr "Interno"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Público"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5449,7 +5461,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7044,12 +7056,6 @@ msgid "Other responsible parties"
 msgstr "Otros responsables"
 
 #: src/reports/spreadsheets/action_print_layout.py
-#, fuzzy
-#| msgid "Page link"
-msgid "Page"
-msgstr "Enlace de página"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Perfiles"
 
@@ -7303,7 +7309,19 @@ msgid "No production domains have been configured for this plan."
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
@@ -7311,6 +7329,10 @@ msgstr ""
 #| msgid "Unpublished"
 msgid "Yes, publish"
 msgstr "Sin publicar"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 #, fuzzy
@@ -7325,6 +7347,37 @@ msgstr "Ahorrar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Guardar"
+
+#~ msgid "Allow logging in to the public website"
+#~ msgstr "Permitir el acceso al sitio web público"
+
+#~ msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"
+
+#, fuzzy
+#~| msgid "Show all information but only for authenticated users"
+#~ msgid "Expose unpublished plan only to authenticated users"
+#~ msgstr "Mostrar toda la información pero sólo para usuarios autentificados"
+
+#, fuzzy
+#~| msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgid "Should the plan be exposed only to authenticated users if not published?"
+#~ msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"
+
+#, fuzzy
+#~| msgid "comment"
+#~ msgid "Pledge Commitments"
+#~ msgstr "comentario"
+
+#, fuzzy
+#~| msgid "action status"
+#~ msgid "Publication status"
+#~ msgstr "estado de la acción"
+
+#, fuzzy
+#~| msgid "Page link"
+#~ msgid "Page"
+#~ msgstr "Enlace de página"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Nuestras disculpas, el servidor está experimentando dificultades temporalmente."

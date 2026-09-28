@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1364,7 +1364,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "förfallodatum"
 
@@ -1874,20 +1874,12 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Bör den offentliga webbplatsen innehålla en länk till admin -inloggningen?"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr "Tillåt inloggning på den offentliga webbplatsen"
+msgid "Show the sign-in link in the public UI"
+msgstr "Visa inloggningslänken i det offentliga gränssnittet"
 
 #: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr "Ska användare kunna ha autentiserade sessioner i det publika användargränssnittet?"
-
-#: src/actions/models/features.py
-msgid "Expose unpublished plan only to authenticated users"
-msgstr "Visa opublicerad plan endast för autentiserade användare"
-
-#: src/actions/models/features.py
-msgid "Should the plan be exposed only to authenticated users if not published?"
-msgstr "Ska planen visas endast för autentiserade användare om den inte är publicerad?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
+msgstr "Ska den publika webbplatsen erbjuda en länk för att logga in? Det går alltid att logga in; vissa planer har helt enkelt ingen användning för länken och vill hellre inte visa den."
 
 #: src/actions/models/features.py
 msgid "Publicly visible data about contact persons"
@@ -2171,6 +2163,14 @@ msgstr "Om denna plan har flera versioner, namn på denna version"
 msgid "published at"
 msgstr "publicerad på"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "synlighet"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr "Intern: endast inloggade användare som har beviljats åtkomst till planen kan se den. Offentlig: vem som helst kan se den utan att logga in."
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "arkiverad kl"
@@ -2350,13 +2350,13 @@ msgstr "Integritet"
 msgid "Accessibility"
 msgstr "Tillgänglighet"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
-msgstr "Intern"
+#: src/actions/models/plan.py
+msgid "Not live"
+msgstr "Inte live"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Offentlig"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr "Live"
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2408,6 +2408,18 @@ msgstr "Publicerad"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Ej publicerad"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr "Tillgänglig"
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr "Inte tillgänglig"
+
+#: src/actions/models/plan.py
+msgid "Sign-in required"
+msgstr "Inloggning krävs"
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2489,7 +2501,7 @@ msgstr "plandomän"
 msgid "plan domains"
 msgstr "planera domäner"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "Webbplatsen är för närvarande inte offentlig."
 
@@ -2706,10 +2718,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Antal åtaganden"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Löften"
-
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Exportera"
@@ -2742,9 +2750,9 @@ msgstr "Datum för åtagande"
 msgid "User ID"
 msgstr "Användar-ID"
 
-#: src/actions/pledge_admin.py
-msgid "Pledge Commitments"
-msgstr "Löftesåtaganden"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Löften"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -3108,8 +3116,8 @@ msgid "Plan notification settings"
 msgstr "Planens aviseringsinställningar"
 
 #: src/actions/wagtail_admin.py
-msgid "Publication status"
-msgstr "Publiceringsstatus"
+msgid "Site status"
+msgstr "Webbplatsens status"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3172,8 +3180,8 @@ msgstr "Vill du publicera planen '%(plan)s'? Den blir då offentligt tillgängli
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
-msgstr "Vill du avpublicera planen '%(plan)s'? Den blir då otillgänglig för allmänheten."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
+msgstr "Vill du avpublicera planen '%(plan)s'? Dess produktionswebbplats tas då ned."
 
 #: src/actions/wagtail_admin.py
 msgid "The plan is already published."
@@ -3725,8 +3733,12 @@ msgid "order"
 msgstr "ordning"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "synlighet"
+msgid "Internal"
+msgstr "Intern"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Offentlig"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5049,7 +5061,7 @@ msgstr "Resultat"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Namnet på det beräknade värdet (indikatordata × faktor) som visas i diagram, t.ex. \"Fordonsutsläpp\""
 
 #: src/indicators/wagtail_admin.py
@@ -6584,10 +6596,6 @@ msgid "Other responsible parties"
 msgstr "Andra ansvariga"
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Sida"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6823,12 +6831,28 @@ msgid "No production domains have been configured for this plan."
 msgstr "Inga produktionsdomäner har konfigurerats för denna plan."
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
-msgstr "Om denna plan avpubliceras blir den omedelbart otillgänglig för allmänheten."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr "Om denna plan avpubliceras tas dess produktionswebbplats ned omedelbart."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr "Planen förblir offentlig, så dess förhandsgranskningsadresser och API:et visar den fortfarande för alla."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr "Den här planen är för närvarande intern, så när den publiceras blir den också synlig för alla."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
+msgstr "Behåll planen intern, så att besökare måste logga in för att se webbplatsen"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, publish"
 msgstr "Ja, publicera"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr "Gör också planen intern, så att endast inloggade användare med åtkomst kan se den någonstans"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, unpublish"
@@ -6841,6 +6865,31 @@ msgstr "Sparar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Spara"
+
+#~ msgid "Allow logging in to the public website"
+#~ msgstr "Tillåt inloggning på den offentliga webbplatsen"
+
+#~ msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgstr "Ska användare kunna ha autentiserade sessioner i det publika användargränssnittet?"
+
+#~ msgid "Expose unpublished plan only to authenticated users"
+#~ msgstr "Visa opublicerad plan endast för autentiserade användare"
+
+#~ msgid "Should the plan be exposed only to authenticated users if not published?"
+#~ msgstr "Ska planen visas endast för autentiserade användare om den inte är publicerad?"
+
+#~ msgid "Pledge Commitments"
+#~ msgstr "Löftesåtaganden"
+
+#~ msgid "Publication status"
+#~ msgstr "Publiceringsstatus"
+
+#, python-format
+#~ msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+#~ msgstr "Vill du avpublicera planen '%(plan)s'? Den blir då otillgänglig för allmänheten."
+
+#~ msgid "Page"
+#~ msgstr "Sida"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Ingress är inte tillåten för åtgärder i denna plan"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -1449,7 +1449,7 @@ msgstr "statuss"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "termiņš"
 
@@ -2007,19 +2007,13 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Vai publiskajā tīmekļa vietnē ir jābūt saitei uz administratora pieteikšanās iespēju?"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr ""
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Show the sign-in link in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
 
 #: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr ""
-
-#: src/actions/models/features.py
-msgid "Expose unpublished plan only to authenticated users"
-msgstr ""
-
-#: src/actions/models/features.py
-msgid "Should the plan be exposed only to authenticated users if not published?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
 msgstr ""
 
 #: src/actions/models/features.py
@@ -2332,6 +2326,14 @@ msgstr "Ja šim plānam ir vairākas versijas, norāda šīs versijas nosaukumu"
 msgid "published at"
 msgstr "publicēts vietnē"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "redzamība"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr ""
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "arhivēts vietnē"
@@ -2527,15 +2529,15 @@ msgstr "Konfidencialitāte"
 msgid "Accessibility"
 msgstr "Pieejamība"
 
-#: src/actions/models/plan.py src/aplans/utils.py
+#: src/actions/models/plan.py
 #, fuzzy
-#| msgid "internal notes"
-msgid "Internal"
-msgstr "iekšējās piezīmes"
+#| msgid "Not editable"
+msgid "Not live"
+msgstr "Nav rediģējams"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Publiski"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2587,6 +2589,18 @@ msgstr "Publicēts"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Nepublicēts"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Sign-in required"
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2674,7 +2688,7 @@ msgstr "plāna domēns"
 msgid "plan domains"
 msgstr "plāna domēni"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "Pašlaik vietne nav publiski pieejama."
 
@@ -2919,10 +2933,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Vietnes īpašnieka vārds un uzvārds"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
-
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2967,11 +2977,9 @@ msgstr "komentārs"
 msgid "User ID"
 msgstr "Lietotāji"
 
-#: src/actions/pledge_admin.py
-#, fuzzy
-#| msgid "comment"
-msgid "Pledge Commitments"
-msgstr "komentārs"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3360,9 +3368,9 @@ msgstr "Plāna paziņojumu iestatījumi"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
-#| msgid "action status"
-msgid "Publication status"
-msgstr "rīcības statuss"
+#| msgid "Active tasks"
+msgid "Site status"
+msgstr "Aktīvie uzdevumi"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3445,7 +3453,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -4032,8 +4040,14 @@ msgid "order"
 msgstr "pasūtījums"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "redzamība"
+#, fuzzy
+#| msgid "internal notes"
+msgid "Internal"
+msgstr "iekšējās piezīmes"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Publiski"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5525,7 +5539,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7160,12 +7174,6 @@ msgid "Other responsible parties"
 msgstr "Citi atbildīgie"
 
 #: src/reports/spreadsheets/action_print_layout.py
-#, fuzzy
-#| msgid "Page link"
-msgid "Page"
-msgstr "Lapas saite"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7415,7 +7423,19 @@ msgid "No production domains have been configured for this plan."
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
@@ -7423,6 +7443,10 @@ msgstr ""
 #| msgid "Unpublished"
 msgid "Yes, publish"
 msgstr "Nepublicēts"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 #, fuzzy
@@ -7437,6 +7461,21 @@ msgstr "Ietaupot…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Saglabāt"
+
+#, fuzzy
+#~| msgid "comment"
+#~ msgid "Pledge Commitments"
+#~ msgstr "komentārs"
+
+#, fuzzy
+#~| msgid "action status"
+#~ msgid "Publication status"
+#~ msgstr "rīcības statuss"
+
+#, fuzzy
+#~| msgid "Page link"
+#~ msgid "Page"
+#~ msgstr "Lapas saite"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Atvainojamies, serveris uz laiku saskaras ar grūtībām."

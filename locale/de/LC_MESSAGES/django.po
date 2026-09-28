@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-09-28 07:49+0000\n"
 "Last-Translator: Stefan Cave <stefan.cave@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -1364,7 +1364,7 @@ msgstr "Status"
 msgid "details"
 msgstr "Details"
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "Frist"
 
@@ -1870,20 +1870,12 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr "Einloggen auf der öffentlichen Website ermöglichen"
+msgid "Show the sign-in link in the public UI"
+msgstr "Anmeldelink in der öffentlichen Website anzeigen"
 
 #: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr "Sollen Benutzer authentifizierte Sitzungen in der öffentlichen Oberfläche haben können?"
-
-#: src/actions/models/features.py
-msgid "Expose unpublished plan only to authenticated users"
-msgstr "Unveröffentlichten Plan nur authentifizierten Benutzern zugänglich machen"
-
-#: src/actions/models/features.py
-msgid "Should the plan be exposed only to authenticated users if not published?"
-msgstr "Sollte der Plan nur authentifizierten Benutzern zugänglich sein, wenn er nicht veröffentlicht ist?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
+msgstr "Soll die öffentliche Website einen Link zur Anmeldung anbieten? Die Anmeldung ist immer möglich; manche Pläne haben für den Link schlicht keine Verwendung und zeigen ihn lieber nicht an."
 
 #: src/actions/models/features.py
 msgid "Publicly visible data about contact persons"
@@ -2172,6 +2164,14 @@ msgstr "Wenn dieser Plan mehrere Versionen hat, der Name dieser Version"
 msgid "published at"
 msgstr "veröffentlicht am"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "Sichtbarkeit"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr "Intern: Nur angemeldete Benutzer, denen Zugriff auf diesen Plan gewährt wurde, können ihn sehen. Öffentlich: Jeder kann ihn ohne Anmeldung sehen."
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "archiviert am"
@@ -2352,13 +2352,13 @@ msgstr "Datenschutz"
 msgid "Accessibility"
 msgstr "Barrierefreiheit"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
-msgstr "Intern"
+#: src/actions/models/plan.py
+msgid "Not live"
+msgstr "Nicht in Betrieb"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Öffentlich"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr "In Betrieb"
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2410,6 +2410,18 @@ msgstr "Veröffentlicht"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Unveröffentlicht"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr "Verfügbar"
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr "Nicht verfügbar"
+
+#: src/actions/models/plan.py
+msgid "Sign-in required"
+msgstr "Anmeldung erforderlich"
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2491,7 +2503,7 @@ msgstr "Plandomäne"
 msgid "plan domains"
 msgstr "Plandomänen"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "Die Seite ist derzeit nicht öffentlich."
 
@@ -2709,10 +2721,6 @@ msgstr "Teilnehmende"
 msgid "Number of commitments"
 msgstr "Anzahl der Teilnahmen"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Mitmach-Aktionen"
-
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Exportieren"
@@ -2745,9 +2753,9 @@ msgstr "Teilnahmedatum"
 msgid "User ID"
 msgstr "Benutzer-ID"
 
-#: src/actions/pledge_admin.py
-msgid "Pledge Commitments"
-msgstr "Teilnahme-Erklärungen"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Mitmach-Aktionen"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -3113,8 +3121,8 @@ msgid "Plan notification settings"
 msgstr "Plan-Benachrichtigungseinstellungen"
 
 #: src/actions/wagtail_admin.py
-msgid "Publication status"
-msgstr "Veröffentlichungsstatus"
+msgid "Site status"
+msgstr "Website-Status"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3177,8 +3185,8 @@ msgstr "Möchten Sie den Plan „%(plan)s” veröffentlichen? Dadurch wird er �
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
-msgstr "Möchten Sie den Plan „%(plan)s” zurückziehen? Dadurch wird er für die Öffentlichkeit nicht mehr zugänglich sein."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
+msgstr "Möchten Sie den Plan „%(plan)s” zurückziehen? Dadurch wird seine Produktivwebsite außer Betrieb genommen."
 
 #: src/actions/wagtail_admin.py
 msgid "The plan is already published."
@@ -3735,8 +3743,12 @@ msgid "order"
 msgstr "Sortierung"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "Sichtbarkeit"
+msgid "Internal"
+msgstr "Intern"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Öffentlich"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5055,7 +5067,9 @@ msgid "Result"
 msgstr "Ergebnis"
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+#, fuzzy
+#| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Bezeichnung des in Diagrammen dargestellten berechneten Werts (Indikatorwert × Faktor), z. B. „Fahrzeugemissionen“"
 
 #: src/indicators/wagtail_admin.py
@@ -6589,10 +6603,6 @@ msgid "Other responsible parties"
 msgstr "Andere Verantwortliche"
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Seite"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Steckbriefe"
 
@@ -6828,12 +6838,28 @@ msgid "No production domains have been configured for this plan."
 msgstr "Für diesen Plan wurden keine Produktionsdomänen konfiguriert."
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
-msgstr "Durch das Zurückziehen dieses Plans wird er für die Öffentlichkeit sofort unzugänglich."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr "Durch das Zurückziehen dieses Plans wird seine Produktivwebsite sofort außer Betrieb genommen."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr "Der Plan bleibt öffentlich, daher stellen seine Vorschauadressen und die API ihn weiterhin allen bereit."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr "Dieser Plan ist derzeit intern, daher wird er durch das Veröffentlichen auch für alle sichtbar."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
+msgstr "Den Plan intern halten, sodass Besucher sich anmelden müssen, um die Website zu sehen"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, publish"
 msgstr "Ja, veröffentlichen"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr "Den Plan außerdem intern machen, sodass ihn überall nur angemeldete Benutzer mit Zugriff sehen können"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, unpublish"
@@ -6846,6 +6872,31 @@ msgstr "Wird gespeichert…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Speichern"
+
+#~ msgid "Allow logging in to the public website"
+#~ msgstr "Einloggen auf der öffentlichen Website ermöglichen"
+
+#~ msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgstr "Sollen Benutzer authentifizierte Sitzungen in der öffentlichen Oberfläche haben können?"
+
+#~ msgid "Expose unpublished plan only to authenticated users"
+#~ msgstr "Unveröffentlichten Plan nur authentifizierten Benutzern zugänglich machen"
+
+#~ msgid "Should the plan be exposed only to authenticated users if not published?"
+#~ msgstr "Sollte der Plan nur authentifizierten Benutzern zugänglich sein, wenn er nicht veröffentlicht ist?"
+
+#~ msgid "Pledge Commitments"
+#~ msgstr "Teilnahme-Erklärungen"
+
+#~ msgid "Publication status"
+#~ msgstr "Veröffentlichungsstatus"
+
+#, python-format
+#~ msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+#~ msgstr "Möchten Sie den Plan „%(plan)s” zurückziehen? Dadurch wird er für die Öffentlichkeit nicht mehr zugänglich sein."
+
+#~ msgid "Page"
+#~ msgstr "Seite"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Leitabsatz ist für Maßnahmen in diesem Plan nicht zulässig"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -1429,7 +1429,7 @@ msgstr "κράτος"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "ημερομηνία λήξης"
 
@@ -1977,24 +1977,14 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Θα πρέπει ο δημόσιος ιστότοπος να περιέχει σύνδεσμο για τη σύνδεση του διαχειριστή;"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
-
-#: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"
-
-#: src/actions/models/features.py
 #, fuzzy
-#| msgid "Show all information but only for authenticated users"
-msgid "Expose unpublished plan only to authenticated users"
-msgstr "Εμφάνιση όλων των πληροφοριών αλλά μόνο για πιστοποιημένους χρήστες"
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Show the sign-in link in the public UI"
+msgstr "Κείμενο βοήθειας για τη λίστα ενεργειών που θα εμφανίζεται στο δημόσιο UI"
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Should users be able to have authenticated sessions in the public UI?"
-msgid "Should the plan be exposed only to authenticated users if not published?"
-msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
+msgstr ""
 
 #: src/actions/models/features.py
 msgid "Publicly visible data about contact persons"
@@ -2292,6 +2282,14 @@ msgstr "Εάν αυτό το σχέδιο έχει πολλαπλές εκδόσ
 msgid "published at"
 msgstr "που δημοσιεύτηκε στο"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "ορατότητα"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr ""
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "αρχειοθετημένο στο"
@@ -2481,13 +2479,15 @@ msgstr "Απόρρητο"
 msgid "Accessibility"
 msgstr "Προσβασιμότητα"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
-msgstr "Εσωτερικό"
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Not editable"
+msgid "Not live"
+msgstr "Δεν επεξεργάζεται"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Δημόσιο"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2539,6 +2539,20 @@ msgstr "Δημοσιευμένο"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Αδημοσίευτο"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Email required"
+msgid "Sign-in required"
+msgstr "Απαιτείται email"
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2626,7 +2640,7 @@ msgstr "τομέας σχεδίου"
 msgid "plan domains"
 msgstr "τομείς σχεδίου"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "Ο ιστότοπος δεν είναι δημόσιος προς το παρόν."
 
@@ -2871,10 +2885,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Όνομα του ιδιοκτήτη του χώρου"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
-
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2919,11 +2929,9 @@ msgstr "σχόλιο"
 msgid "User ID"
 msgstr "Χρήστες"
 
-#: src/actions/pledge_admin.py
-#, fuzzy
-#| msgid "comment"
-msgid "Pledge Commitments"
-msgstr "σχόλιο"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3314,9 +3322,9 @@ msgstr "Ρυθμίσεις ειδοποίησης σχεδίου"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
-#| msgid "action status"
-msgid "Publication status"
-msgstr "κατάσταση δράσης"
+#| msgid "Active tasks"
+msgid "Site status"
+msgstr "Ενεργά καθήκοντα"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3399,7 +3407,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -3979,8 +3987,12 @@ msgid "order"
 msgstr "παραγγελία"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "ορατότητα"
+msgid "Internal"
+msgstr "Εσωτερικό"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Δημόσιο"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5483,7 +5495,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -7087,12 +7099,6 @@ msgid "Other responsible parties"
 msgstr "Άλλοι υπεύθυνοι"
 
 #: src/reports/spreadsheets/action_print_layout.py
-#, fuzzy
-#| msgid "Page link"
-msgid "Page"
-msgstr "Σύνδεσμος σελίδας"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Προφίλ"
 
@@ -7346,7 +7352,19 @@ msgid "No production domains have been configured for this plan."
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
@@ -7354,6 +7372,10 @@ msgstr ""
 #| msgid "Unpublished"
 msgid "Yes, publish"
 msgstr "Αδημοσίευτο"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 #, fuzzy
@@ -7368,6 +7390,37 @@ msgstr "Εξοικονόμηση…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Αποθήκευση"
+
+#~ msgid "Allow logging in to the public website"
+#~ msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
+
+#~ msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"
+
+#, fuzzy
+#~| msgid "Show all information but only for authenticated users"
+#~ msgid "Expose unpublished plan only to authenticated users"
+#~ msgstr "Εμφάνιση όλων των πληροφοριών αλλά μόνο για πιστοποιημένους χρήστες"
+
+#, fuzzy
+#~| msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgid "Should the plan be exposed only to authenticated users if not published?"
+#~ msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"
+
+#, fuzzy
+#~| msgid "comment"
+#~ msgid "Pledge Commitments"
+#~ msgstr "σχόλιο"
+
+#, fuzzy
+#~| msgid "action status"
+#~ msgid "Publication status"
+#~ msgstr "κατάσταση δράσης"
+
+#, fuzzy
+#~| msgid "Page link"
+#~ msgid "Page"
+#~ msgstr "Σύνδεσμος σελίδας"
 
 #~ msgid "Our apologies, the server is temporarily experiencing difficulties."
 #~ msgstr "Ζητούμε συγγνώμη, ο διακομιστής αντιμετωπίζει προσωρινά δυσκολίες."

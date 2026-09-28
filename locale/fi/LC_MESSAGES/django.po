@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2026-02-25 16:13+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1365,7 +1365,7 @@ msgstr "tila"
 msgid "details"
 msgstr "lisätiedot"
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
@@ -1875,20 +1875,12 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr "Salli kirjautuminen julkiselle sivustolle"
+msgid "Show the sign-in link in the public UI"
+msgstr "Näytä kirjautumislinkki julkisessa käyttöliittymässä"
 
 #: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr "Voivatko käyttäjät kirjautua julkiselle sivustolle?"
-
-#: src/actions/models/features.py
-msgid "Expose unpublished plan only to authenticated users"
-msgstr "Näytä julkaisematon toimenpideohjelma vain kirjautuneille käyttäjille"
-
-#: src/actions/models/features.py
-msgid "Should the plan be exposed only to authenticated users if not published?"
-msgstr "Näytetäänkö julkaisematon toimenpideohjelma vain kirjautuneille käyttäjille?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
+msgstr "Pitäisikö julkisella sivustolla näyttää linkki sisäänkirjautumiseen? Kirjautuminen on aina mahdollista; osalla toimenpideohjelmista ei vain ole linkille käyttöä, eikä sitä haluta näyttää."
 
 #: src/actions/models/features.py
 msgid "Publicly visible data about contact persons"
@@ -2172,6 +2164,14 @@ msgstr "Toimenpideohjelman tämän version nimi, jos versioita on useita"
 msgid "published at"
 msgstr "julkaisuaika"
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr "Näkyvyys"
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr "Ei-julkinen: vain kirjautuneet käyttäjät, joille on myönnetty pääsy tähän toimenpideohjelmaan, voivat nähdä sen. Julkinen: kuka tahansa voi nähdä sen ilman kirjautumista."
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr "arkistointiaika"
@@ -2351,13 +2351,13 @@ msgstr "Tietosuoja"
 msgid "Accessibility"
 msgstr "Saavutettavuus"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
-msgstr "Ei-julkinen"
+#: src/actions/models/plan.py
+msgid "Not live"
+msgstr "Ei tuotannossa"
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
-msgstr "Julkinen"
+#: src/actions/models/plan.py
+msgid "Live"
+msgstr "Tuotannossa"
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2409,6 +2409,18 @@ msgstr "Julkaistu"
 #: src/actions/models/plan.py
 msgid "Unpublished"
 msgstr "Ei julkaistu"
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr "Saatavilla"
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr "Ei saatavilla"
+
+#: src/actions/models/plan.py
+msgid "Sign-in required"
+msgstr "Vaatii kirjautumisen"
 
 #: src/actions/models/plan.py
 msgid "general plan admin"
@@ -2490,7 +2502,7 @@ msgstr "toimenpideohjelman verkkotunnus"
 msgid "plan domains"
 msgstr "toimenpideohjelman verkkotunnukset"
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr "Sivusto ei ole julkinen tällä hetkellä."
 
@@ -2707,10 +2719,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Liittymisten määrä"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Sitoumukset"
-
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Vie"
@@ -2743,9 +2751,9 @@ msgstr "Liittymispäivä"
 msgid "User ID"
 msgstr "Käyttäjän tunniste"
 
-#: src/actions/pledge_admin.py
-msgid "Pledge Commitments"
-msgstr "Sitoumukseen liittymiset"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Sitoumukset"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -3109,8 +3117,8 @@ msgid "Plan notification settings"
 msgstr "Toimenpiteen heräteasetukset"
 
 #: src/actions/wagtail_admin.py
-msgid "Publication status"
-msgstr "Julkaisutila"
+msgid "Site status"
+msgstr "Sivuston tila"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
@@ -3173,8 +3181,8 @@ msgstr "Haluatko julkaista toimenpideohjelman \"%(plan)s\"? Se tulee tällöin j
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
-msgstr "Haluatko perua toimenpideohjelman \"%(plan)s\" julkaisun? Se ei tällöin ole enää julkisesti saatavilla."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
+msgstr "Haluatko perua toimenpideohjelman \"%(plan)s\" julkaisun? Sen tuotantosivusto poistetaan tällöin käytöstä."
 
 #: src/actions/wagtail_admin.py
 msgid "The plan is already published."
@@ -3726,8 +3734,12 @@ msgid "order"
 msgstr "järjestys"
 
 #: src/aplans/utils.py
-msgid "visibility"
-msgstr "Näkyvyys"
+msgid "Internal"
+msgstr "Ei-julkinen"
+
+#: src/aplans/utils.py
+msgid "Public"
+msgstr "Julkinen"
 
 #: src/aplans/utils.py
 msgid "Authenticated users"
@@ -5050,7 +5062,7 @@ msgstr "Tulos"
 #: src/indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Kaavioissa näytettävän lasketun arvon nimi (mittarin data × tekijä), esim. \"Ajoneuvojen päästöt\""
 
 #: src/indicators/wagtail_admin.py
@@ -6624,10 +6636,6 @@ msgid "Other responsible parties"
 msgstr "Muut vastuutahot"
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Sivu"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiilit"
 
@@ -6863,12 +6871,28 @@ msgid "No production domains have been configured for this plan."
 msgstr "Tälle toimenpideohjelmalle ei ole määritetty tuotantoverkkotunnuksia."
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
-msgstr "Tämän toimenpideohjelman julkaisun peruminen tekee siitä heti julkisesti saavuttamattoman."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr "Tämän toimenpideohjelman julkaisun peruminen poistaa sen tuotantosivuston käytöstä heti."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr "Toimenpideohjelma pysyy julkisena, joten sen esikatseluosoitteet ja rajapinta näyttävät sen edelleen kaikille."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr "Tämä toimenpideohjelma on tällä hetkellä ei-julkinen, joten julkaiseminen tekee siitä myös kaikille näkyvän."
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
+msgstr "Pidä toimenpideohjelma ei-julkisena, jolloin kävijöiden on kirjauduttava sisään nähdäkseen sivuston"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, publish"
 msgstr "Kyllä, julkaise"
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
+msgstr "Tee toimenpideohjelmasta myös ei-julkinen, jolloin vain sisäänkirjautuneet käyttäjät, joilla on käyttöoikeus, voivat nähdä sen missään"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, unpublish"
@@ -6881,6 +6905,31 @@ msgstr "Tallennetaan…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Tallenna ja poistu"
+
+#~ msgid "Allow logging in to the public website"
+#~ msgstr "Salli kirjautuminen julkiselle sivustolle"
+
+#~ msgid "Should users be able to have authenticated sessions in the public UI?"
+#~ msgstr "Voivatko käyttäjät kirjautua julkiselle sivustolle?"
+
+#~ msgid "Expose unpublished plan only to authenticated users"
+#~ msgstr "Näytä julkaisematon toimenpideohjelma vain kirjautuneille käyttäjille"
+
+#~ msgid "Should the plan be exposed only to authenticated users if not published?"
+#~ msgstr "Näytetäänkö julkaisematon toimenpideohjelma vain kirjautuneille käyttäjille?"
+
+#~ msgid "Pledge Commitments"
+#~ msgstr "Sitoumukseen liittymiset"
+
+#~ msgid "Publication status"
+#~ msgstr "Julkaisutila"
+
+#, python-format
+#~ msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+#~ msgstr "Haluatko perua toimenpideohjelman \"%(plan)s\" julkaisun? Se ei tällöin ole enää julkisesti saatavilla."
+
+#~ msgid "Page"
+#~ msgstr "Sivu"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Ingressi ei ole käytössä tämän toimenpideohjelman toimenpiteissä"
@@ -7585,9 +7634,6 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "My actions"
 #~ msgstr "Omat tapahtumat"
-
-#~ msgid "None available"
-#~ msgstr "Ei löydy"
 
 #~ msgid "Edit this action"
 #~ msgstr "Muokkaa tätä toimenpidettä"

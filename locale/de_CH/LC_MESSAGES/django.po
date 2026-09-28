@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 09:43+0300\n"
+"POT-Creation-Date: 2026-09-28 14:53+0300\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: German (Switzerland) <https://weblate.kausal.tech/projects/watch/django/de_CH/>\n"
@@ -1381,7 +1381,7 @@ msgstr ""
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr ""
 
@@ -1907,19 +1907,13 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr ""
 
 #: src/actions/models/features.py
-msgid "Allow logging in to the public website"
-msgstr ""
+#, fuzzy
+#| msgid "Help text for the Action list to be shown in the public UI"
+msgid "Show the sign-in link in the public UI"
+msgstr "In Benutzeroberfläche anzuzeigender Hilfetext für die Massnahmenliste"
 
 #: src/actions/models/features.py
-msgid "Should users be able to have authenticated sessions in the public UI?"
-msgstr ""
-
-#: src/actions/models/features.py
-msgid "Expose unpublished plan only to authenticated users"
-msgstr ""
-
-#: src/actions/models/features.py
-msgid "Should the plan be exposed only to authenticated users if not published?"
+msgid "Should the public website offer a link to sign in? Signing in is always possible; some plans simply have no use for the link and would rather not show it."
 msgstr ""
 
 #: src/actions/models/features.py
@@ -2218,6 +2212,14 @@ msgstr ""
 msgid "published at"
 msgstr ""
 
+#: src/actions/models/plan.py src/aplans/utils.py
+msgid "visibility"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Internal: only signed-in users who have been granted access to this plan can view it. Public: anyone can view it, without signing in."
+msgstr ""
+
 #: src/actions/models/plan.py
 msgid "archived at"
 msgstr ""
@@ -2403,12 +2405,12 @@ msgstr ""
 msgid "Accessibility"
 msgstr ""
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Internal"
+#: src/actions/models/plan.py
+msgid "Not live"
 msgstr ""
 
-#: src/actions/models/plan.py src/aplans/utils.py
-msgid "Public"
+#: src/actions/models/plan.py
+msgid "Live"
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -2460,6 +2462,18 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Unpublished"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Available"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Unavailable"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Sign-in required"
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -2544,7 +2558,7 @@ msgstr ""
 msgid "plan domains"
 msgstr ""
 
-#: src/actions/models/plan.py src/actions/schema.py
+#: src/actions/models/plan.py
 msgid "The site is not public at this time."
 msgstr ""
 
@@ -2755,10 +2769,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Für 'Massnahme' zu verwendender Begriff"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
-
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr ""
@@ -2793,11 +2803,9 @@ msgstr ""
 msgid "User ID"
 msgstr ""
 
-#: src/actions/pledge_admin.py
-#, fuzzy
-#| msgid "Action list pages"
-msgid "Pledge Commitments"
-msgstr "Massnahmenlistenseiten"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -3163,8 +3171,8 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
-#| msgid "action status"
-msgid "Publication status"
+#| msgid "Action statuses"
+msgid "Site status"
 msgstr "Massnahmenstatus"
 
 #: src/actions/wagtail_admin.py
@@ -3233,7 +3241,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, python-format
-msgid "Do you want to unpublish the plan '%(plan)s'? This will make it inaccessible to the public."
+msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -3796,7 +3804,11 @@ msgid "order"
 msgstr ""
 
 #: src/aplans/utils.py
-msgid "visibility"
+msgid "Internal"
+msgstr ""
+
+#: src/aplans/utils.py
+msgid "Public"
 msgstr ""
 
 #: src/aplans/utils.py
@@ -5210,7 +5222,7 @@ msgid "Result"
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
-msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
+msgid "The name of the computed value (indicator data \\u00d7 factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
 
 #: src/indicators/wagtail_admin.py
@@ -6796,10 +6808,6 @@ msgid "Other responsible parties"
 msgstr ""
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr ""
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7039,11 +7047,27 @@ msgid "No production domains have been configured for this plan."
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
-msgid "Unpublishing this plan will make it inaccessible to the public immediately."
+msgid "Unpublishing this plan takes its production site down immediately."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "This plan is currently internal, so publishing it will also make it visible to anyone."
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Keep the plan internal, so that visitors have to sign in to see the site"
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, publish"
+msgstr ""
+
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
 msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
@@ -7057,6 +7081,16 @@ msgstr ""
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr ""
+
+#, fuzzy
+#~| msgid "Action list pages"
+#~ msgid "Pledge Commitments"
+#~ msgstr "Massnahmenlistenseiten"
+
+#, fuzzy
+#~| msgid "action status"
+#~ msgid "Publication status"
+#~ msgstr "Massnahmenstatus"
 
 #~ msgid "Lead paragraph is not allowed for actions in this plan"
 #~ msgstr "Leitabsatz ist für Massnahmen in diesem Plan nicht zulässig"
