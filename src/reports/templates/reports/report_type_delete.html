@@ -1,0 +1,47 @@
+{% extends "modeladmin/delete.html" %}
+{% load i18n %}
+
+{% block content_main %}
+    <div class="nice-padding">
+        {% if usage.blocks_deletion %}
+            <h2>{% blocktrans trimmed with view.verbose_name|capfirst as model_name %}{{ model_name }} could not be deleted{% endblocktrans %}</h2>
+            <p>
+                {% blocktrans trimmed with instance as instance_name %}
+                    '{{ instance_name }}' is used by a "Report comparison" block on the action details pages. Deleting it
+                    would break these pages. If you wanted to remove the report comparison from the action details
+                    pages, remove the block from the following pages instead:
+                {% endblocktrans %}
+            </p>
+            <ul>
+                {% for page in usage.pages %}
+                    <li><a href="{% url 'wagtailadmin_pages:edit' page.pk %}">{{ page.get_admin_display_title }}</a></li>
+                {% endfor %}
+                {% for page in usage.draft_pages %}
+                    <li>
+                        <a href="{% url 'wagtailadmin_pages:edit' page.pk %}">{{ page.get_admin_display_title }}</a>
+                        ({% trans "unpublished draft" %})
+                    </li>
+                {% endfor %}
+            </ul>
+            <p><a href="{{ view.index_url }}" class="button">{% trans 'Go back to listing' %}</a></p>
+        {% else %}
+            {% if usage.report_count %}
+                <div class="help-block help-warning">
+                    {% blocktrans trimmed with snapshot_count=usage.snapshot_count count counter=usage.report_count %}
+                        Deleting this report type also permanently deletes its report and the {{ snapshot_count }}
+                        action snapshots saved in it.
+                    {% plural %}
+                        Deleting this report type also permanently deletes its {{ counter }} reports and the
+                        {{ snapshot_count }} action snapshots saved in them.
+                    {% endblocktrans %}
+                </div>
+            {% endif %}
+            <p>{{ view.confirmation_message }}</p>
+            <form action="{{ view.delete_url }}" method="POST">
+                {% csrf_token %}
+                <input type="submit" value="{% trans 'Yes, delete' %}" class="button serious" />
+                <a href="{{ view.index_url }}" class="button button-secondary">{% trans "No, don't delete" %}</a>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

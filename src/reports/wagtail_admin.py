@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.db.models import Model
 from django.http import HttpResponse
@@ -20,6 +20,7 @@ from actions.category_admin import ModelAdminMixinBase
 from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin, QueryParameterButtonHelper
 
 from .models import Report, ReportType
+from .usage import get_report_type_usage
 from .views import MarkReportAsCompleteView
 
 
@@ -114,6 +115,32 @@ class ReportAdminButtonHelper(QueryParameterButtonHelper):
         return buttons
 
 
+class ReportTypeDeleteView(DeleteView[ReportType]):
+    """
+    Refuse to delete a report type that a report comparison block still refers to.
+
+    Deleting such a report type would break the action details pages, and admins have mistaken deleting the report
+    type for removing the block.
+    """
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['usage'] = get_report_type_usage(self.instance)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if get_report_type_usage(self.instance).blocks_deletion:
+            messages.error(
+                request,
+                _('The report type is still used on action pages. Remove the report comparison blocks first.'),
+            )
+            return self.get(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+
+    def get_template_names(self):
+        return ['reports/report_type_delete.html']
+
+
 @modeladmin_register
 class ReportTypeAdmin(AplansModelAdmin[ReportType]):
     model = ReportType
@@ -128,6 +155,8 @@ class ReportTypeAdmin(AplansModelAdmin[ReportType]):
         FieldPanel('only_plan_admins_can_mark_actions_as_complete'),
         FieldPanel('fields', heading=_('fields')),
     ]
+
+    delete_view_class = ReportTypeDeleteView
 
     def get_form_fields_exclude(self, request):  # type: ignore[override]
         exclude = super().get_form_fields_exclude(request)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
