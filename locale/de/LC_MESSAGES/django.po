@@ -449,8 +449,9 @@ msgid "Heading"
 msgstr "Überschrift"
 
 #: src/actions/blocks/__init__.py
+#, fuzzy
 msgid "Leave empty to fall back to the parent plan's name, or to this plan's own short name."
-msgstr ""
+msgstr "Leer lassen, um auf den Namen des übergeordneten Plans oder auf den Kurznamen dieses Plans zurückzugreifen."
 
 #: src/actions/blocks/__init__.py
 msgid "Related plans"
@@ -849,29 +850,28 @@ msgstr "Paths Ergebnis"
 
 #: src/actions/bulk_approve.py src/actions/wagtail_hooks.py
 #, fuzzy
-#| msgid "Resubmit for moderation"
 msgid "Release actions from moderation"
-msgstr "Erneut zur Moderation vorlegen"
+msgstr "Maßnahmen aus der Moderation freigeben"
 
 #: src/actions/bulk_approve.py
+#, fuzzy
 msgid "No releasable actions were selected."
-msgstr ""
+msgstr "Es wurden keine freigebbaren Maßnahmen ausgewählt."
 
 #: src/actions/bulk_approve.py
 #, fuzzy, python-format
-#| msgid "Related actions"
 msgid "Released %(count)d actions."
-msgstr "Verbundene Maßnahmen"
+msgstr "%(count)d Maßnahmen freigegeben."
 
 #: src/actions/bulk_approve.py
-#, python-format
+#, fuzzy, python-format
 msgid "%(count)d actions skipped (no permission)."
-msgstr ""
+msgstr "%(count)d Maßnahmen übersprungen (keine Berechtigung)."
 
 #: src/actions/bulk_approve.py
-#, python-format
+#, fuzzy, python-format
 msgid "%(count)d actions failed to release; see logs for details."
-msgstr ""
+msgstr "%(count)d Maßnahmen konnten nicht freigegeben werden; Details siehe Protokolle."
 
 #: src/actions/category_admin.py
 msgid "Common category type"
@@ -1417,27 +1417,23 @@ msgstr "Maßnahmenaufgaben"
 
 #: src/actions/models/action.py
 #, fuzzy
-#| msgid "action responsible party"
 msgid "action task responsible party"
-msgstr "für Maßnahme zuständige Stelle"
+msgstr "für Maßnahmenaufgabe zuständige Stelle"
 
 #: src/actions/models/action.py
 #, fuzzy
-#| msgid "action responsible parties"
 msgid "action task responsible parties"
-msgstr "für Maßnahme zuständige Stellen"
+msgstr "für Maßnahmenaufgabe zuständige Stellen"
 
 #: src/actions/models/action.py
 #, fuzzy
-#| msgid "action contact person"
 msgid "action task contact person"
-msgstr "Maßnahmenansprechperson"
+msgstr "Ansprechperson der Maßnahmenaufgabe"
 
 #: src/actions/models/action.py
 #, fuzzy
-#| msgid "action contact persons"
 msgid "action task contact persons"
-msgstr "Maßnahmenansprechpersonen"
+msgstr "Ansprechpersonen der Maßnahmenaufgabe"
 
 #: src/actions/models/action.py
 msgid "action impact class"
@@ -2070,28 +2066,34 @@ msgid "Enable users of the public UI to export actions to PDF."
 msgstr "Nutzern der öffentlichen Benutzeroberfläche die Möglichkeit geben, Maßnahmen als PDF zu exportieren."
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Hide published plan from search engines"
-msgstr ""
+msgstr "Veröffentlichten Plan vor Suchmaschinen verbergen"
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "If set, the public production site of a published plan will instruct search engines not to index any of its pages. Unpublished plans and preview sites are always excluded from indexing regardless of this setting."
-msgstr ""
+msgstr "Wenn gesetzt, weist die öffentliche Produktivseite eines veröffentlichten Plans Suchmaschinen an, keine ihrer Seiten zu indexieren. Unveröffentlichte Pläne und Vorschauseiten werden unabhängig von dieser Einstellung immer von der Indexierung ausgeschlossen."
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Assign responsible parties and contact persons to tasks"
-msgstr ""
+msgstr "Aufgaben zuständige Stellen und Ansprechpersonen zuweisen"
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Should the organizations and people responsible for an individual task be recorded? Off by default; the assignments are hidden everywhere while it is off, including in plans that already have some."
-msgstr ""
+msgstr "Sollen die für eine einzelne Aufgabe zuständigen Organisationen und Personen erfasst werden? Standardmäßig deaktiviert; solange die Option deaktiviert ist, werden die Zuweisungen überall ausgeblendet, auch in Plänen, die bereits welche haben."
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "Present the parent-child plans as peers"
-msgstr ""
+msgstr "Über- und untergeordnete Pläne als gleichrangig darstellen"
 
 #: src/actions/models/features.py
+#, fuzzy
 msgid "If this is a parent plan, consider it one more peer among related plans and show it in selectors. If this is a child plan, consider its parent as one more peer among related plans and show it in selectors. Should be enabled both in parent and child plans when the parent is not considered an umbrella plan."
-msgstr ""
+msgstr "Handelt es sich um einen übergeordneten Plan, wird er als weiterer gleichrangiger Plan unter den verwandten Plänen behandelt und in Auswahlmenüs angezeigt. Handelt es sich um einen untergeordneten Plan, wird sein übergeordneter Plan als weiterer gleichrangiger Plan unter den verwandten Plänen behandelt und in Auswahlmenüs angezeigt. Sollte sowohl im übergeordneten als auch in den untergeordneten Plänen aktiviert werden, wenn der übergeordnete Plan nicht als Dachplan gilt."
 
 #: src/actions/models/features.py
 msgid "plan feature"
@@ -2103,9 +2105,8 @@ msgstr "Plan-Features"
 
 #: src/actions/models/features.py
 #, fuzzy
-#| msgid "Enable community engagement features such as pledges for this plan."
 msgid "Community engagement requires a primary client to be set on the plan."
-msgstr "Aktiviere Funktionen für das Bürgerengagement, wie z. B. Mitmach-Aktionen, für diesen Plan."
+msgstr "Für das Bürgerengagement muss im Plan ein primärer Kunde festgelegt sein."
 
 #: src/actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
@@ -2319,8 +2320,9 @@ msgid "Primary language must not be selected"
 msgstr "Hauptsprache darf nicht ausgewählt sein"
 
 #: src/actions/models/plan.py src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Only one client can be marked as primary."
-msgstr ""
+msgstr "Nur ein Kunde kann als primär markiert werden."
 
 #: src/actions/models/plan.py
 msgid "Category type must belong to plan"
@@ -2639,12 +2641,14 @@ msgid "Opaque secret used as a bearer credential after the user signs up."
 msgstr "Opakes Secret, das nach der Registrierung des Benutzers als Bearer-Anmeldeinformation verwendet wird."
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "email"
-msgstr ""
+msgstr "E-Mail"
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "Set when the user signs up; used for PIN-based authentication."
-msgstr ""
+msgstr "Wird bei der Registrierung des Nutzers gesetzt; wird für die PIN-basierte Authentifizierung verwendet."
 
 #: src/actions/models/public_user.py
 #, fuzzy
@@ -2653,24 +2657,24 @@ msgid "client"
 msgstr "Kunde"
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "Tenant this account belongs to. Required for authed rows; null for anonymous rows."
-msgstr ""
+msgstr "Mandant, zu dem dieses Konto gehört. Erforderlich für authentifizierte Einträge; leer für anonyme Einträge."
 
 #: src/actions/models/public_user.py
+#, fuzzy
 msgid "terms accepted at"
-msgstr ""
+msgstr "Nutzungsbedingungen akzeptiert am"
 
 #: src/actions/models/public_user.py
 #, fuzzy
-#| msgid "Marked as complete at"
 msgid "marketing consented at"
-msgstr "Als abgeschlossen markiert am"
+msgstr "Marketing-Einwilligung erteilt am"
 
 #: src/actions/models/public_user.py
 #, fuzzy
-#| msgid "modified at"
 msgid "email verified at"
-msgstr "verändert am"
+msgstr "E-Mail-Adresse bestätigt am"
 
 #: src/actions/models/public_user.py
 msgid "public users"
@@ -2678,15 +2682,13 @@ msgstr "öffentliche Nutzer"
 
 #: src/actions/models/public_user.py
 #, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempt"
-msgstr "öffentliche Nutzer"
+msgstr "Anmeldeversuch eines öffentlichen Nutzers"
 
 #: src/actions/models/public_user.py
 #, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempts"
-msgstr "öffentliche Nutzer"
+msgstr "Anmeldeversuche öffentlicher Nutzer"
 
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
@@ -2699,8 +2701,9 @@ msgstr "Mitmach-Aktion"
 #: src/actions/pledge_admin.py src/actions/pledge_participants_admin.py
 #: src/actions/wagtail_hooks.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "Participants"
-msgstr ""
+msgstr "Teilnehmende"
 
 #: src/actions/pledge_admin.py
 msgid "Number of commitments"
@@ -2760,101 +2763,102 @@ msgstr "Visualisierung der Auswirkungen auf die Gemeinschaft"
 
 #: src/actions/pledge_participants_admin.py
 #, fuzzy
-#| msgid "pledge actions"
 msgid "Pledge participants"
-msgstr "Maßnahmen der Mitmach-Aktion"
+msgstr "Teilnehmende der Mitmach-Aktion"
 
 #: src/actions/pledge_participants_admin.py
+#, fuzzy
 msgid "Copy opted-in emails"
-msgstr ""
+msgstr "E-Mail-Adressen mit Einwilligung kopieren"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "Copied"
-msgstr ""
+msgstr "Kopiert"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 #, fuzzy
-#| msgid "Export pledges as CSV"
 msgid "Export opted-in emails as CSV"
-msgstr "Mitmach-Aktionen als CSV exportieren"
+msgstr "E-Mail-Adressen mit Einwilligung als CSV exportieren"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "Email"
-msgstr ""
+msgstr "E-Mail"
 
 #: src/actions/pledge_participants_admin.py
 #, fuzzy
-#| msgid "pledge commitment"
 msgid "Pledges committed"
-msgstr "Teilnahme"
+msgstr "Teilnahmen an Mitmach-Aktionen"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "Marketing opt-in"
-msgstr ""
+msgstr "Marketing-Einwilligung"
 
 #: src/actions/public_user_auth.py
 #, fuzzy, python-format
-#| msgid "A shorter version of the plan name"
 msgid "Your sign-in code for the %(plan_name)s"
-msgstr "Eine kürzere Version des Plannamens"
+msgstr "Ihr Anmeldecode für %(plan_name)s"
 
 #: src/actions/public_user_auth.py
-#, python-format
+#, fuzzy, python-format
 msgid "Here is your sign-in code for the %(plan_name)s:"
-msgstr ""
+msgstr "Hier ist Ihr Anmeldecode für %(plan_name)s:"
 
 #: src/actions/public_user_auth.py
+#, fuzzy
 msgid "Your sign-in code"
-msgstr ""
+msgstr "Ihr Anmeldecode"
 
 #: src/actions/public_user_auth.py
+#, fuzzy
 msgid "Here is your sign-in code:"
-msgstr ""
+msgstr "Hier ist Ihr Anmeldecode:"
 
 #: src/actions/public_user_auth.py
-#, python-format
+#, fuzzy, python-format
 msgid "Enter this code when prompted. It expires in %(minutes)d minutes."
-msgstr ""
+msgstr "Geben Sie diesen Code ein, wenn Sie dazu aufgefordert werden. Er läuft in %(minutes)d Minuten ab."
 
 #: src/actions/public_user_auth.py
+#, fuzzy
 msgid "If you didn't request this code, you can ignore this email."
-msgstr ""
+msgstr "Wenn Sie diesen Code nicht angefordert haben, können Sie diese E-Mail ignorieren."
 
 #: src/actions/public_user_auth.py
 #, fuzzy
-#| msgid "Exported from Kausal Watch"
 msgid "Powered by Kausal Watch"
-msgstr "Aus Kausal Watch exportiert"
+msgstr "Bereitgestellt von Kausal Watch"
 
 #: src/actions/templates/actions/bulk_approve.html
+#, fuzzy
 msgid "Selected actions will be published and marked as approved, skipping any remaining moderation tasks."
-msgstr ""
+msgstr "Die ausgewählten Maßnahmen werden veröffentlicht und als genehmigt markiert; verbleibende Moderationsaufgaben werden übersprungen."
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "The main organization for the plan"
 msgid "There are no actions currently in moderation for this plan."
-msgstr "Die Hauptorganisation für den Plan"
+msgstr "Für diesen Plan befinden sich derzeit keine Maßnahmen in Moderation."
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "Back to own user"
 msgid "Back to actions"
-msgstr "Zurück zum eigenen Benutzer"
+msgstr "Zurück zu den Maßnahmen"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "in progress"
 msgid "Select all in progress"
-msgstr "im Gange"
+msgstr "Alle laufenden auswählen"
 
 #: src/actions/templates/actions/bulk_approve.html
+#, fuzzy
 msgid "Select"
-msgstr ""
+msgstr "Auswählen"
 
 #: src/actions/templates/actions/bulk_approve.html src/copying/views.py
 #: src/reports/spreadsheets/excel_report.py
@@ -2863,39 +2867,38 @@ msgstr "Kennung"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "Currently used by:"
 msgid "Current task"
-msgstr "Derzeit verwendet von:"
+msgstr "Aktuelle Aufgabe"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "updated by"
 msgid "Submitted by"
-msgstr "aktualisiert von"
+msgstr "Eingereicht von"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "published at"
 msgid "Submitted at"
-msgstr "veröffentlicht am"
-
-#: src/actions/templates/actions/bulk_approve.html
-msgid "Needs changes (not releasable)"
-msgstr ""
-
-#: src/actions/templates/actions/bulk_approve.html
-msgid "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually."
-msgstr ""
+msgstr "Eingereicht am"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
-#| msgid "send to action contact persons"
-msgid "Send notification emails to contact persons"
-msgstr "an Maßnahmen-Ansprechpersonen senden"
+msgid "Needs changes (not releasable)"
+msgstr "Änderungen erforderlich (nicht freigebbar)"
 
 #: src/actions/templates/actions/bulk_approve.html
+#, fuzzy
+msgid "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually."
+msgstr "Diese Maßnahmen wurden zuvor von einer moderierenden Person abgelehnt. Sie können nicht gesammelt freigegeben werden und müssen einzeln bearbeitet werden."
+
+#: src/actions/templates/actions/bulk_approve.html
+#, fuzzy
+msgid "Send notification emails to contact persons"
+msgstr "Benachrichtigungs-E-Mails an Ansprechpersonen senden"
+
+#: src/actions/templates/actions/bulk_approve.html
+#, fuzzy
 msgid "Release selected"
-msgstr ""
+msgstr "Ausgewählte freigeben"
 
 #: src/actions/templates/actions/bulk_approve.html
 #: templates/aplans/plan_publish_confirmation.html
@@ -3011,12 +3014,14 @@ msgid "A plan's other language cannot be the same as its primary language"
 msgstr "Eine zusätzliche Sprache des Plans darf nicht gleich sein wie seine Hauptsprache"
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "One client must be marked as primary."
-msgstr ""
+msgstr "Ein Kunde muss als primär markiert werden."
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Public-user accounts exist for the current primary client. Contact system administration to migrate them before changing the primary client."
-msgstr ""
+msgstr "Für den aktuellen primären Kunden existieren Konten öffentlicher Nutzer. Wenden Sie sich an die Systemadministration, um diese zu migrieren, bevor Sie den primären Kunden ändern."
 
 #: src/actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name for a new one."
@@ -3222,15 +3227,13 @@ msgstr "Plan zurückgezogen"
 
 #: src/actions/wagtail_hooks.py
 #, fuzzy
-#| msgid "action task"
 msgid "Skip moderation task"
-msgstr "Maßnahmenaufgabe"
+msgstr "Moderationsaufgabe überspringen"
 
 #: src/actions/wagtail_hooks.py
 #, fuzzy
-#| msgid "action tasks"
 msgid "Moderation task skipped"
-msgstr "Maßnahmenaufgaben"
+msgstr "Moderationsaufgabe übersprungen"
 
 #: src/actions/wagtail_hooks.py templates/modeladmin/create.html
 msgid "Actions"
@@ -3265,45 +3268,49 @@ msgid "History"
 msgstr "Verlauf"
 
 #: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
 msgid "The built-in field whose appearance and access rights are customized"
-msgstr ""
+msgstr "Das integrierte Feld, dessen Darstellung und Zugriffsrechte angepasst werden"
 
 #: src/admin_site/built_in_field_customization_admin.py
-#, python-format
+#, fuzzy, python-format
 msgid "%(field)s (no longer customizable)"
-msgstr ""
+msgstr "%(field)s (nicht mehr anpassbar)"
 
 #: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
 msgid "This field cannot be customized."
-msgstr ""
+msgstr "Dieses Feld kann nicht angepasst werden."
 
 #: src/admin_site/built_in_field_customization_admin.py
 #, fuzzy
-#| msgid "The organization is already included in the plan"
 msgid "This field is already customized in this plan."
-msgstr "Die Organisation ist bereits im Plan aufgenommen"
-
-#: src/admin_site/built_in_field_customization_admin.py
-msgid "Model"
-msgstr ""
-
-#: src/admin_site/built_in_field_customization_admin.py
-msgid "Field customizations"
-msgstr ""
-
-#: src/admin_site/built_in_field_customization_admin.py
-msgid "Appearance"
-msgstr ""
-
-#: src/admin_site/built_in_field_customization_admin.py
-msgid "Leave empty to use the label and help text that the field has by default. These have no effect on fields that are shown in a tab or panel of their own, such as tasks."
-msgstr ""
+msgstr "Dieses Feld ist in diesem Plan bereits angepasst."
 
 #: src/admin_site/built_in_field_customization_admin.py
 #, fuzzy
-#| msgid "Accessibility"
+msgid "Model"
+msgstr "Modell"
+
+#: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
+msgid "Field customizations"
+msgstr "Feldanpassungen"
+
+#: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
+msgid "Appearance"
+msgstr "Darstellung"
+
+#: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
+msgid "Leave empty to use the label and help text that the field has by default. These have no effect on fields that are shown in a tab or panel of their own, such as tasks."
+msgstr "Leer lassen, um die Standardbezeichnung und den Standard-Hilfetext des Feldes zu verwenden. Diese haben keine Wirkung auf Felder, die in einem eigenen Tab oder Panel angezeigt werden, wie z. B. Aufgaben."
+
+#: src/admin_site/built_in_field_customization_admin.py
+#, fuzzy
 msgid "Access rights"
-msgstr "Barrierefreiheit"
+msgstr "Zugriffsrechte"
 
 #: src/admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
@@ -3410,30 +3417,32 @@ msgstr "Anmeldemethode, die für Benutzer verwendet wird, die kein Passwort fest
 
 #: src/admin_site/models.py
 #, fuzzy
-#| msgid "primary language"
 msgid "primary client"
-msgstr "Hauptsprache"
+msgstr "primärer Kunde"
 
 #: src/admin_site/models.py
+#, fuzzy
 msgid "The tenant that owns this plan. Used to scope public user identities and staff notifications for pledge sign-ups."
-msgstr ""
+msgstr "Der Mandant, dem dieser Plan gehört. Wird verwendet, um die Identitäten öffentlicher Nutzer und die Benachrichtigungen an Mitarbeitende über Anmeldungen zu Mitmach-Aktionen einzugrenzen."
 
 #: src/admin_site/models.py
 msgid "label"
 msgstr "Beschriftung"
 
 #: src/admin_site/models.py
+#, fuzzy
 msgid "field customization"
-msgstr ""
+msgstr "Feldanpassung"
 
 #: src/admin_site/models.py
+#, fuzzy
 msgid "field customizations"
-msgstr ""
+msgstr "Feldanpassungen"
 
 #: src/admin_site/models.py
-#, python-format
+#, fuzzy, python-format
 msgid "The model '%(model)s' does not exist any more"
-msgstr ""
+msgstr "Das Modell '%(model)s' existiert nicht mehr"
 
 #: src/admin_site/models.py
 #, python-format
@@ -3499,18 +3508,19 @@ msgid "%(time_period)s ago"
 msgstr "vor %(time_period)s"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "Opted in"
-msgstr ""
+msgstr "Eingewilligt"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 #, fuzzy
-#| msgid "Not started"
 msgid "Not opted in"
-msgstr "Nicht begonnen"
+msgstr "Nicht eingewilligt"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
+#, fuzzy
 msgid "No participants have committed to this pledge yet."
-msgstr ""
+msgstr "Bisher hat sich noch niemand an dieser Mitmach-Aktion beteiligt."
 
 #: src/admin_site/templates/admin_site/release_impersonation.html
 msgid "Viewing site as another user"
@@ -3750,19 +3760,18 @@ msgstr "Bearbeitungsrechte"
 
 #: src/aplans/utils.py
 #, fuzzy
-#| msgid "URL for the owner of the site"
 msgid "A help text shown to visitors of the site"
-msgstr "URL für Inhaber der Seite"
+msgstr "Ein Hilfetext, der den Besuchern der Seite angezeigt wird"
 
 #: src/aplans/utils.py
 #, fuzzy
-#| msgid "Help text for the field to be shown in the UI"
 msgid "help text for the admin UI"
-msgstr "In Benutzeroberfläche anzuzeigender Hilfetext für das Feld"
+msgstr "Hilfetext für die Admin-Oberfläche"
 
 #: src/aplans/utils.py
+#, fuzzy
 msgid "If set, these instructions are shown to admin users instead of the help text"
-msgstr ""
+msgstr "Wenn gesetzt, werden diese Anweisungen den Admin-Nutzern anstelle des Hilfetexts angezeigt"
 
 #: src/aplans/utils.py
 msgid "Contact persons with \"moderator\" role"
@@ -5011,9 +5020,8 @@ msgstr "Indikatorwerte"
 
 #: src/indicators/models/values.py
 #, fuzzy
-#| msgid "There is already a category with this identifier."
 msgid "There is already a value for this date and these categories."
-msgstr "Es gibt bereits eine Kategorie mit dieser Kennung."
+msgstr "Für dieses Datum und diese Kategorien gibt es bereits einen Wert."
 
 #: src/indicators/models/values.py
 msgid "indicator goal"
@@ -5573,15 +5581,15 @@ msgid "A user has submitted feedback."
 msgstr "Ein Benutzer hat Feedback hinterlassen."
 
 #: src/notifications/notifications.py
+#, fuzzy
 msgid "Pledge participant signed up"
-msgstr ""
+msgstr "Teilnehmende Person hat sich für Mitmach-Aktion angemeldet"
 
 #: src/notifications/notifications.py
 #, fuzzy
-#| msgid "pledge actions"
 msgctxt "pledge_participant_signup"
 msgid "New pledge sign-ups"
-msgstr "Maßnahmen der Mitmach-Aktion"
+msgstr "Neue Anmeldungen zu Mitmach-Aktionen"
 
 #: src/notifications/notifications.py
 msgid "Manually scheduled notification"
@@ -6492,9 +6500,8 @@ msgstr "Wähle einen anderen Berichtstyp"
 
 #: src/reports/models.py
 #, fuzzy
-#| msgid "Only plan admins can mark actions as complete for reports of this type"
 msgid "Only plan admins can mark actions as complete"
-msgstr "Nur Planadministratoren können Maßnahmen für Berichte dieses Typs als abgeschlossen markieren"
+msgstr "Nur Planadministratoren können Maßnahmen als abgeschlossen markieren"
 
 #: src/reports/models.py
 msgid "Only plan admins can mark actions as complete for reports of this type"
