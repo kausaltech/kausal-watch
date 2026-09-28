@@ -76,8 +76,8 @@ class TestReport:
 
         report = _report()
 
-        assert report[live.hostname]['status'] == 'available'
-        assert report[dark.hostname]['status'] == 'unavailable'
+        assert report[live.hostname]['availability'] == 'available'
+        assert report[dark.hostname]['availability'] == 'unavailable'
 
     def test_it_skips_inactive_plans(self, plan_factory, plan_domain_factory):
         inactive = plan_domain_factory(plan=plan_factory(visibility=PUBLIC, is_active=False))
@@ -136,11 +136,11 @@ class TestPlanReport:
         readable = _plan_report()[plan.identifier]['readable_anonymously']
 
         data = graphql_client_query_data(
-            'query($hostname: String) { plansForHostname(hostname: $hostname) { domain { status } } }',
+            'query($hostname: String) { plansForHostname(hostname: $hostname) { domain { availability } } }',
             variables={'hostname': f'{plan.identifier}.dummy.io'},
         )
 
-        assert (data['plansForHostname'][0]['domain']['status'] == 'AVAILABLE') is readable
+        assert (data['plansForHostname'][0]['domain']['availability'] == 'AVAILABLE') is readable
 
 
 class TestVerify:

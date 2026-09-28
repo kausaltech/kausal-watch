@@ -333,6 +333,11 @@ def _get_plan_domains_for_hostname(plan: Plan, hostname: str) -> list[PlanDomain
 class PlanInterface(graphene.Interface[T], Generic[T]):
     primary_language = graphene.String(required=True)
     published_at = graphene.DateTime()
+    # A hostname that is not serving the site still renders a page, and that page has to say
+    # which plan is behind it and dress itself in that plan's theme. Both implementations carry
+    # these, so the page needs no fragment per type.
+    name = graphene.String(required=True)
+    theme_identifier = graphene.String(required=False)
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     status_message = graphene.String()
@@ -423,7 +428,14 @@ class RestrictedPlanNode(DjangoObjectType[Plan]):
     class Meta:
         interfaces = (PlanInterface,)
         model = Plan
-        fields = ('primary_language', 'published_at', 'domain', 'domains')
+        fields = ('primary_language', 'published_at', 'domain', 'domains', 'name', 'theme_identifier')
+
+    # `name` is translated, and this is a plain `DjangoObjectType`, so it never runs the
+    # `DjangoNode` pass that binds modeltrans resolvers. It answers in the asked language anyway,
+    # because graphene-django converts a model field once and both types share the field object
+    # `PlanNode` had the resolver bound onto. That is quiet enough to be worth a test of its own,
+    # which is why `test_graphql_restricted_plan` asks for a translated name.
+
 
 
 class PlanNode(DjangoNode[Plan]):
