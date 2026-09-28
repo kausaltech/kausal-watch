@@ -425,17 +425,32 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
 
 @register_graphene_node
 class RestrictedPlanNode(DjangoObjectType[Plan]):
+    # Declared rather than converted from the model, because graphene-django converts a model
+    # field once and hands every type the same `Field` object — the one `PlanNode` has the
+    # translating resolver bound onto. Sharing it would mean inheriting that resolver, and a
+    # `resolve_name` here would never be reached.
+    name = graphene.String(required=True)
+
     class Meta:
         interfaces = (PlanInterface,)
         model = Plan
-        fields = ('primary_language', 'published_at', 'domain', 'domains', 'name', 'theme_identifier')
+        fields = ('primary_language', 'published_at', 'domain', 'domains', 'theme_identifier')
 
-    # `name` is translated, and this is a plain `DjangoObjectType`, so it never runs the
-    # `DjangoNode` pass that binds modeltrans resolvers. It answers in the asked language anyway,
-    # because graphene-django converts a model field once and both types share the field object
-    # `PlanNode` had the resolver bound onto. That is quiet enough to be worth a test of its own,
-    # which is why `test_graphql_restricted_plan` asks for a translated name.
+    @staticmethod
+    def resolve_name(root: Plan, _info: GQLInfo) -> str:
+        """
+        Answer in the plan's own language, whatever language was asked for.
 
+        A visitor who is not being served the site has not chosen a language, and there is no
+        site yet to have chosen one for them. `plansForHostname` names no plan in a directive
+        either, so the query language falls back to the deployment's default and would give a
+        plan's sign-in page a name in a language that has nothing to do with the plan.
+        `status_message_for_user` already answers in the plan's language for this reason.
+
+        The untranslated column is that value: modeltrans keeps translations in `i18n` and the
+        field itself holds the text in `primary_language`.
+        """
+        return root.name
 
 
 class PlanNode(DjangoNode[Plan]):

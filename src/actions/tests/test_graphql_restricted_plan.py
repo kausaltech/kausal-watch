@@ -65,26 +65,55 @@ def test_a_restricted_plan_names_and_themes_itself(graphql_client_query_data, pl
     assert plan_data['themeIdentifier'] == 'some-theme'
 
 
-def test_a_restricted_plan_answers_its_name_in_the_asked_language(
+def test_a_restricted_plan_names_itself_in_its_own_language(
     graphql_client_query_data,
     plan_factory,
     plan_domain_factory,
 ):
     """
-    A sign-in page is read in the visitor's language like any other.
+    The plan's own language is the only one this page can be sure of.
 
-    The restricted type is a plain `DjangoObjectType`, so it never runs the pass that binds
-    modeltrans resolvers. It answers translated anyway, on the strength of graphene-django
-    converting a model field once and handing both types the same field object — which is quiet
-    enough that it wants pinning here rather than being taken on trust.
+    A visitor here has not chosen a language and there is no site yet to have chosen one for
+    them, and `plansForHostname` names no plan in a directive, so the query language falls back
+    to the deployment's default — which would hand a Finnish plan's sign-in page an English name
+    purely because the server is configured in English. `statusMessage` already answers in the
+    plan's language for the same reason, and the name on the same page follows it.
     """
-    plan, domain = _sign_in_required_plan(plan_factory, plan_domain_factory, primary_language='en', other_languages=['fi'])
-    plan.i18n = {'name_fi': 'Suomenkielinen nimi'}
+    plan, domain = _sign_in_required_plan(plan_factory, plan_domain_factory, primary_language='fi', other_languages=['en'])
+    plan.name = 'Suomenkielinen nimi'
+    plan.i18n = {'name_en': 'An English name'}
     plan.save()
 
-    data = graphql_client_query_data(TRANSLATED_IDENTITY_QUERY, variables={'hostname': domain.hostname, 'lang': 'fi'})
+    asked_in_english = graphql_client_query_data(
+        TRANSLATED_IDENTITY_QUERY, variables={'hostname': domain.hostname, 'lang': 'en'}
+    )
+    asked_without_a_language = graphql_client_query_data(IDENTITY_QUERY, variables={'hostname': domain.hostname})
 
-    assert data['plansForHostname'][0]['name'] == 'Suomenkielinen nimi'
+    assert asked_in_english['plansForHostname'][0]['name'] == 'Suomenkielinen nimi'
+    assert asked_without_a_language['plansForHostname'][0]['name'] == 'Suomenkielinen nimi'
+
+
+def test_the_plan_body_still_answers_a_translated_name(
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+):
+    """The site itself is served in the visitor's language, and its name goes with it."""
+    plan = plan_factory(
+        visibility='public',
+        published_at=timezone.now() - timedelta(minutes=5),
+        primary_language='fi',
+        other_languages=['en'],
+    )
+    plan.name = 'Suomenkielinen nimi'
+    plan.i18n = {'name_en': 'An English name'}
+    plan.save()
+    domain = plan_domain_factory(plan=plan, deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION)
+
+    data = graphql_client_query_data(TRANSLATED_IDENTITY_QUERY, variables={'hostname': domain.hostname, 'lang': 'en'})
+
+    assert data['plansForHostname'][0]['__typename'] == 'Plan'
+    assert data['plansForHostname'][0]['name'] == 'An English name'
 
 
 def test_an_unavailable_plan_still_identifies_itself(graphql_client_query_data, plan_factory, plan_domain_factory):

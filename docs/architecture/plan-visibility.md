@@ -81,6 +81,14 @@ This is a deliberate widening: a plan that is internal, or that has not launched
 and theme to anyone who asks at its hostname. It reveals nothing about the plan's contents, and
 naming the plan is what the hostname exists to do.
 
+The restricted stand-in answers that name in the plan's own language, whatever language was
+asked for, as `statusMessage` already does. A visitor here has chosen no language and there is
+no site yet to have chosen one for them, and `plansForHostname` names no plan in a directive, so
+the query language falls back to the deployment's default — which would otherwise put an English
+name on a Finnish plan's sign-in page purely because the server is configured in English. The
+plan's body keeps answering a translated name: once the site is being served, the language is
+the visitor's.
+
 ## Which hostnames are previews
 
 A `PlanDomain` row tagged `deployment_environment` preview or development is a preview surface.
