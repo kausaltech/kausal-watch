@@ -3,7 +3,6 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from django.conf import settings
-from django.urls import resolve
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import (
@@ -19,7 +18,7 @@ from rest_framework.throttling import UserRateThrottle
 
 import requests
 
-from users.models import User
+from .login_method import LoginMethodError, resolve_login_method
 
 
 class LoginMethodThrottle(UserRateThrottle):
@@ -58,68 +57,24 @@ def check_user_in_other_clusters(email, request):
 @permission_classes([])
 @schema(None)
 @throttle_classes([LoginMethodThrottle])
-def check_login_method(request):  # noqa: C901
+def check_login_method(request):
     d = request.data
     if not d or not isinstance(d, dict):
         msg = _('Invalid email address')
         raise ValidationError({'detail': msg, 'code': 'invalid_email'})
 
-    email = d.get('email', '').strip().lower()
-    if not email:
-        msg = _('Invalid email address')
-        raise ValidationError({'detail': msg, 'code': 'invalid_email'})
-
-    user = User.objects.filter(email__iexact=email, is_active=True).first()
-    person = user.get_corresponding_person() if user else None
-
-    if user is None or person is None:
-        cluster_result = check_user_in_other_clusters(email, request)
-        if cluster_result:
-            return Response({
-                'method': cluster_result.get('method'),
-                'cluster_redirect': True,
-                'cluster_url': cluster_result.get('cluster_url'),
-            })
-
-        msg = _('No user found with this email address. Ask your administrator to create an account for you.')
-        raise ValidationError({'detail': msg, 'code': 'no_user'})
-
-    next_url_input = d.get('next')
-    resolved = None
-    if next_url_input:
-        next_url = urlparse(next_url_input)
-        resolved = resolve(next_url.path)
-
-    destination_is_public_site = resolved and (resolved.url_name == 'authorize' and 'oauth2_provider' in resolved.app_names)
-    if destination_is_public_site and not user.can_access_public_site(plan=None):
-        msg = _(
-            'You do not have access to the public site.',
-        )
-        raise ValidationError({'detail': msg, 'code': 'no_site_access'})
-
-    if not destination_is_public_site and not user.can_access_admin(plan=None):
-        msg = _(
-            'You do not have admin access. Your administrator may need to assign you an action or indicator, or grant '
-            'you plan admin status.',
-        )
-        raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
-
-    # Always use password authentication if the user has a password
-    if user.has_usable_password():
-        return Response({'method': 'password'})
-
-    # Use the client's authorization backend
+    email = d.get('email', '')
     try:
-        client = person.get_admin_client()
-    except Exception:
-        client = None
+        result = resolve_login_method(email, d.get('next'))
+    except LoginMethodError as e:
+        if e.code == 'no_user':
+            cluster_result = check_user_in_other_clusters(email.strip().lower(), request)
+            if cluster_result:
+                return Response({
+                    'method': cluster_result.get('method'),
+                    'cluster_redirect': True,
+                    'cluster_url': cluster_result.get('cluster_url'),
+                })
+        raise ValidationError({'detail': e.detail, 'code': e.code}) from e
 
-    if client is None:
-        msg = _('Cannot determine authentication method. The email address domain may be unknown.')
-        raise ValidationError({'detail': msg, 'code': 'no_client'})
-
-    if not client.auth_backend:
-        msg = _('Password authentication is required, but the user has no password.')
-        raise ValidationError({'detail': msg, 'code': 'no_password'})
-
-    return Response({'method': client.auth_backend})
+    return Response({'method': result.method})
