@@ -94,7 +94,7 @@ from actions.models import (
     MonitoringQualityPoint,
     Plan,
     PlanDomain,
-    PlanDomainStatus,
+    PlanDomainAvailability,
     PlanFeatures,
     Pledge,
     PublicationStatus,
@@ -156,16 +156,16 @@ if TYPE_CHECKING:
 
 logger = logger.bind(name='actions.schema')
 PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
-PlanDomainStatusNode = graphene.Enum.from_enum(PlanDomainStatus)
+PlanDomainAvailabilityNode = graphene.Enum.from_enum(PlanDomainAvailability)
 
 
 class PlanDomainNode(DjangoNode[PlanDomain]):
-    status = PlanDomainStatusNode()
+    status = PlanDomainAvailabilityNode()
     status_message = graphene.String(required=False)
 
     @staticmethod
-    def resolve_status(root: PlanDomain, info: GQLInfo) -> PlanDomainStatus:
-        return root.status_for_user(info.context.user)
+    def resolve_status(root: PlanDomain, info: GQLInfo) -> PlanDomainAvailability:
+        return root.availability_for_user(info.context.user)
 
     @staticmethod
     def resolve_status_message(root: PlanDomain, info: GQLInfo) -> str | None:
@@ -366,7 +366,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         domain = PlanInterface.resolve_domain(root, info)
         if domain is None:
             return False
-        return domain.status_for_user(info.context.user) == PlanDomainStatus.SIGN_IN_REQUIRED
+        return domain.availability_for_user(info.context.user) == PlanDomainAvailability.SIGN_IN_REQUIRED
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -392,7 +392,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         domain = cls.resolve_domain(instance, info)
         if domain is None:
             return RestrictedPlanNode
-        if domain.status_for_user(info.context.user) == PlanDomainStatus.AVAILABLE:
+        if domain.availability_for_user(info.context.user) == PlanDomainAvailability.AVAILABLE:
             return PlanNode
         return RestrictedPlanNode
 

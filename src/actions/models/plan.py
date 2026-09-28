@@ -1626,13 +1626,17 @@ class PublicationStatus(models.TextChoices):
         return [(c.value, c.label) for c in PublicationStatus if c != PublicationStatus.SCHEDULED]
 
 
-class PlanDomainStatus(models.TextChoices):
+class PlanDomainAvailability(models.TextChoices):
     """
     What a hostname serves a particular viewer, as the public UI needs to know it.
 
     This is deliberately not the publication vocabulary above: on a preview hostname the answer
     has nothing to do with whether the plan has been published, so saying "published" there would
     be a lie. `PublicationStatus` stays as the manual per-domain override's choices.
+
+    It is availability and not a status because nothing here is stored or settled: the answer is
+    derived per request, and two viewers of the same hostname at the same moment can get
+    different ones.
     """
 
     AVAILABLE = 'available', _('Available')
@@ -1821,7 +1825,7 @@ class PlanDomain(models.Model):
             return True
         return self.plan.is_live()
 
-    def status_for_user(self, user: UserOrAnon | None) -> PlanDomainStatus:
+    def availability_for_user(self, user: UserOrAnon | None) -> PlanDomainAvailability:
         """
         Name the page the frontend should render for this viewer at this hostname.
 
@@ -1831,23 +1835,24 @@ class PlanDomain(models.Model):
         it cannot for a viewer who has already signed in.
         """
         if not self.plan.is_active or not self.is_launched:
-            return PlanDomainStatus.UNAVAILABLE
+            return PlanDomainAvailability.UNAVAILABLE
         if self.plan.is_visible_for_user(user):
-            return PlanDomainStatus.AVAILABLE
+            return PlanDomainAvailability.AVAILABLE
         if user is not None and user.is_authenticated:
-            return PlanDomainStatus.UNAVAILABLE
-        return PlanDomainStatus.SIGN_IN_REQUIRED
+            return PlanDomainAvailability.UNAVAILABLE
+        return PlanDomainAvailability.SIGN_IN_REQUIRED
 
     def status_message_for_user(self, user: UserOrAnon | None) -> str | None:
         """
         Return a message to show instead of the site, or None for the default placeholder.
 
-        Only the sign-in page gets one, and only for the UI released before `status`: it forwards
-        `loginEnabled` to its placeholder solely alongside a non-empty message, so without one it
-        would hide the sign-in button from the viewers who need it. Remove once no deployed UI
-        predates `status`; the field itself stays, for an authored per-plan message later.
+        Only the sign-in page gets one, and only for the UI released before this model: it
+        forwards `loginEnabled` to its placeholder solely alongside a non-empty message, so
+        without one it would hide the sign-in button from the viewers who need it. Remove once no
+        deployed UI predates the model; the field itself stays, for an authored per-plan message
+        later.
         """
-        if self.status_for_user(user) != PlanDomainStatus.SIGN_IN_REQUIRED:
+        if self.availability_for_user(user) != PlanDomainAvailability.SIGN_IN_REQUIRED:
             return None
         with translation.override(self.plan.primary_language):
             return gettext('The site is not public at this time.')

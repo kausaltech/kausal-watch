@@ -8,7 +8,7 @@ import pytest
 
 from aplans.utils import RestrictedVisibilityModel
 
-from actions.models.plan import PlanDomainStatus, PublicationStatus
+from actions.models.plan import PlanDomainAvailability, PublicationStatus
 
 pytestmark = pytest.mark.django_db
 
@@ -56,15 +56,15 @@ GET_PLANS_BY_HOSTNAME_QUERY_TYPENAME = """
 
 
 @pytest.mark.parametrize(
-    ('publication_status_override', 'delta_minutes', 'expected_status', 'redirect_to'),
+    ('publication_status_override', 'delta_minutes', 'expected_availability', 'redirect_to'),
     [
-        (None, -5, PlanDomainStatus.AVAILABLE, ''),
-        (None, 5, PlanDomainStatus.UNAVAILABLE, ''),
-        (None, None, PlanDomainStatus.UNAVAILABLE, ''),
-        (PublicationStatus.UNPUBLISHED, -5, PlanDomainStatus.UNAVAILABLE, ''),
-        (PublicationStatus.PUBLISHED, 5, PlanDomainStatus.AVAILABLE, ''),
-        (PublicationStatus.PUBLISHED, None, PlanDomainStatus.AVAILABLE, ''),
-        (PublicationStatus.PUBLISHED, None, PlanDomainStatus.AVAILABLE, 'test_redirect.com'),
+        (None, -5, PlanDomainAvailability.AVAILABLE, ''),
+        (None, 5, PlanDomainAvailability.UNAVAILABLE, ''),
+        (None, None, PlanDomainAvailability.UNAVAILABLE, ''),
+        (PublicationStatus.UNPUBLISHED, -5, PlanDomainAvailability.UNAVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, 5, PlanDomainAvailability.AVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, None, PlanDomainAvailability.AVAILABLE, ''),
+        (PublicationStatus.PUBLISHED, None, PlanDomainAvailability.AVAILABLE, 'test_redirect.com'),
     ],
 )
 def test_get_plans_by_hostname(
@@ -73,7 +73,7 @@ def test_get_plans_by_hostname(
     plan_domain_factory,
     publication_status_override,
     delta_minutes,
-    expected_status,
+    expected_availability,
     redirect_to,
 ):
     """
@@ -102,7 +102,7 @@ def test_get_plans_by_hostname(
                 {
                     'basePath': domain.base_path,
                     'hostname': domain.hostname,
-                    'status': expected_status.name,
+                    'status': expected_availability.name,
                     'redirectToHostname': domain.redirect_to_hostname or None,
                 }
             ],
@@ -110,7 +110,7 @@ def test_get_plans_by_hostname(
             'publishedAt': published_at.isoformat() if published_at else None,
         },
     ]
-    if expected_status == PlanDomainStatus.AVAILABLE:
+    if expected_availability == PlanDomainAvailability.AVAILABLE:
         expected[0]['identifier'] = plan.identifier
         expected[0]['id'] = plan.identifier
     assert plans == expected

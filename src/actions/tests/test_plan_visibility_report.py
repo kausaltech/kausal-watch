@@ -20,7 +20,7 @@ from kausal_common.testing.utils import parse_table
 
 from aplans.utils import RestrictedVisibilityModel
 
-from actions.models.plan import PlanDomain, PlanDomainStatus
+from actions.models.plan import PlanDomain, PlanDomainAvailability
 from actions.plan_visibility import plan_surfaces
 
 pytestmark = pytest.mark.django_db
@@ -41,7 +41,7 @@ def _plan(plan_factory, visibility, *, launched):
 
 class TestPlanSurfaces:
     @pytest.mark.parametrize(*parse_table("""
-        environment  visibility  launched  status
+        environment  visibility  launched  availability
         production   public      +         AVAILABLE
         production   public      -         UNAVAILABLE
         production   internal    +         SIGN_IN_REQUIRED
@@ -50,7 +50,7 @@ class TestPlanSurfaces:
         preview      internal    -         SIGN_IN_REQUIRED
     """))
     def test_it_reports_what_each_hostname_serves_anonymously(
-        self, plan_factory, plan_domain_factory, environment, visibility, launched, status,
+        self, plan_factory, plan_domain_factory, environment, visibility, launched, availability,
     ):
         plan = _plan(plan_factory, visibility, launched=launched)
         environments = {'production': PRODUCTION, 'preview': PREVIEW}
@@ -58,7 +58,7 @@ class TestPlanSurfaces:
 
         (surface,) = plan_surfaces(plan, AnonymousUser())
 
-        assert surface.status == PlanDomainStatus(status.lower())
+        assert surface.availability == PlanDomainAvailability(availability.lower())
 
     def test_it_reports_every_domain_of_a_plan(self, plan_factory, plan_domain_factory):
         plan = _plan(plan_factory, PUBLIC, launched=False)
@@ -67,8 +67,8 @@ class TestPlanSurfaces:
 
         by_hostname = {s.hostname: s for s in plan_surfaces(plan, AnonymousUser())}
 
-        assert by_hostname[production.hostname].status == PlanDomainStatus.UNAVAILABLE
-        assert by_hostname[preview.hostname].status == PlanDomainStatus.AVAILABLE
+        assert by_hostname[production.hostname].availability == PlanDomainAvailability.UNAVAILABLE
+        assert by_hostname[preview.hostname].availability == PlanDomainAvailability.AVAILABLE
 
     def test_it_answers_per_viewer(self, plan_factory, plan_domain_factory, person_factory):
         plan = _plan(plan_factory, INTERNAL, launched=True)
@@ -78,8 +78,8 @@ class TestPlanSurfaces:
         anonymous = plan_surfaces(plan, AnonymousUser())[0]
         privileged = plan_surfaces(plan, person.user)[0]
 
-        assert anonymous.status == PlanDomainStatus.SIGN_IN_REQUIRED
-        assert privileged.status == PlanDomainStatus.AVAILABLE
+        assert anonymous.availability == PlanDomainAvailability.SIGN_IN_REQUIRED
+        assert privileged.availability == PlanDomainAvailability.AVAILABLE
 
     def test_it_carries_the_base_path_so_multi_plan_hostnames_stay_distinct(
         self, plan_factory, plan_domain_factory,
@@ -110,6 +110,6 @@ class TestPlanSurfaces:
             d.hostname: plan_surfaces(d.plan, AnonymousUser())[0] for d in (unlaunched, internal)
         }
 
-        assert surfaces[unlaunched.hostname].status == PlanDomainStatus.UNAVAILABLE
+        assert surfaces[unlaunched.hostname].availability == PlanDomainAvailability.UNAVAILABLE
         assert surfaces[unlaunched.hostname].visibility == PUBLIC
         assert surfaces[internal.hostname].visibility == INTERNAL

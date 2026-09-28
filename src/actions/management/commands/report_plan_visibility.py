@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING, Any
 from django.contrib.auth.models import AnonymousUser
 from django.core.management.base import BaseCommand, CommandError
 
-from actions.models.plan import Plan, PlanDomainStatus
+from actions.models.plan import Plan, PlanDomainAvailability
 from actions.plan_visibility import all_surfaces, plan_access
 
 if TYPE_CHECKING:
@@ -172,7 +172,7 @@ class Command(BaseCommand):
                 gone.append(key)
                 continue
             served_before = before['served_anonymously']
-            served_after = after.status == PlanDomainStatus.AVAILABLE
+            served_after = after.availability == PlanDomainAvailability.AVAILABLE
             if served_before == served_after:
                 continue
             # Losing the site is expected on a hostname that had not launched and still has not,
@@ -195,7 +195,9 @@ class Command(BaseCommand):
         # purpose, which only the operator can say.
         appeared = sorted(set(current) - set(baseline))
         unexpected.extend(
-            (key, False, True) for key in appeared if current[key].status == PlanDomainStatus.AVAILABLE and key not in allowed_new
+            (key, False, True)
+            for key in appeared
+            if current[key].availability == PlanDomainAvailability.AVAILABLE and key not in allowed_new
         )
 
         plan_unexpected, plan_gone, plan_appeared = _compare_plans(baseline_readable, access, allowed_new)

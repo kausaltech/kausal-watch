@@ -2,9 +2,9 @@
 Where a plan is served, and what each of its hostnames shows.
 
 The visibility model splits one question in two — may this viewer read the plan, and has this
-hostname launched — and `PlanDomain.status_for_user` folds them back into the single answer the
-public UI needs. This module reports that answer for every hostname a plan has, which is what a
-human needs in order to check a plan's exposure at a glance.
+hostname launched — and `PlanDomain.availability_for_user` folds them back into the single
+answer the public UI needs. This module reports that answer for every hostname a plan has, which
+is what a human needs in order to check a plan's exposure at a glance.
 
 It exists as its own module rather than inside a management command because the same list is
 what a plan's admin page would want to show: *this plan is served at these addresses, and this
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from kausal_common.users import UserOrAnon
 
-    from actions.models.plan import Plan, PlanDomain, PlanDomainStatus
+    from actions.models.plan import Plan, PlanDomain, PlanDomainAvailability
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,7 @@ class SurfaceReport:
     deployment_environment: str
     is_preview: bool
     is_launched: bool
-    status: PlanDomainStatus
+    availability: PlanDomainAvailability
 
     @property
     def key(self) -> str:
@@ -61,7 +61,7 @@ class SurfaceReport:
             'deployment_environment': self.deployment_environment or '',
             'is_preview': self.is_preview,
             'is_launched': self.is_launched,
-            'status': self.status.value,
+            'availability': self.availability.value,
         }
 
 
@@ -74,7 +74,7 @@ def describe_surface(domain: PlanDomain, user: UserOrAnon | None) -> SurfaceRepo
         deployment_environment=domain.deployment_environment or '',
         is_preview=domain.is_preview_surface,
         is_launched=domain.is_launched,
-        status=domain.status_for_user(user),
+        availability=domain.availability_for_user(user),
     )
 
 
