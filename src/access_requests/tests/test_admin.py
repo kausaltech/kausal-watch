@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.messages import get_messages
 from django.core import mail
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
@@ -181,3 +183,25 @@ class TestDecide:
         req.refresh_from_db()
         assert req.status == AccessRequest.Status.APPROVED
         assert _messages(response) == ['Access approved for visitor@example.com, but the email to them could not be sent.']
+
+
+@pytest.mark.parametrize(
+    ('action', 'status'), [('approve', AccessRequest.Status.APPROVED), ('reject', AccessRequest.Status.REJECTED)]
+)
+def test_panel_forms_pass_csrf_checks(plan, plan_admin_user, action, status):
+    # The test client skips CSRF checks unless told otherwise; a browser does not.
+    csrf_client = Client(enforce_csrf_checks=True)
+    csrf_client.force_login(plan_admin_user)
+    req = AccessRequestFactory.create(plan=plan)
+    html = csrf_client.get(reverse('wagtailadmin_home')).content.decode()
+
+    action_url = reverse(f'access_requests_{action}', args=[req.pk])
+    form = html[html.index(f'action="{action_url}"') :]
+    match = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', form[: form.index('</form>')])
+    assert match is not None, 'the form carries no CSRF token'
+
+    response = csrf_client.post(action_url, {'csrfmiddlewaretoken': match.group(1)})
+
+    assert response.status_code == 302
+    req.refresh_from_db()
+    assert req.status == status
