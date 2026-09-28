@@ -13,7 +13,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-28 09:43+0300\n"
 "PO-Revision-Date: 2026-09-28 07:52+0000\n"
-"Last-Translator: Stefan Cave <stefan.cave@kausal.tech>\n"
+"Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
@@ -4699,6 +4699,7 @@ msgid "Earliest value"
 msgstr ""
 
 #: src/indicators/blocks/layout.py
+#, fuzzy
 msgid "Reference value"
 msgstr "Referenceværdi"
 
@@ -4725,6 +4726,7 @@ msgid "Show a tick next to the latest value when the indicator has reached its g
 msgstr ""
 
 #: src/indicators/blocks/layout.py
+#, fuzzy
 msgid "Show reference value"
 msgstr "Vis referenceværdi"
 
@@ -4737,6 +4739,7 @@ msgid "This can be set to override the default reference year."
 msgstr ""
 
 #: src/indicators/blocks/layout.py
+#, fuzzy
 msgid "Show current value"
 msgstr "Vis aktuel værdi"
 
@@ -5074,6 +5077,7 @@ msgid "updated values due at"
 msgstr "opdaterede værdier forfalder kl"
 
 #: src/indicators/models/indicator.py
+#, fuzzy
 msgid "reference value"
 msgstr "referenceværdi"
 
