@@ -285,3 +285,51 @@ def test_publication_status_override_forces_the_launch_state_of_one_hostname(
     domain = plan_domain_factory(plan=plan, publication_status_override=override)
     data = graphql_client_query_data(STATUS_QUERY, variables={'hostname': domain.hostname})
     assert data['plansForHostname'][0]['domain']['status'] == expected_status
+
+
+SHARED_HOSTNAME_QUERY = """
+  query GetPlansByHostname($hostname: String) {
+    plansForHostname(hostname: $hostname) {
+      __typename
+      domain { basePath status }
+    }
+  }
+"""
+
+
+def test_each_plan_on_a_shared_hostname_answers_for_itself(
+    graphql_client_query_data,
+    plan_factory,
+    plan_domain_factory,
+):
+    """
+    A regional site carries several plans on one hostname, separated by base path.
+
+    The query carries no path, so every plan on the hostname comes back and the frontend picks
+    the one whose base path matches the URL it is serving. Each entry must therefore answer for
+    its own plan: a plan that is not ready to be served must not borrow its neighbour's answer,
+    in either direction.
+    """
+    hostname = 'shared.example.org'
+    launched = timezone.now() - timedelta(minutes=5)
+    plan_domain_factory(
+        plan=plan_factory(visibility='public', published_at=launched),
+        hostname=hostname,
+        base_path='/open',
+        deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+    )
+    plan_domain_factory(
+        plan=plan_factory(visibility='internal', published_at=launched),
+        hostname=hostname,
+        base_path='/closed',
+        deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+    )
+
+    data = graphql_client_query_data(SHARED_HOSTNAME_QUERY, variables={'hostname': hostname})
+    by_base_path = {plan['domain']['basePath']: plan for plan in data['plansForHostname']}
+
+    assert by_base_path.keys() == {'/open', '/closed'}
+    assert by_base_path['/open']['domain']['status'] == 'AVAILABLE'
+    assert by_base_path['/open']['__typename'] == 'Plan'
+    assert by_base_path['/closed']['domain']['status'] == 'SIGN_IN_REQUIRED'
+    assert by_base_path['/closed']['__typename'] == 'RestrictedPlanNode'
