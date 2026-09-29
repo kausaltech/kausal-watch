@@ -298,6 +298,7 @@ For in-depth implementation details on specific subsystems, see:
 - [Plan Metadata Model](docs/architecture/plan-metadata.md) - How climate action plans are structured, including CategoryTypes, Attributes, and common classification systems
 - [Indicator Data Architecture](docs/architecture/indicators.md) - Legacy `IndicatorValue` time series vs. the `kausal_common.datasets` system, computed metrics, and virtual metrics in the dataset editor
 - [Paths Target Node and Category Pages](docs/architecture/paths-target-node-category-pages.md) - How `paths_target_node_id` relates to Wagtail category pages, and the GraphQL cache invalidation that makes admin edits look inert
+- [Action Export](docs/architecture/action-export.md) - The public UI's `report_export` URL: visible columns versus `fields=all`, who may use it and which attribute columns they get
 - [Single-Tenant Data Export](docs/architecture/single-tenant-export.md) - The `export_plan` command: what counts as plan-owned, how shared rows are handled, and tenant isolation
 - [Unit Testing Guide](docs/unit-tests.md) - Comprehensive guide to testing practices, Factory Boy patterns, fixtures, and type annotations in tests
 - [Media File Integrity](docs/media-integrity.md) - Why media objects came to share S3 keys, the storage/versioning situation per cluster, and the check/inventory/repair commands
