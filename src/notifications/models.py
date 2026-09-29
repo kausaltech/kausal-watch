@@ -47,6 +47,8 @@ DEFAULT_FONT_FAMILY = (
     '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
     'Ubuntu, roboto, noto, arial, sans-serif'
 )
+# Used when a base template has no brand color, so the header and buttons still have a background.
+DEFAULT_BRAND_DARK_COLOR = '#1b4d3e'
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
 
@@ -223,7 +225,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
     def get_notification_context(self):
         return dict(
             theme=dict(
-                brand_dark_color=self.brand_dark_color,
+                brand_dark_color=self.brand_dark_color or DEFAULT_BRAND_DARK_COLOR,
                 font_family=self.font_family,
                 font_family_with_fallback=self._get_font_family_with_fallback(),
                 font_css_url=self.font_css_url,
