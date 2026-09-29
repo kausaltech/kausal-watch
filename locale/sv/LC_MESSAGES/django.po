@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 17:18+0300\n"
+"POT-Creation-Date: 2026-09-29 14:30+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -6321,11 +6321,13 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' är för närvarande ansluten till följande artiklar. Vänligen verifiera raderingen:"
 
 #: src/people/templates/people/delete.html
+#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ja, radera"
 
 #: src/people/templates/people/delete.html
+#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nej, radera inte"
@@ -6643,6 +6645,36 @@ msgstr "Detta kommer att markera följande åtgärder som slutförda:"
 msgid "This will undo marking the following actions as complete:"
 msgstr "Detta kommer att ångra markeringen av följande åtgärder som slutförda:"
 
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s could not be deleted"
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
+msgstr ""
+
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "published at"
+msgid "unpublished draft"
+msgstr "publicerad på"
+
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "Back to own user"
+msgid "Go back to listing"
+msgstr "Tillbaka till egen användare"
+
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/reports/views.py
 msgid "Mark action as complete"
 msgstr "Markera åtgärden som slutförd"
@@ -6732,6 +6764,10 @@ msgstr "Ångra markering som slutförd"
 #: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
 msgstr "Ångra markeringen av denna rapport som fullständig"
+
+#: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "Report types"

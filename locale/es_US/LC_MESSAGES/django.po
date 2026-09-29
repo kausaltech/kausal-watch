@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-28 17:18+0300\n"
+"POT-Creation-Date: 2026-09-29 14:30+0300\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/watch/django/es_US/>\n"
@@ -6248,11 +6248,13 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr ""
 
 #: src/people/templates/people/delete.html
+#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr ""
 
 #: src/people/templates/people/delete.html
+#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr ""
@@ -6568,6 +6570,31 @@ msgstr ""
 msgid "This will undo marking the following actions as complete:"
 msgstr ""
 
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "%(model_name)s could not be deleted"
+msgstr ""
+
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
+msgstr ""
+
+#: src/reports/templates/reports/report_type_delete.html
+msgid "unpublished draft"
+msgstr ""
+
+#: src/reports/templates/reports/report_type_delete.html
+msgid "Go back to listing"
+msgstr ""
+
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/reports/views.py
 msgid "Mark action as complete"
 msgstr ""
@@ -6656,6 +6683,10 @@ msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
