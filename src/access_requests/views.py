@@ -3,24 +3,30 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
+from django.template.response import TemplateResponse
+from django.utils import translation
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from kausal_common.users import user_or_bust
 
-from .emails import send_decision_email
+from .emails import may_set_password, send_decision_email
 from .models import AccessRequest
 from .services import AccessRequestNotPendingError, approve_access_request, reject_access_request
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from django.http import HttpRequest, HttpResponse
+    from django.http import HttpRequest, HttpResponse, HttpResponseBase
 
     from users.models import User
+
+# The public UI page an approved visitor lands on once they have set their password.
+ACCESS_APPROVED_PATH = '/access-approved'
 
 
 def _decide(
@@ -72,3 +78,43 @@ def reject_view(request: HttpRequest, pk: int) -> HttpResponse:
         success_message=_('Access request from %(email)s rejected. They have been notified by email.'),
         unsent_message=_('Access request from %(email)s rejected, but the email to them could not be sent.'),
     )
+
+
+class SetPasswordView(auth_views.PasswordResetConfirmView):
+    """
+    Let an approved visitor set their password from the link in the approval email.
+
+    Signs them in, so the public site's sign-in goes through without asking for the password again.
+    """
+
+    template_name = 'access_requests/set_password.html'
+    post_reset_login = True
+    # Several backends are configured, so the login must name the one that checks passwords.
+    post_reset_login_backend = 'django.contrib.auth.backends.ModelBackend'
+    access_request: AccessRequest
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponseBase:
+        self.access_request = get_object_or_404(AccessRequest.objects.select_related('plan', 'person__user'), pk=kwargs['pk'])
+        with translation.override(self.access_request.plan.primary_language):
+            response = super().dispatch(request, *args, **kwargs)
+            # A template response renders only after the view returns, outside the override.
+            if isinstance(response, TemplateResponse):
+                response.render()
+        return response
+
+    def get_user(self, uidb64: str) -> User | None:
+        user = super().get_user(uidb64)
+        # Anyone the request does not vouch for gets the same "invalid link" page as a bad token.
+        if not may_set_password(self.access_request, user):
+            return None
+        return user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        plan = self.access_request.plan
+        context['plan_name'] = plan.name_i18n
+        context['plan_url'] = plan.site_url or ''
+        return context
+
+    def get_success_url(self) -> str:
+        return self.access_request.plan.get_view_url().rstrip('/') + ACCESS_APPROVED_PATH

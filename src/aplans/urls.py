@@ -161,6 +161,7 @@ urlpatterns = [
     re_path(r'^admin/reports/.*', RootRedirectView.as_view(), name='disabled-reports'),
     # FIXME: This overrides the URLs in Wagtail's admin/urls/pages.py to allow filtering the queryset
     path('admin/pages/search/', PageSearchView.as_view(), name='search'),
+    path('', include('access_requests.urls')),
     re_path(r'^admin/', include(wagtailadmin_urls)),
     re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
