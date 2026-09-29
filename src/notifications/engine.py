@@ -18,7 +18,7 @@ from actions.models.public_user import PublicUser
 from indicators.models import IndicatorContactPerson
 
 from .mjml import render_mjml_from_template
-from .models import DEFAULT_FONT_FAMILY, ManuallyScheduledNotificationTemplate
+from .models import DEFAULT_BRAND_DARK_COLOR, DEFAULT_FONT_FAMILY, ManuallyScheduledNotificationTemplate
 from .notifications import (
     AccessRequestsReceivedNotification,
     ActionNotUpdatedNotification,
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
 
 # The admin interface's look, for emails about the admin rather than the plan.
 ADMIN_THEME = {
-    'brand_dark_color': '#1b4d3e',
+    'brand_dark_color': DEFAULT_BRAND_DARK_COLOR,
     'font_family': None,
     'font_family_with_fallback': DEFAULT_FONT_FAMILY,
     'font_css_url': None,
