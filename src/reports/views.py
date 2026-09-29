@@ -22,6 +22,7 @@ from .export import export_dashboard_report_for_plan
 from .models import ActionListPageNotFoundError, ActionSnapshot, Report
 
 ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
+ALL_FIELDS = 'all'
 
 
 class MarkActionAsCompleteView(WMABaseView[Action]):
@@ -154,9 +155,17 @@ def export_report_view(request, plan_identifier):
     if format not in ALLOWED_EXPORT_FORMATS:
         return HttpResponseBadRequest(f'Invalid format. Allowed values: {", ".join(sorted(ALLOWED_EXPORT_FORMATS))}.')
 
+    fields = request.GET.get('fields')
+    if fields not in (None, ALL_FIELDS):
+        return HttpResponseBadRequest(f'Invalid fields. Allowed value: {ALL_FIELDS}.')
+    all_fields = fields == ALL_FIELDS
+
     plan = get_object_or_404(Plan, identifier=plan_identifier)
     if not plan.is_visible_for_user(request.user):
         raise Http404
+    # Exporting every field is for the plan's own users, not for public visitors.
+    if all_fields and not (request.user.is_authenticated and request.user.can_access_public_site(plan)):
+        raise PermissionDenied
 
     # Possibly restrict which actions are included
     action_ids_param = request.GET.get('actions')
@@ -169,7 +178,7 @@ def export_report_view(request, plan_identifier):
             return HttpResponseBadRequest('Invalid actions parameter. Must be a comma-separated list of integers.')
 
     try:
-        output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids)
+        output, filename = export_dashboard_report_for_plan(plan, format, request.user, action_ids, all_fields=all_fields)
     except ActionListPageNotFoundError as e:
         # A visible plan should always have an ActionListPage; if it doesn't, that's a
         # misconfiguration we want to learn about rather than serve a 500 to the user.

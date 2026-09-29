@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 
 import pytest
@@ -144,6 +145,31 @@ class TestExportReportView:
         response = self._get(rf, plan.identifier)
         assert response.status_code == 200
         assert mock_export.call_args[0][3] is None
+        assert mock_export.call_args.kwargs['all_fields'] is False
+
+    def test_invalid_fields_returns_400(self, rf, plan, superuser):
+        response = self._get(rf, plan.identifier, user=superuser, fields='some')
+        assert response.status_code == 400
+
+    def test_all_fields_forbidden_for_anonymous_user(self, rf, plan, mock_export):
+        with pytest.raises(PermissionDenied):
+            self._get(rf, plan.identifier, fields='all')
+
+    def test_all_fields_forbidden_for_user_without_plan_access(self, rf, plan, mock_export, user_factory):
+        with pytest.raises(PermissionDenied):
+            self._get(rf, plan.identifier, user=user_factory(), fields='all')
+
+    def test_all_fields_allowed_for_public_site_viewer(self, rf, plan, mock_export, user_factory, person_factory):
+        user = user_factory()
+        plan.public_site_viewers.create(person=person_factory(user=user))
+        response = self._get(rf, plan.identifier, user=user, fields='all')
+        assert response.status_code == 200
+        assert mock_export.call_args.kwargs['all_fields'] is True
+
+    def test_all_fields_allowed_for_plan_admin(self, rf, plan, mock_export, plan_admin_user):
+        response = self._get(rf, plan.identifier, user=plan_admin_user, fields='all')
+        assert response.status_code == 200
+        assert mock_export.call_args.kwargs['all_fields'] is True
 
     def test_missing_action_list_page_raises_404(self, rf, plan):
         from reports.models import ActionListPageNotFoundError

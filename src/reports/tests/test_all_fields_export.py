@@ -97,3 +97,29 @@ class TestGenerateForPlanAllFields:
 
         assert (attribute_type.pk in exported_attribute_type_ids(viewer_report_type)) is viewer_sees
         assert (attribute_type.pk in exported_attribute_type_ids(admin_report_type)) is admin_sees
+
+
+def test_full_export_contains_categories_and_non_public_attributes_for_plan_admin(plan_with_pages):
+    from actions.tests.factories import ActionFactory, AttributeTextFactory, CategoryFactory
+    from reports.export import export_dashboard_report_for_plan
+
+    plan = plan_with_pages
+    category_type = CategoryTypeFactory.create(plan=plan, usable_for_actions=True)
+    category = CategoryFactory.create(type=category_type, name='Exported category')
+    attribute_type = action_attribute_type(plan, VisibleFor.PLAN_ADMINS)
+    action = ActionFactory.create(plan=plan)
+    action.categories.add(category)
+    action.save()
+    AttributeTextFactory.create(type=attribute_type, content_object=action, text='Internal note')
+
+    output, _filename = export_dashboard_report_for_plan(plan, 'csv', plan_admin(plan), all_fields=True)
+
+    assert isinstance(output, str)
+    assert 'Exported category' in output
+    assert 'Internal note' in output
+
+    viewer_output, _filename = export_dashboard_report_for_plan(plan, 'csv', public_site_viewer(plan), all_fields=True)
+
+    assert isinstance(viewer_output, str)
+    assert 'Exported category' in viewer_output
+    assert 'Internal note' not in viewer_output

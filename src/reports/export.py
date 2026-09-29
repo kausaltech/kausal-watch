@@ -15,8 +15,13 @@ def export_dashboard_report_for_plan(
     format: Literal['csv', 'xlsx'],
     user: UserOrAnon,
     action_ids: list[int] | None = None,
+    *,
+    all_fields: bool = False,
 ):
-    report_type = ReportType.generate_for_plan_dashboard(plan, user)
+    if all_fields:
+        report_type = ReportType.generate_for_plan_all_fields(plan, user)
+    else:
+        report_type = ReportType.generate_for_plan_dashboard(plan, user)
     report = report_type.generate_incomplete_report()
     report.disable_title_sheet = True
     report.disable_summary_sheets = True
