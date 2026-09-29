@@ -862,27 +862,26 @@ msgstr ""
 
 #: src/actions/bulk_approve.py src/actions/wagtail_hooks.py
 msgid "Release actions from moderation"
-msgstr ""
+msgstr "Massnahmen aus der Moderation freigeben"
 
 #: src/actions/bulk_approve.py
 msgid "No releasable actions were selected."
-msgstr ""
+msgstr "Es wurden keine freigebbaren Massnahmen ausgewählt."
 
 #: src/actions/bulk_approve.py
-#, fuzzy, python-format
-#| msgid "Related actions"
+#, python-format
 msgid "Released %(count)d actions."
-msgstr "Verbundene Massnahmen"
+msgstr "%(count)d Massnahmen freigegeben."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions skipped (no permission)."
-msgstr ""
+msgstr "%(count)d Massnahmen übersprungen (keine Berechtigung)."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions failed to release; see logs for details."
-msgstr ""
+msgstr "%(count)d Massnahmen konnten nicht freigegeben werden; Details siehe Protokolle."
 
 #: src/actions/category_admin.py
 msgid "Common category type"
@@ -1433,28 +1432,20 @@ msgid "action tasks"
 msgstr "Massnahmenaufgaben"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible party"
 msgid "action task responsible party"
-msgstr "für Massnahme zuständige Stelle"
+msgstr "für Massnahmenaufgabe zuständige Stelle"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible parties"
 msgid "action task responsible parties"
-msgstr "für Massnahme zuständige Stellen"
+msgstr "für Massnahmenaufgabe zuständige Stellen"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact person"
 msgid "action task contact person"
-msgstr "Massnahmenansprechperson"
+msgstr "Ansprechperson der Massnahmenaufgabe"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact persons"
 msgid "action task contact persons"
-msgstr "Massnahmenansprechpersonen"
+msgstr "Ansprechpersonen der Massnahmenaufgabe"
 
 #: src/actions/models/action.py
 msgid "action impact class"
@@ -2124,7 +2115,7 @@ msgstr ""
 
 #: src/actions/models/features.py
 msgid "Should the organizations and people responsible for an individual task be recorded? Off by default; the assignments are hidden everywhere while it is off, including in plans that already have some."
-msgstr ""
+msgstr "Sollen die für eine einzelne Aufgabe zuständigen Organisationen und Personen erfasst werden? Standardmässig deaktiviert; solange die Option deaktiviert ist, werden die Zuweisungen überall ausgeblendet, auch in Plänen, die bereits welche haben."
 
 #: src/actions/models/features.py
 msgid "Present the parent-child plans as peers"
@@ -2898,19 +2889,15 @@ msgstr ""
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Selected actions will be published and marked as approved, skipping any remaining moderation tasks."
-msgstr ""
+msgstr "Die ausgewählten Massnahmen werden veröffentlicht und als genehmigt markiert; verbleibende Moderationsaufgaben werden übersprungen."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "Exclude this organization from the active plan"
 msgid "There are no actions currently in moderation for this plan."
-msgstr "Schliesse diese Organisation aus aktivem Plan aus"
+msgstr "Für diesen Plan befinden sich derzeit keine Massnahmen in Moderation."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "contact for actions"
 msgid "Back to actions"
-msgstr "Ansprechperson für Massnahmen"
+msgstr "Zurück zu den Massnahmen"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
@@ -2945,7 +2932,7 @@ msgstr ""
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually."
-msgstr ""
+msgstr "Diese Massnahmen wurden zuvor von einer moderierenden Person abgelehnt. Sie können nicht gesammelt freigegeben werden und müssen einzeln bearbeitet werden."
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
@@ -3248,7 +3235,7 @@ msgstr ""
 #: src/actions/wagtail_admin.py
 #, python-format
 msgid "Do you want to unpublish the plan '%(plan)s'? This will take its production site down."
-msgstr ""
+msgstr "Möchten Sie den Plan „%(plan)s” zurückziehen? Dadurch wird seine Produktivwebsite ausser Betrieb genommen."
 
 #: src/actions/wagtail_admin.py
 msgid "The plan is already published."
@@ -6723,10 +6710,8 @@ msgid "Choose another report type"
 msgstr ""
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Only plan admins can mark actions as complete for reports of this type"
 msgid "Only plan admins can mark actions as complete"
-msgstr "Nur Planadministratoren können Massnahmen für Berichte dieses Typs als abgeschlossen markieren"
+msgstr "Nur Planadministratoren können Massnahmen als abgeschlossen markieren"
 
 #: src/reports/models.py
 msgid "Only plan admins can mark actions as complete for reports of this type"
@@ -6867,7 +6852,7 @@ msgstr ""
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
-msgstr ""
+msgstr "„%(instance_name)s“ wird von einem „Berichtevergleich“-Block auf den Massnahmen-Detailseiten verwendet. Das Löschen würde diese Seiten beschädigen. Wenn Sie den Berichtevergleich von den Massnahmen-Detailseiten entfernen wollten, entfernen Sie stattdessen den Block von den folgenden Seiten:"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, fuzzy
@@ -6886,8 +6871,8 @@ msgstr "Ansprechperson für Massnahmen"
 #, python-format
 msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Beim Löschen dieses Berichtstyps werden auch sein Bericht und die %(snapshot_count)s darin gespeicherten Massnahmen-Snapshots dauerhaft gelöscht."
+msgstr[1] "Beim Löschen dieses Berichtstyps werden auch seine %(counter)s Berichte und die %(snapshot_count)s darin gespeicherten Massnahmen-Snapshots dauerhaft gelöscht."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -6981,7 +6966,7 @@ msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgstr "Der Berichtstyp wird noch auf Massnahmenseiten verwendet. Entfernen Sie zuerst die Berichtevergleich-Blöcke."
 
 #: src/reports/wagtail_admin.py
 msgid "Report types"
@@ -7094,7 +7079,7 @@ msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Unpublishing this plan takes its production site down immediately."
-msgstr ""
+msgstr "Durch das Zurückziehen dieses Plans wird seine Produktivwebsite sofort ausser Betrieb genommen."
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "The plan stays public, so its preview addresses and the API still serve it to anyone."
@@ -7114,7 +7099,7 @@ msgstr ""
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Also make the plan internal, so that only signed-in users with access can see it anywhere"
-msgstr ""
+msgstr "Den Plan ausserdem intern machen, sodass ihn überall nur angemeldete Benutzer mit Zugriff sehen können"
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, unpublish"

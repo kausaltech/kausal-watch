@@ -6576,34 +6576,29 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Dadurch wird das Markieren der folgenden Maßnahmen als abgeschlossen rückgängig gemacht:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s konnte nicht gelöscht werden"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
-msgstr ""
+msgstr "„%(instance_name)s“ wird von einem „Berichtevergleich“-Block auf den Maßnahmen-Detailseiten verwendet. Das Löschen würde diese Seiten beschädigen. Wenn Sie den Berichtevergleich von den Maßnahmen-Detailseiten entfernen wollten, entfernen Sie stattdessen den Block von den folgenden Seiten:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
 msgid "unpublished draft"
-msgstr "veröffentlicht am"
+msgstr "unveröffentlichter Entwurf"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "Back to actions"
 msgid "Go back to listing"
-msgstr "Zurück zu den Maßnahmen"
+msgstr "Zurück zur Liste"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Beim Löschen dieses Berichtstyps werden auch sein Bericht und die %(snapshot_count)s darin gespeicherten Maßnahmen-Snapshots dauerhaft gelöscht."
+msgstr[1] "Beim Löschen dieses Berichtstyps werden auch seine %(counter)s Berichte und die %(snapshot_count)s darin gespeicherten Maßnahmen-Snapshots dauerhaft gelöscht."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -6697,7 +6692,7 @@ msgstr "Markieren dieses Berichts als abgeschlossen rückgängig machen"
 
 #: src/reports/wagtail_admin.py
 msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgstr "Der Berichtstyp wird noch auf Maßnahmenseiten verwendet. Entfernen Sie zuerst die Berichtevergleich-Blöcke."
 
 #: src/reports/wagtail_admin.py
 msgid "Report types"
@@ -6883,7 +6878,6 @@ msgstr "Speichern"
 #~ msgstr "Wir bitten um Entschuldigung, der Server hat vorübergehend Schwierigkeiten."
 
 #, fuzzy
-#~| msgid "Remove row"
 #~ msgid "Remove"
 #~ msgstr "Zeile entfernen"
 
@@ -7269,17 +7263,14 @@ msgstr "Speichern"
 #~ msgstr "Sammlung"
 
 #, fuzzy, python-format
-#~| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 #~ msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
 #~ msgstr "%(model_name)s \"%(title)s\" wurde aus der Moderation zurückgezogen."
 
 #, fuzzy, python-format
-#~| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
 #~ msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
 #~ msgstr "Die Seite „%(title)s“ wurde zur Freigabe in Moderationsphase „%(task)s“ eingereicht."
 
 #, fuzzy, python-format
-#~| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 #~ msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
 #~ msgstr "%(model_name)s \"%(title)s\" wurde aus der Moderation zurückgezogen."
 
