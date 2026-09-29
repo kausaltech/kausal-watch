@@ -11,8 +11,8 @@ on, that page can offer an access request instead of a dead end. The restricted 
 
 Approving grants the **public site only**: a `PlanPublicSiteViewer` row, never admin rights.
 
-Signing in is not part of this feature. The approval email tells the visitor where to sign in; how
-they get a password (and a "forgot password" flow) is left to the authentication work.
+Signing in itself is not part of this feature, but the approval email lets a new visitor set their
+password without typing their address again (see [Setting a password](#setting-a-password)).
 
 ## The request
 
@@ -65,3 +65,25 @@ through `SentNotification`, while the total still waiting is repeated each time.
 seeded when a plan switches access requests on. It is the one notification rendered with the admin
 theme (`Notification.uses_plan_theme = False`) rather than the plan's, because it is about the admin
 interface.
+
+## Setting a password
+
+The approval email carries a one-time link to set a password
+(`access_requests.emails.make_set_password_url`), but only when the visitor needs one
+(`may_set_password`):
+
+- not for an SSO user, who has no usable password and signs in through their organisation;
+- not for someone who has signed in before, who has a password already and did not ask for a
+  reset;
+- only for an approved request whose plan has a site URL.
+
+The link is Django's password reset token, with the access request's pk in the path, served by
+`access_requests.views.SetPasswordView`, a subclass of Django's `PasswordResetConfirmView` (not
+Wagtail's: the page is for visitors, and it is in the plan's language). It works once, and expires
+after `PASSWORD_RESET_TIMEOUT`. A link that no longer matches the request, because the request was
+decided otherwise or belongs to someone else, gets the same "invalid link" page as a bad token.
+
+Setting the password signs the visitor in on the backend and redirects them to
+`<plan view URL>/access-approved`. The public UI provides that page; because the backend session
+exists, its OAuth sign-in goes through without asking for the password again. Once the link has
+expired, the visitor uses "forgot password" on the sign-in page.
