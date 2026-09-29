@@ -2,6 +2,7 @@ from enum import Enum
 from typing import cast
 
 import strawberry as sb
+import strawberry_django
 
 from kausal_common.testing.schema import TestModeMutation
 from kausal_common.users.schema import UserNode
@@ -12,6 +13,16 @@ from actions.models import Action, ActionContactPerson, Plan
 from orgs.models import Organization
 from people.models import Person
 from users.models import User
+
+
+@strawberry_django.type(User, name='User', description='A user of the system')
+class WatchUserNode(UserNode):
+    @sb.field(description='Whether the user may use the admin interface of the given plan')
+    def can_access_admin(self, plan: sb.ID) -> bool:
+        plan_obj = Plan.objects.qs.by_id_or_identifier(plan).first()
+        if plan_obj is None:
+            return False
+        return cast('User', self).can_access_admin(plan_obj)
 
 
 @sb.enum
@@ -39,7 +50,7 @@ class TestUserInput:
 class TestMode(TestModeMutation):
     @gql.mutation
     @staticmethod
-    def create_test_user(info: gql.Info, input: TestUserInput) -> UserNode:
+    def create_test_user(info: gql.Info, input: TestUserInput) -> WatchUserNode:
         user = User(email=input.email, is_superuser=input.is_superuser)
         user.set_password(input.password)
         user.is_active = True
@@ -75,4 +86,4 @@ class TestMode(TestModeMutation):
             user.selected_admin_plan = active_plan
             user.save()
 
-        return cast('UserNode', user)  # pyright: ignore[reportInvalidCast]
+        return cast('WatchUserNode', user)  # pyright: ignore[reportInvalidCast]

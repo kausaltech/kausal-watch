@@ -21,7 +21,6 @@ from kausal_common.models.types import copy_signature
 from kausal_common.strawberry.extensions import LoggingTracingExtension
 from kausal_common.strawberry.schema import Schema as UnifiedSchema
 from kausal_common.users import user_or_none
-from kausal_common.users.schema import UserNode
 
 from aplans import gql
 from aplans.cache import OrganizationActionCountCache
@@ -109,7 +108,7 @@ class Query(
         required=False,
     )
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True), plan=graphene.ID(required=True))
-    me = graphene.Field(UserNode, required=False, description='The current user')
+    me = graphene.Field(users_schema.WatchUserNode, required=False, description='The current user')
 
     @sb.field(description='Admin query namespace')
     @staticmethod
