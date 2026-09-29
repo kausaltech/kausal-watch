@@ -14,7 +14,7 @@ test.describe('Test people', () => {
     await expect(page.getByRole('columnheader', { name: 'Title' })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Organization' })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Role', exact: true })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Participated in training' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Attended training' })).toBeVisible();
     await expect(page.locator('header').getByRole('link', { name: 'Add person' })).toBeVisible();
     await expect(page.getByText('Test User')).toBeVisible();
  });

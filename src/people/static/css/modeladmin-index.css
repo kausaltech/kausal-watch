@@ -33,3 +33,9 @@
   background-color: var(--w-color-grey-100);
   color: var(--w-color-grey-600);
 }
+
+.person-listing-wrapped-header {
+  display: inline-block;
+  width: min-content;
+  white-space: normal;
+}

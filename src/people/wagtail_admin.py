@@ -15,6 +15,7 @@ from django.db import models, transaction
 from django.db.models import Exists, F, ManyToManyField, OneToOneRel, OuterRef, Prefetch, Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.forms import BooleanField, ChoiceField, ModelMultipleChoiceField
+from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import re_path
 from django.utils import timezone
@@ -53,6 +54,7 @@ from .models import Person
 from .views import ImpersonateUserView, ResetPasswordView
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Callable
     from datetime import date
 
     from django.contrib.admin.options import _DisplayT
@@ -247,6 +249,10 @@ class PersonEditView(InitializeFormWithPlanMixin[Person], InitializeFormWithUser
 
 
 class PersonIndexView(AplansIndexView[Person]):
+    def get_buttons_for_obj(self, obj):
+        # The row actions are in the menu of the last column instead
+        return []
+
     def get_ordering(self, request, queryset):
         ret = super().get_ordering(request, queryset)
         out = []
@@ -549,16 +555,20 @@ class PersonAdmin(AplansModelAdmin[Person]):
                 '', '<span class="w-status person-role person-role--{}">{}</span>', ((r.value, r.label) for r in roles)
             )
 
+        @admin.display(description=_('email address'), ordering='email')
+        def email(obj: Person) -> str:
+            return obj.email
+
         fields: list[_DisplayT[Person]] = [
             avatar,
             cannot_access_admin_warning,
+            email,
             first_name,
             last_name,
             'title',
             organization,
             role,
         ]
-        # fields = [avatar, first_name, last_name, 'title', organization]
 
         @admin.display(description=_('last login'), ordering='user__last_login')
         def last_logged_in(obj: Person) -> str | date | None:
@@ -575,7 +585,7 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         if user.is_general_admin_for_plan(plan):
             fields.append(last_logged_in)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
-            fields.append('participated_in_training')
+            fields.append(self._attended_training_column())  # type: ignore[arg-type]
 
         @admin.display(description=_('contact for actions'))
         def contact_for_actions(obj) -> str:
@@ -589,8 +599,35 @@ class PersonAdmin(AplansModelAdmin[Person]):
             fields.append(contact_for_actions)
             fields.append(contact_for_indicators)
 
+        fields.append(self._actions_column(request))
+
         setattr(request, '_person_list_display', fields)  # noqa: B010
         return fields
+
+    @staticmethod
+    def _attended_training_column() -> Callable[[Person], bool | None]:
+        # The header wraps onto two lines to keep the column narrow. It is built per request so that
+        # the label is in the active language.
+        @admin.display(
+            description=format_html('<span class="person-listing-wrapped-header">{}</span>', _('Attended training')),
+            ordering='participated_in_training',
+            boolean=True,
+        )
+        def attended_training(obj: Person) -> bool | None:
+            return obj.participated_in_training
+
+        return attended_training
+
+    def _actions_column(self, request: HttpRequest) -> Callable[[Person], str]:
+        # The rarely used row actions live in a menu instead of the buttons shown on hover
+        button_helper = PersonButtonHelper(self, request)
+
+        @admin.display(description=format_html('<span class="w-sr-only">{}</span>', _('Actions')))
+        def actions(obj: Person) -> str:
+            buttons = button_helper.get_buttons_for_obj(obj)
+            return render_to_string('people/person_actions_menu.html', {'buttons': buttons}, request=request)
+
+        return actions
 
     basic_panels = [
         FieldPanel('first_name'),

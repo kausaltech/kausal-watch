@@ -17,7 +17,7 @@ from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory
 from orgs.tests.factories import OrganizationPlanAdminFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
-from people.wagtail_admin import PersonAdmin, PersonRoleFilter
+from people.wagtail_admin import PersonAdmin, PersonIndexView, PersonRoleFilter
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -33,9 +33,11 @@ def get_cell(rf: RequestFactory, user: User, person: Person, column: str, **para
     request = rf.get('/', params)
     request.user = user
     person_admin = PersonAdmin()
-    listed = person_admin.get_queryset(request).get(pk=person.pk)
-    fields = {getattr(f, '__name__', f): f for f in person_admin.get_list_display(request)}
-    return fields[column](listed)
+    # The index view renders the listing with the active plan set on the permission helper
+    with person_admin.permission_helper.activate_plan_context(user.get_active_admin_plan()):
+        listed = person_admin.get_queryset(request).get(pk=person.pk)
+        fields = {getattr(f, '__name__', f): f for f in person_admin.get_list_display(request)}
+        return fields[column](listed)
 
 
 def test_person_without_name_is_listed_by_email(rf: RequestFactory, plan: Plan, plan_admin_user: User):
@@ -222,3 +224,74 @@ class TestAvatar:
         cell = get_cell(rf, plan_admin_user, person, 'avatar')
         assert 'people/avatar-viewer-placeholder.svg' in cell
         assert uploaded_avatar not in cell
+
+
+def get_column_names(rf: RequestFactory, user: User, **params: str) -> list[str]:
+    request = rf.get('/', params)
+    request.user = user
+    return [getattr(f, '__name__', f) for f in PersonAdmin().get_list_display(request)]
+
+
+def get_column_header(rf: RequestFactory, user: User, column: str) -> str:
+    request = rf.get('/')
+    request.user = user
+    fields = {getattr(f, '__name__', f): f for f in PersonAdmin().get_list_display(request)}
+    return str(fields[column].short_description)  # type: ignore[union-attr]
+
+
+class TestEmailColumn:
+    def test_follows_the_avatar_and_warning_icons(self, rf: RequestFactory, plan_admin_user: User):
+        columns = get_column_names(rf, plan_admin_user)
+        assert columns[:4] == ['avatar', 'cannot_access_admin_warning', 'email', 'first_name']
+
+    def test_shown_to_users_who_are_not_plan_admins(self, rf: RequestFactory, action_contact_person_user: User):
+        assert 'email' in get_column_names(rf, action_contact_person_user)
+
+    def test_shows_the_email(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = PersonFactory.create(email='listed@example.com', organization=plan.organization)
+        assert 'listed@example.com' in get_cell(rf, plan_admin_user, person, 'email')
+
+
+class TestAttendedTrainingColumn:
+    def test_replaces_participated_in_training(self, rf: RequestFactory, plan_admin_user: User):
+        columns = get_column_names(rf, plan_admin_user)
+        assert 'participated_in_training' not in columns
+        assert 'attended_training' in columns
+
+    def test_header_wraps(self, rf: RequestFactory, plan_admin_user: User):
+        header = get_column_header(rf, plan_admin_user, 'attended_training')
+        assert 'Attended training' in header
+        assert 'person-listing-wrapped-header' in header
+
+    def test_shows_whether_the_person_attended(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        attended = PersonFactory.create(organization=plan.organization, participated_in_training=True)
+        not_attended = PersonFactory.create(organization=plan.organization, participated_in_training=False)
+        assert get_cell(rf, plan_admin_user, attended, 'attended_training') is True
+        assert get_cell(rf, plan_admin_user, not_attended, 'attended_training') is False
+
+
+class TestActionsMenu:
+    def test_rows_have_no_hover_buttons(self, plan: Plan):
+        person = PersonFactory.create(organization=plan.organization)
+        view = PersonIndexView.__new__(PersonIndexView)
+        assert view.get_buttons_for_obj(person) == []
+
+    def test_is_the_last_column(self, rf: RequestFactory, plan_admin_user: User):
+        assert get_column_names(rf, plan_admin_user)[-1] == 'actions'
+        assert get_column_names(rf, plan_admin_user, role='contact_person')[-1] == 'actions'
+
+    def test_lists_the_actions_in_a_dropdown(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = PersonFactory.create(organization=plan.organization)
+        cell = get_cell(rf, plan_admin_user, person, 'actions')
+        assert 'data-controller="w-dropdown"' in cell
+        assert 'icon-dots-horizontal' in cell
+        assert f'/{person.pk}/' in cell
+        assert 'Edit' in cell
+        assert 'Deactivate' in cell
+
+    def test_superuser_can_view_as_the_user(self, rf: RequestFactory, plan: Plan, superuser: User):
+        action = ActionFactory.create(plan=plan)
+        person = PersonFactory.create(organization=plan.organization, contact_for_actions=[action])
+        superuser.selected_admin_plan = plan
+        superuser.save()
+        assert 'View as user' in get_cell(rf, superuser, person, 'actions')
