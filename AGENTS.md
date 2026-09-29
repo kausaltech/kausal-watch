@@ -222,6 +222,16 @@ def process_request(request):
 - Uses `django-modeltrans` for model field translations
 - MJML email templates use Jinja2 (not Django templates)
 - Supports multiple locales with separate translation workflows
+- In a language variant's catalog (e.g. `de_CH` as a variant of `de`), leave a string's translation
+  empty if it would be the same as the base language's translation. Untranslated strings fall
+  back to the base language, so only real differences belong in the variant (for `de_CH`, mostly
+  "ss" instead of "ß").
+  - Exception: if our base-language translation overrides a msgid that a dependency (Django,
+    Wagtail, ...) also translates, the variant must repeat our translation. Django merges the
+    dependencies' `de` catalogs (they have no `de_CH`) ahead of our `de` fallback, so for `de-ch`
+    the dependency's wording would win over ours.
+  - To find such strings, compile the catalogs (`msgfmt`) and compare `gettext()` under
+    `override('de')` and `override('de-ch')` for every msgid the variant leaves empty.
 
 ### Extensions System
 - Optional, closed-source `kausal_watch_extensions` package for SaaS-enabling features
