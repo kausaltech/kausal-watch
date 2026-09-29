@@ -528,10 +528,12 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         @admin.display(description=_('first name'), ordering='first_name')
         def first_name(obj: Person) -> str:
+            # Show the email of a nameless person so that the row has something to click on
+            text = obj.first_name if obj.first_name or obj.last_name else obj.email
             url = edit_url(obj)
             if url:
-                return format_html('<a href="{}">{}</a>', url, obj.first_name)
-            return obj.first_name
+                return format_html('<a href="{}">{}</a>', url, text)
+            return text
 
         @admin.display(description=_('last name'), ordering='last_name')
         def last_name(obj: Person) -> str:
