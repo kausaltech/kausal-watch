@@ -182,3 +182,43 @@ class TestContactColumns:
         cell = get_cell(rf, plan_admin_user, person, 'contact_for_actions', role='contact_person')
         assert 'Plan action' in cell
         assert 'Other action' not in cell
+
+
+class TestAvatar:
+    @pytest.fixture(autouse=True)
+    def _plain_static_storage(self, settings) -> None:
+        # The manifest storage needs collectstatic to have run
+        settings.STORAGES = {
+            **settings.STORAGES,
+            'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+        }
+
+    @pytest.fixture
+    def uploaded_avatar(self, monkeypatch: pytest.MonkeyPatch) -> str:
+        url = '/media/avatar.png'
+        monkeypatch.setattr(Person, 'get_avatar_url', lambda *_args, **_kwargs: url)
+        return url
+
+    def test_person_with_image(self, rf: RequestFactory, plan: Plan, plan_admin_user: User, uploaded_avatar: str):
+        person = PersonFactory.create(organization=plan.organization)
+        assert uploaded_avatar in get_cell(rf, plan_admin_user, person, 'avatar')
+
+    def test_person_without_image_gets_placeholder(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = PersonFactory.create(organization=plan.organization)
+        cell = get_cell(rf, plan_admin_user, person, 'avatar')
+        assert 'people/avatar-placeholder.svg' in cell
+        assert 'people/avatar-viewer-placeholder.svg' not in cell
+
+    def test_viewer_without_image_gets_viewer_placeholder(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = PersonFactory.create(organization=plan.organization)
+        PlanPublicSiteViewer.objects.create(plan=plan, person=person)
+        assert 'people/avatar-viewer-placeholder.svg' in get_cell(rf, plan_admin_user, person, 'avatar')
+
+    def test_viewer_with_image_gets_viewer_placeholder(
+        self, rf: RequestFactory, plan: Plan, plan_admin_user: User, uploaded_avatar: str
+    ):
+        person = PersonFactory.create(organization=plan.organization)
+        PlanPublicSiteViewer.objects.create(plan=plan, person=person)
+        cell = get_cell(rf, plan_admin_user, person, 'avatar')
+        assert 'people/avatar-viewer-placeholder.svg' in cell
+        assert uploaded_avatar not in cell

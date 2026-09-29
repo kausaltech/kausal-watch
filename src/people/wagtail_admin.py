@@ -15,6 +15,7 @@ from django.db import models, transaction
 from django.db.models import Exists, F, ManyToManyField, OneToOneRel, OuterRef, Prefetch, Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.forms import BooleanField, ChoiceField, ModelMultipleChoiceField
+from django.templatetags.static import static
 from django.urls import re_path
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
@@ -486,10 +487,17 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         @admin.display(description='', empty_value='')
         def avatar(obj: Person) -> str:
-            avatar_url = obj.get_avatar_url(request, size='50x50')
-            if not avatar_url:
-                return ''
-            img = format_html('<span class="avatar"><img src="{}" /></span>', avatar_url)
+            # Viewers stand out with their own placeholder even when they have uploaded an image
+            if obj.is_viewer:  # type: ignore[attr-defined]
+                img = format_html(
+                    '<span class="avatar"><img src="{}" alt="{}" title="{}" /></span>',
+                    static('people/avatar-viewer-placeholder.svg'),
+                    PersonRole.VIEWER.label,
+                    PersonRole.VIEWER.label,
+                )
+            else:
+                avatar_url = obj.get_avatar_url(request, size='50x50') or static('people/avatar-placeholder.svg')
+                img = format_html('<span class="avatar"><img src="{}" /></span>', avatar_url)
             url = edit_url(obj)
             if url:
                 return format_html('<a href="{}">{}</a>', url, img)
