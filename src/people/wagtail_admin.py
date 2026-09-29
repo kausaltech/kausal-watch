@@ -33,7 +33,6 @@ from aplans.utils import naturaltime
 
 from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan, PlanPublicSiteViewer
 from actions.perms import get_people_with_login_rights
-from admin_site.utils import admin_req
 from admin_site.wagtail import (
     ActivatePermissionHelperPlanContextModelAdminMixin,
     AplansAdminModelForm,
@@ -57,7 +56,6 @@ if typing.TYPE_CHECKING:
 
     from django.contrib.admin.options import _DisplayT
     from django.http import HttpRequest
-    from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels import Panel
 
     from users.models import User
@@ -96,57 +94,23 @@ def annotate_person_roles(qs: PersonQuerySet, plan: Plan) -> PersonQuerySet:
     )
 
 
-class IsContactPersonFilter(SimpleListFilter):
-    title = _('Is contact person')
-    parameter_name = 'contact_person'
+class PersonRoleFilter(SimpleListFilter):
+    title = _('Role')
+    parameter_name = 'role'
+    NO_ROLE = 'none'
 
     def lookups(self, request, model_admin):
-        request = admin_req(request)
-        plan = request.user.get_active_admin_plan()
-        related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
-        # If there are related plans that have action contact persons, show a filter for each of these plans
-        related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
-        filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
-        action_filters: list[tuple[str, StrOrPromise]]
-        if filter_plans.exists():
-            action_filters = [
-                (f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n}) for plan in filter_plans
-            ]
-        else:
-            action_filters = [('action', _('For an action'))]
-        choices = [
-            *action_filters,
-            ('peer_contact_persons', _('For same actions or indicators as me')),
-            ('indicator', _('For an indicator')),
-            ('none', _('Not a contact person')),
-        ]
-        return choices
+        return [*PersonRole.choices, (self.NO_ROLE, _('No role'))]
 
     def queryset(self, request, queryset):
-        user = cast('User', request.user)
-        plan = user.get_active_admin_plan()
         val = self.value()
         if val is None:
             return queryset
-        if val == 'action':
-            queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
-        elif val.startswith('action_in_plan__'):
-            plan_pk = int(val[16:])
-            queryset = queryset.filter(contact_for_actions__plan=plan_pk)
-        elif val == 'indicator':
-            queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
-        elif val == 'peer_contact_persons':
-            person = user.person
-            my_actions = plan.actions.filter(contact_persons__person=person)
-            my_indicators = plan.indicators.filter(contact_persons__person=person)
-            queryset = queryset.filter(
-                Q(contact_for_actions__pk__in=my_actions) | Q(contact_for_indicators__pk__in=my_indicators),
-            )
-        else:
-            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all()).exclude(
-                contact_for_indicators__in=plan.indicators.all()
-            )
-        return queryset.distinct()
+        if val == self.NO_ROLE:
+            return queryset.filter(**dict.fromkeys(PERSON_ROLE_ANNOTATIONS.values(), False))
+        if val not in PersonRole.values:
+            return queryset
+        return queryset.filter(**{PERSON_ROLE_ANNOTATIONS[PersonRole(val)]: True})
 
 
 def smart_truncate(content, length=100, suffix='...'):
@@ -465,7 +429,7 @@ class PersonAdmin(AplansModelAdmin[Person]):
     menu_order = 210
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation')
-    list_filter = (IsContactPersonFilter,)
+    list_filter = (PersonRoleFilter,)
     button_helper_class = PersonButtonHelper
     index_view_extra_css = ['css/modeladmin-index.css']
     permission_helper: PersonPermissionHelper
@@ -613,10 +577,8 @@ class PersonAdmin(AplansModelAdmin[Person]):
         def contact_for_indicators(obj) -> str:
             return '; '.join([smart_truncate(str(ind), 40) for ind in obj.plan_contact_for_indicators])
 
-        contact_person_filter = request.GET.get('contact_person', '')
-        if contact_person_filter == 'action':
+        if request.GET.get(PersonRoleFilter.parameter_name) == PersonRole.CONTACT_PERSON:
             fields.append(contact_for_actions)
-        elif contact_person_filter == 'indicator':
             fields.append(contact_for_indicators)
 
         setattr(request, '_person_list_display', fields)  # noqa: B010
