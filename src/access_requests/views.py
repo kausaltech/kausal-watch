@@ -14,6 +14,8 @@ from django.views.decorators.http import require_POST
 
 from kausal_common.users import user_or_bust
 
+from notifications.models import DEFAULT_BRAND_DARK_COLOR, DEFAULT_FONT_FAMILY
+
 from .emails import may_set_password, send_decision_email
 from .models import AccessRequest
 from .services import AccessRequestNotPendingError, approve_access_request, reject_access_request
@@ -114,6 +116,18 @@ class SetPasswordView(auth_views.PasswordResetConfirmView):
         plan = self.access_request.plan
         context['plan_name'] = plan.name_i18n
         context['plan_url'] = plan.site_url or ''
+        general_content = getattr(plan, 'general_content', None)
+        context['site_title'] = (general_content.site_title if general_content else '') or plan.name_i18n
+        # The public UI's theme is not available here, so borrow the branding of the plan's emails.
+        base_template = getattr(plan, 'notification_base_template', None)
+        if base_template is not None:
+            context['theme'] = base_template.get_notification_context()['theme']
+        else:
+            context['theme'] = {
+                'brand_dark_color': DEFAULT_BRAND_DARK_COLOR,
+                'font_family_with_fallback': DEFAULT_FONT_FAMILY,
+                'font_css_url': None,
+            }
         return context
 
     def get_success_url(self) -> str:
