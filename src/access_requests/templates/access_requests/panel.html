@@ -22,6 +22,28 @@
         flex-wrap: wrap;
         gap: 0.5rem;
     }
+    .access-requests-panel .access-requests-panel__empty {
+        background: var(--w-color-surface-header);
+        border-radius: 0.3125rem;
+        padding: 1rem 1.25rem;
+    }
+    /* The dialog is teleported to the end of <body>, outside the panel */
+    .access-requests-dialog .w-dialog__content {
+        min-height: 0;
+        padding: 2rem;
+    }
+    .access-requests-dialog .w-dialog__header {
+        padding-inline-end: 2rem;
+    }
+    .access-requests-dialog .w-dialog__title {
+        margin-bottom: 1.25rem;
+    }
+    .access-requests-dialog .w-dialog__body p:last-of-type {
+        margin-bottom: 0;
+    }
+    .access-requests-dialog .w-dialog__body form {
+        margin-top: 2rem;
+    }
 </style>
 
 <div class="panel access-requests-panel">
@@ -84,7 +106,7 @@
             {% for req in page_obj.object_list %}
                 {% trans "Reject access request?" as dialog_title %}
                 {% with pk_str=req.pk|stringformat:"s" %}
-                {% dialog id="reject-access-request-"|add:pk_str title=dialog_title %}
+                {% dialog id="reject-access-request-"|add:pk_str title=dialog_title classname="access-requests-dialog" %}
                     <p>
                         {% blocktrans with email=req.email %}{{ email }} will receive an email saying their request has been rejected, with details of who to contact for more information.{% endblocktrans %}
                     </p>
@@ -112,7 +134,7 @@
                 </nav>
             {% endif %}
         {% else %}
-            <div class="help-block">
+            <div class="help-block access-requests-panel__empty">
                 {% trans "No access requests waiting. New requests will appear here, and you'll receive an email when they arrive." %}
             </div>
         {% endif %}
