@@ -84,7 +84,7 @@ msgstr "Massnahmen"
 
 #: src/actions/action_admin.py
 msgid "Last updated"
-msgstr ""
+msgstr "Zuletzt aktualisiert"
 
 #: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
 #: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
@@ -150,12 +150,12 @@ msgstr ""
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "The %(model_name)s could not be saved as it is locked"
-msgstr ""
+msgstr "%(model_name)s ist gesperrt und konnte deshalb nicht gespeichert werden"
 
 #: src/actions/action_admin_mixins.py src/admin_site/wagtail.py
 #, python-format
 msgid "%(model_name)s '%(object)s' updated."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' aktualisiert."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
@@ -165,27 +165,27 @@ msgstr ""
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' wurde zur Veröffentlichung vorgesehen."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' erstellt und für die Veröffentlichung vorgesehen."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' ist live und diese Version ist für die Veröffentlichung vorgesehen."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' updated and published."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' aktualisiert und veröffentlicht."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and published."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' erstellt und veröffentlicht."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
@@ -200,12 +200,12 @@ msgstr ""
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr ""
+msgstr "Der Workflow auf %(model_name)s '%(object)s' wurde neu gestartet."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr ""
+msgstr "Der Workflow auf %(model_name)s '%(object)s' wurde abgebrochen."
 
 #: src/actions/action_admin_mixins.py
 #, python-format
@@ -218,7 +218,7 @@ msgstr ""
 
 #: src/actions/action_admin_mixins.py
 msgid "Cancel scheduled publish"
-msgstr ""
+msgstr "Geplante Veröffentlichung abbrechen"
 
 #: src/actions/action_admin_mixins.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -245,7 +245,7 @@ msgstr ""
 #: src/actions/action_status_summary.py
 #: src/actions/templates/actions/bulk_approve.html
 msgid "In progress"
-msgstr ""
+msgstr "Im Gange"
 
 #: src/actions/action_status_summary.py src/actions/defaults.py
 msgid "Not started"
@@ -257,7 +257,7 @@ msgstr ""
 
 #: src/actions/action_status_summary.py
 msgid "Cancelled"
-msgstr ""
+msgstr "Gestrichen"
 
 #: src/actions/action_status_summary.py
 msgid "Out of scope"
@@ -398,7 +398,7 @@ msgstr ""
 
 #: src/actions/attribute_type_admin.py src/actions/category_admin.py
 msgid "Order"
-msgstr ""
+msgstr "Sortierung"
 
 #: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
@@ -459,7 +459,7 @@ msgstr "Verbundene Pläne"
 
 #: src/actions/blocks/action_content.py
 msgid "Full width"
-msgstr ""
+msgstr "Volle Breite"
 
 #: src/actions/blocks/action_content.py
 msgid "Grid"
@@ -1412,7 +1412,7 @@ msgstr ""
 #: src/actions/models/public_user.py src/admin_site/models.py
 #: src/aplans/utils.py src/feedback/models.py
 msgid "created at"
-msgstr ""
+msgstr "erstellt am"
 
 #: src/actions/models/action.py
 msgid "modified at"
@@ -1479,7 +1479,7 @@ msgstr "Massnahmenlinks"
 
 #: src/actions/models/action.py src/pages/models.py
 msgid "revision"
-msgstr ""
+msgstr "Überarbeitung"
 
 #: src/actions/models/action.py src/pages/models.py
 #, fuzzy
@@ -1567,7 +1567,7 @@ msgstr "Auswirkungsgruppenmassnahmen"
 
 #: src/actions/models/action.py
 msgid "Approve"
-msgstr ""
+msgstr "Genehmigen"
 
 #: src/actions/models/action.py
 msgid "Request changes"
@@ -1674,10 +1674,8 @@ msgid "The icon must be an SVG file."
 msgstr ""
 
 #: src/actions/models/attributes.py
-#, fuzzy
-#| msgid "Action"
 msgid "active"
-msgstr "Massnahme"
+msgstr "aktiv"
 
 #: src/actions/models/attributes.py
 msgid "attribute choice option"
@@ -2390,7 +2388,7 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Privacy"
-msgstr ""
+msgstr "Datenschutz"
 
 #: src/actions/models/plan.py src/feedback/models.py
 msgid "Accessibility"
@@ -2402,7 +2400,7 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Live"
-msgstr ""
+msgstr "In Betrieb"
 
 #: src/actions/models/plan.py
 msgid "Scheduled"
@@ -2453,7 +2451,7 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Unpublished"
-msgstr ""
+msgstr "Unveröffentlicht"
 
 #: src/actions/models/plan.py
 msgid "Available"
@@ -2843,7 +2841,7 @@ msgstr ""
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Email"
-msgstr ""
+msgstr "E-Mail"
 
 #: src/actions/pledge_participants_admin.py
 #, fuzzy
@@ -2971,11 +2969,11 @@ msgstr[1] ""
 #: src/actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 #, python-format
 msgid "The page \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\"."
-msgstr ""
+msgstr "Die Seite \"%(title)s\" wurde zur Freigabe in Moderationsphase \"%(task)s\" eingereicht."
 
 #: src/actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 msgid "You can preview the page here:"
-msgstr ""
+msgstr "Eine Vorschau der Seite finden Sie hier:"
 
 #: src/actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
 msgid "You can edit the page here:"
@@ -3015,7 +3013,7 @@ msgstr ""
 #: src/actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
 #: src/actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
 msgid "You can view the page here:"
-msgstr ""
+msgstr "Sie können die Seite hier aufrufen:"
 
 #: src/actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
 #: src/actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
@@ -3182,7 +3180,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Unpublish"
-msgstr ""
+msgstr "Zurückziehen"
 
 #: src/actions/wagtail_admin.py
 msgid "Unpublish this plan"
@@ -3328,7 +3326,7 @@ msgstr ""
 
 #: src/admin_site/apps.py
 msgid "History"
-msgstr ""
+msgstr "Verlauf"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "The built-in field whose appearance and access rights are customized"
@@ -3396,7 +3394,7 @@ msgstr ""
 
 #: src/admin_site/draftail_rich_text_area.py src/pages/blocks.py
 msgid "Embed"
-msgstr ""
+msgstr "Einbettung"
 
 #: src/admin_site/draftail_rich_text_area.py
 msgid "Bold"
@@ -3425,11 +3423,11 @@ msgstr ""
 
 #: src/admin_site/draftail_rich_text_area.py
 msgid "Bulleted list"
-msgstr ""
+msgstr "Aufzählungsliste"
 
 #: src/admin_site/forms.py
 msgid "Enter password"
-msgstr ""
+msgstr "Passwort eingeben"
 
 #: src/admin_site/forms.py
 msgid "Enter your email address"
@@ -3438,7 +3436,7 @@ msgstr ""
 #: src/admin_site/mixins.py templates/modeladmin/create.html
 #: templates/modeladmin/edit.html
 msgid "Save and continue editing"
-msgstr ""
+msgstr "Speichern und weiter bearbeiten"
 
 #: src/admin_site/models.py
 msgid "Only allow password login"
@@ -3561,7 +3559,7 @@ msgstr ""
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #, python-format
 msgid "%(time_period)s ago"
-msgstr ""
+msgstr "vor %(time_period)s"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -3664,7 +3662,7 @@ msgstr ""
 
 #: src/admin_site/wagtail.py
 msgid "View live"
-msgstr ""
+msgstr "Live ansehen"
 
 #: src/admin_site/wagtail.py
 #, python-format
@@ -3698,7 +3696,7 @@ msgstr ""
 
 #: src/aplans/graphql_types.py
 msgid "Approved"
-msgstr ""
+msgstr "Genehmigt"
 
 #: src/aplans/graphql_types.py
 msgid "Draft"
@@ -3903,13 +3901,11 @@ msgstr ""
 
 #: src/audit_logging/templates/site_history_results.html
 msgid "Date / Time"
-msgstr ""
+msgstr "Datum / Uhrzeit"
 
 #: src/audit_logging/templates/site_history_results.html
-#, fuzzy
-#| msgid "Edit this quantity"
 msgid "Edit this item"
-msgstr "Bearbeite diese Grösse"
+msgstr "Bearbeite dieses Element"
 
 #: src/audit_logging/views.py
 #, fuzzy
@@ -3957,7 +3953,7 @@ msgstr ""
 
 #: src/content/models.py
 msgid "Task"
-msgstr ""
+msgstr "Aufgabe"
 
 #: src/content/models.py
 msgid "Milestone"
@@ -3965,7 +3961,7 @@ msgstr ""
 
 #: src/content/models.py
 msgid "Tasks"
-msgstr ""
+msgstr "Aufgaben"
 
 #: src/content/models.py
 msgid "Milestones"
@@ -4180,7 +4176,7 @@ msgstr ""
 
 #: src/documents/models.py
 msgid "uploaded by user"
-msgstr ""
+msgstr "hochgeladen von Benutzer"
 
 #: src/documents/models.py
 msgid "document"
@@ -4208,7 +4204,7 @@ msgstr ""
 
 #: src/feedback/models.py
 msgid "latest revision"
-msgstr ""
+msgstr "letzte Überarbeitung"
 
 #: src/feedback/models.py
 msgid "is processed"
@@ -4330,7 +4326,7 @@ msgstr ""
 
 #: src/images/models.py
 msgid "Alt text"
-msgstr ""
+msgstr "Alt-Text"
 
 #: src/images/models.py
 msgid "images"
@@ -5431,7 +5427,7 @@ msgstr "Massnahmenstatusaktualisierung"
 
 #: src/notifications/apps.py src/notifications/wagtail_admin.py
 msgid "Notifications"
-msgstr ""
+msgstr "Benachrichtigungen"
 
 #: src/notifications/forms.py
 #, python-format
@@ -5826,7 +5822,7 @@ msgstr ""
 
 #: src/orgs/chooser.py
 msgid "Search"
-msgstr ""
+msgstr "Suche"
 
 #: src/orgs/chooser.py
 msgid "Choose an organization"
@@ -6663,7 +6659,7 @@ msgstr ""
 
 #: src/people/wagtail_admin.py
 msgid "last login"
-msgstr ""
+msgstr "letzte Anmeldung"
 
 #: src/people/wagtail_admin.py
 msgid "contact for indicators"
@@ -7103,15 +7099,15 @@ msgstr "Den Plan ausserdem intern machen, sodass ihn überall nur angemeldete Be
 
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Yes, unpublish"
-msgstr ""
+msgstr "Ja, zurückziehen"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
-msgstr ""
+msgstr "Wird gespeichert…"
 
 #: templates/modeladmin/create.html
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 #, fuzzy
 #~| msgid "action status"
