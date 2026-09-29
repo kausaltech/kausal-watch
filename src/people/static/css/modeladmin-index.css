@@ -12,3 +12,24 @@
 .warning-row:hover {
   background-color: var(--w-color-warning-50) !important;
 }
+
+.person-role {
+  margin: 0 0.25em 0.25em 0;
+  white-space: nowrap;
+}
+.person-role--plan_admin {
+  background-color: var(--w-color-primary);
+  color: var(--w-color-white);
+}
+.person-role--organization_admin {
+  background-color: var(--w-color-info-100);
+  color: var(--w-color-white);
+}
+.person-role--contact_person {
+  background-color: var(--w-color-positive-100);
+  color: var(--w-color-white);
+}
+.person-role--viewer {
+  background-color: var(--w-color-grey-100);
+  color: var(--w-color-grey-600);
+}

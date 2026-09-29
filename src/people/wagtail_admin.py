@@ -12,12 +12,12 @@ from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
-from django.db.models import Case, F, ManyToManyField, OneToOneRel, Prefetch, Q, When
+from django.db.models import Exists, F, ManyToManyField, OneToOneRel, OuterRef, Prefetch, Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.forms import BooleanField, ChoiceField, ModelMultipleChoiceField
 from django.urls import re_path
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 
@@ -31,7 +31,7 @@ from kausal_common.users import user_or_bust
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import naturaltime
 
-from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
+from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan, PlanPublicSiteViewer
 from actions.perms import get_people_with_login_rights
 from admin_site.utils import admin_req
 from admin_site.wagtail import (
@@ -46,6 +46,7 @@ from admin_site.wagtail import (
     PlanContextModelAdminPermissionHelper,
     get_translation_tabs,
 )
+from indicators.models import IndicatorContactPerson
 from orgs.models import Organization, OrganizationPlanAdmin
 
 from .models import Person
@@ -61,8 +62,38 @@ if typing.TYPE_CHECKING:
 
     from users.models import User
 
+    from .models import PersonQuerySet
+
 
 logger = logging.getLogger(__name__)
+
+
+class PersonRole(models.TextChoices):
+    PLAN_ADMIN = 'plan_admin', _('Plan admin')
+    ORGANIZATION_ADMIN = 'organization_admin', _('Organization admin')
+    CONTACT_PERSON = 'contact_person', _('Contact person')
+    VIEWER = 'viewer', _('Viewer')
+
+
+# The queryset annotation that tells whether a listed person holds the role in the active plan
+PERSON_ROLE_ANNOTATIONS: dict[PersonRole, str] = {
+    PersonRole.PLAN_ADMIN: 'is_plan_admin',
+    PersonRole.ORGANIZATION_ADMIN: 'is_organization_admin',
+    PersonRole.CONTACT_PERSON: 'is_contact_person',
+    PersonRole.VIEWER: 'is_viewer',
+}
+
+
+def annotate_person_roles(qs: PersonQuerySet, plan: Plan) -> PersonQuerySet:
+    person = OuterRef('pk')
+    is_action_contact = Exists(ActionContactPerson.objects.filter(action__plan=plan, person=person))
+    is_indicator_contact = Exists(IndicatorContactPerson.objects.filter(indicator__in=plan.indicators.all(), person=person))
+    return qs.annotate(
+        is_plan_admin=Exists(GeneralPlanAdmin.objects.filter(plan=plan, person=person)),
+        is_organization_admin=Exists(OrganizationPlanAdmin.objects.filter(plan=plan, person=person)),
+        is_contact_person=Q(is_action_contact) | Q(is_indicator_contact),
+        is_viewer=Exists(PlanPublicSiteViewer.objects.filter(plan=plan, person=person)),
+    )
 
 
 class IsContactPersonFilter(SimpleListFilter):
@@ -94,12 +125,6 @@ class IsContactPersonFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         user = cast('User', request.user)
         plan = user.get_active_admin_plan()
-        queryset = queryset.prefetch_related(
-            Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions'),
-        )
-        queryset = queryset.prefetch_related(
-            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators'),
-        )
         val = self.value()
         if val is None:
             return queryset
@@ -452,14 +477,11 @@ class PersonAdmin(AplansModelAdmin[Person]):
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
         qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
-        if user.is_general_admin_for_plan(plan):
-            qs = qs.annotate(
-                is_plan_admin=Case(
-                    When(id__in=plan.general_admins.all(), then=True),
-                    default=False,
-                )
-            )
-        return qs
+        qs = qs.prefetch_related(
+            Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions'),
+            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators'),
+        )
+        return annotate_person_roles(qs, plan)
 
     def get_empty_value_display(self, field=None):
         if getattr(field, '_name', field) == 'last_logged_in':
@@ -548,7 +570,22 @@ class PersonAdmin(AplansModelAdmin[Person]):
             org = orgs_by_id.get(org_id, obj.organization)
             return org.get_fully_qualified_name(orgs_by_path=orgs_by_path)
 
-        fields: list[_DisplayT[Person]] = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
+        @admin.display(description=_('Role'), ordering='-is_plan_admin')
+        def role(obj: Person) -> str:
+            roles = [r for r, annotation in PERSON_ROLE_ANNOTATIONS.items() if getattr(obj, annotation)]
+            return format_html_join(
+                '', '<span class="w-status person-role person-role--{}">{}</span>', ((r.value, r.label) for r in roles)
+            )
+
+        fields: list[_DisplayT[Person]] = [
+            avatar,
+            cannot_access_admin_warning,
+            first_name,
+            last_name,
+            'title',
+            organization,
+            role,
+        ]
         # fields = [avatar, first_name, last_name, 'title', organization]
 
         @admin.display(description=_('last login'), ordering='user__last_login')
@@ -565,14 +602,6 @@ class PersonAdmin(AplansModelAdmin[Person]):
         setattr(last_logged_in, '_name', 'last_logged_in')  # noqa: B010
 
         if user.is_general_admin_for_plan(plan):
-
-            @admin.display(description=_('Is plan admin'), ordering='-is_plan_admin', boolean=True)
-            def is_plan_admin(obj: Person) -> bool:
-                return obj.is_plan_admin  # type: ignore[attr-defined]
-
-            setattr(is_plan_admin, '_name', 'is_plan_admin')  # noqa: B010
-            fields.append(is_plan_admin)
-
             fields.append(last_logged_in)  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
             fields.append('participated_in_training')
 
