@@ -13,7 +13,7 @@ test.describe('Test people', () => {
     await expect(page.getByRole('columnheader', { name: 'Last name' })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Title' })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Organization' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Is plan admin' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Role', exact: true })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Participated in training' })).toBeVisible();
     await expect(page.locator('header').getByRole('link', { name: 'Add person' })).toBeVisible();
     await expect(page.getByText('Test User')).toBeVisible();
@@ -33,22 +33,21 @@ test.describe('Test people', () => {
     await expect(page.getByText('Test User')).toBeVisible();
   });
 
-  test('Filter contact persons', async ({ page }) => {
+  test('Filter by role', async ({ page }) => {
     test.setTimeout(40000);
     await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Filter' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'For an action' })).toBeVisible();
-    await page.getByRole('link', { name: 'For an action' }).click();
-    await expect(page.getByText('Test User')).toBeHidden();
-    await page.getByRole('link', { name: 'For same actions or indicators as me' }).click();
-    await expect(page.getByText('Test User')).toBeHidden();
-    await page.getByRole('link', { name: 'For an indicator' }).click();
-    await expect(page.getByText('Test User')).toBeHidden();
-    await page.getByRole('link', { name: 'Not a contact person' }).click();
+    const filters = page.locator('.changelist-filter');
+    // The test user has no role in the test plan
+    for (const role of ['Plan admin', 'Organization admin', 'Contact person', 'Viewer']) {
+      await filters.getByRole('link', { name: role, exact: true }).click();
+      await expect(page.getByText('Test User')).toBeHidden();
+    }
+    await filters.getByRole('link', { name: 'No role', exact: true }).click();
     await expect(page.getByText('Test User')).toBeVisible();
-    await page.getByRole('link', { name: 'All', exact: true }).click();
+    await filters.getByRole('link', { name: 'All', exact: true }).click();
     await expect(page.getByText('Test User')).toBeVisible();
   });
 });
