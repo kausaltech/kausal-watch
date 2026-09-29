@@ -8,6 +8,9 @@
             <p>{{ paragraph|e }}</p>
             {% endfor %}
         </mj-text>
+        {% if button %}
+        <mj-button align="left" href="{{ button.url }}">{{ button.label|e }}</mj-button>
+        {% endif %}
     </mj-column>
 </mj-section>
 

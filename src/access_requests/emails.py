@@ -7,7 +7,7 @@ right away when an email could not be delivered.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
@@ -64,10 +64,16 @@ def make_set_password_url(req: AccessRequest) -> str | None:
     return f'{settings.ADMIN_BASE_URL}{reverse("access_requests_set_password", kwargs=kwargs)}'
 
 
+class _Button(TypedDict):
+    label: str
+    url: str
+
+
 class _Content(TypedDict):
     subject: str
     heading: str
     paragraphs: list[str]
+    button: NotRequired[_Button]
 
 
 def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
@@ -76,7 +82,7 @@ def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
         sign_in = _('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url}
     else:
         sign_in = _('You can sign in with this email address.')
-    return {
+    content: _Content = {
         'subject': _('Your access to %(plan_name)s has been approved') % {'plan_name': plan_name},
         'heading': _('Your access has been approved'),
         'paragraphs': [
@@ -84,6 +90,15 @@ def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
             sign_in,
         ],
     }
+    set_password_url = make_set_password_url(req)
+    if set_password_url is None:
+        return content
+    days = int(settings.PASSWORD_RESET_TIMEOUT / (60 * 60 * 24))
+    content['paragraphs'].append(
+        _('First, set your password with the link below. The link works once and expires in %(days)s days.') % {'days': days}
+    )
+    content['button'] = {'label': _('Set your password'), 'url': set_password_url}
+    return content
 
 
 def _rejected_content(req: AccessRequest, plan_name: str) -> _Content:
@@ -124,7 +139,9 @@ def _build_message(req: AccessRequest) -> EmailMessage:
     footer = _('You are receiving this email because an access request was made for this address on %(plan_name)s.') % {
         'plan_name': plan_name
     }
-    plain_body = '\n\n'.join([_('Hi,'), *content['paragraphs'], '—', footer, _('Powered by Kausal Watch')])
+    button = content.get('button')
+    button_lines = [f'{button["label"]}: {button["url"]}'] if button else []
+    plain_body = '\n\n'.join([_('Hi,'), *content['paragraphs'], *button_lines, '—', footer, _('Powered by Kausal Watch')])
 
     base_template = getattr(plan, 'notification_base_template', None)
     if base_template is None:
@@ -134,6 +151,7 @@ def _build_message(req: AccessRequest) -> EmailMessage:
         'title': content['heading'],
         'site': _site_context(plan),
         'paragraphs': content['paragraphs'],
+        'button': button,
         'footer': footer,
         'content_blocks': {},
         **base_template.get_notification_context(),
