@@ -9,8 +9,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypedDict
 
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.urls import reverse
 from django.utils import translation
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext as _
 
 import sentry_sdk
@@ -24,8 +29,39 @@ from .models import AccessRequest
 
 if TYPE_CHECKING:
     from actions.models import Plan
+    from users.models import User
 
 logger = logger.bind(name='access_requests.emails')
+
+
+def may_set_password(req: AccessRequest, user: User | None) -> bool:
+    """
+    Tell whether `user` may set their password through the approval of `req`.
+
+    Nobody who signs in some other way may: an SSO user has no usable password, and someone who
+    has signed in before already has their credentials and did not ask for a reset. The plan must
+    have a site to send them to afterwards.
+    """
+    if req.status != AccessRequest.Status.APPROVED or req.person is None or not req.plan.site_url:
+        return False
+    if user is None or req.person.user != user:
+        return False
+    if not user.is_active or user.is_superuser:
+        return False
+    return user.has_usable_password() and user.last_login is None
+
+
+def make_set_password_url(req: AccessRequest) -> str | None:
+    """Return a one-time link for the approved requester to set their password, if they may."""
+    user = req.person.user if req.person is not None else None
+    if user is None or not may_set_password(req, user):
+        return None
+    kwargs = {
+        'pk': req.pk,
+        'uidb64': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': default_token_generator.make_token(user),
+    }
+    return f'{settings.ADMIN_BASE_URL}{reverse("access_requests_set_password", kwargs=kwargs)}'
 
 
 class _Content(TypedDict):
