@@ -1,10 +1,35 @@
 {% load i18n wagtailadmin_tags %}
+<style>
+    .access-requests-panel h2 .w-status--label {
+        font-size: 0.8rem;
+        vertical-align: middle;
+    }
+    .access-requests-panel .w-status--muted {
+        background: var(--w-color-surface-page);
+        border-color: var(--w-color-text-meta);
+        color: var(--w-color-text-meta);
+    }
+    .access-requests-panel .access-requests-panel__rejected-at {
+        font-size: 0.8em;
+        color: var(--w-color-text-meta);
+    }
+    .access-requests-panel .listing tbody,
+    .access-requests-panel .listing tbody tr {
+        border-style: solid;
+    }
+    .access-requests-panel .access-requests-panel__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+</style>
+
 <div class="panel access-requests-panel">
     <section>
         <h2>
             {% trans "Access requests" %}
             {% if waiting_count %}
-                <span class="w-status w-status--primary">{% blocktrans count counter=waiting_count %}{{ counter }} waiting{% plural %}{{ counter }} waiting{% endblocktrans %}</span>
+                <span class="w-status w-status--label w-status--muted">{% blocktrans count counter=waiting_count %}{{ counter }} waiting{% plural %}{{ counter }} waiting{% endblocktrans %}</span>
             {% endif %}
         </h2>
         <p class="help">
@@ -32,7 +57,7 @@
                                 {% if req.previously_rejected_at %}
                                     <div>
                                         <span class="w-status w-status--label">{% trans "Requested again" %}</span>
-                                        <span class="help">{% blocktrans with date=req.previously_rejected_at|date:"SHORT_DATE_FORMAT" %}Previously rejected {{ date }}{% endblocktrans %}</span>
+                                        <span class="access-requests-panel__rejected-at">{% blocktrans with date=req.previously_rejected_at|date:"SHORT_DATE_FORMAT" %}Previously rejected {{ date }}{% endblocktrans %}</span>
                                     </div>
                                 {% endif %}
                             </td>
@@ -40,14 +65,16 @@
                                 <div class="human-readable-date" title="{{ req.created_at|date:"DATETIME_FORMAT" }}">{% blocktrans with time_period=req.created_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div>
                             </td>
                             <td>
-                                <form method="post" action="{% url 'access_requests_approve' req.pk %}" style="display: inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="button button-small">{% trans "Approve" %}</button>
-                                </form>
-                                {% trans "Reject" as reject_label %}
-                                {% with pk_str=req.pk|stringformat:"s" %}
-                                    {% dialog_toggle dialog_id="reject-access-request-"|add:pk_str classname="button button-small button-secondary" text=reject_label %}
-                                {% endwith %}
+                                <div class="access-requests-panel__actions">
+                                    <form method="post" action="{% url 'access_requests_approve' req.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="button button-small">{% trans "Approve" %}</button>
+                                    </form>
+                                    {% trans "Reject" as reject_label %}
+                                    {% with pk_str=req.pk|stringformat:"s" %}
+                                        {% dialog_toggle dialog_id="reject-access-request-"|add:pk_str classname="button button-small button-secondary" text=reject_label %}
+                                    {% endwith %}
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
