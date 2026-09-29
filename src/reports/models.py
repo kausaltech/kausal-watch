@@ -58,6 +58,20 @@ class ActionListPageNotFoundError(Exception):
         super().__init__(f'Plan {plan.identifier!r} has no live, public ActionListPage')
 
 
+def _attribute_type_visible_in_full_export(attribute_type: AttributeType, user: UserOrAnon, plan: Plan) -> bool:
+    visible_for = attribute_type.instances_visible_for
+    VisibleFor = AttributeType.VisibleFor
+    if visible_for == VisibleFor.PUBLIC:
+        return True
+    if not user.is_authenticated:
+        return False
+    if visible_for == VisibleFor.AUTHENTICATED:
+        return True
+    # Contact-person and moderator visibility depends on the action, and the export has no per-cell
+    # filtering, so these columns are only included for plan admins, who see them for every action.
+    return user.is_general_admin_for_plan(plan)
+
+
 @reversion.register()
 class ReportType(PlanRelatedModelWithRevision):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
@@ -115,14 +129,44 @@ class ReportType(PlanRelatedModelWithRevision):
             # (Now they are default fields, always included in reports)
             if f not in ['identifier', 'name']
         ]
+        report_type._set_transient_fields(stream_data)
+        return report_type
 
+    @staticmethod
+    def generate_for_plan_all_fields(plan: Plan, user: UserOrAnon) -> ReportType:
+        """
+        Build a transient report type with every report field of the plan's actions.
+
+        Attribute types are limited to those whose values the user may see for all actions.
+        """
+        report_type = ReportType(plan=plan, name='Full export', fields=None)
         assert report_type.fields is not None
-        report_type.fields = StreamValue(
-            stream_block=report_type.fields.stream_block,
+        attribute_types = [
+            at for at in AttributeType.objects.for_actions(plan) if _attribute_type_visible_in_full_export(at, user, plan)
+        ]
+        category_types = plan.category_types.filter(usable_for_actions=True)
+
+        stream_data: list[dict] = []
+        for field_id in report_type.fields.stream_block.child_blocks:
+            if field_id == 'attribute':
+                stream_data.extend({'type': field_id, 'value': {'attribute_type': at.pk}} for at in attribute_types)
+            elif field_id == 'categories':
+                stream_data.extend(
+                    {'type': field_id, 'value': {'category_type': ct.pk, 'category_level': None}} for ct in category_types
+                )
+            else:
+                block = action_registry.get_block(FieldBlockContext.REPORT, field_id)
+                stream_data.append({'type': field_id, 'value': block.get_default()})
+        report_type._set_transient_fields(stream_data)
+        return report_type
+
+    def _set_transient_fields(self, stream_data: list[dict]) -> None:
+        assert self.fields is not None
+        self.fields = StreamValue(
+            stream_block=self.fields.stream_block,
             stream_data=stream_data,
             is_lazy=True,
         )
-        return report_type
 
     def generate_incomplete_report(self) -> Report:
         return Report(
