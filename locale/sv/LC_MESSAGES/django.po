@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 14:30+0300\n"
+"POT-Creation-Date: 2026-09-30 11:50+0300\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -20,6 +20,281 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.15.1\n"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
+msgstr "Du kan logga in på %(plan_url)s med den här e-postadressen."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your access to %(plan_name)s has been approved"
+msgstr "Din åtkomst till %(plan_name)s har godkänts"
+
+#: src/access_requests/emails.py
+msgid "Your access has been approved"
+msgstr "Din åtkomst har godkänts"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has been approved."
+msgstr "Din begäran om att få se %(plan_name)s har godkänts."
+
+#: src/access_requests/emails.py
+msgid "Sign in"
+msgstr "Logga in"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "First, set your password with the link below. The link works once and expires in %(days)s days."
+msgstr "Ange först ditt lösenord via länken nedan. Länken fungerar en gång och upphör att gälla om %(days)s dagar."
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Set your password"
+msgstr "Ange ditt lösenord"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has not been approved."
+msgstr "Din begäran om att få se %(plan_name)s har inte godkänts."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "If you think this is a mistake, or you need access for your work, please contact %(email)s."
+msgstr "Om du tror att detta är ett misstag, eller om du behöver åtkomst för ditt arbete, kontakta %(email)s."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to access %(plan_name)s"
+msgstr "Din begäran om åtkomst till %(plan_name)s"
+
+#: src/access_requests/emails.py
+msgid "Your request was not approved"
+msgstr "Din begäran godkändes inte"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You are receiving this email because an access request was made for this address on %(plan_name)s."
+msgstr "Du får det här e-postmeddelandet eftersom en begäran om åtkomst gjordes för den här adressen på %(plan_name)s."
+
+#: src/access_requests/emails.py
+msgid "Hi,"
+msgstr "Hej,"
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+#: src/actions/public_user_auth.py
+msgid "Powered by Kausal Watch"
+msgstr "Drivs av Kausal Watch"
+
+#: src/access_requests/models.py
+msgid "Pending"
+msgstr "Väntande"
+
+#: src/access_requests/models.py src/aplans/graphql_types.py
+msgid "Approved"
+msgstr "Godkänd"
+
+#: src/access_requests/models.py
+msgid "Rejected"
+msgstr "Avvisad"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/actions/models/pledge.py
+#: src/content/models.py src/feedback/models.py
+#: src/indicators/models/indicator.py src/notifications/models.py
+#: src/orgs/models.py src/pages/models.py
+msgid "plan"
+msgstr "planen"
+
+#: src/access_requests/models.py src/feedback/models.py
+#: src/people/wagtail_admin.py src/users/models.py
+msgid "email address"
+msgstr "e-postadress"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "first name"
+msgstr "förnamn"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "last name"
+msgstr "efternamn"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/reports/spreadsheets/excel_report.py
+msgid "status"
+msgstr "status"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/pledge.py src/actions/models/public_user.py
+#: src/admin_site/models.py src/aplans/utils.py src/feedback/models.py
+msgid "created at"
+msgstr "skapad vid"
+
+#: src/access_requests/models.py
+msgid "decided at"
+msgstr "beslutad vid"
+
+#: src/access_requests/models.py
+msgid "decided by"
+msgstr "beslutad av"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/indicators/models/contact_persons.py
+#: src/orgs/models.py
+msgid "person"
+msgstr "person"
+
+#: src/access_requests/models.py
+msgid "access request"
+msgstr "åtkomstbegäran"
+
+#: src/access_requests/models.py
+msgid "access requests"
+msgstr "åtkomstbegäranden"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Access requests"
+msgstr "Åtkomstbegäranden"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "%(counter)s waiting"
+msgid_plural "%(counter)s waiting"
+msgstr[0] "%(counter)s väntar"
+msgstr[1] "%(counter)s väntar"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "People who have asked to view this plan. Approving sends them an email. Approved users will not have access to the admin interface."
+msgstr "Personer som har bett om att få se den här planen. Ett godkännande skickar ett e-postmeddelande till dem. Godkända användare får inte tillgång till administrationsgränssnittet."
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/pledge_participants_admin.py
+#: src/admin_site/templates/admin_site/pledge_participants_panel.html
+msgid "Email"
+msgstr "E-post"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Requested"
+msgstr "Begärd"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/wagtail_hooks.py
+#: src/people/templates/people/person_actions_menu.html
+#: src/people/wagtail_admin.py templates/modeladmin/create.html
+msgid "Actions"
+msgstr "Åtgärder"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Requested again"
+msgstr "Begärd igen"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Previously rejected %(date)s"
+msgstr "Tidigare avvisad %(date)s"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s sedan"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/models/action.py
+msgid "Approve"
+msgstr "Godkänn"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject"
+msgstr "Avvisa"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject access request?"
+msgstr "Avvisa åtkomstbegäran?"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "%(email)s will receive an email saying their request has been rejected, with details of who to contact for more information."
+msgstr "%(email)s får ett e-postmeddelande om att begäran har avvisats, med uppgifter om vem man kan kontakta för mer information."
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "If they request access again, their request will appear in this list marked \"Requested again\"."
+msgstr "Om personen begär åtkomst igen visas begäran i den här listan märkt ”Begärd igen”."
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/templates/actions/bulk_approve.html
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject request"
+msgstr "Avvisa begäran"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Access request pages"
+msgstr "Sidor med åtkomstbegäranden"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Previous"
+msgstr "Föregående"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Page %(page)s of %(num_pages)s"
+msgstr "Sida %(page)s av %(num_pages)s"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Next"
+msgstr "Nästa"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "No access requests waiting. New requests will appear here, and you'll receive an email when they arrive."
+msgstr "Inga åtkomstbegäranden väntar. Nya begäranden visas här, och du får ett e-postmeddelande när de kommer in."
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Invalid link"
+msgstr "Ogiltig länk"
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Set password"
+msgstr "Ange lösenord"
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "This link is invalid or has expired, or it has already been used."
+msgstr "Länken är ogiltig, har upphört att gälla eller har redan använts."
+
+#: src/access_requests/templates/access_requests/set_password.html
+#, python-format
+msgid "You can still sign in at <a href=\"%(url)s\">%(url)s</a>. If you do not know your password, use the \"forgot password\" option on the sign-in page."
+msgstr "Du kan fortfarande logga in på <a href=\"%(url)s\">%(url)s</a>. Om du inte vet ditt lösenord kan du använda alternativet ”Glömt lösenord” på inloggningssidan."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "The access request from %(email)s was already handled."
+msgstr "Åtkomstbegäran från %(email)s har redan hanterats."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s. They have been notified by email."
+msgstr "Åtkomst godkänd för %(email)s. Personen har meddelats via e-post."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s, but the email to them could not be sent."
+msgstr "Åtkomst godkänd för %(email)s, men e-postmeddelandet till personen kunde inte skickas."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected. They have been notified by email."
+msgstr "Åtkomstbegäran från %(email)s avvisad. Personen har meddelats via e-post."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected, but the email to them could not be sent."
+msgstr "Åtkomstbegäran från %(email)s avvisad, men e-postmeddelandet till personen kunde inte skickas."
 
 #: src/actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -450,7 +725,7 @@ msgstr "Rubrik"
 
 #: src/actions/blocks/__init__.py
 msgid "Leave empty to fall back to the parent plan's name, or to this plan's own short name."
-msgstr ""
+msgstr "Lämna tomt för att använda den överordnade planens namn eller den här planens eget korta namn."
 
 #: src/actions/blocks/__init__.py
 msgid "Related plans"
@@ -848,30 +1123,27 @@ msgid "Paths outcome"
 msgstr "Paths-utfall"
 
 #: src/actions/bulk_approve.py src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "Resubmit for moderation"
 msgid "Release actions from moderation"
-msgstr "Skicka på nytt för moderering"
+msgstr "Släpp åtgärder från moderering"
 
 #: src/actions/bulk_approve.py
 msgid "No releasable actions were selected."
-msgstr ""
+msgstr "Inga åtgärder som kan släppas valdes."
 
 #: src/actions/bulk_approve.py
-#, fuzzy, python-format
-#| msgid "Related actions"
+#, python-format
 msgid "Released %(count)d actions."
-msgstr "Relaterade åtgärder"
+msgstr "%(count)d åtgärder släpptes."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions skipped (no permission)."
-msgstr ""
+msgstr "%(count)d åtgärder hoppades över (behörighet saknas)."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions failed to release; see logs for details."
-msgstr ""
+msgstr "%(count)d åtgärder kunde inte släppas; se loggarna för detaljer."
 
 #: src/actions/category_admin.py
 msgid "Common category type"
@@ -989,13 +1261,6 @@ msgstr "Planering"
 msgid "Implementation"
 msgstr "Genomförande"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/actions/models/pledge.py src/content/models.py src/feedback/models.py
-#: src/indicators/models/indicator.py src/notifications/models.py
-#: src/orgs/models.py src/pages/models.py
-msgid "plan"
-msgstr "planen"
-
 #: src/actions/models/action.py
 msgid "primary organization"
 msgstr "primär organisation"
@@ -1059,10 +1324,6 @@ msgstr "interna anteckningar för planadministratörer"
 #: src/actions/models/action.py src/indicators/models/indicator.py
 msgid "internal notes"
 msgstr "interna anteckningar"
-
-#: src/actions/models/action.py src/reports/spreadsheets/excel_report.py
-msgid "status"
-msgstr "status"
 
 #: src/actions/models/action.py
 msgid "implementation phase"
@@ -1287,11 +1548,6 @@ msgstr "Redaktör"
 msgid "Moderator"
 msgstr "Moderator"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/indicators/models/contact_persons.py src/orgs/models.py
-msgid "person"
-msgstr "person"
-
 #: src/actions/models/action.py
 msgid "primary contact person"
 msgstr "primär kontaktperson"
@@ -1364,7 +1620,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "förfallodatum"
 
@@ -1392,12 +1648,6 @@ msgstr "Datumet då uppgiften slutfördes"
 msgid "completed by"
 msgstr "fullgjord av"
 
-#: src/actions/models/action.py src/actions/models/pledge.py
-#: src/actions/models/public_user.py src/admin_site/models.py
-#: src/aplans/utils.py src/feedback/models.py
-msgid "created at"
-msgstr "skapad vid"
-
 #: src/actions/models/action.py
 msgid "modified at"
 msgstr "modifierad kl"
@@ -1416,28 +1666,20 @@ msgid "action tasks"
 msgstr "åtgärdsuppgifter"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible party"
 msgid "action task responsible party"
-msgstr "åtgärdsansvarig part"
+msgstr "ansvarig part för åtgärdsuppgift"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible parties"
 msgid "action task responsible parties"
-msgstr "åtgärdsansvariga parter"
+msgstr "ansvariga parter för åtgärdsuppgift"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact person"
 msgid "action task contact person"
-msgstr "åtgärdskontaktperson"
+msgstr "kontaktperson för åtgärdsuppgift"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact persons"
 msgid "action task contact persons"
-msgstr "åtgärder kontaktpersoner"
+msgstr "kontaktpersoner för åtgärdsuppgift"
 
 #: src/actions/models/action.py
 msgid "action impact class"
@@ -1546,10 +1788,6 @@ msgstr "påverkan på gruppåtgärder"
 #: src/actions/models/action.py
 msgid "impact group actions"
 msgstr "påverkan på gruppåtgärder"
-
-#: src/actions/models/action.py
-msgid "Approve"
-msgstr "Godkänn"
 
 #: src/actions/models/action.py
 msgid "Request changes"
@@ -2054,6 +2292,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr "Aktivera funktioner för medborgarengagemang, till exempel löften, för denna plan."
 
 #: src/actions/models/features.py
+msgid "Enable access requests"
+msgstr "Aktivera åtkomstbegäranden"
+
+#: src/actions/models/features.py
+msgid "Let visitors of an internal plan ask for access to its public site. Plan admins approve or reject the requests."
+msgstr "Låt besökare av en intern plan be om åtkomst till dess offentliga webbplats. Planadministratörer godkänner eller avvisar begärandena."
+
+#: src/actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
 msgstr "Aktivera PDF-export av åtgärder i det publika användargränssnittet"
 
@@ -2063,27 +2309,27 @@ msgstr "Låt användare av det publika användargränssnittet exportera åtgärd
 
 #: src/actions/models/features.py
 msgid "Hide published plan from search engines"
-msgstr ""
+msgstr "Dölj publicerad plan för sökmotorer"
 
 #: src/actions/models/features.py
 msgid "If set, the public production site of a published plan will instruct search engines not to index any of its pages. Unpublished plans and preview sites are always excluded from indexing regardless of this setting."
-msgstr ""
+msgstr "Om vald instruerar den offentliga produktionswebbplatsen för en publicerad plan sökmotorer att inte indexera någon av dess sidor. Opublicerade planer och förhandsgranskningswebbplatser undantas alltid från indexering oavsett denna inställning."
 
 #: src/actions/models/features.py
 msgid "Assign responsible parties and contact persons to tasks"
-msgstr ""
+msgstr "Tilldela uppgifter ansvariga parter och kontaktpersoner"
 
 #: src/actions/models/features.py
 msgid "Should the organizations and people responsible for an individual task be recorded? Off by default; the assignments are hidden everywhere while it is off, including in plans that already have some."
-msgstr ""
+msgstr "Ska de organisationer och personer som ansvarar för en enskild uppgift registreras? Avstängt som standard; när det är avstängt döljs tilldelningarna överallt, även i planer som redan har sådana."
 
 #: src/actions/models/features.py
 msgid "Present the parent-child plans as peers"
-msgstr ""
+msgstr "Presentera över- och underordnade planer som jämlika"
 
 #: src/actions/models/features.py
 msgid "If this is a parent plan, consider it one more peer among related plans and show it in selectors. If this is a child plan, consider its parent as one more peer among related plans and show it in selectors. Should be enabled both in parent and child plans when the parent is not considered an umbrella plan."
-msgstr ""
+msgstr "Om detta är en överordnad plan betraktas den som ytterligare en jämlik plan bland de relaterade planerna och visas i väljare. Om detta är en underordnad plan betraktas dess överordnade plan som ytterligare en jämlik plan bland de relaterade planerna och visas i väljare. Bör aktiveras i både överordnade och underordnade planer när den överordnade planen inte betraktas som en paraplyplan."
 
 #: src/actions/models/features.py
 msgid "plan feature"
@@ -2094,10 +2340,8 @@ msgid "plan features"
 msgstr "plan funktion"
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Enable community engagement features such as pledges for this plan."
 msgid "Community engagement requires a primary client to be set on the plan."
-msgstr "Aktivera funktioner för medborgarengagemang, till exempel löften, för denna plan."
+msgstr "Medborgarengagemang kräver att en primär kund har angetts för planen."
 
 #: src/actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
@@ -2220,6 +2464,30 @@ msgid "Link to accessibility statement"
 msgstr "Länk till tillgänglighetsutlåtande"
 
 #: src/actions/models/plan.py
+msgid "Contact email for access requests"
+msgstr "Kontaktadress för åtkomstbegäranden"
+
+#: src/actions/models/plan.py
+msgid "Where people whose access request was not approved can ask for more information."
+msgstr "Dit personer vars åtkomstbegäran inte godkändes kan vända sig för mer information."
+
+#: src/actions/models/plan.py
+msgid "Email domains allowed to request access"
+msgstr "E-postdomäner som får begära åtkomst"
+
+#: src/actions/models/plan.py
+msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
+msgstr "Endast adresser i dessa domäner eller deras underdomäner får begära åtkomst. Separera domäner med kommatecken. Lämna tomt för att tillåta alla adresser."
+
+#: src/actions/models/plan.py
+msgid "Who may be given access"
+msgstr "Vem som kan få åtkomst"
+
+#: src/actions/models/plan.py
+msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr "Visas för personer som begär åtkomst och i e-postmeddelandet som meddelar att deras begäran inte godkändes. Till exempel: ”Åtkomst ges endast till ministeriets personal.”"
+
+#: src/actions/models/plan.py
 msgid "Link to external feedback form"
 msgstr "Länk till formulär för extern feedback"
 
@@ -2320,7 +2588,7 @@ msgstr "Primärspråk får inte väljas"
 
 #: src/actions/models/plan.py src/actions/wagtail_admin.py
 msgid "Only one client can be marked as primary."
-msgstr ""
+msgstr "Endast en kund kan markeras som primär."
 
 #: src/actions/models/plan.py
 msgid "Category type must belong to plan"
@@ -2652,53 +2920,43 @@ msgstr "Opak hemlighet som används som bearer-autentisering efter att användar
 
 #: src/actions/models/public_user.py
 msgid "email"
-msgstr ""
+msgstr "e-post"
 
 #: src/actions/models/public_user.py
 msgid "Set when the user signs up; used for PIN-based authentication."
-msgstr ""
+msgstr "Anges när användaren registrerar sig; används för PIN-baserad autentisering."
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "Client"
 msgid "client"
-msgstr "Kund"
+msgstr "kund"
 
 #: src/actions/models/public_user.py
 msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
-msgstr ""
+msgstr "Kund som detta konto tillhör. Obligatoriskt för registrerade användare; tomt för anonyma användare."
 
 #: src/actions/models/public_user.py
 msgid "terms accepted at"
-msgstr ""
+msgstr "villkor godkända"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "Marked as complete at"
 msgid "marketing consented at"
-msgstr "Markerad som slutförd"
+msgstr "samtycke till marknadsföring givet"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "modified at"
 msgid "email verified at"
-msgstr "modifierad kl"
+msgstr "e-postadress verifierad"
 
 #: src/actions/models/public_user.py
 msgid "public users"
 msgstr "offentliga användare"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempt"
-msgstr "offentliga användare"
+msgstr "inloggningsförsök för offentlig användare"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempts"
-msgstr "offentliga användare"
+msgstr "inloggningsförsök för offentliga användare"
 
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
@@ -2712,15 +2970,11 @@ msgstr "Löfte"
 #: src/actions/wagtail_hooks.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Participants"
-msgstr ""
+msgstr "Deltagare"
 
 #: src/actions/pledge_admin.py
 msgid "Number of commitments"
 msgstr "Antal åtaganden"
-
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Löften"
 
 #: src/actions/pledge_admin.py
 msgid "Export"
@@ -2754,9 +3008,9 @@ msgstr "Datum för åtagande"
 msgid "User ID"
 msgstr "Användar-ID"
 
-#: src/actions/pledge_admin.py
-msgid "Pledge Commitments"
-msgstr "Löftesåtaganden"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Löften"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2771,102 +3025,78 @@ msgid "Community Impact Visualization"
 msgstr "Visualisering av samhällspåverkan"
 
 #: src/actions/pledge_participants_admin.py
-#, fuzzy
-#| msgid "pledge actions"
 msgid "Pledge participants"
-msgstr "löftesåtgärder"
+msgstr "Deltagare i löften"
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
-msgstr ""
+msgstr "Kopiera e-postadresser med samtycke"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Copied"
-msgstr ""
+msgstr "Kopierat"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
-#, fuzzy
-#| msgid "Export pledges as CSV"
 msgid "Export opted-in emails as CSV"
-msgstr "Exportera löften som CSV"
+msgstr "Exportera e-postadresser med samtycke som CSV"
 
 #: src/actions/pledge_participants_admin.py
-#: src/admin_site/templates/admin_site/pledge_participants_panel.html
-msgid "Email"
-msgstr ""
-
-#: src/actions/pledge_participants_admin.py
-#, fuzzy
-#| msgid "pledge commitment"
 msgid "Pledges committed"
-msgstr "löftesåtagande"
+msgstr "Åtagna löften"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Marketing opt-in"
-msgstr ""
+msgstr "Samtycke till marknadsföring"
 
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "%(plan_name)s: Your sign-in code"
-msgstr ""
+msgstr "%(plan_name)s: Din inloggningskod"
 
 #: src/actions/public_user_auth.py
-#, fuzzy, python-format
-#| msgid "A shorter version of the plan name"
+#, python-format
 msgid "This code is for the website “%(plan_name)s”."
-msgstr "En kortare version av planens namn"
+msgstr "Den här koden gäller webbplatsen ”%(plan_name)s”."
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
-msgstr ""
+msgstr "Din inloggningskod"
 
 #: src/actions/public_user_auth.py
 msgid "Here is your sign-in code:"
-msgstr ""
+msgstr "Här är din inloggningskod:"
 
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "Enter this code when prompted. It expires in %(minutes)d minutes."
-msgstr ""
+msgstr "Ange koden när du blir ombedd. Den upphör att gälla om %(minutes)d minuter."
 
 #: src/actions/public_user_auth.py
 msgid "If you didn't request this code, you can ignore this email."
-msgstr ""
-
-#: src/actions/public_user_auth.py
-#, fuzzy
-#| msgid "Exported from Kausal Watch"
-msgid "Powered by Kausal Watch"
-msgstr "Exporterad från Kausal Watch"
+msgstr "Om du inte har begärt den här koden kan du ignorera det här e-postmeddelandet."
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Selected actions will be published and marked as approved, skipping any remaining moderation tasks."
-msgstr ""
+msgstr "Valda åtgärder publiceras och markeras som godkända, och eventuella återstående modereringsuppgifter hoppas över."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "The main organization for the plan"
 msgid "There are no actions currently in moderation for this plan."
-msgstr "Planens huvudorganisation"
+msgstr "Det finns för närvarande inga åtgärder under moderering i den här planen."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "Back to own user"
 msgid "Back to actions"
-msgstr "Tillbaka till egen användare"
+msgstr "Tillbaka till åtgärder"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "in progress"
 msgid "Select all in progress"
-msgstr "pågående"
+msgstr "Välj alla pågående"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Select"
-msgstr ""
+msgstr "Välj"
 
 #: src/actions/templates/actions/bulk_approve.html src/copying/views.py
 #: src/reports/spreadsheets/excel_report.py
@@ -2874,45 +3104,32 @@ msgid "Identifier"
 msgstr "Identifierare"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "Currently used by:"
 msgid "Current task"
-msgstr "Används just nu av:"
+msgstr "Aktuell uppgift"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "updated by"
 msgid "Submitted by"
-msgstr "uppdaterad av"
+msgstr "Inskickad av"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "published at"
 msgid "Submitted at"
-msgstr "publicerad på"
+msgstr "Inskickad"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Needs changes (not releasable)"
-msgstr ""
+msgstr "Kräver ändringar (kan inte släppas)"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually."
-msgstr ""
+msgstr "Dessa åtgärder har tidigare avvisats av en moderator. De kan inte släppas samtidigt utan måste hanteras var för sig."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "send to action contact persons"
 msgid "Send notification emails to contact persons"
-msgstr "skicka till åtgärdskontaktpersoner"
+msgstr "Skicka e-postaviseringar till kontaktpersoner"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Release selected"
-msgstr ""
-
-#: src/actions/templates/actions/bulk_approve.html
-#: templates/aplans/plan_publish_confirmation.html
-msgid "Cancel"
-msgstr "Avbryt"
+msgstr "Släpp valda"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3024,11 +3241,11 @@ msgstr "En plans andra språk får inte vara detsamma som dess primära språk"
 
 #: src/actions/wagtail_admin.py
 msgid "One client must be marked as primary."
-msgstr ""
+msgstr "En kund måste markeras som primär."
 
 #: src/actions/wagtail_admin.py
 msgid "Public-user accounts exist for the current primary client. Contact system administration to migrate them before changing the primary client."
-msgstr ""
+msgstr "Det finns konton för offentliga användare för den nuvarande primära kunden. Kontakta systemadministrationen för att migrera dem innan du byter primär kund."
 
 #: src/actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name for a new one."
@@ -3233,44 +3450,16 @@ msgid "Plan unpublished"
 msgstr "Planen avpublicerad"
 
 #: src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "action task"
 msgid "Skip moderation task"
-msgstr "åtgärd uppgift"
+msgstr "Hoppa över modereringsuppgift"
 
 #: src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "action tasks"
 msgid "Moderation task skipped"
-msgstr "åtgärdsuppgifter"
+msgstr "Modereringsuppgift överhoppad"
 
-#: src/actions/wagtail_hooks.py templates/modeladmin/create.html
-msgid "Actions"
-msgstr "Åtgärder"
-
-#: src/admin_site/api.py
+#: src/admin_site/api.py src/admin_site/login_method.py
 msgid "Invalid email address"
 msgstr "Ogiltig e-postadress"
-
-#: src/admin_site/api.py
-msgid "No user found with this email address. Ask your administrator to create an account for you."
-msgstr "Ingen användare hittades med den här e-postadressen. Be din administratör att skapa ett konto åt dig."
-
-#: src/admin_site/api.py
-msgid "You do not have access to the public site."
-msgstr "Du har inte tillgång till den offentliga webbplatsen."
-
-#: src/admin_site/api.py
-msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr "Du har inte administratörsåtkomst. Din administratör kan behöva tilldela dig en åtgärd eller indikator, eller ge dig status som planadministratör."
-
-#: src/admin_site/api.py
-msgid "Cannot determine authentication method. The email address domain may be unknown."
-msgstr "Kan inte fastställa autentiseringsmetod. Domänen för e-postadressen kan vara okänd."
-
-#: src/admin_site/api.py
-msgid "Password authentication is required, but the user has no password."
-msgstr "Lösenordsautentisering krävs, men användaren har inget lösenord."
 
 #: src/admin_site/apps.py
 msgid "History"
@@ -3278,44 +3467,40 @@ msgstr "Historia"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "The built-in field whose appearance and access rights are customized"
-msgstr ""
+msgstr "Det inbyggda fält vars utseende och åtkomsträttigheter anpassas"
 
 #: src/admin_site/built_in_field_customization_admin.py
 #, python-format
 msgid "%(field)s (no longer customizable)"
-msgstr ""
+msgstr "%(field)s (kan inte längre anpassas)"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "This field cannot be customized."
-msgstr ""
+msgstr "Det här fältet kan inte anpassas."
 
 #: src/admin_site/built_in_field_customization_admin.py
-#, fuzzy
-#| msgid "The organization is already included in the plan"
 msgid "This field is already customized in this plan."
-msgstr "Organisationen är redan inkluderad i planen"
+msgstr "Det här fältet är redan anpassat i den här planen."
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Model"
-msgstr ""
+msgstr "Modell"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Field customizations"
-msgstr ""
+msgstr "Fältanpassningar"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Appearance"
-msgstr ""
+msgstr "Utseende"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Leave empty to use the label and help text that the field has by default. These have no effect on fields that are shown in a tab or panel of their own, such as tasks."
-msgstr ""
+msgstr "Lämna tomt för att använda fältets standardetikett och standardhjälptext. Dessa påverkar inte fält som visas på en egen flik eller panel, till exempel uppgifter."
 
 #: src/admin_site/built_in_field_customization_admin.py
-#, fuzzy
-#| msgid "Accessibility"
 msgid "Access rights"
-msgstr "Tillgänglighet"
+msgstr "Åtkomsträttigheter"
 
 #: src/admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
@@ -3383,6 +3568,26 @@ msgstr "Skriv in lösenord"
 msgid "Enter your email address"
 msgstr "Skriv in din mailadress"
 
+#: src/admin_site/login_method.py
+msgid "No user found with this email address. Ask your administrator to create an account for you."
+msgstr "Ingen användare hittades med den här e-postadressen. Be din administratör att skapa ett konto åt dig."
+
+#: src/admin_site/login_method.py
+msgid "You do not have access to the public site."
+msgstr "Du har inte tillgång till den offentliga webbplatsen."
+
+#: src/admin_site/login_method.py
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr "Du har inte administratörsåtkomst. Din administratör kan behöva tilldela dig en åtgärd eller indikator, eller ge dig status som planadministratör."
+
+#: src/admin_site/login_method.py
+msgid "Cannot determine authentication method. The email address domain may be unknown."
+msgstr "Kan inte fastställa autentiseringsmetod. Domänen för e-postadressen kan vara okänd."
+
+#: src/admin_site/login_method.py
+msgid "Password authentication is required, but the user has no password."
+msgstr "Lösenordsautentisering krävs, men användaren har inget lösenord."
+
 #: src/admin_site/mixins.py templates/modeladmin/create.html
 #: templates/modeladmin/edit.html
 msgid "Save and continue editing"
@@ -3421,14 +3626,12 @@ msgid "Login method that will be used for users that don't have a password set"
 msgstr "Inloggningsmetod som ska användas för användare som inte har ett lösenord"
 
 #: src/admin_site/models.py
-#, fuzzy
-#| msgid "primary language"
 msgid "primary client"
-msgstr "huvudspråk"
+msgstr "primär kund"
 
 #: src/admin_site/models.py
 msgid "The tenant that owns this plan. Used to scope public user identities and staff notifications for pledge sign-ups."
-msgstr ""
+msgstr "Den kund som äger den här planen. Används för att avgränsa offentliga användares identiteter och personalaviseringar om registreringar till löften."
 
 #: src/admin_site/models.py
 msgid "label"
@@ -3436,16 +3639,16 @@ msgstr "etikett"
 
 #: src/admin_site/models.py
 msgid "field customization"
-msgstr ""
+msgstr "fältanpassning"
 
 #: src/admin_site/models.py
 msgid "field customizations"
-msgstr ""
+msgstr "fältanpassningar"
 
 #: src/admin_site/models.py
 #, python-format
 msgid "The model '%(model)s' does not exist any more"
-msgstr ""
+msgstr "Modellen '%(model)s' finns inte längre"
 
 #: src/admin_site/models.py
 #, python-format
@@ -3505,24 +3708,17 @@ msgstr "Redigera denna indikator"
 msgid "Edit data"
 msgstr "Redigera data"
 
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#, python-format
-msgid "%(time_period)s ago"
-msgstr "%(time_period)s sedan"
-
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
-msgstr ""
+msgstr "Samtycke givet"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
-#, fuzzy
-#| msgid "Not started"
 msgid "Not opted in"
-msgstr "Ej påbörjad"
+msgstr "Inget samtycke"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "No participants have committed to this pledge yet."
-msgstr ""
+msgstr "Ingen har ännu anslutit sig till det här löftet."
 
 #: src/admin_site/templates/admin_site/release_impersonation.html
 msgid "Viewing site as another user"
@@ -3635,10 +3831,6 @@ msgstr "Ange ett giltigt värdnamn."
 #: src/aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Fullt kvalificerat värdnamn (FQDN)"
-
-#: src/aplans/graphql_types.py
-msgid "Approved"
-msgstr "Godkänd"
 
 #: src/aplans/graphql_types.py
 msgid "Draft"
@@ -3765,20 +3957,16 @@ msgid "Edit rights"
 msgstr "Redigeringsrättigheter"
 
 #: src/aplans/utils.py
-#, fuzzy
-#| msgid "URL for the owner of the site"
 msgid "A help text shown to visitors of the site"
-msgstr "URL för webbplatsens ägare"
+msgstr "En hjälptext som visas för besökare på webbplatsen"
 
 #: src/aplans/utils.py
-#, fuzzy
-#| msgid "Help text for the field to be shown in the UI"
 msgid "help text for the admin UI"
-msgstr "Hjälptext för fältet som ska visas i användargränssnittet"
+msgstr "hjälptext för administrationsgränssnittet"
 
 #: src/aplans/utils.py
 msgid "If set, these instructions are shown to admin users instead of the help text"
-msgstr ""
+msgstr "Om angivna visas dessa instruktioner för administratörer i stället för hjälptexten"
 
 #: src/aplans/utils.py
 msgid "Contact persons with \"moderator\" role"
@@ -4113,10 +4301,6 @@ msgstr "dokument"
 #: src/feedback/models.py src/indicators/models/action_links.py
 msgid "action"
 msgstr "åtgärd"
-
-#: src/feedback/models.py src/users/models.py
-msgid "email address"
-msgstr "e-postadress"
 
 #: src/feedback/models.py
 msgid "comment"
@@ -5026,10 +5210,8 @@ msgid "indicator values"
 msgstr "indikatorvärden"
 
 #: src/indicators/models/values.py
-#, fuzzy
-#| msgid "There is already a category with this identifier."
 msgid "There is already a value for this date and these categories."
-msgstr "Det finns redan en kategori med denna beteckning."
+msgstr "Det finns redan ett värde för det här datumet och dessa kategorier."
 
 #: src/indicators/models/values.py
 msgid "indicator goal"
@@ -5063,8 +5245,6 @@ msgid "Result"
 msgstr "Resultat"
 
 #: src/indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Namnet på det beräknade värdet (indikatordata × faktor) som visas i diagram, t.ex. \"Fordonsutsläpp\""
 
@@ -5590,14 +5770,21 @@ msgstr "En användare har lämnat feedback."
 
 #: src/notifications/notifications.py
 msgid "Pledge participant signed up"
-msgstr ""
+msgstr "Deltagare registrerade sig för löfte"
 
 #: src/notifications/notifications.py
-#, fuzzy
-#| msgid "pledge actions"
 msgctxt "pledge_participant_signup"
 msgid "New pledge sign-ups"
-msgstr "löftesåtgärder"
+msgstr "Nya registreringar till löften"
+
+#: src/notifications/notifications.py
+msgid "Access requests received"
+msgstr "Åtkomstbegäranden mottagna"
+
+#: src/notifications/notifications.py
+msgctxt "access_requests_received"
+msgid "New access requests"
+msgstr "Nya åtkomstbegäranden"
 
 #: src/notifications/notifications.py
 msgid "Manually scheduled notification"
@@ -6388,29 +6575,28 @@ msgid "Do you really want to view the site as %(person)s?"
 msgstr "Vill du verkligen visa webbplatsen som %(person)s?"
 
 #: src/people/wagtail_admin.py
-msgid "Is contact person"
-msgstr "Är kontaktperson"
+msgid "Plan admin"
+msgstr "Planadministratör"
 
 #: src/people/wagtail_admin.py
-#, python-format
-msgid "For an action in %(plan)s"
-msgstr "För en åtgärd i %(plan)s"
+msgid "Organization admin"
+msgstr "Organisationsadministratör"
 
 #: src/people/wagtail_admin.py
-msgid "For an action"
-msgstr "För en åtgärd"
+msgid "Contact person"
+msgstr "Kontaktperson"
 
 #: src/people/wagtail_admin.py
-msgid "For same actions or indicators as me"
-msgstr "För samma åtgärder eller indikatorer som jag"
+msgid "Viewer"
+msgstr "Besökare"
 
 #: src/people/wagtail_admin.py
-msgid "For an indicator"
-msgstr "För en indikator"
+msgid "Role"
+msgstr "Roll"
 
 #: src/people/wagtail_admin.py
-msgid "Not a contact person"
-msgstr "Inte en kontaktperson"
+msgid "No role"
+msgstr "Ingen roll"
 
 #: src/people/wagtail_admin.py
 msgid "Access to public site only"
@@ -6453,20 +6639,16 @@ msgid "This person has no access to the admin interface. This is commonly becaus
 msgstr "Den här personen har ingen åtkomst till administratörsgränssnittet. Detta beror vanligtvis på att inga åtgärder eller indikatorer har tilldelats dem."
 
 #: src/people/wagtail_admin.py
-msgid "first name"
-msgstr "förnamn"
-
-#: src/people/wagtail_admin.py
-msgid "last name"
-msgstr "efternamn"
-
-#: src/people/wagtail_admin.py
 msgid "last login"
 msgstr "senaste inloggning"
 
 #: src/people/wagtail_admin.py
 msgid "contact for indicators"
 msgstr "kontakt för indikatorer"
+
+#: src/people/wagtail_admin.py
+msgid "Attended training"
+msgstr "Deltagit i utbildning"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -6509,10 +6691,8 @@ msgid "Choose another report type"
 msgstr "Välj en annan rapporttyp"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Only plan admins can mark actions as complete for reports of this type"
 msgid "Only plan admins can mark actions as complete"
-msgstr "Endast planadministratörer kan markera åtgärder som slutförda för rapporter av denna typ"
+msgstr "Endast planadministratörer kan markera åtgärder som slutförda"
 
 #: src/reports/models.py
 msgid "Only plan admins can mark actions as complete for reports of this type"
@@ -6602,10 +6782,6 @@ msgid "Other responsible parties"
 msgstr "Andra ansvariga"
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Sida"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6646,34 +6822,29 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Detta kommer att ångra markeringen av följande åtgärder som slutförda:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' borttagen."
+msgstr "%(model_name)s kunde inte raderas"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
-msgstr ""
+msgstr "”%(instance_name)s” används av ett block för ”Rapportjämförelse” på åtgärdernas detaljsidor. Att radera den skulle förstöra dessa sidor. Om du ville ta bort rapportjämförelsen från åtgärdernas detaljsidor ska du i stället ta bort blocket från följande sidor:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
 msgid "unpublished draft"
-msgstr "publicerad på"
+msgstr "opublicerat utkast"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "Back to own user"
 msgid "Go back to listing"
-msgstr "Tillbaka till egen användare"
+msgstr "Tillbaka till listan"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Om du raderar den här rapporttypen raderas även dess rapport och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i den permanent."
+msgstr[1] "Om du raderar den här rapporttypen raderas även dess %(counter)s rapporter och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i dem permanent."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -6767,7 +6938,7 @@ msgstr "Ångra markeringen av denna rapport som fullständig"
 
 #: src/reports/wagtail_admin.py
 msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgstr "Rapporttypen används fortfarande på åtgärdssidor. Ta bort blocken för rapportjämförelse först."
 
 #: src/reports/wagtail_admin.py
 msgid "Report types"
@@ -6910,6 +7081,31 @@ msgstr "Sparar…"
 msgid "Save"
 msgstr "Spara"
 
+#~ msgid "Pledge Commitments"
+#~ msgstr "Löftesåtaganden"
+
+#~ msgid "Is contact person"
+#~ msgstr "Är kontaktperson"
+
+#, python-format
+#~ msgid "For an action in %(plan)s"
+#~ msgstr "För en åtgärd i %(plan)s"
+
+#~ msgid "For an action"
+#~ msgstr "För en åtgärd"
+
+#~ msgid "For same actions or indicators as me"
+#~ msgstr "För samma åtgärder eller indikatorer som jag"
+
+#~ msgid "For an indicator"
+#~ msgstr "För en indikator"
+
+#~ msgid "Not a contact person"
+#~ msgstr "Inte en kontaktperson"
+
+#~ msgid "Page"
+#~ msgstr "Sida"
+
 #~ msgid "Allow logging in to the public website"
 #~ msgstr "Tillåt inloggning på den offentliga webbplatsen"
 
@@ -6949,7 +7145,6 @@ msgstr "Spara"
 #~ msgstr "Vi ber om ursäkt, servern har för tillfället problem."
 
 #, fuzzy
-#~| msgid "Remove row"
 #~ msgid "Remove"
 #~ msgstr "Ta bort raden"
 
@@ -7001,39 +7196,32 @@ msgstr "Spara"
 #~ msgstr "anmälningsmallar"
 
 #, fuzzy
-#~| msgid "action schedules"
 #~ msgctxt "verbose name of model"
 #~ msgid "action change log message"
 #~ msgstr "åtgärdsscheman"
 
 #, fuzzy
-#~| msgid "action schedules"
 #~ msgctxt "verbose name plural of model"
 #~ msgid "action change log messages"
 #~ msgstr "åtgärdsscheman"
 
 #, fuzzy
-#~| msgid "Indicators assigned to me"
 #~ msgid "indicator change log message"
 #~ msgstr "Indikatorer tilldelade mig"
 
 #, fuzzy
-#~| msgid "indicator goals"
 #~ msgid "indicator change log messages"
 #~ msgstr "indikatormål"
 
 #, fuzzy
-#~| msgid "category levels"
 #~ msgid "category change log messages"
 #~ msgstr "kategorinivåer"
 
 #, fuzzy
-#~| msgid "Save changes"
 #~ msgid "Enable change log"
 #~ msgstr "Spara ändringar"
 
 #, fuzzy
-#~| msgid "Last modified"
 #~ msgid "Last modified at"
 #~ msgstr "Senast ändrad"
 
@@ -7060,27 +7248,22 @@ msgstr "Spara"
 #~ msgstr "Filter: %(filter_label)s"
 
 #, fuzzy
-#~| msgid "Choose a category type"
 #~ msgid "Choose a dataset"
 #~ msgstr "Välj en typ av kategori"
 
 #, fuzzy
-#~| msgid "Choose another category type"
 #~ msgid "Choose another dataset"
 #~ msgstr "Välj en annan typ av kategori"
 
 #, fuzzy
-#~| msgid "dimensions"
 #~ msgid "dimension scope"
 #~ msgstr "mått"
 
 #, fuzzy
-#~| msgid "dimension categories"
 #~ msgid "dimension scopes"
 #~ msgstr "dimensionskategorier"
 
 #, fuzzy
-#~| msgid "Year"
 #~ msgid "Yearly"
 #~ msgstr "År"
 
@@ -7088,117 +7271,94 @@ msgstr "Spara"
 #~ msgstr "Beskrivande namn på datasetets schema"
 
 #, fuzzy
-#~| msgid "Description to show after the field content"
 #~ msgid "Description of the content and use of the dataset"
 #~ msgstr "Beskrivning som ska visas efter fältinnehållet"
 
 #, fuzzy
-#~| msgid "time resolution"
 #~ msgid "Time resolution"
 #~ msgstr "tidsupplösning"
 
 #, fuzzy
-#~| msgid "start date"
 #~ msgid "Initial date"
 #~ msgstr "Startdatum för implementering"
 
 #, fuzzy
-#~| msgid "Permissions"
 #~ msgid "Person permissions"
 #~ msgstr "Behörigheter"
 
 #, fuzzy
-#~| msgid "Permissions"
 #~ msgid "Group permissions"
 #~ msgstr "Behörigheter"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset schemas"
 #~ msgstr "dataset-licens"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset metric"
 #~ msgstr "dataset-licens"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset metrics"
 #~ msgstr "dataset-licens"
 
 #, fuzzy
-#~| msgid "dimensions"
 #~ msgid "dataset schema dimension"
 #~ msgstr "mått"
 
 #, fuzzy
-#~| msgid "dimensions"
 #~ msgid "dataset schema dimensions"
 #~ msgstr "mått"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset schema scope"
 #~ msgstr "dataset-licens"
 
 #, fuzzy
-#~| msgid "dataset licenses"
 #~ msgid "dataset schema scopes"
 #~ msgstr "datasetlicenser"
 
 #, fuzzy
-#~| msgid "Last data point"
 #~ msgid "data point"
 #~ msgstr "Sista datapunkten"
 
 #, fuzzy
-#~| msgid "Last data point"
 #~ msgid "data points"
 #~ msgstr "Sista datapunkten"
 
 #, fuzzy
-#~| msgid "comment"
 #~ msgid "Sticky comment"
 #~ msgstr "kommentar"
 
 #, fuzzy
-#~| msgid "created at"
 #~ msgid "resolved at"
 #~ msgstr "skapad vid"
 
 #, fuzzy
-#~| msgid "comment"
 #~ msgid "comments"
 #~ msgstr "kommentar"
 
 #, fuzzy
-#~| msgid "Section"
 #~ msgid "edition"
 #~ msgstr "Sektion"
 
 #, fuzzy
-#~| msgid "author"
 #~ msgid "authority"
 #~ msgstr "författare"
 
 #, fuzzy
-#~| msgid "main organization for the plan"
 #~ msgid "The organization responsible for the data source"
 #~ msgstr "huvudorganisation för planen"
 
 #, fuzzy
-#~| msgid "datasets"
 #~ msgid "Data source"
 #~ msgstr "datauppsättningar"
 
 #, fuzzy
-#~| msgid "datasets"
 #~ msgid "Data sources"
 #~ msgstr "datauppsättningar"
 
 #, fuzzy
-#~| msgid "Unknown"
 #~ msgid "Unknown schema"
 #~ msgstr "Okänd"
 
@@ -7219,22 +7379,18 @@ msgstr "Spara"
 #~ msgstr "Meddelanden"
 
 #, fuzzy
-#~| msgid "Edit data"
 #~ msgid "Edit dataset"
 #~ msgstr "Redigera data"
 
 #, fuzzy, python-format
-#~| msgid "Edit this person"
 #~ msgid "Edit this %(object)s"
 #~ msgstr "Redigera den här personen"
 
 #, fuzzy
-#~| msgid "created at"
 #~ msgid "Created at"
 #~ msgstr "skapad vid"
 
 #, fuzzy
-#~| msgid "Last modified"
 #~ msgid "Last modified by"
 #~ msgstr "Senast ändrad"
 
@@ -7285,7 +7441,6 @@ msgstr "Spara"
 #~ msgstr "organisationer"
 
 #, fuzzy
-#~| msgid "This will mark the following actions as complete:"
 #~ msgid "This will delete the following objects:"
 #~ msgstr "Detta kommer att markera följande åtgärder som slutförda:"
 
@@ -7379,12 +7534,10 @@ msgstr "Spara"
 #~ msgstr "Vad är det maximala värdet som denna indikator kan nå? Det används i visualiseringar som Y -axelns maximala."
 
 #, fuzzy
-#~| msgid "Basic information"
 #~ msgid "Further information"
 #~ msgstr "Grundläggande information"
 
 #, fuzzy
-#~| msgid "Value field"
 #~ msgid "Value bounds"
 #~ msgstr "Värde fält"
 
@@ -7414,12 +7567,10 @@ msgstr "Spara"
 #~ msgstr "Vad är den här personens organisation"
 
 #, fuzzy
-#~| msgid "start date"
 #~ msgid "Start date"
 #~ msgstr "Startdatum för implementering"
 
 #, fuzzy
-#~| msgid "end date"
 #~ msgid "End date"
 #~ msgstr "Slutdatum för implementering"
 
@@ -7430,7 +7581,6 @@ msgstr "Spara"
 #~ msgstr "Automatiska aviseringar"
 
 #, fuzzy
-#~| msgid "Question"
 #~ msgid "Testing"
 #~ msgstr "Fråga"
 
@@ -7706,12 +7856,6 @@ msgstr "Spara"
 
 #~ msgid "Edit this action"
 #~ msgstr "Redigera den här åtgärden"
-
-#~ msgid "View"
-#~ msgstr "Se"
-
-#~ msgid "Sign in"
-#~ msgstr "Logga in"
 
 #, python-format
 #~ msgid "Your %(username_field)s and password didn't match. Please try again."

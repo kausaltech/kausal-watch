@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 16:18+0200\n"
+"POT-Creation-Date: 2026-09-30 08:50+0000\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language: el\n"
@@ -17,6 +17,35 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: src/notifications/mjml-templates/access_request_decided.mjml
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#: src/notifications/mjml-templates/public_user_pin.mjml
+msgid "Powered by Kausal Watch"
+msgstr ""
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "This person has asked to view %(plan_name)s:"
+msgid_plural "These people have asked to view %(plan_name)s:"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "%(count)s request is waiting for review in total."
+msgid_plural "%(count)s requests are waiting for review in total."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+msgid "Review requests"
+msgstr ""
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "You are receiving this because you can approve access requests for %(plan_name)s."
+msgstr ""
 
 #: src/notifications/mjml-templates/action_not_updated.mjml
 #: src/notifications/mjml-templates/not_enough_tasks.mjml
@@ -82,10 +111,6 @@ msgstr ""
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 msgid "If you didn't request this code, you can ignore this email."
-msgstr ""
-
-#: src/notifications/mjml-templates/public_user_pin.mjml
-msgid "Powered by Kausal Watch"
 msgstr ""
 
 #: src/notifications/mjml-templates/task_due_soon.mjml

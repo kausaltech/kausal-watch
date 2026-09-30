@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 14:30+0300\n"
+"POT-Creation-Date: 2026-09-30 11:50+0300\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -17,6 +17,315 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.17.1\n"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your access to %(plan_name)s has been approved"
+msgstr ""
+
+#: src/access_requests/emails.py
+msgid "Your access has been approved"
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has been approved."
+msgstr ""
+
+#: src/access_requests/emails.py
+msgid "Sign in"
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "First, set your password with the link below. The link works once and expires in %(days)s days."
+msgstr ""
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+#, fuzzy
+#| msgid "Enter password"
+msgid "Set your password"
+msgstr "Introduzca la contraseña"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has not been approved."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "If you think this is a mistake, or you need access for your work, please contact %(email)s."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to access %(plan_name)s"
+msgstr ""
+
+#: src/access_requests/emails.py
+msgid "Your request was not approved"
+msgstr ""
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You are receiving this email because an access request was made for this address on %(plan_name)s."
+msgstr ""
+
+#: src/access_requests/emails.py
+msgid "Hi,"
+msgstr ""
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+#: src/actions/public_user_auth.py
+#, fuzzy
+#| msgid "Exported from Kausal Watch"
+msgid "Powered by Kausal Watch"
+msgstr "Exportado de Kausal Watch"
+
+#: src/access_requests/models.py
+#, fuzzy
+#| msgid "Heading"
+msgid "Pending"
+msgstr "Rúbrica"
+
+#: src/access_requests/models.py src/aplans/graphql_types.py
+msgid "Approved"
+msgstr "Aprobado"
+
+#: src/access_requests/models.py
+msgid "Rejected"
+msgstr ""
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/actions/models/pledge.py
+#: src/content/models.py src/feedback/models.py
+#: src/indicators/models/indicator.py src/notifications/models.py
+#: src/orgs/models.py src/pages/models.py
+msgid "plan"
+msgstr "plan"
+
+#: src/access_requests/models.py src/feedback/models.py
+#: src/people/wagtail_admin.py src/users/models.py
+msgid "email address"
+msgstr "dirección de correo electrónico"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "first name"
+msgstr "Nombre de pila"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "last name"
+msgstr "apellido"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/reports/spreadsheets/excel_report.py
+msgid "status"
+msgstr "estado"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/pledge.py src/actions/models/public_user.py
+#: src/admin_site/models.py src/aplans/utils.py src/feedback/models.py
+msgid "created at"
+msgstr "creado en"
+
+#: src/access_requests/models.py
+#, fuzzy
+#| msgid "modified at"
+msgid "decided at"
+msgstr "modificado en"
+
+#: src/access_requests/models.py
+#, fuzzy
+#| msgctxt "action"
+#| msgid "superseded by"
+msgid "decided by"
+msgstr "sustituido por"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/indicators/models/contact_persons.py
+#: src/orgs/models.py
+msgid "person"
+msgstr "persona"
+
+#: src/access_requests/models.py
+msgid "access request"
+msgstr ""
+
+#: src/access_requests/models.py
+#, fuzzy
+#| msgid "Accessibility"
+msgid "access requests"
+msgstr "Accesibilidad"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "Accessibility"
+msgid "Access requests"
+msgstr "Accesibilidad"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy, python-format
+#| msgid "common category"
+msgid "%(counter)s waiting"
+msgid_plural "%(counter)s waiting"
+msgstr[0] "categoría común"
+msgstr[1] "categoría común"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "People who have asked to view this plan. Approving sends them an email. Approved users will not have access to the admin interface."
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/pledge_participants_admin.py
+#: src/admin_site/templates/admin_site/pledge_participants_panel.html
+msgid "Email"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "Required"
+msgid "Requested"
+msgstr "Requerido"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/wagtail_hooks.py
+#: src/people/templates/people/person_actions_menu.html
+#: src/people/wagtail_admin.py templates/modeladmin/create.html
+#, fuzzy
+#| msgid "Actions"
+msgid "Actions"
+msgstr "Acciones"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "Request changes"
+msgid "Requested again"
+msgstr "Solicitar cambios"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Previously rejected %(date)s"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s hace"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/models/action.py
+msgid "Approve"
+msgstr "Aprobar"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "subject"
+msgid "Reject"
+msgstr "tema"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject access request?"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "%(email)s will receive an email saying their request has been rejected, with details of who to contact for more information."
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "If they request access again, their request will appear in this list marked \"Requested again\"."
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/templates/actions/bulk_approve.html
+#: templates/aplans/plan_publish_confirmation.html
+#, fuzzy
+#| msgid "Cancelled"
+msgid "Cancel"
+msgstr "Cancelado"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject request"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "Accessibility statement pages"
+msgid "Access request pages"
+msgstr "Páginas de la declaración de accesibilidad"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, fuzzy
+#| msgid "Preview"
+msgid "Previous"
+msgstr "Vista previa"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Page %(page)s of %(num_pages)s"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Next"
+msgstr ""
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "No access requests waiting. New requests will appear here, and you'll receive an email when they arrive."
+msgstr ""
+
+#: src/access_requests/templates/access_requests/set_password.html
+#, fuzzy
+#| msgid "External links"
+msgid "Invalid link"
+msgstr "Enlaces externos"
+
+#: src/access_requests/templates/access_requests/set_password.html
+#, fuzzy
+#| msgid "Reset password"
+msgid "Set password"
+msgstr "Restablecer contraseña"
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "This link is invalid or has expired, or it has already been used."
+msgstr ""
+
+#: src/access_requests/templates/access_requests/set_password.html
+#, python-format
+msgid "You can still sign in at <a href=\"%(url)s\">%(url)s</a>. If you do not know your password, use the \"forgot password\" option on the sign-in page."
+msgstr ""
+
+#: src/access_requests/views.py
+#, python-format
+msgid "The access request from %(email)s was already handled."
+msgstr ""
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s. They have been notified by email."
+msgstr ""
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s, but the email to them could not be sent."
+msgstr ""
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected. They have been notified by email."
+msgstr ""
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected, but the email to them could not be sent."
+msgstr ""
 
 #: src/actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -1026,13 +1335,6 @@ msgstr "Planificación"
 msgid "Implementation"
 msgstr "Aplicación"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/actions/models/pledge.py src/content/models.py src/feedback/models.py
-#: src/indicators/models/indicator.py src/notifications/models.py
-#: src/orgs/models.py src/pages/models.py
-msgid "plan"
-msgstr "plan"
-
 #: src/actions/models/action.py
 msgid "primary organization"
 msgstr "Organización primaria"
@@ -1096,10 +1398,6 @@ msgstr "notas internas para los administradores de planes"
 #: src/actions/models/action.py src/indicators/models/indicator.py
 msgid "internal notes"
 msgstr "notas internas"
-
-#: src/actions/models/action.py src/reports/spreadsheets/excel_report.py
-msgid "status"
-msgstr "estado"
 
 #: src/actions/models/action.py
 msgid "implementation phase"
@@ -1332,11 +1630,6 @@ msgstr "Editor"
 msgid "Moderator"
 msgstr "Moderador"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/indicators/models/contact_persons.py src/orgs/models.py
-msgid "person"
-msgstr "persona"
-
 #: src/actions/models/action.py
 msgid "primary contact person"
 msgstr "persona de contacto principal"
@@ -1409,7 +1702,7 @@ msgstr "estado"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "fecha de vencimiento"
 
@@ -1436,12 +1729,6 @@ msgstr "Fecha de finalización de la tarea"
 #: src/actions/models/action.py
 msgid "completed by"
 msgstr "completado por"
-
-#: src/actions/models/action.py src/actions/models/pledge.py
-#: src/actions/models/public_user.py src/admin_site/models.py
-#: src/aplans/utils.py src/feedback/models.py
-msgid "created at"
-msgstr "creado en"
 
 #: src/actions/models/action.py
 msgid "modified at"
@@ -1609,10 +1896,6 @@ msgstr "impact group action"
 #: src/actions/models/action.py
 msgid "impact group actions"
 msgstr "acciones del grupo de impacto"
-
-#: src/actions/models/action.py
-msgid "Approve"
-msgstr "Aprobar"
 
 #: src/actions/models/action.py
 msgid "Request changes"
@@ -2149,6 +2432,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: src/actions/models/features.py
+msgid "Enable access requests"
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Let visitors of an internal plan ask for access to its public site. Plan admins approve or reject the requests."
+msgstr ""
+
+#: src/actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
 msgstr ""
 
@@ -2319,6 +2610,30 @@ msgstr "Personas que pueden modificar todo lo relacionado con el plan de acción
 #: src/actions/models/plan.py
 msgid "Link to accessibility statement"
 msgstr "Enlace a la declaración de accesibilidad"
+
+#: src/actions/models/plan.py
+msgid "Contact email for access requests"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Where people whose access request was not approved can ask for more information."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Email domains allowed to request access"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Who may be given access"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Link to external feedback form"
@@ -2861,10 +3176,6 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Nombre del propietario del sitio"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
-
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -2909,11 +3220,9 @@ msgstr "comentario"
 msgid "User ID"
 msgstr "Usuarios"
 
-#: src/actions/pledge_admin.py
-#, fuzzy
-#| msgid "comment"
-msgid "Pledge Commitments"
-msgstr "comentario"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -2956,11 +3265,6 @@ msgid "Export opted-in emails as CSV"
 msgstr "comentario"
 
 #: src/actions/pledge_participants_admin.py
-#: src/admin_site/templates/admin_site/pledge_participants_panel.html
-msgid "Email"
-msgstr ""
-
-#: src/actions/pledge_participants_admin.py
 #, fuzzy
 #| msgid "comment"
 msgid "Pledges committed"
@@ -2998,12 +3302,6 @@ msgstr ""
 #: src/actions/public_user_auth.py
 msgid "If you didn't request this code, you can ignore this email."
 msgstr ""
-
-#: src/actions/public_user_auth.py
-#, fuzzy
-#| msgid "Exported from Kausal Watch"
-msgid "Powered by Kausal Watch"
-msgstr "Exportado de Kausal Watch"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Selected actions will be published and marked as approved, skipping any remaining moderation tasks."
@@ -3069,13 +3367,6 @@ msgstr "enviar a las personas de contacto de la acción"
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Release selected"
 msgstr ""
-
-#: src/actions/templates/actions/bulk_approve.html
-#: templates/aplans/plan_publish_confirmation.html
-#, fuzzy
-#| msgid "Cancelled"
-msgid "Cancel"
-msgstr "Cancelado"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3461,35 +3752,9 @@ msgstr "tarea de acción"
 msgid "Moderation task skipped"
 msgstr "tareas de acción"
 
-#: src/actions/wagtail_hooks.py templates/modeladmin/create.html
-#, fuzzy
-#| msgid "Actions"
-msgid "Actions"
-msgstr "Acciones"
-
-#: src/admin_site/api.py
+#: src/admin_site/api.py src/admin_site/login_method.py
 msgid "Invalid email address"
 msgstr "Dirección de correo electrónico no válida"
-
-#: src/admin_site/api.py
-msgid "No user found with this email address. Ask your administrator to create an account for you."
-msgstr "No se ha encontrado ningún usuario con esta dirección de correo electrónico. Pida a su administrador que le cree una cuenta."
-
-#: src/admin_site/api.py
-msgid "You do not have access to the public site."
-msgstr "No tiene acceso al sitio público."
-
-#: src/admin_site/api.py
-msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr "No tiene acceso de administrador. Es posible que su administrador tenga que asignarle una acción o un indicador, o concederle el estatus de administrador del plan."
-
-#: src/admin_site/api.py
-msgid "Cannot determine authentication method. The email address domain may be unknown."
-msgstr "No se puede determinar el método de autenticación. El dominio de la dirección de correo electrónico puede ser desconocido."
-
-#: src/admin_site/api.py
-msgid "Password authentication is required, but the user has no password."
-msgstr "Se requiere autenticación de contraseña, pero el usuario no tiene contraseña."
 
 #: src/admin_site/apps.py
 msgid "History"
@@ -3601,6 +3866,26 @@ msgstr "Introduzca la contraseña"
 #: src/admin_site/forms.py
 msgid "Enter your email address"
 msgstr "Introduzca su dirección de correo electrónico"
+
+#: src/admin_site/login_method.py
+msgid "No user found with this email address. Ask your administrator to create an account for you."
+msgstr "No se ha encontrado ningún usuario con esta dirección de correo electrónico. Pida a su administrador que le cree una cuenta."
+
+#: src/admin_site/login_method.py
+msgid "You do not have access to the public site."
+msgstr "No tiene acceso al sitio público."
+
+#: src/admin_site/login_method.py
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr "No tiene acceso de administrador. Es posible que su administrador tenga que asignarle una acción o un indicador, o concederle el estatus de administrador del plan."
+
+#: src/admin_site/login_method.py
+msgid "Cannot determine authentication method. The email address domain may be unknown."
+msgstr "No se puede determinar el método de autenticación. El dominio de la dirección de correo electrónico puede ser desconocido."
+
+#: src/admin_site/login_method.py
+msgid "Password authentication is required, but the user has no password."
+msgstr "Se requiere autenticación de contraseña, pero el usuario no tiene contraseña."
 
 #: src/admin_site/mixins.py templates/modeladmin/create.html
 #: templates/modeladmin/edit.html
@@ -3725,11 +4010,6 @@ msgstr "Editar este indicador"
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Editar datos"
-
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#, python-format
-msgid "%(time_period)s ago"
-msgstr "%(time_period)s hace"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -3865,10 +4145,6 @@ msgstr "Introduzca un nombre de host válido."
 #: src/aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Nombre de host completo (FQDN)"
-
-#: src/aplans/graphql_types.py
-msgid "Approved"
-msgstr "Aprobado"
 
 #: src/aplans/graphql_types.py
 msgid "Draft"
@@ -4383,10 +4659,6 @@ msgstr "documentos"
 #: src/feedback/models.py src/indicators/models/action_links.py
 msgid "action"
 msgstr "acción"
-
-#: src/feedback/models.py src/users/models.py
-msgid "email address"
-msgstr "dirección de correo electrónico"
 
 #: src/feedback/models.py
 msgid "comment"
@@ -6018,6 +6290,15 @@ msgid "New pledge sign-ups"
 msgstr "Acciones fusionadas"
 
 #: src/notifications/notifications.py
+msgid "Access requests received"
+msgstr ""
+
+#: src/notifications/notifications.py
+msgctxt "access_requests_received"
+msgid "New access requests"
+msgstr ""
+
+#: src/notifications/notifications.py
 msgid "Manually scheduled notification"
 msgstr "Notificación programada manualmente"
 
@@ -6846,29 +7127,38 @@ msgid "Do you really want to view the site as %(person)s?"
 msgstr "¿Realmente quiere ver el sitio como %(person)s?"
 
 #: src/people/wagtail_admin.py
-msgid "Is contact person"
-msgstr "Es persona de contacto"
+#, fuzzy
+#| msgid "Plan admins"
+msgid "Plan admin"
+msgstr "Administradores del plan"
 
 #: src/people/wagtail_admin.py
-#, python-format
-msgid "For an action in %(plan)s"
-msgstr "Para una acción en %(plan)s"
+#, fuzzy
+#| msgid "Organization"
+msgid "Organization admin"
+msgstr "Organización"
 
 #: src/people/wagtail_admin.py
-msgid "For an action"
-msgstr "Para una acción"
+#, fuzzy
+#| msgid "Contact persons"
+msgid "Contact person"
+msgstr "Personas de contacto"
 
 #: src/people/wagtail_admin.py
-msgid "For same actions or indicators as me"
-msgstr "Para las mismas acciones o indicadores que yo"
+#, fuzzy
+#| msgid "View live"
+msgid "Viewer"
+msgstr "Ver en directo"
 
 #: src/people/wagtail_admin.py
-msgid "For an indicator"
-msgstr "Para un indicador"
+msgid "Role"
+msgstr ""
 
 #: src/people/wagtail_admin.py
-msgid "Not a contact person"
-msgstr "No es una persona de contacto"
+#, fuzzy
+#| msgid "role"
+msgid "No role"
+msgstr "papel"
 
 #: src/people/wagtail_admin.py
 msgid "Access to public site only"
@@ -6911,20 +7201,18 @@ msgid "This person has no access to the admin interface. This is commonly becaus
 msgstr "Esta persona no tiene acceso a la interfaz de administración. Esto se debe normalmente a que no se le han asignado acciones ni indicadores."
 
 #: src/people/wagtail_admin.py
-msgid "first name"
-msgstr "Nombre de pila"
-
-#: src/people/wagtail_admin.py
-msgid "last name"
-msgstr "apellido"
-
-#: src/people/wagtail_admin.py
 msgid "last login"
 msgstr "último acceso"
 
 #: src/people/wagtail_admin.py
 msgid "contact for indicators"
 msgstr "contacto para indicadores"
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "participated in training"
+msgid "Attended training"
+msgstr "participó en la formación"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -7062,12 +7350,6 @@ msgstr ""
 #: src/reports/report_formatters.py
 msgid "Other responsible parties"
 msgstr "Otros responsables"
-
-#: src/reports/spreadsheets/action_print_layout.py
-#, fuzzy
-#| msgid "Page link"
-msgid "Page"
-msgstr "Enlace de página"
 
 #: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
@@ -7395,6 +7677,35 @@ msgstr "Ahorrar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Guardar"
+
+#, fuzzy
+#~| msgid "comment"
+#~ msgid "Pledge Commitments"
+#~ msgstr "comentario"
+
+#~ msgid "Is contact person"
+#~ msgstr "Es persona de contacto"
+
+#, python-format
+#~ msgid "For an action in %(plan)s"
+#~ msgstr "Para una acción en %(plan)s"
+
+#~ msgid "For an action"
+#~ msgstr "Para una acción"
+
+#~ msgid "For same actions or indicators as me"
+#~ msgstr "Para las mismas acciones o indicadores que yo"
+
+#~ msgid "For an indicator"
+#~ msgstr "Para un indicador"
+
+#~ msgid "Not a contact person"
+#~ msgstr "No es una persona de contacto"
+
+#, fuzzy
+#~| msgid "Page link"
+#~ msgid "Page"
+#~ msgstr "Enlace de página"
 
 #~ msgid "Allow logging in to the public website"
 #~ msgstr "Permitir el acceso al sitio web público"

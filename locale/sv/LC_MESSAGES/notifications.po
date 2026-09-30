@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-28 16:18+0200\n"
+"POT-Creation-Date: 2026-09-30 08:50+0000\n"
 "PO-Revision-Date: 2026-09-28 07:48+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language: sv\n"
@@ -17,6 +17,35 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: src/notifications/mjml-templates/access_request_decided.mjml
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#: src/notifications/mjml-templates/public_user_pin.mjml
+msgid "Powered by Kausal Watch"
+msgstr "Drivs av Kausal Watch"
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "This person has asked to view %(plan_name)s:"
+msgid_plural "These people have asked to view %(plan_name)s:"
+msgstr[0] "Den här personen har bett om att få se %(plan_name)s:"
+msgstr[1] "De här personerna har bett om att få se %(plan_name)s:"
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "%(count)s request is waiting for review in total."
+msgid_plural "%(count)s requests are waiting for review in total."
+msgstr[0] "Totalt väntar %(count)s begäran på granskning."
+msgstr[1] "Totalt väntar %(count)s begäranden på granskning."
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+msgid "Review requests"
+msgstr "Granska begäranden"
+
+#: src/notifications/mjml-templates/access_requests_received.mjml
+#, python-format
+msgid "You are receiving this because you can approve access requests for %(plan_name)s."
+msgstr "Du får det här meddelandet eftersom du kan godkänna åtkomstbegäranden för %(plan_name)s."
 
 #: src/notifications/mjml-templates/action_not_updated.mjml
 #: src/notifications/mjml-templates/not_enough_tasks.mjml
@@ -42,21 +71,21 @@ msgstr "Hej,"
 #, python-format
 msgid "%(count)s new resident created a pledge account on %(plan_name)s."
 msgid_plural "%(count)s new residents created a pledge account on %(plan_name)s."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(count)s ny invånare skapade ett konto för löften på %(plan_name)s."
+msgstr[1] "%(count)s nya invånare skapade ett konto för löften på %(plan_name)s."
 
 #: src/notifications/mjml-templates/pledge_participant_signup.mjml
 #, python-format
 msgid " – signed up: %(signed_up_at)s"
-msgstr ""
+msgstr " – registrerad: %(signed_up_at)s"
 
 #: src/notifications/mjml-templates/pledge_participant_signup.mjml
 msgid " – marketing opt-in: Yes"
-msgstr ""
+msgstr " – samtycke till marknadsföring: Ja"
 
 #: src/notifications/mjml-templates/pledge_participant_signup.mjml
 msgid " – marketing opt-in: No"
-msgstr ""
+msgstr " – samtycke till marknadsföring: Nej"
 
 #: src/notifications/mjml-templates/pledge_participant_signup.mjml
 #, python-format
@@ -65,28 +94,27 @@ msgid ""
 "                    You can view the full list of participants in the <a href=\"%(participants_url)s\">admin user interface</a>.\n"
 "                    "
 msgstr ""
+"\n"
+"                    Du kan se hela listan över deltagare i <a href=\"%(participants_url)s\">administrationsgränssnittet</a>.\n"
+"                    "
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 msgid "Here is your sign-in code:"
-msgstr ""
+msgstr "Här är din inloggningskod:"
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
 msgid "This code is for the website “%(plan_name)s”."
-msgstr ""
+msgstr "Den här koden gäller webbplatsen ”%(plan_name)s”."
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 #, python-format
 msgid "Enter this code when prompted. It expires in %(minutes)s minutes."
-msgstr ""
+msgstr "Ange koden när du blir ombedd. Den upphör att gälla om %(minutes)s minuter."
 
 #: src/notifications/mjml-templates/public_user_pin.mjml
 msgid "If you didn't request this code, you can ignore this email."
-msgstr ""
-
-#: src/notifications/mjml-templates/public_user_pin.mjml
-msgid "Powered by Kausal Watch"
-msgstr ""
+msgstr "Om du inte har begärt den här koden kan du ignorera det här e-postmeddelandet."
 
 #: src/notifications/mjml-templates/task_due_soon.mjml
 #: src/notifications/mjml-templates/task_late.mjml
@@ -152,7 +180,4 @@ msgstr "Redigera åtgärd"
 #: src/notifications/mjml-templates/includes/modify_indicator_button.mjml
 msgid "Edit indicator data"
 msgstr "Redigera indikatordata"
-
-#~ msgid "Here is your sign-in code for the %(plan_name)s:"
-#~ msgstr ""
 

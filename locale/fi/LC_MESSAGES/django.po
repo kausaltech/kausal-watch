@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-29 14:30+0300\n"
+"POT-Creation-Date: 2026-09-30 11:50+0300\n"
 "PO-Revision-Date: 2026-02-25 16:13+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -21,6 +21,281 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.15.1\n"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
+msgstr "Voit kirjautua sisään osoitteessa %(plan_url)s tällä sähköpostiosoitteella."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your access to %(plan_name)s has been approved"
+msgstr "Pääsysi sivustolle %(plan_name)s on hyväksytty"
+
+#: src/access_requests/emails.py
+msgid "Your access has been approved"
+msgstr "Pääsysi on hyväksytty"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has been approved."
+msgstr "Pyyntösi päästä katsomaan sivustoa %(plan_name)s on hyväksytty."
+
+#: src/access_requests/emails.py
+msgid "Sign in"
+msgstr "Kirjaudu sisään"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "First, set your password with the link below. The link works once and expires in %(days)s days."
+msgstr "Aseta ensin salasanasi alla olevasta linkistä. Linkki toimii kerran ja vanhenee %(days)s päivän kuluttua."
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Set your password"
+msgstr "Aseta salasanasi"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to view %(plan_name)s has not been approved."
+msgstr "Pyyntöäsi päästä katsomaan sivustoa %(plan_name)s ei ole hyväksytty."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "If you think this is a mistake, or you need access for your work, please contact %(email)s."
+msgstr "Jos tämä on mielestäsi virhe tai tarvitset pääsyä työssäsi, ota yhteyttä osoitteeseen %(email)s."
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "Your request to access %(plan_name)s"
+msgstr "Pääsypyyntösi sivustolle %(plan_name)s"
+
+#: src/access_requests/emails.py
+msgid "Your request was not approved"
+msgstr "Pyyntöäsi ei hyväksytty"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You are receiving this email because an access request was made for this address on %(plan_name)s."
+msgstr "Saat tämän viestin, koska tälle osoitteelle tehtiin pääsypyyntö sivustolla %(plan_name)s."
+
+#: src/access_requests/emails.py
+msgid "Hi,"
+msgstr "Hei,"
+
+#: src/access_requests/emails.py
+#: src/access_requests/templates/access_requests/set_password.html
+#: src/actions/public_user_auth.py
+msgid "Powered by Kausal Watch"
+msgstr "Toteutettu Kausal Watchilla"
+
+#: src/access_requests/models.py
+msgid "Pending"
+msgstr "Odottaa"
+
+#: src/access_requests/models.py src/aplans/graphql_types.py
+msgid "Approved"
+msgstr "Hyväksytty"
+
+#: src/access_requests/models.py
+msgid "Rejected"
+msgstr "Hylätty"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/actions/models/pledge.py
+#: src/content/models.py src/feedback/models.py
+#: src/indicators/models/indicator.py src/notifications/models.py
+#: src/orgs/models.py src/pages/models.py
+msgid "plan"
+msgstr "toimenpideohjelma"
+
+#: src/access_requests/models.py src/feedback/models.py
+#: src/people/wagtail_admin.py src/users/models.py
+msgid "email address"
+msgstr "sähköpostiosoite"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "first name"
+msgstr "etunimi"
+
+#: src/access_requests/models.py src/people/wagtail_admin.py
+msgid "last name"
+msgstr "sukunimi"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/reports/spreadsheets/excel_report.py
+msgid "status"
+msgstr "tila"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/pledge.py src/actions/models/public_user.py
+#: src/admin_site/models.py src/aplans/utils.py src/feedback/models.py
+msgid "created at"
+msgstr "luomisaika"
+
+#: src/access_requests/models.py
+msgid "decided at"
+msgstr "päätösaika"
+
+#: src/access_requests/models.py
+msgid "decided by"
+msgstr "päättäjä"
+
+#: src/access_requests/models.py src/actions/models/action.py
+#: src/actions/models/plan.py src/indicators/models/contact_persons.py
+#: src/orgs/models.py
+msgid "person"
+msgstr "henkilö"
+
+#: src/access_requests/models.py
+msgid "access request"
+msgstr "pääsypyyntö"
+
+#: src/access_requests/models.py
+msgid "access requests"
+msgstr "pääsypyynnöt"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Access requests"
+msgstr "Pääsypyynnöt"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "%(counter)s waiting"
+msgid_plural "%(counter)s waiting"
+msgstr[0] "%(counter)s odottaa"
+msgstr[1] "%(counter)s odottaa"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "People who have asked to view this plan. Approving sends them an email. Approved users will not have access to the admin interface."
+msgstr "Henkilöt, jotka ovat pyytäneet pääsyä katsomaan tätä toimenpideohjelmaa. Hyväksyminen lähettää heille sähköpostiviestin. Hyväksytyillä käyttäjillä ei ole pääsyä ylläpitokäyttöliittymään."
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/pledge_participants_admin.py
+#: src/admin_site/templates/admin_site/pledge_participants_panel.html
+msgid "Email"
+msgstr "Sähköposti"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Requested"
+msgstr "Pyydetty"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/wagtail_hooks.py
+#: src/people/templates/people/person_actions_menu.html
+#: src/people/wagtail_admin.py templates/modeladmin/create.html
+msgid "Actions"
+msgstr "Toiminnot"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Requested again"
+msgstr "Pyydetty uudelleen"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Previously rejected %(date)s"
+msgstr "Hylätty aiemmin %(date)s"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s sitten"
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/models/action.py
+msgid "Approve"
+msgstr "Hyväksy"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject"
+msgstr "Hylkää"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject access request?"
+msgstr "Hylätäänkö pääsypyyntö?"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "%(email)s will receive an email saying their request has been rejected, with details of who to contact for more information."
+msgstr "%(email)s saa sähköpostiviestin, jossa kerrotaan pyynnön hylkäämisestä ja siitä, keneen voi ottaa yhteyttä lisätietoja varten."
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "If they request access again, their request will appear in this list marked \"Requested again\"."
+msgstr "Jos henkilö pyytää pääsyä uudelleen, pyyntö näkyy tässä luettelossa merkinnällä ”Pyydetty uudelleen”."
+
+#: src/access_requests/templates/access_requests/panel.html
+#: src/actions/templates/actions/bulk_approve.html
+#: templates/aplans/plan_publish_confirmation.html
+msgid "Cancel"
+msgstr "Peruuta"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Reject request"
+msgstr "Hylkää pyyntö"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Access request pages"
+msgstr "Pääsypyyntöjen sivut"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Previous"
+msgstr "Edellinen"
+
+#: src/access_requests/templates/access_requests/panel.html
+#, python-format
+msgid "Page %(page)s of %(num_pages)s"
+msgstr "Sivu %(page)s / %(num_pages)s"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "Next"
+msgstr "Seuraava"
+
+#: src/access_requests/templates/access_requests/panel.html
+msgid "No access requests waiting. New requests will appear here, and you'll receive an email when they arrive."
+msgstr "Ei odottavia pääsypyyntöjä. Uudet pyynnöt näkyvät tässä, ja saat sähköpostiviestin, kun niitä saapuu."
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Invalid link"
+msgstr "Virheellinen linkki"
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "Set password"
+msgstr "Aseta salasana"
+
+#: src/access_requests/templates/access_requests/set_password.html
+msgid "This link is invalid or has expired, or it has already been used."
+msgstr "Linkki on virheellinen tai vanhentunut, tai sitä on jo käytetty."
+
+#: src/access_requests/templates/access_requests/set_password.html
+#, python-format
+msgid "You can still sign in at <a href=\"%(url)s\">%(url)s</a>. If you do not know your password, use the \"forgot password\" option on the sign-in page."
+msgstr "Voit silti kirjautua sisään osoitteessa <a href=\"%(url)s\">%(url)s</a>. Jos et tiedä salasanaasi, käytä kirjautumissivun ”Unohtuiko salasana” -toimintoa."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "The access request from %(email)s was already handled."
+msgstr "Osoitteesta %(email)s tehty pääsypyyntö on jo käsitelty."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s. They have been notified by email."
+msgstr "Pääsy hyväksytty osoitteelle %(email)s. Henkilölle on ilmoitettu sähköpostitse."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access approved for %(email)s, but the email to them could not be sent."
+msgstr "Pääsy hyväksytty osoitteelle %(email)s, mutta sähköpostiviestiä ei voitu lähettää."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected. They have been notified by email."
+msgstr "Osoitteesta %(email)s tehty pääsypyyntö hylätty. Henkilölle on ilmoitettu sähköpostitse."
+
+#: src/access_requests/views.py
+#, python-format
+msgid "Access request from %(email)s rejected, but the email to them could not be sent."
+msgstr "Osoitteesta %(email)s tehty pääsypyyntö hylätty, mutta sähköpostiviestiä ei voitu lähettää."
 
 #: src/actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -451,7 +726,7 @@ msgstr "Otsikko"
 
 #: src/actions/blocks/__init__.py
 msgid "Leave empty to fall back to the parent plan's name, or to this plan's own short name."
-msgstr ""
+msgstr "Jätä tyhjäksi käyttääksesi ylätason toimenpideohjelman nimeä tai tämän toimenpideohjelman omaa lyhyttä nimeä."
 
 #: src/actions/blocks/__init__.py
 msgid "Related plans"
@@ -849,30 +1124,27 @@ msgid "Paths outcome"
 msgstr "Paths-lopputulos"
 
 #: src/actions/bulk_approve.py src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "Resubmit for moderation"
 msgid "Release actions from moderation"
-msgstr "Lähetä uudelleen moderointiin"
+msgstr "Vapauta toimenpiteet moderoinnista"
 
 #: src/actions/bulk_approve.py
 msgid "No releasable actions were selected."
-msgstr ""
+msgstr "Yhtään vapautettavaa toimenpidettä ei valittu."
 
 #: src/actions/bulk_approve.py
-#, fuzzy, python-format
-#| msgid "Related actions"
+#, python-format
 msgid "Released %(count)d actions."
-msgstr "Liittyvät toimenpiteet"
+msgstr "Vapautettiin %(count)d toimenpidettä."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions skipped (no permission)."
-msgstr ""
+msgstr "%(count)d toimenpidettä ohitettiin (ei oikeutta)."
 
 #: src/actions/bulk_approve.py
 #, python-format
 msgid "%(count)d actions failed to release; see logs for details."
-msgstr ""
+msgstr "%(count)d toimenpiteen vapauttaminen epäonnistui; katso lisätiedot lokeista."
 
 #: src/actions/category_admin.py
 msgid "Common category type"
@@ -990,13 +1262,6 @@ msgstr "Suunnittelu"
 msgid "Implementation"
 msgstr "Toteutus"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/actions/models/pledge.py src/content/models.py src/feedback/models.py
-#: src/indicators/models/indicator.py src/notifications/models.py
-#: src/orgs/models.py src/pages/models.py
-msgid "plan"
-msgstr "toimenpideohjelma"
-
 #: src/actions/models/action.py
 msgid "primary organization"
 msgstr "pääorganisaatio"
@@ -1060,10 +1325,6 @@ msgstr "sisäiset muistiinpanot pääkäyttäjille"
 #: src/actions/models/action.py src/indicators/models/indicator.py
 msgid "internal notes"
 msgstr "sisäiset muistiinpanot"
-
-#: src/actions/models/action.py src/reports/spreadsheets/excel_report.py
-msgid "status"
-msgstr "tila"
 
 #: src/actions/models/action.py
 msgid "implementation phase"
@@ -1288,11 +1549,6 @@ msgstr "Muokkaaja"
 msgid "Moderator"
 msgstr "Moderoija"
 
-#: src/actions/models/action.py src/actions/models/plan.py
-#: src/indicators/models/contact_persons.py src/orgs/models.py
-msgid "person"
-msgstr "henkilö"
-
 #: src/actions/models/action.py
 msgid "primary contact person"
 msgstr "ensisijainen yhteyshenkilö"
@@ -1365,7 +1621,7 @@ msgstr "tila"
 msgid "details"
 msgstr "lisätiedot"
 
-#: src/actions/models/action.py src/reports/report_formatters.py
+#: src/actions/models/action.py
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
@@ -1393,12 +1649,6 @@ msgstr "Päivämäärä jolloin tehtävä valmistui"
 msgid "completed by"
 msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
 
-#: src/actions/models/action.py src/actions/models/pledge.py
-#: src/actions/models/public_user.py src/admin_site/models.py
-#: src/aplans/utils.py src/feedback/models.py
-msgid "created at"
-msgstr "luomisaika"
-
 #: src/actions/models/action.py
 msgid "modified at"
 msgstr "muokkausaika"
@@ -1417,28 +1667,20 @@ msgid "action tasks"
 msgstr "toimenpiteen tehtävät"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible party"
 msgid "action task responsible party"
-msgstr "toimenpiteen vastuutaho"
+msgstr "toimenpiteen tehtävän vastuutaho"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action responsible parties"
 msgid "action task responsible parties"
-msgstr "toimenpiteen vastuutahot"
+msgstr "toimenpiteen tehtävän vastuutahot"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact person"
 msgid "action task contact person"
-msgstr "toimenpiteen yhteyshenkilö"
+msgstr "toimenpiteen tehtävän yhteyshenkilö"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "action contact persons"
 msgid "action task contact persons"
-msgstr "toimenpiteen yhteyshenkilöt"
+msgstr "toimenpiteen tehtävän yhteyshenkilöt"
 
 #: src/actions/models/action.py
 msgid "action impact class"
@@ -1547,10 +1789,6 @@ msgstr "toimenpiteen vaikuttavuusryhmä"
 #: src/actions/models/action.py
 msgid "impact group actions"
 msgstr "toimenpiteen vaikuttavuusryhmät"
-
-#: src/actions/models/action.py
-msgid "Approve"
-msgstr "Hyväksy"
 
 #: src/actions/models/action.py
 msgid "Request changes"
@@ -2055,6 +2293,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr "Ota tälle toimenpideohjelmalle käyttöön kansalaisosallistumisen toiminnot, kuten sitoumukset."
 
 #: src/actions/models/features.py
+msgid "Enable access requests"
+msgstr "Ota pääsypyynnöt käyttöön"
+
+#: src/actions/models/features.py
+msgid "Let visitors of an internal plan ask for access to its public site. Plan admins approve or reject the requests."
+msgstr "Sisäisen toimenpideohjelman sivuston kävijät voivat pyytää pääsyä sen julkiselle sivustolle. Toimenpideohjelman ylläpitäjät hyväksyvät tai hylkäävät pyynnöt."
+
+#: src/actions/models/features.py
 msgid "Enable PDF export of actions in public UI"
 msgstr "Ota käyttöön toimenpiteiden PDF-vienti julkisella sivustolla"
 
@@ -2064,27 +2310,27 @@ msgstr "Salli julkisen sivuston käyttäjien viedä toimenpiteitä PDF-muotoon."
 
 #: src/actions/models/features.py
 msgid "Hide published plan from search engines"
-msgstr ""
+msgstr "Piilota julkaistu toimenpideohjelma hakukoneilta"
 
 #: src/actions/models/features.py
 msgid "If set, the public production site of a published plan will instruct search engines not to index any of its pages. Unpublished plans and preview sites are always excluded from indexing regardless of this setting."
-msgstr ""
+msgstr "Jos valittu, julkaistun toimenpideohjelman julkinen tuotantosivusto ohjeistaa hakukoneita olemaan indeksoimatta sen sivuja. Julkaisemattomat toimenpideohjelmat ja esikatselusivustot jätetään aina indeksoinnin ulkopuolelle tästä asetuksesta riippumatta."
 
 #: src/actions/models/features.py
 msgid "Assign responsible parties and contact persons to tasks"
-msgstr ""
+msgstr "Määritä tehtäville vastuutahot ja yhteyshenkilöt"
 
 #: src/actions/models/features.py
 msgid "Should the organizations and people responsible for an individual task be recorded? Off by default; the assignments are hidden everywhere while it is off, including in plans that already have some."
-msgstr ""
+msgstr "Kirjataanko yksittäisestä tehtävästä vastaavat organisaatiot ja henkilöt? Oletuksena pois päältä; kun asetus on pois päältä, määritykset piilotetaan kaikkialla, myös toimenpideohjelmissa, joissa niitä on jo."
 
 #: src/actions/models/features.py
 msgid "Present the parent-child plans as peers"
-msgstr ""
+msgstr "Esitä ylä- ja alatason toimenpideohjelmat rinnakkaisina"
 
 #: src/actions/models/features.py
 msgid "If this is a parent plan, consider it one more peer among related plans and show it in selectors. If this is a child plan, consider its parent as one more peer among related plans and show it in selectors. Should be enabled both in parent and child plans when the parent is not considered an umbrella plan."
-msgstr ""
+msgstr "Jos tämä on ylätason toimenpideohjelma, sitä pidetään yhtenä rinnakkaisena toimenpideohjelmana muiden liittyvien joukossa ja se näytetään valitsimissa. Jos tämä on alatason toimenpideohjelma, sen ylätason toimenpideohjelmaa pidetään yhtenä rinnakkaisena toimenpideohjelmana muiden liittyvien joukossa ja se näytetään valitsimissa. Tulee ottaa käyttöön sekä ylä- että alatason toimenpideohjelmissa, kun ylätason toimenpideohjelmaa ei pidetä kattosuunnitelmana."
 
 #: src/actions/models/features.py
 msgid "plan feature"
@@ -2095,10 +2341,8 @@ msgid "plan features"
 msgstr "toimenpiteen ominaisuudet"
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Enable community engagement features such as pledges for this plan."
 msgid "Community engagement requires a primary client to be set on the plan."
-msgstr "Ota tälle toimenpideohjelmalle käyttöön kansalaisosallistumisen toiminnot, kuten sitoumukset."
+msgstr "Kansalaisosallistuminen edellyttää, että toimenpideohjelmalle on asetettu ensisijainen asiakas."
 
 #: src/actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
@@ -2221,6 +2465,30 @@ msgid "Link to accessibility statement"
 msgstr "Linkki saavutettavuusselosteeseen"
 
 #: src/actions/models/plan.py
+msgid "Contact email for access requests"
+msgstr "Pääsypyyntöjen yhteyssähköposti"
+
+#: src/actions/models/plan.py
+msgid "Where people whose access request was not approved can ask for more information."
+msgstr "Osoite, josta henkilöt, joiden pääsypyyntöä ei hyväksytty, voivat pyytää lisätietoja."
+
+#: src/actions/models/plan.py
+msgid "Email domains allowed to request access"
+msgstr "Sähköpostiverkkotunnukset, joista voi pyytää pääsyä"
+
+#: src/actions/models/plan.py
+msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
+msgstr "Vain näiden verkkotunnusten tai niiden aliverkkotunnusten osoitteista voi pyytää pääsyä. Erota verkkotunnukset pilkuilla. Jätä tyhjäksi salliaksesi kaikki osoitteet."
+
+#: src/actions/models/plan.py
+msgid "Who may be given access"
+msgstr "Kenelle pääsy voidaan myöntää"
+
+#: src/actions/models/plan.py
+msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr "Näytetään pääsyä pyytäville sekä sähköpostiviestissä, jossa kerrotaan, ettei pyyntöä hyväksytty. Esimerkiksi: ”Pääsy myönnetään vain ministeriön henkilöstölle.”"
+
+#: src/actions/models/plan.py
 msgid "Link to external feedback form"
 msgstr "Linkki ulkopuoliseen palautelomakkeeseen"
 
@@ -2321,7 +2589,7 @@ msgstr "Ensisijainen kieli ei voi olla valittuna"
 
 #: src/actions/models/plan.py src/actions/wagtail_admin.py
 msgid "Only one client can be marked as primary."
-msgstr ""
+msgstr "Vain yksi asiakas voidaan merkitä ensisijaiseksi."
 
 #: src/actions/models/plan.py
 msgid "Category type must belong to plan"
@@ -2653,53 +2921,43 @@ msgstr "Läpinäkymätön salaisuus, jota käytetään bearer-tunnisteena käytt
 
 #: src/actions/models/public_user.py
 msgid "email"
-msgstr ""
+msgstr "sähköposti"
 
 #: src/actions/models/public_user.py
 msgid "Set when the user signs up; used for PIN-based authentication."
-msgstr ""
+msgstr "Asetetaan käyttäjän rekisteröityessä; käytetään PIN-koodiin perustuvaan tunnistautumiseen."
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "Client"
 msgid "client"
-msgstr "Asiakas"
+msgstr "asiakas"
 
 #: src/actions/models/public_user.py
 msgid "Tenant this account belongs to. Required for registered users; empty for anonymous users."
-msgstr ""
+msgstr "Asiakas, jolle tämä tili kuuluu. Pakollinen rekisteröityneille käyttäjille; tyhjä anonyymeille käyttäjille."
 
 #: src/actions/models/public_user.py
 msgid "terms accepted at"
-msgstr ""
+msgstr "käyttöehdot hyväksytty"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "Marked as complete at"
 msgid "marketing consented at"
-msgstr "Merkitty valmiiksi"
+msgstr "markkinointilupa annettu"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "modified at"
 msgid "email verified at"
-msgstr "muokkausaika"
+msgstr "sähköpostiosoite vahvistettu"
 
 #: src/actions/models/public_user.py
 msgid "public users"
 msgstr "julkiset käyttäjät"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempt"
-msgstr "julkiset käyttäjät"
+msgstr "julkisen käyttäjän kirjautumisyritys"
 
 #: src/actions/models/public_user.py
-#, fuzzy
-#| msgid "public users"
 msgid "public user sign-in attempts"
-msgstr "julkiset käyttäjät"
+msgstr "julkisten käyttäjien kirjautumisyritykset"
 
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
@@ -2713,15 +2971,11 @@ msgstr "Sitoumus"
 #: src/actions/wagtail_hooks.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Participants"
-msgstr ""
+msgstr "Osallistujat"
 
 #: src/actions/pledge_admin.py
 msgid "Number of commitments"
 msgstr "Liittymisten määrä"
-
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Sitoumukset"
 
 #: src/actions/pledge_admin.py
 msgid "Export"
@@ -2755,9 +3009,9 @@ msgstr "Liittymispäivä"
 msgid "User ID"
 msgstr "Käyttäjän tunniste"
 
-#: src/actions/pledge_admin.py
-msgid "Pledge Commitments"
-msgstr "Sitoumukseen liittymiset"
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Sitoumukset"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -2772,102 +3026,78 @@ msgid "Community Impact Visualization"
 msgstr "Yhteisövaikutuksen visualisointi"
 
 #: src/actions/pledge_participants_admin.py
-#, fuzzy
-#| msgid "pledge actions"
 msgid "Pledge participants"
-msgstr "sitoumuksen toimenpiteet"
+msgstr "Sitoumuksen osallistujat"
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
-msgstr ""
+msgstr "Kopioi markkinointiluvan antaneiden sähköpostiosoitteet"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Copied"
-msgstr ""
+msgstr "Kopioitu"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
-#, fuzzy
-#| msgid "Export pledges as CSV"
 msgid "Export opted-in emails as CSV"
-msgstr "Vie sitoumukset CSV-muotoon"
+msgstr "Vie markkinointiluvan antaneiden sähköpostiosoitteet CSV-muotoon"
 
 #: src/actions/pledge_participants_admin.py
-#: src/admin_site/templates/admin_site/pledge_participants_panel.html
-msgid "Email"
-msgstr ""
-
-#: src/actions/pledge_participants_admin.py
-#, fuzzy
-#| msgid "pledge commitment"
 msgid "Pledges committed"
-msgstr "sitoumukseen liittyminen"
+msgstr "Sitoumuksiin liittymiset"
 
 #: src/actions/pledge_participants_admin.py
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Marketing opt-in"
-msgstr ""
+msgstr "Markkinointilupa"
 
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "%(plan_name)s: Your sign-in code"
-msgstr ""
+msgstr "%(plan_name)s: kirjautumiskoodisi"
 
 #: src/actions/public_user_auth.py
-#, fuzzy, python-format
-#| msgid "A shorter version of the plan name"
+#, python-format
 msgid "This code is for the website “%(plan_name)s”."
-msgstr "Lyhyt versio toimenpideohjelman nimestä"
+msgstr "Tämä koodi on tarkoitettu sivustolle ”%(plan_name)s”."
 
 #: src/actions/public_user_auth.py
 msgid "Your sign-in code"
-msgstr ""
+msgstr "Kirjautumiskoodisi"
 
 #: src/actions/public_user_auth.py
 msgid "Here is your sign-in code:"
-msgstr ""
+msgstr "Tässä on kirjautumiskoodisi:"
 
 #: src/actions/public_user_auth.py
 #, python-format
 msgid "Enter this code when prompted. It expires in %(minutes)d minutes."
-msgstr ""
+msgstr "Syötä tämä koodi, kun sitä pyydetään. Koodi vanhenee %(minutes)d minuutin kuluttua."
 
 #: src/actions/public_user_auth.py
 msgid "If you didn't request this code, you can ignore this email."
-msgstr ""
-
-#: src/actions/public_user_auth.py
-#, fuzzy
-#| msgid "Exported from Kausal Watch"
-msgid "Powered by Kausal Watch"
-msgstr "Tallennettu Kausal Watchista"
+msgstr "Jos et pyytänyt tätä koodia, voit jättää tämän viestin huomiotta."
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Selected actions will be published and marked as approved, skipping any remaining moderation tasks."
-msgstr ""
+msgstr "Valitut toimenpiteet julkaistaan ja merkitään hyväksytyiksi, ja jäljellä olevat moderointitehtävät ohitetaan."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "The main organization for the plan"
 msgid "There are no actions currently in moderation for this plan."
-msgstr "Toimenpideohjelman pääorganisaatio"
+msgstr "Tässä toimenpideohjelmassa ei ole tällä hetkellä moderoitavia toimenpiteitä."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "Back to own user"
 msgid "Back to actions"
-msgstr "Takaisin omaan tunnukseen"
+msgstr "Takaisin toimenpiteisiin"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "in progress"
 msgid "Select all in progress"
-msgstr "käynnissä"
+msgstr "Valitse kaikki keskeneräiset"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Select"
-msgstr ""
+msgstr "Valitse"
 
 #: src/actions/templates/actions/bulk_approve.html src/copying/views.py
 #: src/reports/spreadsheets/excel_report.py
@@ -2875,45 +3105,32 @@ msgid "Identifier"
 msgstr "Tunniste"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "Currently used by:"
 msgid "Current task"
-msgstr "Tällä hetkellä käytössä kohteissa:"
+msgstr "Nykyinen tehtävä"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "updated by"
 msgid "Submitted by"
-msgstr "viimeksi päivittänyt"
+msgstr "Lähettäjä"
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "published at"
 msgid "Submitted at"
-msgstr "julkaisuaika"
+msgstr "Lähetetty"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Needs changes (not releasable)"
-msgstr ""
+msgstr "Vaatii muutoksia (ei vapautettavissa)"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "These actions were previously rejected by a moderator. They cannot be released in bulk and must be handled individually."
-msgstr ""
+msgstr "Moderoija on aiemmin hylännyt nämä toimenpiteet. Niitä ei voi vapauttaa joukkona, vaan ne on käsiteltävä yksitellen."
 
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
-#| msgid "send to action contact persons"
 msgid "Send notification emails to contact persons"
-msgstr "lähetä toimenpiteiden yhteyshenkilöille"
+msgstr "Lähetä ilmoitukset sähköpostitse yhteyshenkilöille"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Release selected"
-msgstr ""
-
-#: src/actions/templates/actions/bulk_approve.html
-#: templates/aplans/plan_publish_confirmation.html
-msgid "Cancel"
-msgstr "Peruuta"
+msgstr "Vapauta valitut"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3025,11 +3242,11 @@ msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
 
 #: src/actions/wagtail_admin.py
 msgid "One client must be marked as primary."
-msgstr ""
+msgstr "Yksi asiakas on merkittävä ensisijaiseksi."
 
 #: src/actions/wagtail_admin.py
 msgid "Public-user accounts exist for the current primary client. Contact system administration to migrate them before changing the primary client."
-msgstr ""
+msgstr "Nykyisellä ensisijaisella asiakkaalla on julkisten käyttäjien tilejä. Ota yhteyttä järjestelmän ylläpitoon niiden siirtämiseksi ennen kuin vaihdat ensisijaisen asiakkaan."
 
 #: src/actions/wagtail_admin.py
 msgid "Select an existing organization or enter a name for a new one."
@@ -3234,44 +3451,16 @@ msgid "Plan unpublished"
 msgstr "Toimenpideohjelman julkaisu peruttu"
 
 #: src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "action task"
 msgid "Skip moderation task"
-msgstr "toimenpiteen tehtävä"
+msgstr "Ohita moderointitehtävä"
 
 #: src/actions/wagtail_hooks.py
-#, fuzzy
-#| msgid "action tasks"
 msgid "Moderation task skipped"
-msgstr "toimenpiteen tehtävät"
+msgstr "Moderointitehtävä ohitettu"
 
-#: src/actions/wagtail_hooks.py templates/modeladmin/create.html
-msgid "Actions"
-msgstr "Toiminnot"
-
-#: src/admin_site/api.py
+#: src/admin_site/api.py src/admin_site/login_method.py
 msgid "Invalid email address"
 msgstr "Virheellinen sähköpostiosoite"
-
-#: src/admin_site/api.py
-msgid "No user found with this email address. Ask your administrator to create an account for you."
-msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä ylläpitäjää luomaan sinulle käyttäjätili."
-
-#: src/admin_site/api.py
-msgid "You do not have access to the public site."
-msgstr "Sinulla ei ole pääsyä julkiselle sivustolle."
-
-#: src/admin_site/api.py
-msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr "Sinulla ei ole pääsyä ylläpitoon. Järjestelmänvalvojan on ehkä tehtävä sinusta yhteyshenkilö tai myönnettävä sinulle toimenpideohjelman ylläpitäjän asema."
-
-#: src/admin_site/api.py
-msgid "Cannot determine authentication method. The email address domain may be unknown."
-msgstr "Kirjautumistapaa ei saatu selville. Sähköpostiosoitteen loppuosa saattaa olla tuntematon."
-
-#: src/admin_site/api.py
-msgid "Password authentication is required, but the user has no password."
-msgstr "Salasanatodennus vaaditaan, mutta käyttäjällä ei ole salasanaa."
 
 #: src/admin_site/apps.py
 msgid "History"
@@ -3279,44 +3468,40 @@ msgstr "Historia"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "The built-in field whose appearance and access rights are customized"
-msgstr ""
+msgstr "Sisäänrakennettu kenttä, jonka ulkoasua ja käyttöoikeuksia mukautetaan"
 
 #: src/admin_site/built_in_field_customization_admin.py
 #, python-format
 msgid "%(field)s (no longer customizable)"
-msgstr ""
+msgstr "%(field)s (ei enää mukautettavissa)"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "This field cannot be customized."
-msgstr ""
+msgstr "Tätä kenttää ei voi mukauttaa."
 
 #: src/admin_site/built_in_field_customization_admin.py
-#, fuzzy
-#| msgid "The organization is already included in the plan"
 msgid "This field is already customized in this plan."
-msgstr "Organisaatio on jo toimenpideohjelmassa"
+msgstr "Tämä kenttä on jo mukautettu tässä toimenpideohjelmassa."
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Model"
-msgstr ""
+msgstr "Malli"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Field customizations"
-msgstr ""
+msgstr "Kenttien mukautukset"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Appearance"
-msgstr ""
+msgstr "Ulkoasu"
 
 #: src/admin_site/built_in_field_customization_admin.py
 msgid "Leave empty to use the label and help text that the field has by default. These have no effect on fields that are shown in a tab or panel of their own, such as tasks."
-msgstr ""
+msgstr "Jätä tyhjäksi käyttääksesi kentän oletusnimeä ja -ohjetekstiä. Näillä ei ole vaikutusta kenttiin, jotka näytetään omalla välilehdellään tai paneelissaan, kuten tehtäviin."
 
 #: src/admin_site/built_in_field_customization_admin.py
-#, fuzzy
-#| msgid "Accessibility"
 msgid "Access rights"
-msgstr "Saavutettavuus"
+msgstr "Käyttöoikeudet"
 
 #: src/admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
@@ -3384,6 +3569,26 @@ msgstr "Syötä salasana"
 msgid "Enter your email address"
 msgstr "Syötä sähköpostiosoitteesi"
 
+#: src/admin_site/login_method.py
+msgid "No user found with this email address. Ask your administrator to create an account for you."
+msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä ylläpitäjää luomaan sinulle käyttäjätili."
+
+#: src/admin_site/login_method.py
+msgid "You do not have access to the public site."
+msgstr "Sinulla ei ole pääsyä julkiselle sivustolle."
+
+#: src/admin_site/login_method.py
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr "Sinulla ei ole pääsyä ylläpitoon. Järjestelmänvalvojan on ehkä tehtävä sinusta yhteyshenkilö tai myönnettävä sinulle toimenpideohjelman ylläpitäjän asema."
+
+#: src/admin_site/login_method.py
+msgid "Cannot determine authentication method. The email address domain may be unknown."
+msgstr "Kirjautumistapaa ei saatu selville. Sähköpostiosoitteen loppuosa saattaa olla tuntematon."
+
+#: src/admin_site/login_method.py
+msgid "Password authentication is required, but the user has no password."
+msgstr "Salasanatodennus vaaditaan, mutta käyttäjällä ei ole salasanaa."
+
 #: src/admin_site/mixins.py templates/modeladmin/create.html
 #: templates/modeladmin/edit.html
 msgid "Save and continue editing"
@@ -3422,14 +3627,12 @@ msgid "Login method that will be used for users that don't have a password set"
 msgstr "Kirjautumismenetelmä käyttäjille joille ei ole asetettu salasanaa"
 
 #: src/admin_site/models.py
-#, fuzzy
-#| msgid "primary language"
 msgid "primary client"
-msgstr "ensisijainen kieli"
+msgstr "ensisijainen asiakas"
 
 #: src/admin_site/models.py
 msgid "The tenant that owns this plan. Used to scope public user identities and staff notifications for pledge sign-ups."
-msgstr ""
+msgstr "Asiakas, jolle tämä toimenpideohjelma kuuluu. Käytetään julkisten käyttäjien tunnisteiden ja sitoumuksiin ilmoittautumisista henkilöstölle lähetettävien ilmoitusten rajaamiseen."
 
 #: src/admin_site/models.py
 msgid "label"
@@ -3437,16 +3640,16 @@ msgstr "selite"
 
 #: src/admin_site/models.py
 msgid "field customization"
-msgstr ""
+msgstr "kentän mukautus"
 
 #: src/admin_site/models.py
 msgid "field customizations"
-msgstr ""
+msgstr "kenttien mukautukset"
 
 #: src/admin_site/models.py
 #, python-format
 msgid "The model '%(model)s' does not exist any more"
-msgstr ""
+msgstr "Mallia '%(model)s' ei ole enää olemassa"
 
 #: src/admin_site/models.py
 #, python-format
@@ -3506,24 +3709,17 @@ msgstr "Muokkaa tätä mittaria"
 msgid "Edit data"
 msgstr "Muokkaa dataa"
 
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#, python-format
-msgid "%(time_period)s ago"
-msgstr "%(time_period)s sitten"
-
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
-msgstr ""
+msgstr "Lupa annettu"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
-#, fuzzy
-#| msgid "Not started"
 msgid "Not opted in"
-msgstr "Ei aloitettu"
+msgstr "Lupaa ei annettu"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "No participants have committed to this pledge yet."
-msgstr ""
+msgstr "Kukaan ei ole vielä liittynyt tähän sitoumukseen."
 
 #: src/admin_site/templates/admin_site/release_impersonation.html
 msgid "Viewing site as another user"
@@ -3636,10 +3832,6 @@ msgstr "Syötä sallittu hostname."
 #: src/aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Täydellinen verkkotunnus (FQDN)"
-
-#: src/aplans/graphql_types.py
-msgid "Approved"
-msgstr "Hyväksytty"
 
 #: src/aplans/graphql_types.py
 msgid "Draft"
@@ -3766,20 +3958,16 @@ msgid "Edit rights"
 msgstr "Muokkausoikeudet"
 
 #: src/aplans/utils.py
-#, fuzzy
-#| msgid "URL for the owner of the site"
 msgid "A help text shown to visitors of the site"
-msgstr "Sivuston omistajaorganisaation URL"
+msgstr "Sivuston kävijöille näytettävä ohjeteksti"
 
 #: src/aplans/utils.py
-#, fuzzy
-#| msgid "Help text for the field to be shown in the UI"
 msgid "help text for the admin UI"
-msgstr "Käyttöliittymässä näytettävä kentän ohjeteksti"
+msgstr "ylläpitokäyttöliittymän ohjeteksti"
 
 #: src/aplans/utils.py
 msgid "If set, these instructions are shown to admin users instead of the help text"
-msgstr ""
+msgstr "Jos asetettu, nämä ohjeet näytetään ylläpitokäyttäjille ohjetekstin sijaan"
 
 #: src/aplans/utils.py
 msgid "Contact persons with \"moderator\" role"
@@ -4114,10 +4302,6 @@ msgstr "asiakirjat"
 #: src/feedback/models.py src/indicators/models/action_links.py
 msgid "action"
 msgstr "toimenpide"
-
-#: src/feedback/models.py src/users/models.py
-msgid "email address"
-msgstr "sähköpostiosoite"
 
 #: src/feedback/models.py
 msgid "comment"
@@ -5027,10 +5211,8 @@ msgid "indicator values"
 msgstr "mittarin arvot"
 
 #: src/indicators/models/values.py
-#, fuzzy
-#| msgid "There is already a category with this identifier."
 msgid "There is already a value for this date and these categories."
-msgstr "Tällä tunnisteella on jo luokka."
+msgstr "Tälle päivämäärälle ja näille kategorioille on jo arvo."
 
 #: src/indicators/models/values.py
 msgid "indicator goal"
@@ -5064,8 +5246,6 @@ msgid "Result"
 msgstr "Tulos"
 
 #: src/indicators/wagtail_admin.py
-#, fuzzy
-#| msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Kaavioissa näytettävän lasketun arvon nimi (mittarin data × tekijä), esim. \"Ajoneuvojen päästöt\""
 
@@ -5630,14 +5810,21 @@ msgstr "Käyttäjä on antanut palautetta."
 
 #: src/notifications/notifications.py
 msgid "Pledge participant signed up"
-msgstr ""
+msgstr "Sitoumuksen osallistuja ilmoittautui"
 
 #: src/notifications/notifications.py
-#, fuzzy
-#| msgid "pledge actions"
 msgctxt "pledge_participant_signup"
 msgid "New pledge sign-ups"
-msgstr "sitoumuksen toimenpiteet"
+msgstr "Uusia ilmoittautumisia sitoumuksiin"
+
+#: src/notifications/notifications.py
+msgid "Access requests received"
+msgstr "Pääsypyyntöjä vastaanotettu"
+
+#: src/notifications/notifications.py
+msgctxt "access_requests_received"
+msgid "New access requests"
+msgstr "Uusia pääsypyyntöjä"
 
 #: src/notifications/notifications.py
 msgid "Manually scheduled notification"
@@ -6428,29 +6615,28 @@ msgid "Do you really want to view the site as %(person)s?"
 msgstr "Haluatko varmasti käyttää sivustoa käyttäjänä %(person)s?"
 
 #: src/people/wagtail_admin.py
-msgid "Is contact person"
-msgstr "On yhteyshenkilö"
+msgid "Plan admin"
+msgstr "Toimenpideohjelman ylläpitäjä"
 
 #: src/people/wagtail_admin.py
-#, python-format
-msgid "For an action in %(plan)s"
-msgstr "Toimenpiteelle ohjelmassa %(plan)s"
+msgid "Organization admin"
+msgstr "Organisaatioylläpitäjä"
 
 #: src/people/wagtail_admin.py
-msgid "For an action"
-msgstr "Toimenpiteelle"
+msgid "Contact person"
+msgstr "Yhteyshenkilö"
 
 #: src/people/wagtail_admin.py
-msgid "For same actions or indicators as me"
-msgstr "Samoille toimenpiteille tai mittareille kuin minä"
+msgid "Viewer"
+msgstr "Katselija"
 
 #: src/people/wagtail_admin.py
-msgid "For an indicator"
-msgstr "Mittarille"
+msgid "Role"
+msgstr "Rooli"
 
 #: src/people/wagtail_admin.py
-msgid "Not a contact person"
-msgstr "Ei ole yhteyshenkilö"
+msgid "No role"
+msgstr "Ei roolia"
 
 #: src/people/wagtail_admin.py
 msgid "Access to public site only"
@@ -6493,20 +6679,16 @@ msgid "This person has no access to the admin interface. This is commonly becaus
 msgstr "Tällä henkilöllä ei ole pääsyä ylläpitoon. Tämä johtuu yleensä siitä, ettei hänelle ole määritetty yhtäkään toimenpidettä tai indikaattoria."
 
 #: src/people/wagtail_admin.py
-msgid "first name"
-msgstr "etunimi"
-
-#: src/people/wagtail_admin.py
-msgid "last name"
-msgstr "sukunimi"
-
-#: src/people/wagtail_admin.py
 msgid "last login"
 msgstr "kirjautunut viimeksi"
 
 #: src/people/wagtail_admin.py
 msgid "contact for indicators"
 msgstr "yhteyshenkilönä mittareille"
+
+#: src/people/wagtail_admin.py
+msgid "Attended training"
+msgstr "Osallistunut koulutukseen"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -6549,10 +6731,8 @@ msgid "Choose another report type"
 msgstr "Valitse toinen raporttityyppi"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Only plan admins can mark actions as complete for reports of this type"
 msgid "Only plan admins can mark actions as complete"
-msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi tämän tyypin raporteissa"
+msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi"
 
 #: src/reports/models.py
 msgid "Only plan admins can mark actions as complete for reports of this type"
@@ -6642,10 +6822,6 @@ msgid "Other responsible parties"
 msgstr "Muut vastuutahot"
 
 #: src/reports/spreadsheets/action_print_layout.py
-msgid "Page"
-msgstr "Sivu"
-
-#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiilit"
 
@@ -6686,34 +6862,29 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Seuraavien toimenpiteiden merkitseminen valmiiksi raporttia varten perutaan:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' poistettu."
+msgstr "%(model_name)s: poistaminen ei onnistunut"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
-msgstr ""
+msgstr "”%(instance_name)s” on käytössä ”Raporttien vertailu” -lohkossa toimenpiteiden sivuilla. Sen poistaminen rikkoisi nämä sivut. Jos halusit poistaa raporttien vertailun toimenpiteiden sivuilta, poista lohko sen sijaan seuraavilta sivuilta:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
 msgid "unpublished draft"
-msgstr "julkaisuaika"
+msgstr "julkaisematon luonnos"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "Back to own user"
 msgid "Go back to listing"
-msgstr "Takaisin omaan tunnukseen"
+msgstr "Palaa luetteloon"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen raportin ja siihen tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
+msgstr[1] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen %(counter)s raporttia ja niihin tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -6807,7 +6978,7 @@ msgstr "Peru tämän raportin merkitseminen valmiiksi"
 
 #: src/reports/wagtail_admin.py
 msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
 
 #: src/reports/wagtail_admin.py
 msgid "Report types"
@@ -6950,6 +7121,31 @@ msgstr "Tallennetaan…"
 msgid "Save"
 msgstr "Tallenna ja poistu"
 
+#~ msgid "Pledge Commitments"
+#~ msgstr "Sitoumukseen liittymiset"
+
+#~ msgid "Is contact person"
+#~ msgstr "On yhteyshenkilö"
+
+#, python-format
+#~ msgid "For an action in %(plan)s"
+#~ msgstr "Toimenpiteelle ohjelmassa %(plan)s"
+
+#~ msgid "For an action"
+#~ msgstr "Toimenpiteelle"
+
+#~ msgid "For same actions or indicators as me"
+#~ msgstr "Samoille toimenpiteille tai mittareille kuin minä"
+
+#~ msgid "For an indicator"
+#~ msgstr "Mittarille"
+
+#~ msgid "Not a contact person"
+#~ msgstr "Ei ole yhteyshenkilö"
+
+#~ msgid "Page"
+#~ msgstr "Sivu"
+
 #~ msgid "Allow logging in to the public website"
 #~ msgstr "Salli kirjautuminen julkiselle sivustolle"
 
@@ -6989,7 +7185,6 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "Pahoittelut, palvelimella on väliaikaisia teknisiä ongelmia."
 
 #, fuzzy
-#~| msgid "Remove row"
 #~ msgid "Remove"
 #~ msgstr "Poista rivi"
 
@@ -7033,34 +7228,28 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "visualisaatiot"
 
 #, fuzzy
-#~| msgid "action schedules"
 #~ msgctxt "verbose name of model"
 #~ msgid "action change log message"
 #~ msgstr "toimenpiteiden aikataulut"
 
 #, fuzzy
-#~| msgid "action schedules"
 #~ msgctxt "verbose name plural of model"
 #~ msgid "action change log messages"
 #~ msgstr "toimenpiteiden aikataulut"
 
 #, fuzzy
-#~| msgid "Indicators assigned to me"
 #~ msgid "indicator change log message"
 #~ msgstr "Minulle osoitetut mittarit"
 
 #, fuzzy
-#~| msgid "indicator goals"
 #~ msgid "indicator change log messages"
 #~ msgstr "mittarin tavoitteet"
 
 #, fuzzy
-#~| msgid "category levels"
 #~ msgid "category change log messages"
 #~ msgstr "luokan tasot"
 
 #, fuzzy
-#~| msgid "Save changes"
 #~ msgid "Enable change log"
 #~ msgstr "Tallenna muutokset"
 
@@ -7072,7 +7261,6 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "Kohdetta ei voida poistaa koska muut oliot viittaavat siihen."
 
 #, fuzzy, python-format
-#~| msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 #~ msgid "Cannot delete \"%s\" because it is connected to other objects such as instances, persons or actions."
 #~ msgstr "Ei voi poistaa \"%s\", koska se liittyy muihin kohteisiin, kuten suunnitelmiin, henkilöihin tai toimiin."
 
@@ -7100,12 +7288,10 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "Valitse toinen ominaisuus"
 
 #, fuzzy
-#~| msgid "dimensions"
 #~ msgid "dimension scope"
 #~ msgstr "mittarin dimensiot"
 
 #, fuzzy
-#~| msgid "dimension categories"
 #~ msgid "dimension scopes"
 #~ msgstr "dimension luokat"
 
@@ -7117,27 +7303,22 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "Kuvaava nimi tietoaineistomallille"
 
 #, fuzzy
-#~| msgid "Description to show after the field content"
 #~ msgid "Description of the content and use of the dataset"
 #~ msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
 
 #, fuzzy
-#~| msgid "time resolution"
 #~ msgid "Time resolution"
 #~ msgstr "aikaresoluutio"
 
 #, fuzzy
-#~| msgid "start date"
 #~ msgid "Initial date"
 #~ msgstr "alkupäivämäärä"
 
 #, fuzzy
-#~| msgid "Permissions"
 #~ msgid "Person permissions"
 #~ msgstr "Käyttöoikeudet"
 
 #, fuzzy
-#~| msgid "Permissions"
 #~ msgid "Group permissions"
 #~ msgstr "Käyttöoikeudet"
 
@@ -7146,12 +7327,10 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "tietoaineiston lisenssi"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset metric"
 #~ msgstr "tietoaineiston lisenssi"
 
 #, fuzzy
-#~| msgid "dataset license"
 #~ msgid "dataset metrics"
 #~ msgstr "tietoaineiston lisenssi"
 
@@ -7168,7 +7347,6 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "tietoaineiston lisenssi"
 
 #, fuzzy
-#~| msgid "dataset licenses"
 #~ msgid "dataset schema scopes"
 #~ msgstr "tietoaineistojen lisenssit"
 
@@ -7181,27 +7359,22 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "Viimeisin datapiste"
 
 #, fuzzy
-#~| msgid "comment"
 #~ msgid "Sticky comment"
 #~ msgstr "kommentti"
 
 #, fuzzy
-#~| msgid "created at"
 #~ msgid "resolved at"
 #~ msgstr "luomisaika"
 
 #, fuzzy
-#~| msgid "comment"
 #~ msgid "comments"
 #~ msgstr "kommentti"
 
 #, fuzzy
-#~| msgid "Section"
 #~ msgid "edition"
 #~ msgstr "Osio"
 
 #, fuzzy
-#~| msgid "author"
 #~ msgid "authority"
 #~ msgstr "tekijä"
 
@@ -7218,32 +7391,26 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "tietoaineistot"
 
 #, fuzzy
-#~| msgid "Unknown content"
 #~ msgid "Unknown schema"
 #~ msgstr "Tuntematon sisältö"
 
 #, fuzzy, python-format
-#~| msgid "Notification preferences"
 #~ msgid "Data source reference in: %(schema)s"
 #~ msgstr "Heräteasetukset"
 
 #, fuzzy
-#~| msgid "Notification preferences"
 #~ msgid "Data source reference"
 #~ msgstr "Heräteasetukset"
 
 #, fuzzy
-#~| msgid "Notification preferences"
 #~ msgid "data source references"
 #~ msgstr "Heräteasetukset"
 
 #, fuzzy
-#~| msgid "Edit data"
 #~ msgid "Edit dataset"
 #~ msgstr "Muokkaa dataa"
 
 #, fuzzy, python-format
-#~| msgid "Edit this person"
 #~ msgid "Edit this %(object)s"
 #~ msgstr "Muokkaa tätä henkilöä"
 
@@ -7377,7 +7544,6 @@ msgstr "Tallenna ja poistu"
 #~ msgstr "%(model_name)s '%(object)s' poistettu."
 
 #, fuzzy, python-format
-#~| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
 #~ msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
 #~ msgstr "Moderointipyyntö on peruttu kohteelle %(model_name)s \"%(title)s\""
 
@@ -7555,9 +7721,6 @@ msgstr "Tallenna ja poistu"
 #~ msgid "Person with that email already exists"
 #~ msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
-#~ msgid "Contact person"
-#~ msgstr "Yhteyshenkilö"
-
 #~ msgid "Own actions"
 #~ msgstr "Omat toimenpiteet"
 
@@ -7675,12 +7838,6 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "Edit this action"
 #~ msgstr "Muokkaa tätä toimenpidettä"
-
-#~ msgid "View"
-#~ msgstr "Katsele"
-
-#~ msgid "Sign in"
-#~ msgstr "Kirjaudu sisään"
 
 #, python-format
 #~ msgid "Your %(username_field)s and password didn't match. Please try again."
