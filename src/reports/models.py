@@ -28,7 +28,6 @@ from reports.blocks.action_content import ReportFieldBlock
 from reports.utils import get_field_unique_key
 
 # The following model is for very specialized use and is only imported here so that Django finds it
-from actions.blocks.base import ActionReportContentField
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
 
 from .spreadsheets import ExcelReport
@@ -181,15 +180,6 @@ class ReportType(PlanRelatedModelWithRevision):
 
     def get_fields_for_type(self, block_type: str) -> list[StreamValue.StreamChild]:
         return [f for f in self.fields if f.block_type == block_type]
-
-    def get_field_labels_for_type(self, block_type: str) -> list[list[str]]:
-        fields = self.get_fields_for_type(block_type)
-        labels: list[list[str]] = []
-        for field in fields:
-            block = field.block
-            assert isinstance(block, ActionReportContentField)
-            labels.append(block.xlsx_column_labels(field.value))
-        return labels
 
     def get_action_list_page(self) -> ActionListPage:
         page = self.plan.get_action_list_page()

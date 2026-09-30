@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
@@ -123,3 +125,56 @@ def test_full_export_contains_categories_and_non_public_attributes_for_plan_admi
     assert isinstance(viewer_output, str)
     assert 'Exported category' in viewer_output
     assert 'Internal note' not in viewer_output
+
+
+def create_action_with_clashing_column_labels(plan: Plan) -> None:
+    """Create an action with a category and an attribute value whose types have the same name."""
+    from actions.tests.factories import ActionFactory, AttributeTextFactory, CategoryFactory
+
+    category_type = CategoryTypeFactory.create(plan=plan, usable_for_actions=True, name='Target group')
+    category = CategoryFactory.create(type=category_type, name='Exported category')
+    attribute_type = action_attribute_type(plan, VisibleFor.PUBLIC)
+    attribute_type.name = 'Target group'
+    attribute_type.save()
+    action = ActionFactory.create(plan=plan)
+    action.categories.add(category)
+    action.save()
+    AttributeTextFactory.create(type=attribute_type, content_object=action, text='Attribute text')
+
+
+def test_full_export_suffixes_a_column_label_already_taken_by_another_field(plan_with_pages):
+    from reports.export import export_dashboard_report_for_plan
+
+    plan = plan_with_pages
+    create_action_with_clashing_column_labels(plan)
+
+    output, _filename = export_dashboard_report_for_plan(plan, 'csv', plan_admin(plan), all_fields=True)
+
+    assert isinstance(output, str)
+    rows = list(csv.DictReader(io.StringIO(output)))
+    assert len(rows) == 1
+    assert {rows[0]['Target group'], rows[0]['Target group (2)']} == {'Exported category', 'Attribute text'}
+
+
+def test_full_export_category_pivot_uses_the_category_column_when_labels_clash(plan_with_pages):
+    from openpyxl import load_workbook
+
+    plan = plan_with_pages
+    create_action_with_clashing_column_labels(plan)
+
+    # The public export leaves out the summary sheets, so build the workbook the way admin reports do.
+    user = plan_admin(plan)
+    report = ReportType.generate_for_plan_all_fields(plan, user).generate_incomplete_report()
+    report.disable_title_sheet = True
+    report.disable_macros = True
+    output = report.get_xlsx_exporter(user=user).generate_xlsx()
+
+    workbook = load_workbook(io.BytesIO(output), read_only=True)
+    pivot_row_labels = {
+        row[0]
+        for sheet in workbook.worksheets
+        if sheet.title.startswith('Summary')
+        for row in sheet.iter_rows(min_row=2, max_col=1, values_only=True)
+    }
+    assert 'Exported category' in pivot_row_labels
+    assert 'Attribute text' not in pivot_row_labels

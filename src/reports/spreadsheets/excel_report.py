@@ -46,6 +46,16 @@ def clean(value: ReportCellValue) -> ReportCellValue:
     return value.replace('\r\n', '\n')
 
 
+def unique_label(label: str, taken: set[str]) -> str:
+    """Return `label`, or `label (n)` with the lowest n >= 2 that is not in `taken`."""
+    if label not in taken:
+        return label
+    n = 2
+    while f'{label} ({n})' in taken:
+        n += 1
+    return f'{label} ({n})'
+
+
 # T = TypeVar('T')
 
 
@@ -56,6 +66,7 @@ class ExcelReport:
     formats: ExcelFormats
     plan_current_related_objects: PlanRelatedObjects
     field_to_column_labels: dict[str, set[str]]
+    category_field_labels: list[list[str]]
     has_macros: bool
     plan: Plan
     action_ids: list[int] | None  # if not None, restrict to these actions
@@ -165,6 +176,7 @@ class ExcelReport:
             self.child_plans = []
             self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self.field_to_column_labels = dict()
+        self.category_field_labels = []
 
     def get_filename(self, suffix: str | None = None) -> str:
         if suffix is None:
@@ -356,26 +368,9 @@ class ExcelReport:
     def get_column_labels(self, field_name: str) -> set[str]:
         return self.field_to_column_labels.get(field_name, set())
 
-    def create_populated_actions_dataframe(  # noqa: C901
-        self,
-        all_actions: list[SerializedActionVersion],
-        all_related_versions: list[SerializedVersion],
-    ):
-        from reports.types import SerializedAttributeVersion
-
-        data: dict[str, list[Any]] = {}
-
-        def append_to_key(key: str, value: ReportCellValue, field_name: str) -> None:
-            self.field_to_column_labels.setdefault(field_name, set()).add(key)
-            data.setdefault(key, []).append(value)
-
-        completed_by_label = _('Marked as complete by')
-        completed_at_label = _('Marked as complete at')
-
-        related_objects = group_by_model(all_related_versions)
-        attribute_versions = {v.attribute_path: v for v in all_related_versions if isinstance(v, SerializedAttributeVersion)}
-
-        fields = []
+    def _get_report_fields(self) -> list[Any]:
+        """Return the report type's fields, leaving out broken and duplicate ones."""
+        fields: list[Any] = []
         seen_field_keys: set[str] = set()
         for field in self.report.type.fields:
             if (
@@ -396,6 +391,58 @@ class ExcelReport:
                 continue
             seen_field_keys.add(field_key)
             fields.append(field)
+        return fields
+
+    def _resolve_field_labels(self, fields: Sequence[Any], reserved_labels: set[str]) -> list[list[str]]:
+        """
+        Return the column labels of each field, suffixed where an earlier column already has the label.
+
+        Two different fields may have the same label, e.g. a category type and an attribute type with the
+        same name. Their values would otherwise end up in the same column.
+        """
+        taken_labels = set(reserved_labels)
+        field_labels: list[list[str]] = []
+        for field in fields:
+            labels = [
+                unique_label(label, taken_labels)
+                for label in field.block.xlsx_column_labels(field.value, plan=self.report.type.plan)
+            ]
+            taken_labels.update(labels)
+            field_labels.append(labels)
+        return field_labels
+
+    def create_populated_actions_dataframe(
+        self,
+        all_actions: list[SerializedActionVersion],
+        all_related_versions: list[SerializedVersion],
+    ):
+        from reports.types import SerializedAttributeVersion
+
+        data: dict[str, list[Any]] = {}
+
+        def append_to_key(key: str, value: ReportCellValue, field_name: str) -> None:
+            self.field_to_column_labels.setdefault(field_name, set()).add(key)
+            data.setdefault(key, []).append(value)
+
+        completed_by_label = _('Marked as complete by')
+        completed_at_label = _('Marked as complete at')
+
+        related_objects = group_by_model(all_related_versions)
+        attribute_versions = {v.attribute_path: v for v in all_related_versions if isinstance(v, SerializedAttributeVersion)}
+
+        fields = self._get_report_fields()
+
+        identifier_label = _('Identifier')
+        action_label = pgettext('Action model', 'Action')
+        plan_label = _('Plan')
+        reserved_labels = {identifier_label, action_label, completed_by_label, completed_at_label}
+        if self.child_plans:
+            reserved_labels.add(plan_label)
+        field_labels = self._resolve_field_labels(fields, reserved_labels)
+        self.category_field_labels = [
+            labels for field, labels in zip(fields, field_labels, strict=True) if field.block_type == 'categories'
+        ]
+
         for action in all_actions:
             action_identifier = action.data['identifier']
             action_obj = Action(**{key: action.data[key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
@@ -407,12 +454,11 @@ class ExcelReport:
             completed_at = action.completed_at
             if completed_at is not None:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
-            append_to_key(_('Identifier'), action_identifier, 'identifier')
-            append_to_key(pgettext('Action model', 'Action'), action_name, 'name')
+            append_to_key(identifier_label, action_identifier, 'identifier')
+            append_to_key(action_label, action_name, 'name')
             if self.child_plans:
-                append_to_key(_('Plan'), action_obj.plan.name, 'plan')
-            for field in fields:
-                labels = list(field.block.xlsx_column_labels(field.value, plan=self.report.type.plan))
+                append_to_key(plan_label, action_obj.plan.name, 'plan')
+            for field, labels in zip(fields, field_labels, strict=True):
                 values = field.block.extract_action_values(
                     self,
                     field.value,
@@ -471,7 +517,7 @@ class ExcelReport:
             },
         ]
         # Pivot sheet: Category (level) x Implementation phase
-        category_labels = self.report.type.get_field_labels_for_type('categories')
+        category_labels = self.category_field_labels
         implementation_phase_fields = self.report.type.get_fields_for_type('implementation_phase')
         if len(implementation_phase_fields) > 0:
             for label in category_labels:
