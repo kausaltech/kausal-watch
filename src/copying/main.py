@@ -196,6 +196,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'pledge_action_through': {},
         'user_feedbacks': EXCLUDED,
     },
+    'pledge_form_fields': {},
     'documentation_root_pages': EXCLUDED,  # handled separately by _copy_documentation_pages
     'user_feedbacks': EXCLUDED,
     'plan_common_indicator_through': EXCLUDED,  # common indicator assignments are not plan-owned

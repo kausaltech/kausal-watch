@@ -4,9 +4,11 @@ import uuid
 from typing import TYPE_CHECKING, ClassVar, Self
 
 import reversion
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modeltrans.fields import TranslationField
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import TranslatableMixin
@@ -17,7 +19,7 @@ from modelsearch import index
 from kausal_common.i18n.helpers import convert_language_code
 from kausal_common.models.types import ModelManager
 
-from aplans.utils import PlanRelatedModelQuerySet, PlanRelatedOrderedModel
+from aplans.utils import IdentifierField, PlanRelatedModelQuerySet, PlanRelatedOrderedModel
 
 from pages.blocks import LargeImageBlock, QuestionAnswerBlock
 from search.models import SearchableModel
@@ -354,3 +356,70 @@ class PledgeActionThrough(models.Model):
 
     def __str__(self) -> str:
         return f'{self.pledge} - {self.action}'
+
+
+PLEDGE_FORM_FIELD_VALUE_MAX_LENGTH = 200
+
+
+@reversion.register()
+class PledgeFormField(PlanRelatedOrderedModel):
+    """
+    A free-text field shown when a community member commits to a pledge.
+
+    The answers are stored in `PublicUser.user_data`, keyed by `identifier`.
+    """
+
+    plan: PK[Plan] = ParentalKey(
+        'actions.Plan',
+        on_delete=models.CASCADE,
+        related_name='pledge_form_fields',
+        verbose_name=_('plan'),
+    )
+    identifier = IdentifierField(
+        max_length=50,
+        help_text=_('The key under which answers are stored, e.g. postal_code. It cannot be changed after the field is saved.'),
+    )
+    label = models.CharField(max_length=100, verbose_name=_('label'))
+    help_text = models.CharField(max_length=200, blank=True, verbose_name=_('help text'))
+    placeholder = models.CharField(max_length=100, blank=True, verbose_name=_('placeholder'))
+    required = models.BooleanField(default=False, verbose_name=_('required'))
+
+    i18n = TranslationField(
+        fields=('label', 'help_text', 'placeholder'),
+        default_language_field='plan__primary_language_lowercase',
+    )
+    label_i18n: str
+    help_text_i18n: str
+    placeholder_i18n: str
+
+    public_fields: ClassVar = [
+        'id',
+        'order',
+        'identifier',
+        'label',
+        'help_text',
+        'placeholder',
+        'required',
+    ]
+
+    id: int
+    objects: ClassVar[Manager[Self]]
+
+    class Meta:
+        ordering = ('plan', 'order')
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('pledge form field')
+        verbose_name_plural = _('pledge form fields')
+
+    def __str__(self) -> str:
+        return self.label
+
+    def clean(self) -> None:
+        super().clean()
+        if self.pk is None:
+            return
+        saved_identifier = type(self).objects.filter(pk=self.pk).values_list('identifier', flat=True).first()
+        if saved_identifier is not None and saved_identifier != self.identifier:
+            raise ValidationError(
+                {'identifier': _('The identifier cannot be changed because answers are stored under it.')},
+            )

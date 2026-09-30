@@ -103,6 +103,19 @@ def _humanize_user_data_key(key: str) -> str:
     return capfirst(key.replace('_', ' '))
 
 
+def _user_data_columns(plan: Plan, user_data_values: Iterable[dict[str, Any] | None]) -> list[tuple[str, str]]:
+    """
+    Return (key, label) pairs for the user_data columns to show for `plan`.
+
+    The plan's configured pledge form fields come first, in their order and with their translated labels. Keys
+    found in the data that aren't configured (e.g. from deleted fields) follow, sorted and humanized.
+    """
+    columns = [(field.identifier, field.label_i18n) for field in plan.pledge_form_fields.all()]
+    configured_keys = {key for key, _label in columns}
+    columns += [(key, _humanize_user_data_key(key)) for key in _user_data_keys(user_data_values) if key not in configured_keys]
+    return columns
+
+
 _CSV_FORMULA_LEADING = ('=', '+', '-', '@', '\t', '\r')
 
 
@@ -151,13 +164,14 @@ class ParticipantsIndexView(WatchIndexView[PublicUser]):
     def columns(self):  # type: ignore[override]
         # Bulk actions aren't available for now
         columns = [column for column in super().columns if column.name != 'bulk_actions']
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
         columns += [
             Column(
                 f'user_data:{key}',
-                label=_humanize_user_data_key(key),
+                label=label,
                 accessor=lambda obj, key=key: (obj.user_data or {}).get(key, ''),
             )
-            for key in _user_data_keys(self.get_queryset().values_list('user_data', flat=True))
+            for key, label in _user_data_columns(plan, self.get_queryset().values_list('user_data', flat=True))
         ]
         return columns
 
@@ -279,16 +293,16 @@ class _ParticipantsCsvView(View):
             filename = f'pledge-participants-opted-in-emails-{plan.identifier}.csv'
 
         participants = _opted_in_participants(plan, pledge)
-        user_data_keys = _user_data_keys(p['user_data'] for p in participants)
+        user_data_columns = _user_data_columns(plan, (p['user_data'] for p in participants))
 
         def _stream() -> Any:
             writer = csv.writer(Echo())
-            yield writer.writerow([str(_('Email')), *(_csv_safe(_humanize_user_data_key(key)) for key in user_data_keys)])
+            yield writer.writerow([str(_('Email')), *(_csv_safe(label) for _key, label in user_data_columns)])
             for participant in participants:
                 user_data = participant['user_data'] or {}
                 yield writer.writerow([
                     _csv_safe(participant['email']),
-                    *(_csv_safe(user_data.get(key, '')) for key in user_data_keys),
+                    *(_csv_safe(user_data.get(key, '')) for key, _label in user_data_columns),
                 ])
 
         response = HttpResponse(_stream(), content_type='text/csv')
