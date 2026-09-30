@@ -491,6 +491,12 @@ class PersonAdmin(AplansModelAdmin[Person]):
                 return self.url_helper.get_action_url('edit', obj.pk)
             return None
 
+        def link_to_edit(obj: Person, content: str) -> str:
+            url = edit_url(obj)
+            if url:
+                return format_html('<a href="{}">{}</a>', url, content)
+            return content
+
         @admin.display(description='', empty_value='')
         def avatar(obj: Person) -> str:
             # Viewers stand out with their own placeholder even when they have uploaded an image
@@ -504,10 +510,7 @@ class PersonAdmin(AplansModelAdmin[Person]):
             else:
                 avatar_url = obj.get_avatar_url(request, size='50x50') or static('people/avatar-placeholder.svg')
                 img = format_html('<span class="avatar"><img src="{}" /></span>', avatar_url)
-            url = edit_url(obj)
-            if url:
-                return format_html('<a href="{}">{}</a>', url, img)
-            return img
+            return link_to_edit(obj, img)
 
         @admin.display(description='', empty_value='')
         def cannot_access_admin_warning(obj: Person) -> str:
@@ -528,17 +531,11 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         @admin.display(description=_('first name'), ordering='first_name')
         def first_name(obj: Person) -> str:
-            url = edit_url(obj)
-            if url:
-                return format_html('<a href="{}">{}</a>', url, obj.first_name)
-            return obj.first_name
+            return link_to_edit(obj, obj.first_name)
 
         @admin.display(description=_('last name'), ordering='last_name')
         def last_name(obj: Person) -> str:
-            url = edit_url(obj)
-            if url:
-                return format_html('<a href="{}">{}</a>', url, obj.last_name)
-            return obj.last_name
+            return link_to_edit(obj, obj.last_name)
 
         @admin.display(description=_('organization'), ordering='organization__name')
         def organization(obj: Person) -> str:
@@ -555,7 +552,7 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         @admin.display(description=_('email address'), ordering='email')
         def email(obj: Person) -> str:
-            return obj.email
+            return link_to_edit(obj, obj.email)
 
         fields: list[_DisplayT[Person]] = [
             avatar,

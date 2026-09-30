@@ -245,6 +245,15 @@ class TestEmailColumn:
         person = PersonFactory.create(email='listed@example.com', organization=plan.organization)
         assert 'listed@example.com' in get_cell(rf, plan_admin_user, person, 'email')
 
+    def test_links_to_the_edit_view(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = PersonFactory.create(email='listed@example.com', organization=plan.organization)
+        edit_url = PersonAdmin().url_helper.get_action_url('edit', person.pk)
+        assert get_cell(rf, plan_admin_user, person, 'email') == f'<a href="{edit_url}">listed@example.com</a>'
+
+    def test_is_plain_text_without_edit_rights(self, rf: RequestFactory, plan: Plan, action_contact_person_user: User):
+        person = PersonFactory.create(email='listed@example.com', organization=plan.organization)
+        assert get_cell(rf, action_contact_person_user, person, 'email') == 'listed@example.com'
+
 
 class TestAttendedTrainingColumn:
     def test_replaces_participated_in_training(self, rf: RequestFactory, plan_admin_user: User):
