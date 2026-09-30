@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 import sentry_sdk
 from wagtail_modeladmin.views import WMABaseView
 
+from kausal_common.auth.tokens import authenticate_from_authorization_header
 from kausal_common.users import user_or_bust
 
 from actions.models import Action, Plan
@@ -151,6 +152,15 @@ class MarkReportAsCompleteView(WMABaseView[Report]):
 
 
 def export_report_view(request, plan_identifier):
+    # The public UI downloads the export through its own server with the ID token it holds, because
+    # the backend session cookie may be missing, expired or for another user.
+    authorization = request.headers.get('Authorization')
+    if authorization:
+        token_auth = authenticate_from_authorization_header(authorization, 'rest-api', request.build_absolute_uri())
+        if token_auth.user is None or not token_auth.user.is_active:
+            return HttpResponse('Invalid or expired token.', status=401, content_type='text/plain')
+        request.user = token_auth.user
+
     format = request.GET.get('format', 'xlsx')
     if format not in ALLOWED_EXPORT_FORMATS:
         return HttpResponseBadRequest(f'Invalid format. Allowed values: {", ".join(sorted(ALLOWED_EXPORT_FORMATS))}.')

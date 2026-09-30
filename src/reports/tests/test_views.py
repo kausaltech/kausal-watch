@@ -77,15 +77,18 @@ def mock_export():
         yield m
 
 
-@pytest.mark.django_db
-class TestExportReportView:
-    def _get(self, rf, plan_identifier, user=None, **params):
+class ExportViewRequestMixin:
+    def _get(self, rf, plan_identifier, user=None, authorization=None, **params):
         from reports.views import export_report_view
 
-        request = rf.get(f'/report_export/{plan_identifier}/', params)
+        headers = {'Authorization': authorization} if authorization is not None else {}
+        request = rf.get(f'/report_export/{plan_identifier}/', params, headers=headers)
         request.user = user if user is not None else AnonymousUser()
         return export_report_view(request, plan_identifier=plan_identifier)
 
+
+@pytest.mark.django_db
+class TestExportReportView(ExportViewRequestMixin):
     @pytest.mark.parametrize('format', ['pdf', 'json', 'xml'])
     def test_invalid_format_returns_400(self, rf, plan, format):
         response = self._get(rf, plan.identifier, format=format)
@@ -182,6 +185,74 @@ class TestExportReportView:
             pytest.raises(Http404),
         ):
             self._get(rf, plan.identifier)
+
+
+def token_auth_as(user=None, error=None):
+    from kausal_common.auth.tokens import TokenAuthError, TokenAuthResult
+
+    if error is not None:
+        result = TokenAuthResult(error=TokenAuthError(id=error, description='Token rejected'))
+    else:
+        result = TokenAuthResult(user=user)
+    return patch('reports.views.authenticate_from_authorization_header', return_value=result)
+
+
+def public_site_viewer(plan, user_factory, person_factory):
+    user = user_factory()
+    plan.public_site_viewers.create(person=person_factory(user=user))
+    return user
+
+
+@pytest.mark.django_db
+class TestExportReportViewTokenAuth(ExportViewRequestMixin):
+    """The public UI's export route authenticates with the ID token it holds, not with a session cookie."""
+
+    def test_token_user_gets_all_fields(self, rf, plan, mock_export, user_factory, person_factory):
+        viewer = public_site_viewer(plan, user_factory, person_factory)
+        with token_auth_as(viewer):
+            response = self._get(rf, plan.identifier, authorization='Bearer token', fields='all')
+        assert response.status_code == 200
+        assert mock_export.call_args[0][2] == viewer
+        assert mock_export.call_args.kwargs['all_fields'] is True
+
+    def test_token_user_takes_precedence_over_session_user(self, rf, plan, mock_export, superuser, user_factory):
+        with token_auth_as(user_factory()), pytest.raises(PermissionDenied):
+            self._get(rf, plan.identifier, user=superuser, authorization='Bearer token', fields='all')
+
+    def test_invalid_token_returns_401(self, rf, plan, mock_export, superuser):
+        with token_auth_as(error='invalid_token'):
+            response = self._get(rf, plan.identifier, user=superuser, authorization='Bearer token')
+        assert response.status_code == 401
+        mock_export.assert_not_called()
+
+    def test_token_of_inactive_user_returns_401(self, rf, plan, mock_export, user_factory, person_factory):
+        viewer = public_site_viewer(plan, user_factory, person_factory)
+        viewer.is_active = False
+        viewer.save()
+        with token_auth_as(viewer):
+            response = self._get(rf, plan.identifier, authorization='Bearer token', fields='all')
+        assert response.status_code == 401
+        mock_export.assert_not_called()
+
+    def test_internal_plan_is_exported_for_token_user(self, rf, mock_export, user_factory, person_factory):
+        plan = PlanFactory.create(published_at=None, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+        viewer = public_site_viewer(plan, user_factory, person_factory)
+        with token_auth_as(viewer):
+            response = self._get(rf, plan.identifier, authorization='Bearer token')
+        assert response.status_code == 200
+
+    def test_real_access_token_authenticates(self, rf, plan, mock_export, user_factory, person_factory):
+        from django.apps import apps
+
+        if not apps.is_installed('oauth2_provider'):
+            pytest.skip('requires the OAuth2 provider')
+        from kausal_common.tests.test_token_auth import create_access_token
+
+        viewer = public_site_viewer(plan, user_factory, person_factory)
+        token = create_access_token(viewer, resource=[])
+        response = self._get(rf, plan.identifier, authorization=f'Bearer {token}', fields='all')
+        assert response.status_code == 200
+        assert mock_export.call_args[0][2] == viewer
 
 
 @pytest.mark.django_db

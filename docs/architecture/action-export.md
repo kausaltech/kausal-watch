@@ -50,8 +50,25 @@ action.
 
 ## Authentication
 
-The export URL is a plain Django view, not part of the GraphQL API. `request.user` therefore
-comes from the backend's session cookie. It never comes from the bearer token the public UI
-sends to GraphQL. The UI links are top-level navigations, so the browser sends that cookie
-when the user has a backend session. A signed-in UI user without one gets 403 for
-`fields=all`.
+The view accepts two kinds of credentials.
+
+**Bearer token (the public UI).** The UI does not link to this URL directly. Its export menu posts
+to a route on the UI's own server, and that route calls this view with
+`Authorization: Bearer <ID token>`. This is the same token the UI sends to GraphQL, and it is
+checked by the same `authenticate_from_authorization_header`. A token that doesn't validate, or
+that belongs to an inactive user, gets 401. A valid token decides the user even when the request
+also carries a session cookie for somebody else.
+
+**Session cookie (fallback).** Without an `Authorization` header, `request.user` comes from the
+Django session. This covers someone opening the URL on the admin host while logged in there. The
+public UI can't rely on it:
+
+- The UI's login sets the session cookie on the admin host only. The export URL the API returns
+  is on the API host, so the browser never sends the cookie with it.
+- A password login keeps the session only until the browser closes. The UI's session outlives it.
+- Signing out of the UI leaves the backend session alive. Logging out of the admin does not sign
+  the user out of the UI.
+- Impersonation, or an admin login as another user in the same browser, makes the session a
+  different user from the one the UI shows.
+- Deactivating a user or changing their password ends the session. The UI's token keeps working
+  until it expires.
