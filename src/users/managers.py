@@ -18,6 +18,21 @@ if TYPE_CHECKING:
 class UserManager(BaseUserManager['User']):
     use_in_migrations = True
 
+    def get_by_natural_key(self, username: str | None) -> User:
+        """
+        Look the user up by email, ignoring case unless that is ambiguous.
+
+        Login forms lowercase the email, but stored emails can have capitals. An exact match wins; otherwise a
+        case-insensitive match is used only when exactly one user has that email.
+        """
+        exact = self.filter(email=username).first()
+        if exact is not None:
+            return exact
+        matches = list(self.filter(email__iexact=username)[:2])
+        if len(matches) != 1:
+            raise self.model.DoesNotExist
+        return matches[0]
+
     def _create_user(self, email, password=None, **extra_fields) -> User:
         if not email:
             raise ValueError('Users must have an email address')
