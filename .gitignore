@@ -54,3 +54,5 @@ __generated__/
 /e2e-tests/playwright-state/
 /e2e-tests/test-results/
 /.mypy_worker*
+scratchpad/
+.playwright/
