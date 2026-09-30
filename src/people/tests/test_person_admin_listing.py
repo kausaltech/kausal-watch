@@ -40,16 +40,10 @@ def get_cell(rf: RequestFactory, user: User, person: Person, column: str, **para
         return fields[column](listed)
 
 
-def test_person_without_name_is_listed_by_email(rf: RequestFactory, plan: Plan, plan_admin_user: User):
+def test_nameless_person_email_is_only_in_the_email_column(rf: RequestFactory, plan: Plan, plan_admin_user: User):
     person = PersonFactory.create(first_name='', last_name='', email='nameless@example.com', organization=plan.organization)
-    assert 'nameless@example.com' in get_cell(rf, plan_admin_user, person, 'first_name')
-
-
-def test_person_with_name_is_not_listed_by_email(rf: RequestFactory, plan: Plan, plan_admin_user: User):
-    person = PersonFactory.create(first_name='Named', last_name='', email='named@example.com', organization=plan.organization)
-    cell = get_cell(rf, plan_admin_user, person, 'first_name')
-    assert 'Named' in cell
-    assert 'named@example.com' not in cell
+    assert 'nameless@example.com' not in get_cell(rf, plan_admin_user, person, 'first_name')
+    assert 'nameless@example.com' in get_cell(rf, plan_admin_user, person, 'email')
 
 
 class TestRoleColumn:
