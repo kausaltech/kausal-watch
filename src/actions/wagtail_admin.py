@@ -135,6 +135,10 @@ class PlanForm(AplansAdminModelForm[Plan]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            # Only used when creating a plan. No panel claims it on the edit page, so Wagtail would
+            # render it as a bare, unlabelled input below the tabs.
+            self.fields.pop('organization_name', None)
         if self.instance.pk is None:
             if 'organization' in self.fields:
                 # We have special handling of a choosing org with chooser vs.
