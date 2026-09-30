@@ -298,3 +298,42 @@ class TestActionsMenu:
         superuser.selected_admin_plan = plan
         superuser.save()
         assert 'View as user' in get_cell(rf, superuser, person, 'actions')
+
+
+class TestNoAdminAccessWarning:
+    def enable_access_requests(self, plan: Plan) -> None:
+        plan.features.enable_access_requests = True
+        plan.features.save()
+
+    def make_viewer(self, plan: Plan) -> Person:
+        person = PersonFactory.create(organization=plan.organization)
+        PlanPublicSiteViewer.objects.create(plan=plan, person=person)
+        return person
+
+    def test_hidden_for_viewers_when_access_requests_are_enabled(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        self.enable_access_requests(plan)
+        person = self.make_viewer(plan)
+        assert get_cell(rf, plan_admin_user, person, 'cannot_access_admin_warning') == ''
+
+    def test_shown_for_viewers_when_access_requests_are_disabled(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        person = self.make_viewer(plan)
+        assert 'icon-warning' in get_cell(rf, plan_admin_user, person, 'cannot_access_admin_warning')
+
+    def test_shown_for_other_people_without_access(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
+        self.enable_access_requests(plan)
+        person = PersonFactory.create(organization=plan.organization)
+        assert 'icon-warning' in get_cell(rf, plan_admin_user, person, 'cannot_access_admin_warning')
+
+    @pytest.mark.parametrize(('access_requests', 'highlighted'), [(True, False), (False, True)])
+    def test_viewer_row_highlight(
+        self, rf: RequestFactory, plan: Plan, plan_admin_user: User, access_requests: bool, highlighted: bool
+    ):
+        if access_requests:
+            self.enable_access_requests(plan)
+        person = self.make_viewer(plan)
+        request = rf.get('/')
+        request.user = plan_admin_user
+        person_admin = PersonAdmin()
+        listed = person_admin.get_queryset(request).get(pk=person.pk)
+        attrs = person_admin.get_extra_attrs_for_row(listed, {'request': request})
+        assert ('warning-row' in attrs.get('class', '')) is highlighted

@@ -333,6 +333,13 @@ def _person_can_access_admin(person) -> bool:
     return person.pk in get_people_with_login_rights()
 
 
+def _warn_about_missing_admin_access(person: Person, plan: Plan) -> bool:
+    # A viewer who got in through an access request is only meant to see the public site
+    if plan.features.enable_access_requests and person.is_viewer:  # type: ignore[attr-defined]
+        return False
+    return not _person_can_access_admin(person)
+
+
 class PersonButtonHelper(ButtonHelper):
     def delete_button(self, *args, **kwargs):
         button = super().delete_button(*args, **kwargs)
@@ -514,20 +521,20 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
         @admin.display(description='', empty_value='')
         def cannot_access_admin_warning(obj: Person) -> str:
-            if not _person_can_access_admin(obj):
-                tooltip = _(
-                    'This person has no access to the admin interface. This is commonly because no actions or '
-                    'indicators are assigned to them.',
-                )
-                return format_html(
-                    '<span data-controller="w-tooltip" data-w-tooltip-content-value="{}" style="cursor: pointer;">'
-                    '<svg class="icon icon-warning" style="height: 1.5em; width: 1.5em;" aria-hidden="true">'
-                    '<use href="#icon-warning"></use>'
-                    '</svg>'
-                    '</span>',
-                    tooltip,
-                )
-            return ''
+            if not _warn_about_missing_admin_access(obj, plan):
+                return ''
+            tooltip = _(
+                'This person has no access to the admin interface. This is commonly because no actions or '
+                'indicators are assigned to them.',
+            )
+            return format_html(
+                '<span data-controller="w-tooltip" data-w-tooltip-content-value="{}" style="cursor: pointer;">'
+                '<svg class="icon icon-warning" style="height: 1.5em; width: 1.5em;" aria-hidden="true">'
+                '<use href="#icon-warning"></use>'
+                '</svg>'
+                '</span>',
+                tooltip,
+            )
 
         @admin.display(description=_('first name'), ordering='first_name')
         def first_name(obj: Person) -> str:
@@ -678,7 +685,8 @@ class PersonAdmin(AplansModelAdmin[Person]):
 
     def get_extra_attrs_for_row(self, obj, context):
         assert isinstance(obj, Person)
-        if not _person_can_access_admin(obj):
+        plan = user_or_bust(context['request'].user).get_active_admin_plan()
+        if _warn_about_missing_admin_access(obj, plan):
             # Add CSS class to highlight rows of users without admin access
             return {
                 'class': 'warning-row',
