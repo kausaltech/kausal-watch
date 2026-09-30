@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-30 11:50+0300\n"
-"PO-Revision-Date: 2026-02-25 16:13+0200\n"
+"PO-Revision-Date: 2026-09-30 11:45+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
@@ -3743,8 +3743,8 @@ msgid "locked plan"
 msgstr "lukittu toimenpideohjelma"
 
 #: src/admin_site/templates/wagtailadmin/login.html
-msgid "Sign in to Kausal Watch admin"
-msgstr "Kirjaudu sisään Kausal Watch -ylläpitoon"
+msgid "Sign in to Kausal"
+msgstr "Kirjaudu sisään"
 
 #: src/admin_site/templates/wagtailadmin/login.html
 msgid "Your Kausal Watch admin portal has moved."

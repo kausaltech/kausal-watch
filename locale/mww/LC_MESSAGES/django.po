@@ -3733,7 +3733,7 @@ msgid "locked plan"
 msgstr ""
 
 #: src/admin_site/templates/wagtailadmin/login.html
-msgid "Sign in to Kausal Watch admin"
+msgid "Sign in to Kausal"
 msgstr ""
 
 #: src/admin_site/templates/wagtailadmin/login.html

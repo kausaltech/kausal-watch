@@ -4051,8 +4051,8 @@ msgid "locked plan"
 msgstr "Planes relacionados"
 
 #: src/admin_site/templates/wagtailadmin/login.html
-msgid "Sign in to Kausal Watch admin"
-msgstr "Iniciar sesión en Kausal Watch admin"
+msgid "Sign in to Kausal"
+msgstr "Iniciar sesión en Kausal"
 
 #: src/admin_site/templates/wagtailadmin/login.html
 msgid "Your Kausal Watch admin portal has moved."
