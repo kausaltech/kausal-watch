@@ -75,6 +75,7 @@ class TestApproved:
         [url] = re.findall(r'http\S+/access-requests/\S+/', str(msg.body))
         assert resolve(urlparse(url).path).url_name == 'access_requests_set_password'
         assert 'expires in 3 days' in msg.body
+        assert 'You can sign in at' not in msg.body
 
     def test_gives_no_link_to_an_sso_user(self, plan):
         req = _approved_through_service(plan)
@@ -87,6 +88,8 @@ class TestApproved:
 
         [msg] = mail.outbox
         assert '/access-requests/' not in msg.body
+        assert 'You can sign in at https://plan.example.com with this email address.' in msg.body
+        assert 'Sign in: https://plan.example.com' in msg.body
 
     def test_gives_no_link_to_someone_who_has_signed_in(self, plan):
         req = _approved_through_service(plan)

@@ -79,18 +79,19 @@ class _Content(TypedDict):
 def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
     plan = req.plan
     set_password_url = make_set_password_url(req)
-    if not set_password_url and plan.site_url:
-        sign_in = _('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url}
     content: _Content = {
         'subject': _('Your access to %(plan_name)s has been approved') % {'plan_name': plan_name},
         'heading': _('Your access has been approved'),
         'paragraphs': [
             _('Your request to view %(plan_name)s has been approved.') % {'plan_name': plan_name},
-            sign_in,
         ],
     }
 
     if set_password_url is None:
+        if not plan.site_url:
+            content['paragraphs'].append(_('You can sign in with this email address.'))
+            return content
+        content['paragraphs'].append(_('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url})
         content['button'] = {'label': _('Sign in'), 'url': plan.site_url}
         return content
     days = int(settings.PASSWORD_RESET_TIMEOUT / (60 * 60 * 24))
