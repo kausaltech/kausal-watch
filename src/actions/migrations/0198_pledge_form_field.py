@@ -9,7 +9,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('actions', '0196_rename_show_login_link_in_public_ui'),
+        ('actions', '0197_access_request_settings'),
     ]
 
     operations = [
