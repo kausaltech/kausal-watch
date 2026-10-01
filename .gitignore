@@ -56,3 +56,4 @@ __generated__/
 /.mypy_worker*
 scratchpad/
 .playwright/
+.pnpm-store/
