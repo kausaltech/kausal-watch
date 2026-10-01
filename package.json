@@ -12,15 +12,15 @@
   "dependencies": {
     "mjml": "^4.15.3"
   },
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@12.8.1",
   "engines": {
-    "node": "26.8.1"
+    "node": "26.10.0"
   },
   "devEngines": {
     "runtime": [
       {
         "name": "node",
-        "version": "26.8.1",
+        "version": "26.10.0",
         "onFail": "download"
       }
     ]
