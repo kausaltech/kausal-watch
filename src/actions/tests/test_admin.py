@@ -148,6 +148,16 @@ def test_can_access_plan_edit_page(plan, plan_admin_user, client):
     assert response.status_code == 200
 
 
+def test_plan_edit_page_has_no_new_organization_field(plan, plan_admin_user, client):
+    # The field is only for creating a plan; unclaimed by any panel, Wagtail would render it bare.
+    ClientPlanFactory.create(plan=plan)
+    url = reverse(PlanViewSet().get_url_name('edit'), args=[plan.pk])
+    client.force_login(plan_admin_user)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'name="organization_name"' not in response.content.decode('utf-8')
+
+
 def test_cannot_access_other_plan_edit_page(plan, plan_admin_user, client):
     other_plan = PlanFactory.create()
     view_set = PlanViewSet()

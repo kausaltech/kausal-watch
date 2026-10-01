@@ -58,6 +58,7 @@ from actions.models import (
     PlanDomain,
     PlanFeatures,
     Pledge,
+    PledgeFormField,
     Scenario,
 )
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
@@ -568,3 +569,9 @@ class PledgeFactory(ModelFactory[Pledge]):
             for action in extracted:
                 obj.actions.add(action)
             obj.save()
+
+
+class PledgeFormFieldFactory(ModelFactory[PledgeFormField]):
+    plan = SubFactory[PledgeFormField, Plan](PlanFactory)
+    identifier = Sequence(lambda i: f'field_{i}')
+    label = Sequence(lambda i: f'Field {i}')

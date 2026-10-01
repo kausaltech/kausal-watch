@@ -97,6 +97,7 @@ from actions.models import (
     PlanDomainAvailability,
     PlanFeatures,
     Pledge,
+    PledgeFormField,
     PublicationStatus,
     Scenario,
 )
@@ -119,6 +120,7 @@ from .models import (
     PublicUser,
     PublicUserSignInAttempt,
 )
+from .models.pledge import PLEDGE_FORM_FIELD_VALUE_MAX_LENGTH
 from .models.public_user import SIGNIN_COOLDOWN, SIGNUP_COOLDOWN, hash_user_token
 from .public_user_auth import (
     SIGN_IN_RATE_LIMIT,
@@ -795,6 +797,11 @@ class PlanNode(DjangoNode[Plan]):
         slug=graphene.String(),
     )
     pledges = graphene.List(graphene.NonNull('actions.schema.PledgeNode'))
+    pledge_form_fields = graphene.List(
+        graphene.NonNull('actions.schema.PledgeFormFieldNode'),
+        required=True,
+        description='Fields shown to a community member when they commit to a pledge.',
+    )
 
     @staticmethod
     def resolve_pledge(root: Plan, info: GQLInfo, id: str | None = None, slug: str | None = None):
@@ -811,6 +818,12 @@ class PlanNode(DjangoNode[Plan]):
         if slug:
             return qs.filter(slug=slug).first()
         return None
+
+    @staticmethod
+    def resolve_pledge_form_fields(root: Plan, info: GQLInfo):
+        if not root.features.enable_community_engagement:
+            return []
+        return root.pledge_form_fields.all()
 
     @staticmethod
     def resolve_pledges(root: Plan, info: GQLInfo):
@@ -1372,6 +1385,12 @@ class PledgeNode(AttributesMixin, DjangoNode[Pledge]):
         if hasattr(root, '_commitment_count'):
             return root._commitment_count  # type: ignore[return-value]
         return PledgeCommitment.objects.filter(pledge__translation_key=root.translation_key).count()
+
+
+class PledgeFormFieldNode(DjangoNode[PledgeFormField]):
+    class Meta:
+        model = PledgeFormField
+        fields = public_fields(PledgeFormField)
 
 
 class PledgeCommitmentNode(DjangoNode[PledgeCommitment]):
@@ -2901,6 +2920,22 @@ class SetUserDataMutation(graphene.Mutation):
         user_uuid: uuid.UUID | None = None,
     ) -> SetUserDataPayload:
         public_user = _resolve_public_user(info, user_uuid)
+
+        request_plan = info.context.request_plan
+        if request_plan is None:
+            raise GraphQLError('Plan not found for this request', extensions={'code': 'NO_PLAN'})
+        if not request_plan.features.enable_community_engagement:
+            raise GraphQLError(
+                'Community engagement is not enabled for this plan',
+                extensions={'code': 'COMMUNITY_ENGAGEMENT_DISABLED'},
+            )
+        if not request_plan.pledge_form_fields.filter(identifier=key).exists():
+            raise GraphQLError(f'Unknown field: {key}', extensions={'code': 'UNKNOWN_FIELD'})
+        if len(value) > PLEDGE_FORM_FIELD_VALUE_MAX_LENGTH:
+            raise GraphQLError(
+                f'Value is longer than {PLEDGE_FORM_FIELD_VALUE_MAX_LENGTH} characters',
+                extensions={'code': 'VALUE_TOO_LONG'},
+            )
 
         public_user.user_data[key] = value
         public_user.save(update_fields=['user_data'])

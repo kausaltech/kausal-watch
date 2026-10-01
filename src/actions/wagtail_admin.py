@@ -110,6 +110,7 @@ from .models import (
     IndicatorChangeLogMessage,
     Plan,
     PlanFeatures,
+    PledgeFormField,
 )
 
 if TYPE_CHECKING:
@@ -134,6 +135,10 @@ class PlanForm(AplansAdminModelForm[Plan]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            # Only used when creating a plan. No panel claims it on the edit page, so Wagtail would
+            # render it as a bare, unlabelled input below the tabs.
+            self.fields.pop('organization_name', None)
         if self.instance.pk is None:
             if 'organization' in self.fields:
                 # We have special handling of a choosing org with chooser vs.
@@ -412,6 +417,14 @@ class PlanAdmin(AplansModelAdmin[Plan]):
         FieldPanel('ends_at'),
     ]
 
+    pledge_form_field_panels = [
+        FieldPanel('identifier'),
+        FieldPanel('label'),
+        FieldPanel('help_text'),
+        FieldPanel('placeholder'),
+        FieldPanel('required'),
+    ]
+
     COLOR_HELP_TEXT = _(
         "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example "
         'red070 or grey030.',
@@ -614,6 +627,31 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                         ),
                     ],
                     heading=_('Action classifications'),
+                ),
+            )
+
+        features = getattr(instance, 'features', None)
+        if not creating and features is not None and features.enable_community_engagement:
+            pledge_form_field_panels = insert_model_translation_panels(
+                PledgeFormField,
+                self.pledge_form_field_panels,
+                request,
+                instance,
+            )
+            tabs.append(
+                ObjectList(
+                    [
+                        CondensedInlinePanel(
+                            'pledge_form_fields',
+                            panels=pledge_form_field_panels,
+                            heading=_('Collected data fields'),
+                            help_text=_(
+                                'Information people are asked to give when they commit to a pledge. Only collect '
+                                'information that your privacy notice covers. Leave empty to collect nothing.'
+                            ),
+                        ),
+                    ],
+                    heading=_('Community engagement'),
                 ),
             )
 

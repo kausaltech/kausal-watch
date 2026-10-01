@@ -14,7 +14,7 @@ import pytest
 from actions.models import Pledge, PledgeCommitment, PublicUser, PublicUserSignInAttempt
 from actions.models.public_user import PIN_MAX_ATTEMPTS, SIGNUP_COOLDOWN, hash_user_token
 from actions.public_user_auth import SIGN_IN_RATE_LIMIT
-from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory
+from actions.tests.factories import ActionFactory, PlanFactory, PledgeFactory, PledgeFormFieldFactory
 from admin_site.tests.factories import ClientFactory
 from images.tests.factories import AplansImageFactory
 
@@ -1095,12 +1095,20 @@ class TestCommitToPledgeMutation:
         assert legacy.client_id is None
 
 
+def _create_plan_with_zip_code_field():
+    plan = PlanFactory.create(primary_client=ClientFactory.create())
+    plan.features.enable_community_engagement = True
+    plan.features.save()
+    PledgeFormFieldFactory.create(plan=plan, identifier='zip_code', label='ZIP code')
+    return plan
+
+
 class TestSetUserDataMutation:
     """Tests for the setUserData GraphQL mutation."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = _create_plan_with_zip_code_field()
 
     def test_set_user_data_sets_value(self, graphql_client_query_data):
         """Test that the mutation sets a key-value pair in user_data."""
@@ -1205,7 +1213,7 @@ class TestSetUserDataMutation:
 
     def test_set_user_data_with_bearer_token_authenticates(self, graphql_client_query_data):
         """The setUserData mutation should authenticate via the X-Public-User-Token header alone."""
-        plan = PlanFactory.create(primary_client=ClientFactory.create())
+        plan = _create_plan_with_zip_code_field()
         public_user = PublicUser.objects.create(email='authed@example.com', client=plan.primary_client)
         token = public_user.regenerate_user_token()
         self.plan = plan

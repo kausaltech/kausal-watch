@@ -61,6 +61,7 @@ from .pledge import (
     Pledge,
     PledgeActionThrough,
     PledgeCommitment,
+    PledgeFormField,
 )
 from .public_user import (
     PublicUser,
@@ -115,6 +116,7 @@ __all__ = [
     'Pledge',
     'PledgeActionThrough',
     'PledgeCommitment',
+    'PledgeFormField',
     'PublicUser',
     'PublicUserSignInAttempt',
     'PublicationStatus',

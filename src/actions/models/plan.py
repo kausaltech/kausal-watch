@@ -93,7 +93,7 @@ if TYPE_CHECKING:
 
     from .action import Action, ActionImplementationPhase, ActionStatus
     from .category import CategoryType
-    from .pledge import Pledge
+    from .pledge import Pledge, PledgeFormField
 
 
 logger = logging.getLogger(__name__)
@@ -693,6 +693,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     category_types: RevMany[CategoryType]
     children: RevMany[Plan]
     pledges: RevMany[Pledge]
+    pledge_form_fields: RevMany[PledgeFormField]
     clients: RevMany[ClientPlan]
     copies: RevMany[Plan]
     documentation_root_pages: RevMany[DocumentationRootPage]
