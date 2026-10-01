@@ -667,7 +667,6 @@ class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
         FieldPanel('moderation_workflow', permission='superuser'),
         FieldPanel('display_field_visibility_restrictions', permission='superuser'),
         FieldPanel('output_report_action_print_layout', permission='superuser'),
-        FieldPanel('password_protected', permission='superuser'),
         FieldPanel('enable_community_engagement', permission='superuser'),
         FieldPanel('enable_action_pdf_export_in_public_ui', permission='superuser'),
         FieldPanel('enable_indicator_factors', permission='superuser'),
