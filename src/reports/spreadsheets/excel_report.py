@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import pathlib
 import typing
 from io import BytesIO
@@ -16,6 +17,7 @@ import xlsxwriter
 from loguru import logger
 
 from actions.models.action import Action
+from indicators.models.indicator import Indicator
 from orgs.models import Organization
 from people.models import Person
 from reports.utils import get_field_unique_key, group_by_model
@@ -34,6 +36,7 @@ if typing.TYPE_CHECKING:
     from actions.models.action import ActionImplementationPhase, ActionStatus
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan
+    from reports.indicator_data import IndicatorDataPoint, IndicatorReportData
     from reports.models import Report
     from reports.types import SerializedActionVersion, SerializedVersion
     from reports.utils import ReportCellValue
@@ -193,6 +196,7 @@ class ExcelReport:
         with translation.override(self.language):
             self._write_title_sheet()
             self._write_actions_sheet(actions_df)
+            self._write_indicators_sheet()
             self.post_process(actions_df)
         # Make striped even-odd rows
         self.close()
@@ -243,6 +247,88 @@ class ExcelReport:
 
     def _write_actions_sheet(self, df: pl.DataFrame) -> xlsxwriter.worksheet.Worksheet:
         return self._write_sheet(self.workbook.add_worksheet(pgettext('Action model', 'Actions')), df)
+
+    def _write_indicators_sheet(self) -> None:
+        if self.report.disable_indicators_sheet:
+            return
+        df = self.generate_indicators_dataframe()
+        self._write_sheet(self.workbook.add_worksheet(_('Indicators')), df)
+
+    def generate_indicators_dataframe(self) -> pl.DataFrame:
+        """
+        Return one row per indicator of the report that `self.user` may see.
+
+        An indicator's data comes from its snapshot for the report if there is one, otherwise from the live data.
+        A complete report only lists the indicators that have a snapshot.
+        """
+        snapshots = {s.indicator_id: s for s in self.report.indicator_snapshots.all()} if self.report.pk else {}
+        indicators = Indicator.objects.get_queryset().visible_for_user(self.user).select_related('unit', 'organization')
+        if self.report.is_complete:
+            indicators = indicators.filter(pk__in=snapshots)
+        else:
+            indicators = indicators.filter(plans__in=[self.plan, *self.child_plans]).distinct()
+        live_data = self.report.collect_indicator_data([i for i in indicators if i.pk not in snapshots])
+        visible_action_ids = {int(pk) for pk in self._visible_action_ids()} if indicators else set()
+        show_action_identifiers = self.plan.features.has_action_identifiers
+
+        def parse_date(data_point: IndicatorDataPoint | None) -> datetime.date | None:
+            return datetime.date.fromisoformat(data_point['date']) if data_point else None
+
+        def value(data_point: IndicatorDataPoint | None) -> float | None:
+            return data_point['value'] if data_point else None
+
+        rows: list[tuple[IndicatorReportData, datetime.datetime | None]] = []
+        for indicator in indicators:
+            snapshot = snapshots.get(indicator.pk)
+            if snapshot is None:
+                rows.append((live_data[indicator.pk], None))
+            else:
+                taken_at = timezone.make_naive(snapshot.taken_at, timezone=self.plan.tzinfo)
+                rows.append((snapshot.data, taken_at))
+        rows.sort(key=lambda row: row[0]['name'].casefold())
+
+        frozen_at_label = _('Data frozen at')
+        date_labels = [
+            _('Date of value at start of reporting period'),
+            _('Date of latest value'),
+            _('Target date'),
+        ]
+        columns: dict[str, tuple[pl.DataType, list[Any]]] = {
+            _('Identifier'): (pl.String(), [data['identifier'] for data, _taken_at in rows]),
+            _('Indicator'): (pl.String(), [data['name'] for data, _taken_at in rows]),
+            _('Unit'): (pl.String(), [data['unit'] for data, _taken_at in rows]),
+            _('Organization'): (pl.String(), [data['organization'] for data, _taken_at in rows]),
+            pgettext('Action model', 'Actions'): (
+                pl.String(),
+                [
+                    ', '.join(
+                        a['identifier'] if show_action_identifiers else a['name']
+                        for a in data['linked_actions']
+                        if a['id'] in visible_action_ids
+                    )
+                    for data, _taken_at in rows
+                ],
+            ),
+            _('Value at start of reporting period'): (
+                pl.Float64(),
+                [value(data['period_start_value']) for data, _taken_at in rows],
+            ),
+            date_labels[0]: (pl.Date(), [parse_date(data['period_start_value']) for data, _taken_at in rows]),
+            _('Latest value'): (pl.Float64(), [value(data['latest_value']) for data, _taken_at in rows]),
+            date_labels[1]: (pl.Date(), [parse_date(data['latest_value']) for data, _taken_at in rows]),
+            _('Target value'): (pl.Float64(), [value(data['target_value']) for data, _taken_at in rows]),
+            date_labels[2]: (pl.Date(), [parse_date(data['target_value']) for data, _taken_at in rows]),
+            frozen_at_label: (pl.Datetime(), [taken_at for _data, taken_at in rows]),
+        }
+        if all(taken_at is None for _data, taken_at in rows):
+            del columns[frozen_at_label]
+        for label in date_labels:
+            self.formats.set_for_label(label, self.formats.date)
+        self.formats.set_for_label(frozen_at_label, self.formats.timestamp)
+        return pl.DataFrame(
+            {label: values for label, (_dtype, values) in columns.items()},
+            schema={label: dtype for label, (dtype, _values) in columns.items()},
+        )
 
     def _write_sheet(
         self,
@@ -334,8 +420,6 @@ class ExcelReport:
         every indicator in the database. The answer is memoised, because the formatters ask
         for it once per exported action.
         """
-        from indicators.models.indicator import Indicator
-
         if candidate_ids not in self._visible_indicator_ids:
             visible = Indicator.objects.get_queryset().visible_for_user(self.user).filter(id__in=candidate_ids)
             self._visible_indicator_ids[candidate_ids] = set(visible.values_list('id', flat=True))
