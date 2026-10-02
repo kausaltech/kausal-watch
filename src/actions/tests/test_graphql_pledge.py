@@ -1257,12 +1257,20 @@ SIGN_IN_MUTATION = """
 """
 
 
+def _create_plan_with_accounts():
+    plan = PlanFactory.create(primary_client=ClientFactory.create())
+    plan.features.enable_community_engagement = True
+    plan.features.enable_community_engagement_accounts = True
+    plan.features.save()
+    return plan
+
+
 class TestSignUpMutation:
     """Tests for the signUp GraphQL mutation."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = _create_plan_with_accounts()
         self.client_tenant = self.plan.primary_client
 
     def test_sign_up_does_not_create_user_and_sends_pin(self, graphql_client_query_data):
@@ -1446,7 +1454,7 @@ class TestSignUpMutation:
         # Switch to a second plan with a different primary_client. Auto-injected
         # X-Cache-Plan-Identifier reads from self.plan, so the SignUp resolves
         # against the second client.
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = _create_plan_with_accounts()
         graphql_client_query_data(
             SIGN_UP_MUTATION,
             variables={'email': 'shared@example.com', 'terms': True, 'marketing': False},
@@ -1466,7 +1474,7 @@ class TestSignInMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = _create_plan_with_accounts()
         self.client_tenant = self.plan.primary_client
 
     def test_sign_in_sends_pin_for_existing_user(self, graphql_client_query_data):
@@ -1591,7 +1599,7 @@ class TestSignInMutation:
         # Account exists on the fixture plan's client but the request comes
         # from a different plan/client. Must be treated as "no account".
         PublicUser.objects.create(email='shared@example.com', client=self.client_tenant)
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
+        self.plan = _create_plan_with_accounts()
 
         response = graphql_client_query(SIGN_IN_MUTATION, variables={'email': 'shared@example.com'})
 
@@ -1615,9 +1623,7 @@ class TestVerifyPinMutation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.plan = PlanFactory.create(primary_client=ClientFactory.create())
-        self.plan.features.enable_community_engagement = True
-        self.plan.features.save()
+        self.plan = _create_plan_with_accounts()
         assert self.plan.primary_client is not None
         self.client_tenant = self.plan.primary_client
         self.public_user = PublicUser.objects.create(email='alice@example.com', client=self.client_tenant)
@@ -2851,6 +2857,8 @@ class TestPledgeLocaleGraphQL:
         # frontend lists pledges in the active locale. The VerifyPin payload
         # must translate IDs to that locale or the frontend can't reconcile
         # them against plan.pledges.
+        self.plan.features.enable_community_engagement_accounts = True
+        self.plan.features.save()
         public_user = PublicUser.objects.create(email='alice@example.com', client=self.plan.primary_client)
         PledgeCommitment.objects.create(pledge=self.primary_pledge, public_user=public_user)
         _, raw_pin = PublicUserSignInAttempt.create_for_signin(public_user)

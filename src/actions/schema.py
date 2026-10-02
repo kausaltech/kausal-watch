@@ -131,6 +131,7 @@ from .public_user_auth import (
     issue_signup_pin,
     merge_anon_into_verified,
     normalize_email,
+    require_accounts_enabled,
     require_request_client,
 )
 
@@ -2988,6 +2989,7 @@ class SignUpMutation(graphene.Mutation):
             raise GraphQLError('Terms must be accepted to sign up.', extensions={'code': 'TERMS_NOT_ACCEPTED'})
 
         client = require_request_client(info)
+        require_accounts_enabled(info)
         normalized = normalize_email(email)
         now = timezone.now()
         try:
@@ -3083,6 +3085,7 @@ class SignInMutation(graphene.Mutation):
     ) -> SignInPayload:
         enforce_rate_limit(info, group='public_user_sign_in', rate=SIGN_IN_RATE_LIMIT)
         client = require_request_client(info)
+        require_accounts_enabled(info)
         normalized = normalize_email(email)
         try:
             public_user = PublicUser.objects.get(email=normalized, client=client)
@@ -3202,6 +3205,7 @@ class VerifyPinMutation(graphene.Mutation):
     ) -> VerifyPinPayload:
         enforce_rate_limit(info, group='public_user_verify_pin', rate=VERIFY_PIN_RATE_LIMIT)
         client = require_request_client(info)
+        require_accounts_enabled(info)
         normalized = normalize_email(email)
         # Look up the user first to decide which attempt-finder path to take:
         # if there's a verified PublicUser, this is a SignIn verification;

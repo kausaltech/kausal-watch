@@ -213,6 +213,16 @@ class TestParticipantsIndexView:
         # Wagtail's permission system returns 302 or 403 when denied; either is fine.
         assert response.status_code in (302, 403, 404)
 
+    def test_empty_list_explains_who_is_listed(self, client, plan_admin_user, active_plan):
+        client.force_login(plan_admin_user)
+
+        response = client.get(self._list_url())
+
+        assert response.status_code == 200
+        body = response.content.decode('utf-8')
+        assert 'There are no pledge participants who have provided their email.' in body
+        assert 'public users' not in body.lower()
+
     def test_view_includes_user_data_columns(self, client, plan_admin_user, active_plan):
         pledge = PledgeFactory.create(plan=active_plan)
         alice = _make_participant('alice@example.com', marketing=True)

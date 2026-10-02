@@ -161,6 +161,11 @@ class ParticipantsIndexView(WatchIndexView[PublicUser]):
     list_export: list[str] = []  # Wagtail's auto-export off; CSV is via the custom button
 
     @cached_property
+    def no_results_message(self):  # type: ignore[override]
+        # Wagtail's default names the model ("public users"), which is an internal term
+        return _('There are no pledge participants who have provided their email.')
+
+    @cached_property
     def columns(self):  # type: ignore[override]
         # Bulk actions aren't available for now
         columns = [column for column in super().columns if column.name != 'bulk_actions']

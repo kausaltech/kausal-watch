@@ -177,6 +177,16 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         verbose_name=_('Enable community engagement'),
         help_text=_('Enable community engagement features such as pledges for this plan.'),
     )
+    enable_community_engagement_accounts = models.BooleanField(
+        default=False,
+        # Pods of the previous release insert features rows without this column during the rollout.
+        db_default=False,
+        verbose_name=_('Offer accounts for community engagement'),
+        help_text=_(
+            'Let people create an account with their email after committing to a pledge, so they can come back to '
+            'their pledges. When off, everyone takes part anonymously.'
+        ),
+    )
     enable_access_requests = models.BooleanField(
         default=False,
         # Pods of the previous release insert features rows without this column during the rollout.
@@ -249,6 +259,10 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             raise ValidationError({
                 'enable_community_engagement': _('Community engagement requires a primary client to be set on the plan.'),
             })
+        if self.enable_community_engagement_accounts and not self.enable_community_engagement:
+            raise ValidationError({
+                'enable_community_engagement_accounts': _('Accounts require community engagement to be enabled.'),
+            })
 
     @property
     def public_contact_persons(self) -> bool:
@@ -281,6 +295,7 @@ class PlanFeatures(PlanRelatedModelWithRevision):
         'indicators_open_in_modal',
         'enable_change_log',
         'enable_community_engagement',
+        'enable_community_engagement_accounts',
         'enable_access_requests',
         'enable_action_pdf_export_in_public_ui',
         'enable_indicator_factors',

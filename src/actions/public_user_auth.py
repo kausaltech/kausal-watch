@@ -71,6 +71,22 @@ def require_request_client(info: GQLInfo) -> Client:
     return client
 
 
+def require_accounts_enabled(info: GQLInfo) -> None:
+    """
+    Refuse account sign-up and sign-in on plans that don't offer accounts.
+
+    Call after `require_request_client`, which guarantees a request plan. Existing tokens keep working
+    elsewhere, so people who signed up before accounts were turned off can still see their pledges.
+    """
+    plan = info.context.request_plan
+    assert plan is not None
+    if not plan.features.enable_community_engagement_accounts:
+        raise GraphQLError(
+            'This plan does not offer accounts.',
+            extensions={'code': 'ACCOUNTS_DISABLED'},
+        )
+
+
 def normalize_email(email: str) -> str:
     """Trim, lowercase, and validate an email. Raise GraphQLError on invalid input."""
     normalized = email.strip().lower()
