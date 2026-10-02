@@ -1,7 +1,7 @@
 from __future__ import annotations  # noqa: I001
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, ClassVar, Never
+from typing import TYPE_CHECKING, ClassVar, Never, Self
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
@@ -30,11 +30,16 @@ from reports.utils import get_field_unique_key
 # The following model is for very specialized use and is only imported here so that Django finds it
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
 
+from .indicator_data import IndicatorReportData, collect_indicator_report_data
 from .spreadsheets import ExcelReport
 from .types import LiveVersions, SerializedActionVersion
 from actions.models import AttributeType
+from indicators.models.action_links import ActionIndicator
+from indicators.models.indicator import Indicator
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from wagtail.blocks.struct_block import StructValue
 
     from kausal_common.models.types import FK
@@ -265,6 +270,7 @@ class Report(PlanRelatedModelWithRevision):
     disable_title_sheet: bool
     disable_summary_sheets: bool
     disable_macros: bool
+    disable_indicators_sheet: bool
 
     class Meta:
         verbose_name = _('report')
@@ -275,6 +281,7 @@ class Report(PlanRelatedModelWithRevision):
         self.disable_title_sheet = False
         self.disable_summary_sheets = False
         self.disable_macros = False
+        self.disable_indicators_sheet = False
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
@@ -285,6 +292,47 @@ class Report(PlanRelatedModelWithRevision):
     @classmethod
     def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[Report]) -> models.QuerySet[Report]:
         return qs.filter(type__plan=plan)
+
+    def get_included_plans(self) -> list[Plan]:
+        """Return the plan of this report and, if its action list includes related plans, the plan's children."""
+        plan = self.type.plan
+        children = list(plan.children.all())
+        if not children or not self.type.get_action_list_page().include_related_plans:
+            return [plan]
+        return [plan, *children]
+
+    def get_indicators(self) -> models.QuerySet[Indicator]:
+        return Indicator.objects.filter(plans__in=self.get_included_plans()).distinct()
+
+    def collect_indicator_data(self, indicators: Sequence[Indicator]) -> dict[int, IndicatorReportData]:
+        plan = self.type.plan
+        return collect_indicator_report_data(
+            indicators,
+            plans=self.get_included_plans(),
+            period_start=self.start_date,
+            language=plan.primary_language,
+        )
+
+    def freeze_indicators_of_action(self, action: Action) -> None:
+        """Snapshot the indicators linked to `action`, replacing earlier snapshots of them for this report."""
+        indicators = list(self.get_indicators().filter(related_actions__action=action))
+        data = self.collect_indicator_data(indicators)
+        now = timezone.now()
+        IndicatorSnapshot.objects.bulk_create(
+            [IndicatorSnapshot(report=self, indicator=i, data=data[i.pk], taken_at=now) for i in indicators],
+            update_conflicts=True,
+            unique_fields=['report', 'indicator'],
+            update_fields=['data', 'taken_at'],
+        )
+
+    def unfreeze_indicators_of_action(self, action: Action) -> None:
+        """Delete the snapshots of `action`'s indicators unless another action complete for this report links them."""
+        complete_actions = Action.objects.get_queryset().complete_for_report(self).exclude(pk=action.pk)
+        still_linked = ActionIndicator.objects.filter(action__in=complete_actions).values('indicator_id')
+        self.indicator_snapshots.filter(
+            indicator__related_actions__action=action,
+            created_explicitly=True,
+        ).exclude(indicator_id__in=still_linked).delete()
 
     def get_xlsx_exporter(self, action_ids: list[int] | None = None, user: UserOrAnon | None = None) -> ExcelReport:
         self.xlsx_exporter = ExcelReport(self, action_ids=action_ids, user=user)
@@ -456,6 +504,12 @@ class Report(PlanRelatedModelWithRevision):
                 created_explicitly=False,
             ).save()
 
+        indicators = list(self.get_indicators().exclude(report_snapshots__report=self))
+        data = self.collect_indicator_data(indicators)
+        IndicatorSnapshot.objects.bulk_create(
+            IndicatorSnapshot(report=self, indicator=i, data=data[i.pk], created_explicitly=False) for i in indicators
+        )
+
     def undo_marking_as_complete(self, user):
         if not self.is_complete:
             raise ValueError(_('The report is not marked as complete.'))
@@ -465,6 +519,7 @@ class Report(PlanRelatedModelWithRevision):
             self.is_complete = False
             self.save()
             self.action_snapshots.filter(created_explicitly=False).delete()
+            self.indicator_snapshots.filter(created_explicitly=False).delete()
 
 
 class ActionSnapshot(models.Model):
@@ -573,3 +628,28 @@ class ActionSnapshot(models.Model):
 
     def get_serialized_data(self) -> SerializedActionVersion:
         return SerializedActionVersion.from_version(self.action_version)
+
+
+class IndicatorSnapshot(models.Model):
+    """The data of an indicator at the time an action linked to it, or the whole report, was marked as complete."""
+
+    report: FK[Report] = models.ForeignKey(Report, on_delete=models.CASCADE, related_name='indicator_snapshots')
+    indicator: FK[Indicator] = models.ForeignKey(
+        'indicators.Indicator', on_delete=models.CASCADE, related_name='report_snapshots'
+    )
+    indicator_id: int
+    data: models.JSONField[IndicatorReportData] = models.JSONField()
+    created_explicitly = models.BooleanField(default=True)
+    taken_at = models.DateTimeField(default=timezone.now)
+
+    objects: ClassVar[models.Manager[Self]]
+
+    class Meta:
+        verbose_name = _('indicator snapshot')
+        verbose_name_plural = _('indicator snapshots')
+        constraints = [
+            models.UniqueConstraint(fields=['report', 'indicator'], name='unique_indicator_snapshot_per_report'),
+        ]
+
+    def __str__(self):
+        return f'{self.indicator} @ {self.report}'

@@ -267,6 +267,7 @@ INDICATOR_CLONE_STRUCTURE: CloneStructure = {
     'graphs': EXCLUDED,
     'indicator_category_through': EXCLUDED,  # copied via Category → indicator_category_through
     'levels': EXCLUDED,  # IndicatorLevel copied via PLAN_CLONE_STRUCTURE['indicator_levels']
+    'report_snapshots': EXCLUDED,  # reports are not copied
 }
 
 DIMENSION_CLONE_STRUCTURE: CloneStructure = {

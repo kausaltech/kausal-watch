@@ -32,7 +32,7 @@ class TestExportStructureCoverage:
 
 class TestExportStructureReclassification:
     def test_reports_are_included(self):
-        assert EXPORT_PLAN_STRUCTURE['report_types'] == {'reports': {'action_snapshots': {}}}
+        assert EXPORT_PLAN_STRUCTURE['report_types'] == {'reports': {'action_snapshots': {}, 'indicator_snapshots': {}}}
 
     def test_plan_links_are_included(self):
         assert EXPORT_PLAN_STRUCTURE['links'] == {}
