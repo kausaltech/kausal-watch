@@ -179,6 +179,8 @@ class PlanFeatures(PlanRelatedModelWithRevision):
     )
     enable_community_engagement_accounts = models.BooleanField(
         default=False,
+        # Pods of the previous release insert features rows without this column during the rollout.
+        db_default=False,
         verbose_name=_('Offer accounts for community engagement'),
         help_text=_(
             'Let people create an account with their email after committing to a pledge, so they can come back to '

@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
             model_name='planfeatures',
             name='enable_community_engagement_accounts',
             field=models.BooleanField(
+                db_default=False,
                 default=False,
                 help_text='Let people create an account with their email after committing to a pledge, so they can come back to their pledges. When off, everyone takes part anonymously.',
                 verbose_name='Offer accounts for community engagement',
