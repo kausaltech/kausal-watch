@@ -153,3 +153,13 @@ def test_sheet_is_only_in_report_export(plan_with_pages, superuser, report):
 
     assert _('Indicators') in load_workbook(io.BytesIO(report_output), read_only=True).sheetnames
     assert _('Indicators') not in load_workbook(io.BytesIO(dashboard_output), read_only=True).sheetnames
+
+
+@pytest.mark.usefixtures('indicator')
+def test_sheet_is_omitted_from_reports_completed_without_indicator_snapshots(superuser, report):
+    report.mark_as_complete(superuser)
+    report.indicator_snapshots.all().delete()
+
+    output = report.get_xlsx_exporter(user=superuser).generate_xlsx()
+
+    assert _('Indicators') not in load_workbook(io.BytesIO(output), read_only=True).sheetnames

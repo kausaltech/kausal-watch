@@ -251,6 +251,9 @@ class ExcelReport:
     def _write_indicators_sheet(self) -> None:
         if self.report.disable_indicators_sheet:
             return
+        # Reports completed before indicator snapshots existed have no frozen indicator data
+        if self.report.is_complete and not self.report.indicator_snapshots.exists():
+            return
         df = self.generate_indicators_dataframe()
         self._write_sheet(self.workbook.add_worksheet(_('Indicators')), df)
 
