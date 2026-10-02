@@ -1005,6 +1005,13 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
         instance = self._cached_instances[instance.uuid]
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().update(instance, validated_data)
+        # `super().update()` has just persisted any client-submitted `order`.
+        # Track that as the row's baseline so `_update_tree_position` emits the
+        # write that normalizes it, even when the normalized value happens to
+        # equal the load-time one.
+        baseline = self._reorder_baseline.get(instance.uuid)
+        if baseline is not None:
+            self._reorder_baseline[instance.uuid] = (instance.order, baseline[1])
         ops = self._update_tree_position(instance, left_sibling_uuid)
         self.add_deferred_operations(ops)
         return instance

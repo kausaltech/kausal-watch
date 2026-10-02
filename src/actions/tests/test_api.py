@@ -515,6 +515,42 @@ def test_reorder_version_bump_is_atomic_against_concurrent_edit(api_client, plan
         assert row['previous_version'] != before[pk][1]
 
 
+def test_bulk_update_normalizes_submitted_order(api_client, plan, plan_admin_user, action_list_url):
+    """
+    A submitted `order` is normalized even if it normalizes back to the load-time value.
+
+    `super().update()` persists the submitted `order` before the reorder pass
+    normalizes it, so skipping rows whose order matches the load-time baseline
+    would leave the raw submitted value in the database.
+    """
+    action = ActionFactory.create(plan=plan)
+    assert Action.objects.filter(plan=plan).count() == 1
+    # Start from the already-normalized position, so the normalized order equals
+    # the load-time one.
+    Action.objects.filter(pk=action.pk).update(order=0)
+    action.refresh_from_db()
+    api_client.force_login(plan_admin_user)
+
+    resp = api_client.put(
+        action_list_url,
+        data=[
+            {
+                'id': action.pk,
+                'identifier': action.identifier,
+                'name': action.name,
+                'version': action.version,
+                'order': 50,
+                'left_sibling': None,
+            }
+        ],
+    )
+    assert resp.status_code == 200
+    assert resp.json_data[0]['order'] == 0
+
+    action.refresh_from_db()
+    assert action.order == 0
+
+
 def test_action_post_as_plan_admin_allowed(api_client, plan, action_list_url, plan_factory, person_factory):
     admin_person = person_factory(general_admin_plans=[plan])
     api_client.force_login(admin_person.user)
