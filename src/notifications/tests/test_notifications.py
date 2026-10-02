@@ -7,6 +7,7 @@ from django.utils import translation
 
 import pytest
 
+from actions.models.action import Action
 from actions.models.public_user import PublicUser
 from actions.tests.factories import (
     ActionContactFactory,
@@ -311,8 +312,9 @@ def test_action_notification_bubbles_to_org_admin_main_organization():
     engine.generate_notifications()
     assert len(mail.outbox) == 0
     org_plan_admin = OrganizationPlanAdminFactory.create(plan=plan)
-    action.primary_org = org_plan_admin.organization
-    action.save()
+    # Use a queryset update: `Action.save()` stamps `updated_at`, which would
+    # make the action no longer stale.
+    Action.objects.filter(pk=action.pk).update(primary_org=org_plan_admin.organization)
     engine.generate_notifications()
     assert len(mail.outbox) == 1
     assert org_plan_admin.person.user is not None
