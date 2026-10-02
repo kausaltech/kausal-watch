@@ -928,6 +928,9 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
     # this request (dedup across the per-row `_update_tree_position` calls).
     _reorder_bump_exclude_pks: set[int]
     _reorder_bumped_pks: set[int]
+    # Rows that already have an `order` write queued this request (see
+    # `_update_tree_position`).
+    _reorder_written_uuids: set[UUID]
     instance: M | None
 
     def __init__(self, *args, **kwargs):
@@ -977,6 +980,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
             self._reorder_bumped_pks = set()
         if not hasattr(self, '_reorder_bump_exclude_pks'):
             self._reorder_bump_exclude_pks = set()
+        if not hasattr(self, '_reorder_written_uuids'):
+            self._reorder_written_uuids = set()
 
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
@@ -1144,11 +1149,21 @@ class NonTreebeardModelWithTreePositionSerializerMixin[M: ActionOrCategory](
         # make an untouched row look modified and spuriously 409 a concurrent grid
         # save. (In the bulk path the ops feed `bulk_update(['order'])`, which never
         # touches `version`, so there it is a harmless optimisation.)
-        return [
+        #
+        # A row that already has a write queued this request is always re-emitted:
+        # in a bulk create each row refreshes `_cached_instances` (and the baseline)
+        # from the database before the queued writes run, and the deferred writes
+        # are merged keeping the latest instance per row. Skipping a row because
+        # it matches its refreshed baseline would let its stale earlier write win.
+        ops = [
             ('update', node, ['order'])
             for node in self._cached_instances.values()
-            if (baseline := self._reorder_baseline.get(node.uuid)) is None or node.order != baseline[0]
+            if (baseline := self._reorder_baseline.get(node.uuid)) is None
+            or node.order != baseline[0]
+            or node.uuid in self._reorder_written_uuids
         ]
+        self._reorder_written_uuids.update(node.uuid for _, node, _ in ops)
+        return ops
 
     def _cache_descendants(self, node) -> None:
         """Add instance `node` and all its descendants to the dict `self._cached_instances`."""

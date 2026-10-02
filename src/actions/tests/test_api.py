@@ -551,6 +551,34 @@ def test_bulk_update_normalizes_submitted_order(api_client, plan, plan_admin_use
     assert action.order == 0
 
 
+def test_bulk_create_keeps_orders_distinct(api_client, plan, plan_admin_user, action_list_url):
+    """
+    Creating several actions in one bulk POST leaves no two actions with the same order.
+
+    Each created row refreshes the serializer's cache from the database while the
+    earlier rows' reorder writes are still queued. A row that an earlier create
+    shifted must still get a write from every later reorder pass; otherwise its
+    stale queued write wins and collides with a later-created row.
+    """
+    x, y = ActionFactory.create(plan=plan), ActionFactory.create(plan=plan)
+    Action.objects.filter(pk=x.pk).update(order=0)
+    Action.objects.filter(pk=y.pk).update(order=1)
+    api_client.force_login(plan_admin_user)
+
+    resp = api_client.post(
+        action_list_url,
+        data=[
+            {'identifier': 'A', 'name': 'A', 'plan': plan.pk, 'left_sibling': str(x.uuid)},
+            {'identifier': 'B', 'name': 'B', 'plan': plan.pk, 'left_sibling': str(y.uuid)},
+        ],
+    )
+    assert resp.status_code == 201
+
+    orders = list(Action.objects.filter(plan=plan).values_list('order', flat=True))
+    assert len(orders) == 4
+    assert len(set(orders)) == len(orders), f'duplicate orders: {sorted(orders)}'
+
+
 def test_action_post_as_plan_admin_allowed(api_client, plan, action_list_url, plan_factory, person_factory):
     admin_person = person_factory(general_admin_plans=[plan])
     api_client.force_login(admin_person.user)
