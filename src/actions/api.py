@@ -1417,6 +1417,15 @@ class ActionSerializer(  # type: ignore[misc]
         their fresh token fields (read back from the DB, since the bump is an
         ``F()`` expression that doesn't touch the in-memory instances) so the
         client can refresh its baseline for them.
+
+        Each row also carries ``previous_version``, the token just before this
+        request's bump. The client must adopt the new token only if its own
+        token equals ``previous_version``; otherwise someone else edited the row
+        after the client loaded it, and promoting the client's stale contents to
+        the latest token would let its next edit silently overwrite that change.
+        ``version - 1`` is exact: each shifted row is bumped at most once per
+        request (``_reorder_bumped_pks``), and the ``F()`` update row-locks it
+        until this request's transaction commits.
         """
         pks = getattr(self, '_reorder_bumped_pks', None)
         if not pks:
@@ -1426,6 +1435,7 @@ class ActionSerializer(  # type: ignore[misc]
             {
                 'uuid': str(row['uuid']),
                 'version': row['version'],
+                'previous_version': row['version'] - 1,
                 'updated_at': row['updated_at'].isoformat() if row['updated_at'] is not None else None,
             }
             for row in rows

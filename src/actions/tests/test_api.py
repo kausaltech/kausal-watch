@@ -432,10 +432,13 @@ def test_reorder_bumps_version_of_shifted_siblings(api_client, plan, plan_admin_
     # body) with their fresh version, so the client can refresh its baseline and
     # not 409 against its own reorder.
     response_by_uuid = {str(o['uuid']): o for o in resp.json_data if isinstance(o, dict) and 'uuid' in o}
-    for pk, _ in shifted_others:
+    # `previous_version` is the pre-bump token; it matches the client's token
+    # because nobody else touched the sibling, so the client may adopt the new one.
+    for pk, version_before in shifted_others:
         sibling = Action.objects.get(pk=pk)
         assert str(sibling.uuid) in response_by_uuid, f'shifted sibling {pk} missing from response'
         assert response_by_uuid[str(sibling.uuid)]['version'] == sibling.version
+        assert response_by_uuid[str(sibling.uuid)]['previous_version'] == version_before
 
     # A grid write to a shifted sibling carrying its pre-reorder version is rejected.
     victim_pk, victim_stale_version = shifted_others[0]
@@ -499,6 +502,17 @@ def test_reorder_version_bump_is_atomic_against_concurrent_edit(api_client, plan
         # `baseline + 1` write would land on `before + 1` and silently drop the
         # concurrent +10 bump.
         assert after[pk][1] == before[pk][1] + 10 + 1, f'action {pk} reorder bump was not atomic'
+
+    # The response must let the client see that the sibling changed under it: its
+    # `previous_version` is the concurrent edit's token, not the client's, so the
+    # client keeps its stale token (and 409s on the next edit) instead of
+    # adopting the fresh one for stale contents.
+    response_by_uuid = {str(o['uuid']): o for o in resp.json_data if isinstance(o, dict) and 'uuid' in o}
+    for pk in shifted:
+        row = response_by_uuid[str(Action.objects.get(pk=pk).uuid)]
+        assert row['version'] == after[pk][1]
+        assert row['previous_version'] == before[pk][1] + 10
+        assert row['previous_version'] != before[pk][1]
 
 
 def test_action_post_as_plan_admin_allowed(api_client, plan, action_list_url, plan_factory, person_factory):
