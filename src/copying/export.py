@@ -38,6 +38,7 @@ from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator
 from orgs.models import Organization
 from people.models import Person
+from reports.models import IndicatorSnapshot
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -95,9 +96,9 @@ def build_export_plan_structure(
     structure = _deepcopy_structure(PLAN_CLONE_STRUCTURE)
 
     # --- Re-include plan-owned content that copy drops only to avoid reference remapping ---
-    # Reports embed action snapshots that reference original PKs; a remapping problem for
+    # Reports embed action and indicator snapshots that reference original PKs; a remapping problem for
     # copy, but not for a PK-preserving export.
-    _set(structure, ['report_types', 'reports'], {'action_snapshots': {}})
+    _set(structure, ['report_types', 'reports'], {'action_snapshots': {}, 'indicator_snapshots': {}})
     # Plan links are cluster children; copy leaves them out (its own TODO), but they are plan content.
     _set(structure, ['links'], {})
     # Change-log history (each of these is a leaf model with no further relations to traverse).
@@ -281,6 +282,9 @@ def collect_export_instances(
     def add(candidates: Generator[Model] | list[Model]) -> list[Model]:
         added: list[Model] = []
         for instance in candidates:
+            # Indicator snapshots embed the indicator's data
+            if not include_indicators and isinstance(instance, IndicatorSnapshot):
+                continue
             key = (type(instance), instance.pk)
             if key in seen:
                 continue

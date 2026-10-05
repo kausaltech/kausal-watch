@@ -80,6 +80,7 @@ class ActionIndicator(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_('indicator'),
     )
+    indicator_id: int
     effect_type = models.CharField(
         max_length=40,
         choices=[(val, name) for val, name in IndicatorRelationship.EFFECT_TYPES if val != 'part_of'],

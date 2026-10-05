@@ -15,6 +15,8 @@ from copying.export import (
 )
 from copying.tests.test_clone_structure_coverage import _check_coverage
 from images.tests.factories import AplansImageFactory
+from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory
+from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 
 class TestExportStructureCoverage:
@@ -32,7 +34,7 @@ class TestExportStructureCoverage:
 
 class TestExportStructureReclassification:
     def test_reports_are_included(self):
-        assert EXPORT_PLAN_STRUCTURE['report_types'] == {'reports': {'action_snapshots': {}}}
+        assert EXPORT_PLAN_STRUCTURE['report_types'] == {'reports': {'action_snapshots': {}, 'indicator_snapshots': {}}}
 
     def test_plan_links_are_included(self):
         assert EXPORT_PLAN_STRUCTURE['links'] == {}
@@ -116,6 +118,19 @@ class TestSerializePlan:
 
         assert any(r['model'] == 'indicators.indicator' for r in with_indicators)
         assert not any(r['model'] == 'indicators.indicator' for r in without_indicators)
+
+    def test_no_indicators_flag_drops_indicator_snapshots(self, plan_with_pages, superuser):
+        indicator = IndicatorFactory.create(plans=[plan_with_pages])
+        action = ActionFactory.create(plan=plan_with_pages)
+        ActionIndicatorFactory.create(action=action, indicator=indicator)
+        report = ReportFactory.create(type=ReportTypeFactory.create(plan=plan_with_pages))
+        report.mark_as_complete(superuser)
+
+        with_indicators = json.loads(serialize_plan(plan_with_pages, include_indicators=True))
+        without_indicators = json.loads(serialize_plan(plan_with_pages, include_indicators=False))
+
+        assert any(r['model'] == 'reports.indicatorsnapshot' for r in with_indicators)
+        assert not any(r['model'] == 'reports.indicatorsnapshot' for r in without_indicators)
 
 
 @pytest.mark.django_db

@@ -730,6 +730,7 @@ class Action(
                 target_items = task_dict.get(content_key, [])
                 if not target_items:
                     continue
+
                 def get_wrapped_id_db(item: Any, attr: str = wrapped_attr) -> int | None:
                     return getattr(item, f'{attr}_id')
 
@@ -1340,6 +1341,7 @@ class Action(
             report=report,
             action=self,
         ).save()
+        report.freeze_indicators_of_action(self)
 
     def undo_marking_as_complete_for_report(self, report, user):
         from reports.models import ActionSnapshot
@@ -1358,6 +1360,7 @@ class Action(
             )
             reversion.set_user(user)
         snapshots.delete()
+        report.unfreeze_indicators_of_action(self)
 
     def get_status_summary(
         self,
@@ -2160,9 +2163,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelate
         # The cache holds the plan's assignments grouped by task, so a list of tasks does not read the
         # relation once per task; see `PlanSpecificCache.populate_task_contact_persons()`.
         if rows is None:
-            rows = (
-                cache.task_contact_persons.get(self.pk, []) if cache is not None else list(self.contact_persons.all())
-            )
+            rows = cache.task_contact_persons.get(self.pk, []) if cache is not None else list(self.contact_persons.all())
         visible: list[tuple[ActionTaskContactPerson, Person]] = []
         for atcp in rows:
             person = (cache.get_person(atcp.person_id) if cache is not None else None) or atcp.person

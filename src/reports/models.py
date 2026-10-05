@@ -1,7 +1,7 @@
 from __future__ import annotations  # noqa: I001
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, ClassVar, Never
+from typing import TYPE_CHECKING, ClassVar, Never, Self
 
 import reversion
 from django.contrib.contenttypes.models import ContentType
@@ -30,11 +30,15 @@ from reports.utils import get_field_unique_key
 # The following model is for very specialized use and is only imported here so that Django finds it
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
 
+from .indicator_data import IndicatorReportData, collect_indicator_report_data
 from .spreadsheets import ExcelReport
 from .types import LiveVersions, SerializedActionVersion
 from actions.models import AttributeType
+from indicators.models.indicator import Indicator
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from wagtail.blocks.struct_block import StructValue
 
     from kausal_common.models.types import FK
@@ -265,6 +269,7 @@ class Report(PlanRelatedModelWithRevision):
     disable_title_sheet: bool
     disable_summary_sheets: bool
     disable_macros: bool
+    disable_indicators_sheet: bool
 
     class Meta:
         verbose_name = _('report')
@@ -275,6 +280,7 @@ class Report(PlanRelatedModelWithRevision):
         self.disable_title_sheet = False
         self.disable_summary_sheets = False
         self.disable_macros = False
+        self.disable_indicators_sheet = False
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
@@ -285,6 +291,38 @@ class Report(PlanRelatedModelWithRevision):
     @classmethod
     def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[Report]) -> models.QuerySet[Report]:
         return qs.filter(type__plan=plan)
+
+    def get_indicators_to_freeze(self) -> models.QuerySet[Indicator]:
+        """Return the indicators of the report's own plan, which, like its actions, are frozen with the report."""
+        return Indicator.objects.filter(plans=self.type.plan).distinct()
+
+    def collect_indicator_data(
+        self, indicators: Sequence[Indicator], plans: Sequence[Plan] | None = None
+    ) -> dict[int, IndicatorReportData]:
+        """
+        Return the report data of `indicators`, listing linked actions of `plans`.
+
+        `plans` defaults to the report's own plan, which is what snapshots store.
+        """
+        plan = self.type.plan
+        return collect_indicator_report_data(
+            indicators,
+            plans=plans if plans is not None else [plan],
+            period_start=self.start_date,
+            language=plan.primary_language,
+        )
+
+    def freeze_indicators_of_action(self, action: Action) -> None:
+        """Snapshot the indicators linked to `action` as frozen by its completion for this report."""
+        indicators = list(self.get_indicators_to_freeze().filter(related_actions__action=action))
+        data = self.collect_indicator_data(indicators)
+        IndicatorSnapshot.objects.bulk_create(
+            [IndicatorSnapshot(report=self, indicator=i, action=action, data=data[i.pk]) for i in indicators],
+            ignore_conflicts=True,
+        )
+
+    def unfreeze_indicators_of_action(self, action: Action) -> None:
+        self.indicator_snapshots.filter(action=action).delete()
 
     def get_xlsx_exporter(self, action_ids: list[int] | None = None, user: UserOrAnon | None = None) -> ExcelReport:
         self.xlsx_exporter = ExcelReport(self, action_ids=action_ids, user=user)
@@ -456,6 +494,23 @@ class Report(PlanRelatedModelWithRevision):
                 created_explicitly=False,
             ).save()
 
+        # The report keeps its own copy of the latest action snapshot, which survives the action's deletion
+        latest_snapshots: dict[int, IndicatorSnapshot] = {}
+        for snapshot in self.indicator_snapshots.filter(action__isnull=False).order_by('taken_at', 'pk'):
+            latest_snapshots[snapshot.indicator_id] = snapshot
+        indicators = list(self.get_indicators_to_freeze().exclude(pk__in=latest_snapshots))
+        data = self.collect_indicator_data(indicators)
+        IndicatorSnapshot.objects.bulk_create(
+            [
+                *(
+                    IndicatorSnapshot(report=self, indicator_id=s.indicator_id, data=s.data, taken_at=s.taken_at)
+                    for s in latest_snapshots.values()
+                ),
+                *(IndicatorSnapshot(report=self, indicator=i, data=data[i.pk]) for i in indicators),
+            ],
+            ignore_conflicts=True,
+        )
+
     def undo_marking_as_complete(self, user):
         if not self.is_complete:
             raise ValueError(_('The report is not marked as complete.'))
@@ -465,6 +520,7 @@ class Report(PlanRelatedModelWithRevision):
             self.is_complete = False
             self.save()
             self.action_snapshots.filter(created_explicitly=False).delete()
+            self.indicator_snapshots.filter(action__isnull=True).delete()
 
 
 class ActionSnapshot(models.Model):
@@ -573,3 +629,45 @@ class ActionSnapshot(models.Model):
 
     def get_serialized_data(self) -> SerializedActionVersion:
         return SerializedActionVersion.from_version(self.action_version)
+
+
+class IndicatorSnapshot(models.Model):
+    """
+    The data of an indicator at the time an action linked to it, or the whole report, was marked as complete.
+
+    Each action's completion keeps its own snapshot, and the report shows the latest one, so undoing a completion
+    brings back the snapshot of the previous one.
+    """
+
+    report: FK[Report] = models.ForeignKey(Report, on_delete=models.CASCADE, related_name='indicator_snapshots')
+    indicator: FK[Indicator] = models.ForeignKey(
+        'indicators.Indicator', on_delete=models.CASCADE, related_name='report_snapshots'
+    )
+    indicator_id: int
+    # The action whose completion for the report froze the indicator; None if the report's completion did
+    action: FK[Action | None] = models.ForeignKey(
+        'actions.Action', on_delete=models.CASCADE, null=True, blank=True, related_name='report_indicator_snapshots'
+    )
+    data: models.JSONField[IndicatorReportData] = models.JSONField()
+    taken_at = models.DateTimeField(default=timezone.now)
+
+    objects: ClassVar[models.Manager[Self]]
+
+    class Meta:
+        verbose_name = _('indicator snapshot')
+        verbose_name_plural = _('indicator snapshots')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['report', 'indicator', 'action'],
+                condition=Q(action__isnull=False),
+                name='unique_indicator_snapshot_per_action',
+            ),
+            models.UniqueConstraint(
+                fields=['report', 'indicator'],
+                condition=Q(action__isnull=True),
+                name='unique_indicator_snapshot_per_report_completion',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.indicator} @ {self.report}'
