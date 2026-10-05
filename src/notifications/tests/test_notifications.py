@@ -541,7 +541,7 @@ def test_i18n(plan: Plan, plan_admin_person: Person):
     assert 'Hallo' in mail.outbox[0].body
 
 
-def test_localhost_admin_url_raises(settings):
+def test_localhost_admin_url_skips_message(settings):
     settings.DEPLOYMENT_TYPE = 'production'
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     plan = PlanFactory.create()
@@ -552,11 +552,14 @@ def test_localhost_admin_url_raises(settings):
     ActionContactFactory.create(action=task.action)
     ClientPlanFactory.create(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
-    with pytest.raises(ValueError, match='localhost'):
+    with patch('notifications.engine.capture_exception') as capture_exception:
         engine.generate_notifications()
+    assert 'localhost' in str(capture_exception.call_args.args[0])
+    assert len(mail.outbox) == 0
+    assert not SentNotification.objects.exists()
 
 
-def test_localhost_hostname_plan_domains_raises_when_not_development(settings):
+def test_localhost_hostname_plan_domains_skips_message_when_not_development(settings):
     settings.DEPLOYMENT_TYPE = 'production'
     settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
     settings.ADMIN_BASE_URL = 'https://admin.example.com'
@@ -568,8 +571,11 @@ def test_localhost_hostname_plan_domains_raises_when_not_development(settings):
     ActionContactFactory.create(action=task.action)
     ClientPlanFactory.create(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
-    with pytest.raises(ValueError, match='Cannot determine hostname'):
+    with patch('notifications.engine.capture_exception') as capture_exception:
         engine.generate_notifications()
+    assert 'Cannot determine hostname' in str(capture_exception.call_args.args[0])
+    assert len(mail.outbox) == 0
+    assert not SentNotification.objects.exists()
 
 
 def test_localhost_allowed_in_development(settings):
@@ -585,3 +591,39 @@ def test_localhost_allowed_in_development(settings):
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
     engine.generate_notifications()
     assert len(mail.outbox) == 1
+
+
+def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = PlanFactory.create()
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, now=now)
+
+    original_render = NotificationEngine.render
+    calls = 0
+
+    def render_failing_first(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ValueError('Notification context contains non-public URLs: site.view_url: https://plan.test/')
+        return original_render(self, *args, **kwargs)
+
+    with (
+        patch.object(NotificationEngine, 'render', render_failing_first),
+        patch('notifications.engine.capture_exception') as capture_exception,
+    ):
+        engine.generate_notifications()
+
+    assert calls == 2
+    assert len(mail.outbox) == 1
+    capture_exception.assert_called_once()
+    # Only the message that went out is recorded as sent; the failed one is retried on the next run.
+    assert SentNotification.objects.count() == 1

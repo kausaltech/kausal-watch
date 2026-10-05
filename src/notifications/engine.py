@@ -43,8 +43,9 @@ if TYPE_CHECKING:
     from feedback.models import UserFeedback
     from indicators.models import Indicator
 
-    from .models import AutomaticNotificationTemplate
+    from .models import AutomaticNotificationTemplate, BaseTemplate
     from .notifications import Notification
+    from .queue import NotificationQueueItem
     from .recipients import NotificationRecipient
 
 # The admin interface's look, for emails about the admin rather than the plan.
@@ -314,6 +315,37 @@ class NotificationEngine:
 
         return rendered
 
+    def _render_message(
+        self,
+        queue_items: Sequence[NotificationQueueItem],
+        base_template: BaseTemplate,
+        template: AutomaticNotificationTemplate | ManuallyScheduledNotificationTemplate,
+        recipient_context: dict,
+    ) -> dict:
+        notification = queue_items[0].notification
+        content_blocks = notification.get_content_blocks(base_template, template)
+
+        context = {
+            'items': [item.notification.get_context() for item in queue_items],
+            'content_blocks': content_blocks,
+            'site': self.plan.get_site_notification_context(),
+            **recipient_context,
+        }
+
+        if not notification.uses_plan_theme:
+            # Presented as coming from the admin interface: no plan logo, and the header
+            # leads to the admin rather than the plan's public site.
+            context.pop('logo', None)
+            context['site'] = {
+                'title': f'Kausal Watch · {self.plan.name_i18n}',
+                'view_url': settings.ADMIN_BASE_URL,
+            }
+            context['plan_name'] = self.plan.name_i18n
+
+        # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
+        # For now, use primary language of plan instead of the recipient's preferred language
+        return self.render(template, context, plan_theme=notification.uses_plan_theme)
+
     def generate_notifications(self):  # noqa: C901, PLR0912, PLR0915
         self.queue = NotificationQueue()
         self.action_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
@@ -400,29 +432,15 @@ class NotificationEngine:
                             continue
                         template = automatic_template
 
-                    notification = queue_items[0].notification
-                    content_blocks = notification.get_content_blocks(base_template, template)
-
-                    context = {
-                        'items': [item.notification.get_context() for item in queue_items],
-                        'content_blocks': content_blocks,
-                        'site': self.plan.get_site_notification_context(),
-                        **recipient_context,
-                    }
-
-                    if not notification.uses_plan_theme:
-                        # Presented as coming from the admin interface: no plan logo, and the header
-                        # leads to the admin rather than the plan's public site.
-                        context.pop('logo', None)
-                        context['site'] = {
-                            'title': f'Kausal Watch · {self.plan.name_i18n}',
-                            'view_url': settings.ADMIN_BASE_URL,
-                        }
-                        context['plan_name'] = self.plan.name_i18n
-
-                    # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
-                    # For now, use primary language of plan instead of the recipient's preferred language
-                    rendered = self.render(template, context, plan_theme=notification.uses_plan_theme)
+                    # Building the context resolves URLs, and render() checks they are public. A failure is
+                    # specific to this message, so skip it unmarked and let the others go out; it is retried
+                    # on the next run.
+                    try:
+                        rendered = self._render_message(queue_items, base_template, template, recipient_context)
+                    except ValueError as e:
+                        capture_exception(e)
+                        logger.error(str(e))
+                        continue
 
                     if self.force_to:
                         to_email = self.force_to
