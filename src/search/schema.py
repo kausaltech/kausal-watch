@@ -13,6 +13,8 @@ from wagtail.models import Page
 from grapple.types.interfaces import get_page_interface
 from loguru import logger
 
+from aplans.graphql_helpers import validate_client_url
+
 from actions.models import Action, Plan
 from actions.schema import ActionNode
 from indicators.models import Indicator
@@ -67,6 +69,7 @@ class SearchHit(graphene.ObjectType[SearchHitObj]):
         only_other_plans = getattr(info.context, 'only_other_plans', False)
         if only_other_plans:
             client_url = None
+        validate_client_url(client_url)
 
         search_hit_object = root.object
         page = root.page
