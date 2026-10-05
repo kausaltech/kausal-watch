@@ -46,7 +46,14 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         return _('Undo marking action as complete')
 
     def check_action_permitted(self, user):
-        return user.can_modify_action(self.action)
+        if not user.can_modify_action(self.action):
+            return False
+        report_type = self.report.type
+        if report_type.plan_id != self.action.plan_id:
+            return False
+        if report_type.only_plan_admins_can_mark_actions_as_complete:
+            return user.is_general_admin_for_plan(self.action.plan)
+        return True
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):

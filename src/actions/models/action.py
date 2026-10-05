@@ -1326,9 +1326,16 @@ class Action(
             return False
         return True
 
+    def _check_report_open_for_action(self, report) -> None:
+        if report.type.plan_id != self.plan_id:
+            raise ValueError(_('The report %s does not belong to the plan of this action.') % report)
+        if report.is_complete:
+            raise ValueError(_('The report %s is already marked as complete.') % report)
+
     def mark_as_complete_for_report(self, report, user):
         from reports.models import ActionSnapshot
 
+        self._check_report_open_for_action(report)
         if self.is_complete_for_report(report):
             raise ValueError(_('The action is already marked as complete for report %s.') % report)
         with reversion.create_revision():
@@ -1346,6 +1353,7 @@ class Action(
     def undo_marking_as_complete_for_report(self, report, user):
         from reports.models import ActionSnapshot
 
+        self._check_report_open_for_action(report)
         snapshots = ActionSnapshot.objects.filter(
             report=report,
             action_version__in=Version.objects.get_for_object(self),  # pyright: ignore
