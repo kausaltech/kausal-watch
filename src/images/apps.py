@@ -5,32 +5,29 @@ class ImagesConfig(AppConfig):
     name = 'images'
 
     def ready(self):
-        # monkeypatch filtering of Collections
+        from wagtail.images import permissions
+        from wagtail.images.forms import BaseImageForm
+
+        from .permissions import permission_policy
+
+        # Install before importing the chooser or image views: those modules
+        # retain the policy in module globals, class attributes and decorators.
+        permissions.permission_policy = permission_policy
+        BaseImageForm.permission_policy = permission_policy
+
         from .chooser import monkeypatch_chooser
 
         monkeypatch_chooser()
-
-        from wagtail.images import permissions
-        from wagtail.images.forms import BaseImageForm
 
         # Don't let deleting one image delete a file that another image still points at.
         from aplans.media_cleanup import ensure_file_cleanup_guard_installed
 
         ensure_file_cleanup_guard_installed()
 
-        # Register post_save signal handler for audit logging.
-        # Register graphql types overrides for grapple
-        from . import schema, signals  # noqa: F401
-
-        # monkeypatch new permission policy
-        from .permissions import permission_policy
-
-        permissions.permission_policy = permission_policy
-
-        BaseImageForm.permission_policy = permission_policy
-
-        # Register feature detection library
         from willow.registry import registry
+
+        # Register audit signals and GraphQL type overrides for Grapple.
+        from . import schema, signals  # noqa: F401
 
         try:
             import rustface.willow
