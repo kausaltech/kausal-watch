@@ -22,7 +22,7 @@ NEW_PASSWORD = 'correct-horse-battery-staple'  # noqa: S105
 @pytest.fixture
 def plan(settings):
     settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
-    return PlanFactory.create(identifier='plan', site_url='https://plan.example.com', features__enable_access_requests=True)
+    return PlanFactory.create(identifier='plan', site_url=None, features__enable_access_requests=True)
 
 
 @pytest.fixture
@@ -72,6 +72,10 @@ class TestSetPasswordUrl:
         req = AccessRequestFactory.create(plan=plan)
         assert make_set_password_url(req) is None
 
+    def test_is_not_given_when_the_plan_has_no_resolvable_url(self, approved, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = []
+        assert make_set_password_url(approved) is None
+
 
 class TestSetPasswordView:
     def test_sets_the_password_signs_in_and_goes_to_the_plan(self, client, approved):
@@ -85,6 +89,14 @@ class TestSetPasswordView:
         user.refresh_from_db()
         assert user.check_password(NEW_PASSWORD)
         assert client.session['_auth_user_id'] == str(user.pk)
+
+    def test_form_links_to_the_plan(self, client, approved):
+        form_url = _open_form(client, approved)
+
+        response = client.get(form_url)
+
+        assert response.status_code == 200
+        assert response.context['plan_url'] == 'https://plan.example.com'
 
     def test_link_works_once(self, client, approved):
         url = make_set_password_url(approved)

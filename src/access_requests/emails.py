@@ -34,6 +34,14 @@ if TYPE_CHECKING:
 logger = logger.bind(name='access_requests.emails')
 
 
+def get_plan_url(plan: Plan) -> str | None:
+    """Return the public URL of the plan's site, or None when no hostname can be resolved for it."""
+    try:
+        return plan.get_view_url()
+    except ValueError:
+        return None
+
+
 def may_set_password(req: AccessRequest, user: User | None) -> bool:
     """
     Tell whether `user` may set their password through the approval of `req`.
@@ -42,7 +50,7 @@ def may_set_password(req: AccessRequest, user: User | None) -> bool:
     has signed in before already has their credentials and did not ask for a reset. The plan must
     have a site to send them to afterwards.
     """
-    if req.status != AccessRequest.Status.APPROVED or req.person is None or not req.plan.site_url:
+    if req.status != AccessRequest.Status.APPROVED or req.person is None or not get_plan_url(req.plan):
         return False
     if user is None or req.person.user != user:
         return False
@@ -88,11 +96,12 @@ def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
     }
 
     if set_password_url is None:
-        if not plan.site_url:
+        plan_url = get_plan_url(plan)
+        if not plan_url:
             content['paragraphs'].append(_('You can sign in with this email address.'))
             return content
-        content['paragraphs'].append(_('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url})
-        content['button'] = {'label': _('Sign in'), 'url': plan.site_url}
+        content['paragraphs'].append(_('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan_url})
+        content['button'] = {'label': _('Sign in'), 'url': plan_url}
         return content
     days = int(settings.PASSWORD_RESET_TIMEOUT / (60 * 60 * 24))
     content['paragraphs'].append(
@@ -122,7 +131,7 @@ def _rejected_content(req: AccessRequest, plan_name: str) -> _Content:
 def _site_context(plan: Plan) -> dict[str, str]:
     general_content = getattr(plan, 'general_content', None)
     return {
-        'view_url': plan.site_url or '',
+        'view_url': get_plan_url(plan) or '',
         'title': (general_content.site_title if general_content else '') or plan.name_i18n,
     }
 

@@ -44,10 +44,12 @@ def _rejected(plan, **kwargs):
 
 
 @pytest.fixture
-def plan():
+def plan(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
     return PlanFactory.create(
         name='Example Climate Plan',
-        site_url='https://plan.example.com',
+        identifier='plan',
+        site_url=None,
         access_request_contact_email='access@example.com',
         access_request_eligibility_text='Access is only given to staff of the ministry.',
     )
@@ -103,9 +105,8 @@ class TestApproved:
         [msg] = mail.outbox
         assert '/access-requests/' not in msg.body
 
-    def test_leaves_out_the_address_when_the_plan_has_no_site_url(self, plan):
-        plan.site_url = None
-        plan.save()
+    def test_leaves_out_the_address_when_the_plan_has_no_resolvable_url(self, plan, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = []
         req = _approved(plan)
         mail.outbox.clear()
 

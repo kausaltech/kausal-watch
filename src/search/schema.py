@@ -65,7 +65,7 @@ class SearchHit(graphene.ObjectType[SearchHitObj]):
         if not plan or not plan.is_visible_for_user(info.context.user):
             return None
 
-        # Check if this is a search result from other plans, we want to use the site_url for these.
+        # Search results from other plans link to their canonical URL, not one matching the client URL.
         only_other_plans = getattr(info.context, 'only_other_plans', False)
         if only_other_plans:
             client_url = None
