@@ -69,6 +69,7 @@ class IndicatorValue(ClusterableModel, PlanRelatedModelWithRevision):
         on_delete=models.CASCADE,
         verbose_name=_('indicator'),
     )
+    indicator_id: int
     categories: M2M[DimensionCategory, IndicatorValue] = models.ManyToManyField(
         'indicators.DimensionCategory',
         through='IndicatorValueCategory',
@@ -141,6 +142,7 @@ class IndicatorGoal(PlanRelatedModelWithRevision):
         on_delete=models.CASCADE,
         verbose_name=_('indicator'),
     )
+    indicator_id: int
     value = models.FloatField()
     date = models.DateField(verbose_name=_('date'))
 

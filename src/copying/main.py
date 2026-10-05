@@ -135,6 +135,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'pledgeactionthrough': EXCLUDED,  # reverse of PledgeActionThrough.action; covered via pledges.pledge_action_through
         'pledges': EXCLUDED,  # reverse M2M; copied as part of Plan.pledges
         'user_feedbacks': EXCLUDED,
+        'report_indicator_snapshots': EXCLUDED,  # reports are not copied
     },
     'built_in_field_customizations': {},
     'category_types': {
@@ -267,6 +268,7 @@ INDICATOR_CLONE_STRUCTURE: CloneStructure = {
     'graphs': EXCLUDED,
     'indicator_category_through': EXCLUDED,  # copied via Category → indicator_category_through
     'levels': EXCLUDED,  # IndicatorLevel copied via PLAN_CLONE_STRUCTURE['indicator_levels']
+    'report_snapshots': EXCLUDED,  # reports are not copied
 }
 
 DIMENSION_CLONE_STRUCTURE: CloneStructure = {
