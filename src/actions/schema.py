@@ -6,7 +6,6 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from itertools import chain
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Generic, Protocol, TypeVar
-from urllib.parse import urlparse
 
 import graphene
 import strawberry
@@ -42,7 +41,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
+from aplans.graphql_helpers import ModelAdminAdminButtonsMixin, validate_client_url
 from aplans.graphql_types import (
     DjangoNode,
     WorkflowStateDescription,
@@ -627,11 +626,7 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_view_url(root: Plan, info: GQLInfo, client_url: str | None = None):
-        if client_url:
-            try:
-                urlparse(client_url)
-            except Exception:
-                raise GraphQLError('clientUrl must be a valid URL') from None
+        validate_client_url(client_url)
         return root.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
 
     @staticmethod
@@ -1946,6 +1941,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         model_field=('plan', 'identifier'),
     )
     def resolve_view_url(root: Action, info: GQLInfo, client_url: str | None = None):
+        validate_client_url(client_url)
         return root.get_view_url(client_url=client_url, request=info.context)
 
     @staticmethod
