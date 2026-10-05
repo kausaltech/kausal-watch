@@ -3,6 +3,8 @@ from logging import getLogger
 from django.core.management.base import BaseCommand
 from django.utils import translation
 
+import sentry_sdk
+
 from actions.models import Plan
 from notifications.engine import NotificationEngine
 
@@ -23,8 +25,10 @@ class Command(BaseCommand):
                 now = plan.to_local_timezone(options['time'])
             else:
                 now = plan.now_in_local_timezone()
-            if plan.should_trigger_daily_notifications(now):
-                logger.info(f'Sending daily notifications for plan {plan}')
+            if not plan.should_trigger_daily_notifications(now):
+                continue
+            logger.info(f'Sending daily notifications for plan {plan}')
+            try:
                 with translation.override(plan.primary_language):
                     engine = NotificationEngine(
                         plan,
@@ -37,5 +41,10 @@ class Command(BaseCommand):
                         now=now,
                     )
                     engine.generate_notifications()
-                plan.daily_notifications_triggered_at = now
-                plan.save()
+            except Exception as e:
+                # One plan's failure must not stop notifications for the others; it is retried on the next run.
+                logger.exception(f'Sending daily notifications failed for plan {plan}')
+                sentry_sdk.capture_exception(e)
+                continue
+            plan.daily_notifications_triggered_at = now
+            plan.save()
