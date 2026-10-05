@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlparse
 
 import graphene
 from django.utils.module_loading import import_string
@@ -76,6 +77,19 @@ def get_fields(info: GraphQLResolveInfo):
         fragments[name] = ast_to_dict(value)
 
     return collect_fields(node, fragments)
+
+
+def validate_client_url(client_url: str | None) -> None:
+    """Reject a `clientUrl` argument that `Plan.get_view_url()` cannot use, as a client-side GraphQL error."""
+    if not client_url:
+        return
+    try:
+        parsed = urlparse(client_url)
+        scheme, hostname = parsed.scheme, parsed.hostname
+    except ValueError:
+        scheme = hostname = None
+    if scheme not in ('http', 'https') or not hostname:
+        raise GraphQLError('clientUrl must be a valid URL')
 
 
 class GraphQLAuthFailedError(GraphQLError):

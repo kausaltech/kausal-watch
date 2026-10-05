@@ -11,6 +11,7 @@ from loguru import logger
 
 from kausal_common.graphene.registry import register_graphene_node
 
+from aplans.graphql_helpers import validate_client_url
 from aplans.graphql_types import get_plan_from_context
 
 from pages.models import AplansPage
@@ -79,6 +80,7 @@ class PageMenuItemNode(graphene.ObjectType[MenuItemBase]):
             return None
         if not client_url:
             client_url = info.variable_values.get('clientUrl')
+        validate_client_url(client_url)
         view_url = plan.get_view_url(client_url=client_url, request=info.context)
         return view_url
 
