@@ -4,6 +4,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.db.models import Model
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import re_path
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
@@ -259,7 +260,7 @@ class ReportAdmin(AplansModelAdmin):
         )
 
     def download_report_view(self, request, instance_pk):
-        report = Report.objects.get(pk=instance_pk)
+        report = get_object_or_404(self.get_queryset(request), pk=instance_pk)
         exporter = report.get_xlsx_exporter(user=request.user)
         output = exporter.generate_xlsx()
         response = HttpResponse(
