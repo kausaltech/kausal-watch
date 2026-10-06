@@ -1279,7 +1279,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         return f'{scheme}://{hostname}{locale_prefix}'
 
     def _first_production_domain(self, candidates: list[PlanDomain]) -> PlanDomain | None:
-        production = [d for d in candidates if d.deployment_environment == PlanDomain.DeploymentEnvironment.PRODUCTION]
+        production = [d for d in candidates if not d.is_preview_surface]
         if not production:
             return None
         if len(production) > 1:
@@ -1301,15 +1301,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         if explicitly_published:
             return self._first_production_domain(explicitly_published) or explicitly_published[0]
 
-        non_production_domains = [
-            d
-            for d in domains
-            if d.deployment_environment != PlanDomain.DeploymentEnvironment.PRODUCTION
-            and d.publication_status_override != PublicationStatus.UNPUBLISHED
+        preview_domains = [
+            d for d in domains if d.is_preview_surface and d.publication_status_override != PublicationStatus.UNPUBLISHED
         ]
-        if not non_production_domains:
+        if not preview_domains:
             return None
-        return non_production_domains[0]
+        return preview_domains[0]
 
     def _find_canonical_domain(self) -> PlanDomain | None:
         """
@@ -1319,7 +1316,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         published production domains. For unpublished plans, explicit
         publication overrides take precedence; otherwise production domains are
         excluded so the URL falls back to a preview/development domain or the
-        wildcard.
+        wildcard. A domain with no deployment environment counts as production,
+        as in `PlanDomain.is_preview_surface`.
         """
         domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
         if not domains:
