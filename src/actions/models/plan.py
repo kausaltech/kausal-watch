@@ -893,7 +893,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def create_default_site(self, hostname=None):
         if hostname is None:
-            hostname = self.default_hostname()
+            hostname = self.default_hostname(include_all_domains=True)
             if not hostname:
                 raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         if self.site is not None:

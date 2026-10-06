@@ -380,6 +380,46 @@ def test_new_site_hostname_raises_when_no_hostname(settings, plan_factory):
         _new_site_hostname(plan, 'copy-plan')
 
 
+
+def test_create_default_site_uses_localhost_in_development(settings, plan_factory):
+    """create_default_site() falls back to localhost under the development defaults."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory(identifier='myplan')
+    plan.create_default_site()
+    assert plan.site is not None
+    assert plan.site.hostname == 'myplan.localhost'
+
+
+def test_create_default_site_raises_when_only_localhost_in_production(settings, plan_factory):
+    """create_default_site() doesn't fall back to localhost in production."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.create_default_site()
+
+
+def test_new_site_hostname_uses_localhost_in_development(settings, plan_factory):
+    """_new_site_hostname() falls back to localhost under the development defaults."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory()
+    assert _new_site_hostname(plan, 'copy-plan') == 'copy-plan.localhost'
+
+
+def test_new_site_hostname_raises_when_only_localhost_in_production(settings, plan_factory):
+    """_new_site_hostname() doesn't fall back to localhost in production."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        _new_site_hostname(plan, 'copy-plan')
+
 # --- Tests for legacy hostname redirect (<plan>.domain → <plan>.<country>.domain) ---
 
 
