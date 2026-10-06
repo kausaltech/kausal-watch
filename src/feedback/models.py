@@ -105,8 +105,6 @@ class UserFeedback(PlanRelatedModelWithRevision):
         if not comment and not additional_fields:
             raise ValidationError(_('At least one field must be filled.'))
 
-        self.save()
-
 
 def get_latest_revision(page_id):
     try:

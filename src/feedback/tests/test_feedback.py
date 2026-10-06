@@ -5,6 +5,7 @@ import pytest
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory, PlanFactory, PledgeFactory
 from feedback.models import UserFeedback
 from feedback.tests.factories import UserFeedbackFactory
+from pages.models import ActionListPage
 
 pytestmark = pytest.mark.django_db
 
@@ -163,3 +164,33 @@ class TestFeedbackGraphQL:
         assert obj.action is None
         assert obj.category is None
         assert obj.pledge is None
+
+    def test_invalid_feedback_is_not_saved(self, plan_with_pages, graphql_client_query_data):
+        data = graphql_client_query_data(
+            CREATE_FEEDBACK_MUTATION,
+            variables={
+                'input': {
+                    'plan': plan_with_pages.identifier,
+                    'comment': 'Feedback',
+                    'url': 'https://example.com/',
+                    'email': 'not-an-email',
+                },
+            },
+        )
+        result = data['createUserFeedback']
+        assert result['feedback'] is None
+        assert [error['field'] for error in result['errors']] == ['email']
+        assert not UserFeedback.objects.exists()
+
+    def test_latest_revision_is_saved(self, plan_with_pages, graphql_client_query_data):
+        page = ActionListPage.objects.descendant_of(plan_with_pages.root_page).get()
+        page.save_revision()
+        obj = _mutate(
+            graphql_client_query_data,
+            plan=plan_with_pages.identifier,
+            comment='Feedback',
+            url='https://example.com/',
+            pageId=str(page.pk),
+        )
+        assert obj.latest_revision is not None
+        assert obj.latest_revision == page.get_latest_revision()
