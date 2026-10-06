@@ -14,15 +14,16 @@ believes the attribute is absent, emits a ``create`` op, and its final
 ``(type, content_type, object_id)`` — one choice value per attribute type per
 action already exists.
 
-Rather than relying on wall-clock timing, we drive the interleaving
-deterministically. The "loser" request is parked at the very start of the write
-path — after it has built its (empty) snapshot, parsed its base version, and
-passed its permission check, but before it takes any lock or writes anything.
-The "winner" then runs start-to-finish alone and commits; only then is the loser
-released, into a world where the row it thought was untouched now exists. Both
-send the same base ``version``, exactly as two grid tabs (or a double-submit)
-would. Parking before any lock means the winner never blocks on the loser, and
-running the two requests one-at-a-time avoids incidental shared-state races.
+Rather than running two live requests on two threads (which needs real commits
+and therefore a ``transaction=True`` test with its table-truncating teardown
+flush), we stage the interleaving deterministically on a single connection. The
+"winner" request runs start-to-finish first. The "loser" request runs afterwards,
+but its attribute snapshot is replaced with the one the winner took before it
+wrote anything — i.e. the loser behaves as if it had built its snapshot at the
+same moment as the winner, before the winner's write landed. Both send the same
+base ``version``, exactly as two grid tabs (or a double-submit) would. Everything
+else the loser does (version check, row lock, writes) runs against the real,
+post-winner database state.
 
 The assertions describe the desired contract and are agnostic to which fix
 lands: an upsert / row-lock approach (both requests succeed) or an
@@ -33,18 +34,15 @@ row.
 
 from __future__ import annotations
 
-import threading
+from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
-from django.db import connections
-from django.db.models.signals import post_migrate
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 import pytest
 
-from kausal_common.api.bulk import BulkListSerializer
-
+from actions.api import ActionSerializer
 from actions.models import Action
 from actions.models.attributes import AttributeChoice, AttributeType
 from actions.tests.factories import (
@@ -53,65 +51,11 @@ from actions.tests.factories import (
     AttributeTypeFactory,
 )
 
-# transaction=True so each request's ATOMIC_REQUESTS transaction really commits
-# and is visible to the other thread's connection (a plain `db` fixture wraps
-# everything in one rolled-back transaction, which can't model a cross-request
-# race).
-pytestmark = pytest.mark.django_db(transaction=True)
-
-_WAIT_TIMEOUT = 30
+pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture(autouse=True, scope='module')
-def _no_permission_sync_on_flush():
-    """
-    Neutralise the `sync_permissions` post_migrate receiver for this module.
-
-    `transaction=True` tests flush the DB on teardown, which re-emits
-    `post_migrate`; the project's `sync_permissions` handler then re-adds
-    `auth_group_permissions` rows referencing permissions that the flush has
-    truncated, raising a ForeignKeyViolation at COMMIT. Django's own
-    `create_permissions` receiver still runs, so permissions are recreated
-    normally; we only skip the group-permission re-sync during the flush.
-    """
-    from actions.signals import sync_permissions
-
-    post_migrate.disconnect(dispatch_uid='sync_app_permissions')
-    yield
-    post_migrate.connect(sync_permissions, dispatch_uid='sync_app_permissions')
-
-
-@pytest.fixture(autouse=True, scope='module')
-def _flush_with_cascade():
-    """
-    Force the transactional-test teardown flush to use `TRUNCATE ... CASCADE`.
-
-    `transaction=True` tests are torn down with Django's `flush` command, which
-    builds a single `TRUNCATE <every managed table>` without CASCADE. The
-    `helusers_adgroupmapping` table (an unmanaged model, so absent from that
-    list) has a foreign key to `auth_group`, so Postgres rejects the non-CASCADE
-    truncate with "cannot truncate a table referenced in a foreign key
-    constraint". Wrapping the `flush` command's `sql_flush` to force
-    `allow_cascade=True` truncates the dangling dependent rows along with it.
-
-    Scoped to the module (not the test) so the patch is still active when the
-    per-test teardown flush runs, and restored afterwards.
-    """
-    from django.core.management.commands import flush as flush_command
-    from django.core.management.sql import sql_flush
-
-    def sql_flush_cascade(style, connection, reset_sequences=True, allow_cascade=False):
-        return sql_flush(style, connection, reset_sequences=reset_sequences, allow_cascade=True)
-
-    # `flush` re-exports `sql_flush` via `from ... import sql_flush`; the type
-    # stub doesn't declare that re-export, hence the ignores on the rebind.
-    flush_command.sql_flush = sql_flush_cascade  # type: ignore[attr-defined]
-    yield
-    flush_command.sql_flush = sql_flush  # type: ignore[attr-defined]
-
-
-def _is_server_error(outcome: object) -> bool:
-    return isinstance(outcome, Exception) or outcome == 500
+def _copy_attribute_values(attribute_values: dict[str, dict[int, list[Any]]]) -> dict[str, dict[int, list[Any]]]:
+    return {fmt: {pk: list(values) for pk, values in by_pk.items()} for fmt, by_pk in attribute_values.items()}
 
 
 def test_concurrent_bulk_attribute_writes_do_not_500(plan, plan_admin_user, monkeypatch):
@@ -137,56 +81,47 @@ def test_concurrent_bulk_attribute_writes_do_not_500(plan, plan_admin_user, monk
         },
     ]
 
-    # Park the loser at the start of the write path (snapshot built, version
-    # parsed, permission check passed, but before any lock/write). The winner
-    # runs fully and commits; then the loser is released into the conflict.
-    role = threading.local()
-    loser_parked = threading.Event()
-    winner_committed = threading.Event()
-    original_update = BulkListSerializer.update
+    # The winner's first snapshot is taken at serializer construction, before it
+    # writes anything. The loser's first snapshot is swapped for that one, as if
+    # both requests had built their snapshots at the same moment.
+    current_role: str | None = None
+    stale_snapshot: dict[str, dict[int, list[Any]]] | None = None
+    loser_staged = False
+    original_initialize = ActionSerializer.initialize_cache_context
 
-    def patched_update(self, *args, **kwargs):
-        if getattr(role, 'name', None) == 'loser':
-            loser_parked.set()
-            assert winner_committed.wait(timeout=_WAIT_TIMEOUT), 'winner never committed'
-        return original_update(self, *args, **kwargs)
+    def staged_initialize_cache_context(self):
+        nonlocal stale_snapshot, loser_staged
+        original_initialize(self)
+        cache = self.context.get('_cache')
+        if cache is None:
+            return
+        if current_role == 'winner' and stale_snapshot is None:
+            stale_snapshot = _copy_attribute_values(cache['attribute_values'])
+        elif current_role == 'loser' and not loser_staged:
+            assert stale_snapshot is not None, 'winner never built its snapshot'
+            for field_name in self._attribute_fields:
+                self.fields[field_name].context['_cache']['attribute_values'] = _copy_attribute_values(stale_snapshot)
+            loser_staged = True
 
-    monkeypatch.setattr(BulkListSerializer, 'update', patched_update)
+    monkeypatch.setattr(ActionSerializer, 'initialize_cache_context', staged_initialize_cache_context)
 
-    results: dict[str, object] = {}
-
-    def do_request(name: str):
-        role.name = name
+    def do_request(role: str) -> int:
+        nonlocal current_role
+        current_role = role
         client = APIClient()
-        # Capture a 500 as a response instead of re-raising into the thread.
+        # Capture a 500 as a response instead of re-raising into the test.
         client.raise_request_exception = False
         client.force_authenticate(plan_admin_user)
-        try:
-            resp = client.put(url, data=payload, format='json')
-            results[name] = resp.status_code
-        except Exception as e:
-            results[name] = e
-        finally:
-            connections.close_all()
+        return client.put(url, data=payload, format='json').status_code
 
-    loser = threading.Thread(target=do_request, args=('loser',), name='loser')
-    winner = threading.Thread(target=do_request, args=('winner',), name='winner')
+    results = {'winner': do_request('winner'), 'loser': do_request('loser')}
+    assert loser_staged, 'loser never built its snapshot'
 
-    loser.start()
-    assert loser_parked.wait(timeout=_WAIT_TIMEOUT), 'loser never reached the write path'
-    winner.start()
-    winner.join(timeout=_WAIT_TIMEOUT)
-    winner_committed.set()
-    loser.join(timeout=_WAIT_TIMEOUT)
-
-    assert not winner.is_alive(), 'winner thread hung'
-    assert not loser.is_alive(), 'loser thread hung'
-
-    outcomes = [results.get('winner'), results.get('loser')]
+    outcomes = list(results.values())
 
     # The core regression: neither concurrent write may crash with a 500 /
     # IntegrityError.
-    assert not any(_is_server_error(o) for o in outcomes), results
+    assert 500 not in outcomes, results
 
     # Fix-agnostic contract: each request either succeeds (upsert / lock) or is
     # cleanly rejected with a conflict (optimistic concurrency); at least one
