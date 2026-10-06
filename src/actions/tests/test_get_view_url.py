@@ -473,6 +473,39 @@ class TestGetViewUrlMultipleProductionDomains:
         assert captured == []
 
 
+class TestGetViewUrlDomainQueries:
+    """The plan's domains are read through `plan.domains.all()`, so prefetching them avoids queries."""
+
+    @pytest.fixture
+    def plan_with_two_production_domains(self, settings):
+        from actions.models.plan import PlanDomain
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+        for hostname in ('first.city.gov', 'second.city.gov'):
+            PlanDomainFactory.create(
+                plan=plan,
+                hostname=hostname,
+                deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+            )
+        return plan
+
+    def test_uses_prefetched_domains(self, plan_with_two_production_domains, django_assert_num_queries):
+        from actions.models import Plan
+
+        plan = Plan.objects.prefetch_related('domains').get(pk=plan_with_two_production_domains.pk)
+        with django_assert_num_queries(0):
+            assert plan.get_view_url() == 'https://first.city.gov'
+
+    def test_tolerates_unsaved_in_memory_domains(self, plan_with_two_production_domains):
+        from actions.models.plan import PlanDomain
+
+        plan = plan_with_two_production_domains
+        unsaved = PlanDomain(hostname='unsaved.city.gov', deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION)
+        plan.domains = [*plan.domains.all(), unsaved]
+        assert plan.get_view_url() == 'https://unsaved.city.gov'
+
+
 class TestGetViewUrlUnpublishedPlan:
     """Unpublished plans should use the wildcard domain, not PRODUCTION PlanDomains."""
 
