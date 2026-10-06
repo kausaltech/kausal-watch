@@ -1308,6 +1308,18 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return None
         return preview_domains[0]
 
+    def _canonical_domain_candidates(self) -> list[PlanDomain]:
+        """
+        Return the plan's non-redirect domains ordered by pk.
+
+        Uses `self.domains.all()` and sorts in Python, so a `prefetch_related('domains')` is
+        honoured instead of being bypassed by `order_by()`.
+        """
+        # Unsaved in-memory domains (from a bound admin form) have no pk and sort first,
+        # as modelcluster's order_by() would sort them.
+        domains = sorted(self.domains.all(), key=lambda d: (d.pk is not None, d.pk or 0))
+        return [d for d in domains if not d.redirect_to_hostname]
+
     def _find_canonical_domain(self) -> PlanDomain | None:
         """
         Find the best PlanDomain to use as the canonical URL for this plan.
@@ -1319,7 +1331,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         wildcard. A domain with no deployment environment counts as production,
         as in `PlanDomain.is_preview_surface`.
         """
-        domains = [d for d in self.domains.order_by('pk') if not d.redirect_to_hostname]
+        domains = self._canonical_domain_candidates()
         if not domains:
             return None
         if self.is_live():
