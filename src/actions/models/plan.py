@@ -1335,7 +1335,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         organization: Organization,
         other_languages: list[str] | None = None,
         short_name: str | None = None,
-        hostname: str | None = None,
         client_name: str | None = None,
         country: str | None = None,
     ) -> Plan:
@@ -1360,23 +1359,18 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client, is_primary=True)
-        return cls.apply_defaults(plan, hostname=hostname)
+        return cls.apply_defaults(plan)
 
     @classmethod
     @transaction.atomic()
     def apply_defaults(
         cls,
         plan: Plan,
-        hostname: str | None = None,
     ) -> Plan:
         from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
 
         plan.statuses_updated_manually = True
-        if not hostname:
-            hostname = plan.default_hostname(include_all_domains=True)
-            if not hostname:
-                raise ValueError(f"Cannot determine hostname for plan '{plan.identifier}': no hostname plan domains configured")
-        plan.create_default_site(hostname)
+        plan.create_default_site()
         plan.save()
 
         with translation.override(plan.primary_language):

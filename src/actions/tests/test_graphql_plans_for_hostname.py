@@ -370,6 +370,18 @@ def test_apply_defaults_raises_when_no_hostname(settings, plan_factory):
         plan.apply_defaults(plan)
 
 
+def test_apply_defaults_rejects_explicit_hostname(plan_factory):
+    """
+    apply_defaults() takes no hostname.
+
+    Public URLs come from PlanDomain rows, so a hostname given here would only
+    reach the Wagtail Site and be silently ignored by Plan.get_view_url().
+    """
+    plan = plan_factory()
+    with pytest.raises(TypeError):
+        plan.apply_defaults(plan, hostname='customer.example.com')  # type: ignore[call-arg]
+
+
 def test_new_site_hostname_raises_when_no_hostname(settings, plan_factory):
     """_new_site_hostname() raises when default_hostname() returns None."""
     from copying.main import _new_site_hostname
