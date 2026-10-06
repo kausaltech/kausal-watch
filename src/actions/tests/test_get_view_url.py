@@ -342,6 +342,20 @@ class TestGetViewUrlPlanDomainFallback:
         url = plan.get_view_url()
         assert url == 'https://city.gov'
 
+    def test_prefers_legacy_domain_without_environment_over_preview(self, plan_no_wildcards):
+        """A row with no deployment environment counts as production, even behind an older preview row."""
+        plan = plan_no_wildcards
+        from actions.models.plan import PlanDomain
+
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', deployment_environment='')
+        url = plan.get_view_url()
+        assert url == 'https://city.gov'
+
     def test_raises_when_only_redirect_domains_and_no_wildcards(self, plan_no_wildcards):
         plan = plan_no_wildcards
         PlanDomainFactory.create(plan=plan, hostname='old.city.gov', redirect_to_hostname='new.city.gov')
@@ -531,6 +545,28 @@ class TestGetViewUrlUnpublishedPlan:
         """Only a PRODUCTION domain exists, plan is unpublished -> use wildcard."""
         url = unpublished_plan_with_production_domain.get_view_url()
         assert url == 'https://myplan.example.com'
+
+    def test_skips_legacy_domain_without_environment(self, settings):
+        """A row with no deployment environment counts as production, so it is not used before launch."""
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', deployment_environment='')
+        url = plan.get_view_url()
+        assert url == 'https://myplan.example.com'
+
+    def test_uses_preview_domain_over_legacy_domain_without_environment(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        from actions.models.plan import PlanDomain
+
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        PlanDomainFactory.create(plan=plan, hostname='city.gov', deployment_environment='')
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        url = plan.get_view_url()
+        assert url == 'https://preview.city.gov'
 
     def test_skips_unpublished_domain_override(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
