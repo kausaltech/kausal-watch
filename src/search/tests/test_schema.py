@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, cast
 
+from django.contrib.auth.models import AnonymousUser
 from django.utils.timezone import make_aware
 
 import pytest
@@ -10,7 +11,8 @@ import pytest
 from actions.models import Plan
 from actions.tests.factories import PlanFactory
 from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
-from search.schema import SearchResults
+from pages.models import ActionListPage
+from search.schema import SearchHit, SearchHitObj, SearchResults
 
 if TYPE_CHECKING:
     from aplans.graphql_types import GQLInfo
@@ -47,3 +49,19 @@ def test_indicator_hit_outside_the_searched_plans_is_dropped(indicator_shared_be
     hits = SearchResults.resolve_hits({'hits': [indicator], 'plan_ids': []}, cast('GQLInfo', None))
 
     assert hits == []
+
+
+def test_translated_page_hit_links_to_its_locale(settings, rf) -> None:
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    plan = PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
+    plan.create_default_site()
+    plan.save()
+    fi_page = next(p for p in ActionListPage.objects.filter(locale__language_code='fi') if p.plan == plan)
+    request = rf.get('/')
+    request.user = AnonymousUser()
+    info = cast('GQLInfo', type('Info', (), {'context': request})())
+    hit = SearchHitObj(id='page-%d' % fi_page.pk, title=fi_page.title, plan=plan, page=fi_page)
+
+    url = SearchHit.resolve_url(hit, info)
+
+    assert url == 'https://myplan.example.com/fi%s' % fi_page.url_path
