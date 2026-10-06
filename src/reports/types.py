@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 import typing
 from dataclasses import asdict, dataclass, field
 
-from actions.models.action import Action
+from actions.models.action import Action, ActionTask
 from actions.models.attributes import Attribute
 
 if typing.TYPE_CHECKING:
@@ -36,7 +37,23 @@ class SerializedVersion:
             return SerializedAttributeVersion.from_version(version)
         if issubclass(model, Action):
             return SerializedActionVersion.from_version(version)
+        if issubclass(model, ActionTask):
+            return cls.from_task_version(version)
         return cls.from_version(version)
+
+    @classmethod
+    def from_task_version(cls, version: Version) -> SerializedVersion:
+        """
+        Serialize an action task version, recovering details stored under the field's old name.
+
+        Task versions saved before the field was renamed from `comment` to `details` keep the text under
+        `comment`, which deserializing drops.
+        """
+        serialized = cls.from_version(version)
+        if serialized.data.get('details') is None and version.format == 'json':
+            fields = json.loads(version.serialized_data)[0]['fields']
+            serialized.data['details'] = fields.get('comment')
+        return serialized
 
 
 @dataclass
