@@ -226,6 +226,11 @@ class Query:
         if root is None:
             logger.warning('Translated root page not found', plan=plan, locale=get_language())
             return None
+        if '\x00' in path:
+            # PostgreSQL text cannot contain NUL bytes, so no page can match. Such paths come from
+            # crawlers requesting URLs with `%00` in them; querying would raise a DataError.
+            logger.warning('Page path contains NUL byte', plan=plan, path=path)
+            return None
         if not path.endswith('/'):
             path = path + '/'
         qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()
