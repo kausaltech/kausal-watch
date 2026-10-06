@@ -79,7 +79,8 @@ class SearchHit(graphene.ObjectType[SearchHitObj]):
             parts = page.get_url_parts(request=info.context)
             if parts is None:
                 return None
-            return '%s%s' % (plan.get_view_url(client_url=client_url, request=info.context), parts[2])
+            root_url = plan.get_view_url(client_url=client_url, active_locale=page.locale.language_code, request=info.context)
+            return '%s%s' % (root_url, parts[2])
         return None
 
 
