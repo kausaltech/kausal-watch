@@ -1,6 +1,7 @@
 import datetime
 
 from django.utils.timezone import make_aware
+from wagtail.models import Site
 
 import pytest
 
@@ -42,8 +43,8 @@ class TestGetUrlParts:
         page = StaticPageFactory.create(parent=published_url_plan.root_page)
         site_id, root_url, page_path = page.get_url_parts()
         assert site_id == published_url_plan.site_id
-        assert root_url == 'https://city.gov/climate'
-        assert page_path == page.url_path
+        assert root_url == 'https://city.gov'
+        assert page_path == '/climate' + page.url_path
 
     def test_published_plan_prefers_production_plan_domain_over_wildcard(self, published_url_plan):
         from actions.models.plan import PlanDomain
@@ -92,6 +93,31 @@ class TestGetUrlParts:
         settings.DEPLOYMENT_TYPE = 'production'
         page = StaticPageFactory.create(parent=plan.root_page)
         assert page.get_url_parts() is None
+
+    @pytest.mark.parametrize(
+        ('base_path', 'expected_origin', 'expected_prefix'),
+        [
+            (None, 'https://myplan.example.com', '/fi'),
+            ('/climate', 'https://city.gov', '/fi/climate'),
+        ],
+    )
+    def test_translated_page_url_keeps_locale_and_base_path(
+        self, published_url_plan, base_path, expected_origin, expected_prefix
+    ):
+        from actions.models.plan import PlanDomain
+
+        if base_path:
+            PlanDomainFactory.create(
+                plan=published_url_plan,
+                hostname='city.gov',
+                base_path=base_path,
+                deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+            )
+        fi_page = next(p for p in ActionListPage.objects.filter(locale__language_code='fi') if p.plan == published_url_plan)
+        # With a single Wagtail site, Page.url is the path part alone, so it must carry the locale and base path.
+        Site.objects.exclude(pk=published_url_plan.site_id).delete()
+        assert fi_page.url == expected_prefix + fi_page.url_path
+        assert fi_page.full_url == expected_origin + expected_prefix + fi_page.url_path
 
 
 @pytest.mark.parametrize(
