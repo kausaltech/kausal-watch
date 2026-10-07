@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING, cast
 
 from django.core.exceptions import ValidationError
 
@@ -16,6 +17,11 @@ from indicators.tests.factories import (
     IndicatorLevelFactory,
     IndicatorValueFactory,
 )
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
+    from indicators.models import IndicatorValue
 
 pytestmark = pytest.mark.django_db
 
@@ -33,7 +39,7 @@ def test_compute_chart_series_without_dimension():
 
 
 def test_compute_chart_series_with_dimension():
-    """compute_chart_series returns one series per category when a dimension is given."""
+    """compute_chart_series returns one series per category, plus an empty total, when a dimension is given."""
 
     indicator = IndicatorFactory.create()
     dimension = DimensionFactory.create()
@@ -44,9 +50,32 @@ def test_compute_chart_series_with_dimension():
     IndicatorValueFactory.create(indicator=indicator, value=2.0, date=datetime.date(2020, 1, 1), categories=[cat_b])
 
     series = compute_chart_series(indicator, dimension=dimension)
-    assert len(series) == 2
-    category_names = {s.dimension_category.name for s in series}
+    assert len(series) == 3
+    category_names = {s.dimension_category.name for s in series if s.dimension_category}
     assert category_names == {'A', 'B'}
+    total = next(s for s in series if s.dimension_category is None)
+    assert not cast('QuerySet[IndicatorValue]', total.values).exists()
+
+
+def test_compute_chart_series_with_dimension_includes_total():
+    """With a dimension, the categoryless values are returned as an extra series without a category."""
+
+    indicator = IndicatorFactory.create()
+    dimension = DimensionFactory.create()
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=dimension)
+    cat_a = DimensionCategoryFactory.create(dimension=dimension, name='A')
+    cat_b = DimensionCategoryFactory.create(dimension=dimension, name='B')
+    IndicatorValueFactory.create(indicator=indicator, value=1.0, date=datetime.date(2020, 1, 1), categories=[cat_a])
+    IndicatorValueFactory.create(indicator=indicator, value=2.0, date=datetime.date(2020, 1, 1), categories=[cat_b])
+    IndicatorValueFactory.create(indicator=indicator, value=3.0, date=datetime.date(2020, 1, 1))
+
+    series = compute_chart_series(indicator, dimension=dimension)
+    assert len(series) == 3
+    assert {s.dimension_category.name for s in series if s.dimension_category} == {'A', 'B'}
+    total = next(s for s in series if s.dimension_category is None)
+    # The graphene field is declared as a List, but compute_chart_series fills it with a queryset
+    total_values = cast('QuerySet[IndicatorValue]', total.values)
+    assert [v.value for v in total_values] == [3.0]
 
 
 def test_indicator_accepts_visualization_type():
@@ -361,9 +390,11 @@ def test_default_visualization_with_grouping_dimension(graphql_client_query_data
         variables=dict(id=indicator.id),
     )
     viz = data['indicator']['defaultVisualization']
-    assert len(viz['chartSeries']) == 2
-    category_names = {s['dimensionCategory']['name'] for s in viz['chartSeries']}
+    assert len(viz['chartSeries']) == 3
+    category_names = {s['dimensionCategory']['name'] for s in viz['chartSeries'] if s['dimensionCategory']}
     assert category_names == {'Transport', 'Energy'}
+    total = next(s for s in viz['chartSeries'] if s['dimensionCategory'] is None)
+    assert total['values'] == []
     assert viz['dimension']['id'] == str(dimension.id)
 
 
