@@ -1930,7 +1930,8 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='description',
-        only=('description', 'i18n'),
+        select_related=('plan',),
+        only=('description', 'i18n', 'plan__primary_language', 'plan__primary_language_lowercase'),
     )
     def resolve_description(root: Action, _info: GQLInfo):
         description = root.description_i18n
