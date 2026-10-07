@@ -1282,12 +1282,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         production = [d for d in candidates if not d.is_preview_surface]
         if not production:
             return None
-        if len(production) > 1:
-            sentry_sdk.capture_message(
-                f"Plan '{self.identifier}' has {len(production)} non-redirect production domains; "
-                f"using '{production[0].hostname}' as canonical",
-                level='warning',
-            )
         return production[0]
 
     def _find_live_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
@@ -1310,14 +1304,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def _canonical_domain_candidates(self) -> list[PlanDomain]:
         """
-        Return the plan's non-redirect domains ordered by pk.
+        Return the plan's non-redirect domains in priority order.
 
         Uses `self.domains.all()` and sorts in Python, so a `prefetch_related('domains')` is
         honoured instead of being bypassed by `order_by()`.
         """
-        # Unsaved in-memory domains (from a bound admin form) have no pk and sort first,
-        # as modelcluster's order_by() would sort them.
-        domains = sorted(self.domains.all(), key=lambda d: (d.pk is not None, d.pk or 0))
+        # Ties break by pk; unsaved in-memory domains (from a bound admin form) have none and
+        # sort first, as modelcluster's order_by() would sort them.
+        domains = sorted(self.domains.all(), key=lambda d: (d.order, d.pk is not None, d.pk or 0))
         return [d for d in domains if not d.redirect_to_hostname]
 
     def _find_canonical_domain(self) -> PlanDomain | None:
@@ -1329,7 +1323,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         publication overrides take precedence; otherwise production domains are
         excluded so the URL falls back to a preview/development domain or the
         wildcard. A domain with no deployment environment counts as production,
-        as in `PlanDomain.is_preview_surface`.
+        as in `PlanDomain.is_preview_surface`. Within each rule, the plan's domain
+        order decides.
         """
         domains = self._canonical_domain_candidates()
         if not domains:
@@ -1788,8 +1783,13 @@ def is_valid_hostname(hostname: str):
         raise ValidationError('Invalid hostname format')
 
 
-class PlanDomain(models.Model):
-    """A domain (hostname) where an UI for a Plan might live."""
+class PlanDomain(OrderedModel):
+    """
+    A domain (hostname) where an UI for a Plan might live.
+
+    The order is the plan's priority order: among the domains the rules in
+    `Plan._find_canonical_domain()` allow, the first one is the plan's canonical address.
+    """
 
     class DeploymentEnvironment(models.TextChoices):
         PRODUCTION = 'production', _('Production')
@@ -1867,6 +1867,7 @@ class PlanDomain(models.Model):
         verbose_name = _('plan domain')
         verbose_name_plural = _('plan domains')
         unique_together = (('hostname', 'base_path'),)
+        ordering = ('plan', 'order')
 
     def __str__(self) -> str:
         s = str(self.hostname)
@@ -1881,6 +1882,9 @@ class PlanDomain(models.Model):
         yield 'hostpath', hostpath
         yield 'plan', self.plan.identifier
         yield 'deployment_environment', self.deployment_environment
+
+    def filter_siblings(self, qs: models.QuerySet[PlanDomain]) -> models.QuerySet[PlanDomain]:
+        return qs.filter(plan=self.plan)
 
     @property
     def is_preview_surface(self) -> bool:
