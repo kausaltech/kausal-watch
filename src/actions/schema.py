@@ -2652,7 +2652,7 @@ class Query:
             plans_actions_queryset(
                 [plan_obj],
                 category,
-                first,
+                None,  # `first` is applied below; the draft path can't filter a sliced queryset
                 order_by,
                 user,
             ),
@@ -2666,11 +2666,16 @@ class Query:
         elif not user.can_access_public_site(plan=plan_obj):
             workflow_state = WorkflowStateEnum.PUBLISHED
         if workflow_state == WorkflowStateEnum.PUBLISHED:
+            if first is not None:
+                qs = qs[:first]
             actions = []
             for act in qs:
                 cache.enrich_action(act)
                 actions.append(act)
             return actions
+        if first is not None:
+            # Same actions as the published path returns, but as a queryset that can still be filtered
+            qs = qs.filter(pk__in=list(qs[:first].values_list('pk', flat=True)))
         ret = Query._resolve_plan_action_revisions(plan_obj, workflow_state, qs, cache=cache)
         return ret
 
