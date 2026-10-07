@@ -48,7 +48,6 @@ from .deferred_ops import DeferredDatabaseOperationsMixin
 from .models import (
     Action,
     ActionDecisionLevel,
-    ActionImpact,
     ActionResponsibleParty,
     ActionSchedule,
     ActionStatus,
@@ -57,10 +56,7 @@ from .models import (
     ActionTaskResponsibleParty,
     Category,
     CategoryType,
-    ImpactGroup,
-    ImpactGroupAction,
     Plan,
-    Scenario,
 )
 
 if TYPE_CHECKING:
@@ -110,12 +106,6 @@ class BulkRouter(SimpleRouter):
 
 class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
     pass
-
-
-class ActionImpactSerializer(serializers.ModelSerializer[ActionImpact]):
-    class Meta:
-        model = ActionImpact
-        fields = public_fields(ActionImpact)
 
 
 class ActionScheduleSerializer(serializers.ModelSerializer[ActionSchedule]):
@@ -2257,52 +2247,3 @@ class ActionTaskPermission(WatchObjectPermissions):
             plan = get_plan_from_view(view)
             return user.can_modify_action(action=action, plan=plan)
         return False
-
-
-class ScenarioSerializer(serializers.HyperlinkedModelSerializer[Scenario]):
-    class Meta:
-        model = Scenario
-        fields = '__all__'
-
-
-@register_view
-class ScenarioViewSet(viewsets.ModelViewSet[Scenario]):
-    queryset = Scenario.objects.all()
-    serializer_class = ScenarioSerializer
-    filterset_fields = {
-        'plan': ('exact',),
-        'plan__identifier': ('exact',),
-    }
-
-
-class ImpactGroupSerializer(serializers.HyperlinkedModelSerializer[ImpactGroup]):
-    name = serializers.CharField()  # translated field
-
-    class Meta:
-        model = ImpactGroup
-        fields = public_fields(ImpactGroup, remove_fields=['actions'])
-
-
-@register_view
-class ImpactGroupViewSet(viewsets.ModelViewSet[ImpactGroup]):
-    queryset = ImpactGroup.objects.all()
-    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
-    serializer_class = ImpactGroupSerializer
-    filterset_fields = {
-        'plan': ('exact',),
-        'plan__identifier': ('exact',),
-    }
-
-
-class ImpactGroupActionSerializer(serializers.HyperlinkedModelSerializer[ImpactGroupAction]):
-    impact = ActionImpactSerializer()
-
-    class Meta:
-        model = ImpactGroupAction
-        fields = public_fields(ImpactGroupAction)
-
-
-@register_view
-class ImpactGroupActionViewSet(viewsets.ModelViewSet[ImpactGroupAction]):
-    queryset = ImpactGroupAction.objects.all()
-    serializer_class = ImpactGroupActionSerializer
