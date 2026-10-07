@@ -8,6 +8,10 @@ PUBLIC_URL_SCHEMES = ('http', 'https')
 NON_HIERARCHICAL_URL_SCHEMES = ('mailto',)
 
 
+class NonPublicURLError(ValueError):
+    """A notification would link somewhere its recipients can't reach."""
+
+
 def is_valid_public_domain_url(url: str) -> bool:
     parsed = urlparse(url)
     if parsed.scheme not in PUBLIC_URL_SCHEMES:
@@ -62,4 +66,4 @@ def validate_notification_context_urls(context: dict, *, allow_localhost: bool =
     invalid = [(path, url) for path, url in urls if not is_valid_public_domain_url(url)]
     if invalid:
         details = ', '.join(f'{path}: {url}' for path, url in invalid)
-        raise ValueError(f'Notification context contains non-public URLs: {details}')
+        raise NonPublicURLError(f'Notification context contains non-public URLs: {details}')
