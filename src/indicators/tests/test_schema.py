@@ -4,6 +4,8 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 import pytest
@@ -1071,3 +1073,29 @@ def test_plan_indicators_description_without_id_or_name(graphql_client_query_dat
         variables={'plan': level.plan.identifier},
     )
     assert data == {'planIndicators': [{'identifier': level.indicator.identifier, 'description': level.indicator.description}]}
+
+
+def test_plan_indicators_description_query_count_does_not_grow_with_indicators(graphql_client_query_data):
+    # The translation's fallback language comes from `organization__primary_language_lowercase`; if the resolver's
+    # hints don't join `organization`, every indicator loads its organization lazily.
+    plan = PlanFactory.create()
+    query = """
+        query($plan: ID!) {
+          planIndicators(plan: $plan) {
+            identifier
+            description
+          }
+        }
+    """
+
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            graphql_client_query_data(query, variables={'plan': plan.identifier})
+        return len(ctx.captured_queries)
+
+    # Each factory-made indicator gets its own organization.
+    IndicatorLevelFactory.create(plan=plan)
+    queries_for_one = count_queries()
+    for _ in range(3):
+        IndicatorLevelFactory.create(plan=plan)
+    assert count_queries() == queries_for_one

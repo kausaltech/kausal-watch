@@ -1,3 +1,6 @@
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
 import pytest
 
 from aplans.utils import hyphenate_fi
@@ -259,3 +262,24 @@ def test_planactions_translated_field_without_id_or_name(graphql_client_query_da
         variables=dict(plan=plan.identifier),
     )
     assert data == {'planActions': [{'identifier': action.identifier, field: getattr(action, attr)}]}
+
+
+@pytest.mark.parametrize('field', ['description', 'leadParagraph'])
+def test_planactions_translated_field_does_not_load_plan_per_action(graphql_client_query_data, field):
+    # The translation's fallback language comes from `plan__primary_language_lowercase`; if the resolver's hints
+    # don't join `plan`, every action loads it lazily.
+    plan = PlanFactory.create()
+    query = f'query($plan: ID!) {{ planActions(plan: $plan) {{ identifier {field} }} }}'
+
+    def count_plan_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            graphql_client_query_data(query, variables=dict(plan=plan.identifier))
+        return sum(
+            1 for q in ctx.captured_queries if 'FROM "actions_plan"' in q['sql'] or '"plan_id" FROM "actions_action"' in q['sql']
+        )
+
+    ActionFactory.create(plan=plan)
+    plan_queries_for_one = count_plan_queries()
+    for _ in range(3):
+        ActionFactory.create(plan=plan)
+    assert count_plan_queries() == plan_queries_for_one
