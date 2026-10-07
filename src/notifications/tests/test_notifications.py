@@ -562,21 +562,20 @@ def test_localhost_admin_url_skips_message(settings):
     assert not SentNotification.objects.exists()
 
 
-def test_localhost_hostname_plan_domains_skips_message_when_not_development(settings):
+def test_unresolvable_plan_url_fails_the_run(settings):
     settings.DEPLOYMENT_TYPE = 'production'
     settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
     settings.ADMIN_BASE_URL = 'https://admin.example.com'
     plan = PlanFactory.create()
     AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
-    due_at = now.date() - timedelta(days=1)
-    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+    task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
     ActionContactFactory.create(action=task.action)
     ClientPlanFactory.create(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
-    with patch('notifications.engine.capture_exception') as capture_exception:
+    # The deploy checks rule this configuration out; if it happens anyway, nothing goes out.
+    with pytest.raises(ValueError, match='Cannot determine hostname'):
         engine.generate_notifications()
-    assert 'Cannot determine hostname' in str(capture_exception.call_args.args[0])
     assert len(mail.outbox) == 0
     assert not SentNotification.objects.exists()
 
