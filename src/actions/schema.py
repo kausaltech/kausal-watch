@@ -2348,6 +2348,24 @@ def _populate_task_responsible_parties(info: GQLInfo, plan_id: int) -> None:
     )
 
 
+# Columns `resolve_plan_actions` reads on every action whatever the client selected: `enrich_action`
+# reads the foreign keys, and the draft path sorts by `order`.
+PLAN_ACTIONS_RESOLVER_FIELDS = ('plan', 'status', 'implementation_phase', 'order')
+
+
+def _with_fields_loaded(qs: ActionQuerySet, fields: Sequence[str]) -> ActionQuerySet:
+    """
+    Make sure `fields` are loaded even if the query optimizer narrowed `qs` with `only()`.
+
+    A second `only()` replaces the first, so the optimizer's field list has to be repeated.
+    """
+    field_names, defer = qs.query.deferred_loading
+    if defer:
+        # Nothing was narrowed with `only()`; the optimizer never uses `defer()`.
+        return qs
+    return qs.only(*field_names, *fields)
+
+
 def plans_actions_queryset(
     plans: Iterable[Plan], category: str | None, first: int | None, order_by: str | None, user: User | None
 ) -> ActionQuerySet:
@@ -2676,6 +2694,7 @@ class Query:
             ),
             info,
         )
+        qs = _with_fields_loaded(qs, PLAN_ACTIONS_RESOLVER_FIELDS)
 
         cache = info.context.cache.for_plan(plan_obj)
         _populate_plan_people_cache(info, plan_obj.pk)
