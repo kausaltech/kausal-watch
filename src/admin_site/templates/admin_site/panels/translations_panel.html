@@ -1,0 +1,14 @@
+{% load i18n wagtailadmin_tags %}
+{% if self.visible_children %}
+    <details class="translations-panel"{% if self.is_open %} open{% endif %}>
+        <summary class="translations-panel__summary">
+            {% icon name="arrow-down" classname="translations-panel__icon" %}
+            {% translate "Translations" %}
+        </summary>
+        <div class="translations-panel__fields">
+            {% for child in self.visible_children %}
+                {% include "wagtailadmin/panels/multi_field_panel_child.html" %}
+            {% endfor %}
+        </div>
+    </details>
+{% endif %}

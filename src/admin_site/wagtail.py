@@ -18,14 +18,17 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.decorators import method_decorator
+from django.utils.functional import cached_property
+from django.utils.html import format_html
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
-from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.admin.forms.models import WagtailAdminModelForm, registry as form_field_overrides
 from wagtail.admin.panels import (
     InlinePanel,
+    MultiFieldPanel,
     ObjectList,
     TabbedInterface,
 )
@@ -74,13 +77,44 @@ else:
     class ViewMixinBase[M: Model]: ...
 
 
+class TranslationsPanel(MultiFieldPanel[Any]):
+    """
+    The per-language inputs of one translatable field, in a section below the field that can be folded away.
+
+    Rendered as a native `<details>` element rather than a Wagtail collapsible panel, because Wagtail only makes
+    top-level panels collapsible and translations also appear inside groups and inline rows. The section starts
+    open when any translation is empty or has an error, so missing translations are not tucked out of sight.
+    """
+
+    class BoundPanel(MultiFieldPanel.BoundPanel):
+        template_name = 'admin_site/panels/translations_panel.html'
+
+        @cached_property
+        def is_open(self) -> bool:
+            for child in self.visible_children:
+                field_name = getattr(child.panel, 'field_name', None)
+                if field_name is None or field_name not in self.form.fields:
+                    continue
+                bound_field = self.form[field_name]
+                if bound_field.errors:
+                    return True
+                value = bound_field.value()
+                if value is None or (isinstance(value, str) and not value.strip()):
+                    return True
+            return False
+
+
 def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
     model: type[M],
     panels: Sequence[PanelT],
     request: HttpRequest,
     instance: Plan | AttributeType | None = None,
 ) -> list[PanelT]:
-    """Return a list of panels containing all of `panels` and language-specific panels for fields with i18n."""
+    """
+    Return `panels` with a `TranslationsPanel` after each field that has translations.
+
+    The section holds one input per other language of `instance`, labelled with the language's name.
+    """
     i18n_field = get_i18n_field(model)
     if not i18n_field:
         return list(panels)
@@ -90,6 +124,7 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
         user = user_or_bust(request.user)
         instance = user.get_active_admin_plan()
 
+    language_names = {code.lower(): str(name) for code, name in settings.LANGUAGES}
     field_map: dict[str, dict[str | None, TranslatedVirtualField]] = {}
     for f in i18n_field.get_translated_fields():
         field_map.setdefault(f.original_name, {})[f.language] = f
@@ -102,11 +137,24 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
         if not t_fields:
             continue
 
+        # Translations are modeltrans virtual fields, which Wagtail doesn't give its widgets (e.g. the auto-height
+        # textarea), so use the widget the original field gets.
+        original_field = model._meta.get_field(p.field_name)
+        widget = p.widget or (form_field_overrides.get(original_field) or {}).get('widget')
+        # The visible label is just the language; screen readers also hear which field is being translated.
+        field_label = p.heading or capfirst(getattr(original_field, 'verbose_name', p.field_name))
+        language_panels: list[Panel[Any]] = []
         for lang_code in instance.other_languages:
-            tf = t_fields.get(convert_language_code(lang_code, 'django'))
+            django_code = convert_language_code(lang_code, 'django')
+            tf = t_fields.get(django_code)
             if not tf:
                 continue
-            out.append(type(p)(tf.name))
+            language_name = language_names.get(django_code.lower(), lang_code)
+            heading = format_html('<span class="w-sr-only">{}: </span>{}', field_label, language_name)
+            language_panels.append(type(p)(tf.name, heading=heading, widget=widget))
+        if language_panels:
+            # The section sits among the caller's panels, which are typed as the caller's panel type.
+            out.append(cast('PanelT', TranslationsPanel(language_panels)))
     return out
 
 
