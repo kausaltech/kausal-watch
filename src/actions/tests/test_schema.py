@@ -72,6 +72,36 @@ def test_plan_domain_node(graphql_client_query_data):
     assert data == expected
 
 
+def test_plan_domain_and_domains_together(graphql_client_query_data):
+    # `domain` and `domains` both prefetch the plan's domains. Selecting both with different sub-fields used to
+    # make the query optimizer build two different `Prefetch('domains')` querysets, which Django rejects.
+    plan = PlanFactory.create()
+    domain = PlanDomainFactory.create(plan=plan)
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!, $hostname: String!) {
+          plan(id: $plan) {
+            identifier
+            domain(hostname: $hostname) {
+              hostname
+            }
+            domains(hostname: $hostname) {
+              basePath
+            }
+          }
+        }
+        """,
+        variables=dict(plan=plan.identifier, hostname=domain.hostname),
+    )
+    assert data == {
+        'plan': {
+            'identifier': plan.identifier,
+            'domain': {'hostname': domain.hostname},
+            'domains': [{'basePath': domain.base_path}],
+        },
+    }
+
+
 @pytest.mark.parametrize('published', [False, True])
 @pytest.mark.parametrize('visibility', list(RestrictedVisibilityModel.VisibilityState))
 def test_plan_node(graphql_client_query_data, plan_with_pages, published, visibility):
