@@ -30,6 +30,7 @@ from notifications.tests.factories import (
     BaseTemplateFactory,
     ManuallyScheduledNotificationTemplateFactory,
 )
+from notifications.utils import NonPublicURLError
 from orgs.tests.factories import OrganizationPlanAdminFactory
 from people.tests.factories import PersonFactory
 
@@ -615,7 +616,7 @@ def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
         nonlocal calls
         calls += 1
         if calls == 1:
-            raise ValueError('Notification context contains non-public URLs: site.view_url: https://plan.test/')
+            raise NonPublicURLError('Notification context contains non-public URLs: site.view_url: https://plan.test/')
         return original_render(self, *args, **kwargs)
 
     with (
@@ -629,6 +630,22 @@ def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
     capture_exception.assert_called_once()
     # Only the message that went out is recorded as sent; the failed one is retried on the next run.
     assert SentNotification.objects.count() == 1
+
+
+def test_unrelated_value_error_is_not_swallowed(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with (
+        patch('notifications.notifications.TaskLateNotification.get_context', side_effect=ValueError('a bug')),
+        pytest.raises(ValueError, match='a bug'),
+    ):
+        engine.generate_notifications()
 
 
 def test_plan_domains_are_looked_up_once_per_run():

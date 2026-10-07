@@ -1,6 +1,11 @@
 import pytest
 
-from notifications.utils import find_urls_in_context, is_valid_public_domain_url, validate_notification_context_urls
+from notifications.utils import (
+    NonPublicURLError,
+    find_urls_in_context,
+    is_valid_public_domain_url,
+    validate_notification_context_urls,
+)
 
 
 class TestIsValidPublicDomainUrl:
@@ -119,7 +124,7 @@ class TestValidateNotificationContextUrls:
 
     def test_raises_for_localhost_url(self):
         ctx = {'admin_url': 'http://localhost:8000'}
-        with pytest.raises(ValueError, match='localhost'):
+        with pytest.raises(NonPublicURLError, match='localhost'):
             validate_notification_context_urls(ctx)
 
     def test_raises_for_ip_address(self):

@@ -35,7 +35,7 @@ from .notifications import (
 )
 from .queue import NotificationQueue
 from .recipients import PersonRecipient
-from .utils import validate_notification_context_urls
+from .utils import NonPublicURLError, validate_notification_context_urls
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -437,12 +437,11 @@ class NotificationEngine:
                             continue
                         template = automatic_template
 
-                    # Building the context resolves URLs, and render() checks they are public. A failure is
-                    # specific to this message, so skip it unmarked and let the others go out; it is retried
-                    # on the next run.
+                    # render() checks that every URL in the message is public. A message that fails is skipped
+                    # unmarked so the others still go out; it is retried on the next run.
                     try:
                         rendered = self._render_message(queue_items, base_template, template, recipient_context)
-                    except ValueError as e:
+                    except NonPublicURLError as e:
                         capture_exception(e)
                         logger.error(str(e))
                         continue
