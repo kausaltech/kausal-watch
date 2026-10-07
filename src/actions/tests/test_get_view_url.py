@@ -423,54 +423,85 @@ class TestGetViewUrlPlanDomainPriority:
         assert url == 'https://city.gov/climate'
 
 
-class TestGetViewUrlMultipleProductionDomains:
-    """When several production domains exist, selection is deterministic (first by pk) and warns."""
+class TestGetViewUrlDomainOrder:
+    """Among the domains the rules allow, the plan's domain order decides which one is canonical."""
 
     @pytest.fixture
     def published_plan(self, settings):
         settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
         return PlanFactory.create(identifier='myplan', primary_language='en', other_languages=['fi'])
 
-    def _add_production_domain(self, plan, hostname):
+    def _add_domain(self, plan, hostname, environment='production'):
+        return PlanDomainFactory.create(plan=plan, hostname=hostname, deployment_environment=environment)
+
+    def _move_to_top(self, domain):
         from actions.models.plan import PlanDomain
 
-        return PlanDomainFactory.create(
-            plan=plan,
-            hostname=hostname,
-            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
-        )
+        lowest = min(d.order for d in PlanDomain.objects.filter(plan=domain.plan))
+        PlanDomain.objects.filter(pk=domain.pk).update(order=lowest - 1)
 
-    def test_picks_first_production_domain_by_pk(self, published_plan):
-        self._add_production_domain(published_plan, 'first.city.gov')
-        self._add_production_domain(published_plan, 'second.city.gov')
-        assert published_plan.get_view_url() == 'https://first.city.gov'
+    def test_new_domains_go_last(self, published_plan):
+        first = self._add_domain(published_plan, 'first.city.gov')
+        second = self._add_domain(published_plan, 'second.city.gov')
+        assert first.order < second.order
 
-    def test_warns_when_multiple_production_domains(self, published_plan, monkeypatch):
-        captured = []
+    def test_numbering_is_per_plan(self, published_plan):
+        self._add_domain(published_plan, 'first.city.gov')
+        self._add_domain(published_plan, 'second.city.gov')
+        other_plan = PlanFactory.create()
+        other = self._add_domain(other_plan, 'other.city.gov')
+        assert other.order == 1
 
-        def fake_capture_message(message, *args, **kwargs):
-            captured.append((message, kwargs.get('level')))
+    def test_picks_first_production_domain_in_order(self, published_plan):
+        self._add_domain(published_plan, 'first.city.gov')
+        second = self._add_domain(published_plan, 'second.city.gov')
+        self._move_to_top(second)
+        assert published_plan.get_view_url() == 'https://second.city.gov'
 
-        from actions.models import plan as plan_module
+    def test_preview_domain_ordered_first_does_not_beat_production_on_a_live_plan(self, published_plan):
+        self._add_domain(published_plan, 'city.gov')
+        preview = self._add_domain(published_plan, 'preview.city.gov', environment='preview')
+        self._move_to_top(preview)
+        assert published_plan.get_view_url() == 'https://city.gov'
 
-        monkeypatch.setattr(plan_module.sentry_sdk, 'capture_message', fake_capture_message)
-        self._add_production_domain(published_plan, 'first.city.gov')
-        self._add_production_domain(published_plan, 'second.city.gov')
-        published_plan.get_view_url()
-        assert len(captured) == 1
-        message, level = captured[0]
-        assert level == 'warning'
-        assert '2 non-redirect production domains' in message
-        assert 'first.city.gov' in message
+    def test_unlaunched_production_domain_ordered_first_is_skipped(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        self._add_domain(plan, 'preview.city.gov', environment='preview')
+        production = self._add_domain(plan, 'city.gov')
+        self._move_to_top(production)
+        assert plan.get_view_url() == 'https://preview.city.gov'
 
-    def test_does_not_warn_with_single_production_domain(self, published_plan, monkeypatch):
+    def test_does_not_warn_with_multiple_production_domains(self, published_plan, monkeypatch):
         captured = []
         from actions.models import plan as plan_module
 
         monkeypatch.setattr(plan_module.sentry_sdk, 'capture_message', lambda *a, **_k: captured.append(a))
-        self._add_production_domain(published_plan, 'only.city.gov')
+        self._add_domain(published_plan, 'first.city.gov')
+        self._add_domain(published_plan, 'second.city.gov')
         published_plan.get_view_url()
         assert captured == []
+
+
+def test_migration_numbers_existing_domains_by_pk_per_plan():
+    import importlib
+
+    from django.apps import apps
+
+    from actions.models.plan import PlanDomain
+
+    migration = importlib.import_module('actions.migrations.0201_plandomain_order')
+    plan, other_plan = PlanFactory.create(), PlanFactory.create()
+    domains = [PlanDomainFactory.create(plan=p) for p in (plan, other_plan, plan, plan, other_plan)]
+    PlanDomain.objects.filter(pk__in=[d.pk for d in domains]).update(order=0)
+
+    migration.number_domains_by_pk(apps, None)
+
+    def orders(p):
+        return list(PlanDomain.objects.filter(plan=p).order_by('pk').values_list('order', flat=True))
+
+    assert orders(plan) == [1, 2, 3]
+    assert orders(other_plan) == [1, 2]
 
 
 class TestGetViewUrlDomainQueries:
