@@ -331,7 +331,7 @@ class NotificationEngine:
         context = {
             'items': [item.notification.get_context() for item in queue_items],
             'content_blocks': content_blocks,
-            'site': self.plan.get_site_notification_context(),
+            'site': dict(self.site_context),
             **recipient_context,
         }
 
@@ -359,6 +359,8 @@ class NotificationEngine:
         self._fetch_data()
 
         base_template = self.plan.notification_base_template
+        # The same for every message, so resolved once; a plan without a public URL fails here, before anything is sent.
+        self.site_context = self.plan.get_site_notification_context()
         self.templates_by_type = {t.type: t for t in base_template.templates.all()}
 
         for task in self.active_tasks:
