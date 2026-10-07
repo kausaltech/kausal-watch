@@ -353,9 +353,12 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
         description='Who may be given access, in the active language; shown when requesting access.'
     )
 
+    # Both `domain` and `domains` read the plan's full domain list through `_get_plan_domains_for_hostname`, as
+    # does `resolve_type`. A plain prefetch keeps the two hints from building conflicting `Prefetch('domains')`
+    # querysets out of their sub-selections, and keeps the cached domains complete.
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='domains',
+        prefetch_related='domains',
     )
     def resolve_domain(root: Plan, info, hostname=None) -> PlanDomain | None:
         from actions.models.plan import get_canonical_wildcard_hostname
@@ -396,7 +399,7 @@ class PlanInterface(graphene.Interface[T], Generic[T]):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='domains',
+        prefetch_related='domains',
     )
     def resolve_domains(root: Plan, info, hostname=None) -> list[PlanDomain] | None:
         context_hostname = getattr(info.context, '_plan_hostname', None)
