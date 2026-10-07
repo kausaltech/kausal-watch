@@ -174,8 +174,7 @@ register(wagtail_factories.factories.CollectionFactory)
 
 @pytest.fixture
 @factory.django.mute_signals(post_save)
-def plan_with_pages(plan, settings):
-    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+def plan_with_pages(plan):
     plan.create_default_site()
     plan.save()
     return plan
