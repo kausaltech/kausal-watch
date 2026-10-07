@@ -586,13 +586,21 @@ def compute_chart_series(
     dimension: Dimension | None,
 ) -> list[DashboardIndicatorChartSeries]:
     categories = dimension.categories.all() if dimension else [None]
-    return [
+    series = [
         DashboardIndicatorChartSeries(
             dimension_category=category,
             values=indicator.values.filter(categories=category),
         )
         for category in categories
     ]
+    if dimension is not None:
+        # Dimensional charts also carry the categoryless (total) values as a
+        # series without a category, so the UI can draw the total line. The
+        # series is appended even when it is empty, as the UI skips empty
+        # totals and checking for values first would cost an extra query.
+        total_values = indicator.values.filter(categories=None)
+        series.append(DashboardIndicatorChartSeries(dimension_category=None, values=total_values))
+    return series
 
 
 IndicatorVisualizationTypeEnum = graphene.Enum.from_enum(VisualizationType)
