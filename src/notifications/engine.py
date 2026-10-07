@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.db.models import prefetch_related_objects
 from django.utils import translation
 
 from sentry_sdk import capture_exception
@@ -84,6 +85,8 @@ class NotificationEngine:
         if now is None:
             now = plan.now_in_local_timezone()
 
+        # Every message builds plan and object URLs from the plan's domains.
+        prefetch_related_objects([plan], 'domains')
         self.plan = plan
         self.now = now
         self.force_to = force_to
