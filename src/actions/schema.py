@@ -1942,7 +1942,10 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
     )
     def resolve_view_url(root: Action, info: GQLInfo, client_url: str | None = None):
         validate_client_url(client_url)
-        return root.get_view_url(client_url=client_url, request=info.context)
+        # The request's plan cache has the plan's domains prefetched; `root.plan` may be a
+        # separate instance for every action in a listing.
+        plan = info.context.cache.for_plan_id(root.plan_id).plan
+        return root.get_view_url(plan=plan, client_url=client_url, request=info.context)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -1977,7 +1980,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         select_related=('plan__features',),
     )
     def resolve_export_pdf(root: Action, info: GQLInfo) -> dict[str, str] | None:
-        plan = root.plan
+        plan = info.context.cache.for_plan_id(root.plan_id).plan
         if not plan.features.enable_action_pdf_export_in_public_ui:
             return None
         base_url = plan.get_view_url(request=info.context)

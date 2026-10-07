@@ -312,7 +312,7 @@ class PlanSpecificCache:
 
     @classmethod
     def fetch(cls, plan_id: int) -> Plan:
-        plan = Plan.objects.filter(id=plan_id).select_related('features').first()
+        plan = Plan.objects.filter(id=plan_id).select_related('features').prefetch_related('domains').first()
         assert plan is not None, 'Invalid plan id'
         return plan
 

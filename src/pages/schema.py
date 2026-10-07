@@ -75,7 +75,10 @@ class PageMenuItemNode(graphene.ObjectType[MenuItemBase]):
     @staticmethod
     def resolve_view_url(root: MenuItemBase, info: GQLInfo, client_url: str | None = None) -> str | None:
         page = root.page
-        plan = page.plan
+        # The request's plan cache has the plan with its domains prefetched; `page.plan` would
+        # look the plan up again for every menu item.
+        plan_cache = info.context.cache.for_page_path(page.path)
+        plan = plan_cache.plan if plan_cache is not None else page.plan
         if plan is None:
             return None
         if not client_url:
