@@ -353,7 +353,8 @@ class IndicatorNode(DjangoNode[Indicator]):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field=('description', 'i18n'),
+        model_field='description',
+        only=('description', 'i18n'),
     )
     def resolve_description(root: Indicator, info) -> RichText | None:
         description = root.description_i18n

@@ -239,3 +239,23 @@ def test_action_has_dependency_relationships_via_plan(
     assert actions_data[action1.identifier]['hasDependencyRelationships'] is True
     assert actions_data[action2.identifier]['hasDependencyRelationships'] is True
     assert actions_data[action3.identifier]['hasDependencyRelationships'] is False
+
+
+@pytest.mark.parametrize(('field', 'attr'), [('description', 'description'), ('leadParagraph', 'lead_paragraph')])
+def test_planactions_translated_field_without_id_or_name(graphql_client_query_data, field, attr):
+    # Selecting a translated field next to only plain model fields (no `id`, no `name`) used to make the query
+    # optimizer defer `i18n`, so the resolver raised.
+    plan = PlanFactory.create()
+    action = ActionFactory.create(plan=plan)
+    data = graphql_client_query_data(
+        f"""
+        query($plan: ID!) {{
+          planActions(plan: $plan) {{
+            identifier
+            {field}
+          }}
+        }}
+        """,
+        variables=dict(plan=plan.identifier),
+    )
+    assert data == {'planActions': [{'identifier': action.identifier, field: getattr(action, attr)}]}

@@ -1929,7 +1929,8 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field=('description', 'i18n'),
+        model_field='description',
+        only=('description', 'i18n'),
     )
     def resolve_description(root: Action, _info: GQLInfo):
         description = root.description_i18n
@@ -1939,7 +1940,9 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field=('lead_paragraph', 'i18n', 'plan__primary_language', 'plan__primary_language_lowercase'),
+        model_field='lead_paragraph',
+        select_related=('plan',),
+        only=('lead_paragraph', 'i18n', 'plan__primary_language', 'plan__primary_language_lowercase'),
     )
     def resolve_lead_paragraph(root: Action, _info: GQLInfo):
         return root.lead_paragraph_i18n
