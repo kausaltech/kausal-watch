@@ -89,6 +89,10 @@ class TranslationsPanel(MultiFieldPanel[Any]):
     class BoundPanel(MultiFieldPanel.BoundPanel):
         template_name = 'admin_site/panels/translations_panel.html'
 
+        if TYPE_CHECKING:
+            # Inherited from PanelGroup.BoundPanel at runtime; the Wagtail stubs leave it off MultiFieldPanel.BoundPanel.
+            visible_children: list[Panel.BoundPanel[Any, Any, Any]]
+
         @cached_property
         def is_open(self) -> bool:
             for child in self.visible_children:
@@ -109,7 +113,7 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
     panels: Sequence[PanelT],
     request: HttpRequest,
     instance: Plan | AttributeType | None = None,
-) -> list[PanelT]:
+) -> list[PanelT | TranslationsPanel]:
     """
     Return `panels` with a `TranslationsPanel` after each field that has translations.
 
@@ -119,7 +123,7 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
     if not i18n_field:
         return list(panels)
 
-    out: list[PanelT] = []
+    out: list[PanelT | TranslationsPanel] = []
     if instance is None:
         user = user_or_bust(request.user)
         instance = user.get_active_admin_plan()
@@ -153,8 +157,7 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
             heading = format_html('<span class="w-sr-only">{}: </span>{}', field_label, language_name)
             language_panels.append(type(p)(tf.name, heading=heading, widget=widget))
         if language_panels:
-            # The section sits among the caller's panels, which are typed as the caller's panel type.
-            out.append(cast('PanelT', TranslationsPanel(language_panels)))
+            out.append(TranslationsPanel(language_panels))
     return out
 
 

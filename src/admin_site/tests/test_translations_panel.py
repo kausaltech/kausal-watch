@@ -30,7 +30,9 @@ def _bound_translations_panel(rf, instance: ActionStatus, data: dict[str, str] |
     request = rf.get('/')
     request.user = AnonymousUser()
     bound = edit_handler.get_bound_panel(instance=instance, request=request, form=form)
-    return next(child for child in bound.children if isinstance(child, TranslationsPanel.BoundPanel))
+    # `children` comes from PanelGroup.BoundPanel at runtime; the Wagtail stubs leave it off ObjectList.BoundPanel
+    children = bound.children  # type: ignore[attr-defined]
+    return next(child for child in children if isinstance(child, TranslationsPanel.BoundPanel))
 
 
 class TestInsertModelTranslationPanels:
