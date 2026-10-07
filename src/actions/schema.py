@@ -1087,6 +1087,12 @@ def get_translated_category_page(_info, **_kwargs) -> Prefetch:  # pyright: igno
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
 
 
+def prefetch_visible_category_actions(info: GQLInfo, **_kwargs) -> Prefetch:  # pyright: ignore[reportMissingTypeArgument]
+    # `plan` is joined because an action's translated fields take their fallback language from it.
+    qs = Action.objects.get_queryset().visible_for_user(info.context.user).select_related('plan')
+    return Prefetch('actions', to_attr='visible_actions', queryset=qs)
+
+
 def prefetch_workflow_states(_info, **_kwargs) -> Prefetch:  # pyright: ignore[reportMissingTypeArgument]
     workflow_states = (
         WorkflowState.objects
@@ -1214,8 +1220,13 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return levels[depth]
 
     @staticmethod
-    def resolve_actions(root: Category, info: GQLInfo) -> ActionQuerySet:
-        return root.actions.get_queryset().visible_for_user(info.context.user)
+    @gql_optimizer.resolver_hints(
+        prefetch_related=prefetch_visible_category_actions,
+    )
+    def resolve_actions(root: Category, info: GQLInfo) -> list[Action] | ActionQuerySet:
+        if hasattr(root, 'visible_actions'):
+            return root.visible_actions  # pyright: ignore
+        return root.actions.get_queryset().visible_for_user(info.context.user).select_related('plan')
 
     @staticmethod
     def resolve_indicator_relationships(root: Category, info: GQLInfo) -> list[IndicatorCategoryRelationshipModel]:
