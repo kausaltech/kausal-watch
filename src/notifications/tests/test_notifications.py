@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from django.core import mail
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import translation
 
 import pytest
@@ -14,6 +16,7 @@ from actions.tests.factories import (
     ActionFactory,
     ActionResponsiblePartyFactory,
     ActionTaskFactory,
+    PlanDomainFactory,
     PlanFactory,
 )
 from admin_site.tests.factories import ClientFactory, ClientPlanFactory
@@ -627,3 +630,19 @@ def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
     capture_exception.assert_called_once()
     # Only the message that went out is recorded as sent; the failed one is retried on the next run.
     assert SentNotification.objects.count() == 1
+
+
+def test_plan_domains_are_looked_up_once_per_run():
+    plan = PlanFactory.create()
+    PlanDomainFactory.create(plan=plan, hostname='custom.city.gov')
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for _ in range(3):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with CaptureQueriesContext(connection) as ctx:
+        engine.generate_notifications()
+    assert len(mail.outbox) > 0
+    assert sum(1 for q in ctx.captured_queries if 'actions_plandomain' in q['sql']) <= 1
