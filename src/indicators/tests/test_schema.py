@@ -1053,3 +1053,21 @@ def test_indicator_plans_visibility(graphql_client_query_data, published_at, vis
     }
 
     assert response == expected
+
+
+def test_plan_indicators_description_without_id_or_name(graphql_client_query_data):
+    # Selecting `description` next to only plain model fields used to make the query optimizer defer `i18n`, so
+    # the resolver raised.
+    level = IndicatorLevelFactory.create()
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) {
+          planIndicators(plan: $plan) {
+            identifier
+            description
+          }
+        }
+        """,
+        variables={'plan': level.plan.identifier},
+    )
+    assert data == {'planIndicators': [{'identifier': level.indicator.identifier, 'description': level.indicator.description}]}
