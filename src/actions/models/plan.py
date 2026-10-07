@@ -892,12 +892,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         return self if self.is_visible_for_user(user) else None
 
     def create_default_site(self, hostname=None):
+        if self.site is not None:
+            return
         if hostname is None:
             hostname = self.default_hostname(include_all_domains=True)
             if not hostname:
                 raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
-        if self.site is not None:
-            return
         root_page = self.create_default_pages()
         site = Site(site_name=self.name, hostname=hostname, root_page=root_page)
         site.save()

@@ -362,6 +362,19 @@ def test_create_default_site_raises_when_no_hostname(settings, plan_factory):
         plan.create_default_site()
 
 
+def test_create_default_site_keeps_existing_site_without_hostname(settings, plan_factory):
+    """create_default_site() needs no hostname when the plan already has a site."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    plan = plan_factory()
+    plan.create_default_site()
+    site = plan.site
+    assert site is not None
+
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan.create_default_site()
+    assert plan.site == site
+
+
 def test_apply_defaults_raises_when_no_hostname(settings, plan_factory):
     """apply_defaults() raises when default_hostname() returns None."""
     settings.HOSTNAME_PLAN_DOMAINS = []
