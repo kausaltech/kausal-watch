@@ -1266,7 +1266,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ''
             return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
 
-        candidate = self._find_canonical_domain()
+        candidate = self.find_canonical_domain()
         if candidate is not None:
             bp = (candidate.base_path or '').rstrip('/')
             scheme = self._scheme_for_hostname(candidate.hostname)
@@ -1314,7 +1314,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         domains = sorted(self.domains.all(), key=lambda d: (d.order, d.pk is not None, d.pk or 0))
         return [d for d in domains if not d.redirect_to_hostname]
 
-    def _find_canonical_domain(self) -> PlanDomain | None:
+    def find_canonical_domain(self) -> PlanDomain | None:
         """
         Find the best PlanDomain to use as the canonical URL for this plan.
 
@@ -1788,7 +1788,7 @@ class PlanDomain(OrderedModel):
     A domain (hostname) where an UI for a Plan might live.
 
     The order is the plan's priority order: among the domains the rules in
-    `Plan._find_canonical_domain()` allow, the first one is the plan's canonical address.
+    `Plan.find_canonical_domain()` allow, the first one is the plan's canonical address.
     """
 
     class DeploymentEnvironment(models.TextChoices):
