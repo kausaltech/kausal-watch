@@ -263,6 +263,12 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             raise ValidationError({
                 'enable_community_engagement_accounts': _('Accounts require community engagement to be enabled.'),
             })
+        if self.enable_community_engagement_accounts and not self.plan.pledge_terms_url:
+            raise ValidationError({
+                'enable_community_engagement_accounts': _(
+                    'Add a link to the terms of use in the plan settings (Community engagement tab) before offering accounts.'
+                ),
+            })
 
     @property
     def public_contact_persons(self) -> bool:
