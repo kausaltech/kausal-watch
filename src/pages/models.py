@@ -233,7 +233,8 @@ class AplansPage(SearchableModel['PageQuerySet'], Page):
         root_page = PlanRootPage.objects.get_queryset().ancestor_of(self, inclusive=True).first()
         assert root_page is not None
         site = Site.objects.filter(root_page__translation_key=root_page.translation_key).first()
-        plan = Plan.objects.filter(site=site).first()
+        # Every URL accessor (url, full_url, get_url_parts) resolves the plan's canonical domain.
+        plan = Plan.objects.filter(site=site).prefetch_related('domains').first()
         return plan
 
     @classmethod

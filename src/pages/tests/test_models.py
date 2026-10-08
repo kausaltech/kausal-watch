@@ -1,5 +1,7 @@
 import datetime
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import make_aware
 from wagtail.models import Site
 
@@ -78,6 +80,16 @@ class TestGetUrlParts:
         page = StaticPageFactory.create(parent=plan.root_page)
         _, root_url, _ = page.get_url_parts()
         assert root_url == 'https://myplan.example.com'
+
+    def test_repeated_calls_look_up_plan_domains_once(self, published_url_plan):
+        PlanDomainFactory.create(plan=published_url_plan, hostname='city.gov')
+        page = StaticPageFactory.create(parent=published_url_plan.root_page)
+        page = type(page).objects.get(pk=page.pk)
+        with CaptureQueriesContext(connection) as ctx:
+            first = page.get_url_parts()
+            second = page.get_url_parts()
+        assert first == second
+        assert sum(1 for q in ctx.captured_queries if 'actions_plandomain' in q['sql']) <= 1
 
     def test_falls_back_to_wildcard_hostname(self, published_url_plan):
         page = StaticPageFactory.create(parent=published_url_plan.root_page)
