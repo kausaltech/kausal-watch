@@ -35,7 +35,7 @@ from .notifications import (
 )
 from .queue import NotificationQueue
 from .recipients import PersonRecipient
-from .utils import NonPublicURLError, validate_notification_context_urls
+from .utils import NonPublicURLError, public_urls_required, validate_notification_context_urls
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -310,7 +310,7 @@ class NotificationEngine:
                 **theme_context,
                 **context,
             )
-            validate_notification_context_urls(context, allow_localhost=settings.DEPLOYMENT_TYPE == 'development')
+            validate_notification_context_urls(context, allow_localhost=not public_urls_required())
 
             rendered['html_body'] = render_mjml_from_template(
                 template.type,

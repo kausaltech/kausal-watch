@@ -595,8 +595,9 @@ def test_unresolvable_plan_url_fails_the_run(settings):
     assert not SentNotification.objects.exists()
 
 
-def test_localhost_allowed_in_development(settings):
-    settings.DEPLOYMENT_TYPE = 'development'
+@pytest.mark.parametrize('deployment_type', ['development', 'ci'])
+def test_localhost_allowed_in_development_and_ci(settings, deployment_type):
+    settings.DEPLOYMENT_TYPE = deployment_type
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     plan = PlanFactory.create()
     AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
