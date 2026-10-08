@@ -83,3 +83,18 @@ def test_menu_items_do_not_look_up_the_plan_per_item(live_plan_with_domain, grap
     for i in range(1, ACTION_COUNT):
         plan.root_page.add_child(instance=StaticPage(title=f'Page {i}', show_in_menus=True))
     assert count_queries() == one_item
+
+
+def test_export_pdf_reads_plan_features_from_the_plan_cache(live_plan_with_domain, graphql_client_query_data):
+    plan = live_plan_with_domain
+    for _ in range(ACTION_COUNT):
+        ActionFactory.create(plan=plan)
+    PlanFeatures.objects.filter(plan=plan).update(enable_action_pdf_export_in_public_ui=True)
+    query = 'query($plan: ID!) { planActions(plan: $plan) { exportPdf { url } } }'
+    with CaptureQueriesContext(connection) as ctx:
+        data = graphql_client_query_data(query, variables=dict(plan=plan.identifier))
+    assert all(action['exportPdf'] for action in data['planActions'])
+    # The action query itself must not join the plan and its features; the plan cache has them.
+    action_queries = [q['sql'] for q in ctx.captured_queries if 'FROM "actions_action"' in q['sql']]
+    assert action_queries
+    assert not any('actions_planfeatures' in sql for sql in action_queries)
