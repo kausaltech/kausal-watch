@@ -10,6 +10,7 @@ from django.core.mail import EmailMessage
 from django.db.models import prefetch_related_objects
 from django.utils import translation
 
+from anymail.exceptions import AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError
 from sentry_sdk import capture_exception, capture_message, new_scope
 
 from aplans.email_sender import EmailSender
@@ -62,6 +63,10 @@ ADMIN_THEME = {
 # How many distinct reasons for skipped messages one Sentry report lists.
 MAX_REPORTED_SKIP_REASONS = 3
 
+# Mail provider statuses that refuse the request as a whole (credentials, rate limits), so every
+# later message in the run would fail the same way.
+PROVIDER_WIDE_CLIENT_ERRORS = frozenset({401, 403, 429})
+
 logger = getLogger(__name__)
 
 TASK_DUE_SOON_DAYS = 30
@@ -77,6 +82,21 @@ class OutgoingMessage:
     msg: EmailMessage
     queue_items: Sequence[NotificationQueueItem]
     recipient: NotificationRecipient
+
+
+def rejects_only_this_message(error: AnymailInvalidAddress | AnymailRecipientsRefused | AnymailRequestsAPIError) -> bool:
+    """
+    Tell whether a mail provider error concerns only the message being sent.
+
+    Such a message (e.g. one with an invalid recipient address) is skipped so that it does not stop
+    the run. Network errors, server errors and errors with the provider account affect every message.
+    """
+    if not isinstance(error, AnymailRequestsAPIError):
+        return True
+    status_code = error.status_code
+    if status_code is None:
+        return False
+    return 400 <= status_code < 500 and status_code not in PROVIDER_WIDE_CLIENT_ERRORS
 
 
 class NotificationEngine:
@@ -445,11 +465,12 @@ class NotificationEngine:
         """
         Send each queued message as soon as it is rendered, and record it as sent once it has gone out.
 
-        A message that cannot be built for a known reason (a non-public URL) or that the mail backend
-        does not accept is skipped unrecorded and reported once per run; the plan's run completes, so
-        it is retried on the plan's next daily run. Any other error, including a failing connection,
-        stops the run; the daily command then retries the plan on its next hourly pass, and messages
-        already sent stay recorded.
+        A message that cannot be built for a known reason (a non-public URL), that the mail backend
+        does not accept, or that the mail provider rejects on its own (e.g. for an invalid recipient
+        address) is skipped unrecorded and reported once per run; the plan's run completes, so it is
+        retried on the plan's next daily run. Any other error, including a failing connection or a
+        provider error that would affect every message, stops the run; the daily command then
+        retries the plan on its next hourly pass, and messages already sent stay recorded.
 
         Delivery is at least once: a message sent just before a failure to record it goes out again.
         """
@@ -461,7 +482,16 @@ class NotificationEngine:
                     return
 
     def _deliver(self, email_sender: EmailSender, outgoing: OutgoingMessage) -> None:
-        if not email_sender.send(outgoing.msg):
+        try:
+            accepted = email_sender.send(outgoing.msg)
+        except (AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError) as e:
+            if not rejects_only_this_message(e):
+                raise
+            # Left unrecorded, so it is tried again on the next run.
+            logger.error(str(e))
+            self.skipped_messages.append(f'The mail provider rejected the message to {outgoing.msg.to}: {e}')
+            return
+        if not accepted:
             # Left unrecorded, so it is tried again on the next run.
             self.skipped_messages.append(f'The mail backend did not accept the message to {outgoing.msg.to}')
             return

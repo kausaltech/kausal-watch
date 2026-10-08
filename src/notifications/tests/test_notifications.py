@@ -8,6 +8,8 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import translation
 
 import pytest
+from anymail.exceptions import AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError
+from requests import Response
 
 from actions.models.action import Action
 from actions.models.public_user import PublicUser
@@ -720,6 +722,74 @@ def test_failure_partway_through_keeps_delivered_messages_marked_sent():
     assert calls == 2
     assert len(mail.outbox) == 1
     assert SentNotification.objects.count() == 1
+
+
+def _esp_api_error(status_code: int) -> AnymailRequestsAPIError:
+    response = Response()
+    response.status_code = status_code
+    response.reason = 'ESP says no'
+    return AnymailRequestsAPIError('Mail provider refused the request', response=response)
+
+
+def _fail_first_message_with(error: Exception):
+    calls = 0
+
+    def send_messages(self, messages):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise error
+        mail.outbox.extend(messages)
+        return len(messages)
+
+    return send_messages
+
+
+@pytest.mark.parametrize(
+    'error',
+    [
+        pytest.param(AnymailInvalidAddress('Invalid email address'), id='invalid-address'),
+        pytest.param(AnymailRecipientsRefused(), id='recipients-refused'),
+        pytest.param(_esp_api_error(400), id='bad-request'),
+        pytest.param(_esp_api_error(413), id='too-large'),
+    ],
+)
+def test_message_the_mail_provider_rejects_is_skipped_and_the_run_continues(error):
+    engine = _plan_with_two_messages()
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        patch('notifications.engine.capture_message') as capture_message,
+    ):
+        engine.generate_notifications()
+    # The rejected message must not block the other one, and is retried on the next run.
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+    capture_message.assert_called_once()
+    assert '1 notification message(s)' in capture_message.call_args.args[0]
+
+
+@pytest.mark.parametrize('status_code', [401, 403, 429, 500, 503])
+def test_mail_provider_failure_that_affects_every_message_stops_the_run(status_code):
+    engine = _plan_with_two_messages()
+    error = _esp_api_error(status_code)
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        pytest.raises(AnymailRequestsAPIError),
+    ):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
+
+
+def test_mail_provider_network_failure_stops_the_run():
+    engine = _plan_with_two_messages()
+    # Anymail wraps network errors in an AnymailRequestsAPIError without a status code.
+    error = AnymailRequestsAPIError('Error posting to the mail provider')
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        pytest.raises(AnymailRequestsAPIError),
+    ):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
 
 
 def test_skip_report_lists_only_the_first_reasons():
