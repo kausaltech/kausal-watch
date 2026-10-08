@@ -1289,23 +1289,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return None
         return production[0]
 
-    def _find_live_canonical_domain(self, domains: list[PlanDomain], as_live: bool = False) -> PlanDomain | None:
-        published_domains = [d for d in domains if (d.is_launched_once_live if as_live else d.is_launched)]
-        if not published_domains:
+    def _find_launched_canonical_domain(self, domains: list[PlanDomain], as_live: bool = False) -> PlanDomain | None:
+        launched_domains = [d for d in domains if (d.is_launched_once_live if as_live else d.is_launched)]
+        if not launched_domains:
             return None
-        return self._first_production_domain(published_domains) or published_domains[0]
-
-    def _find_unpublished_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
-        explicitly_published = [d for d in domains if d.publication_status_override == PublicationStatus.PUBLISHED]
-        if explicitly_published:
-            return self._first_production_domain(explicitly_published) or explicitly_published[0]
-
-        preview_domains = [
-            d for d in domains if d.is_preview_surface and d.publication_status_override != PublicationStatus.UNPUBLISHED
-        ]
-        if not preview_domains:
-            return None
-        return preview_domains[0]
+        return self._first_production_domain(launched_domains) or launched_domains[0]
 
     def ordered_domains(self) -> list[PlanDomain]:
         """
@@ -1326,22 +1314,20 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         """
         Find the best PlanDomain to use as the canonical URL for this plan.
 
-        Filters out redirect domains. For published (live) plans, prefers
-        published production domains. For unpublished plans, explicit
-        publication overrides take precedence; otherwise production domains are
-        excluded so the URL falls back to a preview/development domain or the
-        wildcard. A domain with no deployment environment counts as production,
-        as in `PlanDomain.is_preview_surface`. Within each rule, the plan's domain
-        order decides.
+        Filters out redirect domains and considers only the domains that serve the plan's
+        site (`PlanDomain.is_launched`). Among those, a production domain is preferred; a
+        domain with no deployment environment counts as production, as in
+        `PlanDomain.is_preview_surface`. Before the plan is live, production domains are
+        launched only by a PUBLISHED override, so the URL usually falls back to a
+        preview/development domain or the wildcard. Otherwise, the plan's domain order decides.
 
-        With `as_live`, apply the rules for a live plan whether or not the plan is live yet.
+        With `as_live`, judge launch by `PlanDomain.is_launched_once_live`, i.e. as if the
+        plan were live already.
         """
         domains = self._canonical_domain_candidates()
         if not domains:
             return None
-        if as_live or self.is_live():
-            return self._find_live_canonical_domain(domains, as_live=as_live)
-        return self._find_unpublished_canonical_domain(domains)
+        return self._find_launched_canonical_domain(domains, as_live=as_live)
 
     @classmethod
     def create_with_defaults(
