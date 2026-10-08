@@ -545,20 +545,34 @@ def test_i18n(plan: Plan, plan_admin_person: Person):
     assert 'Hallo' in mail.outbox[0].body
 
 
-def test_localhost_admin_url_skips_message(settings):
+def test_localhost_admin_url_skips_messages_and_reports_once(settings):
     settings.DEPLOYMENT_TYPE = 'production'
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     plan = PlanFactory.create()
-    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
-    due_at = now.date() - timedelta(days=1)
-    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
-    ActionContactFactory.create(action=task.action)
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
     ClientPlanFactory.create(plan=plan)
-    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
-    with patch('notifications.engine.capture_exception') as capture_exception:
+    engine = NotificationEngine(plan, now=now)
+    with (
+        patch('notifications.engine.capture_message') as capture_message,
+        patch('notifications.engine.capture_exception') as capture_exception,
+        patch('notifications.engine.new_scope') as new_scope,
+    ):
         engine.generate_notifications()
-    assert 'localhost' in str(capture_exception.call_args.args[0])
+    capture_exception.assert_not_called()
+    # The per-message URLs vary between runs, so the report is grouped by plan rather than by its text.
+    assert new_scope.return_value.__enter__.return_value.fingerprint == ['notifications-skipped-messages', plan.identifier]
+    # Both messages fail for the same reason; that is one problem, reported once.
+    capture_message.assert_called_once()
+    report = capture_message.call_args.args[0]
+    assert '2 ' in report
+    assert 'localhost' in report
+    assert capture_message.call_args.kwargs['level'] == 'error'
     assert len(mail.outbox) == 0
     assert not SentNotification.objects.exists()
 
@@ -621,15 +635,29 @@ def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
 
     with (
         patch.object(NotificationEngine, 'render', render_failing_first),
-        patch('notifications.engine.capture_exception') as capture_exception,
+        patch('notifications.engine.capture_message') as capture_message,
     ):
         engine.generate_notifications()
 
     assert calls == 2
     assert len(mail.outbox) == 1
-    capture_exception.assert_called_once()
+    capture_message.assert_called_once()
+    assert '1 ' in capture_message.call_args.args[0]
     # Only the message that went out is recorded as sent; the failed one is retried on the next run.
     assert SentNotification.objects.count() == 1
+
+
+def test_skip_report_lists_only_the_first_reasons():
+    plan = PlanFactory.create()
+    engine = NotificationEngine(plan)
+    engine.skipped_messages = [f'reason {i}' for i in range(5)] + ['reason 0']
+    with patch('notifications.engine.capture_message') as capture_message:
+        engine._report_skipped_messages()
+    report = capture_message.call_args.args[0]
+    assert report.startswith('6 notification message(s)')
+    assert 'reason 2' in report
+    assert 'reason 3' not in report
+    assert report.endswith('; and 2 more')
 
 
 def test_unrelated_value_error_is_not_swallowed(settings):
