@@ -322,19 +322,19 @@ def test_default_hostname_returns_none_when_no_domains(settings, plan_factory):
 
 
 def test_default_hostname_returns_none_when_only_localhost_in_production(settings, plan_factory):
-    """default_hostname(include_all_domains=True) returns None in production when only localhost is configured."""
+    """default_hostname() returns None in production when only localhost is configured."""
     settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
     settings.DEPLOYMENT_TYPE = 'production'
     plan = plan_factory()
-    assert plan.default_hostname(include_all_domains=True) is None
+    assert plan.default_hostname() is None
 
 
 def test_default_hostname_returns_localhost_in_development(settings, plan_factory):
-    """default_hostname(include_all_domains=True) falls back to localhost in development."""
+    """default_hostname() falls back to localhost in development."""
     settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
     settings.DEPLOYMENT_TYPE = 'development'
     plan = plan_factory()
-    assert plan.default_hostname(include_all_domains=True) == f'{plan.identifier}.localhost'
+    assert plan.default_hostname() == f'{plan.identifier}.localhost'
 
 
 def test_get_view_url_raises_when_no_hostname(settings, plan_factory):

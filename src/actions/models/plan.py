@@ -895,7 +895,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         if self.site is not None:
             return
         if hostname is None:
-            hostname = self.default_hostname(include_all_domains=True)
+            hostname = self.default_hostname()
             if not hostname:
                 raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         root_page = self.create_default_pages()
@@ -1277,7 +1277,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             scheme = self._scheme_for_hostname(candidate.hostname)
             return f'{scheme}://{candidate.hostname}{locale_prefix}{bp}'
 
-        hostname = self.default_hostname(include_all_domains=True)
+        hostname = self.default_hostname()
         if not hostname:
             raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         scheme = self._scheme_for_hostname(hostname)
@@ -1415,13 +1415,17 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
 
-    def default_hostname(self, include_all_domains: bool = False) -> str | None:
-        """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
+    def default_hostname(self) -> str | None:
+        """
+        Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost.
+
+        In development, fall back to localhost when it is the only item.
+        """
         hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
         try:
             default_domain = next(hostname_plan_domains)
         except StopIteration:
-            if include_all_domains and settings.DEPLOYMENT_TYPE == 'development':
+            if settings.DEPLOYMENT_TYPE == 'development':
                 try:
                     default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
                 except StopIteration:
