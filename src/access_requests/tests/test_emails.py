@@ -16,6 +16,7 @@ from access_requests.emails import send_decision_email
 from access_requests.models import AccessRequest
 from access_requests.services import approve_access_request
 from access_requests.tests.factories import AccessRequestFactory
+from actions.models import Plan
 from actions.tests.factories import PlanFactory
 from notifications.models import BaseTemplate
 from people.tests.factories import PersonFactory
@@ -190,6 +191,20 @@ def test_html_has_a_button_to_set_the_password(plan):
     [url] = re.findall(r'http\S+/access-requests/\S+/', str(msg.body))
     [(html, _mimetype)] = msg.alternatives
     assert f'<mj-button align="left" href="{url}">Set your password</mj-button>' in str(html)
+
+
+@pytest.mark.parametrize('through_service', [False, True], ids=['sign-in-link', 'set-password-link'])
+def test_resolves_the_plan_url_once_per_email(plan, through_service):
+    BaseTemplate.objects.create(plan=plan)
+    plan.refresh_from_db()
+    req = _approved_through_service(plan) if through_service else _approved(plan)
+    mail.outbox.clear()
+
+    original = Plan.get_view_url
+    with patch.object(Plan, 'get_view_url', autospec=True, side_effect=original) as get_view_url:
+        assert send_decision_email(req) is True
+
+    assert get_view_url.call_count == 1
 
 
 def test_admin_entered_text_is_escaped_in_the_html(plan):
