@@ -70,3 +70,9 @@ def test_domains_panel_explains_which_domain_is_used(rf, superuser, plan):
     panel = find(handler)
     assert panel is not None
     assert 'first domain in this list' in str(panel.help_text)
+
+
+def test_default_ordering_does_not_join_the_plan():
+    sql = str(PlanDomain.objects.filter(hostname='city.example.com').query)
+    assert 'JOIN' not in sql
+    assert sql.endswith('ORDER BY "actions_plandomain"."plan_id" ASC, "actions_plandomain"."order" ASC')

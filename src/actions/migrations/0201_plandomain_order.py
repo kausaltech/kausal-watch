@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name='plandomain',
-            options={'ordering': ('plan', 'order'), 'verbose_name': 'plan domain', 'verbose_name_plural': 'plan domains'},
+            options={'ordering': ('plan_id', 'order'), 'verbose_name': 'plan domain', 'verbose_name_plural': 'plan domains'},
         ),
         migrations.AddField(
             model_name='plandomain',
