@@ -648,6 +648,80 @@ def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
     assert SentNotification.objects.count() == 1
 
 
+def _plan_with_two_messages():
+    plan = PlanFactory.create()
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    return NotificationEngine(plan, now=now)
+
+
+def test_failure_while_sending_leaves_no_message_marked_sent():
+    engine = _plan_with_two_messages()
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', side_effect=ConnectionError('smtp down')),
+        pytest.raises(ConnectionError),
+    ):
+        engine.generate_notifications()
+    # Nothing went out, so the next run must send everything again.
+    assert not SentNotification.objects.exists()
+
+
+def test_message_the_backend_does_not_accept_is_not_marked_sent():
+    engine = _plan_with_two_messages()
+    with patch('django.core.mail.backends.locmem.EmailBackend.send_messages', return_value=0):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
+
+
+def test_smtp_failure_partway_through_marks_only_delivered_messages_sent():
+    engine = _plan_with_two_messages()
+    delivered = 0
+
+    def deliver_first_only(self, messages):
+        nonlocal delivered
+        for message in messages:
+            if delivered >= 1:
+                raise ConnectionError('smtp dropped')
+            mail.outbox.append(message)
+            delivered += 1
+        return len(messages)
+
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', deliver_first_only),
+        pytest.raises(ConnectionError),
+    ):
+        engine.generate_notifications()
+    # The delivered message must not go out again on the next run; the other one must.
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+
+
+def test_failure_partway_through_keeps_delivered_messages_marked_sent():
+    engine = _plan_with_two_messages()
+    original_render = NotificationEngine.render
+    calls = 0
+
+    def render_failing_second(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError('a bug')
+        return original_render(self, *args, **kwargs)
+
+    with patch.object(NotificationEngine, 'render', render_failing_second), pytest.raises(RuntimeError):
+        engine.generate_notifications()
+    # The first message went out before the failure and must not go out again on the next run.
+    assert calls == 2
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+
+
 def test_skip_report_lists_only_the_first_reasons():
     plan = PlanFactory.create()
     engine = NotificationEngine(plan)
