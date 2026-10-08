@@ -107,7 +107,7 @@ class SetPasswordView(auth_views.PasswordResetConfirmView):
     def get_user(self, uidb64: str) -> User | None:
         user = super().get_user(uidb64)
         # Anyone the request does not vouch for gets the same "invalid link" page as a bad token.
-        if not may_set_password(self.access_request, user):
+        if not may_set_password(self.access_request, user, get_plan_url(self.access_request.plan)):
             return None
         return user
 
