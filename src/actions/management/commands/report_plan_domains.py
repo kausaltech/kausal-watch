@@ -65,7 +65,7 @@ class Command(BaseCommand):
         sections = []
         flagged = 0
         for plan in plans:
-            domains = list(plan.domains.all())
+            domains = plan.ordered_domains()
             competing = _competing_production_domains(domains)
             if len(competing) > 1:
                 flagged += 1

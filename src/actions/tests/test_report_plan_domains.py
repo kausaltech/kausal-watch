@@ -74,3 +74,18 @@ def test_multiple_only_lists_just_the_plans_with_competing_domains():
 
     assert 'multi ' in report
     assert 'single ' not in report
+
+
+def test_domains_with_the_same_order_are_listed_in_the_order_links_use():
+    plan = PlanFactory.create(identifier='tiedorder')
+    first = PlanDomainFactory.create(plan=plan, hostname='first.city.gov', deployment_environment='production')
+    second = PlanDomainFactory.create(plan=plan, hostname='second.city.gov', deployment_environment='production')
+    # Update the lower pk last, so the database is free to return it second.
+    PlanDomain.objects.filter(pk=second.pk).update(order=5)
+    PlanDomain.objects.filter(pk=first.pk).update(order=5)
+
+    section = _plan_section(_report(), 'tiedorder')
+
+    lines = section.splitlines()
+    assert '* first.city.gov' in lines[1]
+    assert 'second.city.gov' in lines[2]
