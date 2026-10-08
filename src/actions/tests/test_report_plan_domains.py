@@ -1,10 +1,11 @@
 from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
 
 import pytest
 
-from actions.models.plan import PlanDomain
+from actions.models.plan import Plan, PlanDomain
 from actions.tests.factories import PlanDomainFactory, PlanFactory
 
 pytestmark = pytest.mark.django_db
@@ -89,3 +90,15 @@ def test_domains_with_the_same_order_are_listed_in_the_order_links_use():
     lines = section.splitlines()
     assert '* first.city.gov' in lines[1]
     assert 'second.city.gov' in lines[2]
+
+
+def test_resolves_each_plans_canonical_domain_once():
+    plan = PlanFactory.create(identifier='onedomain')
+    PlanDomainFactory.create(plan=plan, hostname='city.gov', deployment_environment='production')
+
+    original = Plan.find_canonical_domain
+    with patch.object(Plan, 'find_canonical_domain', autospec=True, side_effect=original) as find_canonical_domain:
+        section = _plan_section(_report(), 'onedomain')
+
+    assert 'https://city.gov' in section.splitlines()[0]
+    assert find_canonical_domain.call_count == Plan.objects.filter(is_active=True).count()
