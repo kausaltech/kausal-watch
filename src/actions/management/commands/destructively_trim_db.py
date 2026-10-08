@@ -21,6 +21,7 @@ from easy_thumbnails.models import Source, Thumbnail
 from taggit.models import Tag
 
 from actions.models.plan import Plan
+from actions.models.public_user import PublicUser
 from admin_site.models import Client
 from images.models import AplansRendition
 from orgs.models import Organization
@@ -142,6 +143,7 @@ class Command(BaseCommand):
             client_names = Client.objects.filter(id__in=options['exclude_client']).values_list('name', flat=True)
             client_message += f' and are not among the following: {", ".join(client_names)}'
         self.stdout.write(client_message)
+        self.stdout.write('- all PublicUser instances belonging to deleted clients')
         if options['thorough']:
             self.stdout.write('- all Reversion Revision instances')
             self.stdout.write('- all Wagtail Revision instances')
@@ -293,7 +295,10 @@ class Command(BaseCommand):
         _, by_type = User.objects.filter(person__isnull=True).delete()
         self.print_deleted_instances_by_model(by_type)
         # Delete clients without plans unless excluded
-        _, by_type = Client.objects.filter(plans__isnull=True).exclude(id__in=clients_to_keep).delete()
+        clients_to_delete = Client.objects.filter(plans__isnull=True).exclude(id__in=clients_to_keep)
+        _, by_type = PublicUser.objects.filter(client__in=clients_to_delete).delete()
+        self.print_deleted_instances_by_model(by_type)
+        _, by_type = clients_to_delete.delete()
         self.print_deleted_instances_by_model(by_type)
         # Reversion cleanup is intentionally omitted here — thorough mode handles it with a full purge.
         # Delete Wagtail revisions for objects that no longer exist (regardless of author), then
