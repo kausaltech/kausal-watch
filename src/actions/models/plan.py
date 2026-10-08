@@ -1200,7 +1200,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     def _scheme_for_hostname(hostname: str) -> str:
         return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
 
-    def get_view_url(  # noqa: C901, PLR0912, PLR0915
+    def get_view_url(  # noqa: C901, PLR0912
         self,
         client_url: str | None = None,
         active_locale: str | None = None,
@@ -1271,11 +1271,19 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ''
             return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
 
-        candidate = self.find_canonical_domain(as_live=as_live)
-        if candidate is not None:
-            bp = (candidate.base_path or '').rstrip('/')
-            scheme = self._scheme_for_hostname(candidate.hostname)
-            return f'{scheme}://{candidate.hostname}{locale_prefix}{bp}'
+        return self.view_url_for_domain(self.find_canonical_domain(as_live=as_live), locale_prefix)
+
+    def view_url_for_domain(self, domain: PlanDomain | None, locale_prefix: str = '') -> str:
+        """
+        Return the URL of the plan's homepage on `domain`, or on the default hostname when it is None.
+
+        For a caller that already has the result of `find_canonical_domain()`. Raises ValueError
+        when `domain` is None and the plan has no default hostname.
+        """
+        if domain is not None:
+            bp = (domain.base_path or '').rstrip('/')
+            scheme = self._scheme_for_hostname(domain.hostname)
+            return f'{scheme}://{domain.hostname}{locale_prefix}{bp}'
 
         hostname = self.default_hostname()
         if not hostname:
