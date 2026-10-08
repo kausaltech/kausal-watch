@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING
@@ -38,7 +39,7 @@ from .recipients import PersonRecipient
 from .utils import NonPublicURLError, public_urls_required, validate_notification_context_urls
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from actions.models import Action, Plan
     from feedback.models import UserFeedback
@@ -69,6 +70,13 @@ UPDATED_INDICATOR_VALUES_DUE_SOON_DAYS = 30
 
 class InvalidStateException(Exception):  # noqa: N818
     pass
+
+
+@dataclass(frozen=True)
+class OutgoingMessage:
+    msg: EmailMessage
+    queue_items: Sequence[NotificationQueueItem]
+    recipient: NotificationRecipient
 
 
 class NotificationEngine:
@@ -413,7 +421,7 @@ class NotificationEngine:
 
         self.skipped_messages: list[str] = []
         try:
-            self._send_queued_notifications(base_template)
+            self._send_notifications(base_template)
         finally:
             self._report_skipped_messages()
 
@@ -433,10 +441,36 @@ class NotificationEngine:
                 level='error',
             )
 
-    def _send_queued_notifications(self, base_template: BaseTemplate) -> None:  # noqa: C901, PLR0912, PLR0915
-        notification_count = 0
-        email_sender = EmailSender(plan=self.plan)
+    def _send_notifications(self, base_template: BaseTemplate) -> None:
+        """
+        Send each queued message as soon as it is rendered, and record it as sent once it has gone out.
 
+        A message that cannot be built for a known reason (a non-public URL) or that the mail backend
+        does not accept is skipped unrecorded and reported once per run; the plan's run completes, so
+        it is retried on the plan's next daily run. Any other error, including a failing connection,
+        stops the run; the daily command then retries the plan on its next hourly pass, and messages
+        already sent stay recorded.
+
+        Delivery is at least once: a message sent just before a failure to record it goes out again.
+        """
+        with EmailSender(plan=self.plan) as email_sender:
+            for count, outgoing in enumerate(self._build_messages(base_template), start=1):
+                if not self.noop:
+                    self._deliver(email_sender, outgoing)
+                if self.limit and count >= self.limit:
+                    return
+
+    def _deliver(self, email_sender: EmailSender, outgoing: OutgoingMessage) -> None:
+        if not email_sender.send(outgoing.msg):
+            # Left unrecorded, so it is tried again on the next run.
+            self.skipped_messages.append(f'The mail backend did not accept the message to {outgoing.msg.to}')
+            return
+        if self.force_to:
+            # Only a copy went out; the real recipient still needs the message.
+            return
+        self._mark_sent(outgoing.queue_items, outgoing.recipient)
+
+    def _build_messages(self, base_template: BaseTemplate) -> Iterator[OutgoingMessage]:  # noqa: C901, PLR0912
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
                 continue
@@ -494,19 +528,11 @@ class NotificationEngine:
                             s = '\t%s' % str(item.notification.obj)
                         nstr.append(s)
                     logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
+                    yield OutgoingMessage(msg=msg, queue_items=queue_items, recipient=recipient)
 
-                    email_sender.queue(msg)
-                    if not self.force_to and not self.noop:
-                        for item in queue_items:
-                            item.notification.mark_sent(recipient, now=self.now)
-                    notification_count += 1
-                    if self.limit and notification_count >= self.limit:
-                        if not self.noop:
-                            email_sender.send_all()
-                        return
-        if self.noop:
-            return
-        email_sender.send_all()
+    def _mark_sent(self, queue_items: Sequence[NotificationQueueItem], recipient: NotificationRecipient) -> None:
+        for item in queue_items:
+            item.notification.mark_sent(recipient, now=self.now)
 
     def queue_notification(self, notification: Notification, recipient: NotificationRecipient):
         item = recipient.queue_item(notification)
