@@ -655,6 +655,28 @@ class TestGetViewUrlUnpublishedPlan:
         url = plan.get_view_url()
         assert url == 'https://preview.city.gov'
 
+    def test_domain_order_decides_between_launched_preview_domains(self, settings):
+        """A PUBLISHED override only launches a domain; it does not rank it above earlier ones."""
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        from actions.models.plan import PlanDomain, PublicationStatus
+
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='preview.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+            order=1,
+        )
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='staging.city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+            publication_status_override=PublicationStatus.PUBLISHED,
+            order=2,
+        )
+        url = plan.get_view_url()
+        assert url == 'https://preview.city.gov'
+
 
 class TestDefaultHostnameWithCountryWildcard:
     """A <country> wildcard domain resolves using the plan's required country."""
