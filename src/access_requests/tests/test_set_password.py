@@ -7,7 +7,7 @@ from django.utils import timezone
 
 import pytest
 
-from access_requests.emails import make_set_password_url
+from access_requests.emails import get_plan_url, make_set_password_url
 from access_requests.models import AccessRequest
 from access_requests.services import approve_access_request
 from access_requests.tests.factories import AccessRequestFactory
@@ -45,7 +45,7 @@ def _path(url: str) -> str:
 
 
 def _open_form(client: Client, req: AccessRequest) -> str:
-    url = make_set_password_url(req)
+    url = make_set_password_url(req, get_plan_url(req.plan))
     assert url is not None
     response = client.get(_path(url))
     assert response.status_code == 302
@@ -54,27 +54,27 @@ def _open_form(client: Client, req: AccessRequest) -> str:
 
 class TestSetPasswordUrl:
     def test_is_given_to_a_fresh_user(self, approved):
-        assert make_set_password_url(approved) is not None
+        assert make_set_password_url(approved, get_plan_url(approved.plan)) is not None
 
     def test_is_not_given_to_a_user_without_a_password(self, approved):
         user = _user(approved)
         user.set_unusable_password()
         user.save()
-        assert make_set_password_url(approved) is None
+        assert make_set_password_url(approved, get_plan_url(approved.plan)) is None
 
     def test_is_not_given_to_a_user_who_has_signed_in(self, approved):
         user = _user(approved)
         user.last_login = timezone.now()
         user.save()
-        assert make_set_password_url(approved) is None
+        assert make_set_password_url(approved, get_plan_url(approved.plan)) is None
 
     def test_is_not_given_for_a_pending_request(self, plan):
         req = AccessRequestFactory.create(plan=plan)
-        assert make_set_password_url(req) is None
+        assert make_set_password_url(req, get_plan_url(req.plan)) is None
 
     def test_is_not_given_when_the_plan_has_no_resolvable_url(self, approved, settings):
         settings.HOSTNAME_PLAN_DOMAINS = []
-        assert make_set_password_url(approved) is None
+        assert make_set_password_url(approved, get_plan_url(approved.plan)) is None
 
 
 class TestSetPasswordView:
@@ -99,7 +99,7 @@ class TestSetPasswordView:
         assert response.context['plan_url'] == 'https://plan.example.com'
 
     def test_link_works_once(self, client, approved):
-        url = make_set_password_url(approved)
+        url = make_set_password_url(approved, get_plan_url(approved.plan))
         assert url is not None
         form_url = _open_form(client, approved)
         client.post(form_url, {'new_password1': NEW_PASSWORD, 'new_password2': NEW_PASSWORD})
@@ -121,7 +121,7 @@ class TestSetPasswordView:
         assert not user.check_password('short')
 
     def test_link_of_another_request_is_refused(self, client, plan, approved):
-        url = make_set_password_url(approved)
+        url = make_set_password_url(approved, get_plan_url(approved.plan))
         assert url is not None
         other = AccessRequestFactory.create(plan=plan, status=AccessRequest.Status.APPROVED)
         tampered = _path(url).replace(f'/{approved.pk}/', f'/{other.pk}/')
@@ -132,7 +132,7 @@ class TestSetPasswordView:
         assert not response.context['validlink']
 
     def test_rejected_request_is_refused(self, client, approved):
-        url = make_set_password_url(approved)
+        url = make_set_password_url(approved, get_plan_url(approved.plan))
         assert url is not None
         AccessRequest.objects.filter(pk=approved.pk).update(status=AccessRequest.Status.REJECTED)
 
