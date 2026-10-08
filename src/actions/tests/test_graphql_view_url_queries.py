@@ -98,3 +98,15 @@ def test_export_pdf_reads_plan_features_from_the_plan_cache(live_plan_with_domai
     action_queries = [q['sql'] for q in ctx.captured_queries if 'FROM "actions_action"' in q['sql']]
     assert action_queries
     assert not any('actions_planfeatures' in sql for sql in action_queries)
+
+
+def test_export_pdf_is_null_when_plan_url_unresolvable(plan, graphql_client_query_data, settings):
+    ActionFactory.create(plan=plan)
+    PlanFeatures.objects.filter(plan=plan).update(enable_action_pdf_export_in_public_ui=True)
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan.domains.all().delete()
+    query = 'query($plan: ID!) { planActions(plan: $plan) { exportPdf { url } } }'
+    data = graphql_client_query_data(query, variables=dict(plan=plan.identifier))
+    assert data['planActions']
+    assert all(action['exportPdf'] is None for action in data['planActions'])

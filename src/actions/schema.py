@@ -1982,8 +1982,9 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         plan = info.context.cache.for_plan_id(root.plan_id).plan
         if not plan.features.enable_action_pdf_export_in_public_ui:
             return None
-        base_url = plan.get_view_url(request=info.context)
-        if not base_url:
+        try:
+            base_url = plan.get_view_url(request=info.context)
+        except ValueError:
             return None
         return {
             'url': '%s/api/export-pdf' % base_url.rstrip('/'),
