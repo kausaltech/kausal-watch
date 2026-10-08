@@ -1144,14 +1144,12 @@ class PlanPublishView(
             if not domain.is_preview_surface and domain.publication_status_override != PublicationStatus.UNPUBLISHED
         ]
 
-    def get_preview_url(self):
+    def get_preview_url(self) -> str | None:
+        """Return the address the plan's links will use once it is published."""
         try:
-            hostname = self.object.default_hostname()
-        except Exception:
+            return self.object.get_view_url(as_live=True)
+        except ValueError:
             return None
-        if not hostname:
-            return None
-        return f'https://{hostname}'
 
     def is_scheduled(self):
         return self.object.live_state == Plan.LiveState.SCHEDULED

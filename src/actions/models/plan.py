@@ -1205,9 +1205,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         client_url: str | None = None,
         active_locale: str | None = None,
         request: WatchRequest | WatchGraphQLContext | None = None,
+        *,
+        as_live: bool = False,
     ) -> str:
         """
         Return an URL for the homepage of the plan.
+
+        With `as_live`, return the URL the plan's links will use once it is live, as
+        `find_canonical_domain(as_live=True)` picks it.
 
         If `client_url` is given, try to return the URL that matches the supplied
         `client_url` the best:
@@ -1266,7 +1271,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ''
             return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
 
-        candidate = self.find_canonical_domain()
+        candidate = self.find_canonical_domain(as_live=as_live)
         if candidate is not None:
             bp = (candidate.base_path or '').rstrip('/')
             scheme = self._scheme_for_hostname(candidate.hostname)
@@ -1284,8 +1289,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return None
         return production[0]
 
-    def _find_live_canonical_domain(self, domains: list[PlanDomain]) -> PlanDomain | None:
-        published_domains = [d for d in domains if d.is_launched]
+    def _find_live_canonical_domain(self, domains: list[PlanDomain], as_live: bool = False) -> PlanDomain | None:
+        published_domains = [d for d in domains if (d.is_launched_once_live if as_live else d.is_launched)]
         if not published_domains:
             return None
         return self._first_production_domain(published_domains) or published_domains[0]
@@ -1317,7 +1322,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         """Return the plan's non-redirect domains in priority order."""
         return [d for d in self.ordered_domains() if not d.redirect_to_hostname]
 
-    def find_canonical_domain(self) -> PlanDomain | None:
+    def find_canonical_domain(self, *, as_live: bool = False) -> PlanDomain | None:
         """
         Find the best PlanDomain to use as the canonical URL for this plan.
 
@@ -1328,12 +1333,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         wildcard. A domain with no deployment environment counts as production,
         as in `PlanDomain.is_preview_surface`. Within each rule, the plan's domain
         order decides.
+
+        With `as_live`, apply the rules for a live plan whether or not the plan is live yet.
         """
         domains = self._canonical_domain_candidates()
         if not domains:
             return None
-        if self.is_live():
-            return self._find_live_canonical_domain(domains)
+        if as_live or self.is_live():
+            return self._find_live_canonical_domain(domains, as_live=as_live)
         return self._find_unpublished_canonical_domain(domains)
 
     @classmethod
@@ -1918,6 +1925,13 @@ class PlanDomain(OrderedModel):
         if self.is_preview_surface:
             return True
         return self.plan.is_live()
+
+    @property
+    def is_launched_once_live(self) -> bool:
+        """Whether this hostname will serve the plan's site once the plan is live."""
+        if self.publication_status_override is not None:
+            return self.publication_status_override == PublicationStatus.PUBLISHED
+        return True
 
     def availability_for_user(self, user: UserOrAnon | None) -> PlanDomainAvailability:
         """
