@@ -9,7 +9,7 @@ from django.core.mail import EmailMessage
 from django.db.models import prefetch_related_objects
 from django.utils import translation
 
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message, new_scope
 
 from aplans.email_sender import EmailSender
 
@@ -57,6 +57,9 @@ ADMIN_THEME = {
     'font_css_url': None,
     'link_in_brand_bg_color': '#ffffff',
 }
+
+# How many distinct reasons for skipped messages one Sentry report lists.
+MAX_REPORTED_SKIP_REASONS = 3
 
 logger = getLogger(__name__)
 
@@ -349,7 +352,7 @@ class NotificationEngine:
         # For now, use primary language of plan instead of the recipient's preferred language
         return self.render(template, context, plan_theme=notification.uses_plan_theme)
 
-    def generate_notifications(self):  # noqa: C901, PLR0912, PLR0915
+    def generate_notifications(self):  # noqa: C901
         self.queue = NotificationQueue()
         self.action_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
         self.indicator_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
@@ -408,6 +411,29 @@ class NotificationEngine:
         ):
             self.generate_manually_scheduled_notification(manually_scheduled_notification_template)
 
+        self.skipped_messages: list[str] = []
+        try:
+            self._send_queued_notifications(base_template)
+        finally:
+            self._report_skipped_messages()
+
+    def _report_skipped_messages(self) -> None:
+        if not self.skipped_messages:
+            return
+        # The cause is usually shared by every message (e.g. a misconfigured URL setting), so report it once.
+        # The reasons name each message's own URLs; the fingerprint keeps the runs in one Sentry issue per plan.
+        reasons = sorted(set(self.skipped_messages))
+        shown = '; '.join(reasons[:MAX_REPORTED_SKIP_REASONS])
+        if len(reasons) > MAX_REPORTED_SKIP_REASONS:
+            shown += f'; and {len(reasons) - MAX_REPORTED_SKIP_REASONS} more'
+        with new_scope() as scope:
+            scope.fingerprint = ['notifications-skipped-messages', self.plan.identifier]
+            capture_message(
+                f'{len(self.skipped_messages)} notification message(s) for plan {self.plan.identifier} were skipped: {shown}',
+                level='error',
+            )
+
+    def _send_queued_notifications(self, base_template: BaseTemplate) -> None:  # noqa: C901, PLR0912, PLR0915
         notification_count = 0
         email_sender = EmailSender(plan=self.plan)
 
@@ -442,8 +468,8 @@ class NotificationEngine:
                     try:
                         rendered = self._render_message(queue_items, base_template, template, recipient_context)
                     except NonPublicURLError as e:
-                        capture_exception(e)
                         logger.error(str(e))
+                        self.skipped_messages.append(str(e))
                         continue
 
                     if self.force_to:
