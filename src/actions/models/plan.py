@@ -1867,7 +1867,7 @@ class PlanDomain(OrderedModel):
         verbose_name = _('plan domain')
         verbose_name_plural = _('plan domains')
         unique_together = (('hostname', 'base_path'),)
-        ordering = ('plan', 'order')
+        ordering = ('plan_id', 'order')
 
     def __str__(self) -> str:
         s = str(self.hostname)
