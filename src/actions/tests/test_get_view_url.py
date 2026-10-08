@@ -726,3 +726,34 @@ class TestGetSiteNotificationContext:
         )
         context = plan.get_site_notification_context()
         assert context['view_url'] == 'https://preview.city.gov'
+
+
+class TestGetViewUrlAsLive:
+    """`as_live` resolves the URL a not-yet-live plan's links will use once it is live."""
+
+    def test_unpublished_plan_uses_production_domain(self, settings):
+        from actions.models.plan import PlanDomain
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        PlanDomainFactory.create(
+            plan=plan, hostname='preview.city.gov', deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW
+        )
+        PlanDomainFactory.create(
+            plan=plan, hostname='city.gov', deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION
+        )
+        assert plan.get_view_url() == 'https://preview.city.gov'
+        assert plan.get_view_url(as_live=True) == 'https://city.gov'
+
+    def test_skips_production_domain_held_back_by_override(self, settings):
+        from actions.models.plan import PlanDomain, PublicationStatus
+
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        PlanDomainFactory.create(
+            plan=plan,
+            hostname='city.gov',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PRODUCTION,
+            publication_status_override=PublicationStatus.UNPUBLISHED,
+        )
+        assert plan.get_view_url(as_live=True) == 'https://myplan.example.com'
