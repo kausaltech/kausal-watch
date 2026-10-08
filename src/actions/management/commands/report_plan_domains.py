@@ -78,11 +78,11 @@ class Command(BaseCommand):
 
     def _describe_plan(self, plan: Plan, domains: list[PlanDomain], competing: list[PlanDomain]) -> str:
         state = 'live' if plan.is_live() else 'not live'
+        in_use = plan.find_canonical_domain()
         try:
-            url = plan.get_view_url()
+            url = plan.view_url_for_domain(in_use)
         except ValueError as e:
             url = f'ERROR: {e}'
-        in_use = plan.find_canonical_domain()
         lines = [f'{plan.identifier} ({state}): {url}']
         lines.extend(_describe_domain(domain, in_use is not None and domain.pk == in_use.pk) for domain in domains)
         if in_use is None:
