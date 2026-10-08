@@ -3,9 +3,20 @@ from __future__ import annotations
 import ipaddress
 from urllib.parse import urlparse
 
+from django.conf import settings
+
 RESERVED_TLDS = ('.localhost', '.local', '.internal', '.test', '.invalid')
 PUBLIC_URL_SCHEMES = ('http', 'https')
 NON_HIERARCHICAL_URL_SCHEMES = ('mailto',)
+
+
+# Local and CI deployments run on localhost or reserved hostnames, so their URLs can't be public.
+URL_CHECK_EXEMPT_DEPLOYMENT_TYPES = ('development', 'ci')
+
+
+def public_urls_required() -> bool:
+    """Tell whether notification URLs must be public https links in this deployment."""
+    return settings.DEPLOYMENT_TYPE not in URL_CHECK_EXEMPT_DEPLOYMENT_TYPES
 
 
 class NonPublicURLError(ValueError):
