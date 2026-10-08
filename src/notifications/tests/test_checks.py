@@ -1,3 +1,5 @@
+import pytest
+
 from notifications.checks import check_admin_base_url
 
 
@@ -39,7 +41,16 @@ def test_check_passes_for_public_admin_url(settings):
     assert check_admin_base_url(app_configs=None) == []
 
 
-def test_check_allows_localhost_in_development(settings):
-    settings.DEPLOYMENT_TYPE = 'development'
+@pytest.mark.parametrize('deployment_type', ['development', 'ci'])
+def test_check_allows_localhost_in_development_and_ci(settings, deployment_type):
+    settings.DEPLOYMENT_TYPE = deployment_type
     settings.ADMIN_BASE_URL = 'http://localhost:8000'
     assert check_admin_base_url(app_configs=None) == []
+
+
+@pytest.mark.parametrize('deployment_type', ['production', 'staging', 'testing', 'wip'])
+def test_check_errors_for_localhost_in_deployed_environments(settings, deployment_type):
+    settings.DEPLOYMENT_TYPE = deployment_type
+    settings.ADMIN_BASE_URL = 'http://localhost:8000'
+    errors = check_admin_base_url(app_configs=None)
+    assert [e.id for e in errors] == ['notifications.E001']
