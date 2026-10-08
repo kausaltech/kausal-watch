@@ -1302,17 +1302,20 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return None
         return preview_domains[0]
 
-    def _canonical_domain_candidates(self) -> list[PlanDomain]:
+    def ordered_domains(self) -> list[PlanDomain]:
         """
-        Return the plan's non-redirect domains in priority order.
+        Return all of the plan's domains in priority order, as `find_canonical_domain()` ranks them.
 
         Uses `self.domains.all()` and sorts in Python, so a `prefetch_related('domains')` is
         honoured instead of being bypassed by `order_by()`.
         """
         # Ties break by pk; unsaved in-memory domains (from a bound admin form) have none and
         # sort first, as modelcluster's order_by() would sort them.
-        domains = sorted(self.domains.all(), key=lambda d: (d.order, d.pk is not None, d.pk or 0))
-        return [d for d in domains if not d.redirect_to_hostname]
+        return sorted(self.domains.all(), key=lambda d: (d.order, d.pk is not None, d.pk or 0))
+
+    def _canonical_domain_candidates(self) -> list[PlanDomain]:
+        """Return the plan's non-redirect domains in priority order."""
+        return [d for d in self.ordered_domains() if not d.redirect_to_hostname]
 
     def find_canonical_domain(self) -> PlanDomain | None:
         """
