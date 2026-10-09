@@ -53,7 +53,7 @@ from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.context_vars import ctx_instance, ctx_request
-from aplans.utils import RestrictedVisibilityModel
+from aplans.utils import OrderedModelChildFormSet, RestrictedVisibilityModel
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
@@ -320,6 +320,16 @@ class PlanForm(AplansAdminModelForm[Plan]):
         return instance
 
 
+class PlanDomainsPanel(InlinePanel):
+    """Plan domains, whose order in the form is their priority order."""
+
+    def get_form_options(self):
+        options = super().get_form_options()
+        # Renumber every row on save, so the stored order matches the form's.
+        options['formsets'][self.relation_name]['formset'] = OrderedModelChildFormSet
+        return options
+
+
 class PlanCreateView(AplansCreateView[Plan]):
     def get_success_url(self):
         return reverse('change-admin-plan', kwargs=dict(plan_id=self.instance.id))
@@ -386,7 +396,6 @@ class PlanAdmin(AplansModelAdmin[Plan]):
         FieldPanel('short_identifier'),
         FieldPanel('version_name'),
         FieldPanel('actions_locked'),
-        FieldPanel('site_url'),
         FieldPanel('accessibility_statement_url'),
         FieldPanel('access_request_contact_email'),
         FieldPanel('access_request_eligibility_text'),
@@ -567,7 +576,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
             panels.append(FieldPanel('visibility'))
             panels.append(FieldPanel('theme_identifier'))
             panels.append(
-                InlinePanel(
+                PlanDomainsPanel(
                     'domains',
                     panels=[
                         FieldPanel('hostname'),
@@ -579,6 +588,11 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                         FieldPanel('matomo_analytics_url'),
                     ],
                     heading=_('Domains'),
+                    help_text=_(
+                        'Links to the plan use the first domain in this list that serves the plan: a '
+                        'production domain once the plan is published, a preview domain before that. '
+                        'Domains that redirect elsewhere are skipped.'
+                    ),
                 )
             )
 
@@ -1130,10 +1144,11 @@ class PlanPublishView(
             if not domain.is_preview_surface and domain.publication_status_override != PublicationStatus.UNPUBLISHED
         ]
 
-    def get_preview_url(self):
+    def get_preview_url(self) -> str | None:
+        """Return the address the plan's links will use once it is published."""
         try:
-            return f'https://{self.object.default_hostname()}'
-        except Exception:
+            return self.object.get_view_url(as_live=True)
+        except ValueError:
             return None
 
     def is_scheduled(self):

@@ -99,6 +99,20 @@ synthesised.
 A row with no deployment environment set counts as production. Many older rows have none, and
 treating them as production is the cautious reading: it withholds rather than reveals.
 
+## Which hostname links use
+
+Links to a plan (emails, page URLs, `viewUrl`) need one address, chosen by
+`Plan.find_canonical_domain()`. Rows that redirect elsewhere are skipped. A live plan uses a
+launched production domain if it has one, else a launched preview. A plan that has not launched
+uses a domain whose override publishes it, else a preview, so links never point at a hostname
+that is still dark. With no row chosen, links use the wildcard hostname.
+
+Within each of those rules, the plan's domain order decides. Admins set it in the plan form, and
+new rows go last, so the first row is not necessarily the one in use — a preview listed above
+production is passed over once the plan is live. `report_plan_domains` lists each plan's domains
+in order, marks the one in use, and flags plans where more than one launched production domain
+competes; an alias among them usually belongs in `redirect_to_hostname` instead.
+
 ## Launching does not gate the data
 
 `plan(id:)`, REST and search carry no hostname, so they follow `visibility` alone. A `public`

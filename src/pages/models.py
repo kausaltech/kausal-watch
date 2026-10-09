@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self, cast, override
+from urllib.parse import urlsplit
 
 import graphene
 from django.contrib.contenttypes.models import ContentType
@@ -232,7 +233,8 @@ class AplansPage(SearchableModel['PageQuerySet'], Page):
         root_page = PlanRootPage.objects.get_queryset().ancestor_of(self, inclusive=True).first()
         assert root_page is not None
         site = Site.objects.filter(root_page__translation_key=root_page.translation_key).first()
-        plan = Plan.objects.filter(site=site).first()
+        # Every URL accessor (url, full_url, get_url_parts) resolves the plan's canonical domain.
+        plan = Plan.objects.filter(site=site).prefetch_related('domains').first()
         return plan
 
     @classmethod
@@ -257,11 +259,13 @@ class AplansPage(SearchableModel['PageQuerySet'], Page):
         if not plan:
             return super().get_url_parts(request)
 
-        url_path = self.url_path
-        if self.locale.language_code != plan.primary_language:
-            url_path = f'/{self.locale.language_code}{url_path}'
-
-        return (plan.site_id, plan.site_url, url_path)
+        try:
+            view_url = urlsplit(plan.get_view_url(active_locale=self.locale.language_code))
+        except ValueError:
+            return None
+        # Wagtail returns only the path part when it deems the URL local (a single site, or a request on the
+        # page's own site), so the locale prefix and base path must be in the path part, not the root URL.
+        return (plan.site_id, f'{view_url.scheme}://{view_url.netloc}', view_url.path + self.url_path)
 
     # Disable Wagtail's previews because our hacks make them break
     @property

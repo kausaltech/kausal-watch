@@ -6,7 +6,6 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from itertools import chain
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Generic, Protocol, TypeVar
-from urllib.parse import urlparse
 
 import graphene
 import strawberry
@@ -42,7 +41,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_helpers import ModelAdminAdminButtonsMixin
+from aplans.graphql_helpers import ModelAdminAdminButtonsMixin, validate_client_url
 from aplans.graphql_types import (
     DjangoNode,
     WorkflowStateDescription,
@@ -627,12 +626,11 @@ class PlanNode(DjangoNode[Plan]):
 
     @staticmethod
     def resolve_view_url(root: Plan, info: GQLInfo, client_url: str | None = None):
-        if client_url:
-            try:
-                urlparse(client_url)
-            except Exception:
-                raise GraphQLError('clientUrl must be a valid URL') from None
-        return root.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
+        validate_client_url(client_url)
+        # The request's plan cache has the plan's domains prefetched; `root` may be a separate
+        # instance for every row of a listing, e.g. each indicator's `plans`.
+        plan = info.context.cache.for_plan_id(root.id).plan
+        return plan.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
 
     @staticmethod
     def resolve_admin_url(root: Plan, info: GQLInfo):
@@ -1946,7 +1944,11 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         model_field=('plan', 'identifier'),
     )
     def resolve_view_url(root: Action, info: GQLInfo, client_url: str | None = None):
-        return root.get_view_url(client_url=client_url, request=info.context)
+        validate_client_url(client_url)
+        # The request's plan cache has the plan's domains prefetched; `root.plan` may be a
+        # separate instance for every action in a listing.
+        plan = info.context.cache.for_plan_id(root.plan_id).plan
+        return root.get_view_url(plan=plan, client_url=client_url, request=info.context)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -1977,15 +1979,15 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field=('plan', 'identifier'),
-        select_related=('plan__features',),
+        only=('plan', 'identifier'),
     )
     def resolve_export_pdf(root: Action, info: GQLInfo) -> dict[str, str] | None:
-        plan = root.plan
+        plan = info.context.cache.for_plan_id(root.plan_id).plan
         if not plan.features.enable_action_pdf_export_in_public_ui:
             return None
-        base_url = plan.get_view_url(request=info.context)
-        if not base_url:
+        try:
+            base_url = plan.get_view_url(request=info.context)
+        except ValueError:
             return None
         return {
             'url': '%s/api/export-pdf' % base_url.rstrip('/'),

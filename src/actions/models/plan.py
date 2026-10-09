@@ -892,11 +892,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         return self if self.is_visible_for_user(user) else None
 
     def create_default_site(self, hostname=None):
-        if hostname is None:
-            parsed_url = urlparse(self.site_url)
-            hostname = parsed_url.hostname
         if self.site is not None:
             return
+        if hostname is None:
+            hostname = self.default_hostname()
+            if not hostname:
+                raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
         root_page = self.create_default_pages()
         site = Site(site_name=self.name, hostname=hostname, root_page=root_page)
         site.save()
@@ -1013,7 +1014,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def get_site_notification_context(self):
         return dict(
-            view_url=self.site_url,
+            view_url=self.get_view_url(),
             title=self.general_content.site_title,
         )
 
@@ -1195,14 +1196,23 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             return ''
         return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
+    @staticmethod
+    def _scheme_for_hostname(hostname: str) -> str:
+        return 'http' if hostname == 'localhost' or hostname.endswith('.localhost') else 'https'
+
     def get_view_url(  # noqa: C901, PLR0912
         self,
         client_url: str | None = None,
         active_locale: str | None = None,
         request: WatchRequest | WatchGraphQLContext | None = None,
+        *,
+        as_live: bool = False,
     ) -> str:
         """
         Return an URL for the homepage of the plan.
+
+        With `as_live`, return the URL the plan's links will use once it is live, as
+        `find_canonical_domain(as_live=True)` picks it.
 
         If `client_url` is given, try to return the URL that matches the supplied
         `client_url` the best:
@@ -1259,14 +1269,73 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 port_str = ':%s' % port
             else:
                 port_str = ''
-            return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
-        else:  # noqa: RET505
-            assert self.site_url is not None
-            if self.site_url.startswith('http'):
-                url = self.site_url.rstrip('/')
-            else:
-                url = 'https://%s' % self.site_url
-            return f'{url}{locale_prefix}'
+            return '%s://%s%s%s%s' % (scheme, hostname, port_str, locale_prefix, base_path)
+
+        return self.view_url_for_domain(self.find_canonical_domain(as_live=as_live), locale_prefix)
+
+    def view_url_for_domain(self, domain: PlanDomain | None, locale_prefix: str = '') -> str:
+        """
+        Return the URL of the plan's homepage on `domain`, or on the default hostname when it is None.
+
+        For a caller that already has the result of `find_canonical_domain()`. Raises ValueError
+        when `domain` is None and the plan has no default hostname.
+        """
+        if domain is not None:
+            bp = (domain.base_path or '').rstrip('/')
+            scheme = self._scheme_for_hostname(domain.hostname)
+            return f'{scheme}://{domain.hostname}{locale_prefix}{bp}'
+
+        hostname = self.default_hostname()
+        if not hostname:
+            raise ValueError(f"Cannot determine hostname for plan '{self.identifier}': no hostname plan domains configured")
+        scheme = self._scheme_for_hostname(hostname)
+        return f'{scheme}://{hostname}{locale_prefix}'
+
+    def _first_production_domain(self, candidates: list[PlanDomain]) -> PlanDomain | None:
+        production = [d for d in candidates if not d.is_preview_surface]
+        if not production:
+            return None
+        return production[0]
+
+    def _find_launched_canonical_domain(self, domains: list[PlanDomain], as_live: bool = False) -> PlanDomain | None:
+        launched_domains = [d for d in domains if (d.is_launched_once_live if as_live else d.is_launched)]
+        if not launched_domains:
+            return None
+        return self._first_production_domain(launched_domains) or launched_domains[0]
+
+    def ordered_domains(self) -> list[PlanDomain]:
+        """
+        Return all of the plan's domains in priority order, as `find_canonical_domain()` ranks them.
+
+        Uses `self.domains.all()` and sorts in Python, so a `prefetch_related('domains')` is
+        honoured instead of being bypassed by `order_by()`.
+        """
+        # Ties break by pk; unsaved in-memory domains (from a bound admin form) have none and
+        # sort first, as modelcluster's order_by() would sort them.
+        return sorted(self.domains.all(), key=lambda d: (d.order, d.pk is not None, d.pk or 0))
+
+    def _canonical_domain_candidates(self) -> list[PlanDomain]:
+        """Return the plan's non-redirect domains in priority order."""
+        return [d for d in self.ordered_domains() if not d.redirect_to_hostname]
+
+    def find_canonical_domain(self, *, as_live: bool = False) -> PlanDomain | None:
+        """
+        Find the best PlanDomain to use as the canonical URL for this plan.
+
+        Filters out redirect domains and considers only the domains that serve the plan's
+        site (`PlanDomain.is_launched`). Among those, a production domain is preferred; a
+        domain with no deployment environment counts as production, as in
+        `PlanDomain.is_preview_surface`. Before the plan is live, production domains are
+        launched only by a PUBLISHED override, so the URL usually falls back to a
+        preview/development domain or the wildcard. Otherwise, the plan's domain order decides.
+
+        With `as_live`, judge launch by `PlanDomain.is_launched_once_live`, i.e. as if the
+        plan were live already.
+        """
+        domains = self._canonical_domain_candidates()
+        if not domains:
+            return None
+        return self._find_launched_canonical_domain(domains, as_live=as_live)
 
     @classmethod
     def create_with_defaults(
@@ -1277,8 +1346,6 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         organization: Organization,
         other_languages: list[str] | None = None,
         short_name: str | None = None,
-        base_path: str | None = None,
-        hostname: str | None = None,
         client_name: str | None = None,
         country: str | None = None,
     ) -> Plan:
@@ -1303,26 +1370,18 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client, is_primary=True)
-        return cls.apply_defaults(plan, hostname=hostname, base_path=base_path)
+        return cls.apply_defaults(plan)
 
     @classmethod
     @transaction.atomic()
     def apply_defaults(
         cls,
         plan: Plan,
-        base_path: str | None = None,
-        hostname: str | None = None,
     ) -> Plan:
         from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
 
         plan.statuses_updated_manually = True
-        if not hostname:
-            hostname = plan.default_hostname()
-        site_url = f'https://{hostname}'
-        if base_path:
-            site_url += '/' + base_path.strip('/')
-        plan.site_url = site_url
-        plan.create_default_site(hostname)
+        plan.create_default_site()
         plan.save()
 
         with translation.override(plan.primary_language):
@@ -1350,18 +1409,28 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
 
-    def default_hostname(self) -> str:
-        """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
+    def default_hostname(self) -> str | None:
+        """
+        Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost.
+
+        In development, fall back to localhost when it is the only item.
+        """
         hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
         try:
-            default_domain = next(iter(hostname_plan_domains))
-        except StopIteration as e:
-            raise Exception('Cannot create default hostname if no hostname plan domains are configured') from e
+            default_domain = next(hostname_plan_domains)
+        except StopIteration:
+            if settings.DEPLOYMENT_TYPE == 'development':
+                try:
+                    default_domain = next(iter(settings.HOSTNAME_PLAN_DOMAINS))
+                except StopIteration:
+                    return None
+            else:
+                return None
         if COUNTRY_PLACEHOLDER in default_domain:
             country = cast('Country | None', self.country)
             country_code = country.code.lower() if country is not None and country.code is not None else None
             if not country_code:
-                raise Exception(f"Plan '{self.identifier}' has no country set; cannot resolve wildcard domain '{default_domain}'")
+                return None
             default_domain = default_domain.replace(COUNTRY_PLACEHOLDER, country_code, 1)
         return f'{self.identifier}.{default_domain}'
 
@@ -1722,8 +1791,13 @@ def is_valid_hostname(hostname: str):
         raise ValidationError('Invalid hostname format')
 
 
-class PlanDomain(models.Model):
-    """A domain (hostname) where an UI for a Plan might live."""
+class PlanDomain(OrderedModel):
+    """
+    A domain (hostname) where an UI for a Plan might live.
+
+    The order is the plan's priority order: among the domains the rules in
+    `Plan.find_canonical_domain()` allow, the first one is the plan's canonical address.
+    """
 
     class DeploymentEnvironment(models.TextChoices):
         PRODUCTION = 'production', _('Production')
@@ -1801,6 +1875,7 @@ class PlanDomain(models.Model):
         verbose_name = _('plan domain')
         verbose_name_plural = _('plan domains')
         unique_together = (('hostname', 'base_path'),)
+        ordering = ('plan_id', 'order')
 
     def __str__(self) -> str:
         s = str(self.hostname)
@@ -1815,6 +1890,9 @@ class PlanDomain(models.Model):
         yield 'hostpath', hostpath
         yield 'plan', self.plan.identifier
         yield 'deployment_environment', self.deployment_environment
+
+    def filter_siblings(self, qs: models.QuerySet[PlanDomain]) -> models.QuerySet[PlanDomain]:
+        return qs.filter(plan=self.plan)
 
     @property
     def is_preview_surface(self) -> bool:
@@ -1845,6 +1923,13 @@ class PlanDomain(models.Model):
         if self.is_preview_surface:
             return True
         return self.plan.is_live()
+
+    @property
+    def is_launched_once_live(self) -> bool:
+        """Whether this hostname will serve the plan's site once the plan is live."""
+        if self.publication_status_override is not None:
+            return self.publication_status_override == PublicationStatus.PUBLISHED
+        return True
 
     def availability_for_user(self, user: UserOrAnon | None) -> PlanDomainAvailability:
         """

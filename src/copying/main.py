@@ -890,7 +890,6 @@ class CloneVisitor(AbstractVisitor):
         site_copy = self.get_copy(instance.site)
         assert site_copy
         instance.site = site_copy
-        instance.site_url = f'https://{site_copy.hostname}'
         # TODO: Ideally it should be configurable whether 'published_at` is reset
         instance.published_at = None
         # Clearing `published_at` only keeps the production hostname dark; the copy must also stop
@@ -1646,6 +1645,8 @@ def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
     old_plan.identifier = new_plan_identifier
     new_site_hostname = old_plan.default_hostname()
     old_plan.identifier = old_identifier
+    if not new_site_hostname:
+        raise ValueError(f"Cannot determine hostname for plan '{new_plan_identifier}': no hostname plan domains configured")
     return new_site_hostname
 
 

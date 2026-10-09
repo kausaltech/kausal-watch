@@ -26,9 +26,9 @@ from aplans.utils import RestrictedVisibilityModel
 
 from actions.models import Plan
 from actions.models.plan import PlanDomain, PublicationStatus
-from actions.tests.factories import PlanDomainFactory
+from actions.tests.factories import PlanDomainFactory, PlanFactory
 from actions.tests.test_change_log_graphql import make_plan_admin
-from actions.wagtail_admin import LiveStateColumn
+from actions.wagtail_admin import LiveStateColumn, PlanPublishView
 
 pytestmark = pytest.mark.django_db
 
@@ -147,7 +147,9 @@ class TestPublishConfirmationAddresses:
 
         content = _admin_page(client, plan, _publish_url(plan))
 
-        assert 'https://preview.example.org' not in content
+        # The warning names it as where the plan's links will point, but not as a production address.
+        assert '<li><strong><a href="https://preview.example.org"' not in content
+        assert 'because no production domains have been configured' in content
 
     def test_the_base_path_is_part_of_the_address(self, client, plan_factory):
         """On a multi-plan site the hostname alone points at another plan."""
@@ -220,3 +222,42 @@ class TestLiveState:
         stylesheet = finders.find('css/admin-styles.css')
         assert isinstance(stylesheet, str)
         assert f'.{status_class} {{' in Path(stylesheet).read_text(encoding='utf-8')
+
+
+def _preview_url(plan: Plan) -> str | None:
+    view = PlanPublishView()
+    view.object = plan
+    return view.get_preview_url()
+
+
+class TestPreviewURL:
+    """The address the publish confirmation shows when a plan has no production domains."""
+
+    @pytest.fixture
+    def unpublished_plan(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+        return PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+
+    def test_shows_the_wildcard_address_without_domains(self, unpublished_plan):
+        assert _preview_url(unpublished_plan) == 'https://myplan.example.com'
+
+    def test_shows_the_preview_domain_links_will_use(self, unpublished_plan):
+        PlanDomainFactory.create(
+            plan=unpublished_plan,
+            hostname='preview.city.gov',
+            base_path='/climate',
+            deployment_environment=PlanDomain.DeploymentEnvironment.PREVIEW,
+        )
+        assert _preview_url(unpublished_plan) == 'https://preview.city.gov/climate'
+
+    def test_falls_back_to_localhost_in_development(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        settings.DEPLOYMENT_TYPE = 'development'
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        assert _preview_url(plan) == 'http://myplan.localhost'
+
+    def test_is_none_when_no_address_can_be_resolved(self, settings):
+        settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+        settings.DEPLOYMENT_TYPE = 'production'
+        plan = PlanFactory.create(identifier='myplan', primary_language='en', published_at=None)
+        assert _preview_url(plan) is None

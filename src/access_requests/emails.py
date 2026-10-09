@@ -34,15 +34,23 @@ if TYPE_CHECKING:
 logger = logger.bind(name='access_requests.emails')
 
 
-def may_set_password(req: AccessRequest, user: User | None) -> bool:
+def get_plan_url(plan: Plan) -> str | None:
+    """Return the public URL of the plan's site, or None when no hostname can be resolved for it."""
+    try:
+        return plan.get_view_url()
+    except ValueError:
+        return None
+
+
+def may_set_password(req: AccessRequest, user: User | None, plan_url: str | None) -> bool:
     """
     Tell whether `user` may set their password through the approval of `req`.
 
     Nobody who signs in some other way may: an SSO user has no usable password, and someone who
     has signed in before already has their credentials and did not ask for a reset. The plan must
-    have a site to send them to afterwards.
+    have a site to send them to afterwards; `plan_url` is its URL, as `get_plan_url()` returns it.
     """
-    if req.status != AccessRequest.Status.APPROVED or req.person is None or not req.plan.site_url:
+    if req.status != AccessRequest.Status.APPROVED or req.person is None or not plan_url:
         return False
     if user is None or req.person.user != user:
         return False
@@ -51,10 +59,10 @@ def may_set_password(req: AccessRequest, user: User | None) -> bool:
     return user.has_usable_password() and user.last_login is None
 
 
-def make_set_password_url(req: AccessRequest) -> str | None:
+def make_set_password_url(req: AccessRequest, plan_url: str | None) -> str | None:
     """Return a one-time link for the approved requester to set their password, if they may."""
     user = req.person.user if req.person is not None else None
-    if user is None or not may_set_password(req, user):
+    if user is None or not may_set_password(req, user, plan_url):
         return None
     kwargs = {
         'pk': req.pk,
@@ -76,9 +84,8 @@ class _Content(TypedDict):
     button: NotRequired[_Button]
 
 
-def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
-    plan = req.plan
-    set_password_url = make_set_password_url(req)
+def _approved_content(req: AccessRequest, plan_name: str, plan_url: str | None) -> _Content:
+    set_password_url = make_set_password_url(req, plan_url)
     content: _Content = {
         'subject': _('Your access to %(plan_name)s has been approved') % {'plan_name': plan_name},
         'heading': _('Your access has been approved'),
@@ -88,11 +95,11 @@ def _approved_content(req: AccessRequest, plan_name: str) -> _Content:
     }
 
     if set_password_url is None:
-        if not plan.site_url:
+        if not plan_url:
             content['paragraphs'].append(_('You can sign in with this email address.'))
             return content
-        content['paragraphs'].append(_('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan.site_url})
-        content['button'] = {'label': _('Sign in'), 'url': plan.site_url}
+        content['paragraphs'].append(_('You can sign in at %(plan_url)s with this email address.') % {'plan_url': plan_url})
+        content['button'] = {'label': _('Sign in'), 'url': plan_url}
         return content
     days = int(settings.PASSWORD_RESET_TIMEOUT / (60 * 60 * 24))
     content['paragraphs'].append(
@@ -119,10 +126,10 @@ def _rejected_content(req: AccessRequest, plan_name: str) -> _Content:
     }
 
 
-def _site_context(plan: Plan) -> dict[str, str]:
+def _site_context(plan: Plan, plan_url: str | None) -> dict[str, str]:
     general_content = getattr(plan, 'general_content', None)
     return {
-        'view_url': plan.site_url or '',
+        'view_url': plan_url or '',
         'title': (general_content.site_title if general_content else '') or plan.name_i18n,
     }
 
@@ -130,8 +137,9 @@ def _site_context(plan: Plan) -> dict[str, str]:
 def _build_message(req: AccessRequest) -> EmailMessage:
     plan = req.plan
     plan_name = plan.name_i18n
+    plan_url = get_plan_url(plan)
     if req.status == AccessRequest.Status.APPROVED:
-        content = _approved_content(req, plan_name)
+        content = _approved_content(req, plan_name, plan_url)
     elif req.status == AccessRequest.Status.REJECTED:
         content = _rejected_content(req, plan_name)
     else:
@@ -150,7 +158,7 @@ def _build_message(req: AccessRequest) -> EmailMessage:
 
     context = {
         'title': content['heading'],
-        'site': _site_context(plan),
+        'site': _site_context(plan, plan_url),
         'paragraphs': content['paragraphs'],
         'button': button,
         'footer': footer,

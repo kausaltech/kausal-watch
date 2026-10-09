@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 
 import pytest
 
-from admin_site.wagtail import QueryParameterButtonHelper
+from actions.tests.factories import ActionFactory, PlanDomainFactory
+from admin_site.wagtail import AplansButtonHelper, QueryParameterButtonHelper
 
 
 class ConcreteQueryParameterButtonHelper(QueryParameterButtonHelper):
@@ -162,3 +165,17 @@ class TestQueryParameterButtonHelperEdgeCases:
         assert 'title' in result
         # And our query parameter is added
         assert '?test_param=123' in result['url']
+
+
+@pytest.mark.django_db
+def test_view_live_buttons_look_up_plan_domains_once(view, rf, plan, plan_admin_user):
+    PlanDomainFactory.create(plan=plan, hostname='custom.city.gov')
+    actions = [ActionFactory.create(plan=plan) for _ in range(3)]
+    request = rf.get('/admin/')
+    request.user = plan_admin_user
+    helper = AplansButtonHelper(view, request)
+    assert plan_admin_user.get_active_admin_plan() == plan
+    with CaptureQueriesContext(connection) as ctx:
+        buttons = [helper.view_live_button(action) for action in actions]
+    assert all(button is not None for button in buttons)
+    assert sum(1 for q in ctx.captured_queries if 'actions_plandomain' in q['sql']) <= 1

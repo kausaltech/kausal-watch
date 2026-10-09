@@ -5,13 +5,15 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any
 
 import graphene
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from wagtail.models import Page
 
 from grapple.types.interfaces import get_page_interface
 from loguru import logger
+
+from aplans.graphql_helpers import validate_client_url
 
 from actions.models import Action, Plan
 from actions.schema import ActionNode
@@ -63,20 +65,22 @@ class SearchHit(graphene.ObjectType[SearchHitObj]):
         if not plan or not plan.is_visible_for_user(info.context.user):
             return None
 
-        # Check if this is a search result from other plans, we want to use the site_url for these.
+        # Search results from other plans link to their canonical URL, not one matching the client URL.
         only_other_plans = getattr(info.context, 'only_other_plans', False)
         if only_other_plans:
             client_url = None
+        validate_client_url(client_url)
 
         search_hit_object = root.object
         page = root.page
         if search_hit_object is not None:
             return search_hit_object.get_view_url(plan=plan, client_url=client_url, request=info.context)
         if page is not None:
-            parts = page.get_url_parts(request=info.context)
-            if parts is None:
+            try:
+                root_url = plan.get_view_url(client_url=client_url, active_locale=page.locale.language_code, request=info.context)
+            except ValueError:
                 return None
-            return '%s%s' % (plan.get_view_url(client_url=client_url, request=info.context), parts[2])
+            return '%s%s' % (root_url, page.url_path)
         return None
 
 
@@ -128,6 +132,9 @@ class SearchResults(graphene.ObjectType[Any]):
             if highlights:
                 hit.highlight = highlights[0]
             res.append(hit)
+        # Every hit's URL is built from its plan's domains, and each action hit has its own
+        # instance of the plan; fetch the domains of all of them in one query.
+        prefetch_related_objects([hit.plan for hit in res], 'domains')
         return res
 
 

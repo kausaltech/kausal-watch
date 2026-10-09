@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.db.models import prefetch_related_objects
 from django.utils import translation
 
-from sentry_sdk import capture_exception
+from anymail.exceptions import AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError
+from sentry_sdk import capture_exception, capture_message, new_scope
 
 from aplans.email_sender import EmailSender
 
@@ -34,16 +37,18 @@ from .notifications import (
 )
 from .queue import NotificationQueue
 from .recipients import PersonRecipient
+from .utils import NonPublicURLError, public_urls_required, validate_notification_context_urls
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from actions.models import Action, Plan
     from feedback.models import UserFeedback
     from indicators.models import Indicator
 
-    from .models import AutomaticNotificationTemplate
+    from .models import AutomaticNotificationTemplate, BaseTemplate
     from .notifications import Notification
+    from .queue import NotificationQueueItem
     from .recipients import NotificationRecipient
 
 # The admin interface's look, for emails about the admin rather than the plan.
@@ -55,6 +60,13 @@ ADMIN_THEME = {
     'link_in_brand_bg_color': '#ffffff',
 }
 
+# How many distinct reasons for skipped messages one Sentry report lists.
+MAX_REPORTED_SKIP_REASONS = 3
+
+# Mail provider statuses that refuse the request as a whole (credentials, rate limits), so every
+# later message in the run would fail the same way.
+PROVIDER_WIDE_CLIENT_ERRORS = frozenset({401, 403, 429})
+
 logger = getLogger(__name__)
 
 TASK_DUE_SOON_DAYS = 30
@@ -63,6 +75,28 @@ UPDATED_INDICATOR_VALUES_DUE_SOON_DAYS = 30
 
 class InvalidStateException(Exception):  # noqa: N818
     pass
+
+
+@dataclass(frozen=True)
+class OutgoingMessage:
+    msg: EmailMessage
+    queue_items: Sequence[NotificationQueueItem]
+    recipient: NotificationRecipient
+
+
+def rejects_only_this_message(error: AnymailInvalidAddress | AnymailRecipientsRefused | AnymailRequestsAPIError) -> bool:
+    """
+    Tell whether a mail provider error concerns only the message being sent.
+
+    Such a message (e.g. one with an invalid recipient address) is skipped so that it does not stop
+    the run. Network errors, server errors and errors with the provider account affect every message.
+    """
+    if not isinstance(error, AnymailRequestsAPIError):
+        return True
+    status_code = error.status_code
+    if status_code is None:
+        return False
+    return 400 <= status_code < 500 and status_code not in PROVIDER_WIDE_CLIENT_ERRORS
 
 
 class NotificationEngine:
@@ -82,6 +116,8 @@ class NotificationEngine:
         if now is None:
             now = plan.now_in_local_timezone()
 
+        # Every message builds plan and object URLs from the plan's domains.
+        prefetch_related_objects([plan], 'domains')
         self.plan = plan
         self.now = now
         self.force_to = force_to
@@ -302,6 +338,7 @@ class NotificationEngine:
                 **theme_context,
                 **context,
             )
+            validate_notification_context_urls(context, allow_localhost=not public_urls_required())
 
             rendered['html_body'] = render_mjml_from_template(
                 template.type,
@@ -312,7 +349,38 @@ class NotificationEngine:
 
         return rendered
 
-    def generate_notifications(self):  # noqa: C901, PLR0912, PLR0915
+    def _render_message(
+        self,
+        queue_items: Sequence[NotificationQueueItem],
+        base_template: BaseTemplate,
+        template: AutomaticNotificationTemplate | ManuallyScheduledNotificationTemplate,
+        recipient_context: dict,
+    ) -> dict:
+        notification = queue_items[0].notification
+        content_blocks = notification.get_content_blocks(base_template, template)
+
+        context = {
+            'items': [item.notification.get_context() for item in queue_items],
+            'content_blocks': content_blocks,
+            'site': dict(self.site_context),
+            **recipient_context,
+        }
+
+        if not notification.uses_plan_theme:
+            # Presented as coming from the admin interface: no plan logo, and the header
+            # leads to the admin rather than the plan's public site.
+            context.pop('logo', None)
+            context['site'] = {
+                'title': f'Kausal Watch · {self.plan.name_i18n}',
+                'view_url': settings.ADMIN_BASE_URL,
+            }
+            context['plan_name'] = self.plan.name_i18n
+
+        # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
+        # For now, use primary language of plan instead of the recipient's preferred language
+        return self.render(template, context, plan_theme=notification.uses_plan_theme)
+
+    def generate_notifications(self):  # noqa: C901
         self.queue = NotificationQueue()
         self.action_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
         self.indicator_contact_person_recipients: dict[int, Sequence[NotificationRecipient]] = {}
@@ -322,6 +390,8 @@ class NotificationEngine:
         self._fetch_data()
 
         base_template = self.plan.notification_base_template
+        # The same for every message, so resolved once; a plan without a public URL fails here, before anything is sent.
+        self.site_context = self.plan.get_site_notification_context()
         self.templates_by_type = {t.type: t for t in base_template.templates.all()}
 
         for task in self.active_tasks:
@@ -369,9 +439,68 @@ class NotificationEngine:
         ):
             self.generate_manually_scheduled_notification(manually_scheduled_notification_template)
 
-        notification_count = 0
-        email_sender = EmailSender(plan=self.plan)
+        self.skipped_messages: list[str] = []
+        try:
+            self._send_notifications(base_template)
+        finally:
+            self._report_skipped_messages()
 
+    def _report_skipped_messages(self) -> None:
+        if not self.skipped_messages:
+            return
+        # The cause is usually shared by every message (e.g. a misconfigured URL setting), so report it once.
+        # The reasons name each message's own URLs; the fingerprint keeps the runs in one Sentry issue per plan.
+        reasons = sorted(set(self.skipped_messages))
+        shown = '; '.join(reasons[:MAX_REPORTED_SKIP_REASONS])
+        if len(reasons) > MAX_REPORTED_SKIP_REASONS:
+            shown += f'; and {len(reasons) - MAX_REPORTED_SKIP_REASONS} more'
+        with new_scope() as scope:
+            scope.fingerprint = ['notifications-skipped-messages', self.plan.identifier]
+            capture_message(
+                f'{len(self.skipped_messages)} notification message(s) for plan {self.plan.identifier} were skipped: {shown}',
+                level='error',
+            )
+
+    def _send_notifications(self, base_template: BaseTemplate) -> None:
+        """
+        Send each queued message as soon as it is rendered, and record it as sent once it has gone out.
+
+        A message that cannot be built for a known reason (a non-public URL), that the mail backend
+        does not accept, or that the mail provider rejects on its own (e.g. for an invalid recipient
+        address) is skipped unrecorded and reported once per run; the plan's run completes, so it is
+        retried on the plan's next daily run. Any other error, including a failing connection or a
+        provider error that would affect every message, stops the run; the daily command then
+        retries the plan on its next hourly pass, and messages already sent stay recorded.
+
+        Delivery is at least once: a message sent just before a failure to record it goes out again.
+        """
+        with EmailSender(plan=self.plan) as email_sender:
+            for count, outgoing in enumerate(self._build_messages(base_template), start=1):
+                if not self.noop:
+                    self._deliver(email_sender, outgoing)
+                if self.limit and count >= self.limit:
+                    return
+
+    def _deliver(self, email_sender: EmailSender, outgoing: OutgoingMessage) -> None:
+        try:
+            accepted = email_sender.send(outgoing.msg)
+        except (AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError) as e:
+            if not rejects_only_this_message(e):
+                raise
+            # Left unrecorded, so it is tried again on the next run.
+            logger.error(str(e))
+            self.skipped_messages.append(f'The mail provider rejected the message to {outgoing.msg.to}: {e}')
+            return
+        if not accepted:
+            # Left unrecorded, so it is tried again on the next run.
+            self.skipped_messages.append(f'The mail backend did not accept the message to {outgoing.msg.to}')
+            return
+        if self.force_to:
+            # Only a copy went out; the real recipient still needs the message.
+            return
+        self._mark_sent(outgoing.queue_items, outgoing.recipient)
+
+    def _build_messages(self, base_template: BaseTemplate) -> Iterator[OutgoingMessage]:  # noqa: C901, PLR0912
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
                 continue
@@ -398,29 +527,14 @@ class NotificationEngine:
                             continue
                         template = automatic_template
 
-                    notification = queue_items[0].notification
-                    content_blocks = notification.get_content_blocks(base_template, template)
-
-                    context = {
-                        'items': [item.notification.get_context() for item in queue_items],
-                        'content_blocks': content_blocks,
-                        'site': self.plan.get_site_notification_context(),
-                        **recipient_context,
-                    }
-
-                    if not notification.uses_plan_theme:
-                        # Presented as coming from the admin interface: no plan logo, and the header
-                        # leads to the admin rather than the plan's public site.
-                        context.pop('logo', None)
-                        context['site'] = {
-                            'title': f'Kausal Watch · {self.plan.name_i18n}',
-                            'view_url': settings.ADMIN_BASE_URL,
-                        }
-                        context['plan_name'] = self.plan.name_i18n
-
-                    # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
-                    # For now, use primary language of plan instead of the recipient's preferred language
-                    rendered = self.render(template, context, plan_theme=notification.uses_plan_theme)
+                    # render() checks that every URL in the message is public. A message that fails is skipped
+                    # unmarked so the others still go out; it is retried on the next run.
+                    try:
+                        rendered = self._render_message(queue_items, base_template, template, recipient_context)
+                    except NonPublicURLError as e:
+                        logger.error(str(e))
+                        self.skipped_messages.append(str(e))
+                        continue
 
                     if self.force_to:
                         to_email = self.force_to
@@ -444,19 +558,11 @@ class NotificationEngine:
                             s = '\t%s' % str(item.notification.obj)
                         nstr.append(s)
                     logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
+                    yield OutgoingMessage(msg=msg, queue_items=queue_items, recipient=recipient)
 
-                    email_sender.queue(msg)
-                    if not self.force_to and not self.noop:
-                        for item in queue_items:
-                            item.notification.mark_sent(recipient, now=self.now)
-                    notification_count += 1
-                    if self.limit and notification_count >= self.limit:
-                        if not self.noop:
-                            email_sender.send_all()
-                        return
-        if self.noop:
-            return
-        email_sender.send_all()
+    def _mark_sent(self, queue_items: Sequence[NotificationQueueItem], recipient: NotificationRecipient) -> None:
+        for item in queue_items:
+            item.notification.mark_sent(recipient, now=self.now)
 
     def queue_notification(self, notification: Notification, recipient: NotificationRecipient):
         item = recipient.queue_item(notification)

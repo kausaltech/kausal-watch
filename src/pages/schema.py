@@ -11,6 +11,7 @@ from loguru import logger
 
 from kausal_common.graphene.registry import register_graphene_node
 
+from aplans.graphql_helpers import validate_client_url
 from aplans.graphql_types import get_plan_from_context
 
 from pages.models import AplansPage
@@ -74,11 +75,15 @@ class PageMenuItemNode(graphene.ObjectType[MenuItemBase]):
     @staticmethod
     def resolve_view_url(root: MenuItemBase, info: GQLInfo, client_url: str | None = None) -> str | None:
         page = root.page
-        plan = page.plan
+        # The request's plan cache has the plan with its domains prefetched; `page.plan` would
+        # look the plan up again for every menu item.
+        plan_cache = info.context.cache.for_page_path(page.path)
+        plan = plan_cache.plan if plan_cache is not None else page.plan
         if plan is None:
             return None
         if not client_url:
             client_url = info.variable_values.get('clientUrl')
+        validate_client_url(client_url)
         view_url = plan.get_view_url(client_url=client_url, request=info.context)
         return view_url
 

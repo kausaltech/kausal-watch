@@ -12,7 +12,7 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Model, ProtectedError
+from django.db.models import Model, ProtectedError, prefetch_related_objects
 from django.forms.models import ModelForm
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
@@ -481,7 +481,10 @@ class AplansButtonHelper(ButtonHelper):
             url = obj.get_view_url(request=request)
         else:
             user = user_or_bust(self.request.user)
-            url = obj.get_view_url(plan=user.get_active_admin_plan(), request=request)
+            plan = user.get_active_admin_plan()
+            # The button is built for every row of a listing, all for the same plan instance.
+            prefetch_related_objects([plan], 'domains')
+            url = obj.get_view_url(plan=plan, request=request)
         if not url:
             return None
 

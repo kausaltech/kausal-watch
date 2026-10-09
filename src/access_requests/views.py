@@ -16,7 +16,7 @@ from kausal_common.users import user_or_bust
 
 from notifications.models import DEFAULT_BRAND_DARK_COLOR, DEFAULT_FONT_FAMILY
 
-from .emails import may_set_password, send_decision_email
+from .emails import get_plan_url, may_set_password, send_decision_email
 from .models import AccessRequest
 from .services import AccessRequestNotPendingError, approve_access_request, reject_access_request
 
@@ -107,7 +107,7 @@ class SetPasswordView(auth_views.PasswordResetConfirmView):
     def get_user(self, uidb64: str) -> User | None:
         user = super().get_user(uidb64)
         # Anyone the request does not vouch for gets the same "invalid link" page as a bad token.
-        if not may_set_password(self.access_request, user):
+        if not may_set_password(self.access_request, user, get_plan_url(self.access_request.plan)):
             return None
         return user
 
@@ -115,7 +115,7 @@ class SetPasswordView(auth_views.PasswordResetConfirmView):
         context = super().get_context_data(**kwargs)
         plan = self.access_request.plan
         context['plan_name'] = plan.name_i18n
-        context['plan_url'] = plan.site_url or ''
+        context['plan_url'] = get_plan_url(plan) or ''
         general_content = getattr(plan, 'general_content', None)
         context['site_title'] = (general_content.site_title if general_content else '') or plan.name_i18n
         # The public UI's theme is not available here, so borrow the branding of the plan's emails.

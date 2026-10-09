@@ -3,9 +3,13 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from django.core import mail
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import translation
 
 import pytest
+from anymail.exceptions import AnymailInvalidAddress, AnymailRecipientsRefused, AnymailRequestsAPIError
+from requests import Response
 
 from actions.models.action import Action
 from actions.models.public_user import PublicUser
@@ -14,6 +18,7 @@ from actions.tests.factories import (
     ActionFactory,
     ActionResponsiblePartyFactory,
     ActionTaskFactory,
+    PlanDomainFactory,
     PlanFactory,
 )
 from admin_site.tests.factories import ClientFactory, ClientPlanFactory
@@ -27,6 +32,7 @@ from notifications.tests.factories import (
     BaseTemplateFactory,
     ManuallyScheduledNotificationTemplateFactory,
 )
+from notifications.utils import NonPublicURLError
 from orgs.tests.factories import OrganizationPlanAdminFactory
 from people.tests.factories import PersonFactory
 
@@ -539,3 +545,293 @@ def test_i18n(plan: Plan, plan_admin_person: Person):
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
     engine.generate_notifications()
     assert 'Hallo' in mail.outbox[0].body
+
+
+def test_localhost_admin_url_skips_messages_and_reports_once(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    settings.ADMIN_BASE_URL = 'http://localhost:8000'
+    plan = PlanFactory.create()
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, now=now)
+    with (
+        patch('notifications.engine.capture_message') as capture_message,
+        patch('notifications.engine.capture_exception') as capture_exception,
+        patch('notifications.engine.new_scope') as new_scope,
+    ):
+        engine.generate_notifications()
+    capture_exception.assert_not_called()
+    # The per-message URLs vary between runs, so the report is grouped by plan rather than by its text.
+    assert new_scope.return_value.__enter__.return_value.fingerprint == ['notifications-skipped-messages', plan.identifier]
+    # Both messages fail for the same reason; that is one problem, reported once.
+    capture_message.assert_called_once()
+    report = capture_message.call_args.args[0]
+    assert '2 ' in report
+    assert 'localhost' in report
+    assert capture_message.call_args.kwargs['level'] == 'error'
+    assert len(mail.outbox) == 0
+    assert not SentNotification.objects.exists()
+
+
+def test_unresolvable_plan_url_fails_the_run(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.ADMIN_BASE_URL = 'https://admin.example.com'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    # The deploy checks rule this configuration out; if it happens anyway, nothing goes out.
+    with pytest.raises(ValueError, match='Cannot determine hostname'):
+        engine.generate_notifications()
+    assert len(mail.outbox) == 0
+    assert not SentNotification.objects.exists()
+
+
+@pytest.mark.parametrize('deployment_type', ['development', 'ci'])
+def test_localhost_allowed_in_development_and_ci(settings, deployment_type):
+    settings.DEPLOYMENT_TYPE = deployment_type
+    settings.ADMIN_BASE_URL = 'http://localhost:8000'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    due_at = now.date() - timedelta(days=1)
+    task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
+
+
+def test_message_failing_url_validation_does_not_block_or_mark_others(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = PlanFactory.create()
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, now=now)
+
+    original_render = NotificationEngine.render
+    calls = 0
+
+    def render_failing_first(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise NonPublicURLError('Notification context contains non-public URLs: site.view_url: https://plan.test/')
+        return original_render(self, *args, **kwargs)
+
+    with (
+        patch.object(NotificationEngine, 'render', render_failing_first),
+        patch('notifications.engine.capture_message') as capture_message,
+    ):
+        engine.generate_notifications()
+
+    assert calls == 2
+    assert len(mail.outbox) == 1
+    capture_message.assert_called_once()
+    assert '1 ' in capture_message.call_args.args[0]
+    # Only the message that went out is recorded as sent; the failed one is retried on the next run.
+    assert SentNotification.objects.count() == 1
+
+
+def _plan_with_two_messages():
+    plan = PlanFactory.create()
+    base = BaseTemplateFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_LATE.identifier)
+    AutomaticNotificationTemplateFactory.create(base=base, type=NotificationType.TASK_DUE_SOON.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for due_at in (now.date() - timedelta(days=1), now.date() + timedelta(days=1)):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=due_at)
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    return NotificationEngine(plan, now=now)
+
+
+def test_failure_while_sending_leaves_no_message_marked_sent():
+    engine = _plan_with_two_messages()
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', side_effect=ConnectionError('smtp down')),
+        pytest.raises(ConnectionError),
+    ):
+        engine.generate_notifications()
+    # Nothing went out, so the next run must send everything again.
+    assert not SentNotification.objects.exists()
+
+
+def test_message_the_backend_does_not_accept_is_not_marked_sent():
+    engine = _plan_with_two_messages()
+    with patch('django.core.mail.backends.locmem.EmailBackend.send_messages', return_value=0):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
+
+
+def test_smtp_failure_partway_through_marks_only_delivered_messages_sent():
+    engine = _plan_with_two_messages()
+    delivered = 0
+
+    def deliver_first_only(self, messages):
+        nonlocal delivered
+        for message in messages:
+            if delivered >= 1:
+                raise ConnectionError('smtp dropped')
+            mail.outbox.append(message)
+            delivered += 1
+        return len(messages)
+
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', deliver_first_only),
+        pytest.raises(ConnectionError),
+    ):
+        engine.generate_notifications()
+    # The delivered message must not go out again on the next run; the other one must.
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+
+
+def test_failure_partway_through_keeps_delivered_messages_marked_sent():
+    engine = _plan_with_two_messages()
+    original_render = NotificationEngine.render
+    calls = 0
+
+    def render_failing_second(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError('a bug')
+        return original_render(self, *args, **kwargs)
+
+    with patch.object(NotificationEngine, 'render', render_failing_second), pytest.raises(RuntimeError):
+        engine.generate_notifications()
+    # The first message went out before the failure and must not go out again on the next run.
+    assert calls == 2
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+
+
+def _esp_api_error(status_code: int) -> AnymailRequestsAPIError:
+    response = Response()
+    response.status_code = status_code
+    response.reason = 'ESP says no'
+    return AnymailRequestsAPIError('Mail provider refused the request', response=response)
+
+
+def _fail_first_message_with(error: Exception):
+    calls = 0
+
+    def send_messages(self, messages):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise error
+        mail.outbox.extend(messages)
+        return len(messages)
+
+    return send_messages
+
+
+@pytest.mark.parametrize(
+    'error',
+    [
+        pytest.param(AnymailInvalidAddress('Invalid email address'), id='invalid-address'),
+        pytest.param(AnymailRecipientsRefused(), id='recipients-refused'),
+        pytest.param(_esp_api_error(400), id='bad-request'),
+        pytest.param(_esp_api_error(413), id='too-large'),
+    ],
+)
+def test_message_the_mail_provider_rejects_is_skipped_and_the_run_continues(error):
+    engine = _plan_with_two_messages()
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        patch('notifications.engine.capture_message') as capture_message,
+    ):
+        engine.generate_notifications()
+    # The rejected message must not block the other one, and is retried on the next run.
+    assert len(mail.outbox) == 1
+    assert SentNotification.objects.count() == 1
+    capture_message.assert_called_once()
+    assert '1 notification message(s)' in capture_message.call_args.args[0]
+
+
+@pytest.mark.parametrize('status_code', [401, 403, 429, 500, 503])
+def test_mail_provider_failure_that_affects_every_message_stops_the_run(status_code):
+    engine = _plan_with_two_messages()
+    error = _esp_api_error(status_code)
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        pytest.raises(AnymailRequestsAPIError),
+    ):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
+
+
+def test_mail_provider_network_failure_stops_the_run():
+    engine = _plan_with_two_messages()
+    # Anymail wraps network errors in an AnymailRequestsAPIError without a status code.
+    error = AnymailRequestsAPIError('Error posting to the mail provider')
+    with (
+        patch('django.core.mail.backends.locmem.EmailBackend.send_messages', _fail_first_message_with(error)),
+        pytest.raises(AnymailRequestsAPIError),
+    ):
+        engine.generate_notifications()
+    assert not SentNotification.objects.exists()
+
+
+def test_skip_report_lists_only_the_first_reasons():
+    plan = PlanFactory.create()
+    engine = NotificationEngine(plan)
+    engine.skipped_messages = [f'reason {i}' for i in range(5)] + ['reason 0']
+    with patch('notifications.engine.capture_message') as capture_message:
+        engine._report_skipped_messages()
+    report = capture_message.call_args.args[0]
+    assert report.startswith('6 notification message(s)')
+    assert 'reason 2' in report
+    assert 'reason 3' not in report
+    assert report.endswith('; and 2 more')
+
+
+def test_unrelated_value_error_is_not_swallowed(settings):
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with (
+        patch('notifications.notifications.TaskLateNotification.get_context', side_effect=ValueError('a bug')),
+        pytest.raises(ValueError, match='a bug'),
+    ):
+        engine.generate_notifications()
+
+
+def test_plan_domains_are_looked_up_once_per_run():
+    plan = PlanFactory.create()
+    PlanDomainFactory.create(plan=plan, hostname='custom.city.gov')
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    for _ in range(3):
+        task = ActionTaskFactory.create(action__plan=plan, due_at=now.date() - timedelta(days=1))
+        ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    with CaptureQueriesContext(connection) as ctx:
+        engine.generate_notifications()
+    assert len(mail.outbox) > 0
+    assert sum(1 for q in ctx.captured_queries if 'actions_plandomain' in q['sql']) <= 1

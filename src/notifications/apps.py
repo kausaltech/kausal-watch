@@ -7,4 +7,9 @@ class NotificationsConfig(AppConfig):
     verbose_name = _('Notifications')
 
     def ready(self) -> None:
+        from django.core.checks import register
+
         from . import signals  # noqa: F401
+        from .checks import check_admin_base_url
+
+        register(check_admin_base_url, deploy=True)

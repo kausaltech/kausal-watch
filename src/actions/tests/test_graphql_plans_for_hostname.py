@@ -314,6 +314,137 @@ def test_default_hostname_with_exact_domain(settings, plan_factory):
     assert plan.default_hostname() == f'{plan.identifier}.dummy.io'
 
 
+def test_default_hostname_returns_none_when_no_domains(settings, plan_factory):
+    """default_hostname() returns None when HOSTNAME_PLAN_DOMAINS is empty."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    assert plan.default_hostname() is None
+
+
+def test_default_hostname_returns_none_when_only_localhost_in_production(settings, plan_factory):
+    """default_hostname() returns None in production when only localhost is configured."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    assert plan.default_hostname() is None
+
+
+def test_default_hostname_returns_localhost_in_development(settings, plan_factory):
+    """default_hostname() falls back to localhost in development."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory()
+    assert plan.default_hostname() == f'{plan.identifier}.localhost'
+
+
+def test_get_view_url_raises_when_no_hostname(settings, plan_factory):
+    """get_view_url() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.get_view_url()
+
+
+def test_get_view_url_raises_when_only_localhost_in_production(settings, plan_factory):
+    """get_view_url() raises in production when only localhost is configured."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.get_view_url()
+
+
+def test_create_default_site_raises_when_no_hostname(settings, plan_factory):
+    """create_default_site() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.create_default_site()
+
+
+def test_create_default_site_keeps_existing_site_without_hostname(settings, plan_factory):
+    """create_default_site() needs no hostname when the plan already has a site."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    plan = plan_factory()
+    plan.create_default_site()
+    site = plan.site
+    assert site is not None
+
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan.create_default_site()
+    assert plan.site == site
+
+
+def test_apply_defaults_raises_when_no_hostname(settings, plan_factory):
+    """apply_defaults() raises when default_hostname() returns None."""
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.apply_defaults(plan)
+
+
+def test_apply_defaults_rejects_explicit_hostname(plan_factory):
+    """
+    apply_defaults() takes no hostname.
+
+    Public URLs come from PlanDomain rows, so a hostname given here would only
+    reach the Wagtail Site and be silently ignored by Plan.get_view_url().
+    """
+    plan = plan_factory()
+    with pytest.raises(TypeError):
+        plan.apply_defaults(plan, hostname='customer.example.com')  # type: ignore[call-arg]
+
+
+def test_new_site_hostname_raises_when_no_hostname(settings, plan_factory):
+    """_new_site_hostname() raises when default_hostname() returns None."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = []
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        _new_site_hostname(plan, 'copy-plan')
+
+
+
+def test_create_default_site_uses_localhost_in_development(settings, plan_factory):
+    """create_default_site() falls back to localhost under the development defaults."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory(identifier='myplan')
+    plan.create_default_site()
+    assert plan.site is not None
+    assert plan.site.hostname == 'myplan.localhost'
+
+
+def test_create_default_site_raises_when_only_localhost_in_production(settings, plan_factory):
+    """create_default_site() doesn't fall back to localhost in production."""
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        plan.create_default_site()
+
+
+def test_new_site_hostname_uses_localhost_in_development(settings, plan_factory):
+    """_new_site_hostname() falls back to localhost under the development defaults."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'development'
+    plan = plan_factory()
+    assert _new_site_hostname(plan, 'copy-plan') == 'copy-plan.localhost'
+
+
+def test_new_site_hostname_raises_when_only_localhost_in_production(settings, plan_factory):
+    """_new_site_hostname() doesn't fall back to localhost in production."""
+    from copying.main import _new_site_hostname
+
+    settings.HOSTNAME_PLAN_DOMAINS = ['localhost']
+    settings.DEPLOYMENT_TYPE = 'production'
+    plan = plan_factory()
+    with pytest.raises(ValueError, match='Cannot determine'):
+        _new_site_hostname(plan, 'copy-plan')
+
 # --- Tests for legacy hostname redirect (<plan>.domain → <plan>.<country>.domain) ---
 
 
