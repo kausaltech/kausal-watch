@@ -5,7 +5,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any
 
 import graphene
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from wagtail.models import Page
@@ -132,6 +132,9 @@ class SearchResults(graphene.ObjectType[Any]):
             if highlights:
                 hit.highlight = highlights[0]
             res.append(hit)
+        # Every hit's URL is built from its plan's domains, and each action hit has its own
+        # instance of the plan; fetch the domains of all of them in one query.
+        prefetch_related_objects([hit.plan for hit in res], 'domains')
         return res
 
 
