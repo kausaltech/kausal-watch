@@ -57,6 +57,31 @@ def test_query_count_does_not_grow(graphql_client_query_data, grow):
     assert count_queries() == queries_for_one
 
 
+@pytest.mark.parametrize(
+    'query',
+    [
+        'query($plan: ID!) { planCategories(plan: $plan) { actions { identifier } } }',
+        'query($plan: ID!) { plan(id: $plan) { categoryTypes { categories { actions { identifier } } } } }',
+    ],
+    ids=['planCategories', 'categoryTypes'],
+)
+def test_actions_selection_without_plan_fields(graphql_client_query_data, query):
+    # The prefetch joins `plan`. Narrowing its queryset to the selected action fields with `only()` would defer `plan`
+    # while still traversing it, which Django rejects; the selection here asks for nothing that needs `plan`.
+    plan = PlanFactory.create()
+    category = CategoryFactory.create(type=CategoryTypeFactory.create(plan=plan))
+    action = ActionFactory.create(plan=plan, categories=[category])
+
+    data = graphql_client_query_data(query, variables={'plan': plan.identifier})
+
+    if 'planCategories' in data:
+        [category_data] = data['planCategories']
+    else:
+        [category_type_data] = data['plan']['categoryTypes']
+        [category_data] = category_type_data['categories']
+    assert category_data['actions'] == [{'identifier': action.identifier}]
+
+
 class TestCategoryActionsVisibility:
     """Category.actions must apply the same visibility rule as planActions, on both resolver paths."""
 
