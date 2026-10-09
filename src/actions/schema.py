@@ -627,7 +627,10 @@ class PlanNode(DjangoNode[Plan]):
     @staticmethod
     def resolve_view_url(root: Plan, info: GQLInfo, client_url: str | None = None):
         validate_client_url(client_url)
-        return root.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
+        # The request's plan cache has the plan's domains prefetched; `root` may be a separate
+        # instance for every row of a listing, e.g. each indicator's `plans`.
+        plan = info.context.cache.for_plan_id(root.id).plan
+        return plan.get_view_url(client_url=client_url, active_locale=get_language(), request=info.context)
 
     @staticmethod
     def resolve_admin_url(root: Plan, info: GQLInfo):

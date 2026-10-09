@@ -12,6 +12,7 @@ import pytest
 from actions.models.features import PlanFeatures
 from actions.models.plan import PlanDomain
 from actions.tests.factories import ActionFactory, PlanDomainFactory
+from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
 from pages.models import StaticPage
 
 if TYPE_CHECKING:
@@ -59,6 +60,20 @@ def test_action_listing_looks_up_domains_once(live_plan_with_domain, graphql_cli
     actions = data['planActions'] if 'planActions' in data else data['plan']['actions']
     assert len(actions) == ACTION_COUNT
     assert all(action.get('viewUrl') or action.get('exportPdf') for action in actions)
+    assert _domain_query_count(ctx) <= 1
+
+
+@pytest.mark.parametrize('client_url', [None, 'https://custom.city.gov'])
+def test_indicator_listing_looks_up_plan_domains_once(live_plan_with_domain, graphql_client_query_data, client_url):
+    plan = live_plan_with_domain
+    for _ in range(ACTION_COUNT):
+        IndicatorLevelFactory.create(indicator=IndicatorFactory.create(organization=plan.organization), plan=plan)
+    view_url = f'viewUrl(clientUrl: "{client_url}")' if client_url else 'viewUrl'
+    query = 'query($plan: ID!) { planIndicators(plan: $plan) { plans { VIEW_URL } } }'.replace('VIEW_URL', view_url)
+    with CaptureQueriesContext(connection) as ctx:
+        data = graphql_client_query_data(query, variables=dict(plan=plan.identifier))
+    assert len(data['planIndicators']) == ACTION_COUNT
+    assert all(p['viewUrl'] == 'https://custom.city.gov' for ind in data['planIndicators'] for p in ind['plans'])
     assert _domain_query_count(ctx) <= 1
 
 
