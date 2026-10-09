@@ -364,8 +364,19 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         task_id: int,
         action: dict,
     ) -> str:
+        """Return the task's responsible organizations and contact persons as one comma-separated string."""
+        organizations, persons = ActionTasksFormatter.task_assignees(report, related_objects, task_id, action)
+        return ', '.join([*organizations, *persons])
+
+    @staticmethod
+    def task_assignees(
+        report: ExcelReport,
+        related_objects: dict[str, list[SerializedVersion]],
+        task_id: int,
+        action: dict,
+    ) -> tuple[list[str], list[str]]:
         """
-        Return the task's responsible organizations and contact persons as one comma-separated string.
+        Return the names of the task's responsible organizations and of its contact persons.
 
         The assignment rows reach the snapshot because reversion's `follow` is transitive: `Action` follows
         `tasks` and `ActionTask` follows both assignment relations. They are keyed by their own foreign key,
@@ -378,28 +389,25 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         # include a parent and its children, and someone who has left this plan should not be named here
         # just because a sibling plan still has them.
         plan = ActionTasksFormatter._plan_of_action(report, action)
-        names: list[str] = []
         if plan is None or not plan.features.has_action_task_assignees:
-            return ''
+            return [], []
         organizations = ActionTasksFormatter._organizations_of_plan(report, plan)
-        for version in get_related_model_instances_for_action(
-            ('task_id', task_id), related_objects, ActionTaskResponsibleParty
-        ):
+        organization_names: list[str] = []
+        for version in get_related_model_instances_for_action(('task_id', task_id), related_objects, ActionTaskResponsibleParty):
             organization = organizations.get(version.data['organization_id'])
             if organization is not None:
-                names.append(str(organization))
+                organization_names.append(str(organization))
         # An export of a public plan can be downloaded anonymously, so the people are named only when the
         # setting of the plan that owns this action allows this reader to see them.
         if not plan.contact_persons_published_to(report.user):
-            return ', '.join(names)
+            return organization_names, []
         persons = ActionTasksFormatter._persons_of_plan(report, plan)
-        for version in get_related_model_instances_for_action(
-            ('task_id', task_id), related_objects, ActionTaskContactPerson
-        ):
+        person_names: list[str] = []
+        for version in get_related_model_instances_for_action(('task_id', task_id), related_objects, ActionTaskContactPerson):
             person = persons.get(version.data['person_id'])
             if person is not None:
-                names.append(str(person))
-        return ', '.join(names)
+                person_names.append(str(person))
+        return organization_names, person_names
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
         return GrapheneValueClassProperties(

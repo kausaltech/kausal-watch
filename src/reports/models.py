@@ -270,6 +270,7 @@ class Report(PlanRelatedModelWithRevision):
     disable_summary_sheets: bool
     disable_macros: bool
     disable_indicators_sheet: bool
+    disable_tasks_sheet: bool
 
     class Meta:
         verbose_name = _('report')
@@ -281,6 +282,7 @@ class Report(PlanRelatedModelWithRevision):
         self.disable_summary_sheets = False
         self.disable_macros = False
         self.disable_indicators_sheet = False
+        self.disable_tasks_sheet = False
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'

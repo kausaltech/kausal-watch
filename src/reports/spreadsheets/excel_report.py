@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import pathlib
+import re
 import typing
 from io import BytesIO
 from typing import Any
@@ -16,12 +17,15 @@ import polars as pl
 import xlsxwriter
 from loguru import logger
 
-from actions.models.action import Action
+from aplans.utils import convert_html_to_text
+
+from actions.models.action import Action, ActionTask
 from actions.models.plan import Plan
 from indicators.models.indicator import Indicator
 from orgs.models import Organization
 from people.models import Person
-from reports.utils import get_field_unique_key, group_by_model
+from reports.report_formatters import ActionTasksFormatter
+from reports.utils import get_field_unique_key, get_related_model_instances_for_action, group_by_model
 
 from .action_print_layout import write_action_summaries
 from .cursor_writer import Cell, CursorWriter
@@ -40,6 +44,9 @@ if typing.TYPE_CHECKING:
     from reports.models import IndicatorSnapshot, Report
     from reports.types import SerializedActionVersion, SerializedVersion
     from reports.utils import ReportCellValue
+
+
+EXCEL_SHEET_NAME_MAX_LENGTH = 31
 
 
 def clean(value: ReportCellValue) -> ReportCellValue:
@@ -160,6 +167,7 @@ class ExcelReport:
         self.action_ids = action_ids
         self.user = user
         self._visible_indicator_ids: dict[frozenset[int], set[int]] = {}
+        self._serialized_report_data: tuple[list[SerializedActionVersion], list[SerializedVersion]] | None = None
         if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
@@ -188,8 +196,14 @@ class ExcelReport:
 
     def generate_actions_dataframe(self) -> pl.DataFrame:
         with translation.override(self.language):
-            action_version_data, related_versions = self._prepare_serialized_report_data()
+            action_version_data, related_versions = self._get_serialized_report_data()
             return self.create_populated_actions_dataframe(action_version_data, related_versions)
+
+    def _get_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
+        """Return the report's actions and their related versions, prepared once for all sheets."""
+        if self._serialized_report_data is None:
+            self._serialized_report_data = self._prepare_serialized_report_data()
+        return self._serialized_report_data
 
     def generate_xlsx(self) -> bytes:
         actions_df = self.generate_actions_dataframe()
@@ -197,6 +211,7 @@ class ExcelReport:
             self._write_title_sheet()
             self._write_actions_sheet(actions_df)
             self._write_indicators_sheet()
+            self._write_tasks_sheet()
             self.post_process(actions_df)
         # Make striped even-odd rows
         self.close()
@@ -344,6 +359,111 @@ class ExcelReport:
             {label: values for label, (_dtype, values) in columns.items()},
             schema={label: dtype for label, (dtype, _values) in columns.items()},
         )
+
+    def _write_tasks_sheet(self) -> None:
+        if self.report.disable_tasks_sheet:
+            return
+        df = self.generate_tasks_dataframe()
+        self._write_sheet(self.workbook.add_worksheet(self._tasks_sheet_name()), df)
+
+    def _tasks_sheet_name(self) -> str:
+        """Return the plan's term for tasks, made valid as a unique Excel sheet name."""
+        name = str(self.plan.general_content.get_action_task_term_display_plural())
+        name = re.sub(r'[\[\]:*?/\\]', ' ', name).strip()[:EXCEL_SHEET_NAME_MAX_LENGTH] or _('Tasks')
+        taken = {sheet.get_name().casefold() for sheet in self.workbook.worksheets()}
+        if name.casefold() in taken:
+            name = _('Tasks')
+        return name
+
+    def generate_tasks_dataframe(self) -> pl.DataFrame:
+        """
+        Return one row per task of the report's actions that `self.user` may see.
+
+        Tasks come from the same action versions as the Actions sheet: frozen in the action snapshots for actions
+        complete for the report, live otherwise. The state at the start of the reporting period comes from the
+        task's version history.
+        """
+        action_versions, related_versions = self._get_serialized_report_data()
+        related_objects = group_by_model(related_versions)
+        tasks_by_action: dict[int, dict[int, SerializedVersion]] = {}
+        for task in get_related_model_instances_for_action(None, related_objects, ActionTask):
+            tasks_by_action.setdefault(int(task.data['action_id']), {})[int(task.data['id'])] = task
+        start_states = self._task_states_at(
+            [task_id for tasks in tasks_by_action.values() for task_id in tasks],
+            datetime.datetime.combine(self.report.start_date, datetime.time.min, tzinfo=self.plan.tzinfo),
+        )
+        state_labels = {value: str(label) for value, label in ActionTask.STATES}
+        # Action identifiers are only unique within a plan, so a report spanning plans names each task's plan
+        plan_names = {p.pk: p.name for p in (self.plan, *self.child_plans)} if self.child_plans else None
+        show_assignees = any(p.features.has_action_task_assignees for p in (self.plan, *self.child_plans))
+
+        identifier_label = _('Action identifier')
+        action_label = pgettext('Action model', 'Action')
+        plan_label = _('Plan')
+        name_label = _('Name')
+        due_label = _('Due date')
+        state_label = _('State')
+        start_state_label = _('State at start of reporting period')
+        completed_label = _('Completion date')
+        details_label = _('Details')
+        organizations_label = _('Responsible organizations')
+        persons_label = _('Contact persons')
+        rows: list[dict[str, Any]] = []
+        for action in action_versions:
+            action_tasks = tasks_by_action.get(int(action.data['id']), {})
+            for task in sorted(
+                action_tasks.values(), key=lambda t: (t.data['due_at'] or datetime.date.min, t.data['id']), reverse=True
+            ):
+                data = task.data
+                row: dict[str, Any] = {
+                    identifier_label: action.data['identifier'],
+                    action_label: action.data['name'].replace('\n', ' '),
+                    name_label: data['name'],
+                    due_label: data['due_at'],
+                    state_label: state_labels.get(data['state'], data['state']),
+                    start_state_label: state_labels.get(start_states.get(int(data['id'])) or '', ''),
+                    completed_label: data['completed_at'],
+                    details_label: convert_html_to_text(data['details']).strip(),
+                }
+                if plan_names is not None:
+                    row[plan_label] = plan_names.get(action.data['plan_id'])
+                if show_assignees:
+                    organizations, persons = ActionTasksFormatter.task_assignees(
+                        self, related_objects, int(data['id']), action.data
+                    )
+                    row[organizations_label] = ', '.join(organizations)
+                    row[persons_label] = ', '.join(persons)
+                rows.append(row)
+        schema: dict[str, pl.DataType] = {
+            identifier_label: pl.String(),
+            action_label: pl.String(),
+            **({plan_label: pl.String()} if plan_names is not None else {}),
+            name_label: pl.String(),
+            due_label: pl.Date(),
+            state_label: pl.String(),
+            start_state_label: pl.String(),
+            completed_label: pl.Date(),
+            details_label: pl.String(),
+        }
+        if show_assignees:
+            schema |= {organizations_label: pl.String(), persons_label: pl.String()}
+        for label in (due_label, completed_label):
+            self.formats.set_for_label(label, self.formats.date)
+        return pl.DataFrame(rows, schema=schema)
+
+    @staticmethod
+    def _task_states_at(task_ids: list[int], moment: datetime.datetime) -> dict[int, str]:
+        """Return each task's state in its latest version saved before `moment`; tasks without one are left out."""
+        if not task_ids:
+            return {}
+        versions = (
+            Version.objects
+            .get_for_model(ActionTask)
+            .filter(object_id__in=[str(pk) for pk in task_ids], revision__date_created__lt=moment)
+            .order_by('object_id', '-revision__date_created')
+            .distinct('object_id')
+        )
+        return {int(version.object_id): version.field_dict['state'] for version in versions}
 
     def _write_sheet(
         self,
