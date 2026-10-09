@@ -692,7 +692,7 @@ class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
         return context
 
     def get_permissions(self):
-        if self.action == 'update_values':
+        if self.action in ('update_values', 'update_goals'):
             return [IndicatorEditValuesPermission()]
         return [IndicatorPermission()]
 
