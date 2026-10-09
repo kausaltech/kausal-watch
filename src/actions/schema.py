@@ -806,6 +806,13 @@ class PlanNode(DjangoNode[Plan]):
         required=True,
         description='Fields shown to a community member when they commit to a pledge.',
     )
+    pledge_terms_url = graphene.String(description='Terms of use people accept when creating a pledge account.')
+    pledge_privacy_url = graphene.String(description='Privacy notice linked when creating a pledge account.')
+    pledge_account_title = graphene.String(description='Title of the invitation to create a pledge account.')
+    pledge_account_description = graphene.String(description='Text of the invitation to create a pledge account.')
+    pledge_marketing_consent_label = graphene.String(
+        description='Label of the marketing consent checkbox; null when the plan does not ask for marketing consent.'
+    )
 
     @staticmethod
     def resolve_pledge(root: Plan, info: GQLInfo, id: str | None = None, slug: str | None = None):
@@ -822,6 +829,26 @@ class PlanNode(DjangoNode[Plan]):
         if slug:
             return qs.filter(slug=slug).first()
         return None
+
+    @staticmethod
+    def resolve_pledge_terms_url(root: Plan, info: GQLInfo) -> str | None:
+        return root.pledge_terms_url or None
+
+    @staticmethod
+    def resolve_pledge_privacy_url(root: Plan, info: GQLInfo) -> str | None:
+        return root.pledge_privacy_url or None
+
+    @staticmethod
+    def resolve_pledge_account_title(root: Plan, info: GQLInfo) -> str | None:
+        return root.pledge_account_title_i18n or None
+
+    @staticmethod
+    def resolve_pledge_account_description(root: Plan, info: GQLInfo) -> str | None:
+        return root.pledge_account_description_i18n or None
+
+    @staticmethod
+    def resolve_pledge_marketing_consent_label(root: Plan, info: GQLInfo) -> str | None:
+        return root.pledge_marketing_consent_label_i18n or None
 
     @staticmethod
     def resolve_pledge_form_fields(root: Plan, info: GQLInfo):

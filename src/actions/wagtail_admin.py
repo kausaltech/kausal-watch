@@ -425,6 +425,14 @@ class PlanAdmin(AplansModelAdmin[Plan]):
         FieldPanel('required'),
     ]
 
+    pledge_account_panels = [
+        FieldPanel('pledge_terms_url'),
+        FieldPanel('pledge_privacy_url'),
+        FieldPanel('pledge_account_title'),
+        FieldPanel('pledge_account_description'),
+        FieldPanel('pledge_marketing_consent_label'),
+    ]
+
     COLOR_HELP_TEXT = _(
         "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example "
         'red070 or grey030.',
@@ -649,6 +657,11 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                                 'Information people are asked to give when they commit to a pledge. Only collect '
                                 'information that your privacy notice covers. Leave empty to collect nothing.'
                             ),
+                        ),
+                        MultiFieldPanel(
+                            insert_model_translation_panels(Plan, self.pledge_account_panels, request, instance),
+                            heading=_('Pledge accounts'),
+                            help_text=_('Only used when the plan offers accounts for community engagement.'),
                         ),
                     ],
                     heading=_('Community engagement'),
