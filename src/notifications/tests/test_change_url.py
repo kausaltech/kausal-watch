@@ -17,6 +17,10 @@ def test_action_change_url_is_absolute_admin_url():
     assert context['change_url'].startswith(settings.ADMIN_BASE_URL)
 
 
+@pytest.mark.skipif(
+    'kausal_watch_extensions' not in settings.INSTALLED_APPS,
+    reason='The edit-values view is provided by the extensions',
+)
 def test_indicator_edit_values_url_is_absolute_admin_url():
     indicator_level = IndicatorLevelFactory.create()
     indicator = indicator_level.indicator
