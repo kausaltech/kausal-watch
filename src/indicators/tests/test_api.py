@@ -194,6 +194,28 @@ def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_or
     assert result == expected
 
 
+@pytest.mark.parametrize(
+    ('path', 'data', 'related_field'),
+    [
+        ('indicator-values', [VALUE_2019], 'values'),
+        ('indicator-goals', [GOAL_2030], 'goals'),
+    ],
+)
+def test_indicator_contact_person_can_update_values_and_goals(client, plan, path, data, related_field):
+    indicator = IndicatorFactory.create(plans=[plan])
+    contact = IndicatorContactFactory.create(indicator=indicator)
+    post(client, plan, contact.person.user, path, indicator, data)
+    assert_db_matches_set(getattr(indicator, related_field), data)
+
+
+def test_other_indicator_contact_person_cannot_update_goals(client, plan):
+    indicator = IndicatorFactory.create(plans=[plan])
+    other_indicator = IndicatorFactory.create(plans=[plan], organization=indicator.organization)
+    contact = IndicatorContactFactory.create(indicator=other_indicator)
+    post(client, plan, contact.person.user, 'indicator-goals', indicator, [GOAL_2030], expected_status_code=403)
+    assert not indicator.goals.exists()
+
+
 # TODO: these authorization test turned out difficult to implement
 #       without flakiness.
 # def test_contact_person_unauthorized(client, plan, action_contact_person_user):
