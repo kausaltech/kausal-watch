@@ -283,3 +283,33 @@ def test_planactions_translated_field_does_not_load_plan_per_action(graphql_clie
     for _ in range(3):
         ActionFactory.create(plan=plan)
     assert count_plan_queries() == plan_queries_for_one
+
+
+@pytest.mark.parametrize(
+    ('draft', 'first'),
+    [(False, None), (False, 10), (True, None)],
+    ids=['published', 'published-first', 'draft'],
+)
+def test_planactions_narrow_selection_query_count_does_not_grow(
+    graphql_client_query, client, plan, plan_admin_user, draft, first
+):
+    # The optimizer narrows the queryset to the selected columns, but the resolver itself reads the actions' foreign
+    # keys (and, on the draft path, `order`); those must not be loaded lazily per action.
+    directive = '@workflow(state: DRAFT)' if draft else ''
+    first_arg = f', first: {first}' if first else ''
+    query = f'query($plan: ID!) {directive} {{ planActions(plan: $plan{first_arg}) {{ identifier }} }}'
+    if draft:
+        client.force_login(plan_admin_user)
+
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            response = graphql_client_query(query, variables=dict(plan=plan.identifier))
+        assert 'errors' not in response, response
+        return len(ctx.captured_queries)
+
+    ActionFactory.create(plan=plan)
+    count_queries()  # The first request also fills per-process caches.
+    queries_for_one = count_queries()
+    for _ in range(3):
+        ActionFactory.create(plan=plan)
+    assert count_queries() == queries_for_one
