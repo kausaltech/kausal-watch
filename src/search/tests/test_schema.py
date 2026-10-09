@@ -10,8 +10,8 @@ from django.utils.timezone import make_aware
 
 import pytest
 
-from actions.models import Plan
-from actions.tests.factories import PlanFactory
+from actions.models import Action, Plan
+from actions.tests.factories import ActionFactory, PlanFactory
 from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
 from pages.models import ActionListPage
 from search.schema import SearchHit, SearchHitObj, SearchResults
@@ -104,3 +104,26 @@ def test_page_hit_url_is_none_when_plan_url_unresolvable(settings, rf) -> None:
     hit = SearchHitObj(id='page-%d' % page.pk, title=page.title, plan=plan, page=page)
 
     assert SearchHit.resolve_url(hit, info) is None
+
+
+def test_cross_plan_action_hit_urls_look_up_plan_domains_once(settings, rf) -> None:
+    settings.HOSTNAME_PLAN_DOMAINS = ['example.com']
+    plan = PlanFactory.create(identifier='otherplan')
+    for _ in range(3):
+        ActionFactory.create(plan=plan)
+    # As the search query loads them: every action has its own instance of the plan.
+    actions = list(Action.objects.filter(plan=plan).select_related('plan'))
+    for action in actions:
+        action.relevance = 1.0  # pyright: ignore[reportAttributeAccessIssue]
+    request = rf.get('/')
+    request.user = AnonymousUser()
+    # Hits from other plans link to their canonical URL, which the plan's domains decide.
+    request.only_other_plans = True
+    info = cast('GQLInfo', type('Info', (), {'context': request})())
+
+    with CaptureQueriesContext(connection) as ctx:
+        hits = SearchResults.resolve_hits({'hits': actions, 'plan_ids': [plan.pk]}, info)
+        urls = [SearchHit.resolve_url(hit, info) for hit in hits]
+
+    assert urls == ['https://otherplan.example.com/actions/%s' % action.identifier for action in actions]
+    assert sum(1 for q in ctx.captured_queries if 'actions_plandomain' in q['sql']) <= 1
