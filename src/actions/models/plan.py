@@ -1634,11 +1634,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     def delete(self, *args, **kwargs):
         from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry
+        from pages.models import delete_pages
 
         if self.site_id is not None:
             # Deleting root page cascades to Site
-            self.root_page.get_translations(inclusive=True).delete()
-        self.documentation_root_pages.all().delete()
+            delete_pages(self.root_page.get_translations(inclusive=True))
+        delete_pages(self.documentation_root_pages.all())
         # Clean up PROTECT-ed log entries before deleting the plan
         PlanScopedPageLogEntry.objects.filter(plan=self).delete()
         PlanScopedModelLogEntry.objects.filter(plan=self).delete()

@@ -21,6 +21,7 @@ from wagtail.blocks.stream_block import StreamValue
 from wagtail.fields import StreamField
 from wagtail.models import Page, PagePermissionTester, Revision, Site
 
+import sentry_sdk
 from grapple.models import (
     GraphQLBoolean,
     GraphQLField,
@@ -110,7 +111,74 @@ if TYPE_CHECKING:
     from images.models import AplansImage
 
 
-class AplansPage(SearchableModel['PageQuerySet'], Page):
+def sync_numchild(page: Page) -> None:
+    """
+    Make the `numchild` of `page` in the database match its actual number of children.
+
+    Treebeard deletes only the node itself if `numchild` in the database is 0, so a stale value
+    would leave the page's children in the tree as orphans.
+    """
+    # The instance's path may be stale, too, if the page was moved through another instance
+    tree_fields = Page.objects.filter(pk=page.pk).values_list('path', 'depth', 'numchild').first()
+    if tree_fields is None:
+        return
+    page.path, page.depth, stored = tree_fields
+    actual = Page.objects.filter(path__startswith=page.path, depth=page.depth + 1).count()
+    page.numchild = actual
+    if stored == actual:
+        return
+    sentry_sdk.capture_message(
+        f'Page {page.pk} has numchild {stored} in the database but {actual} children; fixing it',
+        level='warning',
+    )
+    Page.objects.filter(pk=page.pk).update(numchild=actual)
+
+
+def delete_pages(pages: models.QuerySet[Page]) -> None:
+    """
+    Delete `pages` and their descendants.
+
+    A queryset delete bypasses `TreeConsistencyMixin.delete()`, so repair `numchild` here as well.
+    """
+    for page in pages:
+        sync_numchild(page)
+    pages.delete()
+
+
+if TYPE_CHECKING:
+    _PageBase = Page
+else:
+    _PageBase = object
+
+
+class TreeConsistencyMixin(_PageBase):
+    """
+    Keep page operations from trusting tree fields of stale in-memory instances.
+
+    Treebeard updates the `numchild` of a parent with an `UPDATE` query when a child is added, so
+    other in-memory instances of the parent keep their old value. Wagtail trusts such instances in
+    two places that can corrupt the tree:
+
+    - When a revision is published, `with_content_json()` copies the tree fields from the instance
+      cached on the revision and the whole page is saved. wagtail-localize publishes new
+      translations in `on_commit` callbacks, so the translated root pages that
+      `Plan.create_default_pages()` creates were saved with `numchild = 0`, although their
+      translated subpages had been added in the same transaction.
+    - Deleting a page whose `numchild` is 0 in the database deletes only the page itself and
+      leaves its children as orphans.
+    """
+
+    def with_content_json(self, content):
+        if self.pk is not None:
+            self.refresh_from_db(fields=['path', 'depth', 'numchild'])
+        return super().with_content_json(content)
+
+    def delete(self, *args, **kwargs):
+        sync_numchild(self)
+        return super().delete(*args, **kwargs)
+
+
+class AplansPage(TreeConsistencyMixin, SearchableModel['PageQuerySet'], Page):
     i18n = models.JSONField(blank=True, null=True)
     show_in_footer = models.BooleanField[bool, bool](
         default=False,
