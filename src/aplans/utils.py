@@ -843,6 +843,7 @@ LANGUAGE_COLLATORS = {
     'es': 'es-x-icu',
     'es-US': 'es-US-x-icu',
     'fi': 'fi-FI-x-icu',
+    'fr': 'fr-x-icu',
     'lv': 'lv-LV-x-icu',
     'sv': 'sv-SE-x-icu',
     'sv-FI': 'sv-FI-x-icu',

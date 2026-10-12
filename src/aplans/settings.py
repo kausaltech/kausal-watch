@@ -575,6 +575,7 @@ LANGUAGES = (
     ('es', _('Spanish')),
     ('es-US', _('Spanish (United States)')),
     ('fi', _('Finnish')),
+    ('fr', _('French')),
     ('lv', _('Latvian')),
     ('mww', _('Hmong (White)')),
     ('pt', _('Portuguese')),  # Use Brazilian Portuguese only for now
@@ -854,6 +855,13 @@ if ELASTICSEARCH_URL:
             'analyzer': {
                 'default': {
                     'type': 'spanish',
+                },
+            },
+        },
+        'fr': {
+            'analyzer': {
+                'default': {
+                    'type': 'french',
                 },
             },
         },
