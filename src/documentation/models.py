@@ -10,7 +10,7 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 
 from actions.models.plan import Plan
-from pages.models import DefaultSlugForCopyingMixin
+from pages.models import DefaultSlugForCopyingMixin, TreeConsistencyMixin
 
 if TYPE_CHECKING:
     from wagtail.models import PageManager
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
 
-class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[misc]
+class DocumentationRootPage(TreeConsistencyMixin, DefaultSlugForCopyingMixin, Page):  # type: ignore[misc]
     plan: FK[Plan] = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name='documentation_root_pages')
 
     content_panels = [
@@ -38,7 +38,7 @@ class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[m
         return []
 
 
-class DocumentationPage(Page):
+class DocumentationPage(TreeConsistencyMixin, Page):
     body = StreamField(
         [
             ('text', blocks.RichTextBlock(label=_('Text'))),
