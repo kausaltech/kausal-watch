@@ -476,6 +476,44 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             'For example: "Access is only given to staff of the ministry."'
         ),
     )
+    # Pledge account settings, used only when the plan offers accounts for community engagement. The links
+    # are one per plan; the texts are translated, which is why they are nullable rather than having a
+    # database default (see access_request_eligibility_text).
+    pledge_terms_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name=_('Link to terms of use for pledge accounts'),
+        help_text=_('People must accept these terms when they create an account. Required before accounts can be offered.'),
+    )
+    pledge_privacy_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name=_('Link to privacy notice for pledge accounts'),
+        help_text=_('Linked next to the terms of use when people create an account.'),
+    )
+    pledge_account_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name=_('Account invitation title'),
+        help_text=_('Shown when people are invited to create an account. Leave empty to use "Create an account".'),
+    )
+    pledge_account_description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('Account invitation text'),
+        help_text=_('Shown below the title. Leave empty to use "Save your pledges and come back to track your progress."'),
+    )
+    pledge_marketing_consent_label = models.CharField(
+        max_length=300,
+        blank=True,
+        null=True,
+        verbose_name=_('Marketing consent label'),
+        help_text=_(
+            'Label of an optional checkbox for agreeing to receive updates from the plan. '
+            'Leave empty to not ask for marketing consent.'
+        ),
+    )
     external_feedback_url = models.URLField(
         blank=True,
         null=True,
@@ -607,7 +645,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(
-        fields=['name', 'short_name', 'access_request_eligibility_text'], default_language_field='primary_language_lowercase'
+        fields=[
+            'name',
+            'short_name',
+            'access_request_eligibility_text',
+            'pledge_account_title',
+            'pledge_account_description',
+            'pledge_marketing_consent_label',
+        ],
+        default_language_field='primary_language_lowercase',
     )
 
     action_attribute_types: RevMany[AttributeType] = GenericRelation(  # type: ignore  # pyright: ignore[reportAssignmentType]
@@ -716,6 +762,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     site_id: int | None
     parent_id: int | None
     name_i18n: str
+    pledge_account_title_i18n: str | None
+    pledge_account_description_i18n: str | None
+    pledge_marketing_consent_label_i18n: str | None
 
     class Meta:
         verbose_name = _('plan')

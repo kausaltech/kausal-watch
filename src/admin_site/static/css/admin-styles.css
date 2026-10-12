@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap");
 
 :root {
-  --w-font-sans: 'Inter';
+  --w-font-sans: "Inter";
   /*--w-font-mono: Inconsolata;*/
   --w-color-primary-hue: 160;
   --w-color-secondary-hue: 160;
@@ -115,7 +115,7 @@
   color: var(--w-color-grey-800);
 }
 
-section[role='tabpanel'] .help-block:has(> .field-visibility-label) {
+section[role="tabpanel"] .help-block:has(> .field-visibility-label) {
   /*
   We are using this to make the "public" vs "non-public" field labels
   prettier when they are rendered inside a .help-block, which happens
@@ -282,33 +282,43 @@ with Wagtail's styles but so far these are required.
 
 /* Focus state */
 .select2-container--default.select2-container--focus .select2-selection--single,
-.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default.select2-container--focus
+  .select2-selection--multiple,
 .select2-container--default.select2-container--open .select2-selection--single,
-.select2-container--default.select2-container--open .select2-selection--multiple {
+.select2-container--default.select2-container--open
+  .select2-selection--multiple {
   border-color: var(--w-color-border-field-hover);
   outline: none;
 }
 
 /* Single select: rendered text wrapper - handles the text and clear button */
 /* Using !important to override default Select2 styles */
-.select2-container--default .select2-selection--single .select2-selection__rendered {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
   color: var(--w-color-text-context);
   padding-top: 0.375rem !important;
   padding-bottom: 0.375rem !important;
   padding-left: 1.25rem !important;
   padding-right: 2.5rem !important; /* Leave room for arrow */
-  line-height: calc(2.625rem - 0.75rem - 2px); /* height - vertical padding - border */
+  line-height: calc(
+    2.625rem - 0.75rem - 2px
+  ); /* height - vertical padding - border */
   display: block;
 }
 
 /* Single select: placeholder */
-.select2-container--default .select2-selection--single .select2-selection__placeholder {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__placeholder {
   color: var(--w-color-text-placeholder);
 }
 
 /* Single select: arrow positioning */
 /* Using !important to override default Select2 styles */
-.select2-container--default .select2-selection--single .select2-selection__arrow {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
   position: absolute;
   top: 0 !important;
   right: 0 !important;
@@ -320,7 +330,10 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Fix arrow icon */
-.select2-container--default .select2-selection--single .select2-selection__arrow b {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow
+  b {
   border-width: 5px 4px 0 4px;
   margin-left: 0;
   margin-top: 0;
@@ -330,7 +343,9 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Multiple select: rendered container */
-.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__rendered {
   padding: 0.375rem 1.25rem !important; /* Match Wagtail's input padding */
   display: flex !important;
   flex-wrap: wrap !important;
@@ -340,7 +355,9 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Multiple select: choice pills */
-.select2-container--default .select2-selection--multiple .select2-selection__choice {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice {
   background-color: var(--w-color-surface-header);
   border: 1px solid var(--w-color-border-field-default);
   border-radius: 0.3125rem; /* Match main border-radius */
@@ -359,7 +376,9 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Multiple select: choice remove button */
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove {
   color: var(--w-color-icon-secondary);
   margin-right: 0.5rem !important; /* More space between x and text */
   order: -1; /* Move remove button to the left */
@@ -368,12 +387,17 @@ with Wagtail's styles but so far these are required.
   flex-shrink: 0; /* Don't shrink the x button */
 }
 
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__choice__remove:hover {
   color: var(--w-color-text-context);
 }
 
 /* Multiple select: search input inside */
-.select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-search--inline
+  .select2-search__field {
   margin: 0;
   padding: 0.25rem 0;
   font-size: 1.1875rem;
@@ -399,7 +423,9 @@ with Wagtail's styles but so far these are required.
   line-height: 1.5;
 }
 
-.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+.select2-container--default
+  .select2-search--dropdown
+  .select2-search__field:focus {
   border-color: var(--w-color-border-field-hover);
   outline: none;
 }
@@ -412,7 +438,8 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Dropdown: highlighted option */
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
+.select2-container--default
+  .select2-results__option--highlighted[aria-selected] {
   background-color: var(--w-color-surface-button-default);
   color: var(--w-color-text-button);
 }
@@ -423,14 +450,18 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Disabled state */
-.select2-container--default.select2-container--disabled .select2-selection--single,
-.select2-container--default.select2-container--disabled .select2-selection--multiple {
+.select2-container--default.select2-container--disabled
+  .select2-selection--single,
+.select2-container--default.select2-container--disabled
+  .select2-selection--multiple {
   background-color: var(--w-color-surface-field-inactive);
   border-color: var(--w-color-border-field-inactive);
   cursor: not-allowed;
 }
 
-.select2-container--default.select2-container--disabled .select2-selection--single .select2-selection__rendered {
+.select2-container--default.select2-container--disabled
+  .select2-selection--single
+  .select2-selection__rendered {
   color: var(--w-color-text-placeholder);
 }
 
@@ -441,7 +472,9 @@ with Wagtail's styles but so far these are required.
 }
 
 /* Clear button styling for single select - position absolutely within the selection */
-.select2-container--default .select2-selection--single .select2-selection__clear {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__clear {
   color: var(--w-color-icon-secondary);
   font-size: 1.1875rem;
   font-weight: 400;
@@ -453,12 +486,16 @@ with Wagtail's styles but so far these are required.
   margin: 0 !important;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__clear:hover {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__clear:hover {
   color: var(--w-color-text-context);
 }
 
 /* Clear button styling for multiple select - position absolutely */
-.select2-container--default .select2-selection--multiple .select2-selection__clear {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__clear {
   color: var(--w-color-icon-secondary);
   font-size: 1.1875rem;
   font-weight: 400;
@@ -471,28 +508,115 @@ with Wagtail's styles but so far these are required.
   padding: 0 !important;
 }
 
-.select2-container--default .select2-selection--multiple .select2-selection__clear:hover {
+.select2-container--default
+  .select2-selection--multiple
+  .select2-selection__clear:hover {
   color: var(--w-color-text-context);
 }
 
 /* Impersonation warning styles */
 /* Style the account menu button with warning background when impersonating */
 .sidebar-footer__account--impersonating {
-  background-color: #FAA500 !important; /* Wagtail warning-100 color */
-  color: #2E1F5E !important; /* Wagtail primary color for proper contrast */
+  background-color: #faa500 !important; /* Wagtail warning-100 color */
+  color: #2e1f5e !important; /* Wagtail primary color for proper contrast */
 }
 
 .sidebar-footer__account--impersonating:hover,
 .sidebar-footer__account--impersonating:focus {
-  background-color: #FDD074 !important; /* Wagtail warning-75 color for hover state */
+  background-color: #fdd074 !important; /* Wagtail warning-75 color for hover state */
 }
 
 /* Ensure the account label text also uses the proper contrast color */
 .sidebar-footer__account--impersonating .sidebar-footer__account-label {
-  color: #2E1F5E !important;
+  color: #2e1f5e !important;
 }
 
 /* Ensure the chevron icon also uses the proper contrast color */
 .sidebar-footer__account--impersonating .icon {
-  color: #2E1F5E !important;
+  color: #2e1f5e !important;
+}
+
+/* A field's translations: folded below the field they translate, indented like Wagtail's nested panels */
+.translations-panel {
+  --guide-line-color: var(--w-color-border-furniture);
+}
+
+.w-panel__wrapper > .translations-panel {
+  margin-top: -1.375rem;
+}
+
+.w-panel--nested .w-panel__wrapper > .translations-panel {
+  margin-top: -1.0625rem;
+}
+
+.w-panel__content > .translations-panel {
+  margin-top: -2rem;
+}
+
+.w-panel__wrapper > .translations-panel:not([open]) {
+  margin-bottom: 1.875rem;
+}
+
+.w-panel--nested .w-panel__wrapper > .translations-panel:not([open]) {
+  margin-bottom: 1.5625rem;
+}
+
+.translations-panel:is(:hover, :focus-within) {
+  --guide-line-color: var(--w-color-icon-primary);
+}
+
+.translations-panel__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--w-color-text-label);
+}
+
+.translations-panel__summary::-webkit-details-marker {
+  display: none;
+}
+
+.translations-panel__icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--w-color-icon-primary);
+  transform: rotate(-90deg);
+  transition: transform 150ms ease;
+}
+
+.translations-panel[open] .translations-panel__icon {
+  transform: none;
+}
+
+/* The dashed guide line runs down from the middle of the toggle icon, drawn as Wagtail draws it */
+.translations-panel__fields {
+  box-sizing: border-box;
+  margin-inline-start: 0.5rem;
+  padding-top: 0.75rem;
+  padding-inline-start: 1.5rem;
+  background-image: linear-gradient(
+    to bottom,
+    var(--guide-line-color) 50%,
+    transparent 0
+  );
+  background-repeat: repeat-y;
+  background-size: 1px 6px;
+}
+
+@media (forced-colors: active) {
+  .translations-panel__fields {
+    background: none;
+    border-inline-start: 1px dashed CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .translations-panel__icon {
+    transition: none;
+  }
 }
