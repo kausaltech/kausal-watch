@@ -71,7 +71,7 @@ class AdminSiteConfig(AdminConfig):
         ThemeSettingsPanel.is_active = lambda _self: False  # type: ignore
 
         from wagtail.admin.rich_text import DraftailRichTextArea
-        from wagtail.telepath import register as register_telepath_adapter
+        from wagtail.admin.telepath import register as register_telepath_adapter
 
         from admin_site.draftail_rich_text_area import DraftailRichTextAreaAdapterWithFixedTranslations
 

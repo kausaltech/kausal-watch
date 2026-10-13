@@ -8,9 +8,9 @@ from django.urls import path, reverse
 from django.utils.translation import gettext, gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.admin.ui.tables import BooleanColumn
+from wagtail.admin.widgets.button import ListingButton
 from wagtail.coreutils import multigetattr
 from wagtail.permission_policies.base import ModelPermissionPolicy
-from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     DeleteView,
@@ -170,7 +170,7 @@ class UserFeedbackIndexView(IndexView[UserFeedback, QS[UserFeedback]]):
         return reverse(self.set_user_feedback_unprocessed_url_name, kwargs={'pk': quote(instance.pk)})
 
     def set_processed_button(self, instance: UserFeedback):
-        return wagtailsnippets_widgets.SnippetListingButton(
+        return ListingButton(
             url=self.get_user_feedback_processed_url(instance),
             label=_('Mark as processed'),
             icon_name='check',
@@ -178,7 +178,7 @@ class UserFeedbackIndexView(IndexView[UserFeedback, QS[UserFeedback]]):
         )
 
     def set_unprocessed_button(self, instance: UserFeedback):
-        return wagtailsnippets_widgets.SnippetListingButton(
+        return ListingButton(
             url=self.get_user_feedback_unprocessed_url(instance),
             label=_('Mark as unprocessed'),
             icon_name='cross',
