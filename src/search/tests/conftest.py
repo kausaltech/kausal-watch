@@ -22,7 +22,7 @@ def es_requests(settings, monkeypatch) -> list[dict[str, Any]]:
         'default-en': {
             'BACKEND': 'search.backends',
             'URLS': ['http://elasticsearch.invalid:9200'],
-            'INDEX': 'watch-en',
+            'INDEX_PREFIX': 'watch-en_',
             'LANGUAGE_CODE': 'en',
             'AUTO_UPDATE': False,
         },
