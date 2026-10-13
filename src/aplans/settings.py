@@ -884,7 +884,7 @@ if ELASTICSEARCH_URL:
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
             'BACKEND': 'search.backends',
             'URLS': [ELASTICSEARCH_URL],
-            'INDEX': 'watch-%s' % lang,
+            'INDEX_PREFIX': 'watch-%s_' % lang,
             'TIMEOUT': 10,
             'LANGUAGE_CODE': lang,
             'INDEX_SETTINGS': {
