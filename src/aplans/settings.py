@@ -687,6 +687,8 @@ WAGTAILDOCS_SERVE_METHOD = 'serve_view'
 WAGTAILDOCS_DOCUMENT_FORM_BASE = 'documents.forms.AplansDocumentForm'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
 WAGTAILIMAGES_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg']
+# Wagtail < 8 defaults; notification emails embed renditions and not all mail clients render WebP
+WAGTAILIMAGES_FORMAT_CONVERSIONS = {'avif': 'png', 'webp': 'png'}
 WAGTAILIMAGES_IMAGE_FORM_BASE = 'images.forms.AplansImageForm'
 WAGTAILIMAGES_MAX_IMAGE_PIXELS = 24_000_000
 WAGTAILEMBEDS_FINDERS = [
