@@ -1,29 +1,20 @@
 from django.test import RequestFactory
-from wagtail.documents import permissions
+from wagtail.documents import get_document_model
 from wagtail.documents.views.documents import IndexView
+from wagtail.permissions import policy_registry
 
 import pytest
 
 from actions.tests.factories import PlanFactory
+from documents import chooser as custom_chooser
 from documents.permissions import permission_policy
 from documents.tests.factories import AplansDocumentFactory
 from users.tests.factories import UserFactory
 
 
-def test_document_views_use_plan_permission_policy():
-    from wagtail.documents.forms import BaseDocumentForm
-    from wagtail.documents.views import chooser, documents
-
-    from documents import chooser as custom_chooser
-
-    assert chooser.permission_policy is permission_policy
-    assert chooser.DocumentChooserViewSet.permission_policy is permission_policy
-    assert chooser.viewset.permission_policy is permission_policy
+def test_document_permission_policy_is_registered():
+    assert policy_registry.get_by_type(get_document_model()) is permission_policy
     assert custom_chooser.permission_policy is permission_policy
-    assert BaseDocumentForm.permission_policy is permission_policy
-    assert permissions.permission_policy is permission_policy
-    assert documents.permission_policy is permission_policy
-    assert IndexView.permission_policy is permission_policy
 
 
 @pytest.mark.django_db

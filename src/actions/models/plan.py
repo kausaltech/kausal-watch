@@ -303,6 +303,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     """
 
     DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 180
+    # permission_policy() is the API policy; Wagtail keeps its default policy for plans
+    register_wagtail_permission_policy: ClassVar[bool] = False
     DEFAULT_ACTION_UPDATE_TARGET_INTERVAL = 30
     DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL = 60
     MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 730
