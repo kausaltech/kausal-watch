@@ -5,16 +5,6 @@ class ImagesConfig(AppConfig):
     name = 'images'
 
     def ready(self):
-        from wagtail.images import permissions
-        from wagtail.images.forms import BaseImageForm
-
-        from .permissions import permission_policy
-
-        # Install before importing the chooser or image views: those modules
-        # retain the policy in module globals, class attributes and decorators.
-        permissions.permission_policy = permission_policy
-        BaseImageForm.permission_policy = permission_policy
-
         from .chooser import monkeypatch_chooser
 
         monkeypatch_chooser()

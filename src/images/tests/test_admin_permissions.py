@@ -1,6 +1,7 @@
 from django.test import RequestFactory
-from wagtail.images import permissions
+from wagtail.images import get_image_model
 from wagtail.images.views.images import IndexView
+from wagtail.permissions import policy_registry
 
 import pytest
 
@@ -11,12 +12,8 @@ from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 
-def test_image_views_use_plan_permission_policy():
-    from wagtail.images.views import images
-
-    assert permissions.permission_policy is permission_policy
-    assert images.permission_policy is permission_policy
-    assert IndexView.permission_policy is permission_policy
+def test_image_permission_policy_is_registered():
+    assert policy_registry.get_by_type(get_image_model()) is permission_policy
 
 
 @pytest.mark.django_db
