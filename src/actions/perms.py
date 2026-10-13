@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query_utils import Q
-from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
+from wagtail.models import GroupPagePermission, Page
 from wagtail.models.media import GroupCollectionPermission
 
 from loguru import logger
@@ -73,7 +73,6 @@ if typing.TYPE_CHECKING:
 
     from django.db.models.base import Model
     from django.db.models.query import QuerySet
-    from wagtail.models import Page
     from wagtail.models.media import Collection
 
     from users.models import User as UserModel
@@ -220,7 +219,7 @@ def _sync_group_page_perms(root_pages: Iterable[Page], group: Group) -> None:
 
     current_perms = GroupPagePermission.objects.filter(group=group).select_related('permission')
     perm_set = {gpp.permission.codename for gpp in current_perms}
-    new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
+    new_perm_set = set(Page.permission_codenames)
     page_set = {gpp.page for gpp in current_perms}
     new_page_set = set(root_pages)
     if perm_set != new_perm_set or page_set != new_page_set:
