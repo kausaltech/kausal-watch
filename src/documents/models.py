@@ -18,6 +18,8 @@ from users.models import User
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
+    from admin_site.permissions import PlanRelatedCollectionOwnershipPermissionPolicy
+
 
 class AplansDocumentQuerySet(SearchableQuerySetMixin, models.QuerySet['AplansDocument']):
     pass
@@ -49,6 +51,12 @@ class AplansDocument(AbstractDocument, PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('document')
         verbose_name_plural = _('documents')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedCollectionOwnershipPermissionPolicy:
+        from documents.permissions import permission_policy
+
+        return permission_policy
 
     def get_plans(self):
         from actions.models.plan import Plan

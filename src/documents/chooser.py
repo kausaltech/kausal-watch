@@ -9,10 +9,11 @@ from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.modal_workflow import render_modal_workflow
 from wagtail.documents import get_document_model
 from wagtail.documents.forms import get_document_form
-from wagtail.documents.permissions import permission_policy
 from wagtail.models import Collection
 
 from kausal_common.users import user_or_bust
+
+from documents.permissions import permission_policy
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
