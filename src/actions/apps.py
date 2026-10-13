@@ -3,21 +3,8 @@ from __future__ import annotations
 from django.apps import AppConfig
 from django.utils.translation import pgettext_lazy
 
-_wagtail_image_chooser_viewset_permission_policy: object | None = None
 _wagtail_get_base_snippet_action_menu_items: object | None = None
 _create_deferring_forward_many_to_many_manager = None  # type: ignore[var-annotated]
-
-
-def monkeypatch_image_chooser_viewset():
-    from wagtail.images.views.chooser import ImageChooserViewSet
-
-    from images.permissions import permission_policy
-
-    global _wagtail_image_chooser_viewset_permission_policy  # noqa: PLW0603
-
-    if _wagtail_image_chooser_viewset_permission_policy is None:
-        _wagtail_image_chooser_viewset_permission_policy = ImageChooserViewSet.permission_policy
-        ImageChooserViewSet.permission_policy = permission_policy
 
 
 def monkeypatch_deferring_forward_many_to_many_manager():
@@ -50,8 +37,6 @@ class ActionsConfig(AppConfig):
     verbose_name = pgettext_lazy('Action model', 'Actions')
 
     def ready(self):
-        # monkeypatch filtering of Collections
-        monkeypatch_image_chooser_viewset()
         import actions.checks
         import actions.signals
 
