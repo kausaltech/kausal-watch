@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from copy import copy as shallow_copy
 from uuid import uuid4
 
@@ -7,11 +8,21 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.utils import timezone
-from wagtail.models import Page, Revision
+from wagtail.models import Locale, Page, Revision
 from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
 
 import pytest
+from wagtail_localize.models import (
+    OverridableSegment,
+    SegmentOverride,
+    StringSegment,
+    StringTranslation,
+    Translation,
+    TranslationContext,
+    TranslationSource,
+)
+from wagtail_localize.operations import TranslationCreator
 
 from kausal_common.datasets.models import DatasetMetricComputation, DatasetMetricValidationRule, DatasetSchema
 
@@ -68,7 +79,7 @@ from indicators.tests.factories import (
 from notifications.models import ContentBlock
 from notifications.tests.factories import AutomaticNotificationTemplateFactory, BaseTemplateFactory
 from pages.models import StaticPage
-from pages.tests.factories import CategoryTypePageLevelLayoutFactory
+from pages.tests.factories import CategoryTypePageLevelLayoutFactory, StaticPageFactory
 from reports.tests.factories import ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
@@ -131,6 +142,8 @@ def html_with_references(instances):
             html += f'<embed embedtype="image" format="fullwidth-zoomable" id="{instance.pk}" alt="{instance.title}"/>'
         elif isinstance(instance, Indicator):
             html += f'<a linktype="indicator" id="{instance.id}" uuid="{instance.uuid}">{instance.name}</a>'
+        elif isinstance(instance, Page):
+            html += f'<a linktype="page" id="{instance.pk}">{instance.title}</a>'
         else:
             raise TypeError('Unexpected type for referenced instance')
     html += '</p>'
@@ -1119,3 +1132,192 @@ def test_copy_plan_disables_notifications(plan_with_pages):
     plan_copy = copy_plan(plan_with_pages)
 
     assert not plan_copy.notification_settings.notifications_enabled
+
+
+def _translate_page(page: Page, locale: Locale) -> Translation:
+    """Translate `page` into `locale` with wagtail-localize, translating its title to `'<title> (translated)'`."""
+    TranslationCreator(user=None, target_locales=[locale]).create_translations(page)
+    source = TranslationSource.objects.get_for_instance(page)
+    title_segment = StringSegment.objects.get(source=source, context__path='title')
+    StringTranslation.objects.create(
+        translation_of=title_segment.string,
+        locale=locale,
+        context=title_segment.context,
+        data=f'{page.title} (translated)',
+        translation_type=StringTranslation.TRANSLATION_TYPE_MANUAL,
+    )
+    translation = source.translations.get(target_locale=locale)
+    translation.save_target(publish=True)
+    return translation
+
+
+def test_copied_subpages_are_translations_of_each_other(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    _translate_page(page, other_locale)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    translation_copy = page_copy.get_translation(other_locale)
+    assert translation_copy.get_parent().pk == plan_copy.root_page.get_translation(other_locale).pk
+    assert translation_copy.title == 'Page (translated)'
+    assert page_copy.translation_key != page.translation_key
+
+
+def test_copied_pages_keep_translation_data(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    _translate_page(page, other_locale)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    assert source_copy != TranslationSource.objects.get_for_instance(page)
+    translation_copy = source_copy.translations.get()
+    assert translation_copy.target_locale == other_locale
+    assert translation_copy.enabled
+    title_context_copy = TranslationContext.objects.get(object=source_copy.object, path='title')
+    assert StringTranslation.objects.get(context=title_context_copy).data == 'Page (translated)'
+    root_source_copy = TranslationSource.objects.get_for_instance(plan_copy.root_page)
+    assert root_source_copy.translations.filter(target_locale=other_locale, enabled=True).exists()
+
+
+def test_syncing_copied_page_translation_updates_translation_copy(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    _translate_page(page, other_locale)
+    plan_copy = copy_plan(plan_with_pages)
+    page_copy = get_page_copy(page, plan_copy)
+    translation_copy = page_copy.get_translation(other_locale)
+    page_copy.lead_paragraph = 'New lead paragraph'
+    page_copy.save_revision().publish()
+
+    # This is what the "Sync translated pages" button does
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    source_copy.update_from_db()
+    for translation in source_copy.translations.filter(enabled=True):
+        translation.save_target(publish=True)
+
+    translation_copy.refresh_from_db()
+    assert translation_copy.title == 'Page (translated)'
+    assert translation_copy.specific.lead_paragraph == 'New lead paragraph'
+    assert Page.objects.filter(translation_key=page_copy.translation_key).count() == 2
+    # The original's translation is unaffected
+    assert page.get_translation(other_locale).specific.lead_paragraph != 'New lead paragraph'
+
+
+def test_copied_segment_override_references_copied_image(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
+    overriding_image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='overriding image')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, header_image=image)
+    translation = _translate_page(page, other_locale)
+    header_image_segment = OverridableSegment.objects.get(source=translation.source, context__path='header_image')
+    SegmentOverride.objects.create(
+        locale=other_locale,
+        context=header_image_segment.context,
+        data_json=json.dumps(overriding_image.pk),
+    )
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    overriding_image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='overriding image')
+    assert overriding_image_copy.pk != overriding_image.pk
+    override_copy = SegmentOverride.objects.get(context__object_id=page_copy.translation_key, context__path='header_image')
+    assert json.loads(override_copy.data_json) == overriding_image_copy.pk
+    # Syncing applies the override to the translation copy
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    source_copy.translations.get().save_target(publish=True)
+    assert page_copy.get_translation(other_locale).specific.header_image == overriding_image_copy
+
+
+def test_copied_translation_source_keeps_unsynced_snapshot(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page', header_image=image)
+    translation = _translate_page(page, other_locale)
+    # Change the source page without syncing its translation
+    page.title = 'Changed page'
+    page.save_revision().publish()
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    snapshot = source_copy.as_instance()
+    assert snapshot.title == 'Page'
+    image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='image')
+    assert snapshot.header_image == image_copy
+    assert source_copy.last_updated_at == translation.source.last_updated_at
+    assert source_copy.translations.get().get_progress() == translation.get_progress()
+
+
+def test_copied_segment_override_is_resolved_in_source_snapshot_containing_it(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
+    overriding_image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='overriding image')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page)
+    _translate_page(page, other_locale)
+    # The translation is itself a translation source, with content that the other source doesn't have
+    translated_page = page.get_translation(other_locale).specific
+    translated_page.body = [('large_image', {'image': image})]
+    translated_page.save_revision().publish()
+    other_source, _ = TranslationSource.get_or_create_from_instance(translated_page)
+    image_segment = OverridableSegment.objects.get(source=other_source, context__path__endswith='.image')
+    # Contexts created before wagtail-localize 1.0 have no field path, so it must be computed from the content
+    TranslationContext.objects.filter(pk=image_segment.context.pk).update(field_path='')
+    SegmentOverride.objects.create(
+        locale=page.locale,
+        context=image_segment.context,
+        data_json=json.dumps(overriding_image.pk),
+    )
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    overriding_image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='overriding image')
+    override_copy = SegmentOverride.objects.get(
+        context__object_id=page_copy.translation_key, context__path=image_segment.context.path
+    )
+    assert json.loads(override_copy.data_json) == overriding_image_copy.pk
+
+
+def test_copied_translations_are_linked_when_locale_trees_differ(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    other_root_page = plan_with_pages.root_page.get_translation(other_locale)
+    # A page that exists only in the other locale, sorted before the translated page in the other locale's tree
+    StaticPageFactory.create(parent=other_root_page, title='Other locale only', locale=other_locale)
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    _translate_page(page, other_locale)
+    # A page that has not been translated
+    StaticPageFactory.create(parent=plan_with_pages.root_page, title='Untranslated')
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    other_root_page_copy = plan_copy.root_page.get_translation(other_locale)
+    page_copy = get_page_copy(page, plan_copy)
+    assert page_copy.get_translation(other_locale).title == 'Page (translated)'
+    for title, root in [('Other locale only', other_root_page_copy), ('Untranslated', plan_copy.root_page)]:
+        copy = root.get_children().get(title=title)
+        assert not copy.get_translations().exists()
+
+
+def test_page_links_in_copied_page_and_translation_source_point_to_page_copies(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    linked_page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Linked page')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    page.body = [('paragraph', RichText(html_with_references([linked_page])))]
+    page.save_revision().publish()
+    _translate_page(page, other_locale)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    linked_page_copy = get_page_copy(linked_page, plan_copy)
+    page_copy = get_page_copy(page, plan_copy)
+    expected_link = f'<a linktype="page" id="{linked_page_copy.pk}">'
+    assert expected_link in page_copy.body[0].value.source
+    snapshot = TranslationSource.objects.get_for_instance(page_copy).as_instance()
+    assert expected_link in snapshot.body[0].value.source
