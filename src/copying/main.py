@@ -1,21 +1,24 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Generator
 from contextlib import ExitStack, contextmanager
 from copy import copy as shallow_copy
 from functools import singledispatchmethod
 from itertools import chain
 from typing import TYPE_CHECKING, Any, NoReturn, cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, OneToOneField, Q, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
+from wagtail.blocks import Block, ChooserBlock, ListBlock, StreamBlock, StructBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import DraftStateMixin, Page, Revision, RevisionMixin, Site
 from wagtail.models.i18n import Locale
@@ -25,6 +28,14 @@ from wagtail.models.reference_index import ReferenceIndex
 import sentry_sdk
 from loguru import logger
 from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator  # type: ignore
+from wagtail_localize.models import (
+    SegmentOverride,
+    StringTranslation,
+    TranslatableObject,
+    Translation,
+    TranslationContext,
+    TranslationSource,
+)
 
 from kausal_common.datasets.models import (
     DatasetMetric,
@@ -1054,7 +1065,13 @@ class UpdateReferencesVisitor(AbstractVisitor):
             if isinstance(field, Field) and hasattr(field, 'extract_references'):
                 value = field.value_from_object(instance)
                 for to_model, to_object_id, _, content_path in field.extract_references(value):
-                    to_object = to_model.objects.get(id=to_object_id)
+                    to_object = to_model.objects.filter(id=to_object_id).first()
+                    if to_object is None:
+                        logger.warning(
+                            f'Cannot update reference: {type(instance).__name__} {instance.pk} references '
+                            f'{to_model.__name__} {to_object_id}, which does not exist. Keeping broken reference in place.'
+                        )
+                        continue
                     updated_this = self.update_reference(
                         from_object=instance,
                         to_object=to_object,
@@ -1410,6 +1427,10 @@ class UpdateReferencesVisitor(AbstractVisitor):
         """
         if _is_excluded_model(to_object._meta.model):
             return False
+        if isinstance(to_object, Page):
+            # References to pages (e.g., from the reference index or rich text) usually give us a base `Page`, but page
+            # copies are registered with their specific class
+            to_object = to_object.specific
 
         try:
             copy = self.clone_visitor.get_copy(to_object)
@@ -1517,19 +1538,202 @@ def copy_root_pages(
     }
     root_page_copy = root_page.copy(recursive=True, update_attrs=update_attrs)
     copies: list[tuple[Page, Page]] = [(root_page, root_page_copy)]
-    new_translation_key = root_page_copy.translation_key
-    assert root_page_copy.translation_key != root_page.translation_key
-    # When copying the translations of `root_page`, reuse this translation key
     for page in root_page.get_translations():
         assert isinstance(page, (PlanRootPage, DocumentationRootPage))
         update_attrs = {
-            'translation_key': new_translation_key,
             'title': page.title + title_suffix,
             'slug': page.default_slug_for_copying(),
         }
         translation_copy = page.copy(recursive=True, update_attrs=update_attrs)
         copies.append((page, translation_copy))
+    _link_translations_of_page_copies(copies)
     return copies
+
+
+def _link_translations_of_page_copies(root_page_copies: list[tuple[Page, Page]]) -> None:
+    """
+    Give the copied pages translation keys that link them to each other like their originals.
+
+    `Page.copy()` gives each page it copies a new random translation key. As we copy the page tree of each locale
+    separately, the copies would otherwise not be translations of each other.
+
+    `root_page_copies` contains (original, copy) tuples of root pages, as returned by `copy_root_pages()`. The trees
+    rooted at an original and its copy must be isomorphic.
+
+    The trees of different locales need not be isomorphic (e.g., a page may be missing in some locale), as we never
+    pair pages of different trees. We pair each page of an original tree with its copy, and the copies of pages
+    sharing a translation key get the same new translation key.
+    """
+    new_translation_keys: dict[UUID, UUID] = {}
+    for original_root, root_copy in root_page_copies:
+        # `Page.copy()` copies the children of each page in path order, so the copy of the n-th page of the original
+        # tree is the n-th page of the copied tree
+        original_keys = original_root.get_descendants(inclusive=True).order_by('path').values_list('translation_key', flat=True)
+        copy_pks = root_copy.get_descendants(inclusive=True).order_by('path').values_list('pk', flat=True)
+        for original_key, copy_pk in zip(original_keys, copy_pks, strict=True):
+            new_key = new_translation_keys.setdefault(original_key, uuid4())
+            Page.objects.filter(pk=copy_pk).update(translation_key=new_key)
+        root_copy.translation_key = new_translation_keys[original_root.translation_key]
+
+
+def copy_page_translation_data(clone_visitor: CloneVisitor) -> None:
+    """
+    Copy the wagtail-localize data of the original pages for the page copies.
+
+    For a page that wagtail-localize translated, it records the translation source, the locales it has been translated
+    into and the translated strings. Without these records, the admin would, e.g., not offer to sync translations of
+    the copies, and a translation copy would no longer be edited in the translation editor.
+
+    A translation source is a snapshot of the source page's content as of the last time its translations were synced,
+    and the translated strings belong to that snapshot. So we copy the snapshot of the original (with references
+    updated to point to the copies) rather than taking a new one of the page copy. Hence this must be called after all
+    copies have been created.
+    """
+    update_references_visitor = UpdateReferencesVisitor(clone_visitor)
+    page_copies = {pk: copy for (model, pk), copy in clone_visitor.copies.items() if issubclass(model, Page)}
+    # Several sources (one per locale) may share the translated strings of an object, so we copy them once per object.
+    # Map the key of each original object to the original, its copy and the snapshots of all its sources.
+    objects_to_copy: dict[UUID, tuple[TranslatableObject, TranslatableObject, list[Page]]] = {}
+    for original in Page.objects.filter(pk__in=page_copies).order_by('path'):
+        source = TranslationSource.objects.get_for_instance_or_none(original)
+        if source is None:
+            continue
+        page_copy = Page.objects.get(pk=page_copies[original.pk].pk).specific
+        source_instance = page_copy.with_content_json(json.loads(source.content_json))
+        update_references_visitor.update_instance(source_instance, save=False, skip_page_draft=True)
+        update_references_visitor.update_extractable_references(source_instance)
+        source_copy, created = TranslationSource.get_or_create_from_instance(source_instance)
+        assert created
+        TranslationSource.objects.filter(pk=source_copy.pk).update(
+            schema_version=source.schema_version,
+            created_at=source.created_at,
+            last_updated_at=source.last_updated_at,
+        )
+        for translation in source.translations.all():
+            Translation.objects.create(
+                source=source_copy,
+                target_locale_id=translation.target_locale_id,
+                enabled=translation.enabled,
+                translations_last_updated_at=translation.translations_last_updated_at,
+                destination_last_updated_at=translation.destination_last_updated_at,
+            )
+        _, _, snapshots = objects_to_copy.setdefault(source.object_id, (source.object, source_copy.object, []))
+        snapshots.append(source_instance)
+    for original_object, object_copy, snapshots in objects_to_copy.values():
+        _copy_translation_contexts(original_object, object_copy, snapshots, clone_visitor)
+
+
+def _copy_translation_contexts(
+    original_object: TranslatableObject,
+    object_copy: TranslatableObject,
+    snapshots: list[Page],
+    clone_visitor: CloneVisitor,
+) -> None:
+    """
+    Copy the translated strings and segment overrides made in the contexts of `original_object`.
+
+    `snapshots` contains, for each translation source of `original_object`, the page copy with the content of that
+    source.
+    """
+    for context in TranslationContext.objects.filter(object=original_object):
+        context_copy, _ = TranslationContext.objects.get_or_create(
+            object=object_copy,
+            path_id=context.path_id,
+            defaults={'path': context.path, 'field_path': context.field_path},
+        )
+        string_translations = list(StringTranslation.objects.filter(context=context))
+        for string_translation in string_translations:
+            string_translation.pk = None
+            string_translation.context = context_copy
+        StringTranslation.objects.bulk_create(string_translations)
+        segment_overrides = []
+        for segment_override in SegmentOverride.objects.filter(context=context):
+            if not _update_segment_override_reference(segment_override, context_copy, snapshots, clone_visitor):
+                continue
+            segment_override.pk = None
+            segment_override.context = context_copy
+            segment_overrides.append(segment_override)
+        SegmentOverride.objects.bulk_create(segment_overrides)
+
+
+def _update_segment_override_reference(
+    segment_override: SegmentOverride,
+    context_copy: TranslationContext,
+    snapshots: list[Page],
+    clone_visitor: CloneVisitor,
+) -> bool:
+    """
+    Make a segment override that references an object (e.g., an overridden image) reference the object's copy.
+
+    Returns false if the override must be dropped. That is the case if it references an object that has been skipped
+    when copying, or if we cannot tell whether it references an object at all.
+    """
+    resolved, target_model = _get_segment_override_target_model(context_copy, snapshots)
+    if not resolved:
+        # None of the translation sources has content at the path, so wagtail-localize won't use the override unless
+        # the content reappears. We cannot tell whether the override references an object of the original plan.
+        return False
+    if target_model is None:
+        return True
+    target = target_model._default_manager.filter(pk=json.loads(segment_override.data_json)).first()
+    if target is None:
+        return True
+    if isinstance(target, Page):
+        target = target.specific
+    if clone_visitor.is_skipped_reference_target(target):
+        return False
+    if clone_visitor.has_copy(target):
+        segment_override.data_json = json.dumps(clone_visitor.get_copy(target).pk)
+    return True
+
+
+def _get_segment_override_target_model(
+    context: TranslationContext,
+    snapshots: list[Page],
+) -> tuple[bool, type[Model] | None]:
+    """
+    Return the model referenced by segment overrides in `context`, resolving the context in a snapshot containing it.
+
+    The first component of the result is false if no snapshot contains content at the path of the context. The second
+    component is the model, or None if segment overrides in the context don't reference model instances.
+    """
+    for snapshot in snapshots:
+        try:
+            field_path = context.get_field_path(snapshot)
+            return True, _get_overridable_segment_target_model(type(snapshot), field_path.split('.'))
+        except LookupError, FieldDoesNotExist:
+            continue
+    return False, None
+
+
+def _get_overridable_segment_target_model(model: type[Model], field_path: list[str]) -> type[Model] | None:
+    """
+    Return the model referenced by overridable segments at the given wagtail-localize field path in `model`.
+
+    Returns None if overridable segments at the field path don't reference model instances (e.g., URLs).
+    """
+    field = model._meta.get_field(field_path[0])
+    if isinstance(field, ForeignKey):
+        return field.related_model
+    if isinstance(field, ManyToOneRel):
+        return _get_overridable_segment_target_model(field.related_model, field_path[1:])
+    if isinstance(field, StreamField):
+        return _get_overridable_segment_target_block_model(field.stream_block, field_path[1:])
+    return None
+
+
+def _get_overridable_segment_target_block_model(block: Block, field_path: list[str]) -> type[Model] | None:
+    """Like `_get_overridable_segment_target_model()`, but for a field path within a block."""
+    for component in field_path:
+        if isinstance(block, ListBlock):
+            block = block.child_block
+        elif isinstance(block, (StructBlock, StreamBlock)):
+            block = block.child_blocks[component]
+        else:
+            return None
+    if isinstance(block, ChooserBlock):
+        return block.model_class
+    return None
 
 
 def _copy_instance_revision(
@@ -1856,6 +2060,7 @@ def _clone_plan_objects(
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, indicators, clone_visitor)
+    copy_page_translation_data(clone_visitor)
 
     return plan_copy
 

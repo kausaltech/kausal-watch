@@ -6,6 +6,7 @@ from typing import Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from wagtail.blocks import StreamValue
+from wagtail.models import Page
 
 from documents.models import AplansDocument
 from images.models import AplansImage
@@ -160,6 +161,17 @@ def update_streamfield_block(
     setattr(instance, field_name, StreamValue(stream_value.stream_block, stream_value.raw_data, is_lazy=True))
 
 
+def _reference_tag_pattern(referenced_object: Model) -> str:
+    """Return a regex matching the tags of references to objects of the type of `referenced_object` in rich text."""
+    if isinstance(referenced_object, AplansImage):
+        return r'<embed\s+[^>]*embedtype="image"[^>]*/>'
+    link_types: list[tuple[type[Model], str]] = [(AplansDocument, 'document'), (Indicator, 'indicator'), (Page, 'page')]
+    for model, link_type in link_types:
+        if isinstance(referenced_object, model):
+            return rf'<a\s+[^>]*linktype="{link_type}"[^>]*>'
+    raise TypeError(f'referenced_object has unexpected type {type(referenced_object)}')
+
+
 def _tag_references_object(tag: str, referenced_object: Model) -> bool:
     return re.search(rf'\bid="{referenced_object.pk}"', tag) is not None
 
@@ -168,15 +180,11 @@ def remove_reference_from_html(
     html: str,
     referenced_object: Model,
 ) -> str:
-    """Remove a reference to an image, document, or indicator from a given HTML string."""
-    if isinstance(referenced_object, AplansDocument):
-        pattern = r'<a\s+[^>]*linktype="document"[^>]*>.*?</a>'
-    elif isinstance(referenced_object, AplansImage):
-        pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
-    elif isinstance(referenced_object, Indicator):
-        pattern = r'<a\s+[^>]*linktype="indicator"[^>]*>.*?</a>'
-    else:
-        raise TypeError(f'referenced_object has unexpected type {type(referenced_object)}')
+    """Remove a reference to an image, document, indicator or page from a given HTML string."""
+    pattern = _reference_tag_pattern(referenced_object)
+    if not isinstance(referenced_object, AplansImage):
+        # Match the whole link, not just its opening tag
+        pattern += r'.*?</a>'
 
     def replace_reference(match: re.Match) -> str:
         tag = match.group(0)
@@ -198,16 +206,9 @@ def update_reference_in_html(
     old_referenced_object: Model,
     new_referenced_object: Model,
 ) -> str:
-    """Update a reference to an image, document, or indicator in a given HTML string."""
+    """Update a reference to an image, document, indicator or page in a given HTML string."""
     assert type(old_referenced_object) is type(new_referenced_object)
-    if isinstance(old_referenced_object, AplansDocument):
-        pattern = r'<a\s+[^>]*linktype="document"[^>]*>'
-    elif isinstance(old_referenced_object, AplansImage):
-        pattern = r'<embed\s+[^>]*embedtype="image"[^>]*/>'
-    elif isinstance(old_referenced_object, Indicator):
-        pattern = r'<a\s+[^>]*linktype="indicator"[^>]*>'
-    else:
-        raise TypeError(f'old_referenced_object has unexpected type {type(old_referenced_object)}')
+    pattern = _reference_tag_pattern(old_referenced_object)
 
     old_id = old_referenced_object.pk
     new_id = new_referenced_object.pk
@@ -254,7 +255,7 @@ def update_rich_text_reference_in_field(
     old_referenced_object: Model,
     new_referenced_object: Model,
 ) -> None:
-    """Update a reference to an image, document, or indicator in a given rich text field."""
+    """Update a reference to an image, document, indicator or page in a given rich text field."""
     old_value: str = getattr(instance, field_name)
     new_value = update_reference_in_html(old_value, old_referenced_object, new_referenced_object)
     setattr(instance, field_name, new_value)
@@ -265,7 +266,7 @@ def remove_rich_text_reference_from_field(
     field_name: str,
     referenced_object: Model,
 ) -> None:
-    """Remove a reference to an image, document, or indicator from a given rich text field."""
+    """Remove a reference to an image, document, indicator or page from a given rich text field."""
     old_value: str = getattr(instance, field_name)
     new_value = remove_reference_from_html(old_value, referenced_object)
     setattr(instance, field_name, new_value)
