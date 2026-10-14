@@ -4,9 +4,10 @@ from wagtail.images.views.images import IndexView
 
 import pytest
 
-from actions.tests.factories import PlanFactory
+from actions.tests.factories import CommonCategoryTypeFactory, PlanFactory
 from images.permissions import permission_policy
 from images.tests.factories import AplansImageFactory
+from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 
@@ -41,3 +42,18 @@ def test_image_index_queryset_tracks_active_plan():
     # A subsequent request gets a fresh user and active-plan cache.
     request.user = type(user).objects.get(pk=user.pk)
     assert list(view.get_base_queryset().values_list('pk', flat=True)) == [other_image.pk]
+
+
+@pytest.mark.django_db
+def test_superuser_sees_common_category_type_images():
+    plan = PlanFactory.create()
+    cct = CommonCategoryTypeFactory.create(has_collection=True)
+    assert cct.collection is not None
+    plan_image = AplansImageFactory.create(collection=plan.root_collection)
+    cct_image = AplansImageFactory.create(collection=cct.collection)
+    superuser = UserFactory.create(is_superuser=True, selected_admin_plan=plan)
+    plan_admin = PersonFactory.create(general_admin_plans=[plan]).user
+    assert plan_admin is not None
+
+    assert set(permission_policy.instances_user_has_any_permission_for(superuser, ['choose'])) == {plan_image, cct_image}
+    assert cct_image not in permission_policy.instances_user_has_any_permission_for(plan_admin, ['choose'])
