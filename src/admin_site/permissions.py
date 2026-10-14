@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from wagtail.models import Collection
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.permission_policies.collections import (
     CollectionOwnershipPermissionPolicy,
@@ -39,6 +40,10 @@ class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissi
         qs = super().instances_user_has_any_permission_for(user, actions)
         plan = user.get_active_admin_plan()
         collections = plan.root_collection.get_descendants(inclusive=True)
+        if user.is_superuser:
+            common_cat_coll = Collection.objects.filter(name=settings.COMMON_CATEGORIES_COLLECTION).first()
+            if common_cat_coll is not None:
+                collections |= common_cat_coll.get_descendants(inclusive=True)
         qs = qs.filter(collection__in=collections)
         return qs
 
