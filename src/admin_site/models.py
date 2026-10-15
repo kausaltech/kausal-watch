@@ -29,6 +29,7 @@ from users.models import User
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
+    from kausal_common.users import UserOrAnon
 
     from actions.models.plan import Plan
     from admin_site.permissions import PlanAdminOnlyPermissionPolicy, PlanRelatedPermissionPolicy
@@ -198,6 +199,7 @@ class BuiltInFieldCustomization(
     )
     # Model of the customized field
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+    content_type_id: int
     # Name of the field in the model
     field_name = models.CharField(max_length=80, verbose_name=_('field'))
 
@@ -250,6 +252,32 @@ class BuiltInFieldCustomization(
             customization.is_instance_visible_for(user, plan, instance),
             customization.is_instance_editable_by(user, plan, instance),
         )
+
+    @classmethod
+    def for_plan(cls, plan: Plan) -> dict[tuple[int, str], Self]:
+        """Return all customizations of `plan` keyed by `(content_type_id, field_name)`, using one query."""
+        return {(c.content_type_id, c.field_name): c for c in cls.objects.filter(plan=plan)}
+
+    @classmethod
+    def is_field_visible_for(
+        cls,
+        user: UserOrAnon,
+        plan: Plan,
+        model: type[models.Model],
+        field_name: str,
+        instance: models.Model | None,
+        customizations: dict[tuple[int, str], Self],
+    ) -> bool:
+        """
+        Return whether a built-in field of `model` in `plan` is visible for `user`.
+
+        Takes the plan's customizations as returned by `for_plan()`, so that a caller checking many rows
+        queries them only once. The field is visible if it has no customization.
+        """
+        customization = customizations.get((ContentType.objects.get_for_model(model).pk, field_name))
+        if customization is None:
+            return True
+        return customization.is_instance_visible_for(user, plan, instance)
 
     def clean(self):
         # Note that this will only be called when saving the instance using a form, not when doing it with save(). When

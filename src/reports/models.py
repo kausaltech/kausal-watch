@@ -25,7 +25,7 @@ from actions.action_fields import action_registry
 from actions.models.action import Action
 from kausal_common.blocks.registry import FieldBlockContext
 from reports.blocks.action_content import ReportFieldBlock
-from reports.utils import get_field_unique_key
+from reports.utils import get_field_unique_key, is_visible_in_full_export
 
 # The following model is for very specialized use and is only imported here so that Django finds it
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
@@ -59,20 +59,6 @@ class ActionListPageNotFoundError(Exception):
     def __init__(self, plan: Plan):
         self.plan = plan
         super().__init__(f'Plan {plan.identifier!r} has no live, public ActionListPage')
-
-
-def _attribute_type_visible_in_full_export(attribute_type: AttributeType, user: UserOrAnon, plan: Plan) -> bool:
-    visible_for = attribute_type.instances_visible_for
-    VisibleFor = AttributeType.VisibleFor
-    if visible_for == VisibleFor.PUBLIC:
-        return True
-    if not user.is_authenticated:
-        return False
-    if visible_for == VisibleFor.AUTHENTICATED:
-        return True
-    # Contact-person and moderator visibility depends on the action, and the export has no per-cell
-    # filtering, so these columns are only included for plan admins, who see them for every action.
-    return user.is_general_admin_for_plan(plan)
 
 
 @reversion.register()
@@ -144,9 +130,7 @@ class ReportType(PlanRelatedModelWithRevision):
         """
         report_type = ReportType(plan=plan, name='Full export', fields=None)
         assert report_type.fields is not None
-        attribute_types = [
-            at for at in AttributeType.objects.for_actions(plan) if _attribute_type_visible_in_full_export(at, user, plan)
-        ]
+        attribute_types = [at for at in AttributeType.objects.for_actions(plan) if is_visible_in_full_export(at, user, plan)]
         category_types = plan.category_types.filter(usable_for_actions=True)
 
         stream_data: list[dict] = []

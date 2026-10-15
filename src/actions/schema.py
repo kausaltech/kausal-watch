@@ -104,6 +104,7 @@ from actions.models.action import ActionQuerySet
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
 from actions.models.category import IndicatorCategoryRelationshipType
+from admin_site.models import BuiltInFieldCustomization
 from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, PageChangeLogMessage
@@ -1578,6 +1579,29 @@ def _plan_cache_for_task(task: ActionTask, info: GQLInfo) -> PlanSpecificCache |
     return cache
 
 
+def _task_assignment_cache(task: ActionTask, info: GQLInfo, relation_name: str) -> PlanSpecificCache | None:
+    """
+    Return the cache of the plan that owns `task` if the task's `relation_name` assignments may be served.
+
+    They may not be if the plan is not visible to the user, if the plan does not have the feature, or if the
+    plan's field customization of the relation hides it from the user. The customization is checked against
+    the task's action, which the contact-person and moderator visibility levels are about.
+    """
+    cache = _plan_cache_for_task(task, info)
+    if cache is None or not cache.plan.features.has_action_task_assignees:
+        return None
+    if not BuiltInFieldCustomization.is_field_visible_for(
+        info.context.user,
+        cache.plan,
+        ActionTask,
+        relation_name,
+        task.action,
+        cache.built_in_field_customizations,
+    ):
+        return None
+    return cache
+
+
 class ActionTaskResponsiblePartyNode(DjangoNode[ActionTaskResponsibleParty]):
     class Meta:
         model = ActionTaskResponsibleParty
@@ -1632,8 +1656,8 @@ class ActionTaskNode(DjangoNode[ActionTask]):
 
     @staticmethod
     def resolve_responsible_parties(root: ActionTask, info: GQLInfo):
-        cache = _plan_cache_for_task(root, info)
-        if cache is None or not cache.plan.features.has_action_task_assignees:
+        cache = _task_assignment_cache(root, info, 'responsible_parties')
+        if cache is None:
             return []
         from_revision = root.assignments_from_revision('responsible_parties')
         if from_revision is not None:
@@ -1643,8 +1667,8 @@ class ActionTaskNode(DjangoNode[ActionTask]):
 
     @staticmethod
     def resolve_contact_persons(root: ActionTask, info: GQLInfo):
-        cache = _plan_cache_for_task(root, info)
-        if cache is None or not cache.plan.features.has_action_task_assignees:
+        cache = _task_assignment_cache(root, info, 'contact_persons')
+        if cache is None:
             return []
         from_revision = root.assignments_from_revision('contact_persons')
         if from_revision is None:
