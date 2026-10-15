@@ -61,6 +61,7 @@ from admin_site.wagtail import (
     CustomizableBuiltInFieldPanel,
     InitializeFormWithInitialPlanMixin,
     InitializeFormWithPlanMixin,
+    get_default_language_tab_heading,
     get_translation_tabs,
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
@@ -395,7 +396,7 @@ class QuantityAdmin(AplansModelAdmin[Quantity]):
         request = ctx_request.get()
         instance = ctx_instance.get()
         tabs = [
-            ObjectList(self.panels, heading=_('General')),
+            ObjectList(self.panels, heading=get_default_language_tab_heading(instance, _('General'))),
             *get_translation_tabs(instance, request, include_all_languages=True),
         ]
         return AplansTabbedInterface(tabs, base_form_class=QuantityForm)
@@ -426,7 +427,7 @@ class UnitAdmin(AplansModelAdmin[Unit]):
         request = ctx_request.get()
         instance = ctx_instance.get()
         tabs = [
-            ObjectList(self.panels, heading=_('General')),
+            ObjectList(self.panels, heading=get_default_language_tab_heading(instance, _('General'))),
             *get_translation_tabs(instance, request, include_all_languages=True),
         ]
         return AplansTabbedInterface(tabs, base_form_class=UnitForm)
