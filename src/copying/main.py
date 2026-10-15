@@ -498,7 +498,7 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
         'root_collection': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
         'secondary_action_classification': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
         # Part of unique constraints with the parent and with the organization, which the copy shares with the original
-        'short_identifier': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
+        'short_identifier': UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE,
         'site': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
     },
     PlanFeatures: {
@@ -1076,6 +1076,8 @@ class CloneVisitor(AbstractVisitor):
         # Temporarily break cycles; to be restored after everything has been copied
         self.remove_link(instance, 'primary_action_classification')
         self.remove_link(instance, 'secondary_action_classification')
+        # The copy has the same parent and organization as the original, so it cannot have the same short identifier
+        instance.short_identifier = None
         # Groups will be created in Plan.save()
         instance.admin_group = None
         instance.contact_person_group = None
