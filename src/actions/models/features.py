@@ -157,11 +157,6 @@ class PlanFeatures(PlanRelatedModelWithRevision):
             'In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing.',
         ),
     )
-    password_protected = models.BooleanField(
-        default=False,
-        verbose_name=_('Password protected'),
-        help_text=_('Is this plan password protected?'),
-    )
     indicators_open_in_modal = models.BooleanField(
         default=False,
         verbose_name=_('Indicators open in modal'),
