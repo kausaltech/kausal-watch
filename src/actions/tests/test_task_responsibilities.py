@@ -27,12 +27,14 @@ from aplans.cache import PlanSpecificCache
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.action_admin import ActionAdmin, ReadOnlyInlinePanel
+from actions.action_admin import TASK_ASSIGNMENT_RELATIONS, ActionAdmin, ReadOnlyInlinePanel
 from actions.models import Action
 from actions.models.action import ActionContactPerson, ActionTask, ActionTaskContactPerson, ActionTaskResponsibleParty
 from actions.models.features import PlanFeatures
 from actions.perms import get_action_contact_person_perms
 from actions.tests.factories import (
+    ActionFactory,
+    ActionResponsiblePartyFactory,
     ActionTaskContactFactory,
     ActionTaskFactory,
     ActionTaskResponsiblePartyFactory,
@@ -44,6 +46,7 @@ from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
+from users.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -645,9 +648,7 @@ def test_redaction_does_not_add_a_query_per_assignment(graphql_client_query_data
     small_count = _query_count_for_plan(graphql_client_query_data, plan)
     large_count = _query_count_for_plan(graphql_client_query_data, larger)
 
-    assert large_count - small_count <= 6 - 2, (
-        f'{large_count} queries for 6 tasks vs {small_count} for 2 at the NAME level'
-    )
+    assert large_count - small_count <= 6 - 2, f'{large_count} queries for 6 tasks vs {small_count} for 2 at the NAME level'
 
 
 def _plan_with_tasks(plan_factory, action_factory, task_count: int):
@@ -676,9 +677,7 @@ def test_graphql_task_assignments_do_not_scale_with_task_count(graphql_client_qu
     small_count = _query_count_for_plan(graphql_client_query_data, small)
     large_count = _query_count_for_plan(graphql_client_query_data, large)
 
-    assert large_count == small_count, (
-        f'{large_count} queries for {task_counts[1]} tasks vs {small_count} for {task_counts[0]}'
-    )
+    assert large_count == small_count, f'{large_count} queries for {task_counts[1]} tasks vs {small_count} for {task_counts[0]}'
 
 
 def test_an_action_query_does_not_read_the_assignment_tables(graphql_client_query_data, plan, action):
@@ -976,9 +975,7 @@ def test_a_person_assigned_only_to_a_task_stays_available_to_the_plan(plan, acti
     assert consultant in Person.objects.available_for_plan(plan, include_contact_persons=True)
 
 
-def test_an_existing_task_assignment_still_validates_after_the_person_leaves_the_action(
-    rf, action, plan_admin_user
-):
+def test_an_existing_task_assignment_still_validates_after_the_person_leaves_the_action(rf, action, plan_admin_user):
     """Re-saving the action must not reject an assignment that is already stored."""
     consultant = PersonFactory.create()
     contact = ActionContactPerson.objects.create(action=action, person=consultant)
@@ -1040,9 +1037,7 @@ def test_an_organization_assigned_to_a_task_stays_a_valid_choice(rf, action, pla
     assert form.is_valid(), form.formsets['tasks'].forms[0].formsets['responsible_parties'].forms[0].errors
 
 
-def test_rest_api_does_not_query_an_organization_per_redacted_contact(
-    api_client, plan, action, action_task_list_url
-):
+def test_rest_api_does_not_query_an_organization_per_redacted_contact(api_client, plan, action, action_task_list_url):
     """
     At the `NAME` level the redacted copy carries the person's organization, which has to be prefetched.
 
@@ -1099,9 +1094,7 @@ def test_a_departed_organization_cannot_be_assigned_to_another_task(rf, action, 
     assert not form.is_valid(), 'a departed organization must not be assignable to a new task'
 
 
-def test_related_plan_actions_do_not_query_a_person_per_assignment(
-    graphql_client_query_data, plan_factory, action_factory
-):
+def test_related_plan_actions_do_not_query_a_person_per_assignment(graphql_client_query_data, plan_factory, action_factory):
     """
     `relatedPlanActions` returns other plans' actions, whose people also have to come from the cache.
 
@@ -1138,9 +1131,7 @@ def test_related_plan_actions_do_not_query_a_person_per_assignment(
     assert large == small, f'{large} queries for {task_counts[1]} tasks vs {small} for {task_counts[0]}'
 
 
-def test_related_plan_actions_do_not_load_people_of_untouched_plans(
-    graphql_client_query_data, plan_factory, action_factory
-):
+def test_related_plan_actions_do_not_load_people_of_untouched_plans(graphql_client_query_data, plan_factory, action_factory):
     """
     Filling a plan's people costs several queries, so it happens on first use.
 
@@ -1266,8 +1257,8 @@ def test_a_query_without_assignee_fields_does_not_load_them(graphql_client_query
     )
 
     assert with_assignees > without, 'the assignments are loaded when they are asked for'
-    assert with_assignees - without == 2, (
-        f'{with_assignees - without} extra queries; one per relation is expected'
+    assert with_assignees - without == 3, (
+        f'{with_assignees - without} extra queries; one per relation and one for the field customizations are expected'
     )
 
 
@@ -1294,9 +1285,7 @@ def test_a_plan_without_the_feature_does_not_load_assignments(graphql_client_que
     assert without_feature < with_feature
 
 
-def test_rest_api_does_not_read_assignments_of_a_plan_without_the_feature(
-    api_client, plan, action, action_task_list_url
-):
+def test_rest_api_does_not_read_assignments_of_a_plan_without_the_feature(api_client, plan, action, action_task_list_url):
     """A plan without the feature answers with empty lists, so its assignments are not worth reading."""
     task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
     ActionTaskResponsiblePartyFactory.create(task=task)
@@ -1386,9 +1375,268 @@ def test_a_draft_shows_its_own_task_assignments(graphql_client_query_data, clien
         variables={'plan': plan.identifier},
     )
 
-    names = [
-        rp['organization']['name'] for a in data['planActions'] for t in a['tasks'] for rp in t['responsibleParties']
-    ]
+    names = [rp['organization']['name'] for a in data['planActions'] for t in a['tasks'] for rp in t['responsibleParties']]
     assert names == [draft_org.name], f'the draft holds {draft_org.name}, the database {published_org.name}'
     people = [cp['person']['firstName'] for a in data['planActions'] for t in a['tasks'] for cp in t['contactPersons']]
     assert people == [draft_person.first_name]
+
+
+# --- Visibility of the assignments outside the admin ------------------------------------------------------
+#
+# A plan's field customization of a task relation decides who sees it in the public GraphQL API and in REST
+# too, not only in the admin. The customization is checked against the task's action, so the
+# contact-person and moderator levels mean the contact persons of that action. (`ActionContactPerson.role`
+# defaults to moderator, so the `action_contact_person` fixture is one.)
+
+VisibleFor = InstancesVisibleForMixin.VisibleFor
+EditableBy = InstancesEditableByMixin.EditableBy
+READERS = ('anonymous', 'authenticated', 'action_contact', 'other_action_contact', 'plan_admin')
+VISIBLE_TO: dict[str, set[str]] = {
+    VisibleFor.PUBLIC: set(READERS),
+    VisibleFor.AUTHENTICATED: {'authenticated', 'action_contact', 'other_action_contact', 'plan_admin'},
+    VisibleFor.CONTACT_PERSONS: {'action_contact', 'plan_admin'},
+    VisibleFor.MODERATORS: {'action_contact', 'plan_admin'},
+    VisibleFor.PLAN_ADMINS: {'plan_admin'},
+}
+
+
+def _log_in_reader(client, reader: str, action: Action, request) -> None:
+    if reader == 'anonymous':
+        return
+    if reader == 'authenticated':
+        # Someone with a person in no role of the plan; the action queries require a person.
+        user = PersonFactory.create(user=UserFactory.create()).user
+    elif reader == 'action_contact':
+        user = request.getfixturevalue('action_contact_person_user')
+    elif reader == 'other_action_contact':
+        other_action = ActionFactory.create(plan=action.plan)
+        user = PersonFactory.create(contact_for_actions=[other_action], user=UserFactory.create()).user
+    else:
+        user = request.getfixturevalue('plan_admin_user')
+    client.force_login(user)
+
+
+def _task_with_assignments(action: Action) -> ActionTask:
+    """Create a task with one of each assignment, in a plan that publishes its contact persons in full."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task)
+    ActionTaskContactFactory.create(task=task, person=PersonFactory.create(organization=action.plan.organization))
+    action.plan.features.contact_persons_public_data = PlanFeatures.ContactPersonsPublicData.ALL
+    action.plan.features.save()
+    return task
+
+
+TASK_ASSIGNMENTS_QUERY = """
+    query($plan: ID!) {
+      planActions(plan: $plan) {
+        tasks { responsibleParties { organization { id } } contactPersons { person { id } } }
+      }
+    }
+"""
+
+
+@pytest.mark.parametrize('relation', TASK_ASSIGNMENT_RELATIONS)
+@pytest.mark.parametrize('visible_for', list(VISIBLE_TO))
+@pytest.mark.parametrize('reader', READERS)
+def test_graphql_follows_the_customized_visibility(
+    graphql_client_query_data, client, request, action, relation, visible_for, reader
+):
+    _task_with_assignments(action)
+    _customize(action.plan, relation, visible_for=visible_for, editable_by=EditableBy.PLAN_ADMINS)
+    _log_in_reader(client, reader, action, request)
+
+    data = graphql_client_query_data(TASK_ASSIGNMENTS_QUERY, variables={'plan': action.plan.identifier})
+
+    (task,) = [t for a in data['planActions'] for t in a['tasks']]
+    field = {'responsible_parties': 'responsibleParties', 'contact_persons': 'contactPersons'}[relation]
+    other_field = {'responsibleParties': 'contactPersons', 'contactPersons': 'responsibleParties'}[field]
+    assert bool(task[field]) == (reader in VISIBLE_TO[visible_for])
+    assert len(task[other_field]) == 1, 'the other relation is not customized and stays public'
+
+
+def test_graphql_customization_is_checked_against_the_tasks_own_action(
+    graphql_client_query_data, client, action, action_contact_person_user
+):
+    """A contact person of one action sees "contact persons only" assignments of that action's tasks alone."""
+    _task_with_assignments(action)
+    other_action = ActionFactory.create(plan=action.plan)
+    _task_with_assignments(other_action)
+    _customize(
+        action.plan,
+        'responsible_parties',
+        visible_for=VisibleFor.CONTACT_PERSONS,
+        editable_by=EditableBy.PLAN_ADMINS,
+    )
+    client.force_login(action_contact_person_user)
+
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) { planActions(plan: $plan) { id tasks { responsibleParties { id } } } }
+        """,
+        variables={'plan': action.plan.identifier},
+    )
+
+    visible = {a['id']: bool(a['tasks'][0]['responsibleParties']) for a in data['planActions']}
+    assert visible == {str(action.pk): True, str(other_action.pk): False}
+
+
+def test_graphql_customization_wins_over_published_contact_persons(graphql_client_query_data, action):
+    """Contact persons need both settings: the customization hides them even if the plan publishes them."""
+    _task_with_assignments(action)
+    _customize(
+        action.plan,
+        'contact_persons',
+        visible_for=VisibleFor.PLAN_ADMINS,
+        editable_by=EditableBy.PLAN_ADMINS,
+    )
+
+    data = graphql_client_query_data(TASK_ASSIGNMENTS_QUERY, variables={'plan': action.plan.identifier})
+
+    (task,) = [t for a in data['planActions'] for t in a['tasks']]
+    assert task['contactPersons'] == []
+
+
+def test_graphql_plan_setting_wins_over_a_public_customization(graphql_client_query_data, action):
+    """...and the plan's contact-person setting still hides them if the customization is public."""
+    _task_with_assignments(action)
+    _customize(action.plan, 'contact_persons', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    action.plan.features.contact_persons_public_data = PlanFeatures.ContactPersonsPublicData.NONE
+    action.plan.features.save()
+
+    data = graphql_client_query_data(TASK_ASSIGNMENTS_QUERY, variables={'plan': action.plan.identifier})
+
+    (task,) = [t for a in data['planActions'] for t in a['tasks']]
+    assert task['contactPersons'] == []
+
+
+def test_graphql_hides_draft_assignments_too(graphql_client_query_data, client, plan, action, action_contact_person_user):
+    """A draft is rebuilt from its revision, which must not bypass the customization."""
+    _task_with_assignments(action)
+    action.refresh_from_db()
+    action.save_revision(user=action_contact_person_user)
+    action.has_unpublished_changes = True
+    action.save(update_fields=['has_unpublished_changes'])
+    _customize(
+        plan,
+        'responsible_parties',
+        visible_for=VisibleFor.PLAN_ADMINS,
+        editable_by=EditableBy.PLAN_ADMINS,
+    )
+    client.force_login(action_contact_person_user)
+
+    data = graphql_client_query_data(
+        """
+        query($plan: ID!) @workflow(state: DRAFT) {
+          planActions(plan: $plan) { tasks { responsibleParties { id } contactPersons { id } } }
+        }
+        """,
+        variables={'plan': plan.identifier},
+    )
+
+    (task,) = [t for a in data['planActions'] for t in a['tasks']]
+    assert task['responsibleParties'] == []
+    assert len(task['contactPersons']) == 1
+
+
+def test_graphql_customizations_cost_one_query_per_plan(graphql_client_query_data, plan, action_factory):
+    """The customizations are read once for the plan, not once per task."""
+
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            graphql_client_query_data(TASK_ASSIGNMENTS_QUERY, variables={'plan': plan.identifier})
+        return len(ctx)
+
+    _task_with_assignments(action_factory.create(plan=plan))
+    _customize(plan, 'responsible_parties', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    baseline = count_queries()
+    for _ in range(3):
+        _task_with_assignments(action_factory.create(plan=plan))
+
+    assert count_queries() == baseline
+
+
+def test_graphql_does_not_apply_action_level_customizations(graphql_client_query_data, action):
+    """
+    Customizations of the action's own relations still affect only the admin.
+
+    Plans may already restrict those for the admin, and enforcing that publicly would take data off their sites.
+    """
+    ActionResponsiblePartyFactory.create(action=action, organization=action.plan.organization)
+    BuiltInFieldCustomizationFactory.create(
+        plan=action.plan,
+        content_type=ContentType.objects.get_for_model(Action),
+        field_name='responsible_parties',
+        instances_visible_for=VisibleFor.PLAN_ADMINS,
+    )
+
+    data = graphql_client_query_data(
+        'query($plan: ID!) { planActions(plan: $plan) { id responsibleParties { id } } }',
+        variables={'plan': action.plan.identifier},
+    )
+
+    (payload,) = [a for a in data['planActions'] if a['id'] == str(action.pk)]
+    assert payload['responsibleParties']
+
+
+@pytest.mark.parametrize(
+    ('visible_for', 'reader', 'visible'),
+    [
+        (VisibleFor.PLAN_ADMINS, 'anonymous', False),
+        (VisibleFor.PLAN_ADMINS, 'plan_admin', True),
+        (VisibleFor.CONTACT_PERSONS, 'action_contact', True),
+        (VisibleFor.CONTACT_PERSONS, 'other_action_contact', False),
+    ],
+)
+@pytest.mark.parametrize('relation', TASK_ASSIGNMENT_RELATIONS)
+def test_rest_api_follows_the_customized_visibility(
+    api_client, request, action, action_task_list_url, relation, visible_for, reader, visible
+):
+    task = _task_with_assignments(action)
+    _customize(action.plan, relation, visible_for=visible_for, editable_by=EditableBy.PLAN_ADMINS)
+    _log_in_reader(api_client, reader, action, request)
+
+    response = api_client.get(action_task_list_url)
+
+    assert response.status_code == 200
+    (payload,) = [t for t in response.json()['results'] if t['id'] == task.pk]
+    assert bool(payload[relation]) == visible
+
+
+def test_rest_api_customizations_cost_one_query_per_plan(api_client, plan, action_factory, action_task_list_url):
+    def count_queries() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            assert api_client.get(action_task_list_url).status_code == 200
+        return len(ctx)
+
+    _task_with_assignments(action_factory.create(plan=plan))
+    _customize(plan, 'responsible_parties', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    baseline = count_queries()
+    for _ in range(3):
+        _task_with_assignments(action_factory.create(plan=plan))
+
+    assert count_queries() == baseline
+
+
+@pytest.mark.parametrize(
+    ('relation', 'visible_for', 'contact_persons_public_data', 'public'),
+    [
+        ('responsible_parties', VisibleFor.PUBLIC, PlanFeatures.ContactPersonsPublicData.ALL, True),
+        ('responsible_parties', VisibleFor.AUTHENTICATED, PlanFeatures.ContactPersonsPublicData.ALL, False),
+        ('contact_persons', VisibleFor.PUBLIC, PlanFeatures.ContactPersonsPublicData.ALL, True),
+        ('contact_persons', VisibleFor.PUBLIC, PlanFeatures.ContactPersonsPublicData.NONE, False),
+        ('contact_persons', VisibleFor.PLAN_ADMINS, PlanFeatures.ContactPersonsPublicData.ALL, False),
+    ],
+)
+def test_assignment_panel_headings_tell_whether_the_relation_is_public(
+    action, plan_admin_user, relation, visible_for, contact_persons_public_data, public
+):
+    features = action.plan.features
+    features.display_field_visibility_restrictions = True
+    features.contact_persons_public_data = contact_persons_public_data
+    features.save()
+    _customize(action.plan, relation, visible_for=visible_for, editable_by=EditableBy.PLAN_ADMINS)
+
+    panels = ActionAdmin().get_task_panels(plan_admin_user, action.plan, action)
+
+    (panel,) = [p for p in panels if getattr(p, 'relation_name', None) == relation]
+    assert ('Non-public field' not in str(panel.heading)) == public

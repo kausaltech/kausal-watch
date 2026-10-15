@@ -69,6 +69,7 @@ if TYPE_CHECKING:
     from rest_framework.views import APIView
 
     from kausal_common.api.utils import RegisteredAPIView
+    from kausal_common.users import UserOrAnon
 
     from aplans.types import WatchAdminRequest, WatchAPIRequest
 
@@ -2145,12 +2146,34 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         chosen, not what may be read, and an assignment the admin form deliberately keeps should not
         vanish from the API that reports it. This is what an action's own responsible parties do.
         """
-        if not self._plan_of(obj).features.has_action_task_assignees:
+        if not self._serves_assignments(obj, 'responsible_parties'):
             return []
         return list(ActionTaskResponsiblePartySerializer(obj.responsible_parties.all(), many=True).data)
 
     def _plan_of(self, obj: ActionTask) -> Plan:
         return self.context.get('plan') or obj.action.plan
+
+    def _user(self) -> UserOrAnon:
+        request = self.context.get('request')
+        return request.user if request is not None else AnonymousUser()
+
+    def _serves_assignments(self, obj: ActionTask, relation_name: str) -> bool:
+        """
+        Return whether the task's `relation_name` assignments may be shown to the requesting user.
+
+        They may not be if the plan lacks the feature, or if the plan's field customization of the relation
+        hides it from the user. The customizations are loaded once per plan rather than once per task.
+        """
+        plan = self._plan_of(obj)
+        if not plan.features.has_action_task_assignees:
+            return False
+        customizations = self._customizations_by_plan.get(plan.pk)
+        if customizations is None:
+            customizations = BuiltInFieldCustomization.for_plan(plan)
+            self._customizations_by_plan[plan.pk] = customizations
+        return BuiltInFieldCustomization.is_field_visible_for(
+            self._user(), plan, ActionTask, relation_name, obj.action, customizations
+        )
 
     def get_contact_persons(self, obj: ActionTask) -> list[dict[str, Any]]:
         """
@@ -2160,15 +2183,14 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         show contact persons" alone would still hand out person ids under "show all information but only
         for authenticated users", for which `PlanFeatures.public_contact_persons` is equally false.
         """
-        if not self._plan_of(obj).features.has_action_task_assignees:
+        if not self._serves_assignments(obj, 'contact_persons'):
             return []
-        request = self.context.get('request')
-        user = request.user if request is not None else AnonymousUser()
-        visible = obj.get_redacted_contact_persons(user)
+        visible = obj.get_redacted_contact_persons(self._user())
         return list(ActionTaskContactPersonSerializer(visible, many=True).data)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._customizations_by_plan: dict[int, dict[tuple[int, str], BuiltInFieldCustomization]] = {}
         plan = self.context.get('plan')
         action_field = self.fields.get('action')
         if plan and action_field:

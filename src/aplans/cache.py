@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         AttributeTypeChoiceOption,
     )
     from actions.models.action import ActionQuerySet
+    from admin_site.models import BuiltInFieldCustomization
     from orgs.models import Organization, OrganizationQuerySet
     from pages.models import AplansPage
     from people.models import Person, PersonQuerySet
@@ -56,6 +57,12 @@ class PlanSpecificCache:
     # Task assignments of the plan, keyed by task id; see `populate_task_assignments()`
     task_responsible_parties: dict[int, list[Any]] = field(default_factory=dict)
     task_contact_persons: dict[int, list[Any]] = field(default_factory=dict)
+
+    @cached_property
+    def built_in_field_customizations(self) -> dict[tuple[int, str], BuiltInFieldCustomization]:
+        from admin_site.models import BuiltInFieldCustomization
+
+        return BuiltInFieldCustomization.for_plan(self.plan)
 
     @cached_property
     def category_types(self) -> list[CategoryType]:

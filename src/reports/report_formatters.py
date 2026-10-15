@@ -391,15 +391,19 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         plan = ActionTasksFormatter._plan_of_action(report, action)
         if plan is None or not plan.features.has_action_task_assignees:
             return [], []
-        organizations = ActionTasksFormatter._organizations_of_plan(report, plan)
         organization_names: list[str] = []
-        for version in get_related_model_instances_for_action(('task_id', task_id), related_objects, ActionTaskResponsibleParty):
-            organization = organizations.get(version.data['organization_id'])
-            if organization is not None:
-                organization_names.append(str(organization))
+        if report.task_assignments_visible(plan, 'responsible_parties'):
+            organizations = ActionTasksFormatter._organizations_of_plan(report, plan)
+            for version in get_related_model_instances_for_action(
+                ('task_id', task_id), related_objects, ActionTaskResponsibleParty
+            ):
+                organization = organizations.get(version.data['organization_id'])
+                if organization is not None:
+                    organization_names.append(str(organization))
         # An export of a public plan can be downloaded anonymously, so the people are named only when the
-        # setting of the plan that owns this action allows this reader to see them.
-        if not plan.contact_persons_published_to(report.user):
+        # setting of the plan that owns this action allows this reader to see them, and only when the plan's
+        # field customization of task contact persons does too.
+        if not plan.contact_persons_published_to(report.user) or not report.task_assignments_visible(plan, 'contact_persons'):
             return organization_names, []
         persons = ActionTasksFormatter._persons_of_plan(report, plan)
         person_names: list[str] = []

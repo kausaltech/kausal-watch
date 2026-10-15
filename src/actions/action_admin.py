@@ -8,6 +8,7 @@ from typing import Any, ClassVar, Unpack, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseModelFormSet, ModelChoiceField
@@ -1496,7 +1497,12 @@ class ActionAdmin(AplansModelAdmin[Action]):
         - visible but not editable: swap in a `ReadOnlyInlinePanel`, which renders the rows without form
           inputs. Merely hiding the panel would keep the formset in the form and leave the rows writable.
         - both: the editable `InlinePanel` as declared.
+
+        The heading tells whether the relation is public, which the customization's visibility decides too,
+        and for contact persons also the plan's contact-person setting.
         """
+        render_field_label = FieldLabelRenderer(plan)
+        customizations = BuiltInFieldCustomization.for_plan(plan)
         panels: list[Panel[Any]] = []
         for panel in self.task_panels:
             relation_name = getattr(panel, 'relation_name', None)
@@ -1510,11 +1516,19 @@ class ActionAdmin(AplansModelAdmin[Action]):
             is_visible, is_editable = BuiltInFieldCustomization.get_field_access(user, plan, ActionTask, relation_name, instance)
             if not is_visible:
                 continue
+            is_public = BuiltInFieldCustomization.is_field_visible_for(
+                AnonymousUser(), plan, ActionTask, relation_name, instance, customizations
+            )
+            if relation_name == 'contact_persons':
+                is_public = is_public and plan.features.public_contact_persons
+            heading = render_field_label(panel.heading, public=is_public)
             if not is_editable:
-                panels.append(ReadOnlyInlinePanel(relation_name, heading=panel.heading))
+                panels.append(ReadOnlyInlinePanel(relation_name, heading=heading))
                 continue
             # Bind the plan so the child form rejects assignees from outside it.
-            panels.append(panel.bound_to_plan(plan) if isinstance(panel, TaskAssignmentInlinePanel) else panel)
+            bound_panel = panel.bound_to_plan(plan) if isinstance(panel, TaskAssignmentInlinePanel) else panel.clone()
+            bound_panel.heading = heading
+            panels.append(bound_panel)
         return panels
 
     def get_responsible_parties_panels(self, request: HttpRequest, instance: Action):
