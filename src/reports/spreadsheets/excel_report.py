@@ -21,11 +21,17 @@ from aplans.utils import convert_html_to_text
 
 from actions.models.action import Action, ActionTask
 from actions.models.plan import Plan
+from admin_site.models import BuiltInFieldCustomization
 from indicators.models.indicator import Indicator
 from orgs.models import Organization
 from people.models import Person
 from reports.report_formatters import ActionTasksFormatter
-from reports.utils import get_field_unique_key, get_related_model_instances_for_action, group_by_model
+from reports.utils import (
+    get_field_unique_key,
+    get_related_model_instances_for_action,
+    group_by_model,
+    is_visible_in_full_export,
+)
 
 from .action_print_layout import write_action_summaries
 from .cursor_writer import Cell, CursorWriter
@@ -167,6 +173,7 @@ class ExcelReport:
         self.action_ids = action_ids
         self.user = user
         self._visible_indicator_ids: dict[frozenset[int], set[int]] = {}
+        self._task_assignments_visible: dict[tuple[int, str], bool] = {}
         self._serialized_report_data: tuple[list[SerializedActionVersion], list[SerializedVersion]] | None = None
         if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
@@ -559,6 +566,24 @@ class ExcelReport:
             visible = Indicator.objects.get_queryset().visible_for_user(self.user).filter(id__in=candidate_ids)
             self._visible_indicator_ids[candidate_ids] = set(visible.values_list('id', flat=True))
         return self._visible_indicator_ids[candidate_ids]
+
+    def task_assignments_visible(self, plan: Plan, relation_name: str) -> bool:
+        """
+        Return whether the `relation_name` assignments of `plan`'s tasks go into the export for `self.user`.
+
+        Follows the plan's field customization of the relation the way attribute types are followed (see
+        `is_visible_in_full_export()`). The answer is memoised, because the formatter asks once per task.
+        """
+        key = (plan.pk, relation_name)
+        if key not in self._task_assignments_visible:
+            customization = BuiltInFieldCustomization.for_plan(plan).get((
+                ContentType.objects.get_for_model(ActionTask).pk,
+                relation_name,
+            ))
+            self._task_assignments_visible[key] = customization is None or is_visible_in_full_export(
+                customization, self.user, plan
+            )
+        return self._task_assignments_visible[key]
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
         from reports.types import SerializedActionVersion, SerializedVersion

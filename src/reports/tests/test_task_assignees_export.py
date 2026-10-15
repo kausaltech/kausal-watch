@@ -6,14 +6,18 @@ import datetime
 from types import SimpleNamespace
 from typing import Any
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 import pytest
 
-from actions.models.action import ActionTaskContactPerson, ActionTaskResponsibleParty
+from aplans.utils import InstancesVisibleForMixin
+
+from actions.models.action import ActionTask, ActionTaskContactPerson, ActionTaskResponsibleParty
 from actions.models.features import PlanFeatures
 from actions.tests.factories import ActionTaskFactory
+from admin_site.tests.factories import BuiltInFieldCustomizationFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
 from reports.models import ActionSnapshot
@@ -127,9 +131,7 @@ def test_a_snapshot_taken_before_the_assignment_existed_renders_without_it(plan,
         PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
     ],
 )
-def test_export_does_not_name_contact_persons_the_reader_may_not_see(
-    plan, action, user, report_with_tasks, setting
-):
+def test_export_does_not_name_contact_persons_the_reader_may_not_see(plan, action, user, report_with_tasks, setting):
     """
     A public plan's report can be downloaded anonymously, so the export follows the same rule as the APIs.
 
@@ -193,9 +195,7 @@ def test_export_uses_the_setting_of_the_plan_that_owns_the_action(plan, plan_fac
     assert plan.contact_persons_published_to(None), "the parent's does not"
 
 
-def test_export_names_contact_persons_for_a_reader_who_may_see_them(
-    plan, action, user, report_with_tasks, plan_admin_user
-):
+def test_export_names_contact_persons_for_a_reader_who_may_see_them(plan, action, user, report_with_tasks, plan_admin_user):
     """The counterpart: an admin exporting the same plan still gets the names."""
     person = PersonFactory.create(organization=plan.organization, first_name='Ada', last_name='Byron')
     task = ActionTaskFactory.create(action=action, name='Insulate the depot', due_at=datetime.date(2027, 1, 1))
@@ -236,6 +236,7 @@ def test_marking_a_report_complete_does_not_query_per_task_assignment(
     reversion walks every followed relation of every task, and the report's own queries decide whether
     those walks hit the database or a prefetch.
     """
+
     def count_queries_for(task_count: int) -> int:
         plan = plan_factory()
         action = action_factory(plan=plan)
@@ -296,3 +297,46 @@ def test_export_omits_assignees_without_the_feature(plan, action, user, report_w
     assert value.startswith('• Insulate the depot [')
     assert 'Department of Heat' not in value
     assert 'Ada Byron' not in value
+
+
+@pytest.mark.parametrize(
+    ('visible_for', 'reader', 'shown'),
+    [
+        (InstancesVisibleForMixin.VisibleFor.PUBLIC, 'anonymous', True),
+        (InstancesVisibleForMixin.VisibleFor.AUTHENTICATED, 'anonymous', False),
+        (InstancesVisibleForMixin.VisibleFor.AUTHENTICATED, 'action_contact_person', True),
+        # The export cannot filter cell by cell, so the levels that depend on the action are for plan admins,
+        # as they are for attribute types.
+        (InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, 'action_contact_person', False),
+        (InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, 'plan_admin', True),
+        (InstancesVisibleForMixin.VisibleFor.MODERATORS, 'action_contact_person', False),
+        (InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS, 'action_contact_person', False),
+        (InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS, 'plan_admin', True),
+    ],
+)
+@pytest.mark.parametrize('relation', ['responsible_parties', 'contact_persons'])
+def test_export_follows_the_customized_visibility(
+    request, plan, action, user, report_with_tasks, relation, visible_for, reader, shown
+):
+    organization = OrganizationFactory.create(name='Department of Heat')
+    plan.related_organizations.add(organization)
+    person = PersonFactory.create(organization=plan.organization, first_name='Ada', last_name='Byron')
+    task = ActionTaskFactory.create(action=action, name='Insulate the depot', due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsibleParty.objects.create(task=task, organization=organization)
+    ActionTaskContactPerson.objects.create(task=task, person=person)
+    plan.features.contact_persons_public_data = PlanFeatures.ContactPersonsPublicData.ALL
+    plan.features.save()
+    BuiltInFieldCustomizationFactory.create(
+        plan=plan,
+        content_type=ContentType.objects.get_for_model(ActionTask),
+        field_name=relation,
+        instances_visible_for=visible_for,
+    )
+    reader_user = None if reader == 'anonymous' else request.getfixturevalue(f'{reader}_user')
+
+    report_with_tasks.mark_as_complete(user)
+    value = _format_tasks(report_with_tasks, action, user=reader_user)
+
+    hidden_name, other_name = ('Department of Heat', 'Ada Byron')[:: 1 if relation == 'responsible_parties' else -1]
+    assert (hidden_name in value) == shown
+    assert other_name in value, 'the other relation is not customized'

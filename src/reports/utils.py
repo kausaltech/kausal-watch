@@ -9,7 +9,31 @@ if typing.TYPE_CHECKING:
 
     from django.db.models import Model
 
+    from kausal_common.users import UserOrAnon
+
+    from aplans.utils import InstancesVisibleForMixin
+
+    from actions.models.plan import Plan
+
     from .types import AttributePath, SerializedAttributeVersion, SerializedVersion
+
+
+def is_visible_in_full_export(holder: InstancesVisibleForMixin, user: UserOrAnon | None, plan: Plan) -> bool:
+    """
+    Return whether the values of `holder` (an attribute type or a field customization) go into an export for `user`.
+
+    Contact-person and moderator visibility depends on the action, and the export has no per-cell filtering, so
+    values with these levels are only included for plan admins, who see them for every action.
+    """
+    visible_for = holder.instances_visible_for
+    VisibleFor = holder.VisibleFor
+    if visible_for == VisibleFor.PUBLIC:
+        return True
+    if user is None or not user.is_authenticated:
+        return False
+    if visible_for == VisibleFor.AUTHENTICATED:
+        return True
+    return user.is_general_admin_for_plan(plan)
 
 
 def get_attribute_for_type_from_related_objects(
