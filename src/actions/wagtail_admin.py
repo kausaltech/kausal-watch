@@ -63,10 +63,6 @@ from admin_site.forms import WatchAdminModelForm
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.models import Client, ClientPlan
-from admin_site.permissions import (
-    PlanSpecificSingletonModelPermissionPolicy,
-    PlanSpecificSingletonModelSuperuserPermissionPolicy,
-)
 from admin_site.viewsets import (
     BaseChangeLogMessageCreateView,
     BaseChangeLogMessageDeleteView,
@@ -806,10 +802,6 @@ class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
     def get_menu_item(self, order=None):
         return ActivePlanFeaturesMenuItem(self, order or self.menu_order)
 
-    @property
-    def permission_policy(self):
-        return PlanSpecificSingletonModelPermissionPolicy(self.model)
-
 
 register_snippet(ActivePlanFeaturesViewSet)
 
@@ -860,15 +852,6 @@ class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
     edit_view_class = ActivePlanNotificationSettingsEditView
     menu_label = _('Plan notification settings')
     add_to_settings_menu = True
-
-    @property
-    def permission_policy(self):
-        # TODO: Commit history looks like this viewset was meant to be open for
-        # plan admins, but due to a bug was really open only for superusers.
-        # Restrict access to superusers to keep the functionality same for now.
-        # Check in the future if this viewset should be opened up for plan
-        # admins.
-        return PlanSpecificSingletonModelSuperuserPermissionPolicy(self.model)
 
     def get_menu_item(self, order=None):
         item = ActivePlanNotificationSettingsMenuItem(self, order or self.menu_order)

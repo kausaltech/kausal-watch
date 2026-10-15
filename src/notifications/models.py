@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
 
     from actions.models.plan import Plan
     from admin_site.models import Client
+    from admin_site.permissions import PlanRelatedPermissionPolicy, PlanSpecificSingletonModelSuperuserPermissionPolicy
 
     from .recipients import EmailRecipient, NotificationRecipient
 
@@ -98,6 +99,17 @@ class NotificationSettings(ClusterableModel, PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('notification settings')
         verbose_name_plural = _('notification settings')
+
+    @classmethod
+    def permission_policy(cls) -> PlanSpecificSingletonModelSuperuserPermissionPolicy:
+        from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
+
+        # TODO: Commit history looks like this viewset was meant to be open for
+        # plan admins, but due to a bug was really open only for superusers.
+        # Restrict access to superusers to keep the functionality same for now.
+        # Check in the future if this viewset should be opened up for plan
+        # admins.
+        return PlanSpecificSingletonModelSuperuserPermissionPolicy(cls)
 
     def __str__(self):
         return str(self.plan)
@@ -209,6 +221,12 @@ class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('base template')
         verbose_name_plural = _('base templates')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedPermissionPolicy:
+        from admin_site.permissions import PlanRelatedPermissionPolicy
+
+        return PlanRelatedPermissionPolicy(cls)
 
     def __str__(self):
         return str(self.plan)

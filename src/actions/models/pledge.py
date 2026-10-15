@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
     from actions.attributes import AttributeType
     from actions.models.action import Action, ActionQuerySet
+    from actions.pledge_permissions import PledgePermissionPolicy
     from images.models import AplansImage
 
 
@@ -198,6 +199,12 @@ class Pledge(
         verbose_name_plural = _('pledges')
         unique_together = [('plan', 'slug', 'locale'), ('translation_key', 'locale')]
         ordering = ['plan', 'order']
+
+    @classmethod
+    def permission_policy(cls) -> PledgePermissionPolicy:
+        from actions.pledge_permissions import PledgePermissionPolicy
+
+        return PledgePermissionPolicy(cls)
 
     def __str__(self) -> str:
         return self.name

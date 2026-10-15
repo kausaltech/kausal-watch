@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import reversion
 from django.db import models
@@ -9,6 +9,9 @@ from modeltrans.fields import TranslationField
 from wagtail.fields import RichTextField
 
 from aplans.utils import PlanRelatedModelWithRevision
+
+if TYPE_CHECKING:
+    from content.permissions import SiteGeneralContentPermissionPolicy
 
 
 @reversion.register()
@@ -155,6 +158,12 @@ class SiteGeneralContent(PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('site general content')
         verbose_name_plural = _('site general contents')
+
+    @classmethod
+    def permission_policy(cls) -> SiteGeneralContentPermissionPolicy:
+        from content.permissions import SiteGeneralContentPermissionPolicy
+
+        return SiteGeneralContentPermissionPolicy(cls)
 
     def __str__(self):
         if self.plan:

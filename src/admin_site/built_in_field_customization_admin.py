@@ -28,7 +28,6 @@ from admin_site.field_customization import (
 )
 from admin_site.forms import WatchAdminModelForm
 from admin_site.models import BuiltInFieldCustomization
-from admin_site.permissions import PlanAdminOnlyPermissionPolicy
 from admin_site.viewsets import WatchViewSet
 
 if TYPE_CHECKING:
@@ -240,10 +239,6 @@ class BuiltInFieldCustomizationViewSet(WatchViewSet[BuiltInFieldCustomization, B
             heading=_('Access rights'),
         ),
     ]
-
-    @property
-    def permission_policy(self):
-        return PlanAdminOnlyPermissionPolicy(self.model)
 
     def get_edit_handler(self):
         return ObjectList(self.panels, base_form_class=BuiltInFieldCustomizationForm).bind_to_model(self.model)
