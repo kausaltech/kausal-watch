@@ -54,6 +54,7 @@ if TYPE_CHECKING:
 
     from django.forms.models import ModelChoiceField
     from django.http import HttpRequest
+    from django_stubs_ext import StrOrPromise
     from modeltrans.fields import TranslatedVirtualField
     from wagtail.admin.panels.base import Panel
 
@@ -206,6 +207,19 @@ def get_translation_tabs(
         panels += extra_panels.get(lang_code, [])
         tabs.append(ObjectList(panels, heading=languages_by_code[lang_code]))
     return tabs
+
+
+def get_default_language_tab_heading(instance: Model, heading: StrOrPromise) -> str:
+    """
+    Label a tab holding an instance's untranslated fields with the language they are in.
+
+    `get_translation_tabs()` leaves out the instance's default language because its values live in the untranslated
+    fields. Without the language in the heading of the tab holding those fields, users cannot tell which language to
+    enter there and look in vain for a tab of the default language.
+    """
+    language = get_language_from_default_language_field(instance)
+    languages_by_code = {code.lower(): name for code, name in settings.LANGUAGES}
+    return _('%(heading)s (%(language)s)') % {'heading': heading, 'language': languages_by_code[language]}
 
 
 # TODO: Reimplemented in admin_site/permissions.py to make this work without
