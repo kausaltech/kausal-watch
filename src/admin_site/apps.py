@@ -46,7 +46,11 @@ def _get_language_choices() -> list[tuple[str, str]]:
 class AdminSiteConfig(AdminConfig):
     def ready(self):
         super().ready()
+        from kausal_common.models.permission_registry import register_model_permission_policies
+
         import admin_site.signals  # noqa: F401
+
+        register_model_permission_policies()
 
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
@@ -71,7 +75,7 @@ class AdminSiteConfig(AdminConfig):
         ThemeSettingsPanel.is_active = lambda _self: False  # type: ignore
 
         from wagtail.admin.rich_text import DraftailRichTextArea
-        from wagtail.telepath import register as register_telepath_adapter
+        from wagtail.admin.telepath import register as register_telepath_adapter
 
         from admin_site.draftail_rich_text_area import DraftailRichTextAreaAdapterWithFixedTranslations
 

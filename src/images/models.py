@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
     from kausal_common.models.types import FK
 
+    from admin_site.permissions import PlanRelatedCollectionOwnershipPermissionPolicy
+
 
 def truncate_filename(directories: list[str], filename: str) -> str:
     """
@@ -70,6 +72,12 @@ class AplansImage(AbstractImage, PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('image')
         verbose_name_plural = _('images')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedCollectionOwnershipPermissionPolicy:
+        from images.permissions import permission_policy
+
+        return permission_policy
 
     def get_plans(self):
         from actions.models.plan import Plan
