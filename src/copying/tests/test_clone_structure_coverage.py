@@ -2,26 +2,42 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.db.models import ManyToManyRel, ManyToOneRel
+from django.apps import apps
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import ForeignKey, ManyToManyField, ManyToManyRel, ManyToOneRel
+from django.test.utils import isolate_apps
+from modelcluster.fields import ParentalKey
+from wagtail.models import Page
 
 from kausal_common.datasets.models import DatasetSchema
 
+from actions.models.action import Action
 from actions.models.attributes import AttributeType
+from actions.models.category import Category
 from actions.models.plan import Plan
 from copying.main import (
     ATTRIBUTE_TYPE_CLONE_STRUCTURE,
+    CLONE_STRUCTURE_ROOTS,
     DATASET_SCHEMA_CLONE_STRUCTURE,
     DIMENSION_CLONE_STRUCTURE,
+    GENERIC_REFERENCE_MODELS,
     INDICATOR_CLONE_STRUCTURE,
+    MODELS_COPIED_OUTSIDE_CLONE_STRUCTURES,
     PLAN_CLONE_STRUCTURE,
+    RELATIONS_OUTSIDE_CLONE_STRUCTURES,
+    UNIQUE_FIELD_COPY_POLICIES,
     Excluded,
     _is_excluded_model,
+    _iter_clone_structure_models,
     get_unclassified_unique_field_copy_policies,
 )
 from indicators.models.dimensions import Dimension
 from indicators.models.indicator import Indicator
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
     from django.db.models import Model
 
     from copying.main import CloneStructure
@@ -86,3 +102,176 @@ class TestCloneStructureCoverage:
 
     def test_unique_field_copy_policy_coverage(self):
         assert get_unclassified_unique_field_copy_policies() == []
+
+    def test_unique_field_copy_policy_coverage_detects_multi_field_constraints(self, monkeypatch):
+        policies = dict(UNIQUE_FIELD_COPY_POLICIES)
+        policies[Plan] = {k: v for k, v in policies[Plan].items() if k != 'short_identifier'}
+        monkeypatch.setattr('copying.main.UNIQUE_FIELD_COPY_POLICIES', policies)
+        assert get_unclassified_unique_field_copy_policies() == [
+            'actions.Plan.(short_identifier, organization)',
+            'actions.Plan.(short_identifier, parent)',
+        ]
+
+    def test_unique_field_copy_policy_coverage_accepts_joining_field_in_constraint(self):
+        # `Action` has a unique constraint on `(plan, identifier)` without a policy for either field, but `plan` is the
+        # foreign key by which `PLAN_CLONE_STRUCTURE` reaches it
+        assert 'identifier' not in UNIQUE_FIELD_COPY_POLICIES[Action]
+        assert not any(label.startswith('actions.Action.(') for label in get_unclassified_unique_field_copy_policies())
+
+
+# Relations and generic references that copying does not handle yet although it should. Each entry is a bug; fix it and
+# then classify the entry in `RELATIONS_OUTSIDE_CLONE_STRUCTURES` or `GENERIC_REFERENCE_MODELS` instead.
+KNOWN_GAPS: dict[str, str] = {
+    'actions.AttributeCategoryChoice.categories': 'The categories of category choice attribute values are lost',
+    'actions.Plan.related_plans': 'The related plans are lost',
+    'datasets.DataSource': 'Data sources scoped to the plan are not copied',
+    'datasets.Dataset': 'Datasets of actions and categories are not copied',
+    'datasets.DatasetSchemaScope': 'Dataset schemas scoped to the plan or its category types are not copied',
+    'datasets.DimensionScope': 'Dataset dimensions scoped to the plan are not scoped to the copy',
+    'kausal_watch_extensions.CartographyProviderCredentials.plan': (
+        "Map credentials are not copied, so map blocks in the copied pages use the original plan's credentials"
+    ),
+    'reports.ReportActionPrintLayoutCustomization.plan': 'The print layout customization of the plan is lost',
+    'taggit.TaggedItem': 'The tags of copied images and documents are lost',
+    'wagtailcore.CollectionViewRestriction.collection': 'View restrictions of the collection are lost',
+    'wagtailcore.GroupCollectionPermission.collection': (
+        'The plan groups of the copy get no collection permissions as long as the plan is not saved again'
+    ),
+    'wagtailcore.GroupPagePermission.page': (
+        'The plan groups of the copy get no page permissions as long as the plan is not saved again'
+    ),
+    'wagtailcore.Revision': (
+        'Page copies keep all revisions of the originals, but only the latest one has its references updated, so '
+        'reverting to an older revision references objects of the original plan'
+    ),
+    'wagtailcore.WorkflowPage.page': 'Workflows assigned to pages are lost',
+}
+
+
+def _get_structure_models() -> set[type[Model]]:
+    models: set[type[Model]] = set()
+    for root_model, structure in CLONE_STRUCTURE_ROOTS:
+        models |= set(_iter_clone_structure_models(root_model, structure))
+    return models
+
+
+def _is_copied_page_cluster_child(model_class: type[Model]) -> bool:
+    for field in model_class._meta.fields:
+        if not isinstance(field, ParentalKey):
+            continue
+        page_model = field.related_model
+        assert isinstance(page_model, type)
+        if not issubclass(page_model, Page):
+            continue
+        accessor_name = field.remote_field.get_accessor_name()
+        excluded_fields = {*page_model.default_exclude_fields_in_copy, *page_model.exclude_fields_in_copy}
+        if accessor_name not in excluded_fields:
+            return True
+    return False
+
+
+def _is_copied_outside_clone_structures(model_class: type[Model]) -> bool:
+    if any(issubclass(model_class, m) for m in MODELS_COPIED_OUTSIDE_CLONE_STRUCTURES):
+        return True
+    return _is_copied_page_cluster_child(model_class)
+
+
+def _iter_relations_outside_clone_structures() -> Generator[str]:
+    """Yield the labels of the relations that must be listed in `RELATIONS_OUTSIDE_CLONE_STRUCTURES`."""
+    structure_models = _get_structure_models()
+    for model_class in apps.get_models():
+        if _is_excluded_model(model_class):
+            continue
+        if model_class in structure_models or _is_copied_outside_clone_structures(model_class):
+            # Copied, so its forward relations are remapped to the copies of their targets
+            continue
+        for field in model_class._meta.get_fields(include_parents=False):
+            if not isinstance(field, (ForeignKey, ManyToManyField)):
+                continue
+            target = field.related_model
+            assert isinstance(target, type)
+            # Visible reverse relations of models in the clone structures are covered by `_check_coverage()`
+            hidden_from_structure = target in structure_models and field.remote_field.hidden
+            if hidden_from_structure or _is_copied_outside_clone_structures(target):
+                yield f'{model_class._meta.label}.{field.name}'
+    copied_models = [m for m in apps.get_models() if m in structure_models or _is_copied_outside_clone_structures(m)]
+    yield from _iter_auto_created_many_to_many_fields(copied_models)
+
+
+def _iter_auto_created_many_to_many_fields(models: Iterable[type[Model]]) -> Generator[str]:
+    """Yield the labels of the many-to-many fields of the given models whose through model is auto-created."""
+    for model_class in models:
+        for field in model_class._meta.local_many_to_many:
+            through = field.remote_field.through
+            assert isinstance(through, type)
+            if through._meta.auto_created:
+                yield f'{model_class._meta.label}.{field.name}'
+
+
+def _iter_generic_reference_models() -> Generator[str]:
+    """Yield the labels of the models that must be listed in `GENERIC_REFERENCE_MODELS`."""
+    for model_class in apps.get_models():
+        has_generic_foreign_key = any(isinstance(f, GenericForeignKey) for f in model_class._meta.private_fields)
+        has_content_type = any(
+            isinstance(f, ForeignKey) and f.related_model is ContentType
+            for f in model_class._meta.get_fields(include_parents=False)
+        )
+        if has_generic_foreign_key or has_content_type:
+            yield model_class._meta.label
+
+
+def _is_installed(label: str) -> bool:
+    app_label, model_name = label.split('.')[:2]
+    try:
+        apps.get_model(app_label, model_name)
+    except LookupError:
+        return False
+    return True
+
+
+def _check_classification(found: set[str], classified: dict[str, str], registry_name: str) -> None:
+    unclassified = found - classified.keys() - KNOWN_GAPS.keys()
+    assert not unclassified, (
+        f'Copying a plan does not account for the following. Make sure copying handles them and add them to '
+        f'{registry_name}:\n' + '\n'.join(f'  {label}' for label in sorted(unclassified))
+    )
+    both = classified.keys() & KNOWN_GAPS.keys()
+    assert not both, f'Entries are both in {registry_name} and in KNOWN_GAPS: {sorted(both)}'
+    bogus = {label for label in classified.keys() - found if _is_installed(label)}
+    assert not bogus, f'Entries in {registry_name} that do not need to be listed: {sorted(bogus)}'
+
+
+class TestCopyBlindSpots:
+    """
+    Check for data that relates to copied objects in ways the clone structures cannot express.
+
+    `TestCloneStructureCoverage` only sees reverse relations that the clone structures can follow. These tests find
+    the remaining ways data can depend on a copied object, so each must be classified explicitly.
+    """
+
+    def test_relations_outside_clone_structures_are_classified(self):
+        found = set(_iter_relations_outside_clone_structures())
+        _check_classification(found, RELATIONS_OUTSIDE_CLONE_STRUCTURES, 'RELATIONS_OUTSIDE_CLONE_STRUCTURES')
+
+    def test_generic_reference_models_are_classified(self):
+        found = set(_iter_generic_reference_models())
+        _check_classification(found, GENERIC_REFERENCE_MODELS, 'GENERIC_REFERENCE_MODELS')
+
+    def test_auto_created_many_to_many_fields_of_page_models_are_found(self):
+        with isolate_apps('copying'):
+
+            class PageWithManyToMany(Page):
+                categories = ManyToManyField(Category)
+
+                class Meta:
+                    app_label = 'copying'
+
+        # Page models are copied with `Page.copy()`, which keeps the relation pointing to the original categories
+        assert _is_copied_outside_clone_structures(PageWithManyToMany)
+        found = set(_iter_auto_created_many_to_many_fields([PageWithManyToMany]))
+        assert found == {'copying.PageWithManyToMany.categories'}
+
+    def test_known_gaps_are_not_stale(self):
+        found = set(_iter_relations_outside_clone_structures()) | set(_iter_generic_reference_models())
+        stale = {label for label in KNOWN_GAPS.keys() - found if _is_installed(label)}
+        assert not stale, f'Entries in KNOWN_GAPS that are no longer found, remove them: {sorted(stale)}'

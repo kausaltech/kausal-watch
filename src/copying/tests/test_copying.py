@@ -649,6 +649,15 @@ def test_rejects_copy_indicator_with_kausal_paths_node_uuid(plan_with_pages, ind
         copy_plan(plan_with_pages, copy_indicators=True)
 
 
+def test_rejects_copy_of_plan_with_short_identifier(plan_with_pages):
+    # The copy would violate the unique constraints on the short identifier, which it shares with the original
+    plan_with_pages.short_identifier = 'abc'
+    plan_with_pages.save(update_fields=['short_identifier'])
+
+    with pytest.raises(ValueError, match=r'actions\.Plan\.short_identifier'):
+        copy_plan(plan_with_pages)
+
+
 @pytest.mark.parametrize('indicator__common', [None])
 def test_copy_indicator_keeps_original_indicator_unchanged(plan_with_pages, indicator):
     # Original indicator should still belong to only the original plan
