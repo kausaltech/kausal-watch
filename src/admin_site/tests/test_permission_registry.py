@@ -1,3 +1,4 @@
+from django.core.exceptions import ImproperlyConfigured
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.permissions import policy_registry
 
@@ -5,11 +6,35 @@ import pytest
 
 from kausal_common.datasets.models import DataPoint, Dataset, DatasetSchema, DataSource
 
-from actions.models import Plan
+from actions.models import (
+    ActionChangeLogMessage,
+    ActionImpact,
+    CategoryChangeLogMessage,
+    IndicatorChangeLogMessage,
+    Plan,
+    PlanFeatures,
+    Pledge,
+    PublicUser,
+)
+from actions.pledge_permissions import ParticipantsPermissionPolicy, PledgePermissionPolicy
+from admin_site.models import BuiltInFieldCustomization
+from admin_site.permissions import (
+    PlanAdminOnlyPermissionPolicy,
+    PlanRelatedPermissionPolicy,
+    PlanSpecificSingletonModelPermissionPolicy,
+    PlanSpecificSingletonModelSuperuserPermissionPolicy,
+)
+from admin_site.viewsets import WatchViewSet
+from content.models import SiteGeneralContent
+from content.permissions import SiteGeneralContentPermissionPolicy
 from documents.models import AplansDocument
+from feedback.models import UserFeedback
+from feedback.permissions import UserFeedbackPermissionPolicy
 from images.models import AplansImage
 from indicators.models import IndicatorGoalDataPoint
+from notifications.models import BaseTemplate, NotificationSettings
 from orgs.models import Organization
+from pages.models import PageChangeLogMessage
 
 
 @pytest.mark.parametrize(
@@ -21,5 +46,32 @@ def test_declared_permission_policy_is_registered(model):
     assert type(registered) is type(model.permission_policy())
 
 
+@pytest.mark.parametrize(
+    ('model', 'policy_class'),
+    [
+        (Pledge, PledgePermissionPolicy),
+        (PublicUser, ParticipantsPermissionPolicy),
+        (BuiltInFieldCustomization, PlanAdminOnlyPermissionPolicy),
+        (PlanFeatures, PlanSpecificSingletonModelPermissionPolicy),
+        (NotificationSettings, PlanSpecificSingletonModelSuperuserPermissionPolicy),
+        (SiteGeneralContent, SiteGeneralContentPermissionPolicy),
+        (UserFeedback, UserFeedbackPermissionPolicy),
+        (BaseTemplate, PlanRelatedPermissionPolicy),
+        (ActionChangeLogMessage, PlanRelatedPermissionPolicy),
+        (IndicatorChangeLogMessage, PlanRelatedPermissionPolicy),
+        (CategoryChangeLogMessage, PlanRelatedPermissionPolicy),
+        (PageChangeLogMessage, PlanRelatedPermissionPolicy),
+    ],
+)
+def test_viewset_models_keep_their_permission_policy(model, policy_class):
+    assert type(policy_registry.get_by_type(model, fallback=False)) is policy_class
+
+
 def test_plan_keeps_wagtail_default_permission_policy():
     assert type(policy_registry.get_by_type(Plan)) is ModelPermissionPolicy
+
+
+def test_watch_viewset_requires_a_permission_policy_for_plan_related_models():
+    viewset = type('ActionImpactViewSet', (WatchViewSet,), {'model': ActionImpact})()
+    with pytest.raises(ImproperlyConfigured, match='needs a permission_policy'):
+        viewset.register_permissions()

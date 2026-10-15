@@ -31,7 +31,6 @@ from wagtail.snippets.models import register_snippet
 
 from kausal_common.users import user_or_bust
 
-from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchIndexView, WatchViewSet
 from users.models import User
 
@@ -41,7 +40,6 @@ from .models.pledge import PublicUser
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
     from django.db.models import QuerySet
     from django.http import HttpRequest
 
@@ -125,32 +123,6 @@ def _csv_safe(value: object) -> str:
     if text.startswith(_CSV_FORMULA_LEADING):
         return "'" + text
     return text
-
-
-class ParticipantsPermissionPolicy(PlanRelatedPermissionPolicy):
-    """
-    Read-only for plan admins on plans that have community engagement enabled.
-
-    Mirrors PledgePermissionPolicy's gating; the Participants UI is only
-    meaningful when the underlying Pledge feature is enabled.
-    """
-
-    def user_has_permission(self, user: AbstractBaseUser | AnonymousUser, action: str) -> bool:
-        if not super().user_has_permission(user, action):
-            return False
-        if not isinstance(user, User):
-            return False
-        plan = user.get_active_admin_plan(required=False)
-        if plan is None:
-            return False
-        if not user.is_general_admin_for_plan(plan):
-            return False
-        if not plan.features.enable_community_engagement:
-            return False
-        return action == 'view'
-
-    def user_has_any_permission(self, user, actions):
-        return any(self.user_has_permission(user, a) for a in actions)
 
 
 class ParticipantsIndexView(WatchIndexView[PublicUser]):
@@ -244,10 +216,6 @@ class ParticipantsViewSet(WatchViewSet[PublicUser]):
     index_view_class = ParticipantsIndexView  # type: ignore[assignment]
     inspect_view_enabled = False
     copy_view_enabled = False
-
-    @property
-    def permission_policy(self):
-        return ParticipantsPermissionPolicy(self.model)
 
     def get_urlpatterns(self):
         # SnippetViewSet hard-codes add/edit/delete routes even when the
