@@ -15,7 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, OneToOneField, Q, signals
+from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, OneToOneField, Q, UniqueConstraint, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
 from wagtail.blocks import Block, ChooserBlock, ListBlock, StreamBlock, StructBlock
@@ -325,6 +325,76 @@ MODELS_NOT_COPIED = [
     User,
 ]
 
+# Models whose instances are copied by other means than the clone structures: the collection with its images and
+# documents in `copy_collection_with_contents()`, the site, and the pages with `Page.copy()`, which also copies the
+# cluster children of each page (except those in its `exclude_fields_in_copy`). `Page` stands for all page models.
+MODELS_COPIED_OUTSIDE_CLONE_STRUCTURES: list[type[Model]] = [AplansDocument, AplansImage, Collection, Page, Site]
+
+# Relations that the clone structures cannot account for, mapped to how copying handles them. The keys are labels of
+# fields of the form `app_label.Model.field`. These are:
+# - foreign keys of models that are not copied to models in the clone structures if the reverse relation is hidden
+#   (`related_name='+'`), so a clone structure cannot name it;
+# - foreign keys of models that are not copied to models in `MODELS_COPIED_OUTSIDE_CLONE_STRUCTURES`;
+# - many-to-many fields of copied models whose through model is auto-created, as copying an instance does not copy them
+#   (and `Page.copy()`, which does, keeps them pointing to the original targets).
+# References from models in `MODELS_NOT_COPIED` don't need to be listed.
+RELATIONS_OUTSIDE_CLONE_STRUCTURES: dict[str, str] = {
+    'actions.CommonCategoryIcon.image': 'Belongs to a common category, which is not owned by a plan',
+    'audit_logging.PlanScopedPageLogEntry.page': 'The audit log is not copied',
+    'images.AplansRendition.image': 'Renditions of the image copies are generated on demand',
+    'indicators.IndicatorGoalDataPoint.metric': (
+        "Goal values of datasets, which are not copied (see `DATASET_SCHEMA_CLONE_STRUCTURE['datasets']`)"
+    ),
+    'pages.PageChangeLogMessage.page': (
+        "Change log messages are not copied (see `PLAN_CLONE_STRUCTURE['pagechangelogmessage_set']`)"
+    ),
+    'wagtailcore.Comment.page': 'Wagtail does not copy comments when copying pages',
+    'wagtailcore.GroupSitePermission.site': 'Plan groups get no site permissions',
+    'wagtailcore.PageLogEntry.page': 'The log history is not copied; `Page.copy()` logs the copy itself',
+    'wagtailcore.PageSubscription.page': "Users' subscriptions to comment notifications are personal, not plan content",
+    'wagtailcore.PageViewRestriction.page': 'Copied by `Page.copy()`',
+    'wagtaildocs.Document.collection': 'Unused; documents are `AplansDocument` instances',
+    'wagtailforms.FormSubmission.page': 'Form submissions are visitor data, not plan content',
+    'wagtailimages.Image.collection': 'Unused; images are `AplansImage` instances',
+    'wagtailredirects.Redirect.redirect_page': "Redirects belong to the original site's URLs; the copy gets a new hostname",
+    'wagtailredirects.Redirect.site': "Redirects belong to the original site's URLs; the copy gets a new hostname",
+}
+
+# Models that reference model instances generically, i.e., by content type and object ID (e.g., using a generic foreign
+# key) or by content type and some other key (e.g., a translation key), mapped to how copying handles them. Copying
+# cannot discover such references from the referenced instance, so each model with a foreign key to `ContentType` must
+# be listed here, even if its content type references a model rather than an instance. The keys are model labels.
+GENERIC_REFERENCE_MODELS: dict[str, str] = {
+    'actions.AttributeCategoryChoice': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeChoice': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeChoiceWithText': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeNumericValue': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeRichText': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeText': 'Copied via `ATTRIBUTE_TYPE_CLONE_STRUCTURE`; the referenced object is remapped',
+    'actions.AttributeType': 'Copied by `_copy_attribute_types()` for the plan and its category types',
+    'admin.LogEntry': 'The log history is not copied',
+    'admin_site.BuiltInFieldCustomization': 'The content type identifies the customized model, not an instance',
+    'audit_logging.PlanScopedModelLogEntry': 'The audit log is not copied',
+    'audit_logging.PlanScopedPageLogEntry': 'The audit log is not copied',
+    'auth.Permission': 'The content type identifies a model, not an instance',
+    'notifications.SentNotification': 'The record of sent notifications is not copied',
+    'reversion.Version': 'The version history is not copied',
+    'wagtail_localize.TranslatableObject': 'Copied for pages by `copy_page_translation_data()`; not used for pledges',
+    'wagtail_localize.TranslationSource': 'Copied for pages by `copy_page_translation_data()`; not used for pledges',
+    'wagtailadmin.EditingSession': 'Transient admin editing state',
+    'wagtailadmin.FormState': 'Transient admin editing state',
+    'wagtailcore.ModelLogEntry': 'The log history is not copied',
+    'wagtailcore.Page': 'The content type is the page type',
+    'wagtailcore.PageLogEntry': 'The log history is not copied; `Page.copy()` logs the copy itself',
+    'wagtailcore.ReferenceIndex': 'Updated when the copies are saved',
+    'wagtailcore.Task': 'The content type is the task type',
+    'wagtailcore.TaskState': 'In-progress moderation state is not copied',
+    'wagtailcore.UploadedFile': 'Transient uploads',
+    'wagtailcore.WorkflowContentType': 'The content type identifies a model, not an instance',
+    'wagtailcore.WorkflowState': 'In-progress moderation state is not copied',
+    'wagtailsearch.IndexEntry': 'The copies are indexed when they are saved',
+}
+
 UNIQUE_FIELD_POLICY_CLEARED_BEFORE_SAVE = 'cleared_before_save'
 UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED = 'cleared_then_restored'
 UNIQUE_FIELD_POLICY_REGENERATED = 'regenerated'
@@ -334,6 +404,10 @@ UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET = 'unsupported_if_set'
 # Forward unique fields need an explicit policy because the generic clone path saves copied model instances with most
 # field values unchanged. Without a policy, copying an instance can fail with a database uniqueness error before the
 # reference updater has a chance to remap fields.
+#
+# The same holds for unique constraints spanning several fields (`unique_together` or a `UniqueConstraint`), unless one
+# of the fields is the foreign key by which the clone structure reaches the model, as `visit_tree()` sets it to the copy
+# of the parent before saving. Such a constraint is accounted for by giving a policy to one of its fields.
 UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
     Action: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
@@ -344,7 +418,15 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
     Category: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
+    AttributeType: {
+        # Part of a unique constraint with the identifier; the scope is set to the copy of the original scope in
+        # `CloneVisitor.pre_visit()`
+        'scope_id': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+    },
     Indicator: {
+        # Part of a unique constraint with the organization; copying indicators of common indicators is rejected before
+        # copying starts
+        'common': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
         'dataset_schema': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
         'kausal_paths_node_uuid': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
         'reference_value': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
@@ -372,12 +454,16 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
         'primary_action_classification': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
         'root_collection': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
         'secondary_action_classification': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
+        # Part of unique constraints with the parent and with the organization, which the copy shares with the original
+        'short_identifier': UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET,
         'site': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
     },
     PlanFeatures: {
         'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
     },
     Pledge: {
+        # Part of a unique constraint with the locale; regenerated in `CloneVisitor.pre_visit()`
+        'translation_key': UNIQUE_FIELD_POLICY_REGENERATED,
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
     SiteGeneralContent: {
@@ -413,6 +499,29 @@ def _iter_clone_structure_models(
         yield from _iter_clone_structure_models(related_model, entry, visited)
 
 
+def _iter_clone_structure_relations(
+    model_class: type[Model],
+    structure: CloneStructure,
+    joining_field: str | None = None,
+) -> Generator[tuple[type[Model], str | None]]:
+    """
+    Yield each model in the clone structure together with the name of the foreign key by which the structure reaches it.
+
+    The foreign key is None for the root. A model reached in several ways is yielded once per way.
+    """
+    yield model_class, joining_field
+    for relation_name, entry in structure.items():
+        if isinstance(entry, Excluded):
+            continue
+        field = model_class._meta.get_field(relation_name)
+        related_model = field.related_model
+        assert related_model is not None
+        assert not isinstance(related_model, str)
+        related_model = cast('type[Model]', related_model)
+        assert isinstance(field, ManyToOneRel)
+        yield from _iter_clone_structure_relations(related_model, entry, field.field.name)
+
+
 def _iter_unique_fields_requiring_copy_policy(model_class: type[Model]) -> Generator[Field]:
     for field in model_class._meta.fields:
         if field.primary_key:
@@ -424,27 +533,60 @@ def _iter_unique_fields_requiring_copy_policy(model_class: type[Model]) -> Gener
         yield field
 
 
+def _iter_fields_with_copy_policy(model_class: type[Model]) -> Generator[Field]:
+    """Yield the unique fields of the model and the other fields that have a copy policy."""
+    fields = list(_iter_unique_fields_requiring_copy_policy(model_class))
+    for field_name in UNIQUE_FIELD_COPY_POLICIES.get(model_class, {}):
+        field = model_class._meta.get_field(field_name)
+        assert isinstance(field, Field)
+        if field not in fields:
+            fields.append(field)
+    yield from fields
+
+
+def _iter_unique_field_sets(model_class: type[Model]) -> Generator[tuple[str, ...]]:
+    """Yield the field names of each unique constraint of the model that spans several fields."""
+    for field_names in model_class._meta.unique_together:
+        yield tuple(field_names)
+    for constraint in model_class._meta.constraints:
+        if isinstance(constraint, UniqueConstraint) and len(constraint.fields) > 1:
+            yield tuple(constraint.fields)
+
+
+def _get_unclassified_unique_field_sets(model_class: type[Model], joining_field: str | None) -> Generator[str]:
+    policies = UNIQUE_FIELD_COPY_POLICIES.get(model_class, {})
+    for field_names in _iter_unique_field_sets(model_class):
+        if joining_field in field_names:
+            continue
+        if any(model_class._meta.get_field(name).name in policies for name in field_names):
+            continue
+        yield f'{model_class._meta.label}.({", ".join(field_names)})'
+
+
+CLONE_STRUCTURE_ROOTS: list[tuple[type[Model], CloneStructure]] = [
+    (cast('type[Model]', Plan), PLAN_CLONE_STRUCTURE),
+    (cast('type[Model]', AttributeType), ATTRIBUTE_TYPE_CLONE_STRUCTURE),
+    (cast('type[Model]', Indicator), INDICATOR_CLONE_STRUCTURE),
+    (cast('type[Model]', Dimension), DIMENSION_CLONE_STRUCTURE),
+    (cast('type[Model]', DatasetSchema), DATASET_SCHEMA_CLONE_STRUCTURE),
+]
+
+
 def get_unclassified_unique_field_copy_policies() -> list[str]:
     """
-    Return unique fields in clone structures that do not have an explicit copy policy.
+    Return unique fields and multi-field unique constraints in clone structures that do not have an explicit copy policy.
 
     This is intended for tests and as a defensive runtime check before copying starts.
     """
-    roots: list[tuple[type[Model], CloneStructure]] = [
-        (cast('type[Model]', Plan), PLAN_CLONE_STRUCTURE),
-        (cast('type[Model]', AttributeType), ATTRIBUTE_TYPE_CLONE_STRUCTURE),
-        (cast('type[Model]', Indicator), INDICATOR_CLONE_STRUCTURE),
-        (cast('type[Model]', Dimension), DIMENSION_CLONE_STRUCTURE),
-        (cast('type[Model]', DatasetSchema), DATASET_SCHEMA_CLONE_STRUCTURE),
-    ]
     missing = []
-    for root_model, structure in roots:
-        for model_class in _iter_clone_structure_models(root_model, structure):
+    for root_model, structure in CLONE_STRUCTURE_ROOTS:
+        for model_class, joining_field in _iter_clone_structure_relations(root_model, structure):
             policies = UNIQUE_FIELD_COPY_POLICIES.get(model_class, {})
             for field in _iter_unique_fields_requiring_copy_policy(model_class):
                 if field.name in policies:
                     continue
                 missing.append(f'{model_class._meta.label}.{field.name}')
+            missing.extend(_get_unclassified_unique_field_sets(model_class, joining_field))
     return sorted(set(missing))
 
 
@@ -515,7 +657,7 @@ def _validate_unique_field_copy_policies(plan: Plan, copy_indicators: bool) -> N
     unsupported_fields = []
     for instance in iter_plan_owned_instances(plan, include_indicators=copy_indicators):
         policies = UNIQUE_FIELD_COPY_POLICIES.get(type(instance), {})
-        for field in _iter_unique_fields_requiring_copy_policy(type(instance)):
+        for field in _iter_fields_with_copy_policy(type(instance)):
             if policies.get(field.name) != UNIQUE_FIELD_POLICY_UNSUPPORTED_IF_SET:
                 continue
             value = getattr(instance, field.attname)
@@ -624,7 +766,7 @@ def _validate_unique_field_copy_policy_applied(
     policies = UNIQUE_FIELD_COPY_POLICIES.get(type(original), {})
     if not policies:
         return
-    for field in _iter_unique_fields_requiring_copy_policy(type(original)):
+    for field in _iter_fields_with_copy_policy(type(original)):
         policy = policies.get(field.name)
         if policy is None:
             _raise_unique_field_policy_error(copy, field, '<missing>', 'add a policy to UNIQUE_FIELD_COPY_POLICIES')
