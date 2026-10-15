@@ -31,7 +31,6 @@ from openpyxl import Workbook
 from kausal_common.users import user_or_bust
 
 from admin_site.forms import WatchAdminModelForm
-from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
 
 from .models import Pledge
@@ -40,30 +39,8 @@ from .models.pledge import PledgeCommitment
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from django.contrib.auth.base_user import AbstractBaseUser
-    from django.contrib.auth.models import AnonymousUser
     from django.http import HttpRequest
     from django.utils.safestring import SafeString
-
-
-class PledgePermissionPolicy(PlanRelatedPermissionPolicy):
-    """Permission policy for Pledges - only accessible if community engagement is enabled."""
-
-    def user_has_permission(self, user: AbstractBaseUser | AnonymousUser, action: str) -> bool:
-        if not super().user_has_permission(user, action):
-            return False
-
-        # Check if community engagement is enabled
-        from users.models import User
-
-        if not isinstance(user, User):
-            return False
-
-        plan = user.get_active_admin_plan(required=False)
-        if plan is None:
-            return False
-
-        return plan.features.enable_community_engagement
 
 
 class PledgeAdminForm(WatchAdminModelForm[Pledge]):
@@ -433,10 +410,6 @@ class PledgeViewSet(WatchViewSet[Pledge]):
 
     # Position in `panels` where attribute panels are inserted (after name, slug, description, image)
     attribute_panel_position = 4
-
-    @property
-    def permission_policy(self):
-        return PledgePermissionPolicy(self.model)
 
     def get_menu_item(self, order=None):
         """Customize menu item to check feature flag for visibility."""

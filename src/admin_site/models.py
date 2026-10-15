@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
 
     from actions.models.plan import Plan
+    from admin_site.permissions import PlanAdminOnlyPermissionPolicy, PlanRelatedPermissionPolicy
 
 
 class Client(ClusterableModel):
@@ -215,6 +216,12 @@ class BuiltInFieldCustomization(
         ]
 
     @classmethod
+    def permission_policy(cls) -> PlanAdminOnlyPermissionPolicy:
+        from admin_site.permissions import PlanAdminOnlyPermissionPolicy
+
+        return PlanAdminOnlyPermissionPolicy(cls)
+
+    @classmethod
     def get_field_access(
         cls,
         user: User,
@@ -346,6 +353,12 @@ class BaseChangeLogMessage(PlanRelatedModel):
     class Meta:
         abstract = True
         ordering = ('-created_at',)
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedPermissionPolicy:
+        from admin_site.permissions import PlanRelatedPermissionPolicy
+
+        return PlanRelatedPermissionPolicy(cls)
 
     def get_str_template(self):
         return pgettext_lazy('change log message', '%(verbose_name)s: "%(instance)s" (%(date)s).')

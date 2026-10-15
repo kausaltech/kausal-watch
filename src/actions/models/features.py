@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
     from kausal_common.models.types import FK
 
+    from admin_site.permissions import PlanSpecificSingletonModelPermissionPolicy
+
 
 class OrderBy(models.TextChoices):
     NONE = 'none', _('No ordering')
@@ -249,6 +251,12 @@ class PlanFeatures(PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('plan feature')
         verbose_name_plural = _('plan features')
+
+    @classmethod
+    def permission_policy(cls) -> PlanSpecificSingletonModelPermissionPolicy:
+        from admin_site.permissions import PlanSpecificSingletonModelPermissionPolicy
+
+        return PlanSpecificSingletonModelPermissionPolicy(cls)
 
     def __str__(self) -> str:
         return 'Features for %s' % self.plan
