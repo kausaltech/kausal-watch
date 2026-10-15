@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from django import forms
 from django.contrib.admin.utils import quote
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.shortcuts import redirect
@@ -439,6 +439,9 @@ class PlanAdmin(AplansModelAdmin[Plan]):
     )
 
     def copy_view(self, request, instance_pk):
+        # Copying a plan creates a plan, and the copy view may supersede the original plan and its actions
+        if not self.permission_helper.user_can_create(request.user):
+            raise PermissionDenied
         kwargs = {'plan_id': instance_pk}
         view_class = self.copy_view_class
         return view_class.as_view(**kwargs)(request)
