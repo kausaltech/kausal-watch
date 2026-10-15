@@ -122,7 +122,6 @@ class TestCloneStructureCoverage:
 # Relations and generic references that copying does not handle yet although it should. Each entry is a bug; fix it and
 # then classify the entry in `RELATIONS_OUTSIDE_CLONE_STRUCTURES` or `GENERIC_REFERENCE_MODELS` instead.
 KNOWN_GAPS: dict[str, str] = {
-    'actions.AttributeCategoryChoice.categories': 'The categories of category choice attribute values are lost',
     'actions.Plan.related_plans': 'The related plans are lost',
     'datasets.DataSource': 'Data sources scoped to the plan are not copied',
     'datasets.Dataset': 'Datasets of actions and categories are not copied',

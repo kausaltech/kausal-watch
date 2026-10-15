@@ -36,11 +36,13 @@ from actions.tests.factories import (
     ActionContactFactory,
     ActionStatusFactory,
     ActionTaskFactory,
+    AttributeCategoryChoiceFactory,
     AttributeChoiceFactory,
     AttributeChoiceWithTextFactory,
     AttributeRichTextFactory,
     AttributeTypeChoiceOptionFactory,
     AttributeTypeFactory,
+    CategoryFactory,
     CategoryTypeFactory,
     PlanFactory,
     WorkflowFactory,
@@ -800,6 +802,38 @@ def test_indicator_reference_in_attribute_choice_with_text_updated_when_copying_
     at_copy = AttributeType.objects.get(scope_content_type=plan_ct, scope_id=plan_copy.pk, name=attribute_type.name)
     choice_with_text_attr_copy = at_copy.choice_with_text_attributes.get()
     assert choice_with_text_attr_copy.text == html_with_references([indicator_copy])
+
+
+def test_category_choice_attribute_copy_references_category_copies(plan_with_pages, action):
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    category1 = CategoryFactory.create(type=category_type, identifier='c1')
+    category2 = CategoryFactory.create(type=category_type, identifier='c2')
+    CategoryFactory.create(type=category_type, identifier='c3')
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=ContentType.objects.get_for_model(Action),
+        format=AttributeType.AttributeFormat.CATEGORY_CHOICE,
+        attribute_category_type=category_type,
+    )
+    attribute = AttributeCategoryChoiceFactory.create(
+        type=attribute_type, content_object=action, categories=[category1, category2]
+    )
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    action_copy = plan_copy.actions.get()
+    at_copy = AttributeType.objects.get(
+        scope_content_type=ContentType.objects.get_for_model(Plan), scope_id=plan_copy.pk, identifier=attribute_type.identifier
+    )
+    attribute_copy = at_copy.category_choice_attributes.get()
+    assert attribute_copy.content_object == action_copy
+    category_type_copy = plan_copy.category_types.get()
+    assert {c.pk for c in attribute_copy.categories.all()} == set(
+        category_type_copy.categories.filter(identifier__in=['c1', 'c2']).values_list('pk', flat=True)
+    )
+    # The original is unchanged
+    attribute.refresh_from_db()
+    assert set(attribute.categories.all()) == {category1, category2}
 
 
 def test_action_revision_is_copied(plan_with_pages, action, user):
