@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-    from actions.models import Action, ActionContactPerson, ActionResponsibleParty, ModelWithRole, Plan
+    from actions.models import Action, ActionContactPerson, ActionResponsibleParty, ActionTask, ModelWithRole, Plan
     from actions.models.action import ActionQuerySet
     from actions.models.plan import PlanQuerySet
     from indicators.models import Indicator, IndicatorQuerySet
@@ -82,6 +82,15 @@ class UserPermissionCache:
         for role_actions in self.contact_for_actions_by_role.values():
             actions.update(role_actions)
         return actions
+
+    @cached_property
+    def contact_for_action_tasks(self) -> set[int]:
+        from actions.models import ActionTaskContactPerson
+
+        person = self.corresponding_person
+        if not person:
+            return set()
+        return set(ActionTaskContactPerson.objects.filter(person=person).values_list('task_id', flat=True))
 
     @cached_property
     def contact_for_indicators(self) -> set[int]:
@@ -193,6 +202,9 @@ class User(AbstractUser):
         if action is None:
             return bool(self.perms.contact_for_actions)
         return action.pk in self.perms.contact_for_actions
+
+    def is_contact_person_for_action_task(self, task: ActionTask) -> bool:
+        return task.pk in self.perms.contact_for_action_tasks
 
     def has_contact_person_role_for_action(self, role: ActionContactPerson.Role, action: Action | None = None) -> bool:
         if action is None:

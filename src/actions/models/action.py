@@ -127,6 +127,22 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
         qs = self.filter(Q(contact_persons__person=person)).distinct()
         return qs
 
+    def user_is_task_contact_for(self, user: User):
+        """
+        Filter to actions where the user is a contact person of one of the tasks.
+
+        Only plans that record task assignees count; elsewhere the assignments are hidden. Being a task
+        contact grants no staff role, which is why this is not part of `user_has_staff_role_for()`.
+        """
+        person = user.get_corresponding_person()
+        if person is None:
+            return self.none()
+        qs = self.filter(
+            tasks__contact_persons__person=person,
+            plan__features__has_action_task_assignees=True,
+        ).distinct()
+        return qs
+
     def user_is_org_admin_for(self, user: User, plan: Plan | None = None):
         plan_admin_orgs = Organization.objects.get_queryset().user_is_plan_admin_for(user, plan)
         query = Q(responsible_parties__organization__in=plan_admin_orgs) | Q(primary_org__in=plan_admin_orgs)
