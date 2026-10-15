@@ -473,6 +473,21 @@ class RestrictedPlanNode(DjangoObjectType[Plan]):
         return root.name
 
 
+def _filter_own_actions(qs: ActionQuerySet, user: User | None, plan: Plan) -> ActionQuerySet:
+    """
+    Filter `qs` to the actions of `plan` that the user should see on their admin dashboard.
+
+    These are the actions they have a staff role for and, if the plan records task assignees, those with
+    a task they are a contact person for.
+    """
+    if user is None or not user.is_staff:
+        return qs.none()
+    mine = qs.user_has_staff_role_for(user, plan=plan)
+    if plan.features.has_action_task_assignees:
+        mine |= qs.user_is_task_contact_for(user)
+    return mine
+
+
 class PlanNode(DjangoNode[Plan]):
     id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
@@ -670,10 +685,7 @@ class PlanNode(DjangoNode[Plan]):
         if id:
             qs = qs.filter(id=id)
         if only_mine:
-            if not user.is_authenticated or not user.is_staff:
-                qs = qs.none()
-            else:
-                qs = qs.user_has_staff_role_for(user, plan=root)
+            qs = _filter_own_actions(qs, user_or_none(user), root)
         if responsible_organization:
             try:
                 responsible_organization_id = int(responsible_organization)
@@ -1539,6 +1551,14 @@ class MonitoringQualityPointNode(DjangoNode[MonitoringQualityPoint]):
         return root.plan.get_if_visible(info.context.user)
 
 
+def _user_is_among_contact_persons(user: User, rows: Iterable[ActionContactPerson | ActionTaskContactPerson]) -> bool:
+    """Tell whether the user's person is one of the given contact-person rows, e.g. those of a draft."""
+    person = user.get_corresponding_person()
+    if person is None:
+        return False
+    return any(row.person_id == person.pk for row in rows)
+
+
 def _plan_cache_for_task(task: ActionTask, info: GQLInfo) -> PlanSpecificCache | None:
     """
     Return the cache of the plan that owns `task`, or None if that plan is not visible to the user.
@@ -1602,6 +1622,13 @@ class ActionTaskNode(DjangoNode[ActionTask]):
         fields = public_fields(ActionTask)
 
     comment = graphene.String(deprecation_reason='Use "details" instead')
+    viewer_is_contact_person = graphene.Boolean(
+        required=True,
+        description=(
+            'Whether the requesting user is a contact person for this task. Unlike `contactPersons`, '
+            "this is not subject to the plan's contact person privacy settings."
+        ),
+    )
 
     @staticmethod
     def resolve_responsible_parties(root: ActionTask, info: GQLInfo):
@@ -1623,6 +1650,19 @@ class ActionTaskNode(DjangoNode[ActionTask]):
         if from_revision is None:
             _populate_task_contact_persons(info, cache.plan.pk)
         return root.get_redacted_contact_persons(info.context.user, cache, rows=from_revision)
+
+    @staticmethod
+    def resolve_viewer_is_contact_person(root: ActionTask, info: GQLInfo) -> bool:
+        user = user_or_none(info.context.user)
+        if user is None:
+            return False
+        cache = _plan_cache_for_task(root, info)
+        if cache is None or not cache.plan.features.has_action_task_assignees:
+            return False
+        from_revision = root.assignments_from_revision('contact_persons')
+        if from_revision is not None:
+            return _user_is_among_contact_persons(user, from_revision)
+        return user.is_contact_person_for_action_task(root)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -1854,6 +1894,13 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
             '(see PlanFeatures.publicContactPersons).'
         ),
     )
+    viewer_is_contact_person = graphene.Boolean(
+        required=True,
+        description=(
+            'Whether the requesting user is a contact person for this action. Unlike `contactPersons`, '
+            "this is not subject to the plan's contact person privacy settings."
+        ),
+    )
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
@@ -2069,6 +2116,18 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
             return []
         cache = info.context.cache.for_plan(plan)
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
+
+    @staticmethod
+    def resolve_viewer_is_contact_person(root: Action, info: GQLInfo) -> bool:
+        user = user_or_none(info.context.user)
+        if user is None:
+            return False
+        # An action asked for at a draft workflow state is rebuilt from its revision and carries the draft's
+        # contact persons, while the user's permission cache holds the published ones.
+        cluster = getattr(root, '_cluster_related_objects', None)
+        if cluster is not None and 'contact_persons' in cluster:
+            return _user_is_among_contact_persons(user, root.contact_persons.all())
+        return user.is_contact_person_for_action(root)
 
     @staticmethod
     def resolve_pledges(root: Action, info: GQLInfo):
@@ -2643,7 +2702,12 @@ class Query:
         user = user_or_none(info.context.user)
         if user is None:
             return []
-        plans = Plan.objects.get_queryset().user_has_staff_role_for(user).visible_for_user(user)
+        plans = Plan.objects.get_queryset().user_has_staff_role_for(user)
+        if user.is_staff:
+            # The plans in which the user is a contact person of a task; see `_filter_own_actions()`.
+            task_contact_actions = Action.objects.get_queryset().user_is_task_contact_for(user)
+            plans |= Plan.objects.get_queryset().filter(id__in=task_contact_actions.values_list('plan'))
+        plans = plans.visible_for_user(user)
         return gql_optimizer.query(plans, info)
 
     @staticmethod
