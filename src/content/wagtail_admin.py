@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
 from wagtail.admin.panels import FieldPanel
-from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 
 from kausal_common.i18n.panels import TranslatedFieldPanel
@@ -15,7 +14,6 @@ from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
 from admin_site.utils import admin_req
 from admin_site.viewsets import WatchEditView, WatchViewSet
-from users.models import User
 
 from .models import SiteGeneralContent
 
@@ -23,28 +21,7 @@ if TYPE_CHECKING:
     from wagtail.admin.panels import Panel
 
     from actions.models.plan import Plan
-
-
-# FIXME: This is partly duplicated in actions/wagtail_admin.py.
-class SiteGeneralContentPermissionPolicy(ModelPermissionPolicy[SiteGeneralContent, User]):
-    def user_has_permission(self, user, action):
-        user = user_or_none(user)
-        if user is None:
-            return False
-        if action == 'view':
-            return user.is_superuser
-        if action == 'add':
-            return user.is_superuser
-        if action == 'change':
-            return user.is_general_admin_for_plan(user.get_active_admin_plan())
-        if action == 'delete':
-            return False
-        return super().user_has_permission(user, action)
-
-    def user_has_permission_for_instance(self, user, action, instance):
-        if action == 'change':
-            return user.is_general_admin_for_plan(instance.plan)
-        return super().user_has_permission_for_instance(user, action, instance)
+    from content.permissions import SiteGeneralContentPermissionPolicy
 
 
 class SiteGeneralContentMenuItem(PlanSpecificSingletonModelMenuItem):
@@ -69,10 +46,6 @@ class SiteGeneralContentViewSet(WatchViewSet[SiteGeneralContent]):
     icon = 'cogs'
     menu_label = _('Site settings')
     menu_order = 502
-
-    @property
-    def permission_policy(self):
-        return SiteGeneralContentPermissionPolicy(self.model)
 
     @property
     def panels(self):

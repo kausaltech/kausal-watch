@@ -15,6 +15,9 @@ from actions.models.category import Category
 from actions.models.pledge import Pledge
 from pages.models import ActionListPage, CategoryPage
 
+if typing.TYPE_CHECKING:
+    from feedback.permissions import UserFeedbackPermissionPolicy
+
 
 class UserFeedback(PlanRelatedModelWithRevision):
     class FeedbackType(models.TextChoices):
@@ -84,6 +87,12 @@ class UserFeedback(PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('user feedback')
         verbose_name_plural = _('user feedbacks')
+
+    @classmethod
+    def permission_policy(cls) -> UserFeedbackPermissionPolicy:
+        from feedback.permissions import UserFeedbackPermissionPolicy
+
+        return UserFeedbackPermissionPolicy(cls)
 
     def user_can_change_is_processed(self, user):
         return user.is_general_admin_for_plan(self.plan)
