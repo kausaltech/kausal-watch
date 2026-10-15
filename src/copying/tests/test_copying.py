@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.utils import timezone
-from wagtail.models import Locale, Page, Revision
+from wagtail.models import GroupCollectionPermission, GroupPagePermission, Locale, Page, Revision
 from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
 
@@ -1145,6 +1145,25 @@ def test_documentation_pages_are_copied(plan_with_pages):
     doc_root_copy = plan_copy.documentation_root_pages.get()
     assert doc_root_copy.pk != doc_root.pk
     assert doc_root_copy.plan == plan_copy
+
+
+def test_plan_groups_of_copy_get_permissions_on_its_pages_and_collection(plan_with_pages):
+    global_root = Page.get_first_root_node()
+    assert global_root is not None
+    global_root.add_child(instance=DocumentationRootPage(title='Documentation', plan=plan_with_pages, slug='docs'))
+    assert plan_with_pages.primary_action_classification is None  # otherwise, restoring it would save the plan copy
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert plan_copy.site is not None
+    root_pages = {*plan_copy.site.root_page.get_translations(inclusive=True), *plan_copy.documentation_root_pages.all()}
+    assert len(root_pages) == 3
+    admin_page_perms = GroupPagePermission.objects.filter(group=plan_copy.admin_group)
+    assert {perm.page.specific for perm in admin_page_perms} == root_pages
+    for group in (plan_copy.admin_group, plan_copy.contact_person_group):
+        collection_perms = GroupCollectionPermission.objects.filter(group=group)
+        assert collection_perms.exists()
+        assert {perm.collection for perm in collection_perms} == {plan_copy.root_collection}
 
 
 def test_documentation_pages_original_is_unchanged(plan_with_pages):

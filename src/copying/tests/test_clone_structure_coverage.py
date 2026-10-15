@@ -133,12 +133,6 @@ KNOWN_GAPS: dict[str, str] = {
     'reports.ReportActionPrintLayoutCustomization.plan': 'The print layout customization of the plan is lost',
     'taggit.TaggedItem': 'The tags of copied images and documents are lost',
     'wagtailcore.CollectionViewRestriction.collection': 'View restrictions of the collection are lost',
-    'wagtailcore.GroupCollectionPermission.collection': (
-        'The plan groups of the copy get no collection permissions as long as the plan is not saved again'
-    ),
-    'wagtailcore.GroupPagePermission.page': (
-        'The plan groups of the copy get no page permissions as long as the plan is not saved again'
-    ),
     'wagtailcore.Revision': (
         'Page copies keep all revisions of the originals, but only the latest one has its references updated, so '
         'reverting to an older revision references objects of the original plan'
