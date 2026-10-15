@@ -9,7 +9,6 @@ from graphql.utilities.ast_to_dict import ast_to_dict
 
 from kausal_common.users import user_or_bust
 
-from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.wagtail import PlanRelatedModelAdminPermissionHelper
 
 from .graphql_types import AdminButton
@@ -125,9 +124,6 @@ class AdminButtonsMixin:
 
         view_set_class: type[WatchViewSet[Any]] = import_string(root.VIEWSET_CLASS)  # type: ignore
         view_set = view_set_class()
-
-        if isinstance(view_set.permission_policy, PlanRelatedPermissionPolicy):
-            view_set.permission_policy.disable_admin_plan_check()
 
         if not hasattr(view_set, 'get_index_view_buttons'):
             raise ValueError(f'get_index_view_buttons method not found for view set {view_set.__class__.__name__}')
