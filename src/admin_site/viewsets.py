@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import models
 from django.db.models import Model, ProtectedError, QuerySet
 from django.forms.models import ModelForm
@@ -15,6 +15,7 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.models import Page
+from wagtail.permissions import policy_registry
 from wagtail.snippets.bulk_actions.delete import DeleteBulkAction
 from wagtail.snippets.models import get_snippet_models
 from wagtail.snippets.views.snippets import (
@@ -276,11 +277,16 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
     # its data and saving raises. A subclass that wants copying has to provide a plan-aware view.
     copy_view_enabled = False
 
-    @property
-    def permission_policy(self):
-        if issubclass(self.model, PlanRelatedModel):
-            return PlanRelatedPermissionPolicy(self.model)
-        return super().permission_policy
+    def register_permissions(self):
+        # Wagtail would fall back to a policy without the plan check for plan-related models
+        registered = policy_registry.get_by_type(self.model, fallback=False)
+        if issubclass(self.model, PlanRelatedModel) and (
+            registered is None or registered is policy_registry.get_fallback_policy(self.model)
+        ):
+            raise ImproperlyConfigured(
+                f'{self.model._meta.label} needs a permission_policy() classmethod to be registered in a WatchViewSet'
+            )
+        super().register_permissions()  # type: ignore[misc]
 
     def get_form_class(self, for_update: bool = False):
         if self._edit_handler and not self._edit_handler.base_form_class:

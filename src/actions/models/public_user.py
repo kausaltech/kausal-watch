@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, RevMany
 
     from actions.models.pledge import PledgeCommitment
+    from actions.pledge_permissions import ParticipantsPermissionPolicy
     from admin_site.models import Client
 
 
@@ -150,6 +151,12 @@ class PublicUser(models.Model):
         if self.email:
             self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+    @classmethod
+    def permission_policy(cls) -> ParticipantsPermissionPolicy:
+        from actions.pledge_permissions import ParticipantsPermissionPolicy
+
+        return ParticipantsPermissionPolicy(cls)
 
     def regenerate_user_token(self) -> str:
         """

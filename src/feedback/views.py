@@ -20,7 +20,7 @@ from kausal_common.users import user_or_bust
 from feedback.models import UserFeedback
 
 if TYPE_CHECKING:
-    from feedback.wagtail_admin import UserFeedbackPermissionPolicy
+    from feedback.permissions import UserFeedbackPermissionPolicy
 
 
 class SetUserFeedbackProcessedView(
