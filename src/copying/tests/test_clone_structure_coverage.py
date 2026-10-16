@@ -10,7 +10,7 @@ from django.test.utils import isolate_apps
 from modelcluster.fields import ParentalKey
 from wagtail.models import Page
 
-from kausal_common.datasets.models import DatasetSchema
+from kausal_common.datasets.models import Dataset, DatasetSchema
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
@@ -19,6 +19,7 @@ from actions.models.plan import Plan
 from copying.main import (
     ATTRIBUTE_TYPE_CLONE_STRUCTURE,
     CLONE_STRUCTURE_ROOTS,
+    DATASET_CLONE_STRUCTURE,
     DATASET_SCHEMA_CLONE_STRUCTURE,
     DIMENSION_CLONE_STRUCTURE,
     GENERIC_REFERENCE_MODELS,
@@ -100,6 +101,9 @@ class TestCloneStructureCoverage:
     def test_dataset_schema_clone_structure_coverage(self):
         _check_coverage(DatasetSchema, DATASET_SCHEMA_CLONE_STRUCTURE, set())
 
+    def test_dataset_clone_structure_coverage(self):
+        _check_coverage(Dataset, DATASET_CLONE_STRUCTURE, set())
+
     def test_unique_field_copy_policy_coverage(self):
         assert get_unclassified_unique_field_copy_policies() == []
 
@@ -124,10 +128,6 @@ class TestCloneStructureCoverage:
 KNOWN_GAPS: dict[str, str] = {
     'actions.AttributeCategoryChoice.categories': 'The categories of category choice attribute values are lost',
     'actions.Plan.related_plans': 'The related plans are lost',
-    'datasets.DataSource': 'Data sources scoped to the plan are not copied',
-    'datasets.Dataset': 'Datasets of actions and categories are not copied',
-    'datasets.DatasetSchemaScope': 'Dataset schemas scoped to the plan or its category types are not copied',
-    'datasets.DimensionScope': 'Dataset dimensions scoped to the plan are not scoped to the copy',
     'kausal_watch_extensions.CartographyProviderCredentials.plan': (
         "Map credentials are not copied, so map blocks in the copied pages use the original plan's credentials"
     ),

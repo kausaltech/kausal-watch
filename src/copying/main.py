@@ -38,11 +38,16 @@ from wagtail_localize.models import (
 )
 
 from kausal_common.datasets.models import (
+    DataPoint,
+    Dataset,
     DatasetMetric,
     DatasetMetricComputation,
     DatasetMetricValidationRule,
     DatasetSchema,
+    DatasetSchemaScope,
     Dimension as DatasetDimension,
+    DimensionCategory as DatasetDimensionCategory,
+    DimensionScope,
 )
 
 from aplans.utils import RestrictedVisibilityModel
@@ -307,6 +312,17 @@ DATASET_SCHEMA_CLONE_STRUCTURE: CloneStructure = {
     'indicator': EXCLUDED,  # Indicator is the copy root that points to the copied DatasetSchema
 }
 
+# Datasets of actions and categories. Their schemas are copied via `DATASET_SCHEMA_CLONE_STRUCTURE` before.
+DATASET_CLONE_STRUCTURE: CloneStructure = {
+    'data_points': {
+        'dimension_category_links': {},  # copies through model instances, not dataset `DimensionCategory` instances
+        'comments': EXCLUDED,  # review discussions of the data, not plan content
+        'source_references': EXCLUDED,  # Watch does not use data sources yet
+    },
+    'source_references': EXCLUDED,  # Watch does not use data sources yet
+    'goal_data_points': EXCLUDED,  # only indicator datasets have goals, and they are not copied
+}
+
 # Models that are not scoped by a plan and thus deliberately excluded from copying. References to these models are
 # skipped in `UpdateReferencesVisitor.get_references()` and warnings are suppressed in `update_reference()`.
 MODELS_NOT_COPIED = [
@@ -316,6 +332,7 @@ MODELS_NOT_COPIED = [
     CommonIndicator,
     ContentType,
     DatasetDimension,
+    DatasetDimensionCategory,
     Group,
     Locale,
     Organization,
@@ -377,6 +394,18 @@ GENERIC_REFERENCE_MODELS: dict[str, str] = {
     'audit_logging.PlanScopedModelLogEntry': 'The audit log is not copied',
     'audit_logging.PlanScopedPageLogEntry': 'The audit log is not copied',
     'auth.Permission': 'The content type identifies a model, not an instance',
+    'datasets.DataSource': 'Watch does not use data sources yet (see `DataSourcePermissionPolicy`)',
+    'datasets.Dataset': (
+        'Datasets of the copied actions and categories are copied by `_copy_datasets()`; those of indicators are not '
+        "copied (see `DATASET_SCHEMA_CLONE_STRUCTURE['datasets']`)"
+    ),
+    'datasets.DatasetSchemaScope': (
+        'Schemas scoped to the plan or its category types are copied by `_copy_dataset_schemas()`, those of indicators '
+        'with the indicators; the scopes are copied via `DATASET_SCHEMA_CLONE_STRUCTURE`'
+    ),
+    'datasets.DimensionScope': (
+        'Scopes of the plan and its category types are copied by `_copy_dimension_scopes()`; the dimensions are shared'
+    ),
     'notifications.SentNotification': 'The record of sent notifications is not copied',
     'reversion.Version': 'The version history is not copied',
     'wagtail_localize.TranslatableObject': 'Copied for pages by `copy_page_translation_data()`; not used for pledges',
@@ -432,6 +461,15 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
         'reference_value': UNIQUE_FIELD_POLICY_CLEARED_THEN_RESTORED,
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
+    DataPoint: {
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    Dataset: {
+        # Part of unique constraints with the schema and with the identifier; the scope is set to the copy of the
+        # original scope in `CloneVisitor.pre_visit()`
+        'scope_id': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
+        'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
     DatasetMetric: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
     },
@@ -443,6 +481,11 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
     },
     DatasetSchema: {
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    DimensionScope: {
+        # Part of a unique constraint with the identifier; the scope is set to the copy of the original scope in
+        # `CloneVisitor.pre_visit()`
+        'scope_id': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
     },
     NotificationSettings: {
         'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
@@ -569,6 +612,7 @@ CLONE_STRUCTURE_ROOTS: list[tuple[type[Model], CloneStructure]] = [
     (cast('type[Model]', Indicator), INDICATOR_CLONE_STRUCTURE),
     (cast('type[Model]', Dimension), DIMENSION_CLONE_STRUCTURE),
     (cast('type[Model]', DatasetSchema), DATASET_SCHEMA_CLONE_STRUCTURE),
+    (cast('type[Model]', Dataset), DATASET_CLONE_STRUCTURE),
 ]
 
 
@@ -962,7 +1006,7 @@ class CloneVisitor(AbstractVisitor):
                 copy.save(update_fields=update_fields)
 
     def prepare_instance_for_copy(self, instance):
-        if hasattr(instance, 'name'):
+        if isinstance(getattr(instance, 'name', None), str):
             instance.name += self.copy_name_suffix
         if hasattr(instance, 'uuid'):
             instance.uuid = uuid4()
@@ -1061,9 +1105,35 @@ class CloneVisitor(AbstractVisitor):
         self.remove_link(instance, 'reference_value')
 
     @pre_visit.register
+    def _(self, instance: DatasetMetric) -> None:
+        # The name of a metric is its column name in data frames, so it must not get the suffix for names of copies
+        name = instance.name
+        self.prepare_instance_for_copy(instance)
+        instance.name = name
+
+    @pre_visit.register
     def _(self, instance: DatasetMetricComputation) -> None:
         self.prepare_instance_for_copy(instance)
         instance.target_metric = self.get_copy(instance.target_metric)
+
+    @pre_visit.register
+    def _(self, instance: Dataset) -> None:
+        self.prepare_instance_for_copy(instance)
+        # Change the scope before saving because of the unique constraints involving it
+        scope = instance.scope
+        assert isinstance(scope, Model)
+        instance.scope = self.get_copy(scope)
+        if instance.schema is not None and self.has_copy(instance.schema):
+            instance.schema = self.get_copy(instance.schema)
+
+    @pre_visit.register
+    def _(self, instance: DimensionScope) -> None:
+        self.prepare_instance_for_copy(instance)
+        # Change the scope before saving because of the unique constraint involving it. The dimension is shared with the
+        # original plan.
+        scope = instance.scope
+        assert isinstance(scope, Model)
+        instance.scope = self.get_copy(scope)
 
     @pre_visit.register
     def _(self, instance: Site) -> None:
@@ -2158,6 +2228,59 @@ def _copy_attribute_types(plan: Plan, clone_visitor: CloneVisitor) -> list[Attri
     return attribute_types
 
 
+def _get_plan_and_category_type_scope_q(plan: Plan) -> Q:
+    """Return a filter for models with a generic `scope` that matches the plan and its category types."""
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    category_type_ct = ContentType.objects.get_for_model(CategoryType)
+    return Q(scope_content_type=plan_ct, scope_id=plan.pk) | Q(
+        scope_content_type=category_type_ct, scope_id__in=plan.category_types.values('pk')
+    )
+
+
+def _copy_dataset_schemas(plan: Plan, clone_visitor: CloneVisitor) -> list[DatasetSchema]:
+    """
+    Copy the dataset schemas scoped to the plan or its category types.
+
+    Returns the list of copies. Must be called after the plan's category types have been copied.
+    """
+    scope_q = _get_plan_and_category_type_scope_q(plan)
+    scoped_schema_ids = DatasetSchemaScope.objects.filter(scope_q).values('schema_id')
+    # Materialize in a list because `visit_tree()` turns each original into its copy
+    schemas = list(DatasetSchema.objects.filter(pk__in=scoped_schema_ids))
+    for schema in schemas:
+        visit_tree(schema, DATASET_SCHEMA_CLONE_STRUCTURE, clone_visitor)
+    return schemas
+
+
+def _copy_dimension_scopes(plan: Plan, clone_visitor: CloneVisitor) -> None:
+    """
+    Scope the dataset dimensions of the plan and its category types also to the copies of these.
+
+    The dimensions themselves are shared between the original and the copy. Must be called after the plan's category
+    types have been copied.
+    """
+    for dimension_scope in DimensionScope.objects.filter(_get_plan_and_category_type_scope_q(plan)):
+        visit_tree(dimension_scope, {}, clone_visitor)
+
+
+def _copy_datasets(clone_visitor: CloneVisitor) -> list[Dataset]:
+    """
+    Copy the datasets of the copied actions and categories.
+
+    Returns the list of copies. Must be called after the actions, the categories and the dataset schemas have been
+    copied.
+    """
+    scope_q = Q(pk__in=[])
+    for model in (Action, Category):
+        original_pks = [pk for copied_model, pk in clone_visitor.copies if copied_model is model]
+        scope_q |= Q(scope_content_type=ContentType.objects.get_for_model(model), scope_id__in=original_pks)
+    # Materialize in a list because `visit_tree()` turns each original into its copy
+    datasets = list(Dataset.objects.filter(scope_q))
+    for dataset in datasets:
+        visit_tree(dataset, DATASET_CLONE_STRUCTURE, clone_visitor)
+    return datasets
+
+
 def _copy_indicators(plan: Plan, clone_visitor: CloneVisitor) -> list[Indicator]:
     """Copy all indicators and dimensions of the plan. Returns the list of copied indicator instances."""
     indicators = list(plan.indicators.all())
@@ -2183,6 +2306,9 @@ def _clone_plan_objects(
     _copy_plan_with_structure(plan_copy, clone_visitor)
     _copy_documentation_pages(plan, plan_copy, root_page_title_suffix, clone_visitor)
     attribute_types = _copy_attribute_types(plan, clone_visitor)
+    dataset_schemas = _copy_dataset_schemas(plan, clone_visitor)
+    _copy_dimension_scopes(plan, clone_visitor)
+    datasets = _copy_datasets(clone_visitor)
 
     # Update root page (`plan_copy.site` should now be the site copy)
     assert plan_copy.site
@@ -2201,7 +2327,7 @@ def _clone_plan_objects(
 
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
-    update_references(plan_copy, attribute_types, indicators, clone_visitor)
+    update_references(plan_copy, attribute_types, indicators, dataset_schemas, datasets, clone_visitor)
     copy_page_translation_data(clone_visitor)
 
     return plan_copy
@@ -2264,9 +2390,16 @@ def update_references(
     plan_copy: Plan,
     attribute_types: list[AttributeType],
     indicators: list[Indicator],
+    dataset_schemas: list[DatasetSchema],
+    datasets: list[Dataset],
     clone_visitor: CloneVisitor,
 ):
     update_references_visitor = UpdateReferencesVisitor(clone_visitor)
+    for schema in dataset_schemas:
+        _delete_uncopied_dataset_schema_scopes(schema, clone_visitor)
+        visit_tree(schema, DATASET_SCHEMA_CLONE_STRUCTURE, update_references_visitor)
+    for dataset in datasets:
+        visit_tree(dataset, DATASET_CLONE_STRUCTURE, update_references_visitor)
     visit_tree(plan_copy, PLAN_CLONE_STRUCTURE, update_references_visitor)
     update_references_in_page_tree_with_translations(plan_copy.root_page, update_references_visitor)
     for page in plan_copy.documentation_root_pages.all():
@@ -2341,9 +2474,15 @@ def update_references_in_indicators(indicators: list[Indicator], clone_visitor: 
 
 
 def _delete_uncopied_dataset_schema_scopes(schema: DatasetSchema, clone_visitor: CloneVisitor) -> None:
+    """
+    Delete the scopes of the schema copy whose targets have not been copied.
+
+    A schema may be processed more than once (e.g., if it is scoped to both the plan and an indicator), so keep scopes
+    whose targets have already been remapped to copies.
+    """
     for scope in schema.scopes.all():
         scope_target = scope.scope
-        if isinstance(scope_target, Model) and clone_visitor.has_copy(scope_target):
+        if isinstance(scope_target, Model) and (clone_visitor.has_copy(scope_target) or clone_visitor.is_copy(scope_target)):
             continue
         scope.delete()
 

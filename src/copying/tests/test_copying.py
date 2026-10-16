@@ -24,7 +24,15 @@ from wagtail_localize.models import (
 )
 from wagtail_localize.operations import TranslationCreator
 
-from kausal_common.datasets.models import DatasetMetricComputation, DatasetMetricValidationRule, DatasetSchema
+from kausal_common.datasets.models import (
+    Dataset,
+    DatasetMetricComputation,
+    DatasetMetricValidationRule,
+    DatasetSchema,
+    DatasetSchemaScope,
+    Dimension as DatasetDimension,
+    DimensionScope,
+)
 
 from aplans.utils import RestrictedVisibilityModel
 
@@ -41,6 +49,7 @@ from actions.tests.factories import (
     AttributeRichTextFactory,
     AttributeTypeChoiceOptionFactory,
     AttributeTypeFactory,
+    CategoryFactory,
     CategoryTypeFactory,
     PlanFactory,
     WorkflowFactory,
@@ -55,11 +64,15 @@ from copying.main import (
     copy_plan,
 )
 from datasets.tests.factories import (
+    DataPointFactory,
+    DatasetFactory,
     DatasetMetricFactory,
     DatasetSchemaDimensionFactory,
     DatasetSchemaFactory,
     DatasetSchemaScopeFactory,
+    DimensionCategoryFactory as DatasetDimensionCategoryFactory,
     DimensionFactory as DatasetDimensionFactory,
+    DimensionScopeFactory,
 )
 from documentation.models import DocumentationRootPage
 from documents.models import AplansDocument
@@ -78,7 +91,7 @@ from indicators.tests.factories import (
 )
 from notifications.models import ContentBlock
 from notifications.tests.factories import AutomaticNotificationTemplateFactory, BaseTemplateFactory
-from pages.models import StaticPage
+from pages.models import ActionListPage, StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory, StaticPageFactory
 from reports.tests.factories import ReportTypeFactory
 
@@ -620,6 +633,127 @@ def test_copy_indicator_dataset_schema(plan_with_pages, indicator):
     assert computation_copy.target_metric == metric_copies['Target']
     assert computation_copy.operand_a == metric_copies['Operand A']
     assert computation_copy.operand_b == metric_copies['Operand B']
+
+
+def _scope_filter(scope):
+    return {'scope_content_type': ContentType.objects.get_for_model(type(scope)), 'scope_id': scope.pk}
+
+
+def test_copy_plan_dataset_schema_and_action_dataset(plan_with_pages, action):
+    schema = DatasetSchemaFactory.create(name='Budget')
+    dimension = DatasetDimensionFactory.create()
+    dimension_category = DatasetDimensionCategoryFactory.create(dimension=dimension)
+    DatasetSchemaDimensionFactory.create(schema=schema, dimension=dimension)
+    DatasetSchemaScopeFactory.create(schema=schema, scope=plan_with_pages)
+    other_plan = PlanFactory.create()
+    DatasetSchemaScopeFactory.create(schema=schema, scope=other_plan)
+    metric = DatasetMetricFactory.create(schema=schema, label='Costs', name='costs')
+    DatasetMetricFactory.create(schema=schema, label='Unnamed', name=None)
+    dataset = DatasetFactory.create(schema=schema, scope=action, identifier='budget')
+    data_point = DataPointFactory.create(dataset=dataset, metric=metric, value=42)
+    data_point.dimension_categories.add(dimension_category)
+
+    plan_copy = copy_plan(plan_with_pages, general_name_suffix='(copy)')
+
+    schema_copy = DatasetSchema.objects.get(scopes__in=DatasetSchemaScope.objects.filter(**_scope_filter(plan_copy)))
+    assert schema_copy != schema
+    assert schema_copy.name == 'Budget (copy)'
+    # The scope of the other plan stays with the original
+    assert [scope.scope for scope in schema_copy.scopes.all()] == [plan_copy]
+    assert {scope.scope for scope in schema.scopes.all()} == {plan_with_pages, other_plan}
+    assert schema_copy.dimensions.get().dimension == dimension
+    # Metric names are column names, which the copies must keep
+    assert {m.label: m.name for m in schema_copy.metrics.all()} == {'Costs': 'costs', 'Unnamed': None}
+    metric_copy = schema_copy.metrics.get(label='Costs')
+    assert metric_copy != metric
+
+    action_copy = plan_copy.actions.get()
+    dataset_copy = Dataset.objects.get(**_scope_filter(action_copy))
+    assert dataset_copy.schema == schema_copy
+    assert dataset_copy.identifier == 'budget'
+    assert dataset_copy.uuid != dataset.uuid
+    data_point_copy = dataset_copy.data_points.get()
+    assert data_point_copy != data_point
+    assert data_point_copy.metric == metric_copy
+    assert data_point_copy.value == data_point.value
+    assert list(data_point_copy.dimension_categories.all()) == [dimension_category]
+    # The original is unchanged
+    assert list(Dataset.objects.filter(**_scope_filter(action))) == [dataset]
+    assert dataset.data_points.get().metric == metric
+
+
+@pytest.mark.parametrize('indicator__common', [None])
+def test_copy_dataset_schema_scoped_to_plan_and_indicator(plan_with_pages, indicator):
+    schema = DatasetSchemaFactory.create()
+    DatasetSchemaScopeFactory.create(schema=schema, scope=plan_with_pages)
+    DatasetSchemaScopeFactory.create(schema=schema, scope=indicator)
+    indicator.dataset_schema = schema
+    indicator.save(update_fields=['dataset_schema'])
+
+    plan_copy = copy_plan(plan_with_pages, copy_indicators=True)
+
+    indicator_copy = plan_copy.indicators.get(name=indicator.name)
+    schema_copy = indicator_copy.dataset_schema
+    assert schema_copy is not None
+    assert schema_copy != schema
+    assert {scope.scope for scope in schema_copy.scopes.all()} == {plan_copy, indicator_copy}
+    assert DatasetSchema.objects.filter(scopes__in=DatasetSchemaScope.objects.filter(**_scope_filter(plan_copy))).get() == (
+        schema_copy
+    )
+
+
+def test_copy_category_type_dataset_schema_and_category_dataset(plan_with_pages):
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    category = CategoryFactory.create(type=category_type)
+    schema = DatasetSchemaFactory.create()
+    DatasetSchemaScopeFactory.create(schema=schema, scope=category_type)
+    metric = DatasetMetricFactory.create(schema=schema)
+    dataset = DatasetFactory.create(schema=schema, scope=category)
+    DataPointFactory.create(dataset=dataset, metric=metric)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    category_type_copy = plan_copy.category_types.get()
+    category_copy = category_type_copy.categories.get()
+    schema_copy = DatasetSchema.objects.get(scopes__in=DatasetSchemaScope.objects.filter(**_scope_filter(category_type_copy)))
+    assert schema_copy != schema
+    dataset_copy = Dataset.objects.get(**_scope_filter(category_copy))
+    assert dataset_copy.schema == schema_copy
+    assert dataset_copy.data_points.get().metric == schema_copy.metrics.get()
+
+
+def test_copy_plan_dimension_scopes(plan_with_pages):
+    category_type = CategoryTypeFactory.create(plan=plan_with_pages)
+    plan_dimension = DatasetDimensionFactory.create()
+    category_type_dimension = DatasetDimensionFactory.create()
+    DimensionScopeFactory.create(dimension=plan_dimension, scope=plan_with_pages, identifier='plan-dim')
+    DimensionScopeFactory.create(dimension=category_type_dimension, scope=category_type, identifier='ct-dim')
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    category_type_copy = plan_copy.category_types.get()
+    plan_scope_copy = DimensionScope.objects.get(**_scope_filter(plan_copy))
+    assert plan_scope_copy.dimension == plan_dimension
+    assert plan_scope_copy.identifier == 'plan-dim'
+    category_type_scope_copy = DimensionScope.objects.get(**_scope_filter(category_type_copy))
+    assert category_type_scope_copy.dimension == category_type_dimension
+    # The dimensions are shared, and the original scopes are unchanged
+    assert DatasetDimension.objects.filter(pk__in=[plan_dimension.pk, category_type_dimension.pk]).count() == 2
+    assert DimensionScope.objects.get(**_scope_filter(plan_with_pages)).dimension == plan_dimension
+
+
+def test_page_block_references_copied_plan_dataset_schema(plan_with_pages):
+    schema = DatasetSchemaFactory.create()
+    DatasetSchemaScopeFactory.create(schema=schema, scope=plan_with_pages)
+    page = plan_with_pages.root_page.get_children().type(ActionListPage).get().specific
+    page.details_main_top = [('datasets', {'heading': '', 'help_text': '', 'dataset_schema': schema})]
+    page.save()
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    schema_copy = DatasetSchema.objects.get(scopes__in=DatasetSchemaScope.objects.filter(**_scope_filter(plan_copy)))
+    page_copy = get_page_copy(page, plan_copy)
+    assert page_copy.details_main_top[0].value['dataset_schema'] == schema_copy
 
 
 @pytest.mark.parametrize('indicator__common', [None])
