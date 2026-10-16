@@ -2136,7 +2136,8 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
     """
     Register the pages in the tree rooted at `root_copy` as copies of those rooted at `original_root`.
 
-    Also registers objects "owned" by the pages, i.e., objects with a parental key to a page.
+    Also registers objects "owned" by the pages, i.e., objects with a parental key to a page, except those that
+    `Page.copy()` does not copy (e.g., comments).
 
     The two page trees must be isomorphic.
     """
@@ -2145,8 +2146,11 @@ def register_page_copies(clone_visitor: CloneVisitor, original_root: Page, root_
     for original_page, page_copy in zip(original_pages, page_copies, strict=True):
         assert type(original_page) is type(page_copy)
         clone_visitor.register_copy(original_page, page_copy)
-        original_children = (obj for _, obj in get_cluster_related_objects(original_page))
-        copy_children = (obj for _, obj in get_cluster_related_objects(page_copy))
+        uncopied_fields = {*original_page.default_exclude_fields_in_copy, *original_page.exclude_fields_in_copy}
+        original_children = (
+            obj for field_name, obj in get_cluster_related_objects(original_page) if field_name not in uncopied_fields
+        )
+        copy_children = (obj for field_name, obj in get_cluster_related_objects(page_copy) if field_name not in uncopied_fields)
         for original_child, child_copy in zip(original_children, copy_children, strict=True):
             clone_visitor.register_copy(original_child, child_copy)
 
