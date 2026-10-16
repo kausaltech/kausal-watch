@@ -19,6 +19,9 @@ class PagesConfig(AppConfig):
 
     def ready(self):
         from actions.category_admin import CategoryAdmin
+        from pages.wagtail_localize_compat import patch_segment_extraction
+
+        patch_segment_extraction()
 
         post_reorder.connect(
             post_reorder_categories,

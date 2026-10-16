@@ -94,6 +94,7 @@ from notifications.models import ContentBlock
 from notifications.tests.factories import AutomaticNotificationTemplateFactory, BaseTemplateFactory
 from pages.models import ActionListPage, StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory, StaticPageFactory
+from pages.tests.test_wagtail_localize_compat import set_legacy_null_filter
 from reports.tests.factories import ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
@@ -1351,6 +1352,27 @@ def _translate_page(page: Page, locale: Locale) -> Translation:
     translation = source.translations.get(target_locale=locale)
     translation.save_target(publish=True)
     return translation
+
+
+def test_copy_translated_page_with_struct_block_stored_as_null(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    page = plan_with_pages.root_page.get_children().type(ActionListPage).get().specific
+    assert page.get_translation_or_none(other_locale) is not None
+    set_legacy_null_filter(page)
+    # Give the translation source a snapshot from back then, which contains the block stored as null too
+    source = TranslationSource.objects.get_for_instance(page)
+    content = json.loads(source.content_json)
+    assert page.primary_filters is not None
+    content['primary_filters'] = json.dumps(list(page.primary_filters.raw_data))
+    source.content_json = json.dumps(content)
+    source.save(update_fields=['content_json'])
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    assert [block['type'] for block in json.loads(json.loads(source_copy.content_json)['primary_filters'])] == ['status']
+    assert source_copy.translations.get().target_locale == other_locale
 
 
 def test_copied_subpages_are_translations_of_each_other(plan_with_pages):
