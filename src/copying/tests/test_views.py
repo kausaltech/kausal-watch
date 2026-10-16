@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from django.urls import reverse
+
 import pytest
 
 
@@ -29,3 +31,32 @@ def test_plan_copy_view_accepts_as_view_kwargs():
         if 'invalid keyword' in str(e):
             pytest.fail(f'as_view() rejected a keyword argument: {e}')
         raise
+
+
+@pytest.fixture
+def copy_url(plan):
+    return reverse('actions_plan_modeladmin_copy', kwargs={'instance_pk': plan.pk})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', ['get', 'post'])
+def test_plan_copy_view_denies_plan_admins(client, plan_admin_user, copy_url, method, monkeypatch):
+    queued = []
+    monkeypatch.setattr('copying.views.copy_plan.delay_on_commit', lambda **kwargs: queued.append(kwargs))
+    client.force_login(plan_admin_user)
+    response = getattr(client, method)(copy_url, {'identifier': 'copy', 'name': 'Copy', 'supersede_original_plan': 'on'})
+    # Wagtail redirects to the dashboard if permission is denied
+    assert response.status_code == 302
+    assert response.url == reverse('wagtailadmin_home')
+    assert not queued
+
+
+@pytest.mark.django_db
+def test_plan_copy_view_queues_copy_for_superusers(client, superuser, plan, copy_url, monkeypatch):
+    queued = []
+    monkeypatch.setattr('copying.views.copy_plan.delay_on_commit', lambda **kwargs: queued.append(kwargs))
+    client.force_login(superuser)
+    assert client.get(copy_url).status_code == 200
+    response = client.post(copy_url, {'identifier': 'copy', 'name': 'Copy'})
+    assert response.status_code == 302
+    assert [str(kwargs['plan_id']) for kwargs in queued] == [str(plan.pk)]

@@ -649,13 +649,20 @@ def test_rejects_copy_indicator_with_kausal_paths_node_uuid(plan_with_pages, ind
         copy_plan(plan_with_pages, copy_indicators=True)
 
 
-def test_rejects_copy_of_plan_with_short_identifier(plan_with_pages):
-    # The copy would violate the unique constraints on the short identifier, which it shares with the original
+@pytest.mark.parametrize('with_parent', [False, True])
+def test_copy_of_plan_with_short_identifier_has_none(plan_with_pages, with_parent):
+    # The copy has the same parent and organization as the original, so it cannot have the same short identifier
+    if with_parent:
+        plan_with_pages.parent = PlanFactory.create(organization=plan_with_pages.organization)
     plan_with_pages.short_identifier = 'abc'
-    plan_with_pages.save(update_fields=['short_identifier'])
+    plan_with_pages.save(update_fields=['short_identifier', 'parent'])
 
-    with pytest.raises(ValueError, match=r'actions\.Plan\.short_identifier'):
-        copy_plan(plan_with_pages)
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert plan_copy.parent == plan_with_pages.parent
+    assert plan_copy.short_identifier is None
+    plan_with_pages.refresh_from_db()
+    assert plan_with_pages.short_identifier == 'abc'
 
 
 @pytest.mark.parametrize('indicator__common', [None])
