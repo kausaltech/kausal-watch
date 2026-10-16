@@ -1599,16 +1599,7 @@ def copy_page_translation_data(clone_visitor: CloneVisitor) -> None:
         if source is None:
             continue
         page_copy = Page.objects.get(pk=page_copies[original.pk].pk).specific
-        source_instance = page_copy.with_content_json(json.loads(source.content_json))
-        update_references_visitor.update_instance(source_instance, save=False, skip_page_draft=True)
-        update_references_visitor.update_extractable_references(source_instance)
-        source_copy, created = TranslationSource.get_or_create_from_instance(source_instance)
-        assert created
-        TranslationSource.objects.filter(pk=source_copy.pk).update(
-            schema_version=source.schema_version,
-            created_at=source.created_at,
-            last_updated_at=source.last_updated_at,
-        )
+        source_copy, source_instance = _copy_translation_source(source, page_copy, update_references_visitor)
         for translation in source.translations.all():
             Translation.objects.create(
                 source=source_copy,
@@ -1621,6 +1612,44 @@ def copy_page_translation_data(clone_visitor: CloneVisitor) -> None:
         snapshots.append(source_instance)
     for original_object, object_copy, snapshots in objects_to_copy.values():
         _copy_translation_contexts(original_object, object_copy, snapshots, clone_visitor)
+
+
+def _copy_translation_source(
+    source: TranslationSource,
+    page_copy: Page,
+    update_references_visitor: UpdateReferencesVisitor,
+) -> tuple[TranslationSource, Page]:
+    """
+    Create a translation source for `page_copy` from the snapshot in `source`, the source of the original page.
+
+    Returns the new source and the page copy with the content of the new source.
+
+    The snapshot may be from before a change to the data model, as migrations of StreamFields do not migrate the
+    snapshots. If wagtail-localize cannot extract the segments of the snapshot because of that, the new source is a
+    snapshot of the current content of the page copy instead, as syncing the translations of the copy would take.
+    """
+    source_instance = page_copy.with_content_json(json.loads(source.content_json))
+    try:
+        with transaction.atomic():
+            update_references_visitor.update_instance(source_instance, save=False, skip_page_draft=True)
+            update_references_visitor.update_extractable_references(source_instance)
+            source_copy, created = TranslationSource.get_or_create_from_instance(source_instance)
+    except Exception:
+        logger.opt(exception=True).warning(
+            f'Cannot copy the translation source snapshot of {type(page_copy).__name__} {page_copy.pk}; taking a new '
+            'snapshot of the page copy instead'
+        )
+        source_copy, created = TranslationSource.get_or_create_from_instance(page_copy)
+        assert created
+        TranslationSource.objects.filter(pk=source_copy.pk).update(created_at=source.created_at)
+        return source_copy, page_copy
+    assert created
+    TranslationSource.objects.filter(pk=source_copy.pk).update(
+        schema_version=source.schema_version,
+        created_at=source.created_at,
+        last_updated_at=source.last_updated_at,
+    )
+    return source_copy, source_instance
 
 
 def _copy_translation_contexts(
