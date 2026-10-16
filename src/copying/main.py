@@ -1841,16 +1841,7 @@ def copy_page_translation_data(clone_visitor: CloneVisitor) -> None:
         if source is None:
             continue
         page_copy = Page.objects.get(pk=page_copies[original.pk].pk).specific
-        source_instance = page_copy.with_content_json(json.loads(source.content_json))
-        update_references_visitor.update_instance(source_instance, save=False, skip_page_draft=True)
-        update_references_visitor.update_extractable_references(source_instance)
-        source_copy, created = TranslationSource.get_or_create_from_instance(source_instance)
-        assert created
-        TranslationSource.objects.filter(pk=source_copy.pk).update(
-            schema_version=source.schema_version,
-            created_at=source.created_at,
-            last_updated_at=source.last_updated_at,
-        )
+        source_copy, source_instance = _copy_translation_source(source, page_copy, update_references_visitor)
         for translation in source.translations.all():
             Translation.objects.create(
                 source=source_copy,
@@ -1863,6 +1854,119 @@ def copy_page_translation_data(clone_visitor: CloneVisitor) -> None:
         snapshots.append(source_instance)
     for original_object, object_copy, snapshots in objects_to_copy.values():
         _copy_translation_contexts(original_object, object_copy, snapshots, clone_visitor)
+
+
+def _copy_translation_source(
+    source: TranslationSource,
+    page_copy: Page,
+    update_references_visitor: UpdateReferencesVisitor,
+) -> tuple[TranslationSource, Page]:
+    """
+    Create a translation source for `page_copy` from the snapshot in `source`, the source of the original page.
+
+    Returns the new source and the page copy with the content of the new source.
+
+    The snapshot may be from before a change to the data model, as migrations of StreamFields do not migrate the
+    snapshots. If the StreamField data of the snapshot does not fit the current blocks, or wagtail-localize cannot
+    extract the segments of the snapshot, the new source is a snapshot of the current content of the page copy instead,
+    as syncing the translations of the copy would take.
+    """
+    content = json.loads(source.content_json)
+    if _snapshot_fits_stream_blocks(type(page_copy), content):
+        snapshot_copy = _copy_translation_source_snapshot(source, page_copy, content, update_references_visitor)
+        if snapshot_copy is not None:
+            return snapshot_copy
+    else:
+        logger.warning(
+            f'The translation source snapshot of {type(page_copy).__name__} {page_copy.pk} does not fit the current '
+            'blocks; taking a new snapshot of the page copy instead'
+        )
+    source_copy, created = TranslationSource.get_or_create_from_instance(page_copy)
+    assert created
+    TranslationSource.objects.filter(pk=source_copy.pk).update(created_at=source.created_at)
+    return source_copy, page_copy
+
+
+def _copy_translation_source_snapshot(
+    source: TranslationSource,
+    page_copy: Page,
+    content: dict[str, Any],
+    update_references_visitor: UpdateReferencesVisitor,
+) -> tuple[TranslationSource, Page] | None:
+    """Create the translation source for `page_copy` from the snapshot `content`, or return None if that fails."""
+    source_instance = page_copy.with_content_json(content)
+    try:
+        with transaction.atomic():
+            update_references_visitor.update_instance(source_instance, save=False, skip_page_draft=True)
+            update_references_visitor.update_extractable_references(source_instance)
+            source_copy, created = TranslationSource.get_or_create_from_instance(source_instance)
+    except Exception:
+        logger.opt(exception=True).warning(
+            f'Cannot copy the translation source snapshot of {type(page_copy).__name__} {page_copy.pk}; taking a new '
+            'snapshot of the page copy instead'
+        )
+        return None
+    assert created
+    TranslationSource.objects.filter(pk=source_copy.pk).update(
+        schema_version=source.schema_version,
+        created_at=source.created_at,
+        last_updated_at=source.last_updated_at,
+    )
+    return source_copy, source_instance
+
+
+def _snapshot_fits_stream_blocks(model: type[Model], content: dict[str, Any]) -> bool:
+    """Return true if the StreamField data in the snapshot `content` of a `model` instance fits its current blocks."""
+    for field in model._meta.get_fields():
+        if not isinstance(field, StreamField) or field.name not in content:
+            continue
+        raw_data = content[field.name]
+        if isinstance(raw_data, str):
+            try:
+                raw_data = json.loads(raw_data) if raw_data else None
+            except ValueError:
+                return False
+        if raw_data is not None and not _raw_data_fits_block(field.stream_block, raw_data):
+            return False
+    return True
+
+
+def _raw_data_fits_block(block: Block, raw_data: Any) -> bool:
+    """
+    Return true if the raw StreamField data `raw_data` has the shape that `block` expects.
+
+    This only checks the kinds of values that compound blocks expect, as that is what changes when, e.g., a list block
+    becomes a struct block. The values of other blocks are not checked.
+    """
+    if isinstance(block, StreamBlock):
+        return isinstance(raw_data, list) and all(_raw_stream_child_fits_block(block, child) for child in raw_data)
+    if isinstance(block, ListBlock):
+        return isinstance(raw_data, list) and all(
+            _raw_data_fits_block(block.child_block, _get_raw_list_item_value(item)) for item in raw_data
+        )
+    if isinstance(block, StructBlock):
+        if raw_data is None:
+            # Stored by blocks that used to be `StaticBlock`s (see `pages.wagtail_localize_compat`)
+            return True
+        return isinstance(raw_data, dict) and all(
+            _raw_data_fits_block(child_block, raw_data[name])
+            for name, child_block in block.child_blocks.items()
+            if name in raw_data
+        )
+    return True
+
+
+def _raw_stream_child_fits_block(block: StreamBlock, child: Any) -> bool:
+    if not isinstance(child, dict) or child.get('type') not in block.child_blocks:
+        return False
+    return _raw_data_fits_block(block.child_blocks[child['type']], child.get('value'))
+
+
+def _get_raw_list_item_value(item: Any) -> Any:
+    # List blocks store their items either as plain values (legacy format) or as dicts with an ID (block format)
+    if isinstance(item, dict) and item.get('type') == 'item' and 'value' in item:
+        return item['value']
+    return item
 
 
 def _copy_translation_contexts(
