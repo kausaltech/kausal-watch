@@ -48,7 +48,7 @@ from kausal_common.datasets.models import (
 from aplans.utils import RestrictedVisibilityModel
 
 from actions.models.action import Action
-from actions.models.attributes import AttributeType
+from actions.models.attributes import AttributeCategoryChoice, AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType, skip_page_synchronization_ctx
 from actions.models.features import PlanFeatures
 from actions.models.plan import Plan
@@ -339,6 +339,7 @@ MODELS_COPIED_OUTSIDE_CLONE_STRUCTURES: list[type[Model]] = [AplansDocument, Apl
 #   (and `Page.copy()`, which does, keeps them pointing to the original targets).
 # References from models in `MODELS_NOT_COPIED` don't need to be listed.
 RELATIONS_OUTSIDE_CLONE_STRUCTURES: dict[str, str] = {
+    'actions.AttributeCategoryChoice.categories': 'Copied by `CloneVisitor.post_visit()`',
     'actions.CommonCategoryIcon.image': 'Belongs to a common category, which is not owned by a plan',
     'audit_logging.PlanScopedPageLogEntry.page': 'The audit log is not copied',
     'images.AplansRendition.image': 'Renditions of the image copies are generated on demand',
@@ -1127,6 +1128,25 @@ class CloneVisitor(AbstractVisitor):
                 raise ValueError(f"Cannot supersede action '{original}': already superseded by '{original.superseded_by}'")
             original.superseded_by = copy
             original.save(update_fields=['superseded_by'])
+
+    @post_visit.register
+    def _(self, original: AttributeCategoryChoice, copy: AttributeCategoryChoice) -> None:
+        # The through model of `categories` is auto-created, so it is not in the clone structure, and saving the copy did
+        # not copy the categories. The categories have been copied with the plan's category types before.
+        through_model = AttributeCategoryChoice.categories.through
+        category_ids = through_model.objects.filter(attributecategorychoice_id=original.pk).values('category_id')
+        categories = []
+        for category in Category.objects.filter(pk__in=category_ids):
+            if self.has_copy(category):
+                categories.append(self.get_copy(category))
+                continue
+            logger.warning(
+                f'Could not find copy for {type(category).__name__} {category.pk} when copying the categories of '
+                f'{type(original).__name__} {original.pk}'
+            )
+            categories.append(category)
+        copy.categories.set(categories)
+        copy.save()
 
 
 class UpdateReferencesVisitor(AbstractVisitor):
