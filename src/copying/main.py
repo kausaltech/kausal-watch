@@ -53,6 +53,7 @@ from actions.models.category import Category, CategoryType, CommonCategory, Comm
 from actions.models.features import PlanFeatures
 from actions.models.plan import Plan
 from actions.models.pledge import Pledge
+from actions.perms import sync_all_group_permissions_for_plan
 from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
 from admin_site.models import Client
 from content.apps import create_site_general_content
@@ -349,6 +350,14 @@ RELATIONS_OUTSIDE_CLONE_STRUCTURES: dict[str, str] = {
         "Change log messages are not copied (see `PLAN_CLONE_STRUCTURE['pagechangelogmessage_set']`)"
     ),
     'wagtailcore.Comment.page': 'Wagtail does not copy comments when copying pages',
+    'wagtailcore.GroupCollectionPermission.collection': (
+        'Granted to the plan groups of the copy by `sync_all_group_permissions_for_plan()`; other groups only have '
+        'permissions on the root collection'
+    ),
+    'wagtailcore.GroupPagePermission.page': (
+        'Granted to the plan groups of the copy by `sync_all_group_permissions_for_plan()`; other groups only have '
+        'permissions on the root page'
+    ),
     'wagtailcore.GroupSitePermission.site': 'Plan groups get no site permissions',
     'wagtailcore.PageLogEntry.page': 'The log history is not copied; `Page.copy()` logs the copy itself',
     'wagtailcore.PageSubscription.page': "Users' subscriptions to comment notifications are personal, not plan content",
@@ -2203,6 +2212,9 @@ def _clone_plan_objects(
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, indicators, clone_visitor)
     copy_page_translation_data(clone_visitor)
+    # Saving the plan copy did not grant its groups permissions on its pages and collection, as we disconnected the
+    # signal handler doing that while copying. Do it now that the copy has its pages.
+    sync_all_group_permissions_for_plan(plan_copy)
 
     return plan_copy
 
