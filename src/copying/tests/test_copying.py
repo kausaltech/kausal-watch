@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.utils import timezone
-from wagtail.models import Locale, Page, Revision
+from wagtail.models import Comment, Locale, Page, Revision
 from wagtail.models.reference_index import ReferenceIndex
 from wagtail.rich_text import RichText
 
@@ -387,6 +387,18 @@ def test_rich_text_field_references(plan_with_pages, action):
     image2_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title=image2.title)
     action_copy = plan_copy.actions.get()
     assert action_copy.description == html_with_references([doc1_copy, doc2_copy, image1_copy, image2_copy])
+
+
+def test_copy_page_with_comment(plan_with_pages, user):
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Commented page')
+    comment = Comment._default_manager.create(page=page, user=user, text='Please check this', contentpath='title')
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    # Wagtail does not copy comments when copying pages
+    page_copy = get_page_copy(page, plan_copy)
+    assert not Comment._default_manager.filter(page=page_copy).exists()
+    assert list(Comment._default_manager.filter(page=page)) == [comment]
 
 
 def test_rich_text_block_references(plan_with_pages, static_page):
