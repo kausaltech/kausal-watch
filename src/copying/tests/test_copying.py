@@ -1151,6 +1151,31 @@ def _translate_page(page: Page, locale: Locale) -> Translation:
     return translation
 
 
+def test_copy_translated_page_with_outdated_translation_source_snapshot(plan_with_pages):
+    other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
+    _translate_page(page, other_locale)
+    # Make the snapshot look like one taken before a struct block was a list block, which wagtail-localize cannot
+    # extract segments from. (Migrations of StreamFields don't migrate snapshots.)
+    source = TranslationSource.objects.get_for_instance(page)
+    content = json.loads(source.content_json)
+    content['body'] = json.dumps([{'type': 'indicator_group', 'value': [{'indicator': 1, 'style': 'graph'}], 'id': str(uuid4())}])
+    source.content_json = json.dumps(content)
+    source.save(update_fields=['content_json'])
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    source_copy = TranslationSource.objects.get_for_instance(page_copy)
+    # The copy gets a snapshot of the current content of the page copy instead
+    assert 'indicator_group' not in json.loads(source_copy.content_json)['body']
+    assert json.loads(source_copy.content_json)['title'] == page_copy.title
+    assert source_copy.translations.get().target_locale == other_locale
+    title_context_copy = TranslationContext.objects.get(object=source_copy.object, path='title')
+    assert StringTranslation.objects.get(context=title_context_copy).data == 'Page (translated)'
+    assert page_copy.get_translation(other_locale).title == 'Page (translated)'
+
+
 def test_copied_subpages_are_translations_of_each_other(plan_with_pages):
     other_locale = Locale.objects.get(language_code=plan_with_pages.other_languages[0])
     page = StaticPageFactory.create(parent=plan_with_pages.root_page, title='Page')
