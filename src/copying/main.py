@@ -83,6 +83,7 @@ from notifications.models import AutomaticNotificationTemplate, BaseTemplate, Co
 from orgs.models import Organization
 from pages.models import PlanRootPage
 from people.models import Person
+from reports.models import ReportActionPrintLayoutCustomization
 from users.models import User
 
 if TYPE_CHECKING:
@@ -367,6 +368,7 @@ RELATIONS_OUTSIDE_CLONE_STRUCTURES: dict[str, str] = {
     'pages.PageChangeLogMessage.page': (
         "Change log messages are not copied (see `PLAN_CLONE_STRUCTURE['pagechangelogmessage_set']`)"
     ),
+    'reports.ReportActionPrintLayoutCustomization.plan': 'Copied by `_copy_print_layout_customization()`',
     'wagtailcore.Comment.page': 'Wagtail does not copy comments when copying pages',
     'wagtailcore.GroupCollectionPermission.collection': (
         'Granted to the plan groups of the copy by `sync_all_group_permissions_for_plan()`; other groups only have '
@@ -518,6 +520,9 @@ UNIQUE_FIELD_COPY_POLICIES: dict[type[Model], dict[str, str]] = {
         # Part of a unique constraint with the locale; regenerated in `CloneVisitor.pre_visit()`
         'translation_key': UNIQUE_FIELD_POLICY_REGENERATED,
         'uuid': UNIQUE_FIELD_POLICY_REGENERATED,
+    },
+    ReportActionPrintLayoutCustomization: {
+        'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
     },
     SiteGeneralContent: {
         'plan': UNIQUE_FIELD_POLICY_REPLACED_BEFORE_SAVE,
@@ -1136,6 +1141,13 @@ class CloneVisitor(AbstractVisitor):
         instance.scope = self.get_copy(scope)
         if instance.schema is not None and self.has_copy(instance.schema):
             instance.schema = self.get_copy(instance.schema)
+
+    @pre_visit.register
+    def _(self, instance: ReportActionPrintLayoutCustomization) -> None:
+        self.prepare_instance_for_copy(instance)
+        # Change the plan before saving, as there is at most one customization per plan
+        assert instance.plan is not None
+        instance.plan = self.get_copy(instance.plan)
 
     @pre_visit.register
     def _(self, instance: DimensionScope) -> None:
@@ -2392,6 +2404,14 @@ def _copy_dataset_schemas(plan: Plan, clone_visitor: CloneVisitor) -> list[Datas
     return schemas
 
 
+def _copy_print_layout_customization(plan: Plan, clone_visitor: CloneVisitor) -> None:
+    """Copy the plan's customization of the print layout of actions in reports, if any."""
+    customization = ReportActionPrintLayoutCustomization.objects.filter(plan=plan).first()
+    if customization is None:
+        return
+    visit_tree(customization, {}, clone_visitor)
+
+
 def _copy_dimension_scopes(plan: Plan, clone_visitor: CloneVisitor) -> None:
     """
     Scope the dataset dimensions of the plan and its category types also to the copies of these.
@@ -2448,6 +2468,7 @@ def _clone_plan_objects(
     attribute_types = _copy_attribute_types(plan, clone_visitor)
     dataset_schemas = _copy_dataset_schemas(plan, clone_visitor)
     _copy_dimension_scopes(plan, clone_visitor)
+    _copy_print_layout_customization(plan, clone_visitor)
     datasets = _copy_datasets(clone_visitor)
 
     # Update root page (`plan_copy.site` should now be the site copy)
