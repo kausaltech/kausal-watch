@@ -428,6 +428,10 @@ GENERIC_REFERENCE_MODELS: dict[str, str] = {
     'wagtailcore.Page': 'The content type is the page type',
     'wagtailcore.PageLogEntry': 'The log history is not copied; `Page.copy()` logs the copy itself',
     'wagtailcore.ReferenceIndex': 'Updated when the copies are saved',
+    'wagtailcore.Revision': (
+        'Only the latest revision of each copy is kept: `copy_revisions()` copies it for objects other than pages, and '
+        '`delete_superseded_page_revisions()` deletes the others that `Page.copy()` copied'
+    ),
     'wagtailcore.Task': 'The content type is the task type',
     'wagtailcore.TaskState': 'In-progress moderation state is not copied',
     'wagtailcore.UploadedFile': 'Transient uploads',
@@ -1248,9 +1252,18 @@ class UpdateReferencesVisitor(AbstractVisitor):
         # The object `clone_visitor` will be used for associating instances with their copies.
         self.clone_visitor = clone_visitor
 
-    def update_instance(self, instance: Model, save: bool = True, skip_page_draft: bool = False) -> bool:
+    def update_instance(
+        self,
+        instance: Model,
+        save: bool = True,
+        skip_page_draft: bool = False,
+        skip_indexed_references: bool = False,
+    ) -> bool:
         """
         Update all references from `instance` to objects that have been copied to point to the copies.
+
+        Set `skip_indexed_references` if the content of `instance` may differ from what the reference index recorded for
+        it, e.g., if it is a draft from a revision. Use `update_extractable_references()` for such an instance instead.
 
         Returns true if and only if the instance was updated, regardless of whether it was saved.
         """
@@ -1259,7 +1272,8 @@ class UpdateReferencesVisitor(AbstractVisitor):
         update_fields += self.update_cluster_related_objects(instance)
         logger.info(f'Updating foreign keys of {type(instance).__name__} {instance.pk}: {instance}')
         update_fields += self.update_foreign_keys(instance)
-        update_fields += self.update_indexed_references(instance)
+        if not skip_indexed_references:
+            update_fields += self.update_indexed_references(instance)
         if isinstance(instance, Page) and not skip_page_draft:
             logger.info(f'Updating page draft of {type(instance).__name__} {instance.pk}: {instance}')
             update_fields += self.update_page_draft(instance)
@@ -1755,9 +1769,19 @@ class UpdateReferencesVisitor(AbstractVisitor):
             # create a revision out of `rev_obj` and save that.
             # We set `skip_page_draft=True` to skip updating the latest revision of `rev_obj` because that would be an
             # infinite loop.
-            updated = self.update_instance(rev_obj, save=False, skip_page_draft=True)
+            # The reference index records the references of the page, not of its draft, so we extract the references
+            # from the draft instead.
+            updated = self.update_instance(rev_obj, save=False, skip_page_draft=True, skip_indexed_references=True)
+            if self.update_extractable_references(rev_obj):
+                updated = True
             if updated:
                 new_rev = rev_obj.save_revision(changed=False)
+                if page.live_revision_id == page.latest_revision_id:
+                    # `Page.copy()` makes the revision it creates both the latest and the live one, even if the
+                    # original has an unpublished draft, so the live one still references the originals as well. (It
+                    # never leaves a live revision distinct from the latest one that we would have to update too.)
+                    page.live_revision = new_rev
+                    updated_fields.append('live_revision')
                 page.latest_revision = new_rev
                 updated_fields.append('latest_revision')
         return updated_fields
@@ -2164,6 +2188,31 @@ def copy_revisions(clone_visitor: CloneVisitor):
         _copy_instance_revision(instance, clone_visitor, update_references_visitor)
 
 
+def delete_superseded_page_revisions(clone_visitor: CloneVisitor) -> None:
+    """
+    Delete the revisions of the page copies except their latest and live ones.
+
+    `Page.copy()` copies all revisions of a page, but we only update the references in its latest one (see
+    `UpdateReferencesVisitor.update_page_draft()`). The older ones would thus still reference objects of the original
+    plan, which reverting to such a revision would bring back. Like for the other copied objects, we start with a clean
+    slate revision-wise instead. Must be called after the references have been updated.
+    """
+    page_copy_pks = [copy.pk for (model, _), copy in clone_visitor.copies.items() if issubclass(model, Page)]
+    page_copies = Page.objects.filter(pk__in=page_copy_pks)
+    kept_revision_ids = {
+        revision_id
+        for revision_ids in page_copies.values_list('latest_revision_id', 'live_revision_id')
+        for revision_id in revision_ids
+        if revision_id is not None
+    }
+    page_content_type = ContentType.objects.get_for_model(Page)
+    superseded_revisions = Revision.objects.filter(
+        base_content_type=page_content_type,
+        object_id__in=[str(pk) for pk in page_copy_pks],
+    ).exclude(pk__in=kept_revision_ids)
+    superseded_revisions.delete()
+
+
 def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVisitor):
     images_or_documents: chain[AbstractImage | AbstractDocument] = chain(
         AplansImage.objects.filter(collection_id=collection.pk),
@@ -2481,7 +2530,7 @@ def _clone_plan_objects(
     # Revisions have not been copied yet. (`Action.revisions` is not a reverse accessor, so we can't include action
     # revisions in the clone hierarchy.)
     # We decided that, when copying, we start with a clean slate revision-wise, except for the latest revision, which
-    # may be the current, yet unpublished, draft.
+    # may be the current, yet unpublished, draft. (For pages, see `delete_superseded_page_revisions()`.)
     # Note: copy_revisions runs after _copy_indicators so that indicator copies exist in clone_visitor when
     # updating references in action drafts.
     copy_revisions(clone_visitor)
@@ -2489,6 +2538,7 @@ def _clone_plan_objects(
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, indicators, dataset_schemas, datasets, clone_visitor)
+    delete_superseded_page_revisions(clone_visitor)
     copy_page_translation_data(clone_visitor)
     # Saving the plan copy did not grant its groups permissions on its pages and collection, as we disconnected the
     # signal handler doing that while copying. Do it now that the copy has its pages.

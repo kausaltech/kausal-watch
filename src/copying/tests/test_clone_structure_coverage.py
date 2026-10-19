@@ -132,10 +132,6 @@ KNOWN_GAPS: dict[str, str] = {
     ),
     'taggit.TaggedItem': 'The tags of copied images and documents are lost',
     'wagtailcore.CollectionViewRestriction.collection': 'View restrictions of the collection are lost',
-    'wagtailcore.Revision': (
-        'Page copies keep all revisions of the originals, but only the latest one has its references updated, so '
-        'reverting to an older revision references objects of the original plan'
-    ),
     'wagtailcore.WorkflowPage.page': 'Workflows assigned to pages are lost',
 }
 
