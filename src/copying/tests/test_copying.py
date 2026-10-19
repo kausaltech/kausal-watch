@@ -96,6 +96,7 @@ from notifications.tests.factories import AutomaticNotificationTemplateFactory, 
 from pages.models import ActionListPage, StaticPage
 from pages.tests.factories import CategoryTypePageLevelLayoutFactory, StaticPageFactory
 from pages.tests.test_wagtail_localize_compat import set_legacy_null_filter
+from reports.models import ReportActionPrintLayoutCustomization
 from reports.tests.factories import ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
@@ -1145,6 +1146,30 @@ def test_report_type_category_field_references_are_updated(plan_with_pages):
     category_type_copy = category_field_copy.value['category_type']
     assert category_type_copy.pk != category_type.pk
     assert category_type_copy.plan == plan_copy
+
+
+def test_copy_plan_copies_print_layout_customization(plan_with_pages):
+    global_defaults = set(ReportActionPrintLayoutCustomization.objects.filter(plan=None))
+    customization = ReportActionPrintLayoutCustomization.objects.create(
+        plan=plan_with_pages, max_columns=2, width_needed=[[100, 1], [400, 2]]
+    )
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    customization_copy = ReportActionPrintLayoutCustomization.objects.get(plan=plan_copy)
+    assert customization_copy != customization
+    assert customization_copy.max_columns == 2
+    assert customization_copy.width_needed == [[100, 1], [400, 2]]
+    customization.refresh_from_db()
+    assert customization.plan == plan_with_pages
+    # The global defaults are not copied
+    assert set(ReportActionPrintLayoutCustomization.objects.filter(plan=None)) == global_defaults
+
+
+def test_copy_plan_without_print_layout_customization(plan_with_pages):
+    plan_copy = copy_plan(plan_with_pages)
+
+    assert not ReportActionPrintLayoutCustomization.objects.filter(plan=plan_copy).exists()
 
 
 def test_documentation_pages_are_copied(plan_with_pages):
