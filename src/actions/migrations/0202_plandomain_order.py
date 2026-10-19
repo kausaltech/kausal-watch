@@ -16,7 +16,7 @@ def number_domains_by_pk(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('actions', '0200_action_version'),
+        ('actions', '0201_plan_pledge_account_settings'),
     ]
 
     operations = [

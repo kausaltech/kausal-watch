@@ -490,7 +490,7 @@ def test_migration_numbers_existing_domains_by_pk_per_plan():
 
     from actions.models.plan import PlanDomain
 
-    migration = importlib.import_module('actions.migrations.0201_plandomain_order')
+    migration = importlib.import_module('actions.migrations.0202_plandomain_order')
     plan, other_plan = PlanFactory.create(), PlanFactory.create()
     domains = [PlanDomainFactory.create(plan=p) for p in (plan, other_plan, plan, plan, other_plan)]
     PlanDomain.objects.filter(pk__in=[d.pk for d in domains]).update(order=0)
