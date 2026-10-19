@@ -218,6 +218,57 @@ def test_copying_creates_page_draft_without_changes(plan_with_pages, category_ty
     assert not page_copy.has_unpublished_changes
 
 
+def _page_revisions(page):
+    return Revision.objects.filter(base_content_type=ContentType.objects.get_for_model(Page), object_id=str(page.pk))
+
+
+def test_copy_keeps_only_latest_page_revision_with_updated_references(plan_with_pages):
+    old_image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='old image')
+    image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='image')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, header_image=old_image)
+    page.save_revision().publish()
+    page.header_image = image
+    page.save_revision().publish()
+    original_revision_ids = set(_page_revisions(page).values_list('pk', flat=True))
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='image')
+    revisions = list(_page_revisions(page_copy))
+    # Older revisions would still reference the original plan's images, so they are gone
+    assert revisions == [page_copy.latest_revision]
+    assert page_copy.live_revision == page_copy.latest_revision
+    assert revisions[0].content['header_image'] == image_copy.pk
+    assert not page_copy.has_unpublished_changes
+    # The original's revisions are unaffected
+    assert set(_page_revisions(page).values_list('pk', flat=True)) == original_revision_ids
+
+
+def test_copy_keeps_unpublished_page_draft(plan_with_pages):
+    published_image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='published image')
+    draft_image = AplansImageFactory.create(collection=plan_with_pages.root_collection, title='draft image')
+    page = StaticPageFactory.create(parent=plan_with_pages.root_page, header_image=published_image)
+    page.save_revision().publish()
+    page.header_image = draft_image
+    page.save_revision()
+    page.refresh_from_db()
+    assert page.has_unpublished_changes
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    page_copy = get_page_copy(page, plan_copy)
+    published_image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='published image')
+    draft_image_copy = AplansImage.objects.get(collection=plan_copy.root_collection, title='draft image')
+    assert page_copy.header_image == published_image_copy
+    assert page_copy.has_unpublished_changes
+    assert page_copy.get_latest_revision_as_object().header_image == draft_image_copy
+    # `Page.copy()` makes the revision it creates from the draft both the latest and the live one even though the page
+    # has unpublished changes, so no revision is left that references the original plan's images
+    assert page_copy.live_revision == page_copy.latest_revision
+    assert list(_page_revisions(page_copy)) == [page_copy.latest_revision]
+
+
 @pytest.mark.parametrize('category_type__synchronize_with_pages', [True])
 def test_succeed_when_category_type_pages_are_synchronized(plan_with_pages, category_type, category, category_level):
     # The specified fixtures are necessary to prevent a regression that would raise a ValidationError when references
