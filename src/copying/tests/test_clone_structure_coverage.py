@@ -130,7 +130,6 @@ KNOWN_GAPS: dict[str, str] = {
     'kausal_watch_extensions.CartographyProviderCredentials.plan': (
         "Map credentials are not copied, so map blocks in the copied pages use the original plan's credentials"
     ),
-    'taggit.TaggedItem': 'The tags of copied images and documents are lost',
     'wagtailcore.CollectionViewRestriction.collection': 'View restrictions of the collection are lost',
     'wagtailcore.WorkflowPage.page': 'Workflows assigned to pages are lost',
 }

@@ -420,6 +420,7 @@ GENERIC_REFERENCE_MODELS: dict[str, str] = {
     ),
     'notifications.SentNotification': 'The record of sent notifications is not copied',
     'reversion.Version': 'The version history is not copied',
+    'taggit.TaggedItem': 'Tags of images and documents are copied by `copy_collection_with_contents()`',
     'wagtail_localize.TranslatableObject': 'Copied for pages by `copy_page_translation_data()`; not used for pledges',
     'wagtail_localize.TranslationSource': 'Copied for pages by `copy_page_translation_data()`; not used for pledges',
     'wagtailadmin.EditingSession': 'Transient admin editing state',
@@ -2234,6 +2235,8 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
             continue
         original_model = type(image_or_document)
         original_pk = image_or_document.pk
+        # Tags are stored with a generic foreign key, so saving the copy doesn't copy them
+        tags = list(image_or_document.tags.all())
         visit_tree(image_or_document, {}, clone_visitor)
         image_or_document.collection = collection
         try:
@@ -2249,6 +2252,8 @@ def copy_collection_with_contents(collection: Collection, clone_visitor: CloneVi
             clone_visitor.register_skipped_reference_target_key(original_model, original_pk)
             image_or_document.delete()
             continue
+        # Set the tags before saving so that the copy is indexed for search with them
+        image_or_document.tags.set(tags)
         image_or_document.save()
 
 
