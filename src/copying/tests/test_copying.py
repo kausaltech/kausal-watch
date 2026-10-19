@@ -441,6 +441,24 @@ def test_document_copy_in_collection_copy(plan_with_pages):
     assert doc_copy.collection == plan_copy.root_collection
 
 
+@pytest.mark.parametrize('factory', [AplansImageFactory, AplansDocumentFactory])
+def test_copy_of_image_or_document_has_its_tags(plan_with_pages, factory, settings):
+    settings.WAGTAILSEARCH_BACKENDS = {
+        name: {**conf, 'AUTO_UPDATE': True} for name, conf in settings.WAGTAILSEARCH_BACKENDS.items()
+    }
+    image_or_document = factory.create(collection=plan_with_pages.root_collection, title='tagged')
+    image_or_document.tags.add('energy', 'traffic')
+    model = type(image_or_document)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    image_or_document_copy = model._default_manager.get(collection=plan_copy.root_collection, title='tagged')
+    assert set(image_or_document_copy.tags.names()) == {'energy', 'traffic'}
+    assert set(image_or_document.tags.names()) == {'energy', 'traffic'}
+    # The copy is indexed for search with its tags
+    assert list(model._default_manager.filter(collection=plan_copy.root_collection).search('energy')) == [image_or_document_copy]
+
+
 def test_rich_text_field_references(plan_with_pages, action):
     doc1 = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc1')
     doc2 = AplansDocumentFactory.create(collection=plan_with_pages.root_collection, title='doc2')
