@@ -4,7 +4,7 @@ import csv
 from collections import OrderedDict
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.core.exceptions import ValidationError
 from django.db.models import Count, IntegerField, OuterRef, Subquery
@@ -25,7 +25,7 @@ from wagtail.admin.widgets.button import Button
 from wagtail.images.widgets import AdminImageChooser
 from wagtail.snippets.models import register_snippet
 
-from dal import autocomplete
+from dal import autocomplete, forward as dal_forward
 from openpyxl import Workbook
 
 from kausal_common.users import user_or_bust
@@ -33,14 +33,18 @@ from kausal_common.users import user_or_bust
 from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
 
-from .models import Pledge
+from .models import Action, Pledge
 from .models.pledge import PledgeCommitment
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from django.forms import ModelMultipleChoiceField
     from django.http import HttpRequest
     from django.utils.safestring import SafeString
+
+
+PLEDGE_ACTIONS_FORWARD = (dal_forward.Const(val=True, dst='child_plans'),)
 
 
 class PledgeAdminForm(WatchAdminModelForm[Pledge]):
@@ -57,8 +61,15 @@ class PledgeAdminForm(WatchAdminModelForm[Pledge]):
         # Explicitly define widgets to ensure they're used even with dynamic form class creation
         widgets = {
             'image': AdminImageChooser,
-            'actions': autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
+            'actions': autocomplete.ModelSelect2Multiple(url='action-autocomplete', forward=PLEDGE_ACTIONS_FORWARD),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pledges on an umbrella plan can link actions from its child plans
+        if self.plan is not None and 'actions' in self.fields:
+            actions_field = cast('ModelMultipleChoiceField', self.fields['actions'])
+            actions_field.queryset = Action.objects.filter(plan__in=self.plan.get_plan_and_child_plans())
 
     def clean_slug(self):
         # Since the plan field is excluded from the form, `validate_unique()` won't check
@@ -405,7 +416,9 @@ class PledgeViewSet(WatchViewSet[Pledge]):
             ],
             heading=_('Community Impact Visualization'),
         ),
-        FieldPanel('actions', widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete')),
+        FieldPanel(
+            'actions', widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete', forward=PLEDGE_ACTIONS_FORWARD)
+        ),
     ]
 
     # Position in `panels` where attribute panels are inserted (after name, slug, description, image)

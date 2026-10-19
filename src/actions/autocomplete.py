@@ -18,7 +18,15 @@ if typing.TYPE_CHECKING:
 class ActionAutocomplete(autocomplete.Select2QuerySetView):
     request: WatchAdminRequest
 
+    plan: Plan
+
     def get_result_label(self, result: Action):
+        if self.forwarded.get('child_plans', False):
+            # Only an umbrella plan offers actions from other plans; name the plan for those
+            if result.plan_id == self.plan.pk:
+                return str(result)
+            plan = result.plan
+            return '%s: %s' % (plan.short_name or plan.name, str(result))
         related_plans = self.forwarded.get('related_plans', False)
         plan_id = self.forwarded.get('plan', None)
         if related_plans or plan_id is not None:
@@ -36,10 +44,13 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
             plan = self.request.get_active_admin_plan()
         else:
             plan = Plan.objects.get(id=plan_id)
+        self.plan = plan
         related_plans = self.forwarded.get('related_plans', False)
         plans: Iterable[Plan]
         if related_plans:
             plans = plan.get_all_related_plans(inclusive=True)
+        elif self.forwarded.get('child_plans', False):
+            plans = plan.get_plan_and_child_plans()
         else:
             plans = [plan]
         qs = Action.objects.filter(plan__in=plans).select_related('plan')
