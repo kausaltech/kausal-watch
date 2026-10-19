@@ -217,16 +217,22 @@ class BaseTemplate(ClusterableModel, PlanRelatedModelWithRevision):
         return (self.plan.identifier,)
 
     def _get_font_family_with_fallback(self) -> str:
-        font_family = self.font_family
-        if font_family is None or len(font_family) == 0:
+        font_family = self._get_font_family()
+        if not font_family:
             return DEFAULT_FONT_FAMILY
         return f'{font_family}, {DEFAULT_FONT_FAMILY}'
+
+    def _get_font_family(self) -> str | None:
+        # Double quotes would end the MJML attribute the value is rendered into
+        if self.font_family is None:
+            return None
+        return self.font_family.replace('"', "'")
 
     def get_notification_context(self):
         return dict(
             theme=dict(
                 brand_dark_color=self.brand_dark_color or DEFAULT_BRAND_DARK_COLOR,
-                font_family=self.font_family,
+                font_family=self._get_font_family(),
                 font_family_with_fallback=self._get_font_family_with_fallback(),
                 font_css_url=self.font_css_url,
                 link_in_brand_bg_color='#ffffff',
