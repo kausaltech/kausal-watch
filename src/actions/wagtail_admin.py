@@ -913,7 +913,8 @@ class InactiveWarningColumn(Column):
 
 class PlanTable(Table):
     class Media:
-        css = {'all': ('css/modeladmin-index.css',)}
+        css = {'all': ('css/modeladmin-index.css', 'actions/plan-identifier.css')}
+        js = ('actions/plan-identifier-copy.js',)
 
     def get_row_classname(self, instance: Plan) -> str:
         if not instance.is_active:
@@ -946,6 +947,9 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
             return reverse('change-admin-plan', kwargs={'plan_id': plan.id})
 
         column._get_url_func = change_plan_url  # pyright: ignore[reportAttributeAccessIssue]
+        # Render the plan identifier under the title, with a click-to-copy button, to help with
+        # debugging and communicating about plans.
+        column.cell_template_name = 'aplans/plan_title_cell.html'
         return column
 
     @cached_property

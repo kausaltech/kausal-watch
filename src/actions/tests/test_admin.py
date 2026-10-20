@@ -129,6 +129,17 @@ def test_superuser_can_list_plans(rf, superuser, plan, client):
     assert other_plan in qs
 
 
+def test_plan_listing_shows_identifier_with_copy_button(superuser, client):
+    PlanFactory.create(identifier='my-unique-plan-id')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    # The identifier is shown in the listing, together with a click-to-copy button.
+    assertContains(response, 'my-unique-plan-id')
+    assertContains(response, 'data-copy-identifier="my-unique-plan-id"')
+
+
 def test_admin_can_list_only_own_plan(rf, plan, plan_admin_user, client):
     other_plan = PlanFactory.create()
     view_set = PlanViewSet()

@@ -1,0 +1,20 @@
+{% extends "wagtailadmin/tables/title_cell.html" %}
+{% load wagtailadmin_tags i18n %}
+
+{% block extra %}
+    {% if instance.identifier %}
+        <div class="plan-identifier">
+            <span class="plan-identifier__value">{{ instance.identifier }}</span>
+            <button
+                type="button"
+                class="plan-identifier__copy"
+                data-copy-identifier="{{ instance.identifier }}"
+                aria-label="{% blocktrans with identifier=instance.identifier %}Copy identifier {{ identifier }}{% endblocktrans %}"
+                title="{% trans 'Copy identifier' %}"
+            >
+                {% icon name="copy" classname="plan-identifier__icon" %}
+            </button>
+        </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

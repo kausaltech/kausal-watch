@@ -1,0 +1,36 @@
+/* Identifier shown under each plan name in the Plans admin listing. */
+.plan-identifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  margin-top: 0.25em;
+  font-family: var(--w-font-mono, monospace);
+  font-size: 0.8125em;
+  color: var(--w-color-text-meta, #5c5c5c);
+}
+.plan-identifier__value {
+  user-select: all;
+}
+.plan-identifier__copy {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1em;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 3px;
+  line-height: 0;
+}
+.plan-identifier__copy:hover,
+.plan-identifier__copy:focus {
+  color: var(--w-color-text-link-default, #2e1f5e);
+  background-color: var(--w-color-surface-button-hover, rgba(0, 0, 0, 0.05));
+}
+.plan-identifier__copy.is-copied {
+  color: var(--w-color-text-success, #1b7a43);
+}
+.plan-identifier__icon {
+  width: 1.1em;
+  height: 1.1em;
+}
