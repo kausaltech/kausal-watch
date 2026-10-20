@@ -115,7 +115,9 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
         if user.is_superuser:
             return self
         person = user.get_corresponding_person()
-        query = Q(responsible_parties__organization__in=user.get_adminable_organizations())
+        # The queryset counterpart of User.can_modify_action(), which also grants organization plan admins rights
+        # only in the plan they were granted for
+        query = Q(pk__in=self.model.objects.get_queryset().user_is_org_admin_for(user).values('pk'))
         if person:
             query |= Q(plan__in=person.general_admin_plans.all())
             query |= Q(contact_persons__person=person)

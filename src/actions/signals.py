@@ -10,7 +10,7 @@ from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
 from anymail.signals import post_send, pre_send
 
-from indicators.models import Indicator, IndicatorContactPerson
+from indicators.models import Indicator, IndicatorContactPerson, IndicatorLevel
 from notifications.models import NotificationSettings
 from orgs.models import Organization, OrganizationPlanAdmin
 from people.models import Person
@@ -119,6 +119,8 @@ MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
     ActionResponsibleParty,
     Action,
     Indicator,
+    # The plans of an indicator decide in which plans its organization's admins have rights
+    IndicatorLevel,
     OrganizationPlanAdmin,
     Organization,
 )
@@ -131,6 +133,8 @@ def clear_login_rights_cache(sender, instance, **kwargs):
 for model in MODELS_WHICH_AFFECT_LOGIN_RIGHTS:
     post_save.connect(clear_login_rights_cache, sender=model)
     post_delete.connect(clear_login_rights_cache, sender=model)
+# `indicator.plans.add()` and friends bypass the save and delete signals of IndicatorLevel
+m2m_changed.connect(clear_login_rights_cache, sender=Indicator.plans.through)
 
 
 MODELS_WHICH_AFFECT_USER_GROUPS = (

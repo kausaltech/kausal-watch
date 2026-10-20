@@ -7,6 +7,7 @@ Covered code paths:
   - Plan admin can access datasets scoped to their plan's actions/categories/indicators
   - Action contact person can access datasets scoped to their action
   - Indicator contact person can access datasets scoped to their indicator
+  - Organization plan admin can access datasets of their organization's actions, but only in their plan
   - User without any relevant role has no access
   - Dataset with no scope: only superuser can access
   - construct_perm_q filters correctly (queryset level)
@@ -24,9 +25,11 @@ import pytest
 
 from kausal_common.datasets.models import Dataset
 
-from actions.tests.factories import CategoryFactory, CategoryTypeFactory, PlanFactory
+from actions.tests.factories import ActionResponsiblePartyFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 from datasets.permission_policy import ScopeInheritedDatasetPermissionPolicy
 from datasets.tests.factories import DatasetFactory, DatasetSchemaFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -204,6 +207,21 @@ class TestConstructPermQ:
         assert q is not None
         qs = Dataset.objects.filter(q)
         assert indicator_dataset in qs
+
+    @pytest.mark.parametrize('in_own_plan', [True, False])
+    def test_organization_plan_admin_sees_action_dataset_only_in_own_plan(self, policy, action, action_dataset, in_own_plan):
+        org = OrganizationFactory.create()
+        ActionResponsiblePartyFactory.create(action=action, organization=org)
+        person = PersonFactory.create(organization=org)
+        admin_plan = action.plan if in_own_plan else PlanFactory.create()
+        OrganizationPlanAdminFactory.create(organization=org, person=person, plan=admin_plan)
+        user = person.user
+        assert user is not None
+
+        q = policy.construct_perm_q(user, 'change')
+        assert q is not None
+        assert (action_dataset in Dataset.objects.filter(q)) is in_own_plan
+        assert policy.user_has_perm(user, 'change', action_dataset) is in_own_plan
 
     def test_unrelated_user_sees_nothing(self, policy, user, action_dataset, category_dataset, indicator_dataset):
         q = policy.construct_perm_q(user, 'change')

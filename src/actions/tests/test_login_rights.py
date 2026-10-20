@@ -4,8 +4,11 @@ from typing import Any
 
 import pytest
 
-from actions.perms import _make_organization_tree, calculate_people_with_login_rights
+from actions.perms import _make_organization_tree, calculate_people_with_login_rights, get_people_with_login_rights
+from indicators.models import IndicatorLevel
+from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
 from orgs.models import Organization
+from orgs.tests.factories import OrganizationPlanAdminFactory
 from orgs.tests.fixtures import *
 from people.models import Person
 
@@ -300,3 +303,20 @@ def test_organization_plan_admins_match_user_can_access_admin(test_data, create_
     )
     result = calculate_people_with_login_rights(**test_data_with_models)
     assert_user_access_matches_result(result)
+
+
+def test_login_rights_follow_the_plans_of_indicators(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    indicator = IndicatorFactory.create(organization=org_admin.organization)
+    indicator.plans.clear()
+    get_people_with_login_rights.cache_clear()
+    assert org_admin.person.pk not in get_people_with_login_rights()
+    # The cached result must not survive changes in the plans of an indicator
+    indicator.plans.add(plan)
+    assert org_admin.person.pk in get_people_with_login_rights()
+    indicator.plans.remove(plan)
+    assert org_admin.person.pk not in get_people_with_login_rights()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert org_admin.person.pk in get_people_with_login_rights()
+    IndicatorLevel.objects.filter(indicator=indicator).delete()
+    assert org_admin.person.pk not in get_people_with_login_rights()
