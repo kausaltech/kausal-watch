@@ -436,16 +436,16 @@ def get_people_with_login_rights():
             IndicatorContactPerson.objects.values_list('person_id', flat=True),
         ),
         responsible_orgs=set(
-            ActionResponsibleParty.objects.values_list('organization_id', flat=True),
+            ActionResponsibleParty.objects.values_list('organization_id', 'action__plan_id'),
         ),
         primary_orgs=set(
-            Action.objects.values_list('primary_org_id', flat=True),
+            Action.objects.filter(primary_org__isnull=False).values_list('primary_org_id', 'plan_id'),
         ),
         indicator_orgs=set(
-            Indicator.objects.values_list('organization_id', flat=True),
+            Indicator.objects.filter(plans__isnull=False).values_list('organization_id', 'plans'),
         ),
         organization_plan_admins=set(
-            OrganizationPlanAdmin.objects.values_list('organization_id', 'person_id'),
+            OrganizationPlanAdmin.objects.values_list('organization_id', 'person_id', 'plan_id'),
         ),
         all_orgs=all_orgs,
     )
@@ -457,10 +457,10 @@ def calculate_people_with_login_rights(
     general_plan_admins: set[int],
     action_contact_persons: set[int],
     indicator_contact_persons: set[int],
-    responsible_orgs: set[int],
-    primary_orgs: set[int],
-    indicator_orgs: set[int],
-    organization_plan_admins: set[tuple[int, int]],
+    responsible_orgs: set[tuple[int, int]],
+    primary_orgs: set[tuple[int, int]],
+    indicator_orgs: set[tuple[int, int]],
+    organization_plan_admins: set[tuple[int, int, int]],
     all_orgs: Tree,
 ) -> set[int]:
     """
@@ -469,12 +469,15 @@ def calculate_people_with_login_rights(
     Receive a snapshot with sets of pks for all model instances in the db which are needed for determining
     if a person has some edit rights anywhere in the system to determine this.
 
+    The organizations are given as `(organization_id, plan_id)` pairs and the organization plan admins as
+    `(organization_id, person_id, plan_id)` triples. An organization plan admin only has rights in its own
+    plan, so it counts only if its organization or a descendant is used in that plan.
     """
     persons_with_permissions_pks = superusers | general_plan_admins | action_contact_persons | indicator_contact_persons
-    used_org_ids = responsible_orgs | primary_orgs | indicator_orgs
-    for org_id, person_id in organization_plan_admins:
+    used_orgs = responsible_orgs | primary_orgs | indicator_orgs
+    for org_id, person_id, plan_id in organization_plan_admins:
         org_and_descendants = set(all_orgs.expand_tree(org_id))
-        if org_and_descendants.intersection(used_org_ids):
+        if any((used_org_id, plan_id) in used_orgs for used_org_id in org_and_descendants):
             persons_with_permissions_pks.add(person_id)
 
     return persons_with_permissions_pks

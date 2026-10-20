@@ -158,6 +158,35 @@ def test_is_organization_admin_for_action_not_admin(action: Action):
     assert not user.is_organization_admin_for_action(action)
 
 
+def test_is_organization_admin_for_action_sub_organization(action: Action):
+    org = action.plan.organization
+    sub_org = OrganizationFactory.create(parent=org)
+    person = PersonFactory.create(organization=org)
+    OrganizationPlanAdminFactory.create(organization=org, person=person, plan=action.plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=sub_org)
+    user = person.user
+    assert user is not None
+    # Being an admin for an organization implies being an admin for its descendants
+    assert user.is_organization_admin_for_action(action)
+    assert user.is_organization_admin_for_action(action, action.plan)
+
+
+def test_is_organization_admin_for_action_in_other_plan(action: Action):
+    org = action.plan.organization
+    person = PersonFactory.create(organization=org)
+    other_plan = PlanFactory.create()
+    OrganizationPlanAdminFactory.create(organization=org, person=person, plan=other_plan)
+    ActionResponsiblePartyFactory.create(action=action, organization=org)
+    user = person.user
+    assert user is not None
+    # The user is an admin of the responsible organization, but only in another plan
+    assert not user.is_organization_admin_for_action()
+    assert not user.is_organization_admin_for_action(action)
+    assert not user.is_organization_admin_for_action(action, action.plan)
+    assert not user.can_modify_action(action)
+    assert action.plan not in user.get_adminable_plans()
+
+
 def test_get_adminable_organizations_superuser(superuser: User):
     organization = OrganizationFactory.create()
     assert organization in superuser.get_adminable_organizations().all()
