@@ -443,8 +443,10 @@ def test_document_copy_in_collection_copy(plan_with_pages):
 
 @pytest.mark.parametrize('factory', [AplansImageFactory, AplansDocumentFactory])
 def test_copy_of_image_or_document_has_its_tags(plan_with_pages, factory, settings):
+    # Use the database backend even where Elasticsearch is configured (as in CI): Elasticsearch only makes
+    # indexed documents searchable after an index refresh, so the search below may not find the copy yet.
     settings.WAGTAILSEARCH_BACKENDS = {
-        name: {**conf, 'AUTO_UPDATE': True} for name, conf in settings.WAGTAILSEARCH_BACKENDS.items()
+        'default': {'BACKEND': 'wagtail.search.backends.database', 'AUTO_UPDATE': True},
     }
     image_or_document = factory.create(collection=plan_with_pages.root_collection, title='tagged')
     image_or_document.tags.add('energy', 'traffic')
