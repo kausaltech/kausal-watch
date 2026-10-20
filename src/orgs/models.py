@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import typing
 from typing import ClassVar, Self, override
 
@@ -92,18 +91,6 @@ class OrganizationQuerySet(BaseOrganizationQuerySet['Organization'], Permissione
         for pl in plans:
             query |= Q(id__in=self._available_for_plan(pl))
         return self.filter(query)
-
-    def user_is_plan_admin_for(self, user: User, plan: Plan | None = None):
-        person = user.get_corresponding_person()
-        adm_objs = OrganizationPlanAdmin.objects.filter(person=person)
-        if plan is not None:
-            adm_objs = adm_objs.filter(plan=plan)
-        admin_orgs = self.model.objects.filter(organization_plan_admins__in=adm_objs).only('path').distinct()
-        if not admin_orgs:
-            return self.none()
-        filters = [Q(path__startswith=org.path) for org in admin_orgs]
-        qs = functools.reduce(lambda x, y: x | y, filters)
-        return self.filter(qs)
 
     def annotate_action_count(self, plan: Plan | None = None):
         if plan is not None:

@@ -333,7 +333,7 @@ class User(AbstractUser):
         Return the indicators the user administers by way of being an organization plan admin.
 
         Being an admin for an organization implies being an admin for its descendants, which is also how
-        OrganizationPlanAdmin is interpreted elsewhere (see OrganizationQuerySet.user_is_plan_admin_for and
+        OrganizationPlanAdmin is interpreted elsewhere (see ActionQuerySet.user_is_org_admin_for and
         actions.perms.calculate_people_with_login_rights). The rights are scoped to the plan of the
         OrganizationPlanAdmin, so they only cover the indicators of that plan. Passing `plan` restricts
         the result to the rights granted for that plan; an indicator that some other plan shares does
