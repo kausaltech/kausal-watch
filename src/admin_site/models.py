@@ -279,6 +279,27 @@ class BuiltInFieldCustomization(
             return True
         return customization.is_instance_visible_for(user, plan, instance)
 
+    @classmethod
+    def is_field_editable_by(
+        cls,
+        user: UserOrAnon,
+        plan: Plan,
+        model: type[models.Model],
+        field_name: str,
+        instance: models.Model | None,
+        customizations: dict[tuple[int, str], Self],
+    ) -> bool:
+        """
+        Return whether a built-in field of `model` in `plan` is editable by `user`.
+
+        The counterpart of `is_field_visible_for()`. Editability does not imply visibility; see
+        `get_field_access()`.
+        """
+        customization = customizations.get((ContentType.objects.get_for_model(model).pk, field_name))
+        if customization is None:
+            return True
+        return customization.is_instance_editable_by(user, plan, instance)
+
     def clean(self):
         # Note that this will only be called when saving the instance using a form, not when doing it with save(). When
         # creating instances programmatically (e.g., in the REPL), we must trigger the validation by calling
