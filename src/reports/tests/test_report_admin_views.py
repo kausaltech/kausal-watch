@@ -129,6 +129,15 @@ def test_report_listing_offers_report_actions(admin_client, own_report_type, own
     assert f'{REPORTS_PATH}download/{own_report.pk}/' in content
     assert f'{REPORTS_PATH}mark_report_as_complete/{own_report.pk}/' in content
     assert f'{REPORTS_PATH}edit/{own_report.pk}/?report_type={own_report_type.pk}' in content
+    assert f'{REPORTS_PATH}delete/{own_report.pk}/?report_type={own_report_type.pk}' in content
+
+
+def test_marking_report_complete_returns_to_the_listing(admin_client, own_report):
+    response = admin_client.post(f'{REPORTS_PATH}mark_report_as_complete/{own_report.pk}/')
+    assert response.status_code == 302
+    assert response['Location'] == REPORTS_PATH
+    own_report.refresh_from_db()
+    assert own_report.is_complete
 
 
 def test_undoing_report_completion(admin_client, own_report, plan_admin_user):
