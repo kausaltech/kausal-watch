@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-30 11:50+0300\n"
+"POT-Creation-Date: 2026-10-21 00:35+0300\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -17,11 +17,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.17.1\n"
-
-#: src/access_requests/emails.py
-#, python-format
-msgid "You can sign in at %(plan_url)s with this email address."
-msgstr ""
 
 #: src/access_requests/emails.py
 #, python-format
@@ -35,6 +30,17 @@ msgstr ""
 #: src/access_requests/emails.py
 #, python-format
 msgid "Your request to view %(plan_name)s has been approved."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "You can sign in with this email address."
+msgstr "Persona ar šo e-pasta adresi jau eksistē"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
 msgstr ""
 
 #: src/access_requests/emails.py
@@ -355,6 +361,8 @@ msgstr "Atbildīgās puses"
 
 #: src/actions/action_admin.py src/actions/api.py src/aplans/utils.py
 #: src/indicators/api.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Contact persons"
 msgstr "Kontaktpersonas"
 
@@ -388,6 +396,7 @@ msgstr "%(attribute_type)s (teksts)"
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
+#: src/reports/tests/test_indicators_sheet.py
 #, fuzzy
 #| msgid "Actions"
 msgctxt "Action model"
@@ -402,7 +411,8 @@ msgstr "Pēdējo reizi atjaunināts"
 #: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Name"
 msgstr "Nosaukums"
 
@@ -620,6 +630,10 @@ msgid "This choice option is archived and cannot be selected as a new value."
 msgstr ""
 
 #: src/actions/api.py
+msgid "Some of these actions were modified by someone else. Please reload the latest version and try again."
+msgstr ""
+
+#: src/actions/api.py
 msgid "Identifier must be set"
 msgstr "Jānosaka identifikators"
 
@@ -635,6 +649,36 @@ msgstr ""
 #: src/actions/api.py
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
+msgstr ""
+
+#: src/actions/api.py
+msgid "You do not have permission to change the responsible parties of this task."
+msgstr ""
+
+#: src/actions/api.py
+msgid "You do not have permission to change the contact persons of this task."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy, python-format
+#| msgid "The organization is not included in the plan"
+msgid "Organization %(id)d is not available in this plan."
+msgstr "Organizācija nav iekļauta plānā"
+
+#: src/actions/api.py
+#, python-format
+msgid "Person %(id)d is not available in this plan."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "Bulleted list"
+msgid "Expected a list."
+msgstr "Saraksts ar izceltiem punktiem"
+
+#: src/actions/api.py
+#, python-format
+msgid "Expected a list of objects with an integer \"%(key)s\"."
 msgstr ""
 
 #: src/actions/api.py src/actions/models/action.py
@@ -1161,6 +1205,7 @@ msgstr "Primārā organizācija"
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
 #: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Plāns"
 
@@ -1290,7 +1335,8 @@ msgstr "Ikonas"
 #: src/actions/category_admin.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/apps.py
 #: src/indicators/blocks/__init__.py src/indicators/wagtail_admin.py
-#: src/reports/report_formatters.py
+#: src/reports/report_formatters.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Indicators"
 msgstr "Rādītāji"
 
@@ -1519,6 +1565,16 @@ msgstr "kontaktpersonas"
 msgid "updated at"
 msgstr "atjaunināts vietnē"
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "version name"
+msgid "version"
+msgstr "versijas nosaukums"
+
+#: src/actions/models/action.py
+msgid "Monotonic counter used as an optimistic-concurrency token for bulk edits. Bumped on every conflict-checked write; not meant for display."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/models.py
 msgid "start date"
 msgstr "sākuma datums"
@@ -1609,6 +1665,18 @@ msgstr "Ir kontaktpersonas"
 #: src/actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktīvie uzdevumi"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "These are sent when a visitor has left feedback for this action."
+msgid "The report %s does not belong to the plan of this action."
+msgstr "Tie tiek nosūtīti, ja apmeklētājs ir atstājis atsauksmi par šo rīcību."
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "The report is already marked as complete."
+msgid "The report %s is already marked as complete."
+msgstr "Ziņojums jau ir atzīmēts kā pabeigts."
 
 #: src/actions/models/action.py
 #, python-format
@@ -1745,7 +1813,7 @@ msgstr "statuss"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "termiņš"
 
@@ -2196,7 +2264,8 @@ msgstr ""
 msgid "Kausal Paths node to link this category to"
 msgstr ""
 
-#: src/actions/models/category.py src/admin_site/models.py src/aplans/utils.py
+#: src/actions/models/category.py src/actions/models/pledge.py
+#: src/admin_site/models.py src/aplans/utils.py
 msgid "help text"
 msgstr "palīdzības teksts"
 
@@ -2499,6 +2568,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: src/actions/models/features.py
+msgid "Offer accounts for community engagement"
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Let people create an account with their email after committing to a pledge, so they can come back to their pledges. When off, everyone takes part anonymously."
+msgstr ""
+
+#: src/actions/models/features.py
 msgid "Enable access requests"
 msgstr ""
 
@@ -2548,6 +2625,14 @@ msgstr "plāna funkcijas"
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Accounts require community engagement to be enabled."
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Add a link to the terms of use in the plan settings (Community engagement tab) before offering accounts."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -2691,19 +2776,53 @@ msgid "Where people whose access request was not approved can ask for more infor
 msgstr ""
 
 #: src/actions/models/plan.py
-msgid "Email domains allowed to request access"
-msgstr ""
-
-#: src/actions/models/plan.py
-msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
-msgstr ""
-
-#: src/actions/models/plan.py
 msgid "Who may be given access"
 msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to terms of use for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "People must accept these terms when they create an account. Required before accounts can be offered."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to privacy notice for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Linked next to the terms of use when people create an account."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Account invitation title"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Shown when people are invited to create an account. Leave empty to use \"Create an account\"."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Account invitation text"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Shown below the title. Leave empty to use \"Save your pledges and come back to track your progress.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Marked as complete at"
+msgid "Marketing consent label"
+msgstr "Atzīmēts kā pabeigts"
+
+#: src/actions/models/plan.py
+msgid "Label of an optional checkbox for agreeing to receive updates from the plan. Leave empty to not ask for marketing consent."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3157,6 +3276,40 @@ msgstr "Apvienotie pasākumi"
 msgid "pledge actions"
 msgstr "Apvienotie pasākumi"
 
+#: src/actions/models/pledge.py
+msgid "The key under which answers are stored, e.g. postal_code. It cannot be changed after the field is saved."
+msgstr ""
+
+#: src/actions/models/pledge.py src/admin_site/models.py
+msgid "label"
+msgstr "etiķete"
+
+#: src/actions/models/pledge.py
+msgid "placeholder"
+msgstr ""
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "required"
+msgstr "Saņemtās lietotāju atsauksmes"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "comment"
+msgid "pledge form field"
+msgstr "komentārs"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "comment"
+msgid "pledge form fields"
+msgstr "komentārs"
+
+#: src/actions/models/pledge.py
+msgid "The identifier cannot be changed because answers are stored under it."
+msgstr ""
+
 #: src/actions/models/public_user.py
 #, fuzzy
 #| msgid "Has data"
@@ -3251,6 +3404,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Vietnes īpašnieka vārds un uzvārds"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -3295,9 +3452,11 @@ msgstr "komentārs"
 msgid "User ID"
 msgstr "Lietotāji"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Pledge Commitments"
+msgstr "komentārs"
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3322,6 +3481,10 @@ msgstr "Indikatoru dati"
 #| msgid "Merged actions"
 msgid "Pledge participants"
 msgstr "Apvienotie pasākumi"
+
+#: src/actions/pledge_participants_admin.py
+msgid "There are no pledge participants who have provided their email."
+msgstr ""
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
@@ -3621,6 +3784,10 @@ msgid "Domains"
 msgstr "Domēni"
 
 #: src/actions/wagtail_admin.py
+msgid "Links to the plan use the first domain in this list that serves the plan: a production domain once the plan is published, a preview domain before that. Domains that redirect elsewhere are skipped."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Rīcības statusi"
 
@@ -3645,6 +3812,32 @@ msgstr "Rīcības grafiki"
 #: src/actions/wagtail_admin.py
 msgid "Action classifications"
 msgstr "Rīcību klasifikācijas"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Collected data fields"
+msgstr "saistītās rīcības"
+
+#: src/actions/wagtail_admin.py
+msgid "Information people are asked to give when they commit to a pledge. Only collect information that your privacy notice covers. Leave empty to collect nothing."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Merged actions"
+msgid "Pledge accounts"
+msgstr "Apvienotie pasākumi"
+
+#: src/actions/wagtail_admin.py
+msgid "Only used when the plan offers accounts for community engagement."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Community engagement"
+msgstr "komentārs"
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -4010,10 +4203,6 @@ msgid "The tenant that owns this plan. Used to scope public user identities and 
 msgstr ""
 
 #: src/admin_site/models.py
-msgid "label"
-msgstr "etiķete"
-
-#: src/admin_site/models.py
 msgid "field customization"
 msgstr ""
 
@@ -4086,6 +4275,12 @@ msgstr "Rediģēt šo rādītāju"
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Rediģēt datus"
+
+#: src/admin_site/templates/admin_site/panels/translations_panel.html
+#, fuzzy
+#| msgid "Organizations"
+msgid "Translations"
+msgstr "Organizācijas"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -4184,6 +4379,11 @@ msgstr "Izmaiņas tika saglabātas"
 
 #: src/admin_site/wagtail.py
 #, python-format
+msgid "%(heading)s (%(language)s)"
+msgstr ""
+
+#: src/admin_site/wagtail.py
+#, python-format
 msgid "Edit %(schema_name)s"
 msgstr ""
 
@@ -4273,6 +4473,10 @@ msgstr "spāņu (Amerikas Savienotās Valstis)"
 #: src/aplans/settings.py
 msgid "Finnish"
 msgstr "Somu"
+
+#: src/aplans/settings.py
+msgid "French"
+msgstr ""
 
 #: src/aplans/settings.py
 msgid "Latvian"
@@ -4503,7 +4707,7 @@ msgstr "Uzdevums"
 msgid "Milestone"
 msgstr "Stūrakmens"
 
-#: src/content/models.py
+#: src/content/models.py src/reports/spreadsheets/excel_report.py
 msgid "Tasks"
 msgstr "Uzdevumi"
 
@@ -4512,6 +4716,8 @@ msgid "Milestones"
 msgstr "Stūrakmeņi"
 
 #: src/content/models.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Organization"
 msgstr "Organizācija"
 
@@ -4528,7 +4734,9 @@ msgid "Divisions"
 msgstr "Nodaļas"
 
 #: src/content/models.py src/indicators/blocks/__init__.py
-#: src/indicators/rich_text.py templates/aplans/paths_sync_confirmation.html
+#: src/indicators/rich_text.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#: templates/aplans/paths_sync_confirmation.html
 msgid "Indicator"
 msgstr "Indikators"
 
@@ -4913,6 +5121,8 @@ msgid "File created or updated"
 msgstr "izveidots vietnē"
 
 #: src/indicators/api.py src/indicators/blocks/layout.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Latest value"
 msgstr ""
 
@@ -6002,7 +6212,8 @@ msgstr ""
 msgid "Relationships"
 msgstr "Saistītās rīcības"
 
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
 msgstr "Vienība"
 
@@ -7458,6 +7669,18 @@ msgstr "rīcības momentuzņēmums"
 msgid "action snapshots"
 msgstr "rīcības momentuzņēmumi"
 
+#: src/reports/models.py
+#, fuzzy
+#| msgid "indicator goals"
+msgid "indicator snapshot"
+msgstr "rādītāju mērķi"
+
+#: src/reports/models.py
+#, fuzzy
+#| msgid "action snapshots"
+msgid "indicator snapshots"
+msgstr "rīcības momentuzņēmumi"
+
 #: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Ir mērķi"
@@ -7471,6 +7694,12 @@ msgid "Other responsible parties"
 msgstr "Citi atbildīgie"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
+#| msgid "Page link"
+msgid "Page"
+msgstr "Lapas saite"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr ""
 
@@ -7481,6 +7710,85 @@ msgstr "Sagatavošana drukāšanai"
 #: src/reports/spreadsheets/excel_report.py
 msgid "Exported from Kausal Watch"
 msgstr "Eksportēts no Kausal Watch"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Data frozen at"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Date of value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Date of latest value"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "start date"
+msgid "Target date"
+msgstr "sākuma datums"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "updated values due at"
+msgid "Target value"
+msgstr "atjauninātās vērtības, kas jāsaņem, kad"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Has action identifiers"
+msgid "Action identifier"
+msgstr "Ir rīcības identifikatori"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "due date"
+msgid "Due date"
+msgstr "termiņš"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "state"
+msgid "State"
+msgstr "statuss"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "State at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "completion date"
+msgid "Completion date"
+msgstr "pabeigšanas datums"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Details"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "responsible organizations"
+msgid "Responsible organizations"
+msgstr "atbildīgās organizācijas"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
@@ -7794,11 +8102,6 @@ msgstr "Ietaupot…"
 msgid "Save"
 msgstr "Saglabāt"
 
-#, fuzzy
-#~| msgid "comment"
-#~ msgid "Pledge Commitments"
-#~ msgstr "komentārs"
-
 #~ msgid "Is contact person"
 #~ msgstr "Vai ir kontaktpersona"
 
@@ -7817,11 +8120,6 @@ msgstr "Saglabāt"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Ne kontaktpersona"
-
-#, fuzzy
-#~| msgid "Page link"
-#~ msgid "Page"
-#~ msgstr "Lapas saite"
 
 #, fuzzy
 #~| msgid "action status"
@@ -8160,9 +8458,6 @@ msgstr "Saglabāt"
 #~| msgid "This will mark the following actions as complete:"
 #~ msgid "This will delete the following objects:"
 #~ msgstr "Šādas rīcības tiks atzīmētas kā pabeigtas:"
-
-#~ msgid "Person with this email already exists"
-#~ msgstr "Persona ar šo e-pasta adresi jau eksistē"
 
 #~ msgid "Not all objects have an email address"
 #~ msgstr "Ne visiem objektiem ir e-pasta adrese"
