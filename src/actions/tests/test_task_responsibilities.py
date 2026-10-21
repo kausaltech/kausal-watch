@@ -1640,3 +1640,400 @@ def test_assignment_panel_headings_tell_whether_the_relation_is_public(
 
     (panel,) = [p for p in panels if getattr(p, 'relation_name', None) == relation]
     assert ('Non-public field' not in str(panel.heading)) == public
+
+
+# --- Writing the assignments through REST ------------------------------------------------------------------
+#
+# The action table editor reads the tasks from the REST endpoint and writes them back with a bulk PUT, the
+# assignments included. A write takes the shape a read has; the join rows' ids in it are ignored.
+
+
+def _task_payload(task: ActionTask, **fields) -> dict:
+    return {
+        'id': task.pk,
+        'action': task.action_id,
+        'name': task.name,
+        'due_at': task.due_at.isoformat(),
+        'state': task.state,
+        **fields,
+    }
+
+
+def _assignable_organization(plan) -> Organization:
+    organization = OrganizationFactory.create()
+    plan.related_organizations.add(organization)
+    return organization
+
+
+def _assignable_person(plan) -> Person:
+    return PersonFactory.create(organization=plan.organization)
+
+
+def _assigned_organization_ids(task: ActionTask) -> set[int]:
+    return set(ActionTaskResponsibleParty.objects.filter(task=task).values_list('organization_id', flat=True))
+
+
+def _assigned_person_ids(task: ActionTask) -> set[int]:
+    return set(ActionTaskContactPerson.objects.filter(task=task).values_list('person_id', flat=True))
+
+
+def test_rest_api_sets_and_clears_the_assignments_of_a_task(api_client, plan, action, action_task_list_url, plan_admin_user):
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    kept = _assignable_organization(plan)
+    ActionTaskResponsiblePartyFactory.create(task=task, organization=kept)
+    removed = ActionTaskResponsiblePartyFactory.create(task=task, organization=_assignable_organization(plan))
+    added = _assignable_organization(plan)
+    person = _assignable_person(plan)
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(
+        action_task_list_url,
+        data=[
+            _task_payload(
+                task,
+                # `id` is the row id the editor read; it is ignored.
+                responsible_parties=[{'id': 12345, 'organization': kept.pk}, {'organization': added.pk}],
+                contact_persons=[{'person': person.pk}],
+            )
+        ],
+    )
+
+    assert response.status_code == 200, response.content
+    assert _assigned_organization_ids(task) == {kept.pk, added.pk}
+    assert not ActionTaskResponsibleParty.objects.filter(pk=removed.pk).exists()
+    assert _assigned_person_ids(task) == {person.pk}
+    (payload,) = response.json()
+    assert {rp['organization'] for rp in payload['responsible_parties']} == {kept.pk, added.pk}, 'the response is stale'
+    assert [cp['person'] for cp in payload['contact_persons']] == [person.pk]
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, responsible_parties=[], contact_persons=[])])
+
+    assert response.status_code == 200, response.content
+    assert _assigned_organization_ids(task) == set()
+    assert _assigned_person_ids(task) == set()
+
+
+def test_rest_api_keeps_the_assignments_if_the_fields_are_left_out(
+    api_client, plan, action, action_task_list_url, plan_admin_user
+):
+    task = _task_with_assignments(action)
+    before = (_assigned_organization_ids(task), _assigned_person_ids(task))
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, state=ActionTask.IN_PROGRESS)])
+
+    assert response.status_code == 200, response.content
+    assert (_assigned_organization_ids(task), _assigned_person_ids(task)) == before
+
+
+def test_rest_api_creates_a_task_with_assignments(api_client, plan, action, action_task_list_url, plan_admin_user):
+    organization = _assignable_organization(plan)
+    person = _assignable_person(plan)
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.post(
+        action_task_list_url,
+        data={
+            'action': action.pk,
+            'name': 'Insulate the depot',
+            'due_at': '2027-01-01',
+            'state': ActionTask.NOT_STARTED,
+            'responsible_parties': [{'organization': organization.pk}],
+            'contact_persons': [{'person': person.pk}],
+        },
+    )
+
+    assert response.status_code == 201, response.content
+    task = ActionTask.objects.get(pk=response.json()['id'])
+    assert _assigned_organization_ids(task) == {organization.pk}
+    assert _assigned_person_ids(task) == {person.pk}
+
+
+@pytest.mark.parametrize(
+    ('relation', 'key', 'make_foreign'),
+    [
+        ('responsible_parties', 'organization', OrganizationFactory.create),
+        ('contact_persons', 'person', PersonFactory.create),
+    ],
+)
+def test_rest_api_rejects_assignees_from_outside_the_plan(
+    api_client, action, action_task_list_url, plan_admin_user, relation, key, make_foreign
+):
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    foreign = make_foreign()
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, **{relation: [{key: foreign.pk}]})])
+
+    assert response.status_code == 400, response.content
+    assert relation in response.json()['0']
+    assert getattr(task, relation).count() == 0
+
+
+@pytest.mark.parametrize(
+    ('relation', 'key', 'make_assignable'),
+    [
+        ('responsible_parties', 'organization', _assignable_organization),
+        ('contact_persons', 'person', _assignable_person),
+    ],
+)
+def test_rest_api_rejects_duplicate_assignees(
+    api_client, plan, action, action_task_list_url, plan_admin_user, relation, key, make_assignable
+):
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    assignee = make_assignable(plan)
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(
+        action_task_list_url, data=[_task_payload(task, **{relation: [{key: assignee.pk}, {key: assignee.pk}]})]
+    )
+
+    assert response.status_code == 400
+    assert relation in response.json()['0']
+
+
+@pytest.mark.parametrize('value', ['nope', [1], [{'organization': 'x'}], [{'organization': True}]])
+def test_rest_api_rejects_malformed_assignments(api_client, action, action_task_list_url, plan_admin_user, value):
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, responsible_parties=value)])
+
+    assert response.status_code == 400
+    assert 'responsible_parties' in response.json()['0']
+
+
+def test_rest_api_names_a_departed_organization(api_client, plan, action, action_task_list_url, plan_admin_user):
+    """
+    The plan's organizations no longer include one that left it, so the task has to name it itself.
+
+    Otherwise the table editor could only show the id of an assignment it keeps.
+    """
+    departed = _assignable_organization(plan)
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task, organization=departed)
+    plan.related_organizations.remove(departed)
+    api_client.force_login(plan_admin_user)
+
+    (payload,) = [t for t in api_client.get(action_task_list_url).json()['results'] if t['id'] == task.pk]
+    assert [(rp['organization'], rp['organization_name']) for rp in payload['responsible_parties']] == [
+        (departed.pk, departed.name)
+    ]
+
+    response = api_client.put(
+        action_task_list_url, data=[_task_payload(task, responsible_parties=payload['responsible_parties'])]
+    )
+
+    assert response.status_code == 200, response.content
+    (written,) = response.json()
+    assert [rp['organization_name'] for rp in written['responsible_parties']] == [departed.name]
+
+
+def test_rest_api_keeps_a_departed_organization_on_its_task_only(api_client, plan, action, action_task_list_url, plan_admin_user):
+    """As in the admin form: an organization that left the plan stays valid where it is, but nowhere else."""
+    departed = _assignable_organization(plan)
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    other_task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    ActionTaskResponsiblePartyFactory.create(task=task, organization=departed)
+    plan.related_organizations.remove(departed)
+    newcomer = _assignable_organization(plan)
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(
+        action_task_list_url,
+        data=[_task_payload(task, responsible_parties=[{'organization': departed.pk}, {'organization': newcomer.pk}])],
+    )
+
+    assert response.status_code == 200, response.content
+    assert _assigned_organization_ids(task) == {departed.pk, newcomer.pk}
+
+    response = api_client.put(
+        action_task_list_url, data=[_task_payload(other_task, responsible_parties=[{'organization': departed.pk}])]
+    )
+
+    assert response.status_code == 400
+    assert _assigned_organization_ids(other_task) == set()
+
+
+def test_rest_api_ignores_assignments_without_the_feature(api_client, plan, action, action_task_list_url, plan_admin_user):
+    """The editor may send the fields back regardless; they are dropped, and what is stored stays."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    stored = ActionTaskResponsiblePartyFactory.create(task=task, organization=_assignable_organization(plan))
+    plan.features.has_action_task_assignees = False
+    plan.features.save()
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(
+        action_task_list_url,
+        data=[_task_payload(task, responsible_parties=[], contact_persons=[{'person': _assignable_person(plan).pk}])],
+    )
+
+    assert response.status_code == 200, response.content
+    assert _assigned_organization_ids(task) == {stored.organization_id}
+    assert _assigned_person_ids(task) == set()
+
+
+@pytest.mark.parametrize('relation', TASK_ASSIGNMENT_RELATIONS)
+def test_rest_api_rejects_changing_a_relation_the_user_may_not_edit(
+    api_client, plan, action, action_task_list_url, action_contact_person_user, relation
+):
+    task = _task_with_assignments(action)
+    before = (_assigned_organization_ids(task), _assigned_person_ids(task))
+    _customize(plan, relation, visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    api_client.force_login(action_contact_person_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, **{relation: []})])
+
+    assert response.status_code == 400
+    assert relation in response.json()['0']
+    assert (_assigned_organization_ids(task), _assigned_person_ids(task)) == before
+
+
+def test_rest_api_accepts_an_unchanged_relation_the_user_may_not_edit(
+    api_client, plan, action, action_task_list_url, action_contact_person_user
+):
+    """The editor sends every task back whole, so a read-only relation must survive its own round trip."""
+    task = _task_with_assignments(action)
+    _customize(plan, 'responsible_parties', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    api_client.force_login(action_contact_person_user)
+    (read,) = [t for t in api_client.get(action_task_list_url).json()['results'] if t['id'] == task.pk]
+
+    response = api_client.put(
+        action_task_list_url,
+        data=[
+            _task_payload(task, state=ActionTask.IN_PROGRESS)
+            | {
+                'responsible_parties': read['responsible_parties'],
+                'contact_persons': read['contact_persons'],
+            }
+        ],
+    )
+
+    assert response.status_code == 200, response.content
+    task.refresh_from_db()
+    assert task.state == ActionTask.IN_PROGRESS
+
+
+def test_rest_api_compares_each_bulk_row_with_its_own_task(
+    api_client, plan, action, action_task_list_url, action_contact_person_user
+):
+    """
+    In a bulk update, each row has to be checked against its own task, not another one of the batch.
+
+    Each task here holds a different organization, and the user may not change them, so the update only passes
+    if every row is compared with what its own task stores.
+    """
+    tasks = [ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1)) for _ in range(2)]
+    for task in tasks:
+        ActionTaskResponsiblePartyFactory.create(task=task, organization=_assignable_organization(plan))
+    _customize(plan, 'responsible_parties', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.PLAN_ADMINS)
+    api_client.force_login(action_contact_person_user)
+
+    response = api_client.put(
+        action_task_list_url,
+        data=[
+            _task_payload(
+                task,
+                responsible_parties=[{'organization': organization_id} for organization_id in _assigned_organization_ids(task)],
+            )
+            for task in tasks
+        ],
+    )
+
+    assert response.status_code == 200, response.content
+
+
+@pytest.mark.parametrize('relation', TASK_ASSIGNMENT_RELATIONS)
+def test_rest_api_ignores_a_relation_hidden_from_the_user(
+    api_client, plan, action, action_task_list_url, action_contact_person_user, relation
+):
+    """Hidden from the user, the relation reads as empty; writing that back must not delete anything."""
+    task = _task_with_assignments(action)
+    before = (_assigned_organization_ids(task), _assigned_person_ids(task))
+    _customize(plan, relation, visible_for=VisibleFor.PLAN_ADMINS, editable_by=EditableBy.AUTHENTICATED)
+    api_client.force_login(action_contact_person_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, **{relation: []})])
+
+    assert response.status_code == 200, response.content
+    assert (_assigned_organization_ids(task), _assigned_person_ids(task)) == before
+
+
+def test_rest_api_round_trip_keeps_contact_persons_the_plan_hides(
+    api_client, plan, action, action_task_list_url, action_contact_person_user
+):
+    """
+    Under "do not show contact persons", someone who may edit the action still reads them all.
+
+    The editor writes back what it read, so reading the redacted (empty) list would delete them.
+    """
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    assignment = ActionTaskContactFactory.create(task=task, person=_assignable_person(plan))
+    plan.features.contact_persons_public_data = PlanFeatures.ContactPersonsPublicData.NONE
+    plan.features.save()
+
+    (anonymous_read,) = [t for t in api_client.get(action_task_list_url).json()['results'] if t['id'] == task.pk]
+    assert anonymous_read['contact_persons'] == []
+
+    outsider = PersonFactory.create(user=UserFactory.create()).user
+    api_client.force_login(outsider)
+    (outsider_read,) = [t for t in api_client.get(action_task_list_url).json()['results'] if t['id'] == task.pk]
+    assert outsider_read['contact_persons'] == []
+
+    api_client.force_login(action_contact_person_user)
+    (read,) = [t for t in api_client.get(action_task_list_url).json()['results'] if t['id'] == task.pk]
+    assert [cp['person'] for cp in read['contact_persons']] == [assignment.person_id]
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task) | {'contact_persons': read['contact_persons']}])
+
+    assert response.status_code == 200, response.content
+    assert _assigned_person_ids(task) == {assignment.person_id}
+
+
+def test_rest_api_removal_is_dropped_from_the_actions_draft(api_client, plan, action, action_task_list_url, plan_admin_user):
+    """A draft that still names a deleted row fails to publish, so the row must leave the draft too."""
+    task = ActionTaskFactory.create(action=action, due_at=datetime.date(2027, 1, 1))
+    assignment = ActionTaskResponsiblePartyFactory.create(task=task, organization=_assignable_organization(plan))
+    action.refresh_from_db()
+    revision = action.save_revision(user=plan_admin_user)
+    api_client.force_login(plan_admin_user)
+
+    response = api_client.put(action_task_list_url, data=[_task_payload(task, responsible_parties=[])])
+
+    assert response.status_code == 200, response.content
+    revision.refresh_from_db()
+    (draft_task,) = revision.content['tasks']
+    (draft_assignment,) = draft_task['responsible_parties']
+    assert draft_assignment['organization'] == assignment.organization_id
+    assert draft_assignment['pk'] is None
+
+
+def test_rest_api_bulk_write_costs_a_fixed_number_of_queries_per_assignment(
+    api_client, plan, action_factory, action_task_list_url, plan_admin_user
+):
+    """
+    Writing assignments must not check permissions or candidates once per task.
+
+    Per task, what the write adds is reading the task's rows, inserting the new one and reading them again for
+    the response. Anything else per task would be the customizations, the plan or its candidates loaded again.
+    """
+    organization = _assignable_organization(plan)
+    _customize(plan, 'responsible_parties', visible_for=VisibleFor.PUBLIC, editable_by=EditableBy.AUTHENTICATED)
+    api_client.force_login(plan_admin_user)
+
+    def count_queries(n: int, *, with_assignments: bool) -> int:
+        tasks = [
+            ActionTaskFactory.create(action=action_factory.create(plan=plan), due_at=datetime.date(2027, 1, 1)) for _ in range(n)
+        ]
+        assignments = {'responsible_parties': [{'organization': organization.pk}]} if with_assignments else {}
+        with CaptureQueriesContext(connection) as ctx:
+            response = api_client.put(action_task_list_url, data=[_task_payload(task, **assignments) for task in tasks])
+        assert response.status_code == 200, response.content
+        return len(ctx)
+
+    count_queries(1, with_assignments=True)  # warm up whatever is cached per process
+
+    def added_by_assignments(n: int) -> int:
+        return count_queries(n, with_assignments=True) - count_queries(n, with_assignments=False)
+
+    assert added_by_assignments(4) - added_by_assignments(2) == 2 * 3

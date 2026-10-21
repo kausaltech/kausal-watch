@@ -64,6 +64,7 @@ if TYPE_CHECKING:
 
     from django.db.models import Model
     from django.views.generic import View
+    from django_stubs_ext import StrOrPromise
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
     from rest_framework.views import APIView
@@ -2108,11 +2109,18 @@ class I18nFieldPlanLanguagesSerializerMixin[M: Model](ModelSerializerMixin[M]):
 
 
 class ActionTaskResponsiblePartySerializer(serializers.ModelSerializer[ActionTaskResponsibleParty]):
-    """An organization responsible for a task, identified by the organization rather than by the row."""
+    """
+    An organization responsible for a task, identified by the organization rather than by the row.
+
+    The name is included because the organization may have left the plan since it was assigned: the task
+    keeps it, but the plan's list of organizations no longer has it, so a client could not name it otherwise.
+    """
+
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
 
     class Meta:
         model = ActionTaskResponsibleParty
-        fields = ('id', 'organization')
+        fields = ('id', 'organization', 'organization_name')
 
 
 class ActionTaskContactPersonSerializer(serializers.ModelSerializer[ActionTaskContactPerson]):
@@ -2123,15 +2131,83 @@ class ActionTaskContactPersonSerializer(serializers.ModelSerializer[ActionTaskCo
         fields = ('id', 'person')
 
 
-class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], serializers.ModelSerializer[ActionTask]):
+TASK_ASSIGNMENT_FIELDS = ('responsible_parties', 'contact_persons')
+
+TASK_ASSIGNMENT_NOT_EDITABLE_MESSAGES = {
+    'responsible_parties': _('You do not have permission to change the responsible parties of this task.'),
+    'contact_persons': _('You do not have permission to change the contact persons of this task.'),
+}
+
+TASK_ASSIGNMENT_UNAVAILABLE_MESSAGES = {
+    'responsible_parties': _('Organization %(id)d is not available in this plan.'),
+    'contact_persons': _('Person %(id)d is not available in this plan.'),
+}
+
+
+class TaskAssignmentsField(serializers.Field):
+    """
+    One kind of a task's assignments, read as `[{"id": <row id>, <key>: <id>}]`.
+
+    A write takes the same shape and ignores `id`, the id of the join row: what is written is the set of
+    organizations or persons, and the rows are created and deleted to match. Reading goes through the
+    parent serializer's `get_<field name>()`, which applies the plan's feature, customization and privacy
+    settings; whether a write is allowed is up to the parent's `validate()`, which needs the task's action.
+    """
+
+    key: ClassVar[str]
+    duplicate_message: ClassVar[StrOrPromise]
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('required', False)
+        super().__init__(**kwargs)
+
+    def get_attribute(self, instance: ActionTask) -> ActionTask:
+        return instance
+
+    def to_representation(self, value: ActionTask) -> list[dict[str, Any]]:
+        assert self.field_name is not None
+        return getattr(self.parent, f'get_{self.field_name}')(value)
+
+    def to_internal_value(self, data: Any) -> list[int]:
+        if not isinstance(data, list):
+            raise serializers.ValidationError(_('Expected a list.'))
+        target_ids: list[int] = []
+        for item in data:
+            target_id = item.get(self.key) if isinstance(item, dict) else None
+            if not isinstance(target_id, int) or isinstance(target_id, bool):
+                raise serializers.ValidationError(
+                    _('Expected a list of objects with an integer "%(key)s".') % {'key': self.key},
+                )
+            if target_id in target_ids:
+                raise serializers.ValidationError(self.duplicate_message)
+            target_ids.append(target_id)
+        return target_ids
+
+
+@extend_schema_field(ActionTaskResponsiblePartySerializer(many=True))
+class TaskResponsiblePartiesField(TaskAssignmentsField):
+    key = 'organization'
+    duplicate_message = _('Organization occurs multiple times as responsible party')
+
+
+@extend_schema_field(ActionTaskContactPersonSerializer(many=True))
+class TaskContactPersonsField(TaskAssignmentsField):
+    key = 'person'
+    duplicate_message = _('Person occurs multiple times as contact person')
+
+
+class ActionTaskSerializer(
+    I18nFieldPlanLanguagesSerializerMixin[ActionTask],
+    BulkSerializerValidationInstanceMixin[ActionTask],
+    serializers.ModelSerializer[ActionTask],
+):
     """Serializer for the ActionTask model."""
 
     # Declared explicitly: the generated fields would serialize the primary keys of the join rows, which
-    # identify nothing, since those models have no endpoint of their own. They are read-only because this
-    # endpoint writes its tasks through a bulk list serializer, where rows of a through model would need
-    # create, update and delete handling of their own; assignments are edited in the admin.
-    responsible_parties = serializers.SerializerMethodField()
-    contact_persons = serializers.SerializerMethodField()
+    # identify nothing, since those models have no endpoint of their own. The table editor writes back what
+    # it read, so a write takes the same shape and ignores the row ids; see `TaskAssignmentsField`.
+    responsible_parties = TaskResponsiblePartiesField(label=_('Responsible parties'))
+    contact_persons = TaskContactPersonsField(label=_('Contact persons'))
 
     class Meta:
         model = ActionTask
@@ -2148,7 +2224,11 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         """
         if not self._serves_assignments(obj, 'responsible_parties'):
             return []
-        return list(ActionTaskResponsiblePartySerializer(obj.responsible_parties.all(), many=True).data)
+        rows = obj.responsible_parties.all()
+        if 'responsible_parties' not in getattr(obj, '_prefetched_objects_cache', {}):
+            # Not prefetched with the list, as after a write; fetch the names with the rows.
+            rows = rows.select_related('organization')
+        return list(ActionTaskResponsiblePartySerializer(rows, many=True).data)
 
     def _plan_of(self, obj: ActionTask) -> Plan:
         return self.context.get('plan') or obj.action.plan
@@ -2167,13 +2247,16 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         plan = self._plan_of(obj)
         if not plan.features.has_action_task_assignees:
             return False
+        return BuiltInFieldCustomization.is_field_visible_for(
+            self._user(), plan, ActionTask, relation_name, obj.action, self._customizations(plan)
+        )
+
+    def _customizations(self, plan: Plan) -> dict[tuple[int, str], BuiltInFieldCustomization]:
         customizations = self._customizations_by_plan.get(plan.pk)
         if customizations is None:
             customizations = BuiltInFieldCustomization.for_plan(plan)
             self._customizations_by_plan[plan.pk] = customizations
-        return BuiltInFieldCustomization.is_field_visible_for(
-            self._user(), plan, ActionTask, relation_name, obj.action, customizations
-        )
+        return customizations
 
     def get_contact_persons(self, obj: ActionTask) -> list[dict[str, Any]]:
         """
@@ -2182,15 +2265,23 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
         This endpoint is readable anonymously, so the check has to be the model's: testing for "do not
         show contact persons" alone would still hand out person ids under "show all information but only
         for authenticated users", for which `PlanFeatures.public_contact_persons` is equally false.
+
+        Someone who may edit the task's action gets them all, as the admin form shows them. The table
+        editor writes back what it read, so a redacted list would delete the assignments it left out.
         """
         if not self._serves_assignments(obj, 'contact_persons'):
             return []
-        visible = obj.get_redacted_contact_persons(self._user())
-        return list(ActionTaskContactPersonSerializer(visible, many=True).data)
+        user = user_or_none(self._user())
+        if user is not None and user.can_modify_action(obj.action, self._plan_of(obj)):
+            rows = list(obj.contact_persons.all())
+        else:
+            rows = obj.get_redacted_contact_persons(self._user())
+        return list(ActionTaskContactPersonSerializer(rows, many=True).data)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._customizations_by_plan: dict[int, dict[tuple[int, str], BuiltInFieldCustomization]] = {}
+        self._assignable_ids: dict[tuple[int, str], set[int]] = {}
         plan = self.context.get('plan')
         action_field = self.fields.get('action')
         if plan and action_field:
@@ -2207,7 +2298,98 @@ class ActionTaskSerializer(I18nFieldPlanLanguagesSerializerMixin[ActionTask], se
             raise serializers.ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if state == ActionTask.COMPLETED and completed_at is None:
             raise serializers.ValidationError({'completed_at': _('Completed tasks must have a completion date')})
+        for relation_name in TASK_ASSIGNMENT_FIELDS:
+            self._validate_assignments(data, relation_name)
         return data
+
+    def _validate_assignments(self, data: dict[str, Any], relation_name: str) -> None:
+        """
+        Check the assignments `relation_name` in `data` the way the admin form would, or drop them.
+
+        They are dropped, not rejected, where the admin form would not have the relation at all: if the
+        plan lacks the feature or the relation is hidden from the user. A client that reads and writes the
+        whole task sends them back unchanged then, and must not fail for it. Values equal to what is stored
+        are dropped too, so that only an actual change needs edit rights.
+        """
+        if relation_name not in data:
+            return
+        # The row being validated: in a bulk update, `self.instance` may be the whole queryset.
+        task = self._instance
+        action: Action | None = data.get('action') or (task.action if task is not None else None)
+        assert action is not None  # required on create
+        # The context's plan rather than the action's, which would be loaded again for every task. The
+        # `action` field only accepts actions of that plan.
+        plan: Plan = self.context.get('plan') or action.plan
+        if not plan.features.has_action_task_assignees:
+            del data[relation_name]
+            return
+        user = self._user()
+        customizations = self._customizations(plan)
+        if not BuiltInFieldCustomization.is_field_visible_for(user, plan, ActionTask, relation_name, action, customizations):
+            del data[relation_name]
+            return
+        target_ids: list[int] = data[relation_name]
+        current_ids = _current_assignment_ids(task, relation_name)
+        if set(target_ids) == current_ids:
+            del data[relation_name]
+            return
+        if not BuiltInFieldCustomization.is_field_editable_by(user, plan, ActionTask, relation_name, action, customizations):
+            raise serializers.ValidationError({relation_name: TASK_ASSIGNMENT_NOT_EDITABLE_MESSAGES[relation_name]})
+        # What a task already holds stays valid, as in the admin form: an organization may have left the
+        # plan since it was assigned. Only the task's own assignments, though, so that a departed
+        # organization cannot be put onto another task.
+        assignable_ids = self._get_assignable_ids(plan, relation_name) | current_ids
+        unavailable = [target_id for target_id in target_ids if target_id not in assignable_ids]
+        if unavailable:
+            raise serializers.ValidationError({
+                relation_name: TASK_ASSIGNMENT_UNAVAILABLE_MESSAGES[relation_name] % {'id': unavailable[0]},
+            })
+
+    def _get_assignable_ids(self, plan: Plan, relation_name: str) -> set[int]:
+        """Return the ids of the organizations or persons that may be assigned to tasks of `plan`, once per plan."""
+        key = (plan.pk, relation_name)
+        ids = self._assignable_ids.get(key)
+        if ids is not None:
+            return ids
+        # The same candidates as the admin form's `PlanScopedAssignmentForm`.
+        if relation_name == 'responsible_parties':
+            ids = set(Organization.objects.available_for_plan(plan).values_list('pk', flat=True))
+        else:
+            ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('pk', flat=True))
+        self._assignable_ids[key] = ids
+        return ids
+
+    def create(self, validated_data: dict[str, Any]) -> ActionTask:
+        assignments = _pop_assignments(validated_data)
+        task = super().create(validated_data)
+        _save_assignments(task, assignments)
+        return task
+
+    def update(self, instance: ActionTask, validated_data: dict[str, Any]) -> ActionTask:
+        assignments = _pop_assignments(validated_data)
+        task = super().update(instance, validated_data)
+        _save_assignments(task, assignments)
+        return task
+
+
+def _current_assignment_ids(task: ActionTask | None, relation_name: str) -> set[int]:
+    if task is None:
+        return set()
+    # Through the relation, so that the rows prefetched for the list are used.
+    if relation_name == 'responsible_parties':
+        return {row.organization_id for row in task.responsible_parties.all()}
+    return {row.person_id for row in task.contact_persons.all()}
+
+
+def _pop_assignments(validated_data: dict[str, Any]) -> dict[str, list[int]]:
+    return {name: validated_data.pop(name) for name in TASK_ASSIGNMENT_FIELDS if name in validated_data}
+
+
+def _save_assignments(task: ActionTask, assignments: dict[str, list[int]]) -> None:
+    if 'responsible_parties' in assignments:
+        task.set_responsible_parties(assignments['responsible_parties'])
+    if 'contact_persons' in assignments:
+        task.set_contact_persons(assignments['contact_persons'])
 
 
 class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[ActionTask]):
@@ -2231,7 +2413,10 @@ class ActionTaskViewSet(ViewSetWithPlanContext, AuditLoggingBulkModelViewSet[Act
         qs = ActionTask.objects.filter(action__plan=plan_pk).select_related('action__plan__features')
         if plan.features.has_action_task_assignees:
             qs = qs.prefetch_related(
-                'responsible_parties',
+                Prefetch(
+                    'responsible_parties',
+                    queryset=ActionTaskResponsibleParty.objects.select_related('organization'),
+                ),
                 # With the person's organization: below the "show all information" level the serializer
                 # goes through redacted copies, which carry the organization, so leaving it out costs a
                 # query per assignment.

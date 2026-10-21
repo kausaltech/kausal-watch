@@ -2206,6 +2206,37 @@ class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelate
             atcp.person = person.get_redacted_copy(plan)
         return [atcp for atcp, _person in visible]
 
+    def set_responsible_parties(self, organization_ids: Iterable[int]) -> None:
+        """Make the given organizations the task's responsible parties, keeping the rows that stay."""
+        self._set_assignments(ActionTaskResponsibleParty, 'responsible_parties', 'organization_id', organization_ids)
+
+    def set_contact_persons(self, person_ids: Iterable[int]) -> None:
+        """Make the given persons the task's contact persons, keeping the rows that stay."""
+        self._set_assignments(ActionTaskContactPerson, 'contact_persons', 'person_id', person_ids)
+
+    def _set_assignments(
+        self,
+        model: type[ActionTaskResponsibleParty | ActionTaskContactPerson],
+        relation_name: str,
+        fk_attname: str,
+        target_ids: Iterable[int],
+    ) -> None:
+        # This goes through the model rather than the relation: the relation is a cluster manager, which
+        # would answer from a prefetched or in-memory copy. Rows are deleted one by one so that the
+        # `post_delete` receivers drop them from the action's draft, which would otherwise fail to publish.
+        wanted = set(target_ids)
+        existing = set[int]()
+        for row in model.objects.filter(task=self):
+            target_id = getattr(row, fk_attname)
+            if target_id in wanted:
+                existing.add(target_id)
+                continue
+            row.delete()
+        for target_id in wanted - existing:
+            model.objects.create(task=self, **{fk_attname: target_id})
+        # Whatever was prefetched for this task is stale now.
+        getattr(self, '_prefetched_objects_cache', {}).pop(relation_name, None)
+
     def get_notification_context(self, plan=None):
         if plan is None:
             plan = self.action.plan
