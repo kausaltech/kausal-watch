@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-30 11:50+0300\n"
+"POT-Creation-Date: 2026-10-21 00:35+0300\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -17,11 +17,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.17.1\n"
-
-#: src/access_requests/emails.py
-#, python-format
-msgid "You can sign in at %(plan_url)s with this email address."
-msgstr ""
 
 #: src/access_requests/emails.py
 #, python-format
@@ -35,6 +30,17 @@ msgstr ""
 #: src/access_requests/emails.py
 #, python-format
 msgid "Your request to view %(plan_name)s has been approved."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "You can sign in with this email address."
+msgstr "Άτομο με αυτό το email υπάρχει ήδη"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
 msgstr ""
 
 #: src/access_requests/emails.py
@@ -352,6 +358,8 @@ msgstr "Υπεύθυνα μέρη"
 
 #: src/actions/action_admin.py src/actions/api.py src/aplans/utils.py
 #: src/indicators/api.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Contact persons"
 msgstr "Πρόσωπα επικοινωνίας"
 
@@ -385,6 +393,7 @@ msgstr "%(attribute_type)s (κείμενο)"
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
+#: src/reports/tests/test_indicators_sheet.py
 #, fuzzy
 #| msgid "Actions"
 msgctxt "Action model"
@@ -399,7 +408,8 @@ msgstr "Τελευταία ενημέρωση"
 #: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Name"
 msgstr "Όνομα"
 
@@ -608,6 +618,10 @@ msgid "This choice option is archived and cannot be selected as a new value."
 msgstr ""
 
 #: src/actions/api.py
+msgid "Some of these actions were modified by someone else. Please reload the latest version and try again."
+msgstr ""
+
+#: src/actions/api.py
 msgid "Identifier must be set"
 msgstr "Το αναγνωριστικό πρέπει να οριστεί"
 
@@ -623,6 +637,38 @@ msgstr ""
 #: src/actions/api.py
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "You do not have access to the public site."
+msgid "You do not have permission to change the responsible parties of this task."
+msgstr "Δεν έχετε πρόσβαση στον δημόσιο ιστότοπο."
+
+#: src/actions/api.py
+msgid "You do not have permission to change the contact persons of this task."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy, python-format
+#| msgid "The organization is not included in the plan"
+msgid "Organization %(id)d is not available in this plan."
+msgstr "Ο οργανισμός δεν περιλαμβάνεται στο σχέδιο"
+
+#: src/actions/api.py
+#, python-format
+msgid "Person %(id)d is not available in this plan."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "Bulleted list"
+msgid "Expected a list."
+msgstr "Λίστα με κουκκίδες"
+
+#: src/actions/api.py
+#, python-format
+msgid "Expected a list of objects with an integer \"%(key)s\"."
 msgstr ""
 
 #: src/actions/api.py src/actions/models/action.py
@@ -1144,6 +1190,7 @@ msgstr "Πρωτοβάθμια οργάνωση"
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
 #: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Σχέδιο"
 
@@ -1271,7 +1318,8 @@ msgstr "Εικόνες"
 #: src/actions/category_admin.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/apps.py
 #: src/indicators/blocks/__init__.py src/indicators/wagtail_admin.py
-#: src/reports/report_formatters.py
+#: src/reports/report_formatters.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Indicators"
 msgstr "Δείκτες"
 
@@ -1500,6 +1548,16 @@ msgstr "πρόσωπα επικοινωνίας"
 msgid "updated at"
 msgstr "ενημερώνεται στο"
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "version name"
+msgid "version"
+msgstr "όνομα έκδοσης"
+
+#: src/actions/models/action.py
+msgid "Monotonic counter used as an optimistic-concurrency token for bulk edits. Bumped on every conflict-checked write; not meant for display."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/models.py
 msgid "start date"
 msgstr "ημερομηνία έναρξης"
@@ -1586,6 +1644,18 @@ msgstr "Διαθέτει πρόσωπα επαφής"
 #: src/actions/models/action.py
 msgid "Active tasks"
 msgstr "Ενεργά καθήκοντα"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "These are sent when a visitor has left feedback for this action."
+msgid "The report %s does not belong to the plan of this action."
+msgstr "Αυτά αποστέλλονται όταν ένας επισκέπτης έχει αφήσει σχόλια για αυτή την ενέργεια."
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "The report is already marked as complete."
+msgid "The report %s is already marked as complete."
+msgstr "Η έκθεση έχει ήδη επισημανθεί ως πλήρης."
 
 #: src/actions/models/action.py
 #, python-format
@@ -1722,7 +1792,7 @@ msgstr "κράτος"
 msgid "details"
 msgstr ""
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "ημερομηνία λήξης"
 
@@ -2167,7 +2237,8 @@ msgstr "UUID κόμβου Kausal Paths"
 msgid "Kausal Paths node to link this category to"
 msgstr "Κόμβος Kausal Paths για να συνδέσετε αυτή την κατηγορία με"
 
-#: src/actions/models/category.py src/admin_site/models.py src/aplans/utils.py
+#: src/actions/models/category.py src/actions/models/pledge.py
+#: src/admin_site/models.py src/aplans/utils.py
 msgid "help text"
 msgstr "κείμενο βοήθειας"
 
@@ -2452,6 +2523,14 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr ""
 
 #: src/actions/models/features.py
+msgid "Offer accounts for community engagement"
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Let people create an account with their email after committing to a pledge, so they can come back to their pledges. When off, everyone takes part anonymously."
+msgstr ""
+
+#: src/actions/models/features.py
 msgid "Enable access requests"
 msgstr ""
 
@@ -2501,6 +2580,14 @@ msgstr "χαρακτηριστικά του προγράμματος"
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Accounts require community engagement to be enabled."
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Add a link to the terms of use in the plan settings (Community engagement tab) before offering accounts."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -2642,19 +2729,53 @@ msgid "Where people whose access request was not approved can ask for more infor
 msgstr ""
 
 #: src/actions/models/plan.py
-msgid "Email domains allowed to request access"
-msgstr ""
-
-#: src/actions/models/plan.py
-msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
-msgstr ""
-
-#: src/actions/models/plan.py
 msgid "Who may be given access"
 msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to terms of use for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "People must accept these terms when they create an account. Required before accounts can be offered."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to privacy notice for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Linked next to the terms of use when people create an account."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Account invitation title"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Shown when people are invited to create an account. Leave empty to use \"Create an account\"."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Account invitation text"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Shown below the title. Leave empty to use \"Save your pledges and come back to track your progress.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Marked as complete at"
+msgid "Marketing consent label"
+msgstr "Σημειώθηκε ως πλήρης στο"
+
+#: src/actions/models/plan.py
+msgid "Label of an optional checkbox for agreeing to receive updates from the plan. Leave empty to not ask for marketing consent."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3106,6 +3227,40 @@ msgstr "Εξαρτημένη δράση"
 msgid "pledge actions"
 msgstr "Συγχωνευμένες δράσεις"
 
+#: src/actions/models/pledge.py
+msgid "The key under which answers are stored, e.g. postal_code. It cannot be changed after the field is saved."
+msgstr ""
+
+#: src/actions/models/pledge.py src/admin_site/models.py
+msgid "label"
+msgstr "ετικέτα"
+
+#: src/actions/models/pledge.py
+msgid "placeholder"
+msgstr ""
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "Required"
+msgid "required"
+msgstr "Απαιτούμενο"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "comment"
+msgid "pledge form field"
+msgstr "σχόλιο"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "comment"
+msgid "pledge form fields"
+msgstr "σχόλιο"
+
+#: src/actions/models/pledge.py
+msgid "The identifier cannot be changed because answers are stored under it."
+msgstr ""
+
 #: src/actions/models/public_user.py
 #, fuzzy
 #| msgid "Has data"
@@ -3200,6 +3355,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Όνομα του ιδιοκτήτη του χώρου"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "report"
@@ -3244,9 +3403,11 @@ msgstr "σχόλιο"
 msgid "User ID"
 msgstr "Χρήστες"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr ""
+#: src/actions/pledge_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Pledge Commitments"
+msgstr "σχόλιο"
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3271,6 +3432,10 @@ msgstr "Δείκτης Αιτιώδης αλυσίδα"
 #| msgid "Merged actions"
 msgid "Pledge participants"
 msgstr "Συγχωνευμένες δράσεις"
+
+#: src/actions/pledge_participants_admin.py
+msgid "There are no pledge participants who have provided their email."
+msgstr ""
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
@@ -3574,6 +3739,10 @@ msgid "Domains"
 msgstr "Τομείς"
 
 #: src/actions/wagtail_admin.py
+msgid "Links to the plan use the first domain in this list that serves the plan: a production domain once the plan is published, a preview domain before that. Domains that redirect elsewhere are skipped."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Καταστάσεις δράσης"
 
@@ -3596,6 +3765,32 @@ msgstr "Ρόλοι εξάρτησης δράσης"
 #: src/actions/wagtail_admin.py
 msgid "Action classifications"
 msgstr "Ταξινόμηση δράσης"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Collected data fields"
+msgstr "σχετικές δράσεις"
+
+#: src/actions/wagtail_admin.py
+msgid "Information people are asked to give when they commit to a pledge. Only collect information that your privacy notice covers. Leave empty to collect nothing."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Merged actions"
+msgid "Pledge accounts"
+msgstr "Συγχωνευμένες δράσεις"
+
+#: src/actions/wagtail_admin.py
+msgid "Only used when the plan offers accounts for community engagement."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "comment"
+msgid "Community engagement"
+msgstr "σχόλιο"
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -3961,10 +4156,6 @@ msgid "The tenant that owns this plan. Used to scope public user identities and 
 msgstr ""
 
 #: src/admin_site/models.py
-msgid "label"
-msgstr "ετικέτα"
-
-#: src/admin_site/models.py
 msgid "field customization"
 msgstr ""
 
@@ -4036,6 +4227,12 @@ msgstr "Επεξεργασία αυτού του δείκτη"
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Επεξεργασία δεδομένων"
+
+#: src/admin_site/templates/admin_site/panels/translations_panel.html
+#, fuzzy
+#| msgid "Organizations"
+msgid "Translations"
+msgstr "Οργανισμοί"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -4130,6 +4327,11 @@ msgstr "Χρονοδιαγράμματα δράσης"
 
 #: src/admin_site/wagtail.py
 #, python-format
+msgid "%(heading)s (%(language)s)"
+msgstr ""
+
+#: src/admin_site/wagtail.py
+#, python-format
 msgid "Edit %(schema_name)s"
 msgstr "Επεξεργασία %(schema_name)s"
 
@@ -4219,6 +4421,10 @@ msgstr "Ισπανικά (Ηνωμένες Πολιτείες)"
 #: src/aplans/settings.py
 msgid "Finnish"
 msgstr "Φινλανδική"
+
+#: src/aplans/settings.py
+msgid "French"
+msgstr ""
 
 #: src/aplans/settings.py
 msgid "Latvian"
@@ -4447,7 +4653,7 @@ msgstr "Εργασία"
 msgid "Milestone"
 msgstr "Ορόσημο"
 
-#: src/content/models.py
+#: src/content/models.py src/reports/spreadsheets/excel_report.py
 msgid "Tasks"
 msgstr "Εργασίες"
 
@@ -4456,6 +4662,8 @@ msgid "Milestones"
 msgstr "Ορόσημα"
 
 #: src/content/models.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Organization"
 msgstr "Οργανισμός"
 
@@ -4472,7 +4680,9 @@ msgid "Divisions"
 msgstr "Τμήματα"
 
 #: src/content/models.py src/indicators/blocks/__init__.py
-#: src/indicators/rich_text.py templates/aplans/paths_sync_confirmation.html
+#: src/indicators/rich_text.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#: templates/aplans/paths_sync_confirmation.html
 msgid "Indicator"
 msgstr "Δείκτης"
 
@@ -4851,6 +5061,8 @@ msgid "File created or updated"
 msgstr "δημιουργήθηκε στο"
 
 #: src/indicators/api.py src/indicators/blocks/layout.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Latest value"
 msgstr ""
 
@@ -5956,7 +6168,8 @@ msgstr ""
 msgid "Relationships"
 msgstr "Σχέσεις"
 
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
 msgstr "Μονάδα"
 
@@ -7382,6 +7595,18 @@ msgstr "στιγμιότυπο δράσης"
 msgid "action snapshots"
 msgstr "στιγμιότυπα δράσης"
 
+#: src/reports/models.py
+#, fuzzy
+#| msgid "indicator goals"
+msgid "indicator snapshot"
+msgstr "στόχοι του δείκτη"
+
+#: src/reports/models.py
+#, fuzzy
+#| msgid "action snapshots"
+msgid "indicator snapshots"
+msgstr "στιγμιότυπα δράσης"
+
 #: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Έχει στόχους"
@@ -7395,6 +7620,12 @@ msgid "Other responsible parties"
 msgstr "Άλλοι υπεύθυνοι"
 
 #: src/reports/spreadsheets/action_print_layout.py
+#, fuzzy
+#| msgid "Page link"
+msgid "Page"
+msgstr "Σύνδεσμος σελίδας"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Προφίλ"
 
@@ -7405,6 +7636,85 @@ msgstr "Προετοιμασία για εκτύπωση"
 #: src/reports/spreadsheets/excel_report.py
 msgid "Exported from Kausal Watch"
 msgstr "Εξαχθείσα από το Kausal Watch"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Data frozen at"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Date of value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Date of latest value"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "start date"
+msgid "Target date"
+msgstr "ημερομηνία έναρξης"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "updated values due at"
+msgid "Target value"
+msgstr "επικαιροποιημένες τιμές που οφείλονται στο"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Has action identifiers"
+msgid "Action identifier"
+msgstr "Έχει αναγνωριστικά δράσης"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "due date"
+msgid "Due date"
+msgstr "ημερομηνία λήξης"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "state"
+msgid "State"
+msgstr "κράτος"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "State at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "completion date"
+msgid "Completion date"
+msgstr "ημερομηνία ολοκλήρωσης"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Details"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "responsible organizations"
+msgid "Responsible organizations"
+msgstr "υπεύθυνες οργανώσεις"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
@@ -7721,11 +8031,6 @@ msgstr "Εξοικονόμηση…"
 msgid "Save"
 msgstr "Αποθήκευση"
 
-#, fuzzy
-#~| msgid "comment"
-#~ msgid "Pledge Commitments"
-#~ msgstr "σχόλιο"
-
 #~ msgid "Is contact person"
 #~ msgstr "Είναι πρόσωπο επαφής"
 
@@ -7744,11 +8049,6 @@ msgstr "Αποθήκευση"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Δεν είναι πρόσωπο επαφής"
-
-#, fuzzy
-#~| msgid "Page link"
-#~ msgid "Page"
-#~ msgstr "Σύνδεσμος σελίδας"
 
 #~ msgid "Allow logging in to the public website"
 #~ msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
@@ -8110,9 +8410,6 @@ msgstr "Αποθήκευση"
 
 #~ msgid "This will delete the following objects:"
 #~ msgstr "Αυτό θα διαγράψει τα ακόλουθα αντικείμενα:"
-
-#~ msgid "Person with this email already exists"
-#~ msgstr "Άτομο με αυτό το email υπάρχει ήδη"
 
 #~ msgid "Not all objects have an email address"
 #~ msgstr "Δεν έχουν όλα τα αντικείμενα διεύθυνση ηλεκτρονικού ταχυδρομείου"

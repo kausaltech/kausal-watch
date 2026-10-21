@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-30 11:50+0300\n"
+"POT-Creation-Date: 2026-10-21 00:35+0300\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -21,11 +21,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.15.1\n"
-
-#: src/access_requests/emails.py
-#, python-format
-msgid "You can sign in at %(plan_url)s with this email address."
-msgstr ""
 
 #: src/access_requests/emails.py
 #, python-format
@@ -39,6 +34,17 @@ msgstr ""
 #: src/access_requests/emails.py
 #, python-format
 msgid "Your request to view %(plan_name)s has been approved."
+msgstr ""
+
+#: src/access_requests/emails.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "You can sign in with this email address."
+msgstr "En person med denne e-mailadresse findes allerede"
+
+#: src/access_requests/emails.py
+#, python-format
+msgid "You can sign in at %(plan_url)s with this email address."
 msgstr ""
 
 #: src/access_requests/emails.py
@@ -353,6 +359,8 @@ msgstr "Ansvarlige parter"
 
 #: src/actions/action_admin.py src/actions/api.py src/aplans/utils.py
 #: src/indicators/api.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Contact persons"
 msgstr "Kontaktpersoner"
 
@@ -385,6 +393,7 @@ msgstr "Felt \"%(attribute_type)s\": %(message)s"
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
+#: src/reports/tests/test_indicators_sheet.py
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Handlinger"
@@ -397,7 +406,8 @@ msgstr "Sidst opdateret"
 #: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Name"
 msgstr "Navn"
 
@@ -606,6 +616,10 @@ msgid "This choice option is archived and cannot be selected as a new value."
 msgstr "Denne valgmulighed er arkiveret og kan ikke vælges som ny værdi."
 
 #: src/actions/api.py
+msgid "Some of these actions were modified by someone else. Please reload the latest version and try again."
+msgstr ""
+
+#: src/actions/api.py
 msgid "Identifier must be set"
 msgstr "Identifikator skal indstilles"
 
@@ -622,6 +636,40 @@ msgstr "Du har ikke tilladelse til at ændre kontaktpersoner med rollen \"%(role
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr "Du har ikke tilladelse til at ændre ansvarlige parter med rollen \"%(role)s\" på handlingen \"%(action)s\"."
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
+msgid "You do not have permission to change the responsible parties of this task."
+msgstr "Du har ikke tilladelse til at ændre ansvarlige parter med rollen \"%(role)s\" på handlingen \"%(action)s\"."
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "You do not have permission to change contact persons with role \"%(role)s\" on action \"%(action)s\"."
+msgid "You do not have permission to change the contact persons of this task."
+msgstr "Du har ikke tilladelse til at ændre kontaktpersoner med rollen \"%(role)s\" på handlingen \"%(action)s\"."
+
+#: src/actions/api.py
+#, fuzzy, python-format
+#| msgid "The organization is not included in the plan"
+msgid "Organization %(id)d is not available in this plan."
+msgstr "Organisationen er ikke med i planen"
+
+#: src/actions/api.py
+#, python-format
+msgid "Person %(id)d is not available in this plan."
+msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "Bulleted list"
+msgid "Expected a list."
+msgstr "Punktopstilling"
+
+#: src/actions/api.py
+#, python-format
+msgid "Expected a list of objects with an integer \"%(key)s\"."
+msgstr ""
 
 #: src/actions/api.py src/actions/models/action.py
 msgid "Non-completed tasks cannot have a completion date"
@@ -1095,6 +1143,7 @@ msgstr "Primær organisation"
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
 #: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Plan"
 
@@ -1216,7 +1265,8 @@ msgstr "Ikoner"
 #: src/actions/category_admin.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/apps.py
 #: src/indicators/blocks/__init__.py src/indicators/wagtail_admin.py
-#: src/reports/report_formatters.py
+#: src/reports/report_formatters.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Indicators"
 msgstr "Indikatorer"
 
@@ -1439,6 +1489,16 @@ msgstr "kontaktpersoner"
 msgid "updated at"
 msgstr "opdateret kl"
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "version name"
+msgid "version"
+msgstr "versionsnavn"
+
+#: src/actions/models/action.py
+msgid "Monotonic counter used as an optimistic-concurrency token for bulk edits. Bumped on every conflict-checked write; not meant for display."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/models.py
 msgid "start date"
 msgstr "start dato"
@@ -1519,6 +1579,18 @@ msgstr "Har kontaktpersoner"
 #: src/actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktive projekter"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "These are sent when a visitor has left feedback for this action."
+msgid "The report %s does not belong to the plan of this action."
+msgstr "Disse sendes, når en besøgende har givet feedback til denne handling."
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "The report is already marked as complete."
+msgid "The report %s is already marked as complete."
+msgstr "Rapporten er allerede markeret som færdig."
 
 #: src/actions/models/action.py
 #, python-format
@@ -1655,7 +1727,7 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
-#: src/actions/models/action.py
+#: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "Afleveringsdato"
 
@@ -2070,7 +2142,8 @@ msgstr "UUID for Kausal Paths-knude"
 msgid "Kausal Paths node to link this category to"
 msgstr "Kausal Paths-knude, som denne kategori skal knyttes til"
 
-#: src/actions/models/category.py src/admin_site/models.py src/aplans/utils.py
+#: src/actions/models/category.py src/actions/models/pledge.py
+#: src/admin_site/models.py src/aplans/utils.py
 msgid "help text"
 msgstr "hjælpetekst"
 
@@ -2337,6 +2410,16 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr "Aktiver funktioner til borgerinddragelse, såsom løfter, for denne plan."
 
 #: src/actions/models/features.py
+#, fuzzy
+#| msgid "Enable community engagement"
+msgid "Offer accounts for community engagement"
+msgstr "Aktiver borgerinddragelse"
+
+#: src/actions/models/features.py
+msgid "Let people create an account with their email after committing to a pledge, so they can come back to their pledges. When off, everyone takes part anonymously."
+msgstr ""
+
+#: src/actions/models/features.py
 msgid "Enable access requests"
 msgstr ""
 
@@ -2389,6 +2472,14 @@ msgstr "planens funktioner"
 #| msgid "Enable community engagement features such as pledges for this plan."
 msgid "Community engagement requires a primary client to be set on the plan."
 msgstr "Aktiver funktioner til borgerinddragelse, såsom løfter, for denne plan."
+
+#: src/actions/models/features.py
+msgid "Accounts require community engagement to be enabled."
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Add a link to the terms of use in the plan settings (Community engagement tab) before offering accounts."
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
@@ -2519,14 +2610,6 @@ msgid "Where people whose access request was not approved can ask for more infor
 msgstr ""
 
 #: src/actions/models/plan.py
-msgid "Email domains allowed to request access"
-msgstr ""
-
-#: src/actions/models/plan.py
-msgid "Only addresses in these domains or their subdomains may request access. Separate domains with commas. Leave empty to allow any address."
-msgstr ""
-
-#: src/actions/models/plan.py
 #, fuzzy
 #| msgid "Show image accent"
 msgid "Who may be given access"
@@ -2534,6 +2617,52 @@ msgstr "Vis billedaccent"
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to terms of use for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "People must accept these terms when they create an account. Required before accounts can be offered."
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Link to privacy notice for pledge accounts"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Linked next to the terms of use when people create an account."
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Account settings"
+msgid "Account invitation title"
+msgstr "Bruger indstillinger"
+
+#: src/actions/models/plan.py
+msgid "Shown when people are invited to create an account. Leave empty to use \"Create an account\"."
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Account settings"
+msgid "Account invitation text"
+msgstr "Bruger indstillinger"
+
+#: src/actions/models/plan.py
+msgid "Shown below the title. Leave empty to use \"Save your pledges and come back to track your progress.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+#, fuzzy
+#| msgid "Marked as complete at"
+msgid "Marketing consent label"
+msgstr "Markeret som afsluttet"
+
+#: src/actions/models/plan.py
+msgid "Label of an optional checkbox for agreeing to receive updates from the plan. Leave empty to not ask for marketing consent."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -2959,6 +3088,40 @@ msgstr "løftehandling"
 msgid "pledge actions"
 msgstr "løftehandlinger"
 
+#: src/actions/models/pledge.py
+msgid "The key under which answers are stored, e.g. postal_code. It cannot be changed after the field is saved."
+msgstr ""
+
+#: src/actions/models/pledge.py src/admin_site/models.py
+msgid "label"
+msgstr "etiket"
+
+#: src/actions/models/pledge.py
+msgid "placeholder"
+msgstr ""
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "Required"
+msgid "required"
+msgstr "Påkrævet"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "pledge commitment"
+msgid "pledge form field"
+msgstr "løftetilslutning"
+
+#: src/actions/models/pledge.py
+#, fuzzy
+#| msgid "pledge commitments"
+msgid "pledge form fields"
+msgstr "løftetilslutninger"
+
+#: src/actions/models/pledge.py
+msgid "The identifier cannot be changed because answers are stored under it."
+msgstr ""
+
 #: src/actions/models/public_user.py
 msgid "user data"
 msgstr "brugerdata"
@@ -3043,6 +3206,10 @@ msgstr ""
 msgid "Number of commitments"
 msgstr "Antal tilslutninger"
 
+#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
+msgid "Pledges"
+msgstr "Løfter"
+
 #: src/actions/pledge_admin.py
 msgid "Export"
 msgstr "Eksportér"
@@ -3075,9 +3242,9 @@ msgstr "Tilslutningsdato"
 msgid "User ID"
 msgstr "Bruger-ID"
 
-#: src/actions/pledge_admin.py src/actions/wagtail_hooks.py src/pages/models.py
-msgid "Pledges"
-msgstr "Løfter"
+#: src/actions/pledge_admin.py
+msgid "Pledge Commitments"
+msgstr "Løftetilslutninger"
 
 #: src/actions/pledge_admin.py
 msgid "Commitments"
@@ -3096,6 +3263,10 @@ msgstr "Visualisering af lokalsamfundets indvirkning"
 #| msgid "pledge actions"
 msgid "Pledge participants"
 msgstr "løftehandlinger"
+
+#: src/actions/pledge_participants_admin.py
+msgid "There are no pledge participants who have provided their email."
+msgstr ""
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
@@ -3381,6 +3552,10 @@ msgid "Domains"
 msgstr "Domæner"
 
 #: src/actions/wagtail_admin.py
+msgid "Links to the plan use the first domain in this list that serves the plan: a production domain once the plan is published, a preview domain before that. Domains that redirect elsewhere are skipped."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Handlingsstatusser"
 
@@ -3403,6 +3578,32 @@ msgstr "Handlingernes afhængighedsroller"
 #: src/actions/wagtail_admin.py
 msgid "Action classifications"
 msgstr "Handlingsklassifikationer"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Connected actions"
+msgid "Collected data fields"
+msgstr "Forbundne handlinger"
+
+#: src/actions/wagtail_admin.py
+msgid "Information people are asked to give when they commit to a pledge. Only collect information that your privacy notice covers. Leave empty to collect nothing."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "pledge actions"
+msgid "Pledge accounts"
+msgstr "løftehandlinger"
+
+#: src/actions/wagtail_admin.py
+msgid "Only used when the plan offers accounts for community engagement."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Enable community engagement"
+msgid "Community engagement"
+msgstr "Aktiver borgerinddragelse"
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -3735,10 +3936,6 @@ msgid "The tenant that owns this plan. Used to scope public user identities and 
 msgstr ""
 
 #: src/admin_site/models.py
-msgid "label"
-msgstr "etiket"
-
-#: src/admin_site/models.py
 msgid "field customization"
 msgstr ""
 
@@ -3808,6 +4005,12 @@ msgstr "Rediger denne indikator"
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Rediger data"
+
+#: src/admin_site/templates/admin_site/panels/translations_panel.html
+#, fuzzy
+#| msgid "Organizations"
+msgid "Translations"
+msgstr "Organisationer"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -3890,6 +4093,11 @@ msgstr "Ændringshistorikbesked"
 msgctxt "page title"
 msgid "Add change history message"
 msgstr "Tilføj ændringshistorikbesked"
+
+#: src/admin_site/wagtail.py
+#, python-format
+msgid "%(heading)s (%(language)s)"
+msgstr ""
 
 #: src/admin_site/wagtail.py
 #, python-format
@@ -3982,6 +4190,10 @@ msgstr "Spansk (USA)"
 #: src/aplans/settings.py
 msgid "Finnish"
 msgstr "finsk"
+
+#: src/aplans/settings.py
+msgid "French"
+msgstr ""
 
 #: src/aplans/settings.py
 msgid "Latvian"
@@ -4192,7 +4404,7 @@ msgstr "Projekt"
 msgid "Milestone"
 msgstr "Milepæl"
 
-#: src/content/models.py
+#: src/content/models.py src/reports/spreadsheets/excel_report.py
 msgid "Tasks"
 msgstr "Projekter"
 
@@ -4201,6 +4413,8 @@ msgid "Milestones"
 msgstr "Milepæle"
 
 #: src/content/models.py src/indicators/wagtail_admin.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Organization"
 msgstr "Organisation"
 
@@ -4217,7 +4431,9 @@ msgid "Divisions"
 msgstr "Afdelinger"
 
 #: src/content/models.py src/indicators/blocks/__init__.py
-#: src/indicators/rich_text.py templates/aplans/paths_sync_confirmation.html
+#: src/indicators/rich_text.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#: templates/aplans/paths_sync_confirmation.html
 msgid "Indicator"
 msgstr "Indikator"
 
@@ -4556,6 +4772,8 @@ msgid "File created or updated"
 msgstr "Filen er oprettet eller opdateret"
 
 #: src/indicators/api.py src/indicators/blocks/layout.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Latest value"
 msgstr "Seneste værdi"
 
@@ -5521,7 +5739,8 @@ msgstr "Faktorer"
 msgid "Relationships"
 msgstr "Relationer"
 
-#: src/indicators/wagtail_admin.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
 msgstr "Enhed"
 
@@ -6892,6 +7111,18 @@ msgstr "handlingssnapshot"
 msgid "action snapshots"
 msgstr "handlingssnapshots"
 
+#: src/reports/models.py
+#, fuzzy
+#| msgid "indicator goals"
+msgid "indicator snapshot"
+msgstr "indikator mål"
+
+#: src/reports/models.py
+#, fuzzy
+#| msgid "action snapshots"
+msgid "indicator snapshots"
+msgstr "handlingssnapshots"
+
 #: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Har mål"
@@ -6905,6 +7136,10 @@ msgid "Other responsible parties"
 msgstr "Andre ansvarlige"
 
 #: src/reports/spreadsheets/action_print_layout.py
+msgid "Page"
+msgstr "Side"
+
+#: src/reports/spreadsheets/action_print_layout.py
 msgid "Profiles"
 msgstr "Profiler"
 
@@ -6915,6 +7150,89 @@ msgstr "Gør klar til udskrivning"
 #: src/reports/spreadsheets/excel_report.py
 msgid "Exported from Kausal Watch"
 msgstr "Eksporteret fra Kausal Watch"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Data frozen at"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Date of value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "Latest value"
+msgid "Date of latest value"
+msgstr "Seneste værdi"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "start date"
+msgid "Target date"
+msgstr "start dato"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+msgid "Value at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_indicators_sheet.py
+#, fuzzy
+#| msgid "Earliest value"
+msgid "Target value"
+msgstr "Tidligste værdi"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Has action identifiers"
+msgid "Action identifier"
+msgstr "Har handlingsidentifikatorer"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "due date"
+msgid "Due date"
+msgstr "Afleveringsdato"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "state"
+msgid "State"
+msgstr "stat"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "State at start of reporting period"
+msgstr ""
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "completion date"
+msgid "Completion date"
+msgstr "færdiggørelsesdato"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "details"
+msgid "Details"
+msgstr "detaljer"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "responsible organizations"
+msgid "Responsible organizations"
+msgstr "ansvarlige organisationer"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py
@@ -7211,9 +7529,6 @@ msgstr "Gemmer…"
 msgid "Save"
 msgstr "Gemme"
 
-#~ msgid "Pledge Commitments"
-#~ msgstr "Løftetilslutninger"
-
 #~ msgid "Is contact person"
 #~ msgstr "Er kontaktperson"
 
@@ -7232,9 +7547,6 @@ msgstr "Gemme"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Ikke en kontaktperson"
-
-#~ msgid "Page"
-#~ msgstr "Side"
 
 #~ msgid "Allow logging in to the public website"
 #~ msgstr "Tillad login på det offentlige website"
@@ -7610,9 +7922,6 @@ msgstr "Gemme"
 #~| msgid "This will mark the following actions as complete:"
 #~ msgid "This will delete the following objects:"
 #~ msgstr "Dette vil markere følgende handlinger som fuldførte:"
-
-#~ msgid "Person with this email already exists"
-#~ msgstr "En person med denne e-mailadresse findes allerede"
 
 #~ msgid "Not all objects have an email address"
 #~ msgstr "Ikke alle objekter har en e-mailadresse"
@@ -8020,9 +8329,6 @@ msgstr "Gemme"
 
 #~ msgid "Edit your account"
 #~ msgstr "Rediger din konto"
-
-#~ msgid "Account settings"
-#~ msgstr "Bruger indstillinger"
 
 #~ msgid "Log out"
 #~ msgstr "Log ud"
