@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
@@ -8,8 +10,12 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.views.generic import TemplateView, View
+from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
 
 import sentry_sdk
 from wagtail_modeladmin.views import WMABaseView
@@ -92,16 +98,34 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         return redirect(self.index_url)
 
 
-class MarkReportAsCompleteView(WMABaseView[Report]):
-    report_pk: str = ''
+class DownloadReportView(BaseObjectMixin[Report], View):
+    model = Report
+
+    def get_base_object_queryset(self):
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        return Report.objects.filter(type__plan=plan)
+
+    def get(self, request, *args, **kwargs):
+        exporter = self.object.get_xlsx_exporter(user=request.user)
+        output = exporter.generate_xlsx()
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{exporter.get_filename()}"'
+        return response
+
+
+class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixin, TemplateView):
+    model = Report
+    report: Report
     complete = True
     template_name = 'reports/mark_report_as_complete_confirmation.html'
+    index_url_name: ClassVar[str | None] = None
 
-    def __init__(self, model_admin, report_pk, complete=True):
-        self.report_pk = unquote(report_pk)
-        self.complete = complete
-        self.report = get_object_or_404(Report, pk=self.report_pk)
-        super().__init__(model_admin)
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.report = self.object
 
     def get_page_title(self):
         if self.complete:
@@ -111,7 +135,6 @@ class MarkReportAsCompleteView(WMABaseView[Report]):
     def check_action_permitted(self, user):
         return user.is_general_admin_for_plan(self.report.type.plan)
 
-    @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
         if not self.check_action_permitted(request.user):
             raise PermissionDenied
@@ -155,6 +178,11 @@ class MarkReportAsCompleteView(WMABaseView[Report]):
             msg = _("Report '%(report)s' is no longer marked as complete.")
         messages.success(request, msg % {'report': self.report})
         return redirect(self.index_url)
+
+    @cached_property
+    def index_url(self):
+        assert self.index_url_name is not None
+        return reverse(self.index_url_name)
 
 
 def export_report_view(request, plan_identifier):

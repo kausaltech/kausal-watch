@@ -103,7 +103,7 @@ def register_common_category_menu():
 class ReportMenuItem(MenuItem):
     def __init__(self, report_type, **kwargs):
         self.report_type = report_type
-        self.base_url = reverse('plan_reports_report_modeladmin_index')
+        self.base_url = reverse('wagtailsnippets_reports_report:list')
         url = f'{self.base_url}?report_type={report_type.id}'
         label = report_type.name
         super().__init__(label, url, **kwargs)

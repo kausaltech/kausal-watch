@@ -35,6 +35,7 @@ from indicators.models import IndicatorGoalDataPoint
 from notifications.models import BaseTemplate, NotificationSettings
 from orgs.models import Organization
 from pages.models import PageChangeLogMessage
+from reports.models import Report, ReportType
 
 
 @pytest.mark.parametrize(
@@ -61,6 +62,8 @@ def test_declared_permission_policy_is_registered(model):
         (IndicatorChangeLogMessage, PlanRelatedPermissionPolicy),
         (CategoryChangeLogMessage, PlanRelatedPermissionPolicy),
         (PageChangeLogMessage, PlanRelatedPermissionPolicy),
+        (ReportType, PlanRelatedPermissionPolicy),
+        (Report, PlanRelatedPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):
