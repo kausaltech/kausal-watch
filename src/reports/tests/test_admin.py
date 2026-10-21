@@ -147,6 +147,7 @@ class TestReportTypeDeleteView:
         response = admin_client.get(self._delete_url(report_type))
         assert response.status_code == 200
         assert response.context['usage'].pages == [action_list_page]
+        assert b'Report type could not be deleted' in response.content
         assert b'Yes, delete' not in response.content
 
         response = admin_client.post(self._delete_url(report_type))
