@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.models import Plan
+    from admin_site.permissions import PlanRelatedPermissionPolicy
     from pages.models import ActionListPage
     from users.models import User
 
@@ -83,6 +84,12 @@ class ReportType(PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedPermissionPolicy:
+        from admin_site.permissions import PlanRelatedPermissionPolicy
+
+        return PlanRelatedPermissionPolicy(cls)
 
     @staticmethod
     def generate_for_plan_dashboard(plan: Plan, user: UserOrAnon) -> ReportType:
@@ -259,6 +266,12 @@ class Report(PlanRelatedModelWithRevision):
     class Meta:
         verbose_name = _('report')
         verbose_name_plural = _('reports')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedPermissionPolicy:
+        from admin_site.permissions import PlanRelatedPermissionPolicy
+
+        return PlanRelatedPermissionPolicy(cls)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
