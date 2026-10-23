@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-09-28 07:47+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -4596,8 +4596,12 @@ msgstr "Veja %s ao vivo"
 msgid "Email domains"
 msgstr "Domínios de e-mail"
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+#, fuzzy
+msgid "Report templates"
+msgstr "Tipos de relatório"
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 #, fuzzy
 msgid "Reports"
 msgstr "Relatórios"
@@ -7806,14 +7810,12 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' está atualmente conectado aos seguintes itens. Verifique a exclusão:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 #, fuzzy
 msgid "Yes, delete"
 msgstr "Sim, excluir"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 #, fuzzy
 msgid "No, don't delete"
@@ -7992,14 +7994,14 @@ msgstr "Nível de organização de contenção"
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Além da própria organização, uma unidade organizacional que contém a organização está incluída no relatório. Contando a partir da organização raiz de nível superior no nível 1, qual nível na hierarquia organizacional deve ser usado para encontrar essa organização que a contém? Se estiver vazio, não adicione a organização que a contém ao relatório."
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
+#: src/reports/blocks/choosers.py
 #, fuzzy
-msgid "Report type"
+msgid "Report template"
 msgstr "Tipo de relatório"
 
 #: src/reports/blocks/choosers.py
 #, fuzzy
-msgid "Report type field"
+msgid "Report template field"
 msgstr "Campo Tipo de relatório"
 
 #: src/reports/blocks/report_comparison_block.py
@@ -8014,12 +8016,12 @@ msgstr "Comparação de relatórios"
 
 #: src/reports/chooser.py
 #, fuzzy
-msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr "Escolha um tipo de relatório"
 
 #: src/reports/chooser.py
 #, fuzzy
-msgid "Choose another report type"
+msgid "Choose another report template"
 msgstr "Selecionar outro tipo de relatório"
 
 #: src/reports/models.py
@@ -8029,17 +8031,17 @@ msgstr "Confirmar a ação de desfazer a marcação %(action)s como completa par
 
 #: src/reports/models.py
 #, fuzzy
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can mark actions as complete for reports from this template"
 msgstr "Confirmar a ação de desfazer a marcação %(action)s como completa para o relatório %(report)s"
 
 #: src/reports/models.py
 #, fuzzy
-msgid "report type"
+msgid "report template"
 msgstr "tipo de relatório"
 
 #: src/reports/models.py
 #, fuzzy
-msgid "report types"
+msgid "report templates"
 msgstr "tipos de relatório"
 
 #: src/reports/models.py
@@ -8282,8 +8284,8 @@ msgstr "contato para ações"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -8358,6 +8360,15 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "O relatório '%(report)s' não está mais marcado como completo."
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+msgid "Edit template"
+msgstr "modelo"
+
+#: src/reports/wagtail_admin.py
 #, fuzzy
 msgid "Download XLSX"
 msgstr "Baixar XLSX"
@@ -8366,16 +8377,6 @@ msgstr "Baixar XLSX"
 #, fuzzy
 msgid "Download report as spreadsheet file"
 msgstr "Faça o download do relatório como arquivo de planilha"
-
-#: src/reports/wagtail_admin.py
-#, fuzzy
-msgid "Mark as complete"
-msgstr "Marcar como concluído"
-
-#: src/reports/wagtail_admin.py
-#, fuzzy
-msgid "Mark this report as complete"
-msgstr "Marcar este relatório como concluído"
 
 #: src/reports/wagtail_admin.py
 #, fuzzy
@@ -8388,13 +8389,14 @@ msgid "Undo marking this report as complete"
 msgstr "Desfazer a marcação deste relatório como concluído"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+#, fuzzy
+msgid "Mark as complete"
+msgstr "Marcar como concluído"
 
 #: src/reports/wagtail_admin.py
 #, fuzzy
-msgid "Report types"
-msgstr "Tipos de relatório"
+msgid "Mark this report as complete"
+msgstr "Marcar este relatório como concluído"
 
 #: src/users/apps.py
 #, fuzzy

@@ -76,9 +76,9 @@ def test_admin_menu_links_each_report_type(admin_client, own_report_type, other_
     assert not any(label == other_plan_report_type.name for label, _url in links)
 
 
-def test_admin_menu_links_report_types(admin_client):
+def test_admin_menu_links_report_templates(admin_client):
     links = _menu_links(admin_client.get('/admin/account/').content)
-    assert ('Report types', REPORT_TYPES_PATH) in links
+    assert ('Report templates', REPORT_TYPES_PATH) in links
 
 
 def test_contact_person_menu_has_no_report_links(client, action_contact_person_user, own_report_type):
@@ -117,10 +117,11 @@ def test_report_listing_offers_add_for_its_report_type(admin_client, own_report_
     _add_report_path(response.content, own_report_type)
 
 
-def test_report_listing_without_report_type_offers_no_add(admin_client, own_report):
+def test_report_listing_without_report_type_offers_the_report_types(admin_client, own_report):
+    """There is no listing of every report: each report type has its own."""
     response = admin_client.get(REPORTS_PATH)
-    assert own_report.name in response.content.decode()
-    assert re.search(rf'href="{REPORTS_PATH}(create|add)/', response.content.decode()) is None
+    assert response.status_code == 302
+    assert response['Location'] == REPORT_TYPES_PATH
 
 
 def test_report_listing_offers_report_actions(admin_client, own_report_type, own_report):
@@ -132,10 +133,10 @@ def test_report_listing_offers_report_actions(admin_client, own_report_type, own
     assert f'{REPORTS_PATH}delete/{own_report.pk}/?report_type={own_report_type.pk}' in content
 
 
-def test_marking_report_complete_returns_to_the_listing(admin_client, own_report):
+def test_marking_report_complete_returns_to_its_listing(admin_client, own_report):
     response = admin_client.post(f'{REPORTS_PATH}mark_report_as_complete/{own_report.pk}/')
     assert response.status_code == 302
-    assert response['Location'] == REPORTS_PATH
+    assert response['Location'] == f'{REPORTS_PATH}?report_type={own_report.type.pk}'
     own_report.refresh_from_db()
     assert own_report.is_complete
 

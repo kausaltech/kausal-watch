@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-09-30 11:45+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -4013,8 +4013,11 @@ msgstr "Näytä julkaistu %s"
 msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+msgid "Report templates"
+msgstr "Raporttipohjat"
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Raportit"
 
@@ -6760,13 +6763,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' on yhteydessä seuraaviin kohteisiin. Ole hyvä ja varmista poistaminen:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Kyllä, poista"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Ei, älä poista"
@@ -6918,13 +6919,13 @@ msgstr "Organisaatiohierarkian taso"
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä raporttiin."
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
-msgstr "Raporttityyppi"
+#: src/reports/blocks/choosers.py
+msgid "Report template"
+msgstr "Raporttipohja"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
-msgstr "Raporttityypin kenttä"
+msgid "Report template field"
+msgstr "Raporttipohjan kenttä"
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "UUID of report field"
@@ -6935,28 +6936,28 @@ msgid "Report comparison"
 msgstr "Raporttien vertailu"
 
 #: src/reports/chooser.py
-msgid "Choose a report type"
-msgstr "Valitse raporttityyppi"
+msgid "Choose a report template"
+msgstr "Valitse raporttipohja"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
-msgstr "Valitse toinen raporttityyppi"
+msgid "Choose another report template"
+msgstr "Valitse toinen raporttipohja"
 
 #: src/reports/models.py
 msgid "Only plan admins can mark actions as complete"
 msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi"
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete for reports of this type"
-msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi tämän tyypin raporteissa"
+msgid "Only plan admins can mark actions as complete for reports from this template"
+msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi tämän pohjan raporteissa"
 
 #: src/reports/models.py
-msgid "report type"
-msgstr "raportin tyyppi"
+msgid "report template"
+msgstr "raporttipohja"
 
 #: src/reports/models.py
-msgid "report types"
-msgstr "raporttien tyypit"
+msgid "report templates"
+msgstr "raporttipohjat"
 
 #: src/reports/models.py
 #, python-format
@@ -7192,10 +7193,10 @@ msgstr "Palaa luetteloon"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen raportin ja siihen tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
-msgstr[1] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen %(counter)s raporttia ja niihin tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgstr[0] "Tämän raporttipohjan poistaminen poistaa pysyvästi myös sen raportin ja siihen tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
+msgstr[1] "Tämän raporttipohjan poistaminen poistaa pysyvästi myös sen %(counter)s raporttia ja niihin tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -7264,20 +7265,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Raportti '%(report)s' ei ole enää merkitty valmiiksi."
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr "Raporttipohja on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+
+#: src/reports/wagtail_admin.py
+msgid "Edit template"
+msgstr "Muokkaa pohjaa"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Tallenna XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Tallenna raportti taulukkolaskentatiedostona"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Merkitse valmiiksi"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Merkitse tämä raportti valmiiksi"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7288,12 +7289,12 @@ msgid "Undo marking this report as complete"
 msgstr "Peru tämän raportin merkitseminen valmiiksi"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+msgid "Mark as complete"
+msgstr "Merkitse valmiiksi"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Raporttityypit"
+msgid "Mark this report as complete"
+msgstr "Merkitse tämä raportti valmiiksi"
 
 #: src/users/apps.py
 msgid "Users"
