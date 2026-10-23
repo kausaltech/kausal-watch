@@ -9,7 +9,7 @@ from django.urls import reverse
 from wagtail.models import Locale
 
 import pytest
-from pytest_django.asserts import assertContains
+from pytest_django.asserts import assertContains, assertNotContains
 
 from actions.action_admin import ActionAdmin
 from actions.attribute_type_admin import AttributeTypeAdmin
@@ -138,6 +138,67 @@ def test_plan_listing_shows_identifier_with_copy_button(superuser, client):
     # The identifier is shown in the listing, together with a click-to-copy button.
     assertContains(response, 'my-unique-plan-id')
     assertContains(response, 'data-copy-identifier="my-unique-plan-id"')
+
+
+def test_plan_listing_is_horizontally_scrollable_with_pinned_columns(superuser, client):
+    PlanFactory.create()
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    # The listing table is wrapped in the reusable scrollable container, and the leftmost
+    # columns are tagged as pinned so they stay visible while the rest scroll.
+    assertContains(response, 'kw-scroll-table')
+    assertContains(response, 'kw-col--pin')
+    # Plans opts into viewport fill, so the container gets the --fill modifier.
+    assertContains(response, 'kw-scroll-table--fill')
+    # Site status is the final pinned column (the pin/scroll boundary).
+    assertContains(response, 'kw-col--pin-last')
+
+
+def test_plan_listing_results_fragment_keeps_scroll_wrapper(superuser, client):
+    # Wagtail swaps #listing-results via AJAX (filter/search). That results fragment must also
+    # carry the scroll wrapper, or the horizontal scroll disappears after the first swap.
+    PlanFactory.create()
+    results_url = reverse(PlanViewSet().get_url_name('list_results'))
+    client.force_login(superuser)
+    response = client.get(results_url)
+    assert response.status_code == 200
+    assertContains(response, 'kw-scroll-table')
+
+
+def test_inactive_plan_hidden_by_default_but_flagged_when_shown(superuser, client):
+    # A unique identifier, so we can look for this plan's row (its copy button) specifically,
+    # rather than its name, which also appears in the admin chrome.
+    PlanFactory.create(is_active=False, identifier='uniq-inactive-plan')
+    row_marker = 'data-copy-identifier="uniq-inactive-plan"'
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    # By default the listing filters to active plans, so the inactive one's row is not shown.
+    default_response = client.get(index_url)
+    assert default_response.status_code == 200
+    assertNotContains(default_response, row_marker)
+
+    # When inactive plans are included (via the Active status filter), the row is flagged with
+    # the warning-row styling and the inactive warning icon.
+    response = client.get(index_url, {'is_active': 'inactive'})
+    assert response.status_code == 200
+    assertContains(response, row_marker)
+    assertContains(response, 'warning-row')
+    assertContains(response, 'icon-warning')
+
+
+def test_plan_listing_shows_site_status_before_version_name(superuser, client):
+    PlanFactory.create()
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    # Site status is high priority, so it is reordered to sit right after the name column,
+    # ahead of the lower-priority columns such as the version name.
+    content = response.content.decode()
+    assert content.index('Site status') < content.index('Version name')
 
 
 def test_admin_can_list_only_own_plan(rf, plan, plan_admin_user, client):

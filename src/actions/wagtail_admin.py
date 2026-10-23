@@ -913,8 +913,18 @@ class InactiveWarningColumn(Column):
 
 class PlanTable(Table):
     class Media:
-        css = {'all': ('css/modeladmin-index.css', 'actions/plan-identifier.css')}
-        js = ('actions/plan-identifier-copy.js',)
+        css = {
+            'all': (
+                'css/modeladmin-index.css',
+                # Reusable pinned-column / horizontal-scroll idiom (see admin_site).
+                'admin_site/css/scrollable-table.css',
+                'actions/plan-identifier.css',
+            ),
+        }
+        js = (
+            'admin_site/js/scrollable-table.js',
+            'actions/plan-identifier-copy.js',
+        )
 
     def get_row_classname(self, instance: Plan) -> str:
         if not instance.is_active:
@@ -927,6 +937,10 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
     any_permission_required = ['add', 'change', 'delete', 'view']
     permission_required = 'view'
     table_class = PlanTable
+    # Fill the viewport so the scrollable table's horizontal scrollbar and sticky header stay on
+    # screen (the plans listing has no pagination and no footer). Read by the shared
+    # admin_site/scrollable_index_results.html template to add the `--fill` modifier.
+    scrollable_table_fill = True
     publish_url_name: str | None = None
     unpublish_url_name: str | None = None
     additional_fields_cache: list[str] | None = None
@@ -950,12 +964,23 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         # Render the plan identifier under the title, with a click-to-copy button, to help with
         # debugging and communicating about plans.
         column.cell_template_name = 'aplans/plan_title_cell.html'
+        # Pin the name column (with its identifier and hamburger menu) to the left (see
+        # scrollable-table.css); the Plans column widths/offsets live in plan-identifier.css.
+        column.classname = 'kw-col kw-col--pin kw-col-plan-name'
         return column
+
+    # Low-priority columns that scroll; each gets a fixed narrow width.
+    _NARROW_COLUMNS = ('version_name', 'parent', 'organization', 'clients_as_string')
 
     @cached_property
     def columns(self):  # type: ignore[override]
         cols = [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
-        cols.insert(0, InactiveWarningColumn())
+        # The warning column is the leftmost pinned column; tag it so it stays visible while the
+        # low-priority columns scroll under the pinned block.
+        cols.insert(0, InactiveWarningColumn(classname='kw-col kw-col--pin kw-col-plan-warning'))
+        for col in cols:
+            if col.name in self._NARROW_COLUMNS:
+                col.classname = 'kw-col kw-col-plan-narrow'
         return cols
 
     def get_publish_url(self, instance: Plan) -> str:
@@ -1203,17 +1228,25 @@ class PlanViewSet(SnippetViewSet[Plan]):
     icon = 'kausal-plan'
     menu_label = _('Plans')
     menu_order = 9000
+    # Columns are ordered by decreasing priority left-to-right. The first three (warning, name,
+    # site status) are pinned; the rest scroll under them with fixed narrow widths. Site status
+    # is the final pinned column, so it carries the pin/scroll divider.
     list_display = [
         'name',
+        LiveStateColumn(classname='kw-col kw-col--pin kw-col--pin-last kw-col-plan-status'),
         'version_name',
         'parent',
         'organization',
         'clients_as_string',
-        LiveStateColumn(),
     ]
     filterset_class = PlanFilter
     list_per_page = None  # disable pagination
     index_view_class = PlanIndexView
+    # Wrap the listing table in the reusable horizontally scrollable container with pinned left
+    # columns. This must be set on the ViewSet (not the view): the snippet machinery otherwise
+    # resolves the generic wagtailsnippets index_results template ahead of a view-level
+    # fallback. The same template is used for the full page and the AJAX filter/search refresh.
+    index_results_template_name = 'admin_site/scrollable_index_results.html'
     publish_url_name = 'publish'
     unpublish_url_name = 'unpublish'
     # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView

@@ -1,4 +1,67 @@
-/* Identifier shown under each plan name in the Plans admin listing. */
+/* Styling for the Plans admin listing: identifier under the name, and the per-column widths
+ * and pinned-column offsets for the reusable scrollable-table idiom (see admin_site's
+ * scrollable-table.css for the machinery). */
+
+/*
+ * Plans column dimensions. The name width is fluid: it grows on wide windows to take up the
+ * slack (so the table fills the width and the name has room), and the status column is kept
+ * narrow. The pinned columns' sticky `left` offsets are set at runtime from the measured widths
+ * (scrollable-table.js); the `--kw-pin-left` values here are only a pre-JS fallback.
+ */
+.kw-scroll-table {
+  --kw-plan-warning-w: 2.25rem;
+  --kw-plan-name-w: clamp(16rem, 100vw - 57rem, 44rem);
+  --kw-plan-status-w: 6rem;
+}
+.kw-col-plan-warning {
+  --kw-w: var(--kw-plan-warning-w);
+  --kw-pin-left: 0;
+}
+.kw-col-plan-name {
+  --kw-w: var(--kw-plan-name-w);
+  --kw-pin-left: var(--kw-plan-warning-w);
+}
+.kw-col-plan-status {
+  --kw-w: var(--kw-plan-status-w);
+  --kw-pin-left: calc(var(--kw-plan-warning-w) + var(--kw-plan-name-w));
+}
+.kw-col-plan-narrow {
+  --kw-w: 9rem;
+}
+
+/* The warning column only shows an icon for inactive plans; keep its contents centred and
+   un-padded so the narrow pinned column isn't lopsided. */
+.kw-scroll-table .kw-col-plan-warning {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+/*
+ * Lay the title cell out as a two-row grid so the identifier drops onto its own
+ * line under the plan name, while the row actions (the "..." menu) span both
+ * rows and stay vertically centred against them.
+ */
+.kw-scroll-table td.title:has(.plan-identifier) {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'name actions'
+    'identifier actions';
+  align-items: center;
+  column-gap: 0.5em;
+}
+.kw-scroll-table td.title:has(.plan-identifier) .title-wrapper {
+  grid-area: name;
+}
+.kw-scroll-table td.title:has(.plan-identifier) .plan-identifier {
+  grid-area: identifier;
+}
+.kw-scroll-table td.title:has(.plan-identifier) .actions {
+  grid-area: actions;
+  align-self: center;
+}
+
 .plan-identifier {
   display: inline-flex;
   align-items: center;
