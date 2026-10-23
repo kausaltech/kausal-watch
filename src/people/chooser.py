@@ -11,8 +11,11 @@ from kausal_common.people.chooser import (
 )
 from kausal_common.users import user_or_bust
 
+from admin_site.scoped_choosers import ChosenFromOfferedObjectsMixin
+from people.models import Person
 
-class PersonChooserMixin(BasePersonChooserMixin):
+
+class PersonChooserMixin(ChosenFromOfferedObjectsMixin[Person], BasePersonChooserMixin):
     def get_object_list(self, search_term=None, **kwargs):
         user = user_or_bust(self.request.user)
         plan = user.get_active_admin_plan()
@@ -26,6 +29,9 @@ class PersonChooserMixin(BasePersonChooserMixin):
             object_list = search_backend.autocomplete(search_term, object_list)
 
         return object_list
+
+    def get_chosen_queryset(self):
+        return self.get_object_list()
 
 
 class PersonModelChooserCreateTabMixin(BasePersonModelChooserCreateTabMixin):
