@@ -7,13 +7,15 @@ from wagtail.search.backends import get_search_backend
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 
+from admin_site.scoped_choosers import ChosenFromOfferedObjectsMixin
+
 from .models import ReportType
 
 if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
 
 
-class ReportTypeChooserMixin(ModelChooserMixin):
+class ReportTypeChooserMixin(ChosenFromOfferedObjectsMixin[ReportType], ModelChooserMixin[ReportType]):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):

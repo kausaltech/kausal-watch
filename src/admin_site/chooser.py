@@ -10,6 +10,7 @@ from generic_chooser.widgets import AdminChooser
 from aplans.fields import HostnameValidator
 
 from actions.chooser import WatchModelChooserBase
+from admin_site.scoped_choosers import get_snippet_chooser_queryset
 
 from .models import Client, EmailDomains
 
@@ -21,8 +22,7 @@ class ClientChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
-        objects = Client.objects.all().order_by('name')
-        return objects
+        return get_snippet_chooser_queryset(self.request, Client).order_by('name')
 
 
 class ClientForm(forms.ModelForm):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.db.models.base import Model
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
@@ -13,6 +14,8 @@ from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
 
 from kausal_common.datasets.models import DatasetSchema
 from kausal_common.users import user_or_bust
+
+from admin_site.scoped_choosers import ChosenFromOfferedObjectsMixin
 
 from .models.action import Action
 from .models.attributes import AttributeType
@@ -25,7 +28,7 @@ if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
 
 
-class WatchModelChooserBase[M: Model](ModelChooserMixin[M]):
+class WatchModelChooserBase[M: Model](ChosenFromOfferedObjectsMixin[M], ModelChooserMixin[M]):
     def get_object_list(self, search_term=None, **kwargs):
         objs = self.get_unfiltered_object_list()
 
@@ -103,7 +106,7 @@ def register_category_type_chooser_viewset():
     return CategoryTypeChooserViewSet('category_type_chooser', url_prefix='category-type-chooser')
 
 
-class CategoryLevelChooserMixin(ModelChooserMixin[CategoryLevel]):
+class CategoryLevelChooserMixin(ChosenFromOfferedObjectsMixin[CategoryLevel], ModelChooserMixin[CategoryLevel]):
     request: HttpRequest
 
     def get_unfiltered_object_list(self):
@@ -317,6 +320,16 @@ class DatasetSchemaChooserMixin(WatchModelChooserBase[DatasetSchema]):
                 scopes__scope_id__in=plan.category_types.values_list('id', flat=True),
             ).distinct()
         return DatasetSchema.objects.none()
+
+    def get_chosen_queryset(self):
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
+        plan_scope = Q(scopes__scope_content_type=ContentType.objects.get_for_model(Plan), scopes__scope_id=plan.id)
+        category_type_scope = Q(
+            scopes__scope_content_type=ContentType.objects.get_for_model(CategoryType),
+            scopes__scope_id__in=plan.category_types.values_list('id', flat=True),
+        )
+        return DatasetSchema.objects.filter(plan_scope | category_type_scope).distinct()
 
     def user_can_create(self, user):
         return False
