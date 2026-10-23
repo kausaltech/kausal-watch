@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -4122,8 +4122,11 @@ msgstr "Se %s live"
 msgid "Email domains"
 msgstr "E-mail domæner"
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+msgid "Report templates"
+msgstr "Rapportskabeloner"
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Rapporter"
 
@@ -6838,13 +6841,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft venligst sletning:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ja, slet"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nej, slet ikke"
@@ -7006,13 +7007,13 @@ msgstr "Niveau for den indeholdende organisation"
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Ud over selve organisationen er en organisatorisk enhed, der indeholder organisationen, inkluderet i rapporten. Hvilket niveau i organisationshierarkiet skal bruges til at finde denne indeholdende organisation, når man tæller fra den øverste rodorganisation på niveau 1? Hvis det er tomt, skal du ikke tilføje den indeholdende organisation til rapporten."
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
-msgstr "Rapporttype"
+#: src/reports/blocks/choosers.py
+msgid "Report template"
+msgstr "Rapportskabelon"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
-msgstr "Rapporttypefelt"
+msgid "Report template field"
+msgstr "Felt i rapportskabelonen"
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "UUID of report field"
@@ -7023,12 +7024,12 @@ msgid "Report comparison"
 msgstr "Rapportsammenligning"
 
 #: src/reports/chooser.py
-msgid "Choose a report type"
-msgstr "Vælg en rapporttype"
+msgid "Choose a report template"
+msgstr "Vælg en rapportskabelon"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
-msgstr "Vælg en anden rapporttype"
+msgid "Choose another report template"
+msgstr "Vælg en anden rapportskabelon"
 
 #: src/reports/models.py
 #, fuzzy
@@ -7037,16 +7038,16 @@ msgid "Only plan admins can mark actions as complete"
 msgstr "Kun planadministratorer kan markere handlinger som afsluttede for rapporter af denne type"
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete for reports of this type"
-msgstr "Kun planadministratorer kan markere handlinger som afsluttede for rapporter af denne type"
+msgid "Only plan admins can mark actions as complete for reports from this template"
+msgstr "Kun planadministratorer kan markere handlinger som afsluttede for rapporter fra denne skabelon"
 
 #: src/reports/models.py
-msgid "report type"
-msgstr "rapporttype"
+msgid "report template"
+msgstr "rapportskabelon"
 
 #: src/reports/models.py
-msgid "report types"
-msgstr "rapporttyper"
+msgid "report templates"
+msgstr "rapportskabeloner"
 
 #: src/reports/models.py
 #, python-format
@@ -7287,10 +7288,10 @@ msgstr "Tilbage til egen bruger"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgstr[0] "Sletning af denne rapportskabelon sletter også permanent dens rapport og de %(snapshot_count)s øjebliksbilleder af handlinger, der er gemt i den."
+msgstr[1] "Sletning af denne rapportskabelon sletter også permanent dens %(counter)s rapporter og de %(snapshot_count)s øjebliksbilleder af handlinger, der er gemt i dem."
 
 #: src/reports/views.py
 msgid "Mark action as complete"
@@ -7359,20 +7360,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Rapporten '%(report)s' er ikke længere markeret som færdig."
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr "Rapportskabelonen bruges stadig på handlingssider. Fjern først blokkene til rapportsammenligning."
+
+#: src/reports/wagtail_admin.py
+msgid "Edit template"
+msgstr "Rediger skabelon"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Hent XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Hent rapport som regnearksfil"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Markér som afsluttet"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Markér denne rapport som fuldført"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7383,12 +7384,12 @@ msgid "Undo marking this report as complete"
 msgstr "Fortryd markering af denne rapport som færdig"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Markér som afsluttet"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Rapporttyper"
+msgid "Mark this report as complete"
+msgstr "Markér denne rapport som fuldført"
 
 #: src/users/apps.py
 msgid "Users"

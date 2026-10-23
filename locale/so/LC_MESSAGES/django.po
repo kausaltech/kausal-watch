@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Somali <https://weblate.kausal.tech/projects/watch/django/so/>\n"
@@ -3975,8 +3975,11 @@ msgstr ""
 msgid "Email domains"
 msgstr ""
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+msgid "Report templates"
+msgstr ""
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr ""
 
@@ -6671,13 +6674,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr ""
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr ""
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr ""
@@ -6829,12 +6830,12 @@ msgstr ""
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr ""
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+#: src/reports/blocks/choosers.py
+msgid "Report template"
 msgstr ""
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+msgid "Report template field"
 msgstr ""
 
 #: src/reports/blocks/report_comparison_block.py
@@ -6846,11 +6847,11 @@ msgid "Report comparison"
 msgstr ""
 
 #: src/reports/chooser.py
-msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr ""
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+msgid "Choose another report template"
 msgstr ""
 
 #: src/reports/models.py
@@ -6858,15 +6859,15 @@ msgid "Only plan admins can mark actions as complete"
 msgstr ""
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can mark actions as complete for reports from this template"
 msgstr ""
 
 #: src/reports/models.py
-msgid "report type"
+msgid "report template"
 msgstr ""
 
 #: src/reports/models.py
-msgid "report types"
+msgid "report templates"
 msgstr ""
 
 #: src/reports/models.py
@@ -7081,8 +7082,8 @@ msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -7153,19 +7154,19 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Edit template"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
-msgstr ""
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr ""
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
@@ -7177,11 +7178,11 @@ msgid "Undo marking this report as complete"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgid "Mark as complete"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
+msgid "Mark this report as complete"
 msgstr ""
 
 #: src/users/apps.py

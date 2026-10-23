@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -4405,8 +4405,13 @@ msgstr "Skatīt %s tiešraidē"
 msgid "Email domains"
 msgstr "E-pasta domēni"
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report templates"
+msgstr "Pārskatu veidi"
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Ziņojumi"
 
@@ -7386,13 +7391,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' pašlaik ir savienots ar šādiem elementiem. Lūdzu, pārbaudiet dzēšanu:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Jā, dzēst"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nē, neizdzēst"
@@ -7560,12 +7563,16 @@ msgstr "Organizācijas līmenis, kas satur"
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Papildus pašai organizācijai pārskatā ir iekļauta arī organizatoriskā vienība, kurā ietilpst organizācija. Sākot no augstākā līmeņa saknes organizācijas 1. līmenī, kurš organizatoriskās hierarhijas līmenis jāizmanto, lai atrastu šo saturošo organizāciju? Ja tas ir atstāts tukšs, ziņojumā nepievienojiet saturošo organizāciju."
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+#: src/reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type"
+msgid "Report template"
 msgstr "Ziņojuma veids"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+#, fuzzy
+#| msgid "Report type field"
+msgid "Report template field"
 msgstr "Ziņojuma tipa lauks"
 
 #: src/reports/blocks/report_comparison_block.py
@@ -7577,11 +7584,15 @@ msgid "Report comparison"
 msgstr "Pārskatu salīdzinājums"
 
 #: src/reports/chooser.py
-msgid "Choose a report type"
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr "Izvēlieties ziņojuma veidu"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report template"
 msgstr "Izvēlieties citu ziņojuma veidu"
 
 #: src/reports/models.py
@@ -7593,15 +7604,19 @@ msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu zi
 #: src/reports/models.py
 #, fuzzy
 #| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can mark actions as complete for reports from this template"
 msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
 
 #: src/reports/models.py
-msgid "report type"
+#, fuzzy
+#| msgid "report type"
+msgid "report template"
 msgstr "ziņojuma veids"
 
 #: src/reports/models.py
-msgid "report types"
+#, fuzzy
+#| msgid "report types"
+msgid "report templates"
 msgstr "ziņojumu veidi"
 
 #: src/reports/models.py
@@ -7843,8 +7858,8 @@ msgstr "kontaktinformācija par rīcībām"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
@@ -7916,20 +7931,22 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Ziņojums '%(report)s' vairs nav atzīmēts kā pabeigts."
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "template"
+msgid "Edit template"
+msgstr "veidne"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Lejupielādēt XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Lejupielādēt ziņojumu kā izklājlapas failu"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Atzīmēt kā pabeigtu"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Atzīmējiet šo ziņojumu kā pabeigtu"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7940,12 +7957,12 @@ msgid "Undo marking this report as complete"
 msgstr "Atcelt šī ziņojuma atzīšanu par pabeigtu"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Atzīmēt kā pabeigtu"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Pārskatu veidi"
+msgid "Mark this report as complete"
+msgstr "Atzīmējiet šo ziņojumu kā pabeigtu"
 
 #: src/users/apps.py
 msgid "Users"

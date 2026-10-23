@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-22 16:21+0300\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -4353,8 +4353,13 @@ msgstr "Δείτε το %s live"
 msgid "Email domains"
 msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
 
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report templates"
+msgstr "Τύποι αναφορών"
+
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Αναφορές"
 
@@ -7316,13 +7321,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "Το '%(instance_name)s' είναι συνδεδεμένο με τα ακόλουθα στοιχεία. Παρακαλώ επαληθεύστε τη διαγραφή:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ναι, διαγράψτε"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Όχι, μη διαγράψετε"
@@ -7486,12 +7489,16 @@ msgstr "Επίπεδο οργάνωσης που περιέχει"
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Εκτός από τον ίδιο τον οργανισμό, στην έκθεση περιλαμβάνεται και μια οργανωτική μονάδα που περιέχει τον οργανισμό. Μετρώντας από τον κορυφαίο ριζικό οργανισμό στο επίπεδο 1, ποιο επίπεδο της οργανωτικής ιεραρχίας πρέπει να χρησιμοποιηθεί για να βρεθεί αυτός ο οργανισμός που περιέχει; Εάν παραμείνει κενό, μην προσθέσετε τον οργανισμό που περιέχει στην αναφορά."
 
-#: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+#: src/reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type"
+msgid "Report template"
 msgstr "Τύπος έκθεσης"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+#, fuzzy
+#| msgid "Report type field"
+msgid "Report template field"
 msgstr "Πεδίο τύπου αναφοράς"
 
 #: src/reports/blocks/report_comparison_block.py
@@ -7503,11 +7510,15 @@ msgid "Report comparison"
 msgstr "Σύγκριση εκθέσεων"
 
 #: src/reports/chooser.py
-msgid "Choose a report type"
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr "Επιλέξτε έναν τύπο αναφοράς"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report template"
 msgstr "Επιλέξτε έναν άλλο τύπο αναφοράς"
 
 #: src/reports/models.py
@@ -7519,15 +7530,19 @@ msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της
 #: src/reports/models.py
 #, fuzzy
 #| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can mark actions as complete for reports from this template"
 msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
 
 #: src/reports/models.py
-msgid "report type"
+#, fuzzy
+#| msgid "report type"
+msgid "report template"
 msgstr "τύπος έκθεσης"
 
 #: src/reports/models.py
-msgid "report types"
+#, fuzzy
+#| msgid "report types"
+msgid "report templates"
 msgstr "τύποι αναφορών"
 
 #: src/reports/models.py
@@ -7769,8 +7784,8 @@ msgstr "Πίσω στο δικό σας χρήστη"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -7841,20 +7856,22 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Η αναφορά '%(report)s' δεν χαρακτηρίζεται πλέον ως πλήρης."
 
 #: src/reports/wagtail_admin.py
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "template"
+msgid "Edit template"
+msgstr "πρότυπο"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Λήψη XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Κατεβάστε την έκθεση ως αρχείο λογιστικού φύλλου"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7865,12 +7882,12 @@ msgid "Undo marking this report as complete"
 msgstr "Αναίρεση της επισήμανσης αυτής της αναφοράς ως ολοκληρωμένης"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Τύποι αναφορών"
+msgid "Mark this report as complete"
+msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
 
 #: src/users/apps.py
 msgid "Users"
