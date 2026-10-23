@@ -1523,6 +1523,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
         return qs
 
+    def get_plan_and_child_plans(self) -> PlanQuerySet:
+        """Get this plan and, if it is an umbrella plan, its child plans."""
+        qs: PlanQuerySet = Plan.objects.qs.filter(Q(id=self.id) | Q(parent_id=self.id))
+        return qs
+
     def get_superseded_plans(self, recursive=False) -> PlanQuerySet:
         result = cast('PlanQuerySet', self.superseded_plans.all())
         if recursive:
