@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
@@ -12,6 +13,7 @@ from generic_chooser.widgets import AdminChooser
 from kausal_common.admin_site.choosers import ChooserViewSet
 from kausal_common.users import user_or_bust
 
+from admin_site.scoped_choosers import ChosenFromObjectListViewSetMixin, ChosenFromOfferedObjectsMixin
 from admin_site.utils import ChooserListingTabMixinWithEmptyResultsMessage
 
 from .models import Dimension, Indicator, IndicatorDimension, IndicatorValue
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from .models import IndicatorQuerySet
 
 
-class IndicatorChooserViewSet(ChooserViewSet[Indicator]):
+class IndicatorChooserViewSet(ChosenFromObjectListViewSetMixin, ChooserViewSet[Indicator]):
     icon = 'kausal-indicator'
     model = Indicator
     choose_one_text = _('Choose an indicator')
@@ -48,7 +50,7 @@ def register_indicator_chooser_viewset():
     return indicator_chooser_viewset
 
 
-class DimensionChooserMixin(ModelChooserMixin[Dimension, QuerySet[Dimension]]):
+class DimensionChooserMixin(ChosenFromOfferedObjectsMixin[Dimension], ModelChooserMixin[Dimension, QuerySet[Dimension]]):
     def get_unfiltered_object_list(self):
         request = self.request
         user = user_or_bust(request.user)
@@ -78,6 +80,12 @@ class DimensionChooserMixin(ModelChooserMixin[Dimension, QuerySet[Dimension]]):
             plan_dimensions = Dimension.objects.filter(id__in=plan_dimension_ids)
             dimensions |= plan_dimensions
         return dimensions
+
+    def get_chosen_queryset(self):
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        indicator_dimensions = IndicatorDimension.objects.filter(indicator__plans=plan).values_list('dimension_id')
+        plan_dimensions = plan.dimensions.values_list('dimension_id')
+        return Dimension.objects.filter(Q(id__in=indicator_dimensions) | Q(id__in=plan_dimensions))
 
 
 class DimensionChooser(AdminChooser):
@@ -110,7 +118,9 @@ def register_dimension_chooser_viewset():
     return DimensionChooserViewSet('dimension_chooser', url_prefix='dimension-chooser')
 
 
-class IndicatorValueChooserMixin(ModelChooserMixin[IndicatorValue, QuerySet[IndicatorValue]]):
+class IndicatorValueChooserMixin(
+    ChosenFromOfferedObjectsMixin[IndicatorValue], ModelChooserMixin[IndicatorValue, QuerySet[IndicatorValue]]
+):
     def get_object_string(self, item: IndicatorValue) -> str:
         return item.format_date()
 
@@ -129,6 +139,12 @@ class IndicatorValueChooserMixin(ModelChooserMixin[IndicatorValue, QuerySet[Indi
             pass
 
         return IndicatorValue.objects.none()
+
+    def get_chosen_queryset(self):
+        user = user_or_bust(self.request.user)
+        plan = user.get_active_admin_plan()
+        indicators = Indicator.objects.get_queryset().visible_for_user(user).filter(plans=plan)
+        return IndicatorValue.objects.filter(indicator__in=indicators)
 
 
 class IndicatorValueChooser(AdminChooser):

@@ -52,6 +52,13 @@ class AdminSiteConfig(AdminConfig):
 
         register_model_permission_policies()
 
+        # Runs before wagtail.snippets processes the snippet registrations, so it covers every snippet viewset
+        from wagtail.snippets.views.snippets import SnippetViewSet
+
+        from admin_site.scoped_choosers import PermissionScopedSnippetChooserViewSet
+
+        SnippetViewSet.chooser_viewset_class = PermissionScopedSnippetChooserViewSet
+
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
         global _wagtail_collection_save_instance  # noqa: PLW0603
