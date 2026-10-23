@@ -7,12 +7,13 @@ from django.db import models
 from django.db.models import Model, ProtectedError, QuerySet
 from django.forms.models import ModelForm
 from django.urls import reverse
-from django.utils.functional import classproperty
+from django.utils.functional import cached_property, classproperty
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
+from wagtail.admin.ui.tables import BulkActionsCheckboxColumn
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.models import Page
 from wagtail.permissions import policy_registry
@@ -151,7 +152,12 @@ class WatchIndexView[ModelT: Model, QS: QuerySet[Any] = QuerySet[ModelT]](
     ActivatePermissionHelperPlanContextMixin,
     IndexView[ModelT, QS],
 ):
-    pass
+    @cached_property
+    def columns(self):  # type: ignore[override]
+        columns = super().columns
+        if getattr(getattr(self.model, 'snippet_viewset', None), 'bulk_delete_enabled', True):
+            return columns
+        return [column for column in columns if not isinstance(column, BulkActionsCheckboxColumn)]
 
 
 class InstancePermissionCheckedMixin(PermissionCheckedMixin):
@@ -241,6 +247,8 @@ class PlanAwareSnippetDeleteBulkAction(DeleteBulkAction):
         viewset = getattr(snippet, 'snippet_viewset', None)
         if viewset is None:  # not a registered snippet after all; leave the decision to Wagtail
             return super().check_perm(snippet)
+        if not getattr(viewset, 'bulk_delete_enabled', True):
+            return False
         return viewset.permission_policy.user_has_permission_for_instance(self.request.user, 'delete', snippet)
 
 
@@ -276,6 +284,8 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
     # plan guard nor the instance permission check applies -- copying another plan's object renders
     # its data and saving raises. A subclass that wants copying has to provide a plan-aware view.
     copy_view_enabled = False
+    # Turning this off is only enforced for models with a `PlanRelatedPermissionPolicy`
+    bulk_delete_enabled = True
 
     def register_permissions(self):
         # Wagtail would fall back to a policy without the plan check for plan-related models

@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from django.urls import reverse
-
 import pytest
 
 from actions.tests.factories import PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 from reports.views import MarkReportAsCompleteView
-from reports.wagtail_admin import ReportAdmin
 
 from .fixtures import *
 
@@ -35,7 +32,7 @@ def other_plan_report():
 
 
 def _download_url(report) -> str:
-    return reverse(ReportAdmin().url_helper.get_action_url_name('download'), kwargs={'instance_pk': report.pk})
+    return f'/admin/plan_reports/report/download/{report.pk}/'
 
 
 def test_admin_can_download_report_of_own_plan(admin_client, own_report):

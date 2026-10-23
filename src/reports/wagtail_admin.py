@@ -1,122 +1,34 @@
 from __future__ import annotations
 
-from django.contrib import admin, messages
+from typing import TYPE_CHECKING, ClassVar
+
+from django.contrib import messages
 from django.contrib.admin.utils import quote
-from django.db.models import Model
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.urls import re_path
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import FieldPanel
+from wagtail.admin.ui.tables import BooleanColumn
+from wagtail.admin.widgets.button import ListingButton
+from wagtail.snippets.models import register_snippet
 
-from wagtail_modeladmin.menus import ModelAdminMenuItem
-from wagtail_modeladmin.options import modeladmin_register
-from wagtail_modeladmin.views import DeleteView
+from django_filters import filters
 
-from kausal_common.users import user_or_bust
+from kausal_common.users import user_or_bust, user_or_none
 
 from aplans.utils import append_query_parameter
 
-from actions.category_admin import ModelAdminMixinBase
-from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin, QueryParameterButtonHelper
+from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 
 from .models import Report, ReportType
 from .usage import get_report_type_usage
-from .views import MarkReportAsCompleteView
+from .views import DownloadReportView, MarkReportAsCompleteView
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 
-# FIXME: Duplicated code in category_admin.py and attribute_type_admin.py
-class ReportTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
-    @property
-    def index_url(self):
-        return append_query_parameter(self.request, super().index_url, 'report_type')
-
-    @property
-    def create_url(self):
-        return append_query_parameter(self.request, super().create_url, 'report_type')
-
-    @property
-    def edit_url(self):
-        return append_query_parameter(self.request, super().edit_url, 'report_type')
-
-    @property
-    def delete_url(self):
-        return append_query_parameter(self.request, super().delete_url, 'report_type')
-
-
-class ReportCreateView(ReportTypeQueryParameterMixin[Report], AplansCreateView[Report]):
-    def initialize_instance(self, request):
-        """Set the new report's type to the one given in the GET data end set the report fields from the type."""
-        report_type = request.GET.get('report_type')
-        if report_type and not self.instance.pk:
-            assert not hasattr(self.instance, 'type')
-            self.instance.type = ReportType.objects.get(pk=int(report_type))
-
-
-class ReportEditView(ReportTypeQueryParameterMixin[Report], AplansEditView[Report]):
-    pass
-
-
-class ReportDeleteView(ReportTypeQueryParameterMixin[Report], DeleteView[Report]):
-    pass
-
-
-class ReportAdminButtonHelper(QueryParameterButtonHelper):
-    parameter_name = 'report_type'
-    download_report_button_classnames: list[str] = []
-    mark_as_complete_button_classnames: list[str] = []
-    undo_marking_as_complete_button_classnames: list[str] = []
-
-    def download_report_button(self, report_pk, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.download_report_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('download', quote(report_pk)),
-            'label': _('Download XLSX'),
-            'classname': cn,
-            'icon': 'download',
-            'title': _('Download report as spreadsheet file'),
-        }
-
-    def mark_as_complete_button(self, report_pk, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.mark_as_complete_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('mark_report_as_complete', quote(report_pk)),
-            'label': _('Mark as complete'),
-            'classname': cn,
-            'icon': 'check',
-            'title': _('Mark this report as complete'),
-        }
-
-    def undo_marking_as_complete_button(self, report_pk, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.undo_marking_as_complete_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('undo_marking_report_as_complete', quote(report_pk)),
-            'label': _('Undo marking as complete'),
-            'classname': cn,
-            'icon': 'fontawesome-rotate-left',
-            'title': _('Undo marking this report as complete'),
-        }
-
-    def get_buttons_for_obj(self, obj, *args, **kwargs):
-        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
-        buttons.append(self.download_report_button(obj.pk, **kwargs))
-        if obj.is_complete:
-            buttons.append(self.undo_marking_as_complete_button(obj.pk, **kwargs))
-        else:
-            buttons.append(self.mark_as_complete_button(obj.pk, **kwargs))
-        return buttons
-
-
-class ReportTypeDeleteView(DeleteView[ReportType]):
+class ReportTypeDeleteView(WatchDeleteView[ReportType]):
     """
     Refuse to delete a report type that a report comparison block still refers to.
 
@@ -126,11 +38,11 @@ class ReportTypeDeleteView(DeleteView[ReportType]):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['usage'] = get_report_type_usage(self.instance)
+        context['usage'] = get_report_type_usage(self.object)
         return context
 
     def post(self, request, *args, **kwargs):
-        if get_report_type_usage(self.instance).blocks_deletion:
+        if get_report_type_usage(self.object).blocks_deletion:
             messages.error(
                 request,
                 _('The report type is still used on action pages. Remove the report comparison blocks first.'),
@@ -138,18 +50,17 @@ class ReportTypeDeleteView(DeleteView[ReportType]):
             return self.get(request, *args, **kwargs)
         return super().post(request, *args, **kwargs)
 
-    def get_template_names(self):
-        return ['reports/report_type_delete.html']
 
-
-@modeladmin_register
-class ReportTypeAdmin(AplansModelAdmin[ReportType]):
+class ReportTypeViewSet(WatchViewSet[ReportType]):
     model = ReportType
     menu_label = _('Report types')
-    menu_icon = 'doc-full'
+    icon = 'doc-full'
     menu_order = 1200
     add_to_settings_menu = True
-    base_url_path = 'plan_reports/report_type'
+    url_prefix = 'plan_reports/report_type'
+    delete_view_class = ReportTypeDeleteView
+    bulk_delete_enabled = False
+    delete_template_name = 'reports/report_type_delete.html'
 
     panels = [
         FieldPanel('name'),
@@ -157,61 +68,150 @@ class ReportTypeAdmin(AplansModelAdmin[ReportType]):
         FieldPanel('fields', heading=_('fields')),
     ]
 
-    delete_view_class = ReportTypeDeleteView
-
-    def get_form_fields_exclude(self, request):  # type: ignore[override]
-        exclude = super().get_form_fields_exclude(request)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
-        exclude += ['plan']
-        return exclude
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        return qs.filter(plan=plan)
-
-    # def get_edit_handler(self, instance, request):
-    #     panels = list(self.panels)
-    #     if instance and instance.common:
-    #         panels.insert(1, FieldPanel('common'))
-    #     tabs = [ObjectList(panels, heading=_('Basic information'))]
-    #
-    #     i18n_tabs = get_translation_tabs(instance, request)
-    #     tabs += i18n_tabs
-    #
-    #     return CategoryTypeEditHandler(tabs)
+    def get_queryset(self, request: HttpRequest):
+        plan = user_or_bust(request.user).get_active_admin_plan()
+        return ReportType.objects.filter(plan=plan)
 
 
-class ReportTypeFilter(admin.SimpleListFilter):
-    title = _('Report type')
-    parameter_name = 'report_type'
-
-    def lookups(self, request, model_admin):
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
-        choices = [(i.id, i.name) for i in plan.report_types.all()]
-        return choices
-
-    def queryset(self, request, queryset):
-        if self.value() is not None:
-            return queryset.filter(type=self.value())
-        return queryset
+register_snippet(ReportTypeViewSet)
 
 
-class ReportAdminMenuItem(ModelAdminMenuItem):
-    def is_shown(self, request):
-        # Hide it because we will have menu items for listing reports of specific types.
-        # Note that we need to register ReportAdmin nonetheless, otherwise the URLs wouldn't be set up.
-        return False
+class ReportTypeQueryParameterMixin:
+    """Keep the listing's `report_type` filter in the URLs the report views link to."""
+
+    request: HttpRequest
+
+    def with_report_type(self, url: str | None) -> str | None:
+        if url is None or '?' in url:
+            return url
+        return append_query_parameter(self.request, url, 'report_type')
 
 
-@modeladmin_register
-class ReportAdmin(AplansModelAdmin):
+class ReportCreateView(ReportTypeQueryParameterMixin, WatchCreateView[Report]):
+    def initialize_instance(self, request: HttpRequest, instance: Report) -> None:
+        """Set the new report's type to the one given in the GET data."""
+        report_type = request.GET.get('report_type')
+        if not report_type:
+            return
+        instance.type = ReportType.objects.get(pk=int(report_type))
+
+    def get_add_url(self):
+        return self.with_report_type(super().get_add_url())
+
+    def get_edit_url(self):
+        return self.with_report_type(super().get_edit_url())
+
+    def get_success_url(self):
+        return self.with_report_type(super().get_success_url())
+
+
+class ReportEditView(ReportTypeQueryParameterMixin, WatchEditView[Report]):
+    def get_edit_url(self):
+        return self.with_report_type(super().get_edit_url())
+
+    def get_delete_url(self):
+        return self.with_report_type(super().get_delete_url())
+
+    def get_success_url(self):
+        return self.with_report_type(super().get_success_url())
+
+
+class ReportDeleteView(ReportTypeQueryParameterMixin, WatchDeleteView[Report]):
+    def get_delete_url(self):
+        return self.with_report_type(super().get_delete_url())
+
+    def get_success_url(self):
+        return self.with_report_type(super().get_success_url())
+
+
+class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
+    download_url_name: ClassVar[str | None] = None
+    mark_as_complete_url_name: ClassVar[str | None] = None
+    undo_marking_as_complete_url_name: ClassVar[str | None] = None
+
+    def get_add_url(self):
+        # A report needs a type, which only the menu item of each report type gives
+        if 'report_type' not in self.request.GET:
+            return None
+        return self.with_report_type(super().get_add_url())
+
+    def get_edit_url(self, instance: Report):
+        return self.with_report_type(super().get_edit_url(instance))
+
+    def get_delete_url(self, instance: Report):
+        return self.with_report_type(super().get_delete_url(instance))
+
+    def _report_url(self, url_name: str | None, instance: Report) -> str:
+        assert url_name is not None
+        return reverse(url_name, args=(quote(instance.pk),))
+
+    def get_list_more_buttons(self, instance: Report):
+        buttons = list(super().get_list_more_buttons(instance))
+        buttons.append(
+            ListingButton(
+                _('Download XLSX'),
+                url=self._report_url(self.download_url_name, instance),
+                icon_name='download',
+                attrs={'title': _('Download report as spreadsheet file')},
+                priority=40,
+            )
+        )
+        if instance.is_complete:
+            button = ListingButton(
+                _('Undo marking as complete'),
+                url=self._report_url(self.undo_marking_as_complete_url_name, instance),
+                icon_name='fontawesome-rotate-left',
+                attrs={'title': _('Undo marking this report as complete')},
+                priority=50,
+            )
+        else:
+            button = ListingButton(
+                _('Mark as complete'),
+                url=self._report_url(self.mark_as_complete_url_name, instance),
+                icon_name='check',
+                attrs={'title': _('Mark this report as complete')},
+                priority=50,
+            )
+        buttons.append(button)
+        return buttons
+
+
+def report_types_for_request(request: HttpRequest | None):
+    user = user_or_none(request.user) if request is not None else None
+    if user is None:
+        return ReportType.objects.none()
+    return user.get_active_admin_plan().report_types.all()
+
+
+class ReportFilterSet(WagtailFilterSet):
+    report_type = filters.ModelChoiceFilter(
+        field_name='type',
+        queryset=report_types_for_request,  # pyright: ignore[reportArgumentType]
+        label=_('Report type'),
+    )
+
+    class Meta:
+        model = Report
+        fields = ['report_type']
+
+
+class ReportViewSet(WatchViewSet[Report]):
     model = Report
-    menu_label = _('Reports')
-    list_display = ('name', 'is_complete', 'is_public')
-    list_filter = (ReportTypeFilter,)
-    base_url_path = 'plan_reports/report'
+    # Each report type has its own menu item instead
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    icon = 'doc-full'
+    url_prefix = 'plan_reports/report'
+    list_display = ['name', BooleanColumn('is_complete'), BooleanColumn('is_public')]
+    filterset_class = ReportFilterSet
+    index_view_class = ReportIndexView
+    add_view_class = ReportCreateView
+    edit_view_class = ReportEditView
+    delete_view_class = ReportDeleteView
+    bulk_delete_enabled = False
+    download_url_name = 'download'
+    mark_as_complete_url_name = 'mark_report_as_complete'
+    undo_marking_as_complete_url_name = 'undo_marking_report_as_complete'
 
     panels = [
         FieldPanel('name'),
@@ -221,65 +221,45 @@ class ReportAdmin(AplansModelAdmin):
         FieldPanel('show_in_reporting_tab'),
     ]
 
-    create_view_class = ReportCreateView
-    edit_view_class = ReportEditView
-    # Do we need to create a view for inspect_view?
-    delete_view_class = ReportDeleteView
-    button_helper_class = ReportAdminButtonHelper
+    def get_queryset(self, request: HttpRequest):
+        plan = user_or_bust(request.user).get_active_admin_plan()
+        return Report.objects.filter(type__plan=plan)
 
-    def get_menu_item(self, order=None):
-        return ReportAdminMenuItem(self, order or self.get_menu_order())
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        return qs.filter(type__plan=plan).distinct()
-
-    def get_admin_urls_for_registration(self):
-        urls = super().get_admin_urls_for_registration()
-        download_report_url = re_path(
-            self.url_helper.get_action_url_pattern('download'),
-            self.download_report_view,
-            name=self.url_helper.get_action_url_name('download'),
-        )
-        mark_as_complete_url = re_path(
-            self.url_helper.get_action_url_pattern('mark_report_as_complete'),
-            self.mark_report_as_complete_view,
-            name=self.url_helper.get_action_url_name('mark_report_as_complete'),
-        )
-        undo_marking_as_complete_url = re_path(
-            self.url_helper.get_action_url_pattern('undo_marking_report_as_complete'),
-            self.undo_marking_report_as_complete_view,
-            name=self.url_helper.get_action_url_name('undo_marking_report_as_complete'),
-        )
-        return urls + (
-            download_report_url,
-            mark_as_complete_url,
-            undo_marking_as_complete_url,
+    def get_common_view_kwargs(self, **kwargs):
+        return super().get_common_view_kwargs(
+            download_url_name=self.get_url_name(self.download_url_name),
+            mark_as_complete_url_name=self.get_url_name(self.mark_as_complete_url_name),
+            undo_marking_as_complete_url_name=self.get_url_name(self.undo_marking_as_complete_url_name),
+            **kwargs,
         )
 
-    def download_report_view(self, request, instance_pk):
-        report = get_object_or_404(self.get_queryset(request), pk=instance_pk)
-        exporter = report.get_xlsx_exporter(user=request.user)
-        output = exporter.generate_xlsx()
-        response = HttpResponse(
-            output,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        )
-        response['Content-Disposition'] = f'attachment; filename="{exporter.get_filename()}"'
-        return response
+    @property
+    def download_view(self):
+        return self.construct_view(DownloadReportView)
 
-    def mark_report_as_complete_view(self, request, instance_pk):
-        return MarkReportAsCompleteView.as_view(
-            model_admin=self,
-            report_pk=instance_pk,
-            complete=True,
-        )(request)
+    @property
+    def mark_as_complete_view(self):
+        return self.construct_view(MarkReportAsCompleteView, complete=True)
 
-    def undo_marking_report_as_complete_view(self, request, instance_pk):
-        return MarkReportAsCompleteView.as_view(
-            model_admin=self,
-            report_pk=instance_pk,
-            complete=False,
-        )(request)
+    @property
+    def undo_marking_as_complete_view(self):
+        return self.construct_view(MarkReportAsCompleteView, complete=False)
+
+    def get_urlpatterns(self):
+        return [
+            *super().get_urlpatterns(),
+            path(f'{self.download_url_name}/<str:pk>/', self.download_view, name=self.download_url_name),
+            path(
+                f'{self.mark_as_complete_url_name}/<str:pk>/',
+                self.mark_as_complete_view,
+                name=self.mark_as_complete_url_name,
+            ),
+            path(
+                f'{self.undo_marking_as_complete_url_name}/<str:pk>/',
+                self.undo_marking_as_complete_view,
+                name=self.undo_marking_as_complete_url_name,
+            ),
+        ]
+
+
+register_snippet(ReportViewSet)
