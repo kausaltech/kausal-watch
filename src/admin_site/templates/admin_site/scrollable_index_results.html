@@ -1,0 +1,17 @@
+{% extends "wagtailsnippets/snippets/index_results.html" %}
+{% load wagtailadmin_tags %}
+
+{% comment %}
+Reusable results template for information-dense listings: wraps the listing table in a
+horizontally scrollable container (see admin_site/css/scrollable-table.css). Used for both the
+full page and the AJAX filter/search refresh via the view's index_results_template_name.
+
+Set `scrollable_table_fill = True` on the IndexView to also fill the viewport (and reclaim the
+footer space); leave it unset/False to keep normal page flow and the footer.
+{% endcomment %}
+
+{% block results %}
+    <div class="kw-scroll-table{% if view.scrollable_table_fill %} kw-scroll-table--fill{% endif %}">
+        {% component table %}
+    </div>
+{% endblock %}

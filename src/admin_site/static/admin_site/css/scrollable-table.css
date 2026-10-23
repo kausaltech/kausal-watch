@@ -1,0 +1,123 @@
+/*
+ * Reusable idiom for information-dense Wagtail admin listings: a horizontally scrollable
+ * table whose leftmost columns are pinned (horizontally sticky) while the rest scroll.
+ *
+ * How to opt a listing in:
+ *   - Set the ViewSet's `index_results_template_name` to
+ *     'admin_site/scrollable_index_results.html' (wraps the table in `.kw-scroll-table`).
+ *   - Load this stylesheet from the table's `Media` (e.g. subclass the shared base table).
+ *   - Give every column the class `kw-col` and a per-column class that sets `--kw-w` (width).
+ *   - For the pinned block (contiguous columns from the left), also add `kw-col--pin` and set
+ *     `--kw-pin-left` on each (the cumulative width of the pinned columns before it). Add
+ *     `kw-col--pin-last` to the final pinned column for the divider.
+ * The concrete widths/offsets live in the per-listing stylesheet, not here.
+ *
+ * Viewport fill (opt-in, per view): by default the page flows normally and the footer is kept.
+ * Set `scrollable_table_fill = True` on the IndexView to add the `--fill` modifier, which caps
+ * the table to the viewport (its scrollbar/header stay on screen) and reclaims the footer
+ * space; also load admin_site/js/scrollable-table.js. Views that need the footer simply leave
+ * the flag off.
+ */
+
+/* The scroll container holds the table and provides the horizontal scroll + pinned columns.
+   By itself it does not change the page's vertical flow: the page scrolls normally and the
+   footer is kept. Add the `--fill` modifier (below) to make the table fill the viewport. */
+.kw-scroll-table {
+  overflow: auto;
+  max-width: 100%;
+  /* Force always-visible scrollbars; overlay-scrollbar systems otherwise hide them and leave
+     no hint that the table can be scrolled. */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--w-color-border-furniture, #c7c7c7) transparent;
+}
+
+/* `--fill` opt-in: bound the table to the viewport so its horizontal scrollbar and sticky
+   header stay on screen for long listings, instead of pushing them below the fold. The JS sets
+   the exact max-height; this calc is the pre-JS fallback. Views without `--fill` keep normal
+   page flow and the footer. */
+.kw-scroll-table--fill {
+  max-height: calc(100vh - 13rem);
+}
+/* A `--fill` listing uses the whole content area, so drop the content area's bottom "footer"
+   padding and its min-height: 100% stretch, which would otherwise leave empty space below the
+   table. Scoped to `--fill` so other views keep their footer. */
+.content:has(.kw-scroll-table--fill) {
+  padding-bottom: 0;
+  min-height: 0;
+}
+.kw-scroll-table::-webkit-scrollbar {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+.kw-scroll-table::-webkit-scrollbar-thumb {
+  background-color: var(--w-color-border-furniture, #c7c7c7);
+  border-radius: 0.375rem;
+}
+.kw-scroll-table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Wagtail gives the first column of a checkbox-less listing a 5rem left gutter
+   (padding-inline-start on td/th:first-child, via a high-specificity :not(:has(checkbox)) rule).
+   That inflates and offsets our fixed-width first column (e.g. it pushes the warning icon out of
+   its column and under the next one), so neutralise it. `!important` is needed to beat that
+   rule's specificity. */
+.kw-scroll-table td:first-child,
+.kw-scroll-table th:first-child {
+  padding-inline-start: 0 !important;
+}
+
+/* Fixed per-column widths. Setting width == min == max pins each column's width; the resulting
+   row of fixed widths makes the table wider than the container, which then scrolls. The sticky
+   `left` offsets of the pinned columns are set from the measured widths at runtime
+   (scrollable-table.js), so they stay correct even if the table stretches a column. */
+.kw-scroll-table .kw-col {
+  width: var(--kw-w);
+  min-width: var(--kw-w);
+  max-width: var(--kw-w);
+}
+/* Non-pinned columns keep their fixed width but wrap long values onto further lines rather
+   than truncating them (the row grows taller as needed). */
+.kw-scroll-table td.kw-col:not(.kw-col--pin) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Sticky header: the header row stays visible while the body scrolls vertically inside the
+   bounded container. */
+.kw-scroll-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--w-color-surface-page, #fff);
+}
+
+/* Pinned columns: sticky to the scroller's left edge. Each sets its own --kw-pin-left. */
+.kw-scroll-table th.kw-col--pin,
+.kw-scroll-table td.kw-col--pin {
+  position: sticky;
+  left: var(--kw-pin-left, 0);
+  z-index: 2;
+  background: var(--w-color-surface-page, #fff);
+}
+/* The header's pinned cells are the corner (sticky on both axes): above header and body. */
+.kw-scroll-table thead th.kw-col--pin {
+  z-index: 4;
+}
+/* A pinned cell establishes a stacking context, and Wagtail's interactive row-action dropdown
+   (the "..." menu, a Tippy popup) is appended inside the cell. While it is shown, lift that
+   cell above the other pinned cells so the popup is not painted under adjacent rows' opaque
+   backgrounds. `[data-tippy-root]` stays mounted for the whole fade-out, so the cell keeps its
+   lift until the popup is gone (keying only on aria-expanded would drop it mid-fade). */
+.kw-scroll-table td.kw-col--pin:has([aria-expanded='true']),
+.kw-scroll-table td.kw-col--pin:has([data-tippy-root]) {
+  z-index: 5;
+}
+/* Pinned cells must carry a highlighted row's background, or scrolled cells show through. */
+.kw-scroll-table tr.warning-row td.kw-col--pin {
+  background: var(--w-color-warning-50, #fdf5d8);
+}
+/* Divider at the boundary between the pinned block and the scrolling block. */
+.kw-scroll-table .kw-col--pin-last {
+  box-shadow: inset -1px 0 0 var(--w-color-border-furniture, #d9d9d9);
+}
