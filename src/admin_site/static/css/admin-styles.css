@@ -514,6 +514,13 @@ with Wagtail's styles but so far these are required.
   color: var(--w-color-text-context);
 }
 
+/* A faint line above a sidebar menu item that starts a new group, e.g. "Report templates" in the Reports menu */
+.sidebar-menu-item__link--separated {
+  margin-top: 0.5rem;
+  border-top: 1px solid rgb(255 255 255 / 0.15);
+  padding-top: 0.5rem;
+}
+
 /* Impersonation warning styles */
 /* Style the account menu button with warning background when impersonating */
 .sidebar-footer__account--impersonating {
