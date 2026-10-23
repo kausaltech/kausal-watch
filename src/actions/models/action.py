@@ -115,7 +115,9 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
         if user.is_superuser:
             return self
         person = user.get_corresponding_person()
-        query = Q(responsible_parties__organization__in=user.get_adminable_organizations())
+        # The queryset counterpart of User.can_modify_action(), which also grants organization plan admins rights
+        # only in the plan they were granted for
+        query = Q(pk__in=self.model.objects.get_queryset().user_is_org_admin_for(user).values('pk'))
         if person:
             query |= Q(plan__in=person.general_admin_plans.all())
             query |= Q(contact_persons__person=person)
@@ -145,8 +147,25 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
         return qs
 
     def user_is_org_admin_for(self, user: User, plan: Plan | None = None):
-        plan_admin_orgs = Organization.objects.get_queryset().user_is_plan_admin_for(user, plan)
-        query = Q(responsible_parties__organization__in=plan_admin_orgs) | Q(primary_org__in=plan_admin_orgs)
+        """
+        Filter to actions the user administers by way of being an organization plan admin.
+
+        An `OrganizationPlanAdmin` makes its person an admin of the organization and its descendants in
+        its own plan only, so each one matches only the actions of that plan. Otherwise an organization
+        admin of one plan could edit that organization's actions in every other plan.
+        """
+        person = user.get_corresponding_person()
+        if person is None:
+            return self.none()
+        admins = person.organization_plan_admins.select_related('organization')
+        if plan is not None:
+            admins = admins.filter(plan=plan)
+        query = Q(pk__in=[])  # always false; Q() would match everything
+        for org_admin in admins:
+            org_path = org_admin.organization.path
+            is_responsible = Q(responsible_parties__organization__path__startswith=org_path)
+            is_primary = Q(primary_org__path__startswith=org_path)
+            query |= Q(plan_id=org_admin.plan_id) & (is_responsible | is_primary)
         return self.filter(query).distinct()
 
     def user_has_staff_role_for(self, user: UserOrAnon, plan: Plan | None = None):

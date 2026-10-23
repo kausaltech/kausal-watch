@@ -21,6 +21,7 @@ from actions.models.attributes import AttributeType as AttributeTypeModel
 from actions.tests.factories import (
     ActionContactFactory,
     ActionFactory,
+    ActionResponsiblePartyFactory,
     AttributeTextFactory,
     AttributeTypeFactory,
     CategoryFactory,
@@ -28,7 +29,9 @@ from actions.tests.factories import (
     PlanFactory,
 )
 from images.tests.factories import AplansImageFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 from pages.models import CategoryPage, CategoryTypePage
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -51,6 +54,21 @@ def test_action_query_set_modifiable_by_plan_admin(action, plan_admin_user):
 
 def test_action_query_set_modifiable_by_contact_person(action, action_contact):
     assert action in Action.objects.qs.modifiable_by(action_contact.person.user)
+
+
+@pytest.mark.parametrize('in_own_plan', [True, False])
+def test_action_query_set_modifiable_by_organization_plan_admin(action, in_own_plan):
+    org = OrganizationFactory.create()
+    sub_org = OrganizationFactory.create(parent=org)
+    ActionResponsiblePartyFactory.create(action=action, organization=sub_org)
+    person = PersonFactory.create(organization=org)
+    admin_plan = action.plan if in_own_plan else PlanFactory.create()
+    OrganizationPlanAdminFactory.create(organization=org, person=person, plan=admin_plan)
+    user = person.user
+    assert user is not None
+    # Admins of an organization may modify the actions of its descendants, but only in the plan they were granted for
+    assert (action in Action.objects.qs.modifiable_by(user)) is in_own_plan
+    assert user.can_modify_action(action) is in_own_plan
 
 
 def test_action_query_set_modifiable_by_distinct(action, user, person, action_contact):

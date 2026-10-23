@@ -4,8 +4,11 @@ from typing import Any
 
 import pytest
 
-from actions.perms import _make_organization_tree, calculate_people_with_login_rights
+from actions.perms import _make_organization_tree, calculate_people_with_login_rights, get_people_with_login_rights
+from indicators.models import IndicatorLevel
+from indicators.tests.factories import IndicatorFactory, IndicatorLevelFactory
 from orgs.models import Organization
+from orgs.tests.factories import OrganizationPlanAdminFactory
 from orgs.tests.fixtures import *
 from people.models import Person
 
@@ -33,21 +36,22 @@ def get_org_pk(name: str) -> int:
 
 
 @pytest.fixture
-def test_data(organization_hierarchy):
+def test_data(organization_hierarchy, plan):
     all_orgs = _make_organization_tree(Organization.objects.order_by('path').all())
     return {
         'superusers': {1},
         'general_plan_admins': {2},
         'action_contact_persons': {3},
         'indicator_contact_persons': {4},
-        'responsible_orgs': {get_org_pk('3.1')},
-        'primary_orgs': {get_org_pk('1')},
-        'indicator_orgs': {get_org_pk('2.2.1')},
+        # (org, plan)
+        'responsible_orgs': {(get_org_pk('3.1'), plan.pk)},
+        'primary_orgs': {(get_org_pk('1'), plan.pk)},
+        'indicator_orgs': {(get_org_pk('2.2.1'), plan.pk)},
         'organization_plan_admins': {
-            # (org, person)
-            (get_org_pk('2.1'), 3),
-            (get_org_pk('2.2.1'), 4),
-            (get_org_pk('3'), 5),
+            # (org, person, plan)
+            (get_org_pk('2.1'), 3, plan.pk),
+            (get_org_pk('2.2.1'), 4, plan.pk),
+            (get_org_pk('3'), 5, plan.pk),
         },
         'all_orgs': all_orgs,
     }
@@ -80,14 +84,18 @@ def create_models(  # noqa: C901
             person = person_factory(pk=pk)
             ic = indicator_contact_factory(person=person)
             ic.indicator.plans.set([plan])
-        for pk in test_data['responsible_orgs']:
-            action_responsible_party_factory(organization_id=pk)
-        for pk in test_data['primary_orgs']:
+        for pk, plan_pk in test_data['responsible_orgs']:
+            assert plan_pk == plan.pk
+            action_responsible_party_factory(organization_id=pk, action=action_factory(plan=plan))
+        for pk, plan_pk in test_data['primary_orgs']:
+            assert plan_pk == plan.pk
             action_factory(primary_org_id=pk, plan=plan)
-        for pk in test_data['indicator_orgs']:
+        for pk, plan_pk in test_data['indicator_orgs']:
+            assert plan_pk == plan.pk
             indicator = indicator_factory(organization_id=pk)
             indicator.plans.set([plan])
-        for org_pk, person_pk in test_data['organization_plan_admins']:
+        for org_pk, person_pk, plan_pk in test_data['organization_plan_admins']:
+            assert plan_pk == plan.pk
             if not Person.objects.filter(pk=person_pk).exists():
                 person_factory(pk=person_pk)
             organization_plan_admin_factory(
@@ -173,6 +181,25 @@ def test_organization_plan_admins(test_data):
         all_orgs=test_data['all_orgs'],
     )
     assert result == {1, 4, 5}
+
+
+def test_organization_plan_admins_of_other_plan(test_data):
+    other_plan_pk = max(plan_pk for _, _, plan_pk in test_data['organization_plan_admins']) + 1
+    result = calculate_people_with_login_rights(
+        superusers=test_data['superusers'],
+        general_plan_admins=set(),
+        action_contact_persons=set(),
+        indicator_contact_persons=set(),
+        responsible_orgs=test_data['responsible_orgs'],
+        primary_orgs=test_data['primary_orgs'],
+        indicator_orgs=test_data['indicator_orgs'],
+        # The organizations are used in the plan of the test data, but these admins are for another plan
+        organization_plan_admins={
+            (org_pk, person_pk, other_plan_pk) for org_pk, person_pk, _ in test_data['organization_plan_admins']
+        },
+        all_orgs=test_data['all_orgs'],
+    )
+    assert result == {1}
 
 
 def assert_user_access_matches_result(result: set[int]):
@@ -276,3 +303,20 @@ def test_organization_plan_admins_match_user_can_access_admin(test_data, create_
     )
     result = calculate_people_with_login_rights(**test_data_with_models)
     assert_user_access_matches_result(result)
+
+
+def test_login_rights_follow_the_plans_of_indicators(plan):
+    org_admin = OrganizationPlanAdminFactory.create(plan=plan)
+    indicator = IndicatorFactory.create(organization=org_admin.organization)
+    indicator.plans.clear()
+    get_people_with_login_rights.cache_clear()
+    assert org_admin.person.pk not in get_people_with_login_rights()
+    # The cached result must not survive changes in the plans of an indicator
+    indicator.plans.add(plan)
+    assert org_admin.person.pk in get_people_with_login_rights()
+    indicator.plans.remove(plan)
+    assert org_admin.person.pk not in get_people_with_login_rights()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert org_admin.person.pk in get_people_with_login_rights()
+    IndicatorLevel.objects.filter(indicator=indicator).delete()
+    assert org_admin.person.pk not in get_people_with_login_rights()
