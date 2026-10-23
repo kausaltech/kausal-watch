@@ -27,10 +27,10 @@
         {% if usage.report_count %}
             <div class="help-block help-warning">
                 {% blocktrans trimmed with snapshot_count=usage.snapshot_count count counter=usage.report_count %}
-                    Deleting this report type also permanently deletes its report and the {{ snapshot_count }}
+                    Deleting this report template also permanently deletes its report and the {{ snapshot_count }}
                     action snapshots saved in it.
                 {% plural %}
-                    Deleting this report type also permanently deletes its {{ counter }} reports and the
+                    Deleting this report template also permanently deletes its {{ counter }} reports and the
                     {{ snapshot_count }} action snapshots saved in them.
                 {% endblocktrans %}
             </div>
