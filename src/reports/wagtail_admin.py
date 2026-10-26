@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import quote
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Cast
 from django.shortcuts import redirect
 from django.urls import path, reverse
+from django.utils.formats import date_format
 from django.utils.functional import cached_property
+from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel
-from wagtail.admin.ui.tables import BooleanColumn
+from wagtail.admin.panels import FieldPanel, Panel
+from wagtail.admin.ui.tables import BooleanColumn, Column, StatusTagColumn
 from wagtail.admin.widgets.button import HeaderButton, ListingButton
 from wagtail.snippets.models import register_snippet
 
@@ -17,6 +22,7 @@ from kausal_common.users import user_or_bust
 
 from aplans.utils import append_query_parameter
 
+from actions.models import Action
 from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 
 from .models import Report, ReportType
@@ -25,8 +31,10 @@ from .views import DownloadReportView, MarkReportAsCompleteView
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from datetime import datetime
 
     from django.http import HttpRequest
+    from reversion.models import Revision
     from wagtail.admin.views.generic.base import BreadcrumbItem
 
 
@@ -189,7 +197,17 @@ class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
         return super().get(request, *args, **kwargs)
 
     def get_base_queryset(self):
-        return super().get_base_queryset().filter(type=self.report_type)
+        actions_of_plan = Action.objects.filter(plan=OuterRef('type__plan')).order_by().values('plan').annotate(count=Count('pk'))
+        submitted_action_ids = Cast('action_snapshots__action_version__object_id', output_field=IntegerField())
+        return (
+            super()
+            .get_base_queryset()
+            .filter(type=self.report_type)
+            .annotate(
+                submitted_action_count=Count(submitted_action_ids, distinct=True),
+                action_count=Subquery(actions_of_plan.values('count')),
+            )
+        )
 
     def get_page_title(self):
         return self.report_type.name
@@ -254,6 +272,96 @@ class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
         return buttons
 
 
+def report_date_range(report: Report) -> str:
+    dates = {'start': date_format(report.start_date), 'end': date_format(report.end_date)}
+    return _('%(start)s – %(end)s') % dates  # noqa: RUF001 (a date range takes an en dash)
+
+
+def report_submission_count(report: Report) -> str:
+    """Return how many of its plan's actions have been submitted to a report annotated by `ReportIndexView`."""
+    counts = {'submitted': getattr(report, 'submitted_action_count', 0), 'total': getattr(report, 'action_count', None) or 0}
+    return _('%(submitted)s / %(total)s') % counts
+
+
+@dataclass(frozen=True)
+class ActionSubmission:
+    """An action of a report's plan, and when and by whom it was submitted to the report, if it has been."""
+
+    action: Action
+    contact_persons: str
+    submitted_at: datetime | None = None
+    submitted_by: str | None = None
+    undo_url: str | None = None
+
+
+def get_action_submissions(report: Report, return_url: str) -> list[ActionSubmission]:
+    """
+    Return the actions of the report's plan with their latest submission to it.
+
+    While the report is open, a submission can be undone; the undo confirmation then returns to `return_url`.
+    """
+    latest_revisions: dict[int, Revision] = {}
+    for snapshot in report.action_snapshots.select_related('action_version__revision__user'):
+        revision = snapshot.action_version.revision
+        action_id = int(snapshot.action_version.object_id)
+        latest = latest_revisions.get(action_id)
+        if latest is None or revision.date_created > latest.date_created:
+            latest_revisions[action_id] = revision
+
+    submissions: list[ActionSubmission] = []
+    for action in report.type.plan.actions.prefetch_related('contact_persons__person'):
+        contacts = list(action.contact_persons.all())
+        shown_contacts = [contact for contact in contacts if contact.primary_contact] or contacts
+        contact_persons = ', '.join(str(contact.person) for contact in shown_contacts)
+        revision = latest_revisions.get(action.pk)
+        if revision is None:
+            submissions.append(ActionSubmission(action=action, contact_persons=contact_persons))
+            continue
+        undo_url = None
+        if not report.is_complete:
+            undo_url = reverse(
+                'actions_action_modeladmin_undo_marking_action_as_complete',
+                kwargs={'action_pk': action.pk, 'report_pk': report.pk},
+            )
+            undo_url = f'{undo_url}?{urlencode({"next": return_url})}'
+        user = revision.user
+        submissions.append(
+            ActionSubmission(
+                action=action,
+                contact_persons=contact_persons,
+                submitted_at=revision.date_created,
+                submitted_by=(user.get_full_name() or user.email) if user is not None else None,
+                undo_url=undo_url,
+            )
+        )
+    return submissions
+
+
+class ReportSubmissionsPanel(Panel):
+    """List which actions of the report's plan have been submitted to the report, with undo while it is open."""
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = 'reports/panels/report_submissions_panel.html'
+
+        def is_shown(self):
+            # A report being created has no submissions yet
+            return self.instance is not None and self.instance.pk is not None
+
+        def get_context_data(self, parent_context=None):
+            context = super().get_context_data(parent_context)
+            report = self.instance
+            assert isinstance(report, Report)
+            return_url = reverse('wagtailsnippets_reports_report:edit', args=(quote(report.pk),))
+            submissions = get_action_submissions(report, return_url)
+            submitted_count = sum(1 for submission in submissions if submission.submitted_at is not None)
+            context.update(
+                submissions=submissions,
+                submitted_count=submitted_count,
+                not_submitted_count=len(submissions) - submitted_count,
+            )
+            return context
+
+
 class ReportViewSet(WatchViewSet[Report]):
     model = Report
     # Each report template has its own menu item instead
@@ -261,7 +369,18 @@ class ReportViewSet(WatchViewSet[Report]):
     menu_item_is_registered = True
     icon = 'doc-full'
     url_prefix = 'plan_reports/report'
-    list_display = ['name', BooleanColumn('is_complete'), BooleanColumn('is_public')]
+    list_display = [
+        'name',
+        Column('date_range', label=_('Date range'), accessor=report_date_range),
+        StatusTagColumn(
+            'status',
+            label=_('Status'),
+            accessor=lambda report: _('Complete') if report.is_complete else _('Open'),
+            primary=lambda report: report.is_complete,
+        ),
+        Column('submitted_actions', label=_('Actions submitted'), accessor=report_submission_count),
+        BooleanColumn('is_public'),
+    ]
     index_view_class = ReportIndexView
     add_view_class = ReportCreateView
     edit_view_class = ReportEditView
@@ -277,6 +396,7 @@ class ReportViewSet(WatchViewSet[Report]):
         FieldPanel('end_date'),
         FieldPanel('is_public'),
         FieldPanel('show_in_reporting_tab'),
+        ReportSubmissionsPanel(heading=_('Action submissions')),
     ]
 
     def get_queryset(self, request: HttpRequest):

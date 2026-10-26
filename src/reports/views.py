@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.formats import date_format
 from django.utils.functional import cached_property
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
@@ -115,6 +116,21 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         indicators = self.report.get_indicators_to_freeze().filter(related_actions__action=self.action)
         return list(indicators.select_related('latest_value', 'unit').order_by('name'))
 
+    @cached_property
+    def next_url(self) -> str | None:
+        """Return the page that asked for the confirmation, such as the report's submissions, if it is on this site."""
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}, require_https=self.request.is_secure()
+        ):
+            return next_url
+        return None
+
+    @property
+    def return_url(self) -> str:
+        """Return where to go after confirming or cancelling: the page that asked, or else the action list."""
+        return self.next_url or self.index_url
+
     def has_unpublished_changes(self) -> bool:
         """Return whether the action has changes, e.g. waiting for approval, that the submission leaves out."""
         return bool(self.action.plan.features.enable_moderation_workflow and self.action.has_unpublished_changes)
@@ -136,7 +152,7 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
                 self.action.undo_marking_as_complete_for_report(self.report, self.request.user)
         except ValueError as e:
             messages.error(request, str(e))
-            return redirect(self.index_url)
+            return redirect(self.return_url)
         if self.resubmit:
             msg = _("Action '%(action)s' has been resubmitted to the report '%(report)s'.")
         elif self.complete:
@@ -144,7 +160,7 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         else:
             msg = _("The submission of action '%(action)s' to the report '%(report)s' has been undone.")
         messages.success(request, msg % {'action': self.action, 'report': report_label(self.report)})
-        return redirect(self.index_url)
+        return redirect(self.return_url)
 
 
 class DownloadReportView(BaseObjectMixin[Report], View):

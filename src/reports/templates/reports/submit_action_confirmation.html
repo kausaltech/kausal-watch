@@ -38,6 +38,9 @@
 
         <form action="{{ view.post_url }}" method="POST">
             {% csrf_token %}
+            {% if view.next_url %}
+                <input type="hidden" name="next" value="{{ view.next_url }}" />
+            {% endif %}
             {% if view.resubmit %}
                 <input type="submit" value="{% translate 'Resubmit' %}" class="button button-primary" />
             {% elif view.complete %}
@@ -45,7 +48,7 @@
             {% else %}
                 <input type="submit" value="{% translate 'Undo submission' %}" class="button button-primary" />
             {% endif %}
-            <a href="{{ view.index_url }}" class="button button-secondary">{% translate "Cancel" %}</a>
+            <a href="{{ view.return_url }}" class="button button-secondary">{% translate "Cancel" %}</a>
         </form>
     </div>
 {% endblock %}
