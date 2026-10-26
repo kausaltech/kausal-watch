@@ -64,6 +64,6 @@ def reorder_child_plan_view(request: HttpRequest, parent_pk: int, child_pk: int)
     with transaction.atomic():
         Plan.objects.bulk_update(children, ['order'])
         # Each child plan's site lists its siblings, so their cached responses are stale too
-        for plan in children:
+        for plan in [parent, *children]:
             transaction.on_commit(plan.invalidate_cache)
     return JsonResponse({'success': True})
