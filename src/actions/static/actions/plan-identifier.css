@@ -148,3 +148,55 @@
   width: 1.1em;
   height: 1.1em;
 }
+
+/*
+ * Child plans are indented under their umbrella (see PlanIndexView.order_queryset). A dedicated
+ * gutter column holds the connector glyph (↳), and the name and identifier share the next column
+ * so they stay perfectly aligned with each other; the glyph's left edge lines up with the parent
+ * plan's title. The row-actions column is unaffected so the "..." menu stays flush right. This
+ * grid overrides the two-column one above, so it must come after it.
+ */
+.kw-scroll-table td.title:has(.plan-title--child) {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  grid-template-areas:
+    'connector name actions'
+    'connector identifier actions';
+  align-items: center;
+  column-gap: 0;
+}
+.kw-scroll-table td.title:has(.plan-title--child) .title-wrapper {
+  grid-area: name;
+}
+.kw-scroll-table td.title:has(.plan-title--child) .plan-identifier {
+  grid-area: identifier;
+}
+.kw-scroll-table td.title:has(.plan-title--child) .actions {
+  grid-area: actions;
+  align-self: center;
+}
+.plan-title--child {
+  grid-area: connector;
+  align-self: center;
+  color: var(--w-color-text-meta, #5c5c5c);
+}
+
+/*
+ * Banner shown above the Plans listing when an explicit column sort suspends the family grouping,
+ * with a link back to the grouped default (see PlanIndexView.get_context_data).
+ */
+.plan-sort-active {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  background: var(--w-color-surface-info, #e9f0f6);
+  color: var(--w-color-text-context, #2d2d2d);
+  font-size: 0.875em;
+}
+.plan-sort-active__label {
+  font-weight: 600;
+}

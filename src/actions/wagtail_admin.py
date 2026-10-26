@@ -8,7 +8,8 @@ from django import forms
 from django.contrib.admin.utils import quote
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import F, Max, ProtectedError, Window
+from django.db.models.functions import Coalesce
 from django.shortcuts import redirect
 from django.urls import path, re_path, reverse
 from django.utils import timezone
@@ -974,6 +975,17 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         # Pin the name column (with its identifier and hamburger menu) to the left (see
         # scrollable-table.css); the Plans column widths/offsets live in plan-identifier.css.
         column.classname = 'kw-col kw-col--pin kw-col-plan-name'
+        # The child-row indent/connector only makes sense while the family grouping is in effect;
+        # under an explicit column sort the rows are flat, so tell the cell template to drop it.
+        grouping_active = not self.is_explicitly_ordered
+        original_get_cell_context_data = column.get_cell_context_data
+
+        def get_cell_context_data(instance: Plan, parent_context):  # noqa: ANN202
+            data = original_get_cell_context_data(instance, parent_context)
+            data['grouping_active'] = grouping_active
+            return data
+
+        column.get_cell_context_data = get_cell_context_data
         return column
 
     # Low-priority columns that scroll; each gets a fixed narrow width.
@@ -989,6 +1001,46 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
             if col.name in self._NARROW_COLUMNS:
                 col.classname = 'kw-col kw-col-plan-narrow'
         return cols
+
+    def _ordering_label(self) -> str:
+        key = str(self.ordering).lstrip('-')
+        for col in self.columns:
+            if getattr(col, 'sort_key', None) == key:
+                return str(col.label or key)
+        return key
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        # When an explicit column sort is active, the family grouping is suspended. Surface that
+        # with a banner and a link back to the grouped (un-ordered) default, since clicking a
+        # column header only toggles its direction and never clears the sort.
+        context['sort_is_active'] = bool(self.is_explicitly_ordered and self.ordering)
+        if context['sort_is_active']:
+            context['sort_label'] = self._ordering_label()
+            context['sort_descending'] = str(self.ordering).startswith('-')
+            params = self.request.GET.copy()
+            params.pop('ordering', None)
+            query = params.urlencode()
+            context['clear_sort_url'] = self.request.path + (f'?{query}' if query else '')
+        return context
+
+    def order_queryset(self, queryset: PlanQuerySet) -> PlanQuerySet:
+        # When the user picks a column to sort by, honour it (and opt out of the family grouping).
+        if self.is_explicitly_ordered:
+            return super().order_queryset(queryset)
+        # Otherwise group umbrella families and show the newest first: each child sits directly
+        # under its umbrella (parent), families are ranked by the latest creation time of any plan
+        # in the family (so a family with a fresh child rises to the top), and within a family the
+        # umbrella comes first (null parent), then its children newest-first. Grouping relies on
+        # the practical one-level umbrella -> children hierarchy; a deeper descendant groups under
+        # its immediate parent. See also Plan.get_all_related_plans, which traverses the same one
+        # level.
+        qs = queryset.annotate(_family_key=Coalesce('parent_id', 'id'))
+        qs = qs.annotate(_family_latest=Window(Max('created_at'), partition_by=[F('_family_key')]))
+        # django-stubs can't resolve the window-annotation alias in order_by.
+        return qs.order_by(  # type: ignore[misc]
+            '-_family_latest', '_family_key', F('parent_id').asc(nulls_first=True), '-created_at',
+        )
 
     def get_publish_url(self, instance: Plan) -> str:
         return reverse(self.publish_url_name, kwargs={'pk': quote(instance.pk)})
@@ -1242,12 +1294,15 @@ class PlanViewSet(SnippetViewSet[Plan]):
         'name',
         LiveStateColumn(classname='kw-col kw-col--pin kw-col--pin-last kw-col-plan-status'),
         'version_name',
-        'parent',
         'organization',
         'clients_as_string',
+        # Parent is conveyed by the family grouping and the child-row indent, so it is the
+        # least-important column and sits last in the scrolling block.
+        'parent',
     ]
     filterset_class = PlanFilter
     list_per_page = None  # disable pagination
+    index_template_name = 'aplans/plan_index.html'
     index_view_class = PlanIndexView
     # Wrap the listing table in the reusable horizontally scrollable container with pinned left
     # columns. This must be set on the ViewSet (not the view): the snippet machinery otherwise

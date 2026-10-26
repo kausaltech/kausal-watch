@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import typing
+from datetime import timedelta
 from unittest.mock import Mock
 
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from django.utils import timezone
 from wagtail.models import Locale
 
 import pytest
@@ -227,6 +229,98 @@ def test_currently_active_plan_is_marked(superuser, client):
     assert response.status_code == 200
     # Exactly one row (the currently active admin plan) carries the active-plan marker.
     assertContains(response, 'is-active-plan', count=1)
+
+
+def _marker_positions(response, *identifiers):
+    html = response.content.decode()
+    return [html.index(f'data-copy-identifier="{ident}"') for ident in identifiers]
+
+
+def _set_created_at(plan, when):
+    # created_at is auto_now_add, so set it explicitly with an update() that bypasses it.
+    from actions.models import Plan
+
+    Plan.objects.filter(pk=plan.pk).update(created_at=when)
+
+
+def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
+    # Creation times are chosen so the grouping is distinguishable from a plain created-at sort.
+    # A family is ranked by the latest creation time of any plan in it: the umbrella's family wins
+    # because its newest child is the newest plan overall, even though the umbrella itself is the
+    # oldest. Within the family the umbrella comes first, then children newest-first. Expected
+    # order: umbrella, child-newer, child-older, standalone.
+    now = timezone.now()
+    umbrella = PlanFactory.create(name='Umbrella', identifier='grp-umbrella')
+    child_newer = PlanFactory.create(name='Child newer', identifier='grp-child-new', parent=umbrella)
+    child_older = PlanFactory.create(name='Child older', identifier='grp-child-old', parent=umbrella)
+    standalone = PlanFactory.create(name='Standalone', identifier='grp-standalone')
+    _set_created_at(umbrella, now - timedelta(days=4))
+    _set_created_at(child_older, now - timedelta(days=3))
+    _set_created_at(standalone, now - timedelta(days=2))
+    _set_created_at(child_newer, now - timedelta(days=1))
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+
+    umb, new_child, old_child, alone = _marker_positions(
+        response, 'grp-umbrella', 'grp-child-new', 'grp-child-old', 'grp-standalone',
+    )
+    # The family block is contiguous and ranked above the standalone (its newest child is newest
+    # overall); the umbrella leads, then children newest-first.
+    assert umb < new_child < old_child < alone
+
+
+def test_plan_listing_explicit_sort_bypasses_family_grouping(superuser, client):
+    umbrella = PlanFactory.create(name='M umbrella', identifier='grp-umbrella')
+    PlanFactory.create(name='A child', identifier='grp-child-a', parent=umbrella)
+    PlanFactory.create(name='B child', identifier='grp-child-b', parent=umbrella)
+    PlanFactory.create(name='A standalone', identifier='grp-standalone')
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    # An explicit column sort opts out of grouping: by name the rows go a-child, a-standalone,
+    # b-child, m-umbrella -> the standalone falls *between* the two children, which family
+    # grouping would never allow.
+    response = client.get(index_url, {'ordering': 'name'})
+    assert response.status_code == 200
+
+    child_a, standalone, child_b = _marker_positions(
+        response, 'grp-child-a', 'grp-standalone', 'grp-child-b',
+    )
+    assert child_a < standalone < child_b
+
+
+def test_child_plan_row_is_marked_as_child(superuser, client):
+    # Only the child row carries the child marker; the umbrella and an unrelated standalone do not.
+    umbrella = PlanFactory.create(name='Umbrella', identifier='ind-umbrella')
+    PlanFactory.create(name='Child', identifier='ind-child', parent=umbrella)
+    PlanFactory.create(name='Standalone', identifier='ind-standalone')
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    assertContains(response, 'plan-title--child', count=1)
+    # No explicit sort, so no sort banner.
+    assertNotContains(response, 'plan-sort-active')
+
+
+def test_explicit_sort_hides_child_markers_and_shows_clear_sort(superuser, client):
+    umbrella = PlanFactory.create(name='Umbrella', identifier='srt-umbrella')
+    PlanFactory.create(name='Child', identifier='srt-child', parent=umbrella)
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url, {'ordering': 'name'})
+    assert response.status_code == 200
+    # Grouping is off under an explicit sort, so the child indent/arrow is gone...
+    assertNotContains(response, 'plan-title--child')
+    # ...and a sort banner offers a link back to the grouped (un-ordered) default.
+    assertContains(response, 'plan-sort-active')
+    assertContains(response, 'plan-sort-clear')
+    assertContains(response, f'href="{index_url}"')
 
 
 def test_plan_listing_shows_site_status_before_version_name(superuser, client):

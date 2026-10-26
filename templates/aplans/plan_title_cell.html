@@ -2,6 +2,12 @@
 {% load wagtailadmin_tags i18n %}
 
 {% block extra %}
+    {% comment %}
+    Child plans (those with a parent/umbrella) are indented under their umbrella in the grouped
+    listing; the connector glyph sits in a dedicated grid gutter column so the name and identifier
+    share one column and stay aligned. Styling lives in actions/plan-identifier.css.
+    {% endcomment %}
+    {% if instance.parent_id and grouping_active %}<span class="plan-title--child" aria-hidden="true">↳</span>{% endif %}
     {% if instance.identifier %}
         <div class="plan-identifier">
             <span class="plan-identifier__value">{{ instance.identifier }}</span>
