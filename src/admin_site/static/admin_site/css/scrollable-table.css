@@ -31,12 +31,14 @@
   scrollbar-color: var(--w-color-border-furniture, #c7c7c7) transparent;
 }
 
-/* `--fill` opt-in: bound the table to the viewport so its horizontal scrollbar and sticky
-   header stay on screen for long listings, instead of pushing them below the fold. The JS sets
-   the exact max-height; this calc is the pre-JS fallback. Views without `--fill` keep normal
-   page flow and the footer. */
+/* `--fill` opt-in: fill the table to the viewport so its horizontal scrollbar and sticky
+   header stay on screen for long listings, instead of pushing them below the fold. We fill the
+   region (set `height`, not just a cap) so a short listing also keeps empty space below its last
+   row, leaving room for the row-actions dropdown to open downward inside the overflow container
+   rather than being clipped. The JS sets the exact height; this calc is the pre-JS fallback.
+   Views without `--fill` keep normal page flow and the footer. */
 .kw-scroll-table--fill {
-  max-height: calc(100vh - 13rem);
+  height: calc(100vh - 13rem);
 }
 /* A `--fill` listing uses the whole content area, so drop the content area's bottom "footer"
    padding and its min-height: 100% stretch, which would otherwise leave empty space below the

@@ -38,9 +38,13 @@
     var rect = el.getBoundingClientRect();
     // Fill from the container's top down to the bottom of the viewport. The admin content area
     // is already pinned to the viewport height, so this does not make the window scroll; it just
-    // stops the table short of the very edge.
+    // stops the table short of the very edge. We set `height` (not `max-height`) so the region
+    // fills even when there are few rows: a short listing then keeps empty space below its last
+    // row, giving the row-actions dropdown (a popup appended inside the overflow container) room
+    // to open downward instead of being clipped. With `overflow: auto`, a longer table still
+    // scrolls inside this height exactly as a cap would.
     var avail = window.innerHeight - rect.top - BOTTOM_GAP;
-    el.style.maxHeight = Math.max(avail, MIN_HEIGHT) + 'px';
+    el.style.height = Math.max(avail, MIN_HEIGHT) + 'px';
   }
 
   function sizeAll() {
