@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import quote
@@ -11,7 +11,7 @@ from django.urls import path, reverse
 from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel, Panel
+from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList, Panel, TabbedInterface
 from wagtail.admin.ui.tables import BooleanColumn, Column, StatusTagColumn
 from wagtail.admin.widgets.button import HeaderButton, ListingButton
 from wagtail.snippets.models import register_snippet
@@ -21,10 +21,17 @@ from kausal_common.users import user_or_bust
 from aplans.utils import append_query_parameter
 
 from actions.models import Action
+from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 
 from .models import Report, ReportType
 from .submissions import get_action_submissions
+from .template_editor import (
+    CreateReportingFieldView,
+    ReportTemplateFieldsFormField,
+    ReportTemplateFieldsPanel,
+    report_template_editor_available,
+)
 from .usage import get_report_type_usage
 from .utils import get_field_unique_key
 from .views import DownloadReportView, MarkReportAsCompleteView
@@ -59,6 +66,18 @@ class ReportTypeDeleteView(WatchDeleteView[ReportType]):
         return super().post(request, *args, **kwargs)
 
 
+class ReportTypeForm(WatchAdminModelForm[ReportType]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        plan = self.plan or getattr(self.instance, 'plan', None)
+        if report_template_editor_available() and plan is not None and 'fields' in self.fields:
+            stream_block = ReportType._meta.get_field('fields').stream_block
+            self.fields['fields'] = ReportTemplateFieldsFormField(stream_block, plan, required=False)
+            # Data without the fields, e.g. from a form that doesn't show them, keeps the stored ones
+            if self.is_bound and 'fields' not in self.data:
+                self.fields['fields'].disabled = True
+
+
 class ReportTypeViewSet(WatchViewSet[ReportType]):
     model = ReportType
     # Listed at the end of the Reports menu (see admin_site.wagtail_hooks.ReportMenu) instead of a menu of its own
@@ -70,15 +89,34 @@ class ReportTypeViewSet(WatchViewSet[ReportType]):
     bulk_delete_enabled = False
     delete_template_name = 'reports/report_type_delete.html'
 
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('only_plan_admins_can_mark_actions_as_complete'),
-        FieldPanel('fields', heading=_('fields')),
-    ]
+    def get_edit_handler(self):
+        details = [
+            FieldPanel('name'),
+            FieldPanel('description'),
+            MultiFieldPanel(
+                [FieldPanel('only_plan_admins_can_mark_actions_as_complete')],
+                heading=_('Permissions'),
+            ),
+        ]
+        if report_template_editor_available():
+            fields = [ReportTemplateFieldsPanel('fields', heading=_('Fields'))]
+        else:
+            fields = [FieldPanel('fields', heading=_('Fields'))]
+        tabs = [
+            ObjectList(details, heading=_('Details')),
+            ObjectList(fields, heading=_('Fields')),
+        ]
+        return TabbedInterface[ReportType, Any](tabs, base_form_class=ReportTypeForm).bind_to_model(ReportType)
 
     def get_queryset(self, request: HttpRequest):
         plan = user_or_bust(request.user).get_active_admin_plan()
         return ReportType.objects.filter(plan=plan)
+
+    def get_urlpatterns(self):
+        return [
+            *super().get_urlpatterns(),
+            path('reporting-fields/new/', CreateReportingFieldView.as_view(), name='create_reporting_field'),
+        ]
 
 
 register_snippet(ReportTypeViewSet)
