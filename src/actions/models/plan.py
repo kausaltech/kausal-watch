@@ -18,7 +18,7 @@ from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count, Min, Q
+from django.db.models import Count, F, Min, Q
 from django.db.models.aggregates import Max
 from django.db.models.functions import Cast, Length, Substr
 from django.utils import timezone, translation
@@ -244,6 +244,10 @@ class PlanQuerySet(PermissionedQuerySet['Plan'], MultilingualQuerySet['Plan']):
         staff_actions = Action.objects.get_queryset().user_has_staff_role_for(user).values_list('plan').distinct()
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
+
+    def in_hierarchy_order(self) -> Self:
+        """Order top-level plans first and children in their manual order, then by creation time."""
+        return self.order_by(F('parent_id').asc(nulls_first=True), F('order').asc(nulls_last=True), 'created_at')
 
     def visible_for_user(self, user: UserOrAnon | None) -> PlanQuerySet:
         """Filter by visibility using permission policy."""
@@ -545,6 +549,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         related_name='children',
         on_delete=models.SET_NULL,
     )
+    order = models.PositiveIntegerField(null=True, blank=True, editable=False)
     common_category_types: M2M[CommonCategoryType] = models.ManyToManyField(
         'actions.CommonCategoryType',
         blank=True,

@@ -749,11 +749,11 @@ class PlanNode(DjangoNode[Plan]):
         # NOTE: The previous select_related=('parent',) optimizer hint was removed
         # because it conflicts with graphene-django-optimizer's field deferral when
         # the client doesn't also request `parent` on the same Plan type.
-        return root.get_all_related_plans().visible_for_user(info.context.user)
+        return root.get_all_related_plans().in_hierarchy_order().visible_for_user(info.context.user)
 
     @staticmethod
     def resolve_children(root: Plan, info: GQLInfo) -> PlanQuerySet:
-        qs = Plan.objects.qs.filter(parent=root)
+        qs = Plan.objects.qs.filter(parent=root).in_hierarchy_order()
         return qs.visible_for_user(info.context.user)
 
     @staticmethod
