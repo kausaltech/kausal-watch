@@ -886,28 +886,37 @@ class LiveStateColumn(Column):
         }
         context['status_class'] = status_class_map[state]
         context['status_label'] = state.label
-        # A live plan that is still internal is the unusual one, so name it wherever plans are
-        # listed rather than leaving it to be discovered on the edit page.
-        context['visibility_label'] = (
-            instance.get_visibility_display()
-            if instance.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
-            else None
-        )
-
+        # The internal-visibility marker lives in the leftmost plan-flags column (a key icon),
+        # not here; see PlanFlagsColumn.
         context['tooltip'] = tooltip
         return context
 
 
-class InactiveWarningColumn(Column):
+class PlanFlagsColumn(Column):
+    """
+    Leftmost pinned column that flags special plans with small stacked icons.
+
+    Shows a warning icon for inactive plans and a key icon for internal-visibility plans, and
+    marks the row of the currently active admin plan (the CSS draws its arrow and highlight).
+    """
+
     cell_template_name = 'aplans/warning_cell.html'
 
-    def __init__(self, name: str = 'inactive_warning', **kwargs):
+    def __init__(self, name: str = 'plan_flags', **kwargs):
         super().__init__(name, label='', **kwargs)
 
     def get_cell_context_data(self, instance: Plan, parent_context):
         context = super().get_cell_context_data(instance, parent_context)
-        context['show_warning'] = not instance.is_active
-        context['tooltip'] = str(_('This plan is inactive and only visible to superusers.'))
+        request = parent_context.get('request')
+        active_plan = request.user.get_active_admin_plan(required=False) if request else None
+        context['is_inactive'] = not instance.is_active
+        context['is_internal'] = instance.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
+        context['is_active_plan'] = active_plan is not None and instance == active_plan
+        context['inactive_tooltip'] = str(
+            _('This plan is inactive and only visible to superusers.'),
+        )
+        context['internal_tooltip'] = str(_('This plan is internal: only signed-in users may read it.'))
+        context['active_plan_tooltip'] = str(_('This is the plan you are currently editing.'))
         return context
 
 
@@ -926,10 +935,8 @@ class PlanTable(Table):
             'actions/plan-identifier-copy.js',
         )
 
-    def get_row_classname(self, instance: Plan) -> str:
-        if not instance.is_active:
-            return 'warning-row'
-        return ''
+    # Row highlighting (inactive / active plan) is driven by the state classes the plan-flags
+    # cell renders, via CSS `tr:has(...)` — see actions/plan-identifier.css.
 
 
 class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
@@ -975,9 +982,9 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
     @cached_property
     def columns(self):  # type: ignore[override]
         cols = [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
-        # The warning column is the leftmost pinned column; tag it so it stays visible while the
-        # low-priority columns scroll under the pinned block.
-        cols.insert(0, InactiveWarningColumn(classname='kw-col kw-col--pin kw-col-plan-warning'))
+        # The plan-flags column is the leftmost pinned column; tag it so it stays visible while
+        # the low-priority columns scroll under the pinned block.
+        cols.insert(0, PlanFlagsColumn(classname='kw-col kw-col--pin kw-col-plan-warning'))
         for col in cols:
             if col.name in self._NARROW_COLUMNS:
                 col.classname = 'kw-col kw-col-plan-narrow'

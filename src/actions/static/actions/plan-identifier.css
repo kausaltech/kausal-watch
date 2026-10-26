@@ -38,6 +38,57 @@
 }
 
 /*
+ * Plan flags column: stacked small icons for special plans, plus the currently-active-plan
+ * arrow/border. State classes (is-inactive / is-internal / is-active-plan) are set on the cell
+ * by templates/aplans/warning_cell.html.
+ */
+.kw-scroll-table .kw-col-plan-warning .plan-flags {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+}
+.kw-scroll-table .kw-col-plan-warning .plan-flag {
+  display: inline-flex;
+  line-height: 0;
+}
+.kw-scroll-table .kw-col-plan-warning .plan-flag .icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+.kw-scroll-table .kw-col-plan-warning .plan-flag--inactive {
+  color: var(--w-color-text-warning, #8f5a00);
+}
+.kw-scroll-table .kw-col-plan-warning .plan-flag--internal {
+  color: var(--w-color-text-meta, #5c5c5c);
+}
+
+/* Inactive plans look greyed-out and ghostly — faded and desaturated, as if nearly deleted. The
+   cell *contents* are dimmed (not the cell boxes), so the opaque pinned cells still hide the
+   horizontally-scrolled content behind them. A faint grey wash reinforces the fade. */
+.kw-scroll-table tbody tr:has(td.kw-col-plan-warning.is-inactive) {
+  --kw-row-bg: color-mix(in srgb, var(--w-color-grey-400, #808080) 7%, transparent);
+}
+.kw-scroll-table tbody tr:has(td.kw-col-plan-warning.is-inactive) td > * {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+/* Currently active plan: a faint full-row teal wash (set --kw-row-bg; scrollable-table.css spans
+   it across the whole row and composites it over the surface on the pinned cells). */
+.kw-scroll-table
+  tbody
+  tr:has(td.kw-col-plan-warning.is-active-plan):not(:has(td.kw-col-plan-warning.is-inactive)) {
+  --kw-row-bg: color-mix(in srgb, var(--w-color-primary, #2e7d6f) 7%, transparent);
+}
+
+/* Currently active plan: a teal left border on the pinned status cell (which sits against the
+   sidebar because the cell is sticky at left:0) plus the subtle teal row tint above. */
+.kw-scroll-table td.kw-col-plan-warning.is-active-plan {
+  box-shadow: inset 0.1875rem 0 0 var(--w-color-primary, #2e7d6f);
+}
+
+/*
  * Lay the title cell out as a two-row grid so the identifier drops onto its own
  * line under the plan name, while the row actions (the "..." menu) span both
  * rows and stay vertically centred against them.

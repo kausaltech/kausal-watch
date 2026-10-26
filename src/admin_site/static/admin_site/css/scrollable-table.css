@@ -92,13 +92,23 @@
   background: var(--w-color-surface-page, #fff);
 }
 
-/* Pinned columns: sticky to the scroller's left edge. Each sets its own --kw-pin-left. */
+/* Row tint. A tinted row sets `--kw-row-bg` (may be semi-transparent); it covers the whole row
+   because non-pinned cells are transparent and show this through. */
+.kw-scroll-table tbody tr {
+  background: var(--kw-row-bg, transparent);
+}
+
+/* Pinned columns: sticky to the scroller's left edge. Each sets its own --kw-pin-left. The cell
+   must stay opaque (or horizontally-scrolled cells show through it), so it paints the page
+   surface and composites the row tint on top via a gradient — matching the (possibly
+   semi-transparent) tint the non-pinned cells show over the page. */
 .kw-scroll-table th.kw-col--pin,
 .kw-scroll-table td.kw-col--pin {
   position: sticky;
   left: var(--kw-pin-left, 0);
   z-index: 2;
-  background: var(--w-color-surface-page, #fff);
+  background-color: var(--w-color-surface-page, #fff);
+  background-image: linear-gradient(var(--kw-row-bg, transparent), var(--kw-row-bg, transparent));
 }
 /* The header's pinned cells are the corner (sticky on both axes): above header and body. */
 .kw-scroll-table thead th.kw-col--pin {
@@ -112,10 +122,6 @@
 .kw-scroll-table td.kw-col--pin:has([aria-expanded='true']),
 .kw-scroll-table td.kw-col--pin:has([data-tippy-root]) {
   z-index: 5;
-}
-/* Pinned cells must carry a highlighted row's background, or scrolled cells show through. */
-.kw-scroll-table tr.warning-row td.kw-col--pin {
-  background: var(--w-color-warning-50, #fdf5d8);
 }
 /* Divider at the boundary between the pinned block and the scrolling block. */
 .kw-scroll-table .kw-col--pin-last {

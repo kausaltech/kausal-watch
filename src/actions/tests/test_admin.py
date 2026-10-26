@@ -181,12 +181,52 @@ def test_inactive_plan_hidden_by_default_but_flagged_when_shown(superuser, clien
     assertNotContains(default_response, row_marker)
 
     # When inactive plans are included (via the Active status filter), the row is flagged with
-    # the warning-row styling and the inactive warning icon.
+    # the inactive state class and the warning icon.
     response = client.get(index_url, {'is_active': 'inactive'})
     assert response.status_code == 200
     assertContains(response, row_marker)
-    assertContains(response, 'warning-row')
+    assertContains(response, 'is-inactive')
     assertContains(response, 'icon-warning')
+
+
+def test_internal_plan_flagged_with_key_icon_not_site_status_text(superuser, client):
+    PlanFactory.create(
+        visibility='internal',
+        identifier='uniq-internal-plan',
+    )
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    assertContains(response, 'data-copy-identifier="uniq-internal-plan"')
+    # Internal plans are flagged with a key icon in the plan-flags column...
+    assertContains(response, 'is-internal')
+    assertContains(response, 'plan-flag--internal')
+    # ...and no longer with an "Internal" text badge in the Site status column.
+    assertNotContains(response, '<span class="w-status">Internal</span>')
+
+
+def test_public_plan_not_flagged_internal(superuser, client):
+    PlanFactory.create(visibility='public', identifier='uniq-public-plan')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    assertContains(response, 'data-copy-identifier="uniq-public-plan"')
+    assertNotContains(response, 'plan-flag--internal')
+
+
+def test_currently_active_plan_is_marked(superuser, client):
+    active = PlanFactory.create(identifier='uniq-active-plan')
+    PlanFactory.create(identifier='uniq-other-plan')
+    superuser.selected_admin_plan = active
+    superuser.save(update_fields=['selected_admin_plan'])
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    # Exactly one row (the currently active admin plan) carries the active-plan marker.
+    assertContains(response, 'is-active-plan', count=1)
 
 
 def test_plan_listing_shows_site_status_before_version_name(superuser, client):
