@@ -14,7 +14,3 @@ class DocumentsConfig(AppConfig):
         from aplans.media_cleanup import ensure_file_cleanup_guard_installed
 
         ensure_file_cleanup_guard_installed()
-
-        import wagtail.documents.wagtail_hooks  # noqa: F401
-
-        from .rich_text import DocumentLinkHandler  # noqa: F401
