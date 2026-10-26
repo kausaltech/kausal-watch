@@ -1604,6 +1604,7 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                 ]
             else:
                 submitted_on = date_format(timezone.localtime(submitted_at), 'SHORT_DATE_FORMAT')
+                # Undoing a submission is offered in the report's list of submissions instead
                 report_buttons = [
                     ListingButton(
                         _('Resubmit for %(report)s (submitted %(date)s)')
@@ -1614,12 +1615,6 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                             'title': _('Replace the submission of this action to the report %s with its current data')
                             % report_label(report),
                         },
-                    ),
-                    ListingButton(
-                        _('Undo submission for %s') % report_label(report),
-                        url=reverse(self.get_url_name('undo_marking_action_as_complete'), args=args),
-                        icon_name='fontawesome-rotate-left',
-                        attrs={'title': _('Undo submitting this action to the report %s') % report_label(report)},
                     ),
                 ]
             for button in report_buttons:
