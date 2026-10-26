@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from django.utils.html import escape
-from wagtail import hooks
 from wagtail.documents.rich_text import DocumentLinkHandler as WagtailDocumentLinkHandler
 
 if TYPE_CHECKING:
@@ -25,10 +24,3 @@ class DocumentLinkHandler(WagtailDocumentLinkHandler):
     def expand_db_attributes_many(cls, attrs_list: list[dict]) -> list[str]:
         ret = [cls.expand_one(cast('AplansDocument', doc)) if doc else '<a>' for doc in cls.get_many(attrs_list)]
         return ret
-
-
-def register_document_feature(features):
-    features.register_link_type(DocumentLinkHandler)
-
-
-hooks.register('register_rich_text_features', register_document_feature)
