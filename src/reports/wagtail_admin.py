@@ -11,7 +11,7 @@ from django.urls import path, reverse
 from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, Panel
+from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel, Panel
 from wagtail.admin.ui.tables import BooleanColumn, Column, StatusTagColumn
 from wagtail.admin.widgets.button import HeaderButton, ListingButton
 from wagtail.snippets.models import register_snippet
@@ -26,6 +26,7 @@ from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView,
 from .models import Report, ReportType
 from .submissions import get_action_submissions
 from .usage import get_report_type_usage
+from .utils import get_field_unique_key
 from .views import DownloadReportView, MarkReportAsCompleteView
 
 if TYPE_CHECKING:
@@ -280,6 +281,39 @@ def report_submission_count(report: Report) -> str:
     return _('%(submitted)s / %(total)s') % counts
 
 
+def report_template_field_labels(report_type: ReportType) -> list[str]:
+    """Name the fields of a report template as its spreadsheet export heads their columns, leaving out the same ones."""
+    labels: list[str] = []
+    seen_field_keys: set[str] = set()
+    for field in report_type.fields:
+        # A field whose attribute type has been deleted has nothing to name
+        if field is None or field.value is None or ('attribute_type' in field.value and field.value['attribute_type'] is None):
+            continue
+        field_key = get_field_unique_key(field)
+        if field_key in seen_field_keys:
+            continue
+        seen_field_keys.add(field_key)
+        labels.append(', '.join(field.block.xlsx_column_labels(field.value, plan=report_type.plan)))
+    return labels
+
+
+class ReportTemplatePanel(Panel):
+    """Show which template a report is made from and the fields it captures."""
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = 'reports/panels/report_template_panel.html'
+
+        def is_shown(self):
+            return self.instance is not None and getattr(self.instance, 'type_id', None) is not None
+
+        def get_context_data(self, parent_context=None):
+            context = super().get_context_data(parent_context)
+            report = self.instance
+            assert isinstance(report, Report)
+            context.update(report_type=report.type, field_labels=report_template_field_labels(report.type))
+            return context
+
+
 class ReportSubmissionsPanel(Panel):
     """List which actions of the report's plan have been submitted to the report, with undo while it is open."""
 
@@ -334,11 +368,26 @@ class ReportViewSet(WatchViewSet[Report]):
     undo_marking_as_complete_url_name = 'undo_marking_report_as_complete'
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('start_date'),
-        FieldPanel('end_date'),
-        FieldPanel('is_public'),
-        FieldPanel('show_in_reporting_tab'),
+        ReportTemplatePanel(heading=_('Report template')),
+        MultiFieldPanel(
+            [
+                FieldPanel('name'),
+                FieldRowPanel(
+                    [FieldPanel('start_date'), FieldPanel('end_date')],
+                    heading=_('Date range'),
+                    help_text=_('The period during which action data for this report is collected.'),
+                ),
+            ],
+            heading=_('Report details'),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel('show_in_reporting_tab'),
+                # Replaced by choosing the reports in the report comparison block (plan 3, Phase C)
+                FieldPanel('is_public'),
+            ],
+            heading=_('Visibility'),
+        ),
         ReportSubmissionsPanel(heading=_('Action submissions')),
     ]
 

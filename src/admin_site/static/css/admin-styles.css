@@ -521,6 +521,12 @@ with Wagtail's styles but so far these are required.
   padding-top: 0.5rem;
 }
 
+/* The fields of a report's template, listed on the report's form */
+.report-template-fields {
+  list-style: disc;
+  padding-inline-start: 1.25rem;
+}
+
 /* Impersonation warning styles */
 /* Style the account menu button with warning background when impersonating */
 .sidebar-footer__account--impersonating {
