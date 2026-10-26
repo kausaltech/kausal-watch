@@ -1354,12 +1354,10 @@ class Action(
 
         self._check_report_open_for_action(report)
         if self.is_complete_for_report(report):
-            raise ValueError(_('The action is already marked as complete for report %s.') % report)
+            raise ValueError(_('The action has already been submitted to the report %s.') % report)
         with reversion.create_revision():
             reversion.add_to_revision(self)
-            reversion.set_comment(
-                _("Marked action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report}
-            )
+            reversion.set_comment(_("Submitted action '%(action)s' to report '%(report)s'") % {'action': self, 'report': report})
             reversion.set_user(user)
         ActionSnapshot.for_action(
             report=report,
@@ -1377,11 +1375,11 @@ class Action(
         )
         num_snapshots = snapshots.count()
         if num_snapshots != 1:
-            raise ValueError(_('Cannot undo marking action as complete as there are %s snapshots') % num_snapshots)
+            raise ValueError(_('Cannot undo the submission as the action has %s snapshots for the report') % num_snapshots)
         with reversion.create_revision():
             reversion.add_to_revision(self)
             reversion.set_comment(
-                _("Undid marking action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report}
+                _("Undid submitting action '%(action)s' to report '%(report)s'") % {'action': self, 'report': report}
             )
             reversion.set_user(user)
         snapshots.delete()
