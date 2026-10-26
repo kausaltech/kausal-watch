@@ -1,0 +1,4 @@
+{% load wagtailadmin_tags %}
+{% include "wagtailadmin/panels/field_panel.html" %}
+<script type="module" src="{% versioned_static 'kausal_watch_extensions/report-template-editor.js' %}"></script>
+{% include "kausal_watch_extensions/react_wagtail_render_react_component.html" with query_selector=editor_selector component_extra_args=editor_props_id %}
