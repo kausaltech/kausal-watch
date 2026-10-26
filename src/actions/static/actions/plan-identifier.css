@@ -38,9 +38,10 @@
 }
 
 /*
- * Plan flags column: stacked small icons for special plans, plus the currently-active-plan
- * arrow/border. State classes (is-inactive / is-internal / is-active-plan) are set on the cell
- * by templates/aplans/warning_cell.html.
+ * Plan flags column: a small warning icon for inactive plans, plus the currently-active-plan
+ * arrow/border. State classes (is-inactive / is-active-plan) are set on the cell by
+ * templates/aplans/warning_cell.html. (The internal-visibility key icon sits next to the
+ * site-status badge instead — see .plan-status-internal below.)
  */
 .kw-scroll-table .kw-col-plan-warning .plan-flags {
   display: inline-flex;
@@ -59,8 +60,24 @@
 .kw-scroll-table .kw-col-plan-warning .plan-flag--inactive {
   color: var(--w-color-text-warning, #8f5a00);
 }
-.kw-scroll-table .kw-col-plan-warning .plan-flag--internal {
+
+/*
+ * Internal-visibility marker: a small key icon beside the site-status badge (see
+ * plan_publication_status_cell.html).
+ */
+.plan-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+.plan-status-internal {
+  display: inline-flex;
+  line-height: 0;
   color: var(--w-color-text-meta, #5c5c5c);
+}
+.plan-status-internal .icon {
+  width: 0.9em;
+  height: 0.9em;
 }
 
 /* Inactive plans look greyed-out and ghostly — faded and desaturated, as if nearly deleted. The
@@ -98,7 +115,9 @@
  * actions anchor to it; padding-right reserves room so a long name never runs under them.
  */
 .kw-scroll-table td.kw-col-plan-name {
-  padding-right: 2.75rem;
+  /* Reserve room for the absolutely-placed actions (right: 0.75rem + the ~2.4rem button + a
+     gap), so a long plan title never runs under the "..." menu. */
+  padding-right: 3.75rem;
 }
 /* Stack the name and the identifier on separate lines (the wrapper is otherwise inline). */
 .kw-scroll-table td.kw-col-plan-name .title-wrapper {

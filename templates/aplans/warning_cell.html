@@ -1,20 +1,15 @@
 {% load wagtailadmin_tags %}
 {% comment %}
-Leftmost pinned "plan flags" cell. Shows small stacked icons for special plans — a warning icon
-for inactive plans and a key icon for internal-visibility plans — and marks the currently active
-admin plan's row. The state classes on the <td> drive the row highlight and the active-plan arrow
-in actions/plan-identifier.css.
+Leftmost pinned "plan flags" cell. Shows a warning icon for inactive plans and marks the
+currently active admin plan's row. The state classes on the <td> drive the row highlight and the
+active-plan arrow in actions/plan-identifier.css. The internal-visibility key icon lives next to
+the site-status badge (see plan_publication_status_cell.html).
 {% endcomment %}
-<td class="{{ column.classname }}{% if is_inactive %} is-inactive{% endif %}{% if is_internal %} is-internal{% endif %}{% if is_active_plan %} is-active-plan{% endif %}"{% if is_active_plan %} data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan_tooltip }}"{% endif %}>
+<td class="{{ column.classname }}{% if is_inactive %} is-inactive{% endif %}{% if is_active_plan %} is-active-plan{% endif %}"{% if is_active_plan %} data-controller="w-tooltip" data-w-tooltip-content-value="{{ active_plan_tooltip }}"{% endif %}>
     <span class="plan-flags">
         {% if is_inactive %}
             <span class="plan-flag plan-flag--inactive" data-controller="w-tooltip" data-w-tooltip-content-value="{{ inactive_tooltip }}">
                 <svg class="icon icon-warning" aria-hidden="true"><use href="#icon-warning"></use></svg>
-            </span>
-        {% endif %}
-        {% if is_internal %}
-            <span class="plan-flag plan-flag--internal" data-controller="w-tooltip" data-w-tooltip-content-value="{{ internal_tooltip }}">
-                <svg class="icon icon-key" aria-hidden="true"><use href="#icon-key"></use></svg>
             </span>
         {% endif %}
     </span>

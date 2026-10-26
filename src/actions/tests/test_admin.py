@@ -201,9 +201,10 @@ def test_internal_plan_flagged_with_key_icon_not_site_status_text(superuser, cli
     response = client.get(index_url)
     assert response.status_code == 200
     assertContains(response, 'data-copy-identifier="uniq-internal-plan"')
-    # Internal plans are flagged with a key icon in the plan-flags column...
-    assertContains(response, 'is-internal')
-    assertContains(response, 'plan-flag--internal')
+    # Internal plans are flagged with a key icon next to the Site status badge...
+    assertContains(response, 'plan-status-internal')
+    # ...no longer in the left plan-flags column...
+    assertNotContains(response, 'plan-flag--internal')
     # ...and no longer with an "Internal" text badge in the Site status column.
     assertNotContains(response, '<span class="w-status">Internal</span>')
 

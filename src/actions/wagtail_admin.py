@@ -887,8 +887,10 @@ class LiveStateColumn(Column):
         }
         context['status_class'] = status_class_map[state]
         context['status_label'] = state.label
-        # The internal-visibility marker lives in the leftmost plan-flags column (a key icon),
-        # not here; see PlanFlagsColumn.
+        # Flag internal-visibility plans with a small key icon beside the status badge — internal
+        # is a visibility concept, so it reads naturally next to the site status.
+        context['is_internal'] = instance.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
+        context['internal_tooltip'] = str(_('This plan is internal: only signed-in users may read it.'))
         context['tooltip'] = tooltip
         return context
 
@@ -897,8 +899,9 @@ class PlanFlagsColumn(Column):
     """
     Leftmost pinned column that flags special plans with small stacked icons.
 
-    Shows a warning icon for inactive plans and a key icon for internal-visibility plans, and
-    marks the row of the currently active admin plan (the CSS draws its arrow and highlight).
+    Shows a warning icon for inactive plans and marks the row of the currently active admin plan
+    (the CSS draws its arrow and highlight). The internal-visibility key icon lives next to the
+    site-status badge instead; see LiveStateColumn.
     """
 
     cell_template_name = 'aplans/warning_cell.html'
@@ -911,12 +914,10 @@ class PlanFlagsColumn(Column):
         request = parent_context.get('request')
         active_plan = request.user.get_active_admin_plan(required=False) if request else None
         context['is_inactive'] = not instance.is_active
-        context['is_internal'] = instance.visibility == RestrictedVisibilityModel.VisibilityState.INTERNAL
         context['is_active_plan'] = active_plan is not None and instance == active_plan
         context['inactive_tooltip'] = str(
             _('This plan is inactive and only visible to superusers.'),
         )
-        context['internal_tooltip'] = str(_('This plan is internal: only signed-in users may read it.'))
         context['active_plan_tooltip'] = str(_('This is the plan you are currently editing.'))
         return context
 
