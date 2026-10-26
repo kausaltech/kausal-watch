@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
@@ -30,6 +30,7 @@ from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
 from .models import ActionListPageNotFoundError, ActionSnapshot, Report
+from .submissions import get_action_submissions
 from .utils import report_label
 
 if TYPE_CHECKING:
@@ -215,8 +216,7 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.complete:
-            complete_actions = Action.objects.qs.complete_for_report(self.report)
-            context['affected_actions'] = self.report.type.plan.actions.exclude(id__in=complete_actions)
+            context.update(self.get_completion_context())
         else:
             action_ids = (
                 ActionSnapshot.objects
@@ -226,6 +226,27 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
             )
             context['affected_actions'] = Action.objects.filter(id__in=action_ids)
         return context
+
+    def get_completion_context(self) -> dict[str, Any]:
+        """
+        Return what completing the report captures.
+
+        Actions not yet submitted are captured with their current data. On moderated plans, that is their published
+        version, and a submitted action may also have changes waiting for approval that its submission does not include.
+        """
+        submissions = get_action_submissions(self.report)
+        moderated = self.report.type.plan.features.enable_moderation_workflow
+        return {
+            'action_count': len(submissions),
+            'unsubmitted': [submission for submission in submissions if submission.submitted_at is None],
+            'submitted_count': sum(1 for submission in submissions if submission.submitted_at is not None),
+            'moderated': moderated,
+            'submitted_with_pending_changes': [
+                submission
+                for submission in submissions
+                if moderated and submission.submitted_at is not None and submission.action.has_unpublished_changes
+            ],
+        }
 
     def post(self, request, *args, **kwargs):
         user = user_or_bust(self.request.user)
