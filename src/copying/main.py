@@ -1098,6 +1098,8 @@ class CloneVisitor(AbstractVisitor):
         self.remove_link(instance, 'secondary_action_classification')
         # The copy has the same parent and organization as the original, so it cannot have the same short identifier
         instance.short_identifier = None
+        # A copy goes to the end of its siblings like any new child plan
+        instance.order = None
         # Groups will be created in Plan.save()
         instance.admin_group = None
         instance.contact_person_group = None
