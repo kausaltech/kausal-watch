@@ -11,7 +11,8 @@
 .kw-scroll-table {
   --kw-plan-warning-w: 2.25rem;
   --kw-plan-name-w: clamp(16rem, 100vw - 57rem, 44rem);
-  --kw-plan-status-w: 6rem;
+  /* Wide enough to keep the longest status badge (plus the internal key icon) on one line. */
+  --kw-plan-status-w: 9rem;
 }
 .kw-col-plan-warning {
   --kw-w: var(--kw-plan-warning-w);
