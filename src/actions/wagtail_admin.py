@@ -108,6 +108,7 @@ from .models import (
     PlanFeatures,
     PledgeFormField,
 )
+from .plan_children_admin import ChildPlanOrderPanel, reorder_child_plan_view
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -459,6 +460,11 @@ class PlanAdmin(AplansModelAdmin[Plan]):
                 self.copy_view,
                 name=self.url_helper.get_action_url_name('copy'),
             ),
+            path(
+                'actions/plan/<int:parent_pk>/children/<int:child_pk>/reorder/',
+                reorder_child_plan_view,
+                name='actions_plan_reorder_child',
+            ),
         )
         return urls
 
@@ -616,6 +622,7 @@ class PlanAdmin(AplansModelAdmin[Plan]):
         if not creating:
             panels.append(links_panel)
             panels.append(FieldPanel('external_feedback_url'))
+            panels.append(ChildPlanOrderPanel(heading=_('Child plans')))
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
         if not creating:
