@@ -5,6 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
 
+from django.urls import reverse
+
 import pytest
 
 from aplans.cache import PlanSpecificCache
@@ -112,7 +114,9 @@ def test_listing_offers_the_button_that_applies(graphql_client_query_data, clien
     client.post(h.mark_as_complete_url(action, report.pk))
     urls = button_urls(graphql_client_query_data, client, user, action)
 
-    assert h.undo_marking_as_complete_url(action, report.pk) in urls
+    # Undoing the submission is offered in the report's list of submissions instead
+    assert reverse('wagtailsnippets_actions_action:resubmit_action_for_report', args=(action.pk, report.pk)) in urls
+    assert h.undo_marking_as_complete_url(action, report.pk) not in urls
     assert h.mark_as_complete_url(action, report.pk) not in urls
 
 
