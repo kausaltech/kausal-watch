@@ -4,6 +4,8 @@ import typing
 from datetime import date, datetime
 from typing import Any
 
+from django.utils.translation import gettext as _
+
 if typing.TYPE_CHECKING:
     from typing import Literal
 
@@ -15,7 +17,13 @@ if typing.TYPE_CHECKING:
 
     from actions.models.plan import Plan
 
+    from .models import Report
     from .types import AttributePath, SerializedAttributeVersion, SerializedVersion
+
+
+def report_label(report: Report) -> str:
+    """Name a report together with its template, e.g. "Annual report • 2025"."""
+    return _('%(template)s • %(report)s') % {'template': report.type.name, 'report': report.name}
 
 
 def is_visible_in_full_export(holder: InstancesVisibleForMixin, user: UserOrAnon | None, plan: Plan) -> bool:

@@ -1,0 +1,49 @@
+{% extends "aplans/confirmation.html" %}
+{% load i18n %}
+
+{% block content_main %}
+    <div class="nice-padding">
+        <p>{{ view.confirmation_message }}</p>
+
+        {% if has_unpublished_changes %}
+            <div class="help-block help-warning">
+                {% blocktranslate trimmed %}
+                    This action has changes that have not been published yet, for example changes waiting for
+                    approval. The report gets the published version of the action, without these changes.
+                {% endblocktranslate %}
+            </div>
+        {% endif %}
+
+        {% if frozen_indicators %}
+            <p>
+                {% blocktranslate trimmed %}
+                    The current values of the action's indicators are captured with it as part of the report:
+                {% endblocktranslate %}
+            </p>
+            <ul class="submitted-indicators">
+                {% for indicator in frozen_indicators %}
+                    <li>
+                        <strong>{{ indicator }}</strong><br>
+                        {% if indicator.latest_value %}
+                            {% blocktranslate trimmed with value=indicator.latest_value.value|floatformat:"-3" unit=indicator.unit.short_name_i18n|default:indicator.unit date=indicator.latest_value.date %}
+                                Current: {{ value }} {{ unit }} ({{ date }})
+                            {% endblocktranslate %}
+                        {% else %}
+                            {% translate "No values yet" %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form action="{{ view.post_url }}" method="POST">
+            {% csrf_token %}
+            {% if view.complete %}
+                <input type="submit" value="{% translate 'Submit' %}" class="button button-primary" />
+            {% else %}
+                <input type="submit" value="{% translate 'Undo submission' %}" class="button button-primary" />
+            {% endif %}
+            <a href="{{ view.index_url }}" class="button button-secondary">{% translate "Cancel" %}</a>
+        </form>
+    </div>
+{% endblock %}
