@@ -11,7 +11,9 @@ from django.db.models.functions import Cast
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
@@ -37,25 +39,37 @@ ALL_FIELDS = 'all'
 
 
 class MarkActionAsCompleteView(WMABaseView[Action]):
-    """Submit an action to a report, or undo the submission, after a confirmation."""
+    """Submit an action to a report, resubmit it, or undo the submission, after a confirmation."""
 
     action_pk: str = ''
     report_pk: str = ''
     complete = True
+    # Replace an earlier submission (`complete` stays True: the action ends up submitted)
+    resubmit = False
     template_name = 'reports/submit_action_confirmation.html'
 
-    def __init__(self, model_admin, action_pk, report_pk, complete=True):
+    def __init__(self, model_admin, action_pk, report_pk, complete=True, resubmit=False):
         self.action_pk = unquote(action_pk)
         self.report_pk = unquote(report_pk)
         self.complete = complete
+        self.resubmit = resubmit
         self.action = get_object_or_404(Action, pk=self.action_pk)
         self.report = get_object_or_404(Report, pk=self.report_pk)
         super().__init__(model_admin)
 
     def get_page_title(self):
+        if self.resubmit:
+            return _('Resubmit action to report')
         if self.complete:
             return _('Submit action to report')
         return _('Undo action submission')
+
+    def submitted_at(self) -> str | None:
+        """Return the date of the submission that a resubmission replaces, formatted for display."""
+        submitted_at = self.action.submitted_at_for_report(self.report)
+        if submitted_at is None:
+            return None
+        return date_format(timezone.localtime(submitted_at), 'DATE_FORMAT')
 
     def check_action_permitted(self, user):
         if not user.can_modify_action(self.action):
@@ -74,18 +88,27 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
-        if self.complete:
+        if self.resubmit:
+            msg = _('Confirm resubmitting action %(action)s to report %(report)s')
+        elif self.complete:
             msg = _('Confirm submitting action %(action)s to report %(report)s')
         else:
             msg = _('Confirm undoing the submission of action %(action)s to report %(report)s')
         return msg % {'action': self.action, 'report': report_label(self.report)}
 
     def confirmation_message(self):
+        params = {'action': self.action, 'report': report_label(self.report)}
+        if self.resubmit:
+            msg = _(
+                "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its "
+                'submission from %(date)s with the current data of the action.'
+            )
+            return msg % {**params, 'date': self.submitted_at()}
         if self.complete:
             msg = _("Do you want to submit the action '%(action)s' to the report '%(report)s'?")
         else:
             msg = _("Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?")
-        return msg % {'action': self.action, 'report': report_label(self.report)}
+        return msg % params
 
     def get_frozen_indicators(self) -> list[Indicator]:
         """Return the indicators whose current data the submission captures, as `Report.freeze_indicators_of_action` does."""
@@ -105,14 +128,18 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
 
     def post(self, request, *args, **kwargs):
         try:
-            if self.complete:
+            if self.resubmit:
+                self.action.resubmit_for_report(self.report, self.request.user)
+            elif self.complete:
                 self.action.mark_as_complete_for_report(self.report, self.request.user)
             else:
                 self.action.undo_marking_as_complete_for_report(self.report, self.request.user)
         except ValueError as e:
             messages.error(request, str(e))
             return redirect(self.index_url)
-        if self.complete:
+        if self.resubmit:
+            msg = _("Action '%(action)s' has been resubmitted to the report '%(report)s'.")
+        elif self.complete:
             msg = _("Action '%(action)s' has been submitted to the report '%(report)s'.")
         else:
             msg = _("The submission of action '%(action)s' to the report '%(report)s' has been undone.")

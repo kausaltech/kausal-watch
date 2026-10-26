@@ -16,7 +16,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Exists, F, IntegerField, Max, OuterRef, Q
 from django.db.models.functions import Cast
 from django.urls import reverse
@@ -75,6 +75,7 @@ from .features import PlanFeatures
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
+    from datetime import datetime
 
     from django.db.models import QuerySet
     from django.db.models.expressions import Combinable
@@ -1349,21 +1350,47 @@ class Action(
         if report.is_complete:
             raise ValueError(_('The report %s is already marked as complete.') % report)
 
-    def mark_as_complete_for_report(self, report, user):
+    def submitted_at_for_report(self, report) -> datetime | None:
+        """Return when the action was last submitted to `report`, or None if it hasn't been."""
         from reports.models import ActionSnapshot
 
-        self._check_report_open_for_action(report)
-        if self.is_complete_for_report(report):
-            raise ValueError(_('The action has already been submitted to the report %s.') % report)
+        try:
+            snapshot = self.get_latest_snapshot(report)
+        except ActionSnapshot.DoesNotExist:
+            return None
+        return snapshot.action_version.revision.date_created
+
+    def _snapshot_for_report(self, report, user, comment: str) -> None:
+        """Save the action's current data, and that of its indicators, as its submission to `report`."""
+        from reports.models import ActionSnapshot
+
         with reversion.create_revision():
             reversion.add_to_revision(self)
-            reversion.set_comment(_("Submitted action '%(action)s' to report '%(report)s'") % {'action': self, 'report': report})
+            reversion.set_comment(comment)
             reversion.set_user(user)
         ActionSnapshot.for_action(
             report=report,
             action=self,
         ).save()
         report.freeze_indicators_of_action(self)
+
+    def mark_as_complete_for_report(self, report, user):
+        self._check_report_open_for_action(report)
+        if self.is_complete_for_report(report):
+            raise ValueError(_('The action has already been submitted to the report %s.') % report)
+        comment = _("Submitted action '%(action)s' to report '%(report)s'") % {'action': self, 'report': report}
+        self._snapshot_for_report(report, user, comment)
+
+    def resubmit_for_report(self, report, user):
+        """Replace the action's submission to `report` with its current data."""
+        self._check_report_open_for_action(report)
+        if not self.is_complete_for_report(report):
+            raise ValueError(_('The action has not been submitted to the report %s yet.') % report)
+        comment = _("Resubmitted action '%(action)s' to report '%(report)s'") % {'action': self, 'report': report}
+        with transaction.atomic():
+            self.get_snapshots(report).delete()
+            report.unfreeze_indicators_of_action(self)
+            self._snapshot_for_report(report, user, comment)
 
     def undo_marking_as_complete_for_report(self, report, user):
         from reports.models import ActionSnapshot

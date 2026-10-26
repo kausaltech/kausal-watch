@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.forms import BaseModelFormSet, ModelChoiceField
 from django.urls import path, re_path, reverse
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django.views.generic.detail import SingleObjectMixin
 from modelcluster.forms import childformset_factory
@@ -759,6 +760,21 @@ class ActionButtonHelper(AplansButtonHelper):
             'section': _('Reporting'),
         }
 
+    def resubmit_button(self, action_pk, report, submitted_at, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.mark_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        submitted_on = date_format(timezone.localtime(submitted_at), 'SHORT_DATE_FORMAT')
+        return {
+            'url': self.url_helper.get_action_url('resubmit_action_for_report', quote(action_pk), quote(report.pk)),
+            'label': _('Resubmit for %(report)s (submitted %(date)s)') % {'report': report_label(report), 'date': submitted_on},
+            'classname': cn,
+            'title': _('Replace the submission of this action to the report %s with its current data') % report_label(report),
+            'icon': 'resubmit',
+            'section': _('Reporting'),
+        }
+
     def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
         classnames_exclude = kwargs.get('classnames_exclude', [])
@@ -788,10 +804,12 @@ class ActionButtonHelper(AplansButtonHelper):
                 latest_report.type.plan
             ):
                 continue
-            if obj.is_complete_for_report(latest_report):
-                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
-            else:
+            submitted_at = obj.submitted_at_for_report(latest_report)
+            if submitted_at is None:
                 buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
+            else:
+                buttons.append(self.resubmit_button(obj.pk, latest_report, submitted_at, **kwargs))
+                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
 
 
@@ -1342,6 +1360,14 @@ class ActionAdmin(AplansModelAdmin[Action]):
             complete=False,
         )(request)
 
+    def resubmit_action_for_report_view(self, request, action_pk, report_pk):
+        return MarkActionAsCompleteView.as_view(
+            model_admin=self,
+            action_pk=action_pk,
+            report_pk=report_pk,
+            resubmit=True,
+        )(request)
+
     @property
     def permission_policy(self):
         return ModelPermissionPolicy(Action)
@@ -1416,6 +1442,16 @@ class ActionAdmin(AplansModelAdmin[Action]):
             self.undo_marking_action_as_complete_view,
             name=self.url_helper.get_action_url_name('undo_marking_action_as_complete'),
         )
+        resubmit_url = re_path(
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$'
+            % (
+                self.opts.app_label,
+                self.opts.model_name,
+                'resubmit_action_for_report',
+            ),
+            self.resubmit_action_for_report_view,
+            name=self.url_helper.get_action_url_name('resubmit_action_for_report'),
+        )
         snippet_view_routes = {
             'usage': '<str:pk>',
             'unpublish': '<str:pk>',
@@ -1436,6 +1472,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
         return urls + (
             mark_as_complete_url,
             undo_marking_as_complete_url,
+            resubmit_url,
             *snippet_view_urls,
         )
 
