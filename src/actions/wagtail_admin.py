@@ -1001,6 +1001,9 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         for col in cols:
             if col.name in self._NARROW_COLUMNS:
                 col.classname = 'kw-col kw-col-plan-narrow'
+                # Clamp long values (e.g. organization names) to a few lines with an ellipsis so a
+                # single tall cell can't stretch the whole row.
+                col.cell_template_name = 'aplans/clamp_cell.html'
         return cols
 
     def _ordering_label(self) -> str:

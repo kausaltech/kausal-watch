@@ -29,6 +29,15 @@
 .kw-col-plan-narrow {
   --kw-w: 9rem;
 }
+/* Clamp narrow-column text (organization, clients, ...) to at most 3 lines with an ellipsis, so
+   a long name can't make the row tall. See templates/aplans/clamp_cell.html. */
+.kw-scroll-table .kw-col-plan-narrow .plan-cell-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
 
 /* The warning column only shows an icon for inactive plans; keep its contents centred and
    un-padded so the narrow pinned column isn't lopsided. */

@@ -324,6 +324,17 @@ def test_explicit_sort_hides_child_markers_and_shows_clear_sort(superuser, clien
     assertContains(response, f'href="{index_url}"')
 
 
+def test_plan_listing_clamps_narrow_column_cells(superuser, client):
+    # The narrow columns (organization, clients, ...) clamp their text to a few lines with an
+    # ellipsis, so a long organization name can't make a row arbitrarily tall.
+    PlanFactory.create(identifier='clamp-plan')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+    assertContains(response, 'plan-cell-clamp')
+
+
 def test_plan_listing_shows_site_status_before_version_name(superuser, client):
     PlanFactory.create()
     index_url = reverse(PlanViewSet().get_url_name('list'))

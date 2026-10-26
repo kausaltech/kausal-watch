@@ -1,0 +1,8 @@
+{% comment %}
+Cell template for the narrow secondary columns (organization, clients, ...). Wraps the value so
+it can be clamped to a few lines with an ellipsis (see .plan-cell-clamp in plan-identifier.css),
+keeping rows from growing tall on long names.
+{% endcomment %}
+<td {% if column.classname %}class="{{ column.classname }}"{% endif %}>
+    {% if value is not None %}<div class="plan-cell-clamp">{{ value }}</div>{% endif %}
+</td>
