@@ -170,8 +170,10 @@
   border-radius: 3px;
   line-height: 0;
 }
+/* :focus-visible (not :focus) so a mouse click doesn't leave the button painted with the hover
+   background until it's blurred — only keyboard focus shows the indicator. */
 .plan-identifier__copy:hover,
-.plan-identifier__copy:focus {
+.plan-identifier__copy:focus-visible {
   color: var(--w-color-text-link-default, #2e1f5e);
   background-color: var(--w-color-surface-button-hover, rgba(0, 0, 0, 0.05));
 }
