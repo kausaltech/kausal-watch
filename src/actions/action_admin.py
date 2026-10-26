@@ -74,6 +74,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from people.chooser import TaskPersonChooser
 from people.models import Person
+from reports.action_reporting import ActionReportsPanel
 from reports.utils import report_label
 from reports.views import MarkActionAsCompleteView
 
@@ -1265,18 +1266,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
             ]
 
         reporting_panels: list[Panel] = [cast('Panel', panel) for panel in reporting_attribute_panels]
-        help_panels_for_field: dict[int, list[Panel]] = {}
-        for snapshot in instance.get_snapshots():
-            if not snapshot.report.show_in_reporting_tab:
-                continue
-            for field in snapshot.report.type.fields:
-                if not hasattr(field.block, 'get_help_panel'):
-                    continue
-                help_panel = field.block.get_help_panel(field.value, snapshot)
-                if help_panel:
-                    help_panels_for_field.setdefault(field.id, []).append(help_panel)
-        for help_panels in help_panels_for_field.values():
-            reporting_panels += help_panels
+        reporting_panels.append(ActionReportsPanel(heading=_('Reports')))
         reporting_panels.append(
             FieldPanel(
                 'internal_notes',

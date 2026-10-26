@@ -18,6 +18,18 @@ if TYPE_CHECKING:
     from .models import Report
 
 
+def user_can_submit_action(user, action: Action, report: Report) -> bool:
+    """Return whether `user` may submit `action` to `report`, resubmit it or undo its submission."""
+    if not user.can_modify_action(action):
+        return False
+    report_type = report.type
+    if report_type.plan_id != action.plan_id:
+        return False
+    if report_type.only_plan_admins_can_mark_actions_as_complete:
+        return user.is_general_admin_for_plan(action.plan)
+    return True
+
+
 @dataclass(frozen=True)
 class ActionSubmission:
     """An action of a report's plan, and when and by whom it was submitted to the report, if it has been."""
