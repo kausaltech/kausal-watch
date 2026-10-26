@@ -140,6 +140,12 @@
   margin: 0;
   transform: translateY(-50%);
 }
+/* The row "..." menu's popup is appended inside .actions, so that absolutely-positioned (hence
+   narrow) box is the popup's containing block, which would shrink the menu to fit and wrap each
+   label. max-content sizes the menu to its widest item instead, ignoring that narrow width. */
+.kw-scroll-table td.kw-col-plan-name .actions .w-dropdown__content {
+  width: max-content;
+}
 
 .plan-identifier {
   display: inline-flex;
