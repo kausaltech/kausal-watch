@@ -8,18 +8,17 @@ superusers (like the Clients column).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from importlib import import_module
 
+from django.apps import apps as global_apps
 from django.urls import reverse
 
 import pytest
 
+from actions.models import Plan
 from actions.models.plan import UsageStatus
 from actions.tests.factories import PlanFactory
 from actions.tests.test_change_log_graphql import make_plan_admin
-
-if TYPE_CHECKING:
-    from actions.models import Plan
 
 pytestmark = pytest.mark.django_db
 
@@ -62,3 +61,37 @@ class TestUsageColumn:
         assert 'kw-scroll-table' in content  # the listing rendered for the plan admin
         assert 'kw-col-plan-usage' not in content  # superuser-only column is absent
         assert 'Deprecated' not in content
+
+    def test_not_in_use_status_renders_its_short_label(self, client):
+        # The usage status formerly named "inactive" was renamed to "not in use" to avoid
+        # colliding with the separate plan is_active concept.
+        plan = PlanFactory.create(usage_status=UsageStatus.NOT_IN_USE)
+        content = _render(client, plan, superuser=True)
+
+        assert 'class="plan-usage"' in content
+        assert 'Not in use' in content
+
+
+class TestUsageStatusRenameMigration:
+    def test_forward_converts_inactive_to_not_in_use(self):
+        migration = import_module('actions.migrations.0203_rename_inactive_usage_status')
+        plan = PlanFactory.create()
+        # Write the legacy raw value directly (it is no longer a valid choice).
+        Plan.objects.filter(pk=plan.pk).update(usage_status='inactive')
+
+        migration.rename_inactive_to_not_in_use(global_apps, None)
+
+        plan.refresh_from_db()
+        assert plan.usage_status == UsageStatus.NOT_IN_USE
+
+    def test_other_usage_statuses_are_left_untouched(self):
+        migration = import_module('actions.migrations.0203_rename_inactive_usage_status')
+        sales = PlanFactory.create(usage_status=UsageStatus.SALES)
+        customer = PlanFactory.create(usage_status=UsageStatus.CUSTOMER_USE)
+
+        migration.rename_inactive_to_not_in_use(global_apps, None)
+
+        sales.refresh_from_db()
+        customer.refresh_from_db()
+        assert sales.usage_status == UsageStatus.SALES
+        assert customer.usage_status == UsageStatus.CUSTOMER_USE

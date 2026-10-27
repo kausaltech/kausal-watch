@@ -8197,3 +8197,11 @@ msgstr "Käytöstä poisto"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Vanhentunut"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Ei käytössä"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Ei tällä hetkellä käytössä"

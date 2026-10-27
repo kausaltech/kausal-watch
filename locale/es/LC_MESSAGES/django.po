@@ -8523,3 +8523,11 @@ msgstr "Baja"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Obsoleto"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Sin uso"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Sin uso actualmente"

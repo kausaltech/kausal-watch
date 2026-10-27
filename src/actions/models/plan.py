@@ -289,7 +289,7 @@ class UsageStatus(models.TextChoices):
     SALES = 'sales', _('Sales and demos')
     DEVELOPMENT = 'development', _('Internal testing, training, development or other non-public use')
     CUSTOMER_OFFBOARDING = 'customer_offboarding', _('Offboarding in progress')
-    INACTIVE = 'inactive', _('Inactive, not in use currently')
+    NOT_IN_USE = 'not_in_use', _('Not in use currently')
     DEPRECATED = 'deprecated', _('Deprecated, should be deleted')
 
 

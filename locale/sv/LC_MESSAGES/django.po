@@ -8206,3 +8206,11 @@ msgstr "Avveckling"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Föråldrad"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Används ej"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Används inte för närvarande"

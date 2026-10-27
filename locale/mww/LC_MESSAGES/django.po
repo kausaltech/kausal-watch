@@ -7340,3 +7340,11 @@ msgstr ""
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr ""

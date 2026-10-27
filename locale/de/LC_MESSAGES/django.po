@@ -8060,3 +8060,11 @@ msgstr "Offboarding"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Veraltet"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Nicht in Gebrauch"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Derzeit nicht in Gebrauch"

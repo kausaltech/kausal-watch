@@ -9141,3 +9141,11 @@ msgstr "Desligamento"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Obsoleto"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Sem uso"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Sem uso no momento"

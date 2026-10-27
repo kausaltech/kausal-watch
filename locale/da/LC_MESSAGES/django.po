@@ -8352,3 +8352,11 @@ msgstr "Afvikling"
 #: src/actions/wagtail_admin.py
 msgid "Deprecated"
 msgstr "Forældet"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Ikke i brug"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use currently"
+msgstr "Ikke i brug i øjeblikket"

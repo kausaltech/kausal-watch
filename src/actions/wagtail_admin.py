@@ -912,7 +912,7 @@ class UsageStatusColumn(Column):
         UsageStatus.SALES.value: _('Sales / demo'),
         UsageStatus.DEVELOPMENT.value: _('Dev / test'),
         UsageStatus.CUSTOMER_OFFBOARDING.value: _('Offboarding'),
-        UsageStatus.INACTIVE.value: _('Inactive'),
+        UsageStatus.NOT_IN_USE.value: _('Not in use'),
         UsageStatus.DEPRECATED.value: _('Deprecated'),
     }
 
