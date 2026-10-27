@@ -1073,8 +1073,13 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode[
         fields = public_fields(CategoryType, remove_fields=['select_widget'])
 
     @staticmethod
-    def resolve_attribute_types(root: CategoryType, _info: GQLInfo):
-        return root.attribute_types.order_by('pk')
+    def resolve_attribute_types(root: CategoryType, info: GQLInfo) -> list[AttributeType]:
+        user = info.context.user
+        # Not `root.plan`: on `planCategories { type }` each category has its own category type instance, which
+        # would query the plan again.
+        plan = info.context.cache.for_plan_id(root.plan_id).plan
+        attribute_types = root.attribute_types.order_by('pk')
+        return [at for at in attribute_types if at.is_instance_visible_for(user, plan, None)]
 
     @staticmethod
     @gql_optimizer.resolver_hints(
