@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% comment %}
-When an explicit column sort is active the family grouping is suspended; show a banner above the
+When an explicit column sort is active the multi-plan grouping is suspended; show a banner above the
 results (outside #listing-results, so it survives AJAX filter refreshes) with a link back to the
 grouped default. Context comes from PlanIndexView.get_context_data.
 {% endcomment %}
@@ -14,7 +14,7 @@ grouped default. Context comes from PlanIndexView.get_context_data.
                     Sorted by: {{ field }}
                 {% endblocktrans %}
                 {% if sort_descending %}({% trans "descending" %}){% else %}({% trans "ascending" %}){% endif %}
-                — {% trans "family grouping is off" %}
+                — {% trans "multi-plan grouping is off" %}
             </span>
             <a class="plan-sort-clear button button-small button-secondary" href="{{ clear_sort_url }}">
                 {% trans "Back to grouped view" %}

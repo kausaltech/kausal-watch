@@ -212,7 +212,7 @@
 }
 
 /*
- * Banner shown above the Plans listing when an explicit column sort suspends the family grouping,
+ * Banner shown above the Plans listing when an explicit column sort suspends the multi-plan grouping,
  * with a link back to the grouped default (see PlanIndexView.get_context_data).
  */
 .plan-sort-active {

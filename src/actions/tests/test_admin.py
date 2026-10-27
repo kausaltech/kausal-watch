@@ -323,9 +323,9 @@ def _set_created_at(plan, when):
 
 def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
     # Creation times are chosen so the grouping is distinguishable from a plain created-at sort.
-    # A family is ranked by the latest creation time of any plan in it: the umbrella's family wins
-    # because its newest child is the newest plan overall, even though the umbrella itself is the
-    # oldest. Within the family the umbrella comes first, then the children in creation order
+    # A multi-plan group is ranked by the latest creation time of any plan in it: the umbrella's
+    # group wins because its newest child is the newest plan overall, even though the umbrella
+    # itself is the oldest. Within the group the umbrella comes first, then the children in creation order
     # (oldest-first, matching in_hierarchy_order). Expected order: umbrella, child-older,
     # child-newer, standalone.
     now = timezone.now()
@@ -346,13 +346,13 @@ def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
     umb, new_child, old_child, alone = _marker_positions(
         response, 'grp-umbrella', 'grp-child-new', 'grp-child-old', 'grp-standalone',
     )
-    # The family block is contiguous and ranked above the standalone (its newest child is newest
+    # The group block is contiguous and ranked above the standalone (its newest child is newest
     # overall); the umbrella leads, then children oldest-first (creation order).
     assert umb < old_child < new_child < alone
 
 
 def test_plan_listing_orders_children_by_manual_order(superuser, client):
-    # Within a family the children follow their manual order (the same order the child-plan
+    # Within a group the children follow their manual order (the same order the child-plan
     # ordering panel saves), ahead of creation time. Here the older-created child is given the
     # first manual slot, so it must precede the newer-created one, the opposite of the
     # creation-order default.
@@ -389,7 +389,7 @@ _PLAN_CHILDREN_GQL = """
 
 
 def test_plan_listing_child_order_matches_gql_child_order(superuser, client, graphql_client_query_data):
-    # The admin listing must order a family's children exactly like the GraphQL that the public UI
+    # The admin listing must order a group's children exactly like the GraphQL that the public UI
     # uses for its plan selectors (PlanNode.children / allRelatedPlans, both via in_hierarchy_order).
     # The setup is a deliberate discriminator: a manually ordered child that is neither the oldest
     # nor the newest must lead, then the rest fall back to creation order (oldest-first), so neither
@@ -426,7 +426,7 @@ def test_plan_listing_child_order_matches_gql_child_order(superuser, client, gra
     ]
 
 
-def test_plan_listing_explicit_sort_bypasses_family_grouping(superuser, client):
+def test_plan_listing_explicit_sort_bypasses_multiplan_grouping(superuser, client):
     umbrella = PlanFactory.create(name='M umbrella', identifier='grp-umbrella')
     PlanFactory.create(name='A child', identifier='grp-child-a', parent=umbrella)
     PlanFactory.create(name='B child', identifier='grp-child-b', parent=umbrella)
@@ -435,7 +435,7 @@ def test_plan_listing_explicit_sort_bypasses_family_grouping(superuser, client):
     index_url = reverse(PlanViewSet().get_url_name('list'))
     client.force_login(superuser)
     # An explicit column sort opts out of grouping: by name the rows go a-child, a-standalone,
-    # b-child, m-umbrella -> the standalone falls *between* the two children, which family
+    # b-child, m-umbrella -> the standalone falls *between* the two children, which multi-plan
     # grouping would never allow.
     response = client.get(index_url, {'ordering': 'name'})
     assert response.status_code == 200
@@ -503,7 +503,7 @@ def test_plan_listing_query_count_does_not_scale_with_rows(superuser, client):
 
     index_url = reverse(PlanViewSet().get_url_name('list'))
 
-    def add_family(n_children: int) -> None:
+    def add_multiplan_group(n_children: int) -> None:
         umbrella = PlanFactory.create()
         for _ in range(n_children):
             child = PlanFactory.create(parent=umbrella)
@@ -515,16 +515,16 @@ def test_plan_listing_query_count_does_not_scale_with_rows(superuser, client):
         assert response.status_code == 200
         return len(ctx.captured_queries)
 
-    # Seed a family before logging in: logging in with no adminable plan leaves the session
-    # without a resolved active plan.
-    add_family(1)
+    # Seed a multi-plan group before logging in: logging in with no adminable plan leaves the
+    # session without a resolved active plan.
+    add_multiplan_group(1)
     client.force_login(superuser)
     # Warm up per-request caches (content types, permissions) so the two measured renders match.
     render_query_count()
 
-    add_family(2)
+    add_multiplan_group(2)
     small = render_query_count()
-    add_family(4)
+    add_multiplan_group(4)
     larger = render_query_count()
     assert small == larger, f'N+1: {small} queries for the smaller listing, {larger} for the larger one'
 
@@ -549,7 +549,7 @@ def test_child_without_its_umbrella_in_view_is_not_indented(superuser, client):
 
 
 def test_child_stays_indented_when_its_umbrella_is_also_in_view(superuser, client):
-    # A filter that keeps the whole family intact must leave the child indented under its umbrella.
+    # A filter that keeps the whole multi-plan group intact must leave the child indented under its umbrella.
     umbrella = PlanFactory.create(name='Umbrella', identifier='keep-umbrella', usage_status='sales')
     PlanFactory.create(name='Child', identifier='keep-child', parent=umbrella, usage_status='sales')
 

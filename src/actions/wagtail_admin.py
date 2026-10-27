@@ -1023,7 +1023,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
 
         def get_cell_context_data(instance: Plan, parent_context):  # noqa: ANN202
             data = original_get_cell_context_data(instance, parent_context)
-            # The child-row indent/connector only makes sense while the family grouping is in
+            # The child-row indent/connector only makes sense while the multi-plan grouping is in
             # effect; under an explicit column sort the rows are flat, so tell the cell template to
             # drop it. Read _has_valid_sort here (per cell, at render) rather than while building
             # the column: it touches self.ordering, which validates against self.columns, and this
@@ -1071,7 +1071,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
 
     @cached_property
     def _has_valid_sort(self) -> bool:
-        # An explicit column sort suspends the family grouping, but only when it resolves to a
+        # An explicit column sort suspends the multi-plan grouping, but only when it resolves to a
         # valid ordering. Wagtail's is_explicitly_ordered is merely "ordering" in GET, while
         # self.ordering falls back to the (null) default for an empty or unrecognised value. Gate
         # on both so a malformed ?ordering= keeps the grouped default instead of a flat,
@@ -1087,7 +1087,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        # When an explicit column sort is active, the family grouping is suspended. Surface that
+        # When an explicit column sort is active, the multi-plan grouping is suspended. Surface that
         # with a banner and a link back to the grouped (un-ordered) default, since clicking a
         # column header only toggles its direction and never clears the sort.
         context['sort_is_active'] = self._has_valid_sort
@@ -1116,27 +1116,28 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         return qs.order_by(primary, '-created_at')  # type: ignore[misc]
 
     def order_queryset(self, queryset: PlanQuerySet) -> PlanQuerySet:
-        # When the user picks a column to sort by, honour it (and opt out of the family grouping).
+        # When the user picks a column to sort by, honour it (and opt out of the multi-plan grouping).
         if self._has_valid_sort:
             ordering = self.ordering
             if ordering and str(ordering).lstrip('-') == 'live_state':
                 return self._order_by_live_state(queryset, descending=str(ordering).startswith('-'))
             return super().order_queryset(queryset)
-        # Otherwise group umbrella families and show the newest first: each child sits directly
-        # under its umbrella (parent), families are ranked by the latest creation time of any plan
-        # in the family (so a family with a fresh child rises to the top), and within a family the
-        # umbrella comes first (null parent), then its children newest-first. Grouping relies on
-        # the practical one-level umbrella -> children hierarchy; a deeper descendant groups under
-        # its immediate parent. See also Plan.get_all_related_plans, which traverses the same one
-        # level. Within a family the children follow the same order as PlanQuerySet.in_hierarchy_order
-        # (and so as the public UI and the child-plan ordering panel): their manual order (Plan.order)
-        # first, then creation time oldest-first for children without a manual order. Only the family
-        # ranking stays newest-first, so a family with a fresh plan still rises to the top.
-        qs = queryset.annotate(_family_key=Coalesce('parent_id', 'id'))
-        qs = qs.annotate(_family_latest=Window(Max('created_at'), partition_by=[F('_family_key')]))
+        # Otherwise group umbrella plans with their children and show the newest first: each child
+        # sits directly under its umbrella (parent), a multi-plan group is ranked by the latest
+        # creation time of any plan in it (so a group with a fresh child rises to the top), and
+        # within a group the umbrella comes first (null parent), then its children newest-first.
+        # Grouping relies on the practical one-level umbrella -> children hierarchy; a deeper
+        # descendant groups under its immediate parent. See also Plan.get_all_related_plans, which
+        # traverses the same one level. Within a group the children follow the same order as
+        # PlanQuerySet.in_hierarchy_order (and so as the public UI and the child-plan ordering
+        # panel): their manual order (Plan.order) first, then creation time oldest-first for
+        # children without a manual order. Only the group ranking stays newest-first, so a group
+        # with a fresh plan still rises to the top.
+        qs = queryset.annotate(_multiplan_key=Coalesce('parent_id', 'id'))
+        qs = qs.annotate(_multiplan_latest=Window(Max('created_at'), partition_by=[F('_multiplan_key')]))
         # django-stubs can't resolve the window-annotation alias in order_by.
         return qs.order_by(  # type: ignore[misc]
-            '-_family_latest', '_family_key', F('parent_id').asc(nulls_first=True),
+            '-_multiplan_latest', '_multiplan_key', F('parent_id').asc(nulls_first=True),
             F('order').asc(nulls_last=True), 'created_at',
         )
 
@@ -1522,7 +1523,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
         'version_name',
         'organization',
         'clients_as_string',
-        # Parent is conveyed by the family grouping and the child-row indent, so it is the
+        # Parent is conveyed by the multi-plan grouping and the child-row indent, so it is the
         # least-important column and sits last in the scrolling block.
         'parent',
     ]
