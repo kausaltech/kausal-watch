@@ -811,3 +811,55 @@ class TestGetActionListPage:
         assert plan_with_pages.get_action_list_page() is None
         # ...but reachable for admin use.
         assert plan_with_pages.get_action_list_page(only_visible=False).pk == action_list_page.pk
+
+
+def test_plan_save_syncs_languages_to_attribute_types():
+    plan = PlanFactory.create(primary_language='en', other_languages=[])
+    category_type = CategoryTypeFactory.create(plan=plan)
+    category_attribute_type = AttributeTypeFactory.create(scope=category_type)
+    action_attribute_type = AttributeTypeFactory.create(
+        scope=plan,
+        object_content_type=ContentType.objects.get_for_model(Action),
+    )
+    other_plan = PlanFactory.create(primary_language='en', other_languages=[])
+    other_attribute_type = AttributeTypeFactory.create(scope=CategoryTypeFactory.create(plan=other_plan))
+
+    plan.other_languages = ['fi', 'sv']
+    plan.save()
+
+    for attribute_type in (category_attribute_type, action_attribute_type):
+        attribute_type.refresh_from_db()
+        assert attribute_type.primary_language == 'en'
+        assert attribute_type.other_languages == ['fi', 'sv']
+    other_attribute_type.refresh_from_db()
+    assert other_attribute_type.other_languages == []
+
+
+def test_plan_save_keeps_attribute_type_primary_language():
+    # Changing an attribute type's primary language would make modeltrans read its existing content as being in the
+    # new language
+    plan = PlanFactory.create(primary_language='en', other_languages=['fi'])
+    attribute_type = AttributeTypeFactory.create(scope=CategoryTypeFactory.create(plan=plan))
+    assert (attribute_type.primary_language, attribute_type.other_languages) == ('en', ['fi'])
+
+    plan.primary_language = 'fi'
+    plan.other_languages = ['en', 'sv']
+    plan.save()
+
+    attribute_type.refresh_from_db()
+    assert attribute_type.primary_language == 'en'
+    assert attribute_type.primary_language_lowercase == 'en'
+    assert attribute_type.other_languages == ['fi', 'sv']
+
+
+def test_plan_save_syncs_only_saved_languages_to_attribute_types():
+    plan = PlanFactory.create(primary_language='en', other_languages=[])
+    attribute_type = AttributeTypeFactory.create(scope=CategoryTypeFactory.create(plan=plan))
+
+    plan.primary_language = 'fi'
+    plan.other_languages = ['sv']
+    plan.save(update_fields=['other_languages'])
+
+    attribute_type.refresh_from_db()
+    assert attribute_type.primary_language == 'en'
+    assert attribute_type.other_languages == ['sv']

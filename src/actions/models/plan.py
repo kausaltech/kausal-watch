@@ -989,8 +989,36 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         for pledge in source_pledges:
             pledge.ensure_locale_copies()
 
+    def _sync_attribute_type_languages(self, primary_language: str, other_languages: list[str]) -> None:
+        """
+        Give the attribute types of this plan the plan's languages.
+
+        An attribute type keeps its own copy of the languages because modeltrans needs the default language on the
+        model itself. The copy is taken when the attribute type is created, so it has to follow later changes.
+
+        An attribute type's primary language is left alone: modeltrans reads the untranslated fields (of the attribute
+        type, its choice options and its values) in that language, so changing it would mislabel existing content.
+        Each attribute type gets the plan's other languages, with its own primary language swapped for the plan's if
+        they differ.
+        """
+        from actions.models.attributes import AttributeType
+
+        attribute_types = AttributeType.objects.get_queryset()
+        attribute_types = attribute_types.for_actions(self) | attribute_types.for_categories(self)
+        plan_languages = [primary_language, *other_languages]
+        at_primary_languages = attribute_types.values_list('primary_language', flat=True).distinct().order_by()
+        for at_primary_language in set(at_primary_languages):
+            at_other_languages = [lang for lang in plan_languages if lang != at_primary_language]
+            (
+                attribute_types
+                .filter(primary_language=at_primary_language)
+                .exclude(other_languages=at_other_languages)
+                .update(other_languages=at_other_languages)
+            )
+
     def save(self, *args, **kwargs):  # noqa: C901, PLR0912, PLR0915
         previous_language_codes: set[str] | None = None
+        previous_language_data = None
         save_update_fields = kwargs.get('update_fields')
         if self.pk is not None:
             language_fields = {'primary_language', 'other_languages'}
@@ -1060,6 +1088,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
         if update_fields:
             super().save(update_fields=update_fields)
+
+        if previous_language_data is not None:
+            # Use what was saved rather than the instance's values, which update_fields may have left out
+            saved_language_data = Plan.objects.filter(pk=self.pk).values('primary_language', 'other_languages').get()
+            if saved_language_data != previous_language_data:
+                self._sync_attribute_type_languages(
+                    saved_language_data['primary_language'],
+                    saved_language_data['other_languages'] or [],
+                )
 
         if previous_language_codes is not None:
             current_language_codes = self._get_plan_wagtail_language_codes()
