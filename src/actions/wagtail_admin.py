@@ -8,7 +8,7 @@ from django import forms
 from django.contrib.admin.utils import quote
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import F, Max, ProtectedError, Window
+from django.db.models import F, Max, ProtectedError, Q, Window
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect
 from django.urls import path, re_path, reverse
@@ -1134,6 +1134,55 @@ def clients_for_request(request: HttpRequest | None):
     return clients.order_by('name')
 
 
+def organizations_for_request(request: HttpRequest | None):
+    """Organizations that own at least one plan the user may administer."""
+    if request is None:
+        return Organization.objects.none()
+    user = user_or_none(request.user)
+    if user is None:
+        return Organization.objects.none()
+    plans = user.get_adminable_plans()
+    return Organization.objects.filter(id__in=plans.values_list('organization_id', flat=True)).order_by('name')
+
+
+def parent_plans_for_request(request: HttpRequest | None):
+    """Plans that are the umbrella (parent) of at least one plan the user may administer."""
+    if request is None:
+        return Plan.objects.none()
+    user = user_or_none(request.user)
+    if user is None:
+        return Plan.objects.none()
+    plans = user.get_adminable_plans()
+    parent_ids = plans.filter(parent__isnull=False).values_list('parent_id', flat=True)
+    return Plan.objects.filter(id__in=parent_ids).order_by('name')
+
+
+class LiveStateFilter(filters.ChoiceFilter):
+    """
+    Filter for a plan's site status, which is derived from its publication timestamps.
+
+    `live_state` is a computed property rather than a stored field, so the choice is translated
+    here into the equivalent query on `published_at` / `archived_at` (see Plan.live_state).
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('choices', Plan.LiveState.choices)
+        kwargs.setdefault('label', _('Site status'))
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if not value:
+            return qs
+        if value == Plan.LiveState.NOT_LIVE:
+            return qs.filter(Q(published_at__isnull=True) | Q(archived_at__isnull=False))
+        now = timezone.now()
+        if value == Plan.LiveState.SCHEDULED:
+            return qs.filter(published_at__gt=now, archived_at__isnull=True)
+        if value == Plan.LiveState.LIVE:
+            return qs.filter(published_at__lte=now, archived_at__isnull=True)
+        return qs
+
+
 class IsActiveFilter(filters.ChoiceFilter):
     """
     Filter for plan active status that defaults to showing only active plans.
@@ -1165,6 +1214,21 @@ class IsActiveFilter(filters.ChoiceFilter):
 
 
 class PlanFilter(WagtailFilterSet):
+    # One filter per listing column (see PlanViewSet.list_display), except the name column (covered
+    # by the search box) and the version-name column.
+    live_state = LiveStateFilter()
+    usage_status = filters.ChoiceFilter(
+        choices=UsageStatus.choices,
+        label=capfirst(Plan._meta.get_field('usage_status').verbose_name),
+    )  # only for superusers (the Usage column is superuser-only)
+    organization = filters.ModelChoiceFilter(
+        queryset=organizations_for_request,  # pyright: ignore[reportArgumentType]
+        label=capfirst(Plan._meta.get_field('organization').verbose_name),
+    )
+    parent = filters.ModelChoiceFilter(
+        queryset=parent_plans_for_request,  # pyright: ignore[reportArgumentType]
+        label=capfirst(Plan._meta.get_field('parent').verbose_name),
+    )
     clients__client = filters.ModelChoiceFilter(
         queryset=clients_for_request,  # pyright: ignore[reportArgumentType]
         label=capfirst(Client._meta.verbose_name),
@@ -1177,7 +1241,10 @@ class PlanFilter(WagtailFilterSet):
         if request:
             user = user_or_bust(request.user)
             if not user.is_superuser:
+                # The Usage and Clients columns are superuser-only, so hide their filters too.
                 del self.filters['is_active']
+                del self.filters['usage_status']
+                del self.filters['clients__client']
 
     class Meta:
         model = Plan

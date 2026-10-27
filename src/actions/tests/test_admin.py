@@ -219,6 +219,81 @@ def test_public_plan_not_flagged_internal(superuser, client):
     assertNotContains(response, 'plan-flag--internal')
 
 
+def _marker(identifier: str) -> str:
+    return f'data-copy-identifier="{identifier}"'
+
+
+def test_site_status_filter_narrows_to_the_chosen_live_state(superuser, client):
+    now = timezone.now()
+    live = PlanFactory.create(identifier='uniq-live', published_at=now - timedelta(days=1))
+    scheduled = PlanFactory.create(identifier='uniq-scheduled', published_at=now + timedelta(days=1))
+    not_live = PlanFactory.create(identifier='uniq-not-live', published_at=None)
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url, {'live_state': 'live'})
+    assert response.status_code == 200
+    assertContains(response, _marker(live.identifier))
+    assertNotContains(response, _marker(scheduled.identifier))
+    assertNotContains(response, _marker(not_live.identifier))
+
+    response = client.get(index_url, {'live_state': 'scheduled'})
+    assertContains(response, _marker(scheduled.identifier))
+    assertNotContains(response, _marker(live.identifier))
+    assertNotContains(response, _marker(not_live.identifier))
+
+    response = client.get(index_url, {'live_state': 'not_live'})
+    assertContains(response, _marker(not_live.identifier))
+    assertNotContains(response, _marker(live.identifier))
+    assertNotContains(response, _marker(scheduled.identifier))
+
+
+def test_usage_status_filter_narrows_to_the_chosen_usage(superuser, client):
+    sales = PlanFactory.create(identifier='uniq-sales', usage_status='sales')
+    customer = PlanFactory.create(identifier='uniq-customer', usage_status='customer_use')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url, {'usage_status': 'sales'})
+    assert response.status_code == 200
+    assertContains(response, _marker(sales.identifier))
+    assertNotContains(response, _marker(customer.identifier))
+
+
+def test_usage_status_filter_is_superuser_only(plan_admin_user, client):
+    # Non-superusers never see the usage column, so they must not get its filter either.
+    from actions.wagtail_admin import PlanFilter
+
+    plan_filter = PlanFilter(request=Mock(user=plan_admin_user))
+    assert 'usage_status' not in plan_filter.filters
+
+
+def test_organization_filter_narrows_to_the_chosen_organization(superuser, client):
+    wanted = PlanFactory.create(identifier='uniq-org-wanted')
+    other = PlanFactory.create(identifier='uniq-org-other')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url, {'organization': wanted.organization_id})
+    assert response.status_code == 200
+    assertContains(response, _marker(wanted.identifier))
+    assertNotContains(response, _marker(other.identifier))
+
+
+def test_parent_filter_narrows_to_children_of_the_chosen_umbrella(superuser, client):
+    umbrella = PlanFactory.create(identifier='uniq-umbrella')
+    child = PlanFactory.create(identifier='uniq-child', parent=umbrella)
+    standalone = PlanFactory.create(identifier='uniq-standalone')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url, {'parent': umbrella.id})
+    assert response.status_code == 200
+    assertContains(response, _marker(child.identifier))
+    assertNotContains(response, _marker(standalone.identifier))
+    assertNotContains(response, _marker(umbrella.identifier))
+
+
 def test_currently_active_plan_is_marked(superuser, client):
     active = PlanFactory.create(identifier='uniq-active-plan')
     PlanFactory.create(identifier='uniq-other-plan')
