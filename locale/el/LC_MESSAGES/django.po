@@ -8567,3 +8567,23 @@ msgstr "Αποθήκευση"
 
 #~ msgid "An optional logo for this organization"
 #~ msgstr "Ένα προαιρετικό λογότυπο για αυτόν τον οργανισμό"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr ""

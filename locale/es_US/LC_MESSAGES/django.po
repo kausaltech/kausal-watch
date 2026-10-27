@@ -7350,3 +7350,23 @@ msgstr ""
 
 #~ msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
 #~ msgstr "Logotipo de la organización. Proporcione una imagen cuadrada (mín. 250x250px). El logotipo utilizado para las redes sociales de la organización suele funcionar mejor."
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr ""

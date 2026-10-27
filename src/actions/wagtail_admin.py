@@ -58,6 +58,7 @@ from aplans.utils import OrderedModelChildFormSet, RestrictedVisibilityModel
 
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
+from actions.models.plan import UsageStatus
 from actions.models.public_user import PublicUser
 from admin_site.chooser import ClientChooser
 from admin_site.forms import WatchAdminModelForm
@@ -895,6 +896,38 @@ class LiveStateColumn(Column):
         return context
 
 
+class UsageStatusColumn(Column):
+    """
+    Compact, superuser-only column for a plan's usage status (why the plan exists).
+
+    The raw choice labels range up to a full sentence, so the cell shows a short per-value
+    label with the full label on hover. The default (customer use) is deliberately absent from
+    the mapping, so an ordinary customer plan leaves the cell blank and the column highlights
+    only the plans that are something other than customer use.
+    """
+
+    cell_template_name = 'aplans/plan_usage_status_cell.html'
+
+    _SHORT_LABELS = {
+        UsageStatus.SALES.value: _('Sales / demo'),
+        UsageStatus.DEVELOPMENT.value: _('Dev / test'),
+        UsageStatus.CUSTOMER_OFFBOARDING.value: _('Offboarding'),
+        UsageStatus.INACTIVE.value: _('Inactive'),
+        UsageStatus.DEPRECATED.value: _('Deprecated'),
+    }
+
+    def __init__(self, name: str = 'usage_status', **kwargs):
+        super().__init__(name, label=_('Usage'), **kwargs)
+
+    def get_cell_context_data(self, instance: Plan, parent_context):
+        context = super().get_cell_context_data(instance, parent_context)
+        short_label = self._SHORT_LABELS.get(instance.usage_status)
+        context['short_label'] = short_label
+        # Only carry the full-label tooltip when something is rendered.
+        context['tooltip'] = instance.get_usage_status_display() if short_label else ''
+        return context
+
+
 class PlanFlagsColumn(Column):
     """
     Leftmost pinned column that flags special plans with small stacked icons.
@@ -991,10 +1024,15 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
 
     # Low-priority columns that scroll; each gets a fixed narrow width.
     _NARROW_COLUMNS = ('version_name', 'parent', 'organization', 'clients_as_string')
+    # Columns with internal/statistical detail that only superusers may see.
+    _SUPERUSER_ONLY_COLUMNS = ('clients_as_string', 'usage_status')
 
     @cached_property
     def columns(self):  # type: ignore[override]
         cols = [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
+        user = user_or_none(self.request.user)
+        if user is None or not user.is_superuser:
+            cols = [c for c in cols if c.name not in self._SUPERUSER_ONLY_COLUMNS]
         # The plan-flags column is the leftmost pinned column; tag it so it stays visible while
         # the low-priority columns scroll under the pinned block.
         cols.insert(0, PlanFlagsColumn(classname='kw-col kw-col--pin kw-col-plan-warning'))
@@ -1297,6 +1335,8 @@ class PlanViewSet(SnippetViewSet[Plan]):
     list_display = [
         'name',
         LiveStateColumn(classname='kw-col kw-col--pin kw-col--pin-last kw-col-plan-status'),
+        # Superuser-only (see PlanIndexView._SUPERUSER_ONLY_COLUMNS); first scrolling column.
+        UsageStatusColumn(classname='kw-col kw-col-plan-usage'),
         'version_name',
         'organization',
         'clients_as_string',

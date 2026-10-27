@@ -9121,3 +9121,23 @@ msgstr "Salvar"
 #, fuzzy
 #~ msgid "Either SVG or image must be set"
 #~ msgstr "O SVG ou a imagem devem ser definidos"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Uso"
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Vendas / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Desenvolvimento / teste"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Desligamento"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Obsoleto"

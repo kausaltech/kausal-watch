@@ -8040,3 +8040,23 @@ msgstr "Speichern"
 
 #~ msgid "You do not have permissions for removing users."
 #~ msgstr "Sie haben keine Berechtigung zum Entfernen von Benutzern."
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Nutzung"
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Vertrieb / Demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Entwicklung / Test"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Offboarding"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Veraltet"

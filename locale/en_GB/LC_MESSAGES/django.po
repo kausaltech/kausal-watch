@@ -7751,3 +7751,23 @@ msgstr ""
 #~| msgid "Responsible organizations"
 #~ msgid "Show only editable organizations"
 #~ msgstr "Responsible organisations"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr ""

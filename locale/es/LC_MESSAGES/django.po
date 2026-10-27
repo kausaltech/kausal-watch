@@ -8503,3 +8503,23 @@ msgstr "Guardar"
 
 #~ msgid "Automatic notifications"
 #~ msgstr "Notificaciones automáticas"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Uso"
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Ventas / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Desarrollo / prueba"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Baja"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Obsoleto"

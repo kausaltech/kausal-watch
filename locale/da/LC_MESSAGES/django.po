@@ -8332,3 +8332,23 @@ msgstr "Gemme"
 
 #~ msgid "Log out"
 #~ msgstr "Log ud"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Anvendelse"
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Salg / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Udvikling / test"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Afvikling"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Forældet"

@@ -13,6 +13,8 @@
   --kw-plan-name-w: clamp(16rem, 100vw - 57rem, 44rem);
   /* Wide enough to keep the longest status badge (plus the internal key icon) on one line. */
   --kw-plan-status-w: 9rem;
+  /* Fits the short usage labels (e.g. "Sales / demo") on one line. */
+  --kw-plan-usage-w: 8rem;
 }
 .kw-col-plan-warning {
   --kw-w: var(--kw-plan-warning-w);
@@ -28,6 +30,9 @@
 }
 .kw-col-plan-narrow {
   --kw-w: 9rem;
+}
+.kw-col-plan-usage {
+  --kw-w: var(--kw-plan-usage-w);
 }
 /* Clamp narrow-column text (organization, clients, ...) to at most 3 lines with an ellipsis, so
    a long name can't make the row tall. See templates/aplans/clamp_cell.html. */

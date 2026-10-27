@@ -8177,3 +8177,23 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "has goals"
 #~ msgstr "on tavoitteita"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Käyttö"
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Myynti / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Kehitys / testaus"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Käytöstä poisto"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Vanhentunut"
