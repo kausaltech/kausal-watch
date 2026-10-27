@@ -1019,14 +1019,16 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         # Pin the name column (with its identifier and hamburger menu) to the left (see
         # scrollable-table.css); the Plans column widths/offsets live in plan-identifier.css.
         column.classname = 'kw-col kw-col--pin kw-col-plan-name'
-        # The child-row indent/connector only makes sense while the family grouping is in effect;
-        # under an explicit column sort the rows are flat, so tell the cell template to drop it.
-        grouping_active = not self.is_explicitly_ordered
         original_get_cell_context_data = column.get_cell_context_data
 
         def get_cell_context_data(instance: Plan, parent_context):  # noqa: ANN202
             data = original_get_cell_context_data(instance, parent_context)
-            data['grouping_active'] = grouping_active
+            # The child-row indent/connector only makes sense while the family grouping is in
+            # effect; under an explicit column sort the rows are flat, so tell the cell template to
+            # drop it. Read _has_valid_sort here (per cell, at render) rather than while building
+            # the column: it touches self.ordering, which validates against self.columns, and this
+            # method runs inside that very columns build.
+            data['grouping_active'] = not self._has_valid_sort
             # A child is only indented when its umbrella is actually on screen; when a filter
             # leaves the umbrella out, the child renders as a top-level row (the Parent column
             # still names its umbrella) instead of a dangling indent under nothing.
@@ -1067,6 +1069,15 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
                 col.cell_template_name = 'aplans/clamp_cell.html'
         return cols
 
+    @cached_property
+    def _has_valid_sort(self) -> bool:
+        # An explicit column sort suspends the family grouping, but only when it resolves to a
+        # valid ordering. Wagtail's is_explicitly_ordered is merely "ordering" in GET, while
+        # self.ordering falls back to the (null) default for an empty or unrecognised value. Gate
+        # on both so a malformed ?ordering= keeps the grouped default instead of a flat,
+        # arbitrarily ordered listing with no banner and no way back.
+        return bool(self.is_explicitly_ordered and self.ordering)
+
     def _ordering_label(self) -> str:
         key = str(self.ordering).lstrip('-')
         for col in self.columns:
@@ -1079,7 +1090,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         # When an explicit column sort is active, the family grouping is suspended. Surface that
         # with a banner and a link back to the grouped (un-ordered) default, since clicking a
         # column header only toggles its direction and never clears the sort.
-        context['sort_is_active'] = bool(self.is_explicitly_ordered and self.ordering)
+        context['sort_is_active'] = self._has_valid_sort
         if context['sort_is_active']:
             context['sort_label'] = self._ordering_label()
             context['sort_descending'] = str(self.ordering).startswith('-')
@@ -1106,7 +1117,7 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
 
     def order_queryset(self, queryset: PlanQuerySet) -> PlanQuerySet:
         # When the user picks a column to sort by, honour it (and opt out of the family grouping).
-        if self.is_explicitly_ordered:
+        if self._has_valid_sort:
             ordering = self.ordering
             if ordering and str(ordering).lstrip('-') == 'live_state':
                 return self._order_by_live_state(queryset, descending=str(ordering).startswith('-'))

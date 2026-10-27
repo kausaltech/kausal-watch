@@ -477,6 +477,23 @@ def test_explicit_sort_hides_child_markers_and_shows_clear_sort(superuser, clien
     assertContains(response, f'href="{index_url}"')
 
 
+@pytest.mark.parametrize('ordering', ['', 'bogus'])
+def test_invalid_ordering_param_keeps_the_grouped_default(superuser, client, ordering):
+    # An empty or unrecognised `ordering=` doesn't resolve to a valid sort, so it must fall back
+    # to the grouped default (child indents kept, no sort banner) rather than a flat, arbitrarily
+    # ordered listing that offers no way back.
+    umbrella = PlanFactory.create(name='Umbrella', identifier='inv-umbrella')
+    PlanFactory.create(name='Child', identifier='inv-child', parent=umbrella)
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url, {'ordering': ordering})
+    assert response.status_code == 200
+    # Grouping stays in effect: the child is indented and no sort banner appears.
+    assertContains(response, 'plan-title--child', count=1)
+    assertNotContains(response, 'plan-sort-active')
+
+
 def test_child_without_its_umbrella_in_view_is_not_indented(superuser, client):
     # When a filter matches a child but not its umbrella, the umbrella row is absent, so the
     # child must render as a top-level row rather than a dangling indent under nothing. The
