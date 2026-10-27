@@ -431,6 +431,38 @@ def test_child_stays_indented_when_its_umbrella_is_also_in_view(superuser, clien
     assertContains(response, 'plan-title--child', count=1)
 
 
+def test_usage_status_column_is_sortable(superuser, client):
+    customer = PlanFactory.create(identifier='sort-customer', usage_status='customer_use')
+    sales = PlanFactory.create(identifier='sort-sales', usage_status='sales')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    asc = client.get(index_url, {'ordering': 'usage_status'})
+    assert asc.status_code == 200
+    c_pos, s_pos = _marker_positions(asc, customer.identifier, sales.identifier)
+    assert c_pos < s_pos  # 'customer_use' sorts before 'sales'
+
+    desc = client.get(index_url, {'ordering': '-usage_status'})
+    c_pos, s_pos = _marker_positions(desc, customer.identifier, sales.identifier)
+    assert s_pos < c_pos
+
+
+def test_site_status_column_is_sortable(superuser, client):
+    not_live = PlanFactory.create(identifier='sort-notlive', published_at=None)
+    live = PlanFactory.create(identifier='sort-live', published_at=timezone.now() - timedelta(days=1))
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    asc = client.get(index_url, {'ordering': 'live_state'})
+    assert asc.status_code == 200
+    nl_pos, l_pos = _marker_positions(asc, not_live.identifier, live.identifier)
+    assert nl_pos < l_pos  # NOT_LIVE sorts before LIVE
+
+    desc = client.get(index_url, {'ordering': '-live_state'})
+    nl_pos, l_pos = _marker_positions(desc, not_live.identifier, live.identifier)
+    assert l_pos < nl_pos
+
+
 def test_plan_listing_clamps_narrow_column_cells(superuser, client):
     # The narrow columns (organization, clients, ...) clamp their text to a few lines with an
     # ellipsis, so a long organization name can't make a row arbitrarily tall.

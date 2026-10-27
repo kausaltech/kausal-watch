@@ -8,7 +8,7 @@ from django import forms
 from django.contrib.admin.utils import quote
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import F, Max, ProtectedError, Q, Window
+from django.db.models import Case, F, IntegerField, Max, ProtectedError, Q, Value, When, Window
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect
 from django.urls import path, re_path, reverse
@@ -874,6 +874,9 @@ class LiveStateColumn(Column):
     cell_template_name = 'aplans/plan_publication_status_cell.html'
 
     def __init__(self, name: str = 'live_state', **kwargs):
+        # live_state is a computed property, so PlanIndexView.order_queryset translates this sort
+        # key into the equivalent ordering on the publication timestamps.
+        kwargs.setdefault('sort_key', 'live_state')
         super().__init__(name, label=_('Site status'), **kwargs)
 
     def get_cell_context_data(self, instance: Plan, parent_context):
@@ -917,6 +920,7 @@ class UsageStatusColumn(Column):
     }
 
     def __init__(self, name: str = 'usage_status', **kwargs):
+        kwargs.setdefault('sort_key', 'usage_status')
         super().__init__(name, label=_('Usage'), **kwargs)
 
     def get_cell_context_data(self, instance: Plan, parent_context):
@@ -1079,9 +1083,27 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
             context['clear_sort_url'] = self.request.path + (f'?{query}' if query else '')
         return context
 
+    def _order_by_live_state(self, queryset: PlanQuerySet, *, descending: bool) -> PlanQuerySet:
+        # live_state is derived from the publication timestamps (see Plan.live_state), so it can't
+        # be ordered by directly. Rank each row by the equivalent computed state
+        # (NOT_LIVE < SCHEDULED < LIVE) and break ties newest-first.
+        now = timezone.now()
+        state_order = Case(
+            When(Q(published_at__isnull=True) | Q(archived_at__isnull=False), then=Value(0)),
+            When(published_at__gt=now, then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField(),
+        )
+        qs = queryset.annotate(_live_state_order=state_order)
+        primary = '-_live_state_order' if descending else '_live_state_order'
+        return qs.order_by(primary, '-created_at')  # type: ignore[misc]
+
     def order_queryset(self, queryset: PlanQuerySet) -> PlanQuerySet:
         # When the user picks a column to sort by, honour it (and opt out of the family grouping).
         if self.is_explicitly_ordered:
+            ordering = self.ordering
+            if ordering and str(ordering).lstrip('-') == 'live_state':
+                return self._order_by_live_state(queryset, descending=str(ordering).startswith('-'))
             return super().order_queryset(queryset)
         # Otherwise group umbrella families and show the newest first: each child sits directly
         # under its umbrella (parent), families are ranked by the latest creation time of any plan
