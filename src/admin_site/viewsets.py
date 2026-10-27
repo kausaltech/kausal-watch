@@ -43,7 +43,6 @@ from admin_site.mixins import (
 )
 from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
-from admin_site.wagtail import execute_admin_post_save_tasks
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -77,7 +76,7 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm = WagtailAdminMo
 
     def form_valid(self, form, *args, **kwargs):
         try:
-            form_valid_return = super().form_valid(form, *args, **kwargs)
+            return super().form_valid(form, *args, **kwargs)
         except ProtectedError as e:
             for o in e.protected_objects:
                 name = type(o)._meta.verbose_name_plural
@@ -86,9 +85,6 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm = WagtailAdminMo
                 form.add_error(None, _('In use: "%(instance)s".') % {'instance': str(o)})
             messages.validation_error(self.request, self.get_error_message(), form)
             return self.render_to_response(self.get_context_data(form=form))
-
-        execute_admin_post_save_tasks(form.instance, admin_req(self.request).user)
-        return form_valid_return
 
     def get_error_message(self):
         if hasattr(self.object, 'verbose_name_partitive'):
