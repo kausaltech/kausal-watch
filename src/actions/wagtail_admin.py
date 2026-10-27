@@ -1017,10 +1017,23 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         def get_cell_context_data(instance: Plan, parent_context):  # noqa: ANN202
             data = original_get_cell_context_data(instance, parent_context)
             data['grouping_active'] = grouping_active
+            # A child is only indented when its umbrella is actually on screen; when a filter
+            # leaves the umbrella out, the child renders as a top-level row (the Parent column
+            # still names its umbrella) instead of a dangling indent under nothing.
+            data['parent_in_view'] = instance.parent_id in self._displayed_plan_ids
             return data
 
         column.get_cell_context_data = get_cell_context_data
         return column
+
+    @cached_property
+    def _displayed_plan_ids(self) -> set[int]:
+        # Ids of every plan row in the current (filtered) listing. Pagination is disabled, so the
+        # object list is the full set of displayed rows.
+        object_list = getattr(self, 'object_list', None)
+        if object_list is None:
+            return set()
+        return {obj.pk for obj in object_list}
 
     # Low-priority columns that scroll; each gets a fixed narrow width.
     _NARROW_COLUMNS = ('version_name', 'parent', 'organization', 'clients_as_string')

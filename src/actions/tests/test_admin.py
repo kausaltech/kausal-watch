@@ -399,6 +399,38 @@ def test_explicit_sort_hides_child_markers_and_shows_clear_sort(superuser, clien
     assertContains(response, f'href="{index_url}"')
 
 
+def test_child_without_its_umbrella_in_view_is_not_indented(superuser, client):
+    # When a filter matches a child but not its umbrella, the umbrella row is absent, so the
+    # child must render as a top-level row rather than a dangling indent under nothing. The
+    # Parent column still names the umbrella.
+    umbrella = PlanFactory.create(name='Umbrella', identifier='orph-umbrella', usage_status='customer_use')
+    child = PlanFactory.create(name='Child', identifier='orph-child', parent=umbrella, usage_status='sales')
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url, {'usage_status': 'sales'})
+    assert response.status_code == 200
+
+    # Only the child matches the filter; its umbrella is filtered out.
+    assertContains(response, _marker(child.identifier))
+    assertNotContains(response, _marker(umbrella.identifier))
+    # So the child is not drawn as an indented child of a missing umbrella.
+    assertNotContains(response, 'plan-title--child')
+
+
+def test_child_stays_indented_when_its_umbrella_is_also_in_view(superuser, client):
+    # A filter that keeps the whole family intact must leave the child indented under its umbrella.
+    umbrella = PlanFactory.create(name='Umbrella', identifier='keep-umbrella', usage_status='sales')
+    PlanFactory.create(name='Child', identifier='keep-child', parent=umbrella, usage_status='sales')
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url, {'usage_status': 'sales'})
+    assert response.status_code == 200
+
+    assertContains(response, 'plan-title--child', count=1)
+
+
 def test_plan_listing_clamps_narrow_column_cells(superuser, client):
     # The narrow columns (organization, clients, ...) clamp their text to a few lines with an
     # ellipsis, so a long organization name can't make a row arbitrarily tall.

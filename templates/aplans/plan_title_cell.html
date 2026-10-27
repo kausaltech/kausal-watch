@@ -4,10 +4,12 @@
 {% block title %}
     {% comment %}
     Child plans (those with a parent/umbrella) are indented under their umbrella in the grouped
-    listing; the connector glyph (↳) sits inline in the indent gutter ahead of the name. Styling
-    lives in actions/plan-identifier.css.
+    listing, but only when the umbrella row is itself on screen (parent_in_view); a filter that
+    leaves the umbrella out drops the indent so the child is not nested under nothing. The
+    connector glyph (↳) sits inline in the indent gutter ahead of the name. Styling lives in
+    actions/plan-identifier.css.
     {% endcomment %}
-    {% if instance.parent_id and grouping_active %}<span class="plan-title--child" aria-hidden="true">↳</span>{% endif %}{{ block.super }}
+    {% if instance.parent_id and grouping_active and parent_in_view %}<span class="plan-title--child" aria-hidden="true">↳</span>{% endif %}{{ block.super }}
 {% endblock %}
 
 {% block extra %}
