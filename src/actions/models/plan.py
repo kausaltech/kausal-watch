@@ -1748,7 +1748,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
 
     @admin.display(description=_('Clients'), ordering='clients__client__name')
     def clients_as_string(self) -> str:
-        return '; '.join(self.clients.values_list('client__name', flat=True))
+        # Iterate the related rows (not values_list, which issues its own query and bypasses a
+        # prefetch_related('clients__client')) so a prefetching caller avoids a query per plan.
+        return '; '.join(cp.client.name for cp in self.clients.all())
 
     def delete(self, *args, **kwargs):
         from audit_logging.models import PlanScopedModelLogEntry, PlanScopedPageLogEntry

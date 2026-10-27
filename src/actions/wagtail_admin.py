@@ -1569,8 +1569,10 @@ class PlanViewSet(SnippetViewSet[Plan]):
         # Filter by id only: the adminable plans are found through joins to actions and
         # indicators, which a search of the listing could not filter on.
         qs = Plan.objects.qs.filter(id__in=user.get_adminable_plans().values('id'))
-        # The row-actions menu links to each plan's domains; prefetch them to avoid a query per row.
-        qs = qs.prefetch_related('domains')
+        # Every row renders the organization, parent, clients and domain columns; pull them in up
+        # front so the unpaginated listing stays a handful of queries instead of several per row.
+        # (clients_as_string iterates clients.all(), so clients__client must be prefetched too.)
+        qs = qs.select_related('organization', 'parent').prefetch_related('domains', 'clients__client')
         # Non-superusers don't have access to the is_active filter, so show only active plans by default
         if not user.is_superuser:
             qs = qs.filter(is_active=True)

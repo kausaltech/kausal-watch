@@ -494,6 +494,41 @@ def test_invalid_ordering_param_keeps_the_grouped_default(superuser, client, ord
     assertNotContains(response, 'plan-sort-active')
 
 
+def test_plan_listing_query_count_does_not_scale_with_rows(superuser, client):
+    # The listing renders the organization, parent and clients columns (and the per-row domain
+    # menu) for every row with no pagination, so none of them may add a query per row. Render a
+    # small and a larger listing and assert the query count is constant.
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+
+    def add_family(n_children: int) -> None:
+        umbrella = PlanFactory.create()
+        for _ in range(n_children):
+            child = PlanFactory.create(parent=umbrella)
+            ClientPlanFactory.create(plan=child)
+
+    def render_query_count() -> int:
+        with CaptureQueriesContext(connection) as ctx:
+            response = client.get(index_url)
+        assert response.status_code == 200
+        return len(ctx.captured_queries)
+
+    # Seed a family before logging in: logging in with no adminable plan leaves the session
+    # without a resolved active plan.
+    add_family(1)
+    client.force_login(superuser)
+    # Warm up per-request caches (content types, permissions) so the two measured renders match.
+    render_query_count()
+
+    add_family(2)
+    small = render_query_count()
+    add_family(4)
+    larger = render_query_count()
+    assert small == larger, f'N+1: {small} queries for the smaller listing, {larger} for the larger one'
+
+
 def test_child_without_its_umbrella_in_view_is_not_indented(superuser, client):
     # When a filter matches a child but not its umbrella, the umbrella row is absent, so the
     # child must render as a top-level row rather than a dangling indent under nothing. The
