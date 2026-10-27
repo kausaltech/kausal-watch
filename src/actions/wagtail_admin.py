@@ -117,7 +117,7 @@ if TYPE_CHECKING:
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
 
-    from actions.models.plan import PlanQuerySet
+    from actions.models.plan import PlanDomain, PlanQuerySet
     from users.models import User
 
 
@@ -978,6 +978,12 @@ class PlanTable(Table):
     # cell renders, via CSS `tr:has(...)` — see actions/plan-identifier.css.
 
 
+class MenuSeparatorButton(Button):
+    """A non-interactive separator (an `<hr>`) item for a row-actions dropdown menu."""
+
+    template_name = 'aplans/menu_separator_button.html'
+
+
 class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
     any_permission_required = ['add', 'change', 'delete', 'view']
@@ -1141,20 +1147,79 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
             attrs={'aria-label': _('Unpublish this plan')},
         )
 
+    # Dropdown priority for the domain-links block: above the default actions (priority ~1000) so
+    # the separator and the domain links sort to the bottom of the "..." menu.
+    _DOMAIN_BLOCK_PRIORITY = 2000
+
+    def _domain_links(self, instance: Plan) -> list[tuple[str, str]]:
+        # (label, url) for every surface the plan is reachable on, production first: custom
+        # production domains, then the deployment's derived wildcard host (<identifier>.<base>),
+        # then preview/development domains. Redirect-only domains and domains without a hostname
+        # are skipped.
+        #
+        # The wildcard host and the preview domains are secondary surfaces: the wildcard is the
+        # Kausal-hosted default (a preview by construction) and preview domains are a pre-launch
+        # convenience. They are shown only until the plan has a *launched* production domain of its
+        # own, after which they are noise — so a live plan served on its own production domain
+        # lists just that domain.
+        candidates = [d for d in instance.ordered_domains() if d.hostname and not d.redirect_to_hostname]
+        for domain in candidates:
+            # These rows belong to this plan; point them back so is_launched doesn't refetch it.
+            domain.plan = instance
+        production = [d for d in candidates if not d.is_preview_surface]
+        preview = [d for d in candidates if d.is_preview_surface]
+
+        def spec(domain: PlanDomain) -> tuple[str, str]:
+            return domain.hostname + (domain.base_path or ''), instance.view_url_for_domain(domain)
+
+        links: list[tuple[str, str]] = [spec(d) for d in production]
+        if not any(d.is_launched for d in production):
+            # The wildcard host is not a PlanDomain row, so add it explicitly (deduped against an
+            # identical custom domain).
+            wildcard_host = instance.default_hostname()
+            if wildcard_host:
+                wildcard_url = instance.view_url_for_domain(None)
+                if all(url != wildcard_url for _, url in links):
+                    links.append((wildcard_host, wildcard_url))
+            links += [spec(d) for d in preview]
+        return links
+
+    def _domain_link_buttons(self, instance: Plan) -> list[Button]:
+        # A separator sets the domain links apart from the row's actions. Dropdown items are sorted
+        # by priority, so the separator and the links carry ascending priorities to fix their order.
+        links = self._domain_links(instance)
+        if not links:
+            return []
+        buttons: list[Button] = [MenuSeparatorButton(priority=self._DOMAIN_BLOCK_PRIORITY)]
+        for offset, (label, url) in enumerate(links, start=1):
+            buttons.append(
+                Button(
+                    label=label,
+                    url=url,
+                    icon_name='link-external',
+                    priority=self._DOMAIN_BLOCK_PRIORITY + offset,
+                    attrs={
+                        'target': '_blank',
+                        'rel': 'noopener',
+                        'aria-label': _('Open %(hostname)s in a new tab') % {'hostname': label},
+                    },
+                ),
+            )
+        return buttons
+
     def get_list_more_buttons(self, instance: Plan):
         buttons = list(super().get_list_more_buttons(instance))
         user = user_or_bust(self.request.user)
         # TODO: Enable for general admins once ready for customer use
         # if not user.is_general_admin_for_plan(instance):
         #     return buttons
-        if not user.is_superuser:
-            return buttons
+        if user.is_superuser:
+            if instance.is_live():
+                buttons.append(self.unpublish_button(instance))
+            else:
+                buttons.append(self.publish_button(instance))
 
-        if instance.is_live():
-            buttons.append(self.unpublish_button(instance))
-        else:
-            buttons.append(self.publish_button(instance))
-
+        buttons += self._domain_link_buttons(instance)
         return buttons
 
 
@@ -1489,6 +1554,8 @@ class PlanViewSet(SnippetViewSet[Plan]):
         # Filter by id only: the adminable plans are found through joins to actions and
         # indicators, which a search of the listing could not filter on.
         qs = Plan.objects.qs.filter(id__in=user.get_adminable_plans().values('id'))
+        # The row-actions menu links to each plan's domains; prefetch them to avoid a query per row.
+        qs = qs.prefetch_related('domains')
         # Non-superusers don't have access to the is_active filter, so show only active plans by default
         if not user.is_superuser:
             qs = qs.filter(is_active=True)

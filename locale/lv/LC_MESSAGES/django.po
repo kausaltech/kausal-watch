@@ -8675,3 +8675,8 @@ msgstr ""
 #: src/actions/wagtail_admin.py
 msgid "Not in use currently"
 msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr ""

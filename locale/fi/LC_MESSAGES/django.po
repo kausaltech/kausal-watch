@@ -8205,3 +8205,8 @@ msgstr "Ei käytössä"
 #: src/actions/wagtail_admin.py
 msgid "Not in use currently"
 msgstr "Ei tällä hetkellä käytössä"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr "Avaa %(hostname)s uuteen välilehteen"

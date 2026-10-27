@@ -198,10 +198,10 @@
  */
 .kw-scroll-table td.title:has(.plan-title--child) .title-wrapper {
   position: relative;
-  padding-left: 2rem;
+  padding-left: 1.2rem;
 }
 .kw-scroll-table td.title:has(.plan-title--child) .plan-identifier {
-  padding-left: 2rem;
+  padding-left: 1.2rem;
 }
 /* Absolutely placed (out of inline flow) so it can't push the name right; sits in the gutter with
    its left edge at the cell's content edge, aligned with the parent plan's title. */
@@ -229,4 +229,11 @@
 }
 .plan-sort-active__label {
   font-weight: 600;
+}
+
+/* Separator between the row-actions and the domain links in the "..." dropdown menu. */
+.plan-row-menu__separator {
+  margin: 0.375rem 0;
+  border: 0;
+  border-top: 1px solid var(--w-color-border-furniture, #e0e0e0);
 }

@@ -8360,3 +8360,8 @@ msgstr "Ikke i brug"
 #: src/actions/wagtail_admin.py
 msgid "Not in use currently"
 msgstr "Ikke i brug i øjeblikket"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr "Åbn %(hostname)s i en ny fane"

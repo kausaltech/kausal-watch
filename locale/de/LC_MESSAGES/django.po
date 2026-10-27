@@ -8068,3 +8068,8 @@ msgstr "Nicht in Gebrauch"
 #: src/actions/wagtail_admin.py
 msgid "Not in use currently"
 msgstr "Derzeit nicht in Gebrauch"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr "%(hostname)s in neuem Tab öffnen"

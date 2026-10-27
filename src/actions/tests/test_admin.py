@@ -6,6 +6,7 @@ from unittest.mock import Mock
 
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from wagtail.models import Locale
@@ -21,6 +22,7 @@ from actions.tests.factories import (
     ActionFactory,
     AttributeTypeFactory,
     CategoryTypeFactory,
+    PlanDomainFactory,
     PlanFactory,
     PledgeFactory,
 )
@@ -461,6 +463,101 @@ def test_site_status_column_is_sortable(superuser, client):
     desc = client.get(index_url, {'ordering': '-live_state'})
     nl_pos, l_pos = _marker_positions(desc, not_live.identifier, live.identifier)
     assert l_pos < nl_pos
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['watch.test'])
+def test_unlaunched_plan_lists_production_then_wildcard_then_preview(superuser, client):
+    # An unlaunched plan shows its preview domain too, after the production and wildcard surfaces.
+    plan = PlanFactory.create(identifier='dom-plan', published_at=None)
+    PlanDomainFactory.create(plan=plan, hostname='preview.example.test', deployment_environment='preview')
+    PlanDomainFactory.create(plan=plan, hostname='www.example.test', deployment_environment='production')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    html = response.content.decode()
+    sep = html.index('plan-row-menu__separator')
+    prod = html.index('https://www.example.test')
+    wildcard = html.index('https://dom-plan.watch.test')
+    preview = html.index('https://preview.example.test')
+    assert sep < prod < wildcard < preview
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['watch.test'])
+def test_live_plan_with_launched_production_domain_shows_only_that_domain(superuser, client):
+    # PlanFactory publishes in the past, so the plan (and thus its production domain) is launched.
+    # The wildcard host and the preview domain are then secondary noise and are dropped; only the
+    # custom production domain is linked.
+    plan = PlanFactory.create(identifier='dom-plan')
+    PlanDomainFactory.create(plan=plan, hostname='preview.example.test', deployment_environment='preview')
+    PlanDomainFactory.create(plan=plan, hostname='www.example.test', deployment_environment='production')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'https://www.example.test' in html
+    assert 'https://dom-plan.watch.test' not in html
+    assert 'https://preview.example.test' not in html
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['watch.test'])
+def test_live_plan_without_a_custom_production_domain_still_shows_preview(superuser, client):
+    # Live, but the only custom domain is a preview one (the wildcard host does not count as a
+    # production domain), so the preview link is still shown.
+    plan = PlanFactory.create(identifier='dom-plan')
+    PlanDomainFactory.create(plan=plan, hostname='preview.example.test', deployment_environment='preview')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'https://dom-plan.watch.test' in html
+    assert 'https://preview.example.test' in html
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['watch.test'])
+def test_row_menu_excludes_redirect_only_domains(superuser, client):
+    plan = PlanFactory.create(identifier='dom-plan')
+    PlanDomainFactory.create(plan=plan, hostname='serving.example.test', deployment_environment='production')
+    PlanDomainFactory.create(plan=plan, hostname='old.example.test', redirect_to_hostname='serving.example.test')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'https://serving.example.test' in html
+    assert 'old.example.test' not in html
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['watch.test'])
+def test_row_menu_links_the_derived_wildcard_host_without_a_custom_domain(superuser, client):
+    # A plan with no custom PlanDomain is still served on the deployment's wildcard host.
+    PlanFactory.create(identifier='wild-plan')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    html = response.content.decode()
+    assert 'plan-row-menu__separator' in html
+    assert 'https://wild-plan.watch.test' in html
+
+
+@override_settings(HOSTNAME_PLAN_DOMAINS=['localhost'], DEPLOYMENT_TYPE='production')
+def test_row_menu_has_no_domain_separator_without_any_serving_url(superuser, client):
+    # No custom domain and no wildcard base configured, so there is nothing to link.
+    PlanFactory.create(identifier='nodom-plan')
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+
+    response = client.get(index_url)
+    assert response.status_code == 200
+    assertNotContains(response, 'plan-row-menu__separator')
 
 
 def test_plan_listing_clamps_narrow_column_cells(superuser, client):
