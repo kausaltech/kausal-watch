@@ -74,7 +74,7 @@ class TestUsageColumn:
 
 class TestUsageStatusRenameMigration:
     def test_forward_converts_inactive_to_not_in_use(self):
-        migration = import_module('actions.migrations.0203_rename_inactive_usage_status')
+        migration = import_module('actions.migrations.0204_rename_inactive_usage_status')
         plan = PlanFactory.create()
         # Write the legacy raw value directly (it is no longer a valid choice).
         Plan.objects.filter(pk=plan.pk).update(usage_status='inactive')
@@ -85,7 +85,7 @@ class TestUsageStatusRenameMigration:
         assert plan.usage_status == UsageStatus.NOT_IN_USE
 
     def test_other_usage_statuses_are_left_untouched(self):
-        migration = import_module('actions.migrations.0203_rename_inactive_usage_status')
+        migration = import_module('actions.migrations.0204_rename_inactive_usage_status')
         sales = PlanFactory.create(usage_status=UsageStatus.SALES)
         customer = PlanFactory.create(usage_status=UsageStatus.CUSTOMER_USE)
 

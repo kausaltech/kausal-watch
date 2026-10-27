@@ -14,7 +14,7 @@ def rename_not_in_use_to_inactive(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('actions', '0202_plandomain_order'),
+        ('actions', '0203_plan_order'),
     ]
 
     operations = [
