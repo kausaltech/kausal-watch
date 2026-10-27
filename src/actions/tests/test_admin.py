@@ -16,7 +16,7 @@ from pytest_django.asserts import assertContains, assertNotContains
 
 from actions.action_admin import ActionAdmin
 from actions.attribute_type_admin import AttributeTypeAdmin
-from actions.models import AttributeType, CategoryType
+from actions.models import AttributeType, CategoryType, Plan
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import (
     ActionFactory,
@@ -325,8 +325,9 @@ def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
     # Creation times are chosen so the grouping is distinguishable from a plain created-at sort.
     # A family is ranked by the latest creation time of any plan in it: the umbrella's family wins
     # because its newest child is the newest plan overall, even though the umbrella itself is the
-    # oldest. Within the family the umbrella comes first, then children newest-first. Expected
-    # order: umbrella, child-newer, child-older, standalone.
+    # oldest. Within the family the umbrella comes first, then the children in creation order
+    # (oldest-first, matching in_hierarchy_order). Expected order: umbrella, child-older,
+    # child-newer, standalone.
     now = timezone.now()
     umbrella = PlanFactory.create(name='Umbrella', identifier='grp-umbrella')
     child_newer = PlanFactory.create(name='Child newer', identifier='grp-child-new', parent=umbrella)
@@ -346,8 +347,83 @@ def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
         response, 'grp-umbrella', 'grp-child-new', 'grp-child-old', 'grp-standalone',
     )
     # The family block is contiguous and ranked above the standalone (its newest child is newest
-    # overall); the umbrella leads, then children newest-first.
-    assert umb < new_child < old_child < alone
+    # overall); the umbrella leads, then children oldest-first (creation order).
+    assert umb < old_child < new_child < alone
+
+
+def test_plan_listing_orders_children_by_manual_order(superuser, client):
+    # Within a family the children follow their manual order (the same order the child-plan
+    # ordering panel saves), ahead of creation time. Here the older-created child is given the
+    # first manual slot, so it must precede the newer-created one, the opposite of the
+    # creation-order default.
+    now = timezone.now()
+    umbrella = PlanFactory.create(name='Umbrella', identifier='ord-umbrella')
+    child_newer = PlanFactory.create(name='Child newer', identifier='ord-child-new', parent=umbrella)
+    child_older = PlanFactory.create(name='Child older', identifier='ord-child-old', parent=umbrella)
+    _set_created_at(umbrella, now - timedelta(days=4))
+    _set_created_at(child_older, now - timedelta(days=3))
+    _set_created_at(child_newer, now - timedelta(days=1))
+    # Manual order puts the older child first, against the newest-first creation default.
+    Plan.objects.filter(pk=child_older.pk).update(order=0)
+    Plan.objects.filter(pk=child_newer.pk).update(order=1)
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    client.force_login(superuser)
+    response = client.get(index_url)
+    assert response.status_code == 200
+
+    umb, old_child, new_child = _marker_positions(
+        response, 'ord-umbrella', 'ord-child-old', 'ord-child-new',
+    )
+    assert umb < old_child < new_child
+
+
+_PLAN_CHILDREN_GQL = """
+    query PlanChildren($id: ID!) {
+        plan(id: $id) {
+            children { identifier }
+            allRelatedPlans { identifier parent { id } }
+        }
+    }
+"""
+
+
+def test_plan_listing_child_order_matches_gql_child_order(superuser, client, graphql_client_query_data):
+    # The admin listing must order a family's children exactly like the GraphQL that the public UI
+    # uses for its plan selectors (PlanNode.children / allRelatedPlans, both via in_hierarchy_order).
+    # The setup is a deliberate discriminator: a manually ordered child that is neither the oldest
+    # nor the newest must lead, then the rest fall back to creation order (oldest-first), so neither
+    # creation time nor insertion/pk order alone reproduces the expected sequence.
+    now = timezone.now()
+    umbrella = PlanFactory.create(name='Umbrella', identifier='par-umbrella')
+    first = PlanFactory.create(name='First created', identifier='par-child-first', parent=umbrella)
+    last = PlanFactory.create(name='Last created', identifier='par-child-last', parent=umbrella)
+    middle = PlanFactory.create(name='Middle created', identifier='par-child-middle', parent=umbrella)
+    _set_created_at(umbrella, now - timedelta(days=5))
+    _set_created_at(first, now - timedelta(days=4))
+    _set_created_at(middle, now - timedelta(days=3))
+    _set_created_at(last, now - timedelta(days=2))
+    # Give the middle-created child a manual slot so it leads, ahead of the creation-order fallback.
+    Plan.objects.filter(pk=middle.pk).update(order=0)
+
+    client.force_login(superuser)
+
+    index_url = reverse(PlanViewSet().get_url_name('list'))
+    response = client.get(index_url)
+    assert response.status_code == 200
+    child_idents = ['par-child-first', 'par-child-last', 'par-child-middle']
+    positions = dict(zip(child_idents, _marker_positions(response, *child_idents), strict=True))
+    listing_order = sorted(child_idents, key=positions.__getitem__)
+
+    data = graphql_client_query_data(_PLAN_CHILDREN_GQL, variables={'id': umbrella.identifier})
+    gql_children_order = [c['identifier'] for c in data['plan']['children']]
+    gql_related_children_order = [
+        p['identifier'] for p in data['plan']['allRelatedPlans'] if p['parent'] is not None
+    ]
+
+    assert listing_order == gql_children_order == gql_related_children_order == [
+        'par-child-middle', 'par-child-first', 'par-child-last',
+    ]
 
 
 def test_plan_listing_explicit_sort_bypasses_family_grouping(superuser, client):

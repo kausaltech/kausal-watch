@@ -1117,12 +1117,16 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         # umbrella comes first (null parent), then its children newest-first. Grouping relies on
         # the practical one-level umbrella -> children hierarchy; a deeper descendant groups under
         # its immediate parent. See also Plan.get_all_related_plans, which traverses the same one
-        # level.
+        # level. Within a family the children follow the same order as PlanQuerySet.in_hierarchy_order
+        # (and so as the public UI and the child-plan ordering panel): their manual order (Plan.order)
+        # first, then creation time oldest-first for children without a manual order. Only the family
+        # ranking stays newest-first, so a family with a fresh plan still rises to the top.
         qs = queryset.annotate(_family_key=Coalesce('parent_id', 'id'))
         qs = qs.annotate(_family_latest=Window(Max('created_at'), partition_by=[F('_family_key')]))
         # django-stubs can't resolve the window-annotation alias in order_by.
         return qs.order_by(  # type: ignore[misc]
-            '-_family_latest', '_family_key', F('parent_id').asc(nulls_first=True), '-created_at',
+            '-_family_latest', '_family_key', F('parent_id').asc(nulls_first=True),
+            F('order').asc(nulls_last=True), 'created_at',
         )
 
     def get_publish_url(self, instance: Plan) -> str:
