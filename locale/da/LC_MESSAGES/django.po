@@ -3189,10 +3189,9 @@ msgid "public user sign-in attempts"
 msgstr "offentlige brugere"
 
 #: src/actions/plan_children_admin.py
-#, fuzzy, python-format
-#| msgid "Plan '%(plan)s' has been unpublished."
+#, python-format
 msgid "'%(plan)s' has been moved successfully."
-msgstr "Planen '%(plan)s' er blevet afpubliceret."
+msgstr "'%(plan)s' er blevet flyttet."
 
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
@@ -3398,16 +3397,16 @@ msgstr ""
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
-msgstr ""
+msgstr "Træk planerne i den rækkefølge, som den offentlige side viser dem i. Hver ændring gemmes med det samme."
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag"
-msgstr ""
+msgstr "Træk"
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 #, python-format
 msgid "Item %(index)s of %(total)s"
-msgstr ""
+msgstr "Element %(index)s af %(total)s"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3575,10 +3574,8 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Related plans"
 msgid "Child plans"
-msgstr "Relaterede planer"
+msgstr "Underplaner"
 
 #: src/actions/wagtail_admin.py
 msgid "Action statuses"
@@ -3657,10 +3654,8 @@ msgid "Site status"
 msgstr "Aktivitetsstatus"
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "This plan is inactive and only visible to superusers."
 msgid "This plan is internal: only signed-in users may read it."
-msgstr "Denne plan er inaktiv og kun synlig for superbrugere."
+msgstr "Denne plan er intern: kun brugere, der er logget ind, kan læse den."
 
 #: src/actions/wagtail_admin.py
 msgid "Sales / demo"
@@ -3692,7 +3687,7 @@ msgstr "Denne plan er inaktiv og kun synlig for superbrugere."
 
 #: src/actions/wagtail_admin.py
 msgid "This is the plan you are currently editing."
-msgstr ""
+msgstr "Dette er den plan, du redigerer i øjeblikket."
 
 #: src/actions/wagtail_admin.py
 msgid "Publish"
@@ -7539,29 +7534,23 @@ msgstr "Kausal Paths-instans"
 #: templates/aplans/plan_index.html
 #, python-format
 msgid "Sorted by: %(field)s"
-msgstr ""
+msgstr "Sorteret efter: %(field)s"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Heading"
 msgid "descending"
-msgstr "Overskrift"
+msgstr "faldende"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Heading"
 msgid "ascending"
-msgstr "Overskrift"
+msgstr "stigende"
 
 #: templates/aplans/plan_index.html
 msgid "multi-plan grouping is off"
-msgstr ""
+msgstr "plangruppering er slået fra"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Background image"
 msgid "Back to grouped view"
-msgstr "Baggrundsbillede"
+msgstr "Tilbage til grupperet visning"
 
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
@@ -7613,16 +7602,13 @@ msgid "Yes, unpublish"
 msgstr "Ja, afpublicér"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy, python-format
-#| msgid "hide category identifiers"
+#, python-format
 msgid "Copy identifier %(identifier)s"
-msgstr "skjul kategoriidentifikatorer"
+msgstr "Kopiér identifikator %(identifier)s"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy
-#| msgid "Node identifier"
 msgid "Copy identifier"
-msgstr "Knudeidentifikator"
+msgstr "Kopiér identifikator"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"

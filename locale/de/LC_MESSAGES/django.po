@@ -3111,10 +3111,9 @@ msgid "public user sign-in attempts"
 msgstr "Anmeldeversuche öffentlicher Nutzer"
 
 #: src/actions/plan_children_admin.py
-#, fuzzy, python-format
-#| msgid "Plan '%(plan)s' has been unpublished."
+#, python-format
 msgid "'%(plan)s' has been moved successfully."
-msgstr "Der Plan „%(plan)s” wurde zurückgezogen."
+msgstr "'%(plan)s' wurde erfolgreich verschoben."
 
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
@@ -3299,16 +3298,16 @@ msgstr "Ausgewählte freigeben"
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
-msgstr ""
+msgstr "Ziehen Sie die Pläne in die Reihenfolge, in der die öffentliche Website sie auflistet. Jede Änderung wird sofort gespeichert."
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag"
-msgstr ""
+msgstr "Ziehen"
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 #, python-format
 msgid "Item %(index)s of %(total)s"
-msgstr ""
+msgstr "Element %(index)s von %(total)s"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3476,10 +3475,8 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Related plans"
 msgid "Child plans"
-msgstr "Verbundene Pläne"
+msgstr "Unterpläne"
 
 #: src/actions/wagtail_admin.py
 msgid "Action statuses"
@@ -3556,10 +3553,8 @@ msgid "Site status"
 msgstr "Website-Status"
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "This plan is inactive and only visible to superusers."
 msgid "This plan is internal: only signed-in users may read it."
-msgstr "Dieser Plan ist inaktiv und nur für Superuser sichtbar."
+msgstr "Dieser Plan ist intern: Nur angemeldete Benutzer können ihn lesen."
 
 #: src/actions/wagtail_admin.py
 msgid "Sales / demo"
@@ -3591,7 +3586,7 @@ msgstr "Dieser Plan ist inaktiv und nur für Superuser sichtbar."
 
 #: src/actions/wagtail_admin.py
 msgid "This is the plan you are currently editing."
-msgstr ""
+msgstr "Dies ist der Plan, den Sie gerade bearbeiten."
 
 #: src/actions/wagtail_admin.py
 msgid "Publish"
@@ -7400,29 +7395,23 @@ msgstr "Kausal-Paths-Instanz"
 #: templates/aplans/plan_index.html
 #, python-format
 msgid "Sorted by: %(field)s"
-msgstr ""
+msgstr "Sortiert nach: %(field)s"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Pending"
 msgid "descending"
-msgstr "Ausstehend"
+msgstr "absteigend"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Pending"
 msgid "ascending"
-msgstr "Ausstehend"
+msgstr "aufsteigend"
 
 #: templates/aplans/plan_index.html
 msgid "multi-plan grouping is off"
-msgstr ""
+msgstr "Plan-Gruppierung ist deaktiviert"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Background image"
 msgid "Back to grouped view"
-msgstr "Hintergrundbild"
+msgstr "Zurück zur gruppierten Ansicht"
 
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
@@ -7472,16 +7461,13 @@ msgid "Yes, unpublish"
 msgstr "Ja, zurückziehen"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy, python-format
-#| msgid "hide category identifiers"
+#, python-format
 msgid "Copy identifier %(identifier)s"
-msgstr "verberge Kategoriekennungen"
+msgstr "Kennung %(identifier)s kopieren"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy
-#| msgid "Node identifier"
 msgid "Copy identifier"
-msgstr "Knotenkennung"
+msgstr "Kennung kopieren"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"

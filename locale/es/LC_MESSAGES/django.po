@@ -3312,7 +3312,7 @@ msgstr "espectadores de sitios públicos"
 #: src/actions/plan_children_admin.py
 #, python-format
 msgid "'%(plan)s' has been moved successfully."
-msgstr ""
+msgstr "'%(plan)s' se ha movido correctamente."
 
 #: src/actions/pledge_admin.py
 #, fuzzy
@@ -3540,16 +3540,16 @@ msgstr ""
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
-msgstr ""
+msgstr "Arrastra los planes al orden en que el sitio público los muestra. Cada cambio se guarda de inmediato."
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 msgid "Drag"
-msgstr ""
+msgstr "Arrastrar"
 
 #: src/actions/templates/actions/child_plan_order_panel.html
 #, python-format
 msgid "Item %(index)s of %(total)s"
-msgstr ""
+msgstr "Elemento %(index)s de %(total)s"
 
 #: src/actions/templates/site_summary/actions.html
 #, python-format
@@ -3735,10 +3735,8 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Related plans"
 msgid "Child plans"
-msgstr "Planes relacionados"
+msgstr "Planes subordinados"
 
 #: src/actions/wagtail_admin.py
 msgid "Action statuses"
@@ -3818,7 +3816,7 @@ msgstr "Tareas activas"
 
 #: src/actions/wagtail_admin.py
 msgid "This plan is internal: only signed-in users may read it."
-msgstr ""
+msgstr "Este plan es interno: solo los usuarios que han iniciado sesión pueden leerlo."
 
 #: src/actions/wagtail_admin.py
 msgid "Sales / demo"
@@ -3850,7 +3848,7 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "This is the plan you are currently editing."
-msgstr ""
+msgstr "Este es el plan que estás editando actualmente."
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -7991,29 +7989,23 @@ msgstr "UUID de la instancia Kausal Paths"
 #: templates/aplans/plan_index.html
 #, python-format
 msgid "Sorted by: %(field)s"
-msgstr ""
+msgstr "Ordenado por: %(field)s"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Heading"
 msgid "descending"
-msgstr "Rúbrica"
+msgstr "descendente"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Heading"
 msgid "ascending"
-msgstr "Rúbrica"
+msgstr "ascendente"
 
 #: templates/aplans/plan_index.html
 msgid "multi-plan grouping is off"
-msgstr ""
+msgstr "la agrupación de planes está desactivada"
 
 #: templates/aplans/plan_index.html
-#, fuzzy
-#| msgid "Big image"
 msgid "Back to grouped view"
-msgstr "Imagen grande"
+msgstr "Volver a la vista agrupada"
 
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
@@ -8069,16 +8061,13 @@ msgid "Yes, unpublish"
 msgstr "Sin publicar"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy, python-format
-#| msgid "hide category identifiers"
+#, python-format
 msgid "Copy identifier %(identifier)s"
-msgstr "ocultar identificadores de categoría"
+msgstr "Copiar identificador %(identifier)s"
 
 #: templates/aplans/plan_title_cell.html
-#, fuzzy
-#| msgid "identifier"
 msgid "Copy identifier"
-msgstr "identificador"
+msgstr "Copiar identificador"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
