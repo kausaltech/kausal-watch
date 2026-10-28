@@ -558,7 +558,6 @@ msgstr "Ações mescladas"
 
 #: src/actions/action_status_summary.py
 #: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
-#, fuzzy
 msgid "Completed"
 msgstr "Concluído"
 
@@ -570,13 +569,11 @@ msgstr "Pontual"
 #: src/actions/action_status_summary.py
 #: src/actions/blocks/action_content_blocks.py
 #: src/actions/templates/actions/bulk_approve.html
-#, fuzzy
 msgid "In progress"
 msgstr "Em andamento"
 
 #: src/actions/action_status_summary.py
 #: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
-#, fuzzy
 msgid "Not started"
 msgstr "Não iniciado"
 
@@ -891,13 +888,12 @@ msgid "Heading to show instead of the default"
 msgstr "Título a ser exibido em vez do padrão"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
 msgid "Sections"
-msgstr "Seção"
+msgstr "Seções"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
-msgstr ""
+msgstr "As seções de tarefas exibidas na página da ação, nesta ordem. As seções que não estão na lista não são exibidas."
 
 #: src/actions/blocks/action_content_blocks.py
 #, fuzzy

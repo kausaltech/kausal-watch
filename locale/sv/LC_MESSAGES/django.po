@@ -817,14 +817,12 @@ msgid "Heading to show instead of the default"
 msgstr "Rubrik som ska visas istället för standardrubriken"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Section"
 msgid "Sections"
-msgstr "Sektion"
+msgstr "Sektioner"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
-msgstr ""
+msgstr "Uppgiftssektionerna som visas på åtgärdssidan, i denna ordning. Sektioner som inte finns med i listan visas inte."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"

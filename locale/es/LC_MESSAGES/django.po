@@ -859,14 +859,12 @@ msgid "Heading to show instead of the default"
 msgstr "Encabezado a mostrar en lugar del predeterminado"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Section"
 msgid "Sections"
-msgstr "Sección"
+msgstr "Secciones"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
-msgstr ""
+msgstr "Las secciones de tareas que se muestran en la página de acción, en este orden. Las secciones que no figuran en la lista no se muestran."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"

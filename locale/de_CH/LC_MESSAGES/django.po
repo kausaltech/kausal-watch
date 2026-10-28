@@ -823,14 +823,12 @@ msgid "Heading to show instead of the default"
 msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Actions"
 msgid "Sections"
-msgstr "Massnahmen"
+msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
-msgstr ""
+msgstr "Die Aufgabenabschnitte, die auf der Massnahmenseite angezeigt werden, in dieser Reihenfolge. Nicht aufgeführte Abschnitte werden nicht angezeigt."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"
