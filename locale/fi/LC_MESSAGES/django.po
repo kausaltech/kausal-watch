@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-28 14:13+0200\n"
 "PO-Revision-Date: 2026-09-30 11:45+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -2449,8 +2449,8 @@ msgid "Offboarding in progress"
 msgstr "Käytöstä poistaminen käynnissä"
 
 #: src/actions/models/plan.py
-msgid "Inactive, not in use currently"
-msgstr "Ei aktiivinen, ei tällä hetkellä käytössä"
+msgid "Not in use currently"
+msgstr "Ei tällä hetkellä käytössä"
 
 #: src/actions/models/plan.py
 msgid "Deprecated, should be deleted"
@@ -3115,6 +3115,12 @@ msgstr "julkisen käyttäjän kirjautumisyritys"
 msgid "public user sign-in attempts"
 msgstr "julkisten käyttäjien kirjautumisyritykset"
 
+#: src/actions/plan_children_admin.py
+#, fuzzy, python-format
+#| msgid "Plan '%(plan)s' has been unpublished."
+msgid "'%(plan)s' has been moved successfully."
+msgstr "Toimenpideohjelman \"%(plan)s\" julkaisu on peruttu."
+
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
 msgstr "Tällä osoitetunnisteella on jo sitoumus."
@@ -3296,6 +3302,19 @@ msgstr "Lähetä ilmoitukset sähköpostitse yhteyshenkilöille"
 msgid "Release selected"
 msgstr "Vapauta valitut"
 
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag"
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+#, python-format
+msgid "Item %(index)s of %(total)s"
+msgstr ""
+
 #: src/actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -3462,6 +3481,12 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Related plans"
+msgid "Child plans"
+msgstr "Liittyvät toimenpideohjelmat"
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Toimenpiteen tilat"
 
@@ -3536,8 +3561,42 @@ msgid "Site status"
 msgstr "Sivuston tila"
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "This plan is inactive and only visible to superusers."
+msgid "This plan is internal: only signed-in users may read it."
+msgstr "Tämä toimenpideohjelma ei ole aktiivinen ja näkyy vain pääkäyttäjille."
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Myynti / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Kehitys / testaus"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Käytöstä poisto"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Ei käytössä"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Vanhentunut"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Käyttö"
+
+#: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
 msgstr "Tämä toimenpideohjelma ei ole aktiivinen ja näkyy vain pääkäyttäjille."
+
+#: src/actions/wagtail_admin.py
+msgid "This is the plan you are currently editing."
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Publish"
@@ -3554,6 +3613,11 @@ msgstr "Peru julkaisu"
 #: src/actions/wagtail_admin.py
 msgid "Unpublish this plan"
 msgstr "Peru tämän toimenpideohjelman julkaisu"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr "Avaa %(hostname)s uuteen välilehteen"
 
 #: src/actions/wagtail_admin.py
 msgid "Active"
@@ -7377,6 +7441,33 @@ msgstr "Solmu"
 msgid "Kausal Paths instance"
 msgstr "Kausal Paths -instanssi"
 
+#: templates/aplans/plan_index.html
+#, python-format
+msgid "Sorted by: %(field)s"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Pending"
+msgid "descending"
+msgstr "Odottaa"
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Pending"
+msgid "ascending"
+msgstr "Odottaa"
+
+#: templates/aplans/plan_index.html
+msgid "multi-plan grouping is off"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Background image"
+msgid "Back to grouped view"
+msgstr "Taustakuva"
+
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
 msgid "This plan is already scheduled for publication: %(bold_open)s%(info)s%(bold_close)s. Publishing now will override the scheduled date and make the plan public immediately."
@@ -7424,6 +7515,18 @@ msgstr "Tee toimenpideohjelmasta myös ei-julkinen, jolloin vain sisäänkirjaut
 msgid "Yes, unpublish"
 msgstr "Kyllä, peru julkaisu"
 
+#: templates/aplans/plan_title_cell.html
+#, fuzzy, python-format
+#| msgid "hide category identifiers"
+msgid "Copy identifier %(identifier)s"
+msgstr "piilota kategorioiden tunnisteet"
+
+#: templates/aplans/plan_title_cell.html
+#, fuzzy
+#| msgid "Node identifier"
+msgid "Copy identifier"
+msgstr "Solmun tunniste"
+
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
 msgstr "Tallennetaan…"
@@ -7431,6 +7534,9 @@ msgstr "Tallennetaan…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Tallenna ja poistu"
+
+#~ msgid "Inactive, not in use currently"
+#~ msgstr "Ei aktiivinen, ei tällä hetkellä käytössä"
 
 #~ msgid "Email domains allowed to request access"
 #~ msgstr "Sähköpostiverkkotunnukset, joista voi pyytää pääsyä"
@@ -8177,36 +8283,3 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "has goals"
 #~ msgstr "on tavoitteita"
-
-#: src/actions/wagtail_admin.py
-msgid "Usage"
-msgstr "Käyttö"
-
-#: src/actions/wagtail_admin.py
-msgid "Sales / demo"
-msgstr "Myynti / demo"
-
-#: src/actions/wagtail_admin.py
-msgid "Dev / test"
-msgstr "Kehitys / testaus"
-
-#: src/actions/wagtail_admin.py
-msgid "Offboarding"
-msgstr "Käytöstä poisto"
-
-#: src/actions/wagtail_admin.py
-msgid "Deprecated"
-msgstr "Vanhentunut"
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use"
-msgstr "Ei käytössä"
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use currently"
-msgstr "Ei tällä hetkellä käytössä"
-
-#: src/actions/wagtail_admin.py
-#, python-format
-msgid "Open %(hostname)s in a new tab"
-msgstr "Avaa %(hostname)s uuteen välilehteen"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-28 14:13+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -2611,8 +2611,8 @@ msgid "Offboarding in progress"
 msgstr "Offboarding σε εξέλιξη"
 
 #: src/actions/models/plan.py
-msgid "Inactive, not in use currently"
-msgstr "Ανενεργό, δεν χρησιμοποιείται επί του παρόντος"
+msgid "Not in use currently"
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Deprecated, should be deleted"
@@ -3333,6 +3333,11 @@ msgstr "θεατές του δημόσιου ιστότοπου"
 msgid "public user sign-in attempts"
 msgstr "θεατές του δημόσιου ιστότοπου"
 
+#: src/actions/plan_children_admin.py
+#, python-format
+msgid "'%(plan)s' has been moved successfully."
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 #| msgid "There is already a category with this identifier."
@@ -3557,6 +3562,19 @@ msgstr "αποστολή σε πρόσωπα επαφής δράσης"
 msgid "Release selected"
 msgstr ""
 
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag"
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+#, python-format
+msgid "Item %(index)s of %(total)s"
+msgstr ""
+
 #: src/actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -3743,6 +3761,12 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Related plans"
+msgid "Child plans"
+msgstr "Σχετικά σχέδια"
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Καταστάσεις δράσης"
 
@@ -3819,7 +3843,39 @@ msgid "Site status"
 msgstr "Ενεργά καθήκοντα"
 
 #: src/actions/wagtail_admin.py
+msgid "This plan is internal: only signed-in users may read it."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "This is the plan you are currently editing."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -3843,6 +3899,11 @@ msgstr "Αδημοσίευτο"
 #| msgid "Unpublished"
 msgid "Unpublish this plan"
 msgstr "Αδημοσίευτο"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -7970,6 +8031,33 @@ msgstr ""
 msgid "Kausal Paths instance"
 msgstr "UUID της περίπτωσης Kausal Paths"
 
+#: templates/aplans/plan_index.html
+#, python-format
+msgid "Sorted by: %(field)s"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Heading"
+msgid "descending"
+msgstr "Κεφαλή"
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Heading"
+msgid "ascending"
+msgstr "Κεφαλή"
+
+#: templates/aplans/plan_index.html
+msgid "multi-plan grouping is off"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+#| msgid "Big image"
+msgid "Back to grouped view"
+msgstr "Μεγάλη εικόνα"
+
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
 msgid "This plan is already scheduled for publication: %(bold_open)s%(info)s%(bold_close)s. Publishing now will override the scheduled date and make the plan public immediately."
@@ -8023,6 +8111,18 @@ msgstr ""
 msgid "Yes, unpublish"
 msgstr "Αδημοσίευτο"
 
+#: templates/aplans/plan_title_cell.html
+#, fuzzy, python-format
+#| msgid "hide category identifiers"
+msgid "Copy identifier %(identifier)s"
+msgstr "απόκρυψη αναγνωριστικών κατηγοριών"
+
+#: templates/aplans/plan_title_cell.html
+#, fuzzy
+#| msgid "identifier"
+msgid "Copy identifier"
+msgstr "αναγνωριστικό"
+
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
 msgstr "Εξοικονόμηση…"
@@ -8030,6 +8130,9 @@ msgstr "Εξοικονόμηση…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Αποθήκευση"
+
+#~ msgid "Inactive, not in use currently"
+#~ msgstr "Ανενεργό, δεν χρησιμοποιείται επί του παρόντος"
 
 #~ msgid "Is contact person"
 #~ msgstr "Είναι πρόσωπο επαφής"
@@ -8567,36 +8670,3 @@ msgstr "Αποθήκευση"
 
 #~ msgid "An optional logo for this organization"
 #~ msgstr "Ένα προαιρετικό λογότυπο για αυτόν τον οργανισμό"
-
-#: src/actions/wagtail_admin.py
-msgid "Usage"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Sales / demo"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Dev / test"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Offboarding"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Deprecated"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use currently"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-#, python-format
-msgid "Open %(hostname)s in a new tab"
-msgstr ""

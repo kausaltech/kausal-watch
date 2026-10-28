@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-28 14:13+0200\n"
 "PO-Revision-Date: 2026-09-28 07:47+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -2838,8 +2838,8 @@ msgid "Offboarding in progress"
 msgstr "em andamento"
 
 #: src/actions/models/plan.py
-msgid "Inactive, not in use currently"
-msgstr ""
+msgid "Not in use currently"
+msgstr "Sem uso no momento"
 
 #: src/actions/models/plan.py
 msgid "Deprecated, should be deleted"
@@ -3593,6 +3593,11 @@ msgstr "visualizadores de sites públicos"
 msgid "public user sign-in attempts"
 msgstr "visualizadores de sites públicos"
 
+#: src/actions/plan_children_admin.py
+#, python-format
+msgid "'%(plan)s' has been moved successfully."
+msgstr ""
+
 #: src/actions/pledge_admin.py
 #, fuzzy
 msgid "There is already a pledge with this slug."
@@ -3796,6 +3801,19 @@ msgstr "enviar para pessoas de contato"
 msgid "Release selected"
 msgstr ""
 
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag"
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+#, python-format
+msgid "Item %(index)s of %(total)s"
+msgstr ""
+
 #: src/actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -3973,6 +3991,11 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
+msgid "Child plans"
+msgstr "Planos relacionados"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
 msgid "Action statuses"
 msgstr "Status das ações"
 
@@ -4052,7 +4075,39 @@ msgid "Site status"
 msgstr "Tarefas ativas"
 
 #: src/actions/wagtail_admin.py
+msgid "This plan is internal: only signed-in users may read it."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr "Vendas / demo"
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr "Desenvolvimento / teste"
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr "Desligamento"
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr "Sem uso"
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr "Obsoleto"
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr "Uso"
+
+#: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "This is the plan you are currently editing."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -4073,6 +4128,11 @@ msgstr "Não publicado"
 #, fuzzy
 msgid "Unpublish this plan"
 msgstr "Não publicado"
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
+msgstr "Abrir %(hostname)s em uma nova aba"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -8487,6 +8547,30 @@ msgstr ""
 msgid "Kausal Paths instance"
 msgstr ""
 
+#: templates/aplans/plan_index.html
+#, python-format
+msgid "Sorted by: %(field)s"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+msgid "descending"
+msgstr "Título"
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+msgid "ascending"
+msgstr "Título"
+
+#: templates/aplans/plan_index.html
+msgid "multi-plan grouping is off"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+#, fuzzy
+msgid "Back to grouped view"
+msgstr "Imagem grande"
+
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
 msgid "This plan is already scheduled for publication: %(bold_open)s%(info)s%(bold_close)s. Publishing now will override the scheduled date and make the plan public immediately."
@@ -8536,6 +8620,16 @@ msgstr ""
 #, fuzzy
 msgid "Yes, unpublish"
 msgstr "Não publicado"
+
+#: templates/aplans/plan_title_cell.html
+#, fuzzy, python-format
+msgid "Copy identifier %(identifier)s"
+msgstr "ocultar identificadores de categoria"
+
+#: templates/aplans/plan_title_cell.html
+#, fuzzy
+msgid "Copy identifier"
+msgstr "identificador"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 #, fuzzy
@@ -9121,36 +9215,3 @@ msgstr "Salvar"
 #, fuzzy
 #~ msgid "Either SVG or image must be set"
 #~ msgstr "O SVG ou a imagem devem ser definidos"
-
-#: src/actions/wagtail_admin.py
-msgid "Usage"
-msgstr "Uso"
-
-#: src/actions/wagtail_admin.py
-msgid "Sales / demo"
-msgstr "Vendas / demo"
-
-#: src/actions/wagtail_admin.py
-msgid "Dev / test"
-msgstr "Desenvolvimento / teste"
-
-#: src/actions/wagtail_admin.py
-msgid "Offboarding"
-msgstr "Desligamento"
-
-#: src/actions/wagtail_admin.py
-msgid "Deprecated"
-msgstr "Obsoleto"
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use"
-msgstr "Sem uso"
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use currently"
-msgstr "Sem uso no momento"
-
-#: src/actions/wagtail_admin.py
-#, python-format
-msgid "Open %(hostname)s in a new tab"
-msgstr "Abrir %(hostname)s em uma nova aba"

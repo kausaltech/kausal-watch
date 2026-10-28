@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 00:35+0300\n"
+"POT-Creation-Date: 2026-10-28 14:13+0200\n"
 "PO-Revision-Date: 2026-09-28 07:52+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv_FI/>\n"
@@ -2441,7 +2441,7 @@ msgid "Offboarding in progress"
 msgstr ""
 
 #: src/actions/models/plan.py
-msgid "Inactive, not in use currently"
+msgid "Not in use currently"
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3095,6 +3095,11 @@ msgstr ""
 msgid "public user sign-in attempts"
 msgstr ""
 
+#: src/actions/plan_children_admin.py
+#, python-format
+msgid "'%(plan)s' has been moved successfully."
+msgstr ""
+
 #: src/actions/pledge_admin.py
 msgid "There is already a pledge with this slug."
 msgstr ""
@@ -3278,6 +3283,19 @@ msgstr ""
 msgid "Release selected"
 msgstr ""
 
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag the plans into the order in which the public site lists them. Each change is saved right away."
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+msgid "Drag"
+msgstr ""
+
+#: src/actions/templates/actions/child_plan_order_panel.html
+#, python-format
+msgid "Item %(index)s of %(total)s"
+msgstr ""
+
 #: src/actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -3438,6 +3456,10 @@ msgid "Links to the plan use the first domain in this list that serves the plan:
 msgstr ""
 
 #: src/actions/wagtail_admin.py
+msgid "Child plans"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr ""
 
@@ -3506,7 +3528,39 @@ msgid "Site status"
 msgstr ""
 
 #: src/actions/wagtail_admin.py
+msgid "This plan is internal: only signed-in users may read it."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Sales / demo"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Dev / test"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Offboarding"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Not in use"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Deprecated"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "Usage"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
 msgid "This plan is inactive and only visible to superusers."
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+msgid "This is the plan you are currently editing."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -3523,6 +3577,11 @@ msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Unpublish this plan"
+msgstr ""
+
+#: src/actions/wagtail_admin.py
+#, python-format
+msgid "Open %(hostname)s in a new tab"
 msgstr ""
 
 #: src/actions/wagtail_admin.py
@@ -7274,6 +7333,27 @@ msgstr ""
 msgid "Kausal Paths instance"
 msgstr ""
 
+#: templates/aplans/plan_index.html
+#, python-format
+msgid "Sorted by: %(field)s"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+msgid "descending"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+msgid "ascending"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+msgid "multi-plan grouping is off"
+msgstr ""
+
+#: templates/aplans/plan_index.html
+msgid "Back to grouped view"
+msgstr ""
+
 #: templates/aplans/plan_publish_confirmation.html
 #, python-format
 msgid "This plan is already scheduled for publication: %(bold_open)s%(info)s%(bold_close)s. Publishing now will override the scheduled date and make the plan public immediately."
@@ -7321,43 +7401,19 @@ msgstr ""
 msgid "Yes, unpublish"
 msgstr ""
 
+#: templates/aplans/plan_title_cell.html
+#, python-format
+msgid "Copy identifier %(identifier)s"
+msgstr ""
+
+#: templates/aplans/plan_title_cell.html
+msgid "Copy identifier"
+msgstr ""
+
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
 msgstr ""
 
 #: templates/modeladmin/create.html
 msgid "Save"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Usage"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Sales / demo"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Dev / test"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Offboarding"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Deprecated"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-msgid "Not in use currently"
-msgstr ""
-
-#: src/actions/wagtail_admin.py
-#, python-format
-msgid "Open %(hostname)s in a new tab"
 msgstr ""
