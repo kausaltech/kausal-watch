@@ -31,7 +31,8 @@ from documents.models import AplansDocument
 from feedback.models import UserFeedback
 from feedback.permissions import UserFeedbackPermissionPolicy
 from images.models import AplansImage
-from indicators.models import IndicatorGoalDataPoint
+from indicators.models import Dimension, IndicatorGoalDataPoint
+from indicators.permission_policy import DimensionPermissionPolicy
 from notifications.models import BaseTemplate, NotificationSettings
 from orgs.models import Organization
 from pages.models import PageChangeLogMessage
@@ -64,6 +65,7 @@ def test_declared_permission_policy_is_registered(model):
         (PageChangeLogMessage, PlanRelatedPermissionPolicy),
         (ReportType, PlanRelatedPermissionPolicy),
         (Report, PlanRelatedPermissionPolicy),
+        (Dimension, DimensionPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):

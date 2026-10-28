@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING, Any, cast
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
+from django.http import HttpResponseRedirect, QueryDict
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import lazy
@@ -51,7 +53,13 @@ from aplans.wagtail_utils import _get_category_fields
 from actions.models.plan import Plan
 from admin_site.field_customization import register_customizable_fields
 from admin_site.utils import admin_req
-from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchViewSet
+from admin_site.viewsets import (
+    InstancePermissionCheckedMixin,
+    WatchCreateView,
+    WatchDeleteView,
+    WatchEditView,
+    WatchViewSet,
+)
 from admin_site.wagtail import (
     AplansAdminModelForm,
     AplansCreateView,
@@ -69,6 +77,7 @@ from admin_site.wagtail import (
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.panels import IndicatorMetricsInlinePanel
+from indicators.permission_policy import DimensionPermissionPolicy
 
 from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, PlanDimension, Quantity, Unit
 from .models.goal_data_point import IndicatorGoalDataPoint
@@ -330,6 +339,23 @@ class DimensionCreateView(WatchCreateView[Dimension]):
         return dimension
 
 
+# `WatchEditView` only checks an object's plan for `PlanRelatedModel`s, which `Dimension` is not
+class DimensionEditView(InstancePermissionCheckedMixin, WatchEditView[Dimension]):
+    def dispatch(self, request, *args, **kwargs):
+        user = user_or_bust(request.user)
+        plans = DimensionPermissionPolicy().get_plans(self.object)
+        if user.get_active_admin_plan() in plans:
+            return super().dispatch(request, *args, **kwargs)
+        adminable_plans = user.get_adminable_plans()
+        plan = next((p for p in plans if p in adminable_plans), None)
+        if plan is None:
+            return super().dispatch(request, *args, **kwargs)
+        querystring = QueryDict(mutable=True)
+        querystring[REDIRECT_FIELD_NAME] = request.get_full_path()
+        url = reverse('change-admin-plan', kwargs={'plan_id': plan.id})
+        return HttpResponseRedirect(f'{url}?{querystring.urlencode()}')
+
+
 class DimensionDeleteView(WatchDeleteView[Dimension]):
     def post(self, request, *args, **kwargs):
         dimension = self.object
@@ -358,6 +384,7 @@ class DimensionViewSet(WatchViewSet[Dimension]):
     url_prefix = 'indicators/dimension'
     list_display = ['name']
     add_view_class = DimensionCreateView
+    edit_view_class = DimensionEditView
     delete_view_class = DimensionDeleteView
     bulk_delete_enabled = False
 
