@@ -25,6 +25,26 @@ class ReportTypeChooserBlock(blocks.ChooserBlock):
         return self.widget.get_value_data(value)
 
 
+class ReportChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Report')
+
+    @cached_property
+    def target_model(self):
+        from reports.models import Report
+
+        return Report
+
+    @cached_property
+    def widget(self):
+        from reports.chooser import ReportChooser
+
+        return ReportChooser()
+
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
+
+
 @register_streamfield_block
 class ReportTypeFieldChooserBlock(blocks.CharBlock):
     # TODO: Write proper chooser block instead of extending CharBlock

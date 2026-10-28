@@ -48,7 +48,7 @@ from notifications.models import NotificationSettings
 from notifications.tests.factories import BaseTemplateFactory
 from pages.models import PageChangeLogMessage
 from people.tests.factories import PersonFactory
-from reports.tests.factories import ReportTypeFactory
+from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -170,6 +170,10 @@ CHOOSERS = [
         own='choosable',
     ),
     generic('report-type-chooser', lambda plan: ReportTypeFactory.create(plan=plan, name=f'{MARKER} report type')),
+    generic(
+        'report-chooser',
+        lambda plan: ReportFactory.create(type__plan=plan, name=f'{MARKER} report', is_complete=True),
+    ),
     wagtail('indicator-chooser', _indicator),
     wagtail('organization-chooser', lambda plan: plan.organization, others_visible=True),
     generic('person-chooser', lambda plan: PersonFactory.create(first_name=MARKER, organization=plan.organization)),

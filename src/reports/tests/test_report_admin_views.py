@@ -156,7 +156,7 @@ def test_created_report_gets_type_from_query(admin_client, own_report_type):
 
     response = admin_client.post(
         add_path,
-        {'name': 'New report', 'start_date': '2026-01-01', 'end_date': '2026-12-31', 'is_public': 'on'},
+        {'name': 'New report', 'start_date': '2026-01-01', 'end_date': '2026-12-31'},
     )
     assert response.status_code == 302
     report = Report.objects.get(name='New report')
