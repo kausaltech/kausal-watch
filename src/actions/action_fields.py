@@ -96,6 +96,10 @@ def initialize():
             field_name='tasks',
             field_type='many',
             report_formatter_class='reports.report_formatters.ActionTasksFormatter',
+            # The details block has settings of its own and takes the name `ActionTasksBlock` that the
+            # report block would otherwise be generated with, so the report block needs its own class.
+            details_block_class='actions.blocks.action_content_blocks.ActionTasksBlock',
+            report_block_class='reports.blocks.action_content.ActionTasksReportFieldBlock',
         )
     )
     register(

@@ -11,7 +11,7 @@ from grapple.helpers import register_streamfield_block
 
 from kausal_common.blocks.registry import FieldBlockContext
 
-from actions.blocks.base import ActionReportContentField
+from actions.blocks.base import ActionContentBlockBase, ActionReportContentField
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.stream_block import generate_stream_block
 from reports import report_formatters as formatters
@@ -83,6 +83,16 @@ class ActionStatusReportFieldBlock(FieldBlockWithHelpPanel):
 
     class Meta:
         label = _('Status')
+
+
+@register_streamfield_block
+class ActionTasksReportFieldBlock(ActionContentBlockBase):
+    """
+    The report block for an action's tasks.
+
+    It is the block that would be generated for the field, under a name of its own; the generated
+    name `ActionTasksBlock` belongs to the action page's tasks block, which has settings of its own.
+    """
 
 
 @register_streamfield_block

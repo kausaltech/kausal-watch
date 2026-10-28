@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
@@ -15,8 +17,14 @@ from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
 
 from actions.blocks.base import ActionContentBlockBase
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
+from actions.models.action import ActionTask
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from grapple.models import GraphQLField
 
 
 @register_streamfield_block
@@ -64,6 +72,59 @@ class ActionResponsiblePartiesBlock(ActionContentBlockBase):  # block.details
 
     graphql_fields = [
         GraphQLString('heading'),
+    ]
+
+
+@register_streamfield_block
+class ActionTaskSectionBlock(blocks.StructBlock):  # child
+    """
+    One section of the task list on the action page, listing the tasks in one state.
+
+    The section's child name in `ActionTaskSectionsBlock` is the task state it lists, and the
+    public UI reads it from `field`. So every state shares this class.
+    """
+
+    heading = blocks.CharBlock(
+        required=False,
+        help_text=_('Heading to show instead of the default'),
+        default='',
+        label=_('Heading'),
+    )
+
+    graphql_fields = [
+        GraphQLString('heading'),
+    ]
+
+
+TASK_SECTION_STATES = (
+    (ActionTask.NOT_STARTED, _('Not started')),
+    (ActionTask.IN_PROGRESS, _('In progress')),
+    (ActionTask.COMPLETED, _('Completed')),
+)
+
+
+class ActionTaskSectionsBlock(blocks.StreamBlock):
+    def __init__(self, **kwargs):
+        child_blocks = [(state, ActionTaskSectionBlock(label=label)) for state, label in TASK_SECTION_STATES]
+        kwargs.setdefault('default', [(state, {'heading': ''}) for state in dict(TASK_SECTION_STATES)])
+        super().__init__(child_blocks, **kwargs)
+
+    class Meta:
+        min_num = 1
+        block_counts = {state: {'max_num': 1} for state in dict(TASK_SECTION_STATES)}
+
+
+@register_streamfield_block
+class ActionTasksBlock(ActionContentBlockBase):  # block.details.custom
+    sections = ActionTaskSectionsBlock(
+        label=_('Sections'),
+        help_text=_('The task sections shown on the action page, in this order. Sections not listed are not shown.'),
+    )
+
+    graphql_fields = [
+        *ActionContentBlockBase.graphql_fields,
+        # The sections stream has a single child block type, so this resolves to a plain field.
+        cast('Callable[[], GraphQLField]', make_grapple_streamfield(lambda: ActionTasksBlock, 'sections')),
     ]
 
 
