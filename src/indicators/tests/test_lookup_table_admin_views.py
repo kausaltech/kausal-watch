@@ -102,7 +102,7 @@ def test_unit_listing_columns(admin_client):
     UnitFactory.create(name='kilogram', short_name='kg')
     content = admin_client.get(UNITS_PATH).content.decode()
     assert 'kilogram' in content
-    assert '>kg<' in content
+    assert re.search(r'>\s*kg\s*<', content)
 
 
 def test_quantity_listing_is_sorted_by_name(admin_client):
@@ -125,7 +125,7 @@ def test_listing_offers_no_bulk_delete(admin_client, own_dimension, path):
     UnitFactory.create()
     QuantityFactory.create()
     content = admin_client.get(path).content.decode()
-    assert 'bulk-action' not in content
+    assert 'data-bulk-action-checkbox' not in content
 
 
 def test_bulk_delete_does_not_delete_dimension(admin_client, own_dimension):
@@ -176,7 +176,7 @@ def test_editing_quantity_saves_translation(admin_client):
     response = admin_client.post(f'{QUANTITIES_PATH}edit/{quantity.pk}/', {'name': 'Mass', 'name_fi': 'Massa'})
     assert response.status_code == 302
     quantity.refresh_from_db()
-    assert quantity.name_fi == 'Massa'  # pyright: ignore[reportAttributeAccessIssue]
+    assert quantity.name_fi == 'Massa'  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_editing_dimension_records_revision(admin_client, plan_admin_user, own_dimension):

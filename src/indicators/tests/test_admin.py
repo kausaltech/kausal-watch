@@ -8,7 +8,6 @@ import pytest
 
 from admin_site.tests.factories import ClientPlanFactory
 from indicators.tests.factories import QuantityFactory, UnitFactory
-from indicators.wagtail_admin import QuantityAdmin, UnitAdmin
 
 if typing.TYPE_CHECKING:
     from django.test import Client
@@ -19,12 +18,15 @@ if typing.TYPE_CHECKING:
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize(('admin_class', 'factory'), [(UnitAdmin, UnitFactory), (QuantityAdmin, QuantityFactory)])
+@pytest.mark.parametrize(
+    ('url_name', 'factory'),
+    [('wagtailsnippets_indicators_unit:edit', UnitFactory), ('wagtailsnippets_indicators_quantity:edit', QuantityFactory)],
+)
 def test_untranslated_fields_tab_names_default_language(
     client: Client,
     plan: Plan,
     plan_admin_user: User,
-    admin_class: type[UnitAdmin | QuantityAdmin],
+    url_name: str,
     factory: type[UnitFactory | QuantityFactory],
 ):
     # Units and quantities are shared between plans, so their untranslated fields are always in English, not in the
@@ -32,9 +34,9 @@ def test_untranslated_fields_tab_names_default_language(
     ClientPlanFactory.create(plan=plan)
     instance = factory.create()
     client.force_login(plan_admin_user)
-    edit_url = reverse(admin_class().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': instance.pk})
+    edit_url = reverse(url_name, args=(instance.pk,))
     response = client.get(edit_url)
     assert response.status_code == 200
-    headings = [str(tab.heading) for tab in response.context['edit_handler'].children]
+    headings = [str(tab.heading) for tab in response.context['panel'].children]
     assert headings[0] == 'General (English (United States))'
     assert 'English (United States)' not in headings
