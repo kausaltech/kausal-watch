@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 14:13+0200\n"
+"POT-Creation-Date: 2026-10-28 18:12+0200\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -553,7 +553,8 @@ msgstr "Dependencias de acción"
 msgid "Merged actions"
 msgstr "Acciones fusionadas"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Completed"
 msgstr "Completado"
 
@@ -562,11 +563,13 @@ msgid "On time"
 msgstr "A tiempo"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 #: src/actions/templates/actions/bulk_approve.html
 msgid "In progress"
 msgstr "En curso"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Not started"
 msgstr "No iniciado"
 
@@ -854,6 +857,16 @@ msgstr "Categoría"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Encabezado a mostrar en lugar del predeterminado"
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Section"
+msgid "Sections"
+msgstr "Sección"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
+msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"
@@ -4387,7 +4400,6 @@ msgid "Email domains"
 msgstr "Dominios de correo electrónico"
 
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Informes"
 
@@ -7332,13 +7344,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' está actualmente conectado a los siguientes elementos. Por favor, verifique la eliminación:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Sí, borrar"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "No, no borres"
@@ -7857,20 +7867,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "El informe '%(report)s' ya no está marcado como completo."
 
 #: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Report types"
+msgstr "Tipos de informes"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Descargar XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Descargar informe como archivo de hoja de cálculo"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Marcar como completo"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Marcar este informe como completo"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7881,12 +7891,12 @@ msgid "Undo marking this report as complete"
 msgstr "Deshacer el marcado de este informe como completo"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Marcar como completo"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Tipos de informes"
+msgid "Mark this report as complete"
+msgstr "Marcar este informe como completo"
 
 #: src/users/apps.py
 msgid "Users"

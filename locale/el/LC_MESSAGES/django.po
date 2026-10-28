@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 14:13+0200\n"
+"POT-Creation-Date: 2026-10-28 18:12+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -553,7 +553,8 @@ msgstr "Εξαρτήσεις δράσης"
 msgid "Merged actions"
 msgstr "Συγχωνευμένες δράσεις"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Completed"
 msgstr "Ολοκληρωμένο"
 
@@ -562,11 +563,13 @@ msgid "On time"
 msgstr "Στην ώρα του"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 #: src/actions/templates/actions/bulk_approve.html
 msgid "In progress"
 msgstr "Σε εξέλιξη"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Not started"
 msgstr "Δεν έχει ξεκινήσει"
 
@@ -854,6 +857,16 @@ msgstr "Κατηγορία"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Επικεφαλίδα που θα εμφανίζεται αντί της προεπιλεγμένης"
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Section"
+msgid "Sections"
+msgstr "Τμήμα"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
+msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"
@@ -4415,7 +4428,6 @@ msgid "Email domains"
 msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
 
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Αναφορές"
 
@@ -7377,13 +7389,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "Το '%(instance_name)s' είναι συνδεδεμένο με τα ακόλουθα στοιχεία. Παρακαλώ επαληθεύστε τη διαγραφή:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ναι, διαγράψτε"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Όχι, μη διαγράψετε"
@@ -7902,20 +7912,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Η αναφορά '%(report)s' δεν χαρακτηρίζεται πλέον ως πλήρης."
 
 #: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Report types"
+msgstr "Τύποι αναφορών"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Λήψη XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Κατεβάστε την έκθεση ως αρχείο λογιστικού φύλλου"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7926,12 +7936,12 @@ msgid "Undo marking this report as complete"
 msgstr "Αναίρεση της επισήμανσης αυτής της αναφοράς ως ολοκληρωμένης"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Τύποι αναφορών"
+msgid "Mark this report as complete"
+msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
 
 #: src/users/apps.py
 msgid "Users"
