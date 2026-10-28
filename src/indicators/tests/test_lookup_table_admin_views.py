@@ -13,7 +13,14 @@ import pytest
 from actions.tests.factories import PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
 from indicators.models import Dimension, PlanDimension, Quantity, Unit
-from indicators.tests.factories import DimensionFactory, PlanDimensionFactory, QuantityFactory, UnitFactory
+from indicators.tests.factories import (
+    DimensionFactory,
+    IndicatorDimensionFactory,
+    IndicatorLevelFactory,
+    PlanDimensionFactory,
+    QuantityFactory,
+    UnitFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -239,3 +246,45 @@ def test_deleting_quantity(admin_client):
 def test_dimension_without_plan_is_not_listed(admin_client):
     dimension = DimensionFactory.create(name='Planless dimension')
     assert dimension.name not in admin_client.get(DIMENSIONS_PATH).content.decode()
+
+
+@pytest.mark.parametrize('view', ['edit', 'history'])
+def test_other_plans_dimension_cannot_be_opened(admin_client, other_plan_dimension, view):
+    response = admin_client.get(f'{DIMENSIONS_PATH}{view}/{other_plan_dimension.pk}/')
+    assert response.status_code == 302
+    assert response['Location'] == '/admin/'
+
+
+def test_other_plans_dimension_switches_plan_for_its_admin(client, plan_with_pages, other_plan_dimension, user_factory):
+    user = user_factory(is_superuser=True)
+    user.selected_admin_plan = plan_with_pages
+    user.save(update_fields=['selected_admin_plan'])
+    client.force_login(user)
+    other_plan = other_plan_dimension.plans.get().plan
+    path = f'{DIMENSIONS_PATH}edit/{other_plan_dimension.pk}/'
+    response = client.get(path)
+    assert response.status_code == 302
+    assert response['Location'] == f'/admin/change-admin-plan/{other_plan.pk}/?next={path.replace("/", "%2F")}'
+
+
+def test_other_plans_dimension_cannot_be_edited(admin_client, other_plan_dimension):
+    admin_client.post(f'{DIMENSIONS_PATH}edit/{other_plan_dimension.pk}/', _dimension_form_data('Renamed'))
+    other_plan_dimension.refresh_from_db()
+    assert other_plan_dimension.name == 'Other plan dimension'
+
+
+def test_dimension_shared_with_another_plan_can_be_edited(admin_client, own_dimension):
+    PlanDimensionFactory.create(dimension=own_dimension, plan=PlanFactory.create())
+    response = admin_client.post(f'{DIMENSIONS_PATH}edit/{own_dimension.pk}/', _dimension_form_data('Renamed'))
+    assert response.status_code == 302
+    own_dimension.refresh_from_db()
+    assert own_dimension.name == 'Renamed'
+
+
+def test_dimension_used_by_plans_indicator_can_be_edited(admin_client, plan_with_pages, other_plan_dimension):
+    indicator = IndicatorLevelFactory.create(plan=plan_with_pages).indicator
+    IndicatorDimensionFactory.create(indicator=indicator, dimension=other_plan_dimension)
+    response = admin_client.post(f'{DIMENSIONS_PATH}edit/{other_plan_dimension.pk}/', _dimension_form_data('Renamed'))
+    assert response.status_code == 302
+    other_plan_dimension.refresh_from_db()
+    assert other_plan_dimension.name == 'Renamed'

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan
     from indicators.models.indicator import Indicator
     from indicators.models.values import IndicatorValue
+    from indicators.permission_policy import DimensionPermissionPolicy
 
 
 @reversion.register()
@@ -44,6 +45,12 @@ class Dimension(ClusterableModel):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def permission_policy(cls) -> DimensionPermissionPolicy:
+        from indicators.permission_policy import DimensionPermissionPolicy
+
+        return DimensionPermissionPolicy()
 
     @override
     def delete(
