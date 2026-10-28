@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 14:13+0200\n"
+"POT-Creation-Date: 2026-10-28 18:12+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -520,7 +520,8 @@ msgstr "Toimenpiteen riippuvuudet"
 msgid "Merged actions"
 msgstr "Yhdistetyt toimenpiteet"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Completed"
 msgstr "Valmis"
 
@@ -529,11 +530,13 @@ msgid "On time"
 msgstr "Aikataulussa"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 #: src/actions/templates/actions/bulk_approve.html
 msgid "In progress"
 msgstr "Käynnissä"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Not started"
 msgstr "Ei aloitettu"
 
@@ -813,6 +816,16 @@ msgstr "Luokka"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Otsikko, joka näytetään oletusarvon sijasta"
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Section"
+msgid "Sections"
+msgstr "Osio"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
+msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"
@@ -4073,7 +4086,6 @@ msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
 
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Raportit"
 
@@ -6819,13 +6831,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' on yhteydessä seuraaviin kohteisiin. Ole hyvä ja varmista poistaminen:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Kyllä, poista"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Ei, älä poista"
@@ -7323,20 +7333,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Raportti '%(report)s' ei ole enää merkitty valmiiksi."
 
 #: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+
+#: src/reports/wagtail_admin.py
+msgid "Report types"
+msgstr "Raporttityypit"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Tallenna XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Tallenna raportti taulukkolaskentatiedostona"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Merkitse valmiiksi"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Merkitse tämä raportti valmiiksi"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7347,12 +7357,12 @@ msgid "Undo marking this report as complete"
 msgstr "Peru tämän raportin merkitseminen valmiiksi"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+msgid "Mark as complete"
+msgstr "Merkitse valmiiksi"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Raporttityypit"
+msgid "Mark this report as complete"
+msgstr "Merkitse tämä raportti valmiiksi"
 
 #: src/users/apps.py
 msgid "Users"

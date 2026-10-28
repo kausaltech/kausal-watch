@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 14:13+0200\n"
+"POT-Creation-Date: 2026-10-28 18:12+0200\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -551,7 +551,8 @@ msgstr "Handlingens afhængigheder"
 msgid "Merged actions"
 msgstr "Sammenkoblede handlinger"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Completed"
 msgstr "Færdiggjort"
 
@@ -560,11 +561,13 @@ msgid "On time"
 msgstr "En gang"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 #: src/actions/templates/actions/bulk_approve.html
 msgid "In progress"
 msgstr "I gang"
 
-#: src/actions/action_status_summary.py src/actions/defaults.py
+#: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py src/actions/defaults.py
 msgid "Not started"
 msgstr "Ikke startet"
 
@@ -851,6 +854,16 @@ msgstr "Kategori"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Overskrift, der skal vises i stedet for standarden"
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Section"
+msgid "Sections"
+msgstr "Afsnit"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "The task sections shown on the action page, in this order. Sections not listed are not shown."
+msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Label"
@@ -4182,7 +4195,6 @@ msgid "Email domains"
 msgstr "E-mail domæner"
 
 #: src/admin_site/wagtail_hooks.py src/reports/apps.py
-#: src/reports/wagtail_admin.py
 msgid "Reports"
 msgstr "Rapporter"
 
@@ -6897,13 +6909,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft venligst sletning:"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ja, slet"
 
 #: src/people/templates/people/delete.html
-#: src/reports/templates/reports/report_type_delete.html
 #: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nej, slet ikke"
@@ -7418,20 +7428,20 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Rapporten '%(report)s' er ikke længere markeret som færdig."
 
 #: src/reports/wagtail_admin.py
+msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Report types"
+msgstr "Rapporttyper"
+
+#: src/reports/wagtail_admin.py
 msgid "Download XLSX"
 msgstr "Hent XLSX"
 
 #: src/reports/wagtail_admin.py
 msgid "Download report as spreadsheet file"
 msgstr "Hent rapport som regnearksfil"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Markér som afsluttet"
-
-#: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
-msgstr "Markér denne rapport som fuldført"
 
 #: src/reports/wagtail_admin.py
 msgid "Undo marking as complete"
@@ -7442,12 +7452,12 @@ msgid "Undo marking this report as complete"
 msgstr "Fortryd markering af denne rapport som færdig"
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgid "Mark as complete"
+msgstr "Markér som afsluttet"
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Rapporttyper"
+msgid "Mark this report as complete"
+msgstr "Markér denne rapport som fuldført"
 
 #: src/users/apps.py
 msgid "Users"
