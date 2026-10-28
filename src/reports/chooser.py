@@ -9,7 +9,7 @@ from generic_chooser.widgets import AdminChooser
 
 from admin_site.scoped_choosers import ChosenFromOfferedObjectsMixin
 
-from .models import ReportType
+from .models import Report, ReportType
 
 if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
@@ -56,3 +56,47 @@ class ReportTypeChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_report_type_chooser_viewset():
     return ReportTypeChooserViewSet('report_type_chooser', url_prefix='report-type-chooser')
+
+
+class ReportChooserMixin(ChosenFromOfferedObjectsMixin[Report], ModelChooserMixin[Report]):
+    """Offer the completed reports of the active plan; in-progress data must not reach the public site."""
+
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        reports = Report.objects.filter(type__plan=plan, is_complete=True).select_related('type')
+        return reports.order_by('type__name', '-start_date')
+
+    def get_object_list(self, search_term=None, **kwargs):
+        objs = self.get_unfiltered_object_list()
+
+        if search_term:
+            objs = objs.filter(name__icontains=search_term) | objs.filter(type__name__icontains=search_term)
+
+        return objs
+
+    def user_can_create(self, user):
+        return False
+
+
+class ReportChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = ReportChooserMixin
+
+    icon = 'doc-full'
+    model = Report
+    page_title = _('Choose a report')
+    per_page = 30
+    fields = ['name']
+
+
+class ReportChooser(AdminChooser):
+    choose_one_text = _('Choose a report')
+    choose_another_text = _('Choose another report')
+    model = Report
+    choose_modal_url_name = 'report_chooser:choose'
+
+
+@hooks.register('register_admin_viewset')
+def register_report_chooser_viewset():
+    return ReportChooserViewSet('report_chooser', url_prefix='report-chooser')
