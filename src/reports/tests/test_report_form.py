@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from admin_site.tests.factories import ClientPlanFactory
-from reports.models import Report
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
@@ -65,17 +64,8 @@ def test_report_form_groups_details_and_visibility(admin_client, report_type):
     assert 'Show in action reporting tab' in content
 
 
-def test_report_form_still_sets_whether_comparison_blocks_show_the_report(admin_client, report_type):
-    """Until the report comparison block chooses its reports itself (plan 3, Phase C), "Public" stays."""
-    report = ReportFactory.create(type=report_type, is_public=False)
-    response = admin_client.post(
-        f'{REPORTS_PATH}edit/{report.pk}/',
-        {
-            'name': report.name,
-            'start_date': report.start_date.isoformat(),
-            'end_date': report.end_date.isoformat(),
-            'is_public': 'on',
-        },
-    )
-    assert response.status_code == 302
-    assert Report.objects.get(pk=report.pk).is_public
+def test_report_form_has_no_public_setting(admin_client, report_type):
+    """The report comparison blocks choose the reports they show themselves (plan 3, Phase C)."""
+    report = ReportFactory.create(type=report_type)
+    content = admin_client.get(f'{REPORTS_PATH}edit/{report.pk}/').content.decode()
+    assert 'name="is_public"' not in content
