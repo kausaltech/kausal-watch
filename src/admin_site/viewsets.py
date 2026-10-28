@@ -231,13 +231,17 @@ class PlanAwareSnippetDeleteBulkAction(DeleteBulkAction):
     permission, and holding it must still not allow deleting another plan's object. The result was a
     bulk action that refused legitimate deletions and permitted cross-plan ones.
 
-    Registered for the snippet models whose viewset uses a `PlanRelatedPermissionPolicy`; every other
-    snippet keeps Wagtail's behaviour.
+    Registered for the snippet models whose viewset uses a `PlanRelatedPermissionPolicy` or turns off
+    `bulk_delete_enabled`; every other snippet keeps Wagtail's behaviour.
     """
 
     @classproperty
     def models(cls) -> list[type[Model]]:  # noqa: N805
-        return [model for model in get_snippet_models() if _has_plan_related_policy(model)]
+        return [
+            model
+            for model in get_snippet_models()
+            if _has_plan_related_policy(model) or not getattr(model.snippet_viewset, 'bulk_delete_enabled', True)
+        ]
 
     def check_perm(self, snippet: Model) -> bool:
         viewset = getattr(snippet, 'snippet_viewset', None)
@@ -280,7 +284,6 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
     # plan guard nor the instance permission check applies -- copying another plan's object renders
     # its data and saving raises. A subclass that wants copying has to provide a plan-aware view.
     copy_view_enabled = False
-    # Turning this off is only enforced for models with a `PlanRelatedPermissionPolicy`
     bulk_delete_enabled = True
 
     def register_permissions(self):

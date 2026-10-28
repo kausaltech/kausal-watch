@@ -163,7 +163,7 @@ def insert_model_translation_panels[M: Model, PanelT: Panel[Any]](
 
 
 def get_translation_tabs(
-    instance: Model, request: HttpRequest, include_all_languages: bool = False, extra_panels=None
+    instance: Model, request: HttpRequest | None, include_all_languages: bool = False, extra_panels=None
 ) -> list[Panel[Any]]:
     """
     Get tabs for entering translated strings.
@@ -172,7 +172,7 @@ def get_translation_tabs(
     This default language is determined by the `default_language` argument of the model's i18n field. If there is no
     such argument, the global default language from `settings.LANGUAGE_CODE` is used.
     If `include_all_languages` is false, a tab is shown for each language supported by the currently active plan except,
-    just like before, the default language of the instance.
+    just like before, the default language of the instance. Only then is `request` needed.
     `extra_panels` maps a language code to a list of panels that should be put on the tab of that language.
     """
     if extra_panels is None:
@@ -184,13 +184,12 @@ def get_translation_tabs(
         return []
     tabs: list[Panel[Any]] = []
 
-    user = user_or_bust(request.user)
-    plan = user.get_active_admin_plan()
-
     languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
     if include_all_languages:
         languages = list(languages_by_code.keys())
     else:
+        assert request is not None
+        plan = user_or_bust(request.user).get_active_admin_plan()
         languages = [plan.primary_language_lowercase] + [lang.lower() for lang in plan.other_languages]
 
     # Omit default language because it's stored in the model field without a modeltrans language suffix

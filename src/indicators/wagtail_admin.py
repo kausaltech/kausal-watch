@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, ngettext_lazy, pgettext_lazy
@@ -21,7 +22,9 @@ from wagtail.admin.panels import (
     InlinePanel,
     MultiFieldPanel,
     ObjectList,
+    TabbedInterface,
 )
+from wagtail.snippets.models import register_snippet
 
 from dal import autocomplete, forward as dal_forward
 from generic_chooser.views import ModelChooserViewSet
@@ -29,7 +32,6 @@ from generic_chooser.widgets import AdminChooser
 from wagtail_color_panel.edit_handlers import NativeColorPanel
 from wagtail_modeladmin.helpers.permission import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminGroup
-from wagtail_modeladmin.views import DeleteView
 
 from kausal_common.datasets.models import (
     DataPoint,
@@ -49,6 +51,7 @@ from aplans.wagtail_utils import _get_category_fields
 from actions.models.plan import Plan
 from admin_site.field_customization import register_customizable_fields
 from admin_site.utils import admin_req
+from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchViewSet
 from admin_site.wagtail import (
     AplansAdminModelForm,
     AplansCreateView,
@@ -67,10 +70,12 @@ from admin_site.wagtail import (
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.panels import IndicatorMetricsInlinePanel
 
-from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, PlanDimension, Quantity, Unit
 from .models.goal_data_point import IndicatorGoalDataPoint
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.forms import ModelChoiceField
     from django.http import HttpRequest
     from wagtail.admin.panels.base import Panel
@@ -317,26 +322,18 @@ def register_quantity_chooser_viewset():
     return QuantityChooserViewSet('quantity_chooser', url_prefix='quantity-chooser')
 
 
-class DimensionCreateView(AplansCreateView[Dimension]):
-    def form_valid(self, form, *args, **kwargs):
-        response = super().form_valid(form, *args, **kwargs)
-        user = user_or_bust(self.request.user)
-        plan = user.get_active_admin_plan()
-        dimension = form.instance
-
-        if plan:
-            from indicators.models import PlanDimension
-
-            PlanDimension.objects.get_or_create(plan=plan, dimension=dimension)
-
-        return response
+class DimensionCreateView(WatchCreateView[Dimension]):
+    def save_instance(self):
+        dimension = super().save_instance()
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        PlanDimension.objects.get_or_create(plan=plan, dimension=dimension)
+        return dimension
 
 
-class DimensionDeleteView(DeleteView[Dimension]):
+class DimensionDeleteView(WatchDeleteView[Dimension]):
     def post(self, request, *args, **kwargs):
-        dimension = self.instance
+        dimension = self.object
         current_plan = request.user.get_active_admin_plan()
-        assert dimension is not None
         other_plans = dimension.plans.exclude(plan=current_plan)
         if other_plans.exists():
             messages.error(
@@ -346,19 +343,23 @@ class DimensionDeleteView(DeleteView[Dimension]):
                     'dimension': dimension.name,
                 },
             )
-            return redirect(self.index_url)
+            return redirect(self.get_success_url())
 
         return super().post(request, *args, **kwargs)
 
 
-class DimensionAdmin(AplansModelAdmin[Dimension]):
+class DimensionViewSet(WatchViewSet[Dimension]):
     model = Dimension
-    menu_order = 4
-    menu_icon = 'kausal-dimension'
+    icon = 'kausal-dimension'
     menu_label = _('Indicator dimensions')
-    list_display = ('name',)
-    create_view_class = DimensionCreateView
+    # The menu item is in `IndicatorGroup`
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'indicators/dimension'
+    list_display = ['name']
+    add_view_class = DimensionCreateView
     delete_view_class = DimensionDeleteView
+    bulk_delete_enabled = False
 
     panels = [
         FieldPanel('name'),
@@ -372,49 +373,71 @@ class DimensionAdmin(AplansModelAdmin[Dimension]):
         ),
     ]
 
-    def get_queryset(self, request):
-        plan = request.user.get_active_admin_plan()
-        return super().get_queryset(request).filter(plans__plan=plan)
+    def get_queryset(self, request: HttpRequest):
+        plan = user_or_bust(request.user).get_active_admin_plan()
+        return Dimension.objects.filter(plans__plan=plan)
+
+
+register_snippet(DimensionViewSet)
+
+
+def get_shared_lookup_table_edit_handler[M: Quantity | Unit](
+    model: type[M], panels: Sequence[Panel[Any, Any]], base_form_class: type[AplansAdminModelForm[M]]
+) -> TabbedInterface[M, AplansAdminModelForm[M]]:
+    # Units and quantities are shared between plans, so the tabs don't depend on the active plan
+    instance = model()
+    tabs = [
+        ObjectList(list(panels), heading=lazy(get_default_language_tab_heading, str)(instance, _('General'))),
+        *get_translation_tabs(instance, None, include_all_languages=True),
+    ]
+    return TabbedInterface[M, AplansAdminModelForm[M]](tabs, base_form_class=base_form_class).bind_to_model(model)
 
 
 class QuantityForm(AplansAdminModelForm[Quantity]):
-    pass
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
 
 
-class QuantityAdmin(AplansModelAdmin[Quantity]):
+class QuantityViewSet(WatchViewSet[Quantity]):
     model = Quantity
-    menu_icon = 'kausal-dimension'  # FIXME
-    menu_order = 6
+    icon = 'kausal-dimension'  # FIXME
     menu_label = _('Quantities')
-    list_display = ('name_i18n',)
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'indicators/quantity'
+    list_display = ['name_i18n']
+    bulk_delete_enabled = False
 
     panels = [
         FieldPanel('name'),
     ]
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
-        tabs = [
-            ObjectList(self.panels, heading=get_default_language_tab_heading(instance, _('General'))),
-            *get_translation_tabs(instance, request, include_all_languages=True),
-        ]
-        return AplansTabbedInterface(tabs, base_form_class=QuantityForm)
+        return get_shared_lookup_table_edit_handler(Quantity, self.panels, QuantityForm)
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).order_by('name_i18n')
+    def get_queryset(self, request: HttpRequest):
+        return Quantity.objects.order_by('name_i18n')
+
+
+register_snippet(QuantityViewSet)
 
 
 class UnitForm(AplansAdminModelForm[Unit]):
-    pass
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
 
 
-class UnitAdmin(AplansModelAdmin[Unit]):
+class UnitViewSet(WatchViewSet[Unit]):
     model = Unit
-    menu_icon = 'kausal-dimension'  # FIXME
-    menu_order = 5
+    icon = 'kausal-dimension'  # FIXME
     menu_label = _('Units')
-    list_display = ('name', 'short_name')
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'indicators/unit'
+    list_display = ['name', 'short_name']
+    bulk_delete_enabled = False
 
     panels = [
         FieldPanel('name'),
@@ -424,13 +447,10 @@ class UnitAdmin(AplansModelAdmin[Unit]):
     ]
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
-        tabs = [
-            ObjectList(self.panels, heading=get_default_language_tab_heading(instance, _('General'))),
-            *get_translation_tabs(instance, request, include_all_languages=True),
-        ]
-        return AplansTabbedInterface(tabs, base_form_class=UnitForm)
+        return get_shared_lookup_table_edit_handler(Unit, self.panels, UnitForm)
+
+
+register_snippet(UnitViewSet)
 
 
 class IndicatorForm(AplansAdminModelForm[Indicator]):
@@ -1307,10 +1327,14 @@ class IndicatorGroup(ModelAdminGroup):
     items: tuple[type[AplansModelAdmin[Any]], ...] = (
         IndicatorAdmin,
         CommonIndicatorAdmin,
-        DimensionAdmin,
-        UnitAdmin,
-        QuantityAdmin,
     )
+
+    def get_submenu_items(self):
+        menu_items = super().get_submenu_items()
+        for model in (Dimension, Unit, Quantity):
+            viewset = model.snippet_viewset  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
+            menu_items.append(viewset.get_menu_item(order=len(menu_items) + 1))
+        return menu_items
 
 
 modeladmin_register(IndicatorGroup)
