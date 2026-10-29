@@ -232,14 +232,13 @@ class Report(PlanRelatedModelWithRevision):
     is_public = models.BooleanField(
         default=False,
         verbose_name=_('public'),
-        help_text=_('Set if report can be shown to the public'),
+        help_text=_('Set if the report can be shown in the report comparison blocks on the public action pages'),
     )
     show_in_reporting_tab = models.BooleanField(
         default=True,
-        verbose_name=_('Show in reporting tab'),
+        verbose_name=_('Show in action reporting tab'),
         help_text=_(
-            'Set if the values from this report should be shown in the reporting tab when editing the action. '
-            'The values are shown only if this report has been marked as complete.'
+            "Show this report's values in the reporting tab when editing an action, once the report is marked as complete."
         ),
     )
 

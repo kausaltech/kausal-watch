@@ -1,0 +1,18 @@
+{% load i18n %}
+<p><strong>{{ report_type.name }}</strong></p>
+{% if field_labels %}
+    <p class="help">
+        {% blocktranslate trimmed count counter=field_labels|length %}
+            {{ counter }} field configured on this template:
+        {% plural %}
+            {{ counter }} fields configured on this template:
+        {% endblocktranslate %}
+    </p>
+    <ul class="report-template-fields">
+        {% for label in field_labels %}
+            <li>{{ label }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="help">{% translate "No fields are configured on this template." %}</p>
+{% endif %}
