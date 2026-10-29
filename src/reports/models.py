@@ -66,11 +66,19 @@ class ActionListPageNotFoundError(Exception):
 class ReportType(PlanRelatedModelWithRevision):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    description = models.TextField(
+        blank=True,
+        verbose_name=_('description'),
+        help_text=_('What the template is for, e.g. who receives its reports and when'),
+    )
     fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
     only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
         default=False,
-        verbose_name=_('Only plan admins can mark actions as complete'),
-        help_text=_('Only plan admins can mark actions as complete for reports from this template'),
+        verbose_name=_('Only plan admins can submit actions for reporting'),
+        help_text=_(
+            'Submitting an action ensures the action data at that point in time is used in the final report. When on, '
+            'only plan administrators can submit individual actions for a report. Other users can still edit actions.'
+        ),
     )
     public_fields: ClassVar[list[str]] = [
         'id',
