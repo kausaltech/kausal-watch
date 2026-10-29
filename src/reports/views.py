@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
@@ -27,16 +27,22 @@ from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
 from .models import ActionListPageNotFoundError, ActionSnapshot, Report
+from .utils import report_label
+
+if TYPE_CHECKING:
+    from indicators.models import Indicator
 
 ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
 ALL_FIELDS = 'all'
 
 
 class MarkActionAsCompleteView(WMABaseView[Action]):
+    """Submit an action to a report, or undo the submission, after a confirmation."""
+
     action_pk: str = ''
     report_pk: str = ''
     complete = True
-    template_name = 'aplans/confirmation.html'
+    template_name = 'reports/submit_action_confirmation.html'
 
     def __init__(self, model_admin, action_pk, report_pk, complete=True):
         self.action_pk = unquote(action_pk)
@@ -48,8 +54,8 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
 
     def get_page_title(self):
         if self.complete:
-            return _('Mark action as complete')
-        return _('Undo marking action as complete')
+            return _('Submit action to report')
+        return _('Undo action submission')
 
     def check_action_permitted(self, user):
         if not user.can_modify_action(self.action):
@@ -69,17 +75,33 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
 
     def get_meta_title(self):
         if self.complete:
-            msg = _('Confirm marking action %(action)s as complete for report %(report)s')
+            msg = _('Confirm submitting action %(action)s to report %(report)s')
         else:
-            msg = _('Confirm undoing marking action %(action)s as complete for report %(report)s')
-        return msg % {'action': self.action, 'report': self.report}
+            msg = _('Confirm undoing the submission of action %(action)s to report %(report)s')
+        return msg % {'action': self.action, 'report': report_label(self.report)}
 
     def confirmation_message(self):
         if self.complete:
-            msg = _("Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?")
+            msg = _("Do you want to submit the action '%(action)s' to the report '%(report)s'?")
         else:
-            msg = _("Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?")
-        return msg % {'action': self.action, 'report': self.report}
+            msg = _("Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?")
+        return msg % {'action': self.action, 'report': report_label(self.report)}
+
+    def get_frozen_indicators(self) -> list[Indicator]:
+        """Return the indicators whose current data the submission captures, as `Report.freeze_indicators_of_action` does."""
+        indicators = self.report.get_indicators_to_freeze().filter(related_actions__action=self.action)
+        return list(indicators.select_related('latest_value', 'unit').order_by('name'))
+
+    def has_unpublished_changes(self) -> bool:
+        """Return whether the action has changes, e.g. waiting for approval, that the submission leaves out."""
+        return bool(self.action.plan.features.enable_moderation_workflow and self.action.has_unpublished_changes)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.complete:
+            context['frozen_indicators'] = self.get_frozen_indicators()
+            context['has_unpublished_changes'] = self.has_unpublished_changes()
+        return context
 
     def post(self, request, *args, **kwargs):
         try:
@@ -91,10 +113,10 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
             messages.error(request, str(e))
             return redirect(self.index_url)
         if self.complete:
-            msg = _("Action '%(action)s' has been marked as complete for report '%(report)s'.")
+            msg = _("Action '%(action)s' has been submitted to the report '%(report)s'.")
         else:
-            msg = _("Action '%(action)s' is no longer marked as complete for report '%(report)s'.")
-        messages.success(request, msg % {'action': self.action, 'report': self.report})
+            msg = _("The submission of action '%(action)s' to the report '%(report)s' has been undone.")
+        messages.success(request, msg % {'action': self.action, 'report': report_label(self.report)})
         return redirect(self.index_url)
 
 

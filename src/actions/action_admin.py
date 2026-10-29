@@ -73,6 +73,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from people.chooser import TaskPersonChooser
 from people.models import Person
+from reports.utils import report_label
 from reports.views import MarkActionAsCompleteView
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
@@ -750,9 +751,12 @@ class ActionButtonHelper(AplansButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _('Mark as complete for report %s') % report.name,
+            'label': _('Submit for %s') % report_label(report),
             'classname': cn,
-            'title': _('Mark this action as complete for the report %s') % str(report),
+            'title': _('Submit this action to the report %s') % report_label(report),
+            'icon': 'upload',
+            # The action list's menu puts the reporting items in a section of their own
+            'section': _('Reporting'),
         }
 
     def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
@@ -762,9 +766,11 @@ class ActionButtonHelper(AplansButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _('Undo marking as complete for report %s') % report.name,
+            'label': _('Undo submission for %s') % report_label(report),
             'classname': cn,
-            'title': _('Undo marking this action as complete for the report %s') % str(report),
+            'title': _('Undo submitting this action to the report %s') % report_label(report),
+            'icon': 'fontawesome-rotate-left',
+            'section': _('Reporting'),
         }
 
     def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
