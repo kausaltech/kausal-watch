@@ -70,7 +70,7 @@ class ReportType(PlanRelatedModelWithRevision):
     only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
         default=False,
         verbose_name=_('Only plan admins can mark actions as complete'),
-        help_text=_('Only plan admins can mark actions as complete for reports of this type'),
+        help_text=_('Only plan admins can mark actions as complete for reports from this template'),
     )
     public_fields: ClassVar[list[str]] = [
         'id',
@@ -82,8 +82,8 @@ class ReportType(PlanRelatedModelWithRevision):
     id: int
 
     class Meta:
-        verbose_name = _('report type')
-        verbose_name_plural = _('report types')
+        verbose_name = _('report template')
+        verbose_name_plural = _('report templates')
 
     @classmethod
     def permission_policy(cls) -> PlanRelatedPermissionPolicy:

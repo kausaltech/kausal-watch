@@ -182,7 +182,8 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
     @cached_property
     def index_url(self):
         assert self.index_url_name is not None
-        return reverse(self.index_url_name)
+        # Reports are only listed by report template, so return to the listing of this report's template
+        return f'{reverse(self.index_url_name)}?report_type={self.report.type_id}'
 
 
 def export_report_view(request, plan_identifier):

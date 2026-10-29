@@ -4,17 +4,16 @@ from typing import TYPE_CHECKING, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import quote
+from django.shortcuts import redirect
 from django.urls import path, reverse
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import FieldPanel
 from wagtail.admin.ui.tables import BooleanColumn
-from wagtail.admin.widgets.button import ListingButton
+from wagtail.admin.widgets.button import HeaderButton, ListingButton
 from wagtail.snippets.models import register_snippet
 
-from django_filters import filters
-
-from kausal_common.users import user_or_bust, user_or_none
+from kausal_common.users import user_or_bust
 
 from aplans.utils import append_query_parameter
 
@@ -25,7 +24,10 @@ from .usage import get_report_type_usage
 from .views import DownloadReportView, MarkReportAsCompleteView
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.http import HttpRequest
+    from wagtail.admin.views.generic.base import BreadcrumbItem
 
 
 class ReportTypeDeleteView(WatchDeleteView[ReportType]):
@@ -45,7 +47,7 @@ class ReportTypeDeleteView(WatchDeleteView[ReportType]):
         if get_report_type_usage(self.object).blocks_deletion:
             messages.error(
                 request,
-                _('The report type is still used on action pages. Remove the report comparison blocks first.'),
+                _('The report template is still used on action pages. Remove the report comparison blocks first.'),
             )
             return self.get(request, *args, **kwargs)
         return super().post(request, *args, **kwargs)
@@ -53,10 +55,10 @@ class ReportTypeDeleteView(WatchDeleteView[ReportType]):
 
 class ReportTypeViewSet(WatchViewSet[ReportType]):
     model = ReportType
-    menu_label = _('Report types')
+    # Listed at the end of the Reports menu (see admin_site.wagtail_hooks.ReportMenu) instead of a menu of its own
+    add_to_admin_menu = False
+    menu_item_is_registered = True
     icon = 'doc-full'
-    menu_order = 1200
-    add_to_settings_menu = True
     url_prefix = 'plan_reports/report_type'
     delete_view_class = ReportTypeDeleteView
     bulk_delete_enabled = False
@@ -76,8 +78,17 @@ class ReportTypeViewSet(WatchViewSet[ReportType]):
 register_snippet(ReportTypeViewSet)
 
 
+def report_listing_url(report_type: ReportType) -> str:
+    """Return the URL of the listing of a report template's reports."""
+    return f'{reverse("wagtailsnippets_reports_report:list")}?report_type={report_type.pk}'
+
+
 class ReportTypeQueryParameterMixin:
-    """Keep the listing's `report_type` filter in the URLs the report views link to."""
+    """
+    Keep the report template, given as the `report_type` query parameter, in the URLs the report views link to.
+
+    Reports are only ever listed by template: there is no listing of every report.
+    """
 
     request: HttpRequest
 
@@ -85,6 +96,34 @@ class ReportTypeQueryParameterMixin:
         if url is None or '?' in url:
             return url
         return append_query_parameter(self.request, url, 'report_type')
+
+    @cached_property
+    def query_report_type(self) -> ReportType | None:
+        """Return the report template in the `report_type` query parameter, if it belongs to the active plan."""
+        report_type = self.request.GET.get('report_type')
+        if not report_type or not report_type.isdigit():
+            return None
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        return plan.report_types.filter(pk=int(report_type)).first()
+
+    def breadcrumbs_through_template(
+        self, items: Sequence[BreadcrumbItem], report_type: ReportType | None
+    ) -> list[BreadcrumbItem]:
+        """Replace the link to the listing of every report with the report templates and the report's template."""
+        if report_type is None:
+            return list(items)
+        reports_url = reverse('wagtailsnippets_reports_report:list')
+        result: list[BreadcrumbItem] = []
+        for item in items:
+            if item.get('url') == reports_url:
+                result.append({
+                    'url': reverse('wagtailsnippets_reports_reporttype:list'),
+                    'label': _('Report templates'),
+                })
+                result.append({'url': report_listing_url(report_type), 'label': report_type.name})
+            else:
+                result.append(item)
+        return result
 
 
 class ReportCreateView(ReportTypeQueryParameterMixin, WatchCreateView[Report]):
@@ -102,7 +141,11 @@ class ReportCreateView(ReportTypeQueryParameterMixin, WatchCreateView[Report]):
         return self.with_report_type(super().get_edit_url())
 
     def get_success_url(self):
-        return self.with_report_type(super().get_success_url())
+        assert self.object is not None
+        return report_listing_url(self.object.type)
+
+    def get_breadcrumbs_items(self):
+        return self.breadcrumbs_through_template(super().get_breadcrumbs_items(), self.query_report_type)
 
 
 class ReportEditView(ReportTypeQueryParameterMixin, WatchEditView[Report]):
@@ -113,7 +156,10 @@ class ReportEditView(ReportTypeQueryParameterMixin, WatchEditView[Report]):
         return self.with_report_type(super().get_delete_url())
 
     def get_success_url(self):
-        return self.with_report_type(super().get_success_url())
+        return report_listing_url(self.object.type)
+
+    def get_breadcrumbs_items(self):
+        return self.breadcrumbs_through_template(super().get_breadcrumbs_items(), self.object.type)
 
 
 class ReportDeleteView(ReportTypeQueryParameterMixin, WatchDeleteView[Report]):
@@ -121,7 +167,7 @@ class ReportDeleteView(ReportTypeQueryParameterMixin, WatchDeleteView[Report]):
         return self.with_report_type(super().get_delete_url())
 
     def get_success_url(self):
-        return self.with_report_type(super().get_success_url())
+        return report_listing_url(self.object.type)
 
 
 class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
@@ -129,11 +175,43 @@ class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
     mark_as_complete_url_name: ClassVar[str | None] = None
     undo_marking_as_complete_url_name: ClassVar[str | None] = None
 
+    @property
+    def report_type(self) -> ReportType:
+        # get() redirects the requests that have no report template, so the listing always has one
+        report_type = self.query_report_type
+        assert report_type is not None
+        return report_type
+
+    def get(self, request: HttpRequest, *args, **kwargs):
+        # The listing is always of one template's reports, so without a template, offer the templates instead
+        if self.query_report_type is None:
+            return redirect('wagtailsnippets_reports_reporttype:list')
+        return super().get(request, *args, **kwargs)
+
+    def get_base_queryset(self):
+        return super().get_base_queryset().filter(type=self.report_type)
+
+    def get_page_title(self):
+        return self.report_type.name
+
+    def get_breadcrumbs_items(self):
+        templates: BreadcrumbItem = {
+            'url': reverse('wagtailsnippets_reports_reporttype:list'),
+            'label': _('Report templates'),
+        }
+        return [*self.breadcrumbs_items, templates, {'url': '', 'label': self.get_page_title()}]
+
     def get_add_url(self):
-        # A report needs a type, which only the menu item of each report type gives
-        if 'report_type' not in self.request.GET:
-            return None
         return self.with_report_type(super().get_add_url())
+
+    @cached_property
+    def header_buttons(self):  # type: ignore[override]
+        buttons = list(super().header_buttons)
+        report_type = self.report_type
+        if ReportType.permission_policy().user_has_permission_for_instance(self.request.user, 'change', report_type):
+            edit_url = reverse('wagtailsnippets_reports_reporttype:edit', args=(quote(report_type.pk),))
+            buttons.append(HeaderButton(_('Edit template'), url=edit_url, icon_name='edit'))
+        return buttons
 
     def get_edit_url(self, instance: Report):
         return self.with_report_type(super().get_edit_url(instance))
@@ -176,34 +254,14 @@ class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
         return buttons
 
 
-def report_types_for_request(request: HttpRequest | None):
-    user = user_or_none(request.user) if request is not None else None
-    if user is None:
-        return ReportType.objects.none()
-    return user.get_active_admin_plan().report_types.all()
-
-
-class ReportFilterSet(WagtailFilterSet):
-    report_type = filters.ModelChoiceFilter(
-        field_name='type',
-        queryset=report_types_for_request,  # pyright: ignore[reportArgumentType]
-        label=_('Report type'),
-    )
-
-    class Meta:
-        model = Report
-        fields = ['report_type']
-
-
 class ReportViewSet(WatchViewSet[Report]):
     model = Report
-    # Each report type has its own menu item instead
+    # Each report template has its own menu item instead
     add_to_admin_menu = False
     menu_item_is_registered = True
     icon = 'doc-full'
     url_prefix = 'plan_reports/report'
     list_display = ['name', BooleanColumn('is_complete'), BooleanColumn('is_public')]
-    filterset_class = ReportFilterSet
     index_view_class = ReportIndexView
     add_view_class = ReportCreateView
     edit_view_class = ReportEditView
