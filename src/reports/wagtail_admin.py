@@ -12,7 +12,7 @@ from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList, Panel, TabbedInterface
-from wagtail.admin.ui.tables import BooleanColumn, Column, StatusTagColumn
+from wagtail.admin.ui.tables import Column, StatusTagColumn
 from wagtail.admin.widgets.button import HeaderButton, ListingButton
 from wagtail.snippets.models import register_snippet
 
@@ -394,7 +394,6 @@ class ReportViewSet(WatchViewSet[Report]):
             primary=lambda report: report.is_complete,
         ),
         Column('submitted_actions', label=_('Actions submitted'), accessor=report_submission_count),
-        BooleanColumn('is_public'),
     ]
     index_view_class = ReportIndexView
     add_view_class = ReportCreateView
@@ -418,14 +417,7 @@ class ReportViewSet(WatchViewSet[Report]):
             ],
             heading=_('Report details'),
         ),
-        MultiFieldPanel(
-            [
-                FieldPanel('show_in_reporting_tab'),
-                # Replaced by choosing the reports in the report comparison block (plan 3, Phase C)
-                FieldPanel('is_public'),
-            ],
-            heading=_('Visibility'),
-        ),
+        MultiFieldPanel([FieldPanel('show_in_reporting_tab')], heading=_('Visibility')),
         ReportSubmissionsPanel(heading=_('Action submissions')),
     ]
 

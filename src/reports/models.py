@@ -177,7 +177,6 @@ class ReportType(PlanRelatedModelWithRevision):
             start_date=timezone.now().date(),
             end_date=timezone.now().date(),
             is_complete=False,
-            is_public=True,
             fields=None,
         )
 
@@ -236,11 +235,6 @@ class Report(PlanRelatedModelWithRevision):
         default=False,
         verbose_name=_('complete'),
         help_text=_('Set if report cannot be changed anymore'),
-    )
-    is_public = models.BooleanField(
-        default=False,
-        verbose_name=_('public'),
-        help_text=_('Set if the report can be shown in the report comparison blocks on the public action pages'),
     )
     show_in_reporting_tab = models.BooleanField(
         default=True,
