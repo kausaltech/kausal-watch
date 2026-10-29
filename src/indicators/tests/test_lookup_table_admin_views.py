@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 
 from reversion.models import Version
@@ -12,6 +11,7 @@ import pytest
 
 from actions.tests.factories import PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
+from admin_site.tests.utils import submenu_links
 from indicators.models import Dimension, PlanDimension, Quantity, Unit
 from indicators.tests.factories import (
     DimensionFactory,
@@ -46,27 +46,6 @@ def other_plan_dimension():
     return PlanDimensionFactory.create(plan=PlanFactory.create(), dimension__name='Other plan dimension').dimension
 
 
-def _submenu_links(response_content: bytes, submenu_label: str) -> list[tuple[str, str]]:
-    match = re.search(r'<script id="wagtail-sidebar-props" type="application/json">(.*?)</script>', response_content.decode())
-    assert match is not None
-    links: list[tuple[str, str]] = []
-
-    def collect(node, inside: bool):
-        if isinstance(node, dict):
-            if node.get('_type') == 'wagtail.sidebar.SubMenuItem' and node['_args'][0]['label'] == submenu_label:
-                inside = True
-            if inside and node.get('_type') == 'wagtail.sidebar.LinkMenuItem':
-                links.append((node['_args'][0]['label'], node['_args'][0]['url']))
-            for value in node.values():
-                collect(value, inside)
-        elif isinstance(node, list):
-            for value in node:
-                collect(value, inside)
-
-    collect(json.loads(match.group(1)), inside=False)
-    return links
-
-
 def _dimension_form_data(name: str) -> dict[str, str]:
     return {
         'name': name,
@@ -78,7 +57,7 @@ def _dimension_form_data(name: str) -> dict[str, str]:
 
 
 def test_indicator_menu_links_lookup_tables(admin_client):
-    links = _submenu_links(admin_client.get('/admin/account/').content, 'Indicators')
+    links = submenu_links(admin_client.get('/admin/account/').content, 'Indicators')
     assert links == [
         ('Indicators', '/admin/indicators/indicator/'),
         ('Indicator dimensions', DIMENSIONS_PATH),
