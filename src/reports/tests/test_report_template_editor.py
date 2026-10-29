@@ -182,7 +182,7 @@ CREATE_FIELD_PATH = '/admin/plan_reports/report_type/reporting-fields/new/'
 
 def test_editor_defines_a_text_reporting_field_for_logged_in_users(admin_client, plan_with_pages):
     response = admin_client.post(
-        CREATE_FIELD_PATH, {'name': ' Notes ', 'help_text': 'For the council'}, content_type='application/json'
+        CREATE_FIELD_PATH, {'name': ' Notes ', 'admin_help_text': 'For the council'}, content_type='application/json'
     )
     assert response.status_code == 201
     attribute_type = AttributeType.objects.for_actions(plan_with_pages).get(name='Notes')
@@ -190,7 +190,8 @@ def test_editor_defines_a_text_reporting_field_for_logged_in_users(admin_client,
     assert attribute_type.format == AttributeType.AttributeFormat.TEXT
     assert attribute_type.show_in_reporting_tab
     assert attribute_type.instances_visible_for == AttributeType.VisibleFor.AUTHENTICATED
-    assert attribute_type.help_text == 'For the council'
+    assert attribute_type.admin_help_text == 'For the council'
+    assert attribute_type.help_text == ''
     assert response.json() == {
         'key': f'attribute:{attribute_type.pk}',
         'section': 'action',
