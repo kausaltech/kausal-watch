@@ -150,6 +150,8 @@ def test_migration_fills_blocks_in_drafts(action_list_page, report_type):
     fill_migration.fill_revisions(django_apps, _filler({report_type.pk: [report.pk]}))
 
     draft = Revision.objects.get(pk=revision.pk).as_object()
+    assert isinstance(draft, ActionListPage)
+    assert draft.details_main_bottom is not None
     assert list(draft.details_main_bottom[0].value['reports']) == [report]
 
 
