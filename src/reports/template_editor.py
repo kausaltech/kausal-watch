@@ -258,7 +258,7 @@ class CreateReportingFieldView(View):
         if not isinstance(data, dict):
             return JsonResponse({'error': _('The field could not be read.')}, status=400)
         name = str(data.get('name') or '').strip()
-        help_text = str(data.get('help_text') or '').strip()
+        admin_help_text = str(data.get('admin_help_text') or '').strip()
         if not name:
             return JsonResponse({'error': _('Enter a name for the field.')}, status=400)
 
@@ -267,7 +267,7 @@ class CreateReportingFieldView(View):
             scope_content_type=ContentType.objects.get_for_model(Plan),
             scope_id=plan.pk,
             name=name,
-            help_text=help_text,
+            admin_help_text=admin_help_text,
             format=AttributeType.AttributeFormat.TEXT,
             show_in_reporting_tab=True,
             instances_visible_for=AttributeType.VisibleFor.AUTHENTICATED,
