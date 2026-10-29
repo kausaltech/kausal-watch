@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from django.contrib.messages import get_messages
+from django.utils import timezone
+from django.utils.formats import date_format
 
 import pytest
 
@@ -12,13 +14,14 @@ from actions.action_admin import ActionAdmin
 from actions.tests.factories import WorkflowFactory
 from admin_site.tests.factories import ClientPlanFactory
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorValueFactory
-from reports.models import ActionSnapshot
+from reports.models import ActionSnapshot, IndicatorSnapshot
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
 
 SUBMIT_PATH = '/admin/actions/action/mark_action_as_complete/{action}/{report}/'
 UNDO_PATH = '/admin/actions/action/undo_marking_action_as_complete/{action}/{report}/'
+RESUBMIT_PATH = '/admin/actions/action/resubmit_action_for_report/{action}/{report}/'
 
 
 @pytest.fixture
@@ -65,11 +68,14 @@ def test_action_menu_offers_submitting_in_a_reporting_section(rf, plan_admin_use
     assert button['url'] == SUBMIT_PATH.format(action=action.pk, report=report.pk)
 
 
-def test_action_menu_offers_undoing_a_submission(rf, plan_admin_user, action, report):
+def test_action_menu_offers_resubmitting_and_undoing_a_submission(rf, plan_admin_user, action, report):
     action.mark_as_complete_for_report(report, plan_admin_user)
-    [button] = _reporting_buttons(rf, plan_admin_user, action)
-    assert button['label'] == 'Undo submission for Quarterly report • Q3 2026'
-    assert button['url'] == UNDO_PATH.format(action=action.pk, report=report.pk)
+    submitted_on = date_format(timezone.localtime(action.submitted_at_for_report(report)), 'SHORT_DATE_FORMAT')
+    resubmit, undo = _reporting_buttons(rf, plan_admin_user, action)
+    assert resubmit['label'] == f'Resubmit for Quarterly report • Q3 2026 (submitted {submitted_on})'
+    assert resubmit['url'] == RESUBMIT_PATH.format(action=action.pk, report=report.pk)
+    assert undo['label'] == 'Undo submission for Quarterly report • Q3 2026'
+    assert undo['url'] == UNDO_PATH.format(action=action.pk, report=report.pk)
 
 
 def test_confirmation_lists_the_indicators_the_submission_captures(admin_client, action, report):
@@ -129,3 +135,51 @@ def test_submitting_and_undoing_confirm_in_the_new_words(admin_client, action, r
         f"The submission of action '{action}' to the report 'Quarterly report • Q3 2026' has been undone."
     )
     assert not ActionSnapshot.objects.filter(report=report).exists()
+
+
+def test_resubmission_replaces_the_submission_with_the_current_data(plan_admin_user, action, report):
+    indicator = _linked_indicator(action, 'Total emissions', value=10)
+    action.mark_as_complete_for_report(report, plan_admin_user)
+
+    action.name = 'Renamed since submitting'
+    action.save()
+    indicator.latest_value = IndicatorValueFactory.create(indicator=indicator, value=20, date='2026-06-30')
+    indicator.save(update_fields=['latest_value'])
+    action.resubmit_for_report(report, plan_admin_user)
+
+    snapshot = ActionSnapshot.objects.get(report=report)
+    assert snapshot.action_version.field_dict['name'] == 'Renamed since submitting'
+    # Freezing skips indicators that already have a snapshot, so check the old one was replaced
+    [indicator_snapshot] = IndicatorSnapshot.objects.filter(report=report, action=action)
+    assert indicator_snapshot.data['latest_value']['value'] == 20
+
+
+def test_resubmitting_needs_an_earlier_submission(plan_admin_user, action, report):
+    with pytest.raises(ValueError, match='has not been submitted'):
+        action.resubmit_for_report(report, plan_admin_user)
+    assert not ActionSnapshot.objects.filter(report=report).exists()
+
+
+def test_resubmitting_to_a_completed_report_keeps_the_submission(plan_admin_user, action, report):
+    action.mark_as_complete_for_report(report, plan_admin_user)
+    snapshot = ActionSnapshot.objects.get(report=report)
+    report.mark_as_complete(plan_admin_user)
+
+    with pytest.raises(ValueError, match='already marked as complete'):
+        action.resubmit_for_report(report, plan_admin_user)
+    assert ActionSnapshot.objects.get(report=report) == snapshot
+
+
+def test_resubmit_confirmation_names_the_submission_it_replaces(admin_client, plan_admin_user, action, report):
+    action.mark_as_complete_for_report(report, plan_admin_user)
+    submitted_on = date_format(timezone.localtime(action.submitted_at_for_report(report)), 'DATE_FORMAT')
+    content = admin_client.get(RESUBMIT_PATH.format(action=action.pk, report=report.pk)).content.decode()
+    assert f'This replaces its submission from {submitted_on} with the current data of the action.' in content
+    assert 'value="Resubmit"' in content
+
+
+def test_resubmitting_confirms_in_a_message(admin_client, plan_admin_user, action, report):
+    action.mark_as_complete_for_report(report, plan_admin_user)
+    response = admin_client.post(RESUBMIT_PATH.format(action=action.pk, report=report.pk))
+    assert _messages(response) == [f"Action '{action}' has been resubmitted to the report 'Quarterly report • Q3 2026'."]
+    assert ActionSnapshot.objects.filter(report=report).count() == 1
