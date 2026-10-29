@@ -1,0 +1,17 @@
+{% comment %}
+    A list of actions of a report, each with its identifier, name, contact persons and responsible parties.
+    Takes `submissions` (reports.submissions.ActionSubmission) and an optional `classname`.
+{% endcomment %}
+<ul class="report-action-list {{ classname }}">
+    {% for submission in submissions %}
+        <li>
+            {{ submission.action.identifier }}
+            <a href="{% url 'actions_action_modeladmin_edit' submission.action.pk %}">{{ submission.action.name }}</a>
+            {% if submission.contact_persons or submission.responsible_parties %}
+                <div class="help">
+                    {{ submission.contact_persons }}{% if submission.contact_persons and submission.responsible_parties %} • {% endif %}{{ submission.responsible_parties }}
+                </div>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
