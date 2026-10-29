@@ -10,6 +10,7 @@ from actions.models import (
     ActionChangeLogMessage,
     ActionImpact,
     CategoryChangeLogMessage,
+    CommonCategoryType,
     IndicatorChangeLogMessage,
     Plan,
     PlanFeatures,
@@ -23,6 +24,7 @@ from admin_site.permissions import (
     PlanRelatedPermissionPolicy,
     PlanSpecificSingletonModelPermissionPolicy,
     PlanSpecificSingletonModelSuperuserPermissionPolicy,
+    SuperuserOnlyPermissionPolicy,
 )
 from admin_site.viewsets import WatchViewSet
 from content.models import SiteGeneralContent
@@ -66,6 +68,7 @@ def test_declared_permission_policy_is_registered(model):
         (ReportType, PlanRelatedPermissionPolicy),
         (Report, PlanRelatedPermissionPolicy),
         (Dimension, DimensionPermissionPolicy),
+        (CommonCategoryType, SuperuserOnlyPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):

@@ -57,6 +57,16 @@ class PlanSpecificSingletonModelSuperuserPermissionPolicy(ModelPermissionPolicy)
         return False
 
 
+class SuperuserOnlyPermissionPolicy(ModelPermissionPolicy):
+    """Allow every action only to superusers, whatever model permissions other users have."""
+
+    def user_has_permission(self, user: AbstractBaseUser | AnonymousUser, action: str) -> bool:
+        return getattr(user, 'is_superuser', False)
+
+    def users_with_any_permission(self, actions):
+        return User.objects.filter(is_superuser=True, is_active=True)
+
+
 class PlanSpecificSingletonModelPermissionPolicy(ModelPermissionPolicy):
     """Allow access to edit a plan-specific singleton model for plan admins and superusers."""
 
