@@ -52,6 +52,7 @@ if TYPE_CHECKING:
 
     from actions.models.plan import Plan
     from admin_site.models import BaseChangeLogMessage
+    from admin_site.permissions import SuperuserOnlyPermissionPolicy
     from indicators.models import Indicator
     from pages.models import CategoryPage, CategoryTypePage, CategoryTypePageLevelLayout
 
@@ -171,6 +172,12 @@ class CommonCategoryType(CategoryTypeBase, ModelWithPrimaryLanguage):
         verbose_name = _('common category type')
         verbose_name_plural = _('common category types')
         ordering = ('identifier',)
+
+    @classmethod
+    def permission_policy(cls) -> SuperuserOnlyPermissionPolicy:
+        from admin_site.permissions import SuperuserOnlyPermissionPolicy
+
+        return SuperuserOnlyPermissionPolicy(cls)
 
     def __str__(self):
         return f'{self.name}: {self.identifier}'

@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import re
 
+from django.contrib.auth.models import Permission
 from reversion.models import Version
 from wagtail.models import ModelLogEntry
 
@@ -231,6 +232,16 @@ def test_save_and_continue_editing_stays_on_the_edit_page(superuser_client, comm
     data.update({'name': 'Drinking water', '_continue': '1'})
     response = superuser_client.post(edit_path, data)
     assert response['Location'] == edit_path
+
+
+def test_type_model_permissions_do_not_grant_access(client, plan_with_pages, plan_admin_user, common_category_type):
+    ClientPlanFactory.create(plan=plan_with_pages)
+    plan_admin_user.user_permissions.add(*Permission.objects.filter(content_type__model='commoncategorytype'))
+    client.force_login(plan_admin_user)
+    for path in (TYPES_PATH, f'{TYPES_PATH}edit/{common_category_type.pk}/', f'{TYPES_PATH}delete/{common_category_type.pk}/'):
+        response = client.get(path)
+        assert response.status_code == 302, path
+        assert response['Location'] == '/admin/', path
 
 
 @pytest.mark.parametrize('type_id', ['999999', 'abc'])
