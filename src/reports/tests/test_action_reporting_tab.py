@@ -105,6 +105,8 @@ def test_reporting_tab_renders_the_reports(client, plan_with_pages, plan_admin_u
     assert 'class="listing action-reports"' in content
     assert 'Q3 2026' in content
     assert 'Submit action for report' in content
+    # The reports come after the fields that are filled in
+    assert content.index('name="internal_notes"') < content.index('class="listing action-reports"')
 
 
 def test_submitting_from_the_reporting_tab_returns_to_it(client, plan_with_pages, plan_admin_user, action, report_type):
