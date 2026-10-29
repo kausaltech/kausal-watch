@@ -1,0 +1,58 @@
+{% load i18n wagtailadmin_tags %}
+{% for table in tables %}
+    <h3>{{ table.report_type.name }}</h3>
+    <table class="listing action-reports">
+        <thead>
+            <tr>
+                <th>{% translate "Field" %}</th>
+                {% for column in table.columns %}
+                    <th>
+                        {{ column.report.name }}<br>
+                        {% if column.report.is_complete %}
+                            {% translate "Report completed" as completed_label %}
+                            {% status completed_label %}
+                        {% endif %}
+                        {% if column.submitted_at %}
+                            {% blocktranslate trimmed with date=column.submitted_at|date:"SHORT_DATE_FORMAT" asvar submitted_label %}
+                                Action submitted {{ date }}
+                            {% endblocktranslate %}
+                            {% status submitted_label classname="w-status--primary" %}
+                        {% elif not column.report.is_complete %}
+                            {% translate "Not submitted" as not_submitted_label %}
+                            {% status not_submitted_label %}
+                        {% elif not column.is_captured %}
+                            {% translate "Not included" as not_included_label %}
+                            {% status not_included_label %}
+                        {% endif %}
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for label, values in table.rows %}
+                <tr>
+                    <th scope="row">{{ label }}</th>
+                    {% for value in values %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                {% for column in table.columns %}
+                    <td>
+                        {% if column.submit_url %}
+                            <a href="{{ column.submit_url }}" class="button button-small">{% translate "Submit action for report" %}</a>
+                        {% elif column.resubmit_url %}
+                            <a href="{{ column.resubmit_url }}" class="button button-small button-secondary">{% translate "Resubmit" %}</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+{% empty %}
+    <p class="help">{% translate "No reports are shown in the reporting tab of this plan's actions." %}</p>
+{% endfor %}

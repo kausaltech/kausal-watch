@@ -30,7 +30,7 @@ from actions.models import Action, Plan
 
 from .export import export_dashboard_report_for_plan
 from .models import ActionListPageNotFoundError, ActionSnapshot, Report
-from .submissions import get_action_submissions
+from .submissions import get_action_submissions, user_can_submit_action
 from .utils import report_label
 
 if TYPE_CHECKING:
@@ -74,14 +74,7 @@ class MarkActionAsCompleteView(WMABaseView[Action]):
         return date_format(timezone.localtime(submitted_at), 'DATE_FORMAT')
 
     def check_action_permitted(self, user):
-        if not user.can_modify_action(self.action):
-            return False
-        report_type = self.report.type
-        if report_type.plan_id != self.action.plan_id:
-            return False
-        if report_type.only_plan_admins_can_mark_actions_as_complete:
-            return user.is_general_admin_for_plan(self.action.plan)
-        return True
+        return user_can_submit_action(user, self.action, self.report)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
