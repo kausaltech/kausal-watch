@@ -1470,7 +1470,6 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
             ]
 
         reporting_panels: list[Panel] = [cast('Panel', panel) for panel in reporting_attribute_panels]
-        reporting_panels.append(ActionReportsPanel(heading=_('Reports')))
         reporting_panels.append(
             FieldPanel(
                 'internal_notes',
@@ -1491,6 +1490,8 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                 reporting_panels.append(PlanFilteredFieldPanel('impact'))
             if plan.action_schedules.exists():
                 reporting_panels.append(PlanFilteredFieldPanel('schedule'))
+        # The reports come last: they are for reference, below the fields that are filled in
+        reporting_panels.append(ActionReportsPanel(heading=_('Reports')))
 
         all_tabs.append(ObjectList(reporting_panels, heading=_('Reporting')))
 
