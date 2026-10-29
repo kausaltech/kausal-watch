@@ -45,8 +45,8 @@ def _add_path(response_content: bytes, base_path: str) -> str:
     return html.unescape(match.group(1))
 
 
-def _move_after(client, category: CommonCategory, after: CommonCategory):
-    return client.get(f'{CATEGORIES_PATH}reorder/{category.pk}/?common_category_type={category.type.pk}&after={after.pk}')
+def _move_to(client, category: CommonCategory, position: int):
+    return client.post(f'{CATEGORIES_PATH}reorder/{category.pk}/?position={position}')
 
 
 def _orders(common_category_type: CommonCategoryType) -> list[int]:
@@ -171,7 +171,7 @@ def test_reordering_stays_within_type(superuser_client, common_category_type):
     first, second, third = (CommonCategoryFactory.create(type=common_category_type) for _ in range(3))
     other_type = CommonCategoryTypeFactory.create()
     others = [CommonCategoryFactory.create(type=other_type) for _ in range(3)]
-    response = _move_after(superuser_client, first, second)
+    response = _move_to(superuser_client, first, 1)
     assert response.status_code == 200
     assert _orders(common_category_type) == [second.pk, first.pk, third.pk]
     assert _orders(other_type) == [o.pk for o in others]
@@ -188,3 +188,52 @@ def test_deleting_type(superuser_client, common_category_type):
     response = superuser_client.post(f'{TYPES_PATH}delete/{common_category_type.pk}/')
     assert response.status_code == 302
     assert not CommonCategoryType.objects.filter(pk=common_category_type.pk).exists()
+
+
+def test_reordering_is_offered_only_within_a_type(superuser_client, common_category_type):
+    CommonCategoryFactory.create(type=common_category_type)
+    assert 'data-w-orderable' in superuser_client.get(_categories_path(common_category_type)).content.decode()
+    assert 'data-w-orderable' not in superuser_client.get(CATEGORIES_PATH).content.decode()
+
+
+def test_sort_item_order_keeps_the_type(superuser_client, common_category_type):
+    CommonCategoryFactory.create(type=common_category_type)
+    sorted_by_name = f'{_categories_path(common_category_type)}&ordering=name'
+    content = superuser_client.get(sorted_by_name).content.decode()
+    assert 'data-w-orderable' not in content
+    sort_item_order = f'{_categories_path(common_category_type)}&ordering=order'
+    assert html.escape(sort_item_order) in content
+    assert 'data-w-orderable' in superuser_client.get(sort_item_order).content.decode()
+
+
+def test_breadcrumbs_link_back_to_the_type(superuser_client, common_category_type):
+    category = CommonCategoryFactory.create(type=common_category_type)
+    type_link = f'href="{html.escape(_categories_path(common_category_type))}"'
+    for path in (
+        f'{CATEGORIES_PATH}edit/{category.pk}/',
+        f'{CATEGORIES_PATH}add/?common_category_type={common_category_type.pk}',
+    ):
+        content = superuser_client.get(path).content.decode()
+        assert type_link in content, path
+        assert f'href="{CATEGORIES_PATH}"' not in content, path
+
+
+def test_save_and_continue_editing_stays_on_the_edit_page(superuser_client, common_category_type):
+    add_path = _add_path(superuser_client.get(_categories_path(common_category_type)).content, CATEGORIES_PATH)
+    data = post_data(superuser_client.get(add_path).context['form'])
+    data.update({'name': 'Clean water', 'identifier': 'water', '_continue': '1'})
+    response = superuser_client.post(add_path, data)
+    category = CommonCategory.objects.get(identifier='water')
+    edit_path = f'{CATEGORIES_PATH}edit/{category.pk}/'
+    assert response['Location'] == edit_path
+
+    data = post_data(superuser_client.get(edit_path).context['form'])
+    data.update({'name': 'Drinking water', '_continue': '1'})
+    response = superuser_client.post(edit_path, data)
+    assert response['Location'] == edit_path
+
+
+@pytest.mark.parametrize('type_id', ['999999', 'abc'])
+def test_unknown_type_is_not_found(superuser_client, type_id):
+    for path in (CATEGORIES_PATH, f'{CATEGORIES_PATH}add/'):
+        assert superuser_client.get(f'{path}?common_category_type={type_id}').status_code == 404, path

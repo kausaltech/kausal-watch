@@ -68,7 +68,7 @@ def register_category_menu():
 class CommonCategoryMenuItem(MenuItem):
     def __init__(self, common_category_type, **kwargs):
         self.common_category_type = common_category_type
-        self.base_url = reverse('actions_commoncategory_modeladmin_index')
+        self.base_url = reverse('wagtailsnippets_actions_commoncategory:list')
         url = f'{self.base_url}?common_category_type={common_category_type.id}'
         label = common_category_type.name
         super().__init__(label, url, icon_name='kausal-category', **kwargs)

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.utils import unquote
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Model
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms.models import WagtailAdminModelForm
@@ -19,6 +23,8 @@ from wagtail.admin.panels import (
     ObjectList,
 )
 from wagtail.admin.panels.base import Panel
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views import snippets as snippet_views
 
 from dal import autocomplete
 from wagtail_color_panel.edit_handlers import NativeColorPanel
@@ -36,6 +42,7 @@ from aplans.utils import append_query_parameter
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.models.plan import Plan
 from admin_site.utils import admin_req
+from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 from admin_site.wagtail import (
     AplansAdminModelForm,
     AplansCreateView,
@@ -56,9 +63,12 @@ from admin_site.wagtail import (
 from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.db.models import QuerySet
     from django.forms import ModelChoiceField
     from django.http.request import HttpRequest
+    from wagtail.admin.views.generic.base import BreadcrumbItem
 
     from wagtail_modeladmin.views import InstanceSpecificView
 
@@ -71,23 +81,6 @@ class CategoryTypeFilter(SimpleListFilter):
         user = admin_req(request).user
         plan = user.get_active_admin_plan()
         choices = [(i.pk, i.name) for i in plan.category_types.all()]
-        return choices
-
-    def queryset(self, request, queryset):
-        if self.value() is not None:
-            return queryset.filter(type=self.value())
-        return queryset
-
-
-class CommonCategoryTypeFilter(SimpleListFilter):
-    title = _('Common category type')
-    parameter_name = 'common_category_type'
-
-    def lookups(self, request, model_admin):
-        # user = request.user
-        # plan = user.get_active_admin_plan()
-        # choices = [(i.id, i.name) for i in plan.category_types.all()]
-        choices = [(i.pk, i.name) for i in CommonCategoryType.objects.all()]
         return choices
 
     def queryset(self, request, queryset):
@@ -553,33 +546,56 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin[Category]):
         return CategoryEditHandler(tabs)
 
 
-class CommonCategoryTypePermissionHelper(PermissionHelper[CommonCategoryType]):
-    def user_can_list(self, user):
-        return user.is_superuser
-
-    def user_can_create(self, user):
-        return user.is_superuser
-
-    # def user_can_inspect_obj(self, user, obj):
-    #     return user.is_superuser
-
-    def user_can_delete_obj(self, user, obj):
-        return user.is_superuser
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_superuser
+class CommonCategoryTypeForm(AplansAdminModelForm[CommonCategoryType]):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
 
 
-@modeladmin_register
-class CommonCategoryTypeAdmin(AplansModelAdmin[CommonCategoryType]):
+def get_common_category_type_panel(
+    request: HttpRequest, instance: CommonCategoryType
+) -> AplansTabbedInterface[CommonCategoryType, CommonCategoryTypeForm]:
+    tabs: list[Panel[Any]] = [
+        ObjectList(CommonCategoryTypeViewSet.panels, heading=_('Basic information')),
+        *get_translation_tabs(instance, request),
+    ]
+    return AplansTabbedInterface[CommonCategoryType, CommonCategoryTypeForm](
+        tabs, base_form_class=CommonCategoryTypeForm
+    ).bind_to_model(CommonCategoryType)
+
+
+class PanelFormMixin:
+    """Use the form of the panel built for the request, not the one the viewset built at startup."""
+
+    panel: ClassVar[Panel | None]
+
+    def get_form_class(self):
+        assert self.panel is not None
+        return self.panel.get_form_class()
+
+
+class CommonCategoryTypeCreateView(PanelFormMixin, WatchCreateView[CommonCategoryType]):
+    def get_panel(self):
+        return get_common_category_type_panel(self.request, CommonCategoryType())
+
+
+class CommonCategoryTypeEditView(PanelFormMixin, WatchEditView[CommonCategoryType]):
+    def get_panel(self):
+        return get_common_category_type_panel(self.request, self.object)
+
+
+class CommonCategoryTypeViewSet(WatchViewSet[CommonCategoryType]):
     model = CommonCategoryType
-    menu_icon = 'kausal-category'
+    icon = 'kausal-category'
     menu_label = _('Common category types')
     menu_order = 1101
-    permission_helper_class = CommonCategoryTypePermissionHelper
-    list_display = ('name',)
-    search_fields = ('name',)
     add_to_settings_menu = True
+    url_prefix = 'actions/commoncategorytype'
+    list_display = ['name']
+    search_fields = ['name']
+    bulk_delete_enabled = False
+    add_view_class = CommonCategoryTypeCreateView
+    edit_view_class = CommonCategoryTypeEditView
 
     panels = [
         FieldPanel('name'),
@@ -607,94 +623,179 @@ class CommonCategoryTypeAdmin(AplansModelAdmin[CommonCategoryType]):
         ),
     ]
 
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get_as_type(CommonCategoryType)
-        panels = list(self.panels)
-        tabs: list[Panel[Any]] = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(instance, request)
-        tabs += i18n_tabs
-
-        return AplansTabbedInterface(tabs)
+register_snippet(CommonCategoryTypeViewSet)
 
 
-class CommonCategoryTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
-    @property
-    def index_url(self):
-        return append_query_parameter(self.request, super().index_url, 'common_category_type')
-
-    @property
-    def create_url(self):
-        return append_query_parameter(self.request, super().create_url, 'common_category_type')
-
-    @property
-    def edit_url(self):
-        return append_query_parameter(self.request, super().edit_url, 'common_category_type')
-
-    @property
-    def delete_url(self):
-        return append_query_parameter(self.request, super().delete_url, 'common_category_type')
+def get_common_category_type_from_request(request: HttpRequest) -> CommonCategoryType | None:
+    type_id = request.GET.get('common_category_type')
+    if not type_id:
+        return None
+    if not type_id.isdigit():
+        raise Http404
+    return get_object_or_404(CommonCategoryType, pk=int(type_id))
 
 
-class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin[CommonCategory], AplansCreateView[CommonCategory]):
-    instance: CommonCategory
+def get_common_categories_index_url(common_category_type: CommonCategoryType) -> str:
+    url = reverse('wagtailsnippets_actions_commoncategory:list')
+    return f'{url}?common_category_type={common_category_type.pk}'
 
-    def initialize_instance(self, request):
+
+def scope_breadcrumbs_to_type(
+    items: Sequence[BreadcrumbItem], common_category_type: CommonCategoryType | None
+) -> Sequence[BreadcrumbItem]:
+    if common_category_type is None:
+        return items
+    index_url = reverse('wagtailsnippets_actions_commoncategory:list')
+    type_url = get_common_categories_index_url(common_category_type)
+    result: list[BreadcrumbItem] = [{**item, 'url': type_url} if item['url'] == index_url else item for item in items]
+    return result
+
+
+class CommonCategoryForm(AplansAdminModelForm[CommonCategory]):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['identifier'].disabled = True
+            self.fields['identifier'].required = False
+
+
+def get_common_category_panel(
+    request: HttpRequest, instance: CommonCategory
+) -> AplansTabbedInterface[CommonCategory, CommonCategoryForm]:
+    panels = list[Panel[Any]](CommonCategoryViewSet.panels)
+    if user_or_bust(request.user).is_superuser:
+        # Didn't use CondensedInlinePanel for the following because there is a bug:
+        # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
+        # and only if the inline instance is collapsed.
+        panels.append(
+            InlinePanel(
+                'icons',
+                heading=_('Icons'),
+                panels=[
+                    FieldPanel('language'),
+                    FieldPanel('image'),
+                ],
+            )
+        )
+    tabs: list[Panel[Any]] = [
+        ObjectList(panels, heading=_('Basic information')),
+        *get_translation_tabs(instance, request, include_all_languages=True),
+    ]
+    return AplansTabbedInterface[CommonCategory, CommonCategoryForm](tabs, base_form_class=CommonCategoryForm).bind_to_model(
+        CommonCategory
+    )
+
+
+class CommonCategoryIndexView(WatchIndexView[CommonCategory]):
+    # The menu links to one type's categories. Scoping the queryset instead of filtering keeps reordering available.
+    def get_base_queryset(self):
+        qs = super().get_base_queryset()
+        common_category_type = get_common_category_type_from_request(self.request)
+        if common_category_type is None:
+            return qs
+        return qs.filter(type=common_category_type)
+
+    def get_add_url(self):
+        url = super().get_add_url()
+        common_category_type = get_common_category_type_from_request(self.request)
+        if url is None or common_category_type is None:
+            return url
+        return f'{url}?common_category_type={common_category_type.pk}'
+
+    @cached_property
+    def show_ordering_column(self):
+        # Positions are only meaningful within one type
+        return get_common_category_type_from_request(self.request) is not None and super().show_ordering_column
+
+    @cached_property
+    def reorder_button(self):
+        # Wagtail's button would drop the type from the URL
+        button = super().reorder_button
+        common_category_type = get_common_category_type_from_request(self.request)
+        if button is None or common_category_type is None:
+            return None
+        button.url = f'{get_common_categories_index_url(common_category_type)}&ordering={self.sort_order_field}'
+        return button
+
+
+class CommonCategoryCreateView(PanelFormMixin, WatchCreateView[CommonCategory]):
+    def get_panel(self):
+        instance = CommonCategory()
+        common_category_type = get_common_category_type_from_request(self.request)
+        if common_category_type is not None:
+            instance.type = common_category_type
+        return get_common_category_panel(self.request, instance)
+
+    def initialize_instance(self, request, instance):
         """Set the new common category's type to the one given in the GET data."""
-        common_category_type = request.GET.get('common_category_type')
-        if common_category_type and not self.instance.pk:
-            assert not hasattr(self.instance, 'type')
-            self.instance.type = CommonCategoryType.objects.get(pk=int(common_category_type))
-            # if not self.instance.identifier and self.instance.type.hide_category_identifiers:
-            #     self.instance.generate_identifier()
+        super().initialize_instance(request, instance)
+        common_category_type = get_common_category_type_from_request(request)
+        if common_category_type is not None:
+            instance.type = common_category_type
 
     @transaction.atomic()
-    def form_valid(self, form):
+    def save_instance(self):
         """Create category corresponding to this common category for all plans using this common category's type."""
-        result = super().form_valid(form)
-        for plan in self.instance.type.plans.all():
-            ct = self.instance.type.category_type_instances.get(plan=plan)
-            self.instance.instantiate_for_category_type(ct)
-        return result
+        instance = super().save_instance()
+        for plan in instance.type.plans.all():
+            ct = instance.type.category_type_instances.get(plan=plan)
+            instance.instantiate_for_category_type(ct)
+        return instance
+
+    def get_success_url(self):
+        if self.continue_editing_active():
+            return super().get_success_url()
+        assert self.object is not None
+        return get_common_categories_index_url(self.object.type)
+
+    def get_breadcrumbs_items(self):
+        return scope_breadcrumbs_to_type(super().get_breadcrumbs_items(), get_common_category_type_from_request(self.request))
 
 
-class CommonCategoryEditView(CommonCategoryTypeQueryParameterMixin[CommonCategory], AplansEditView[CommonCategory]):
-    pass
+class CommonCategoryEditView(PanelFormMixin, WatchEditView[CommonCategory]):
+    def get_panel(self):
+        return get_common_category_panel(self.request, self.object)
+
+    def get_success_url(self):
+        if self.continue_editing_active():
+            return super().get_success_url()
+        return get_common_categories_index_url(self.object.type)
+
+    def get_breadcrumbs_items(self):
+        return scope_breadcrumbs_to_type(super().get_breadcrumbs_items(), self.object.type)
 
 
-class CommonCategoryDeleteView(CommonCategoryTypeQueryParameterMixin[CommonCategory], DeleteView[CommonCategory]):
-    pass
+class CommonCategoryDeleteView(WatchDeleteView[CommonCategory]):
+    def get_success_url(self):
+        return get_common_categories_index_url(self.object.type)
 
 
-class CommonCategoryAdminButtonHelper(QueryParameterButtonHelper):
-    parameter_name = 'common_category_type'
+class CommonCategoryReorderView(snippet_views.ReorderView):  # type: ignore[name-defined]  # pyright: ignore[reportAttributeAccessIssue]
+    def get_queryset(self):
+        # Each type numbers its categories separately
+        category = get_object_or_404(CommonCategory, pk=unquote(str(self.kwargs['pk'])))
+        return category.filter_siblings(super().get_queryset())
 
 
-class CommonCategoryAdminMenuItem(ModelAdminMenuItem[CommonCategory]):
-    def is_shown(self, request):
-        # Hide it because we will have menu items for listing common categories of specific types.
-        # Note that we need to register CommonCategoryAdmin nonetheless, otherwise the URLs wouldn't be set up.
-        return False
-
-
-class CommonCategoryEditHandler(AplansTabbedInterface[CommonCategory]):
-    def get_form_class(self):
-        instance = ctx_instance.get()
-        form_class = super().get_form_class()
-        if instance and instance.pk:
-            form_class.base_fields['identifier'].disabled = True
-            form_class.base_fields['identifier'].required = False
-        return form_class
-
-
-@modeladmin_register
-class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin[CommonCategory]):
-    menu_label = _('Common categories')
-    menu_icon = 'kausal-category'
-    list_display = ('name', 'identifier', 'type')
-    list_filter = (CommonCategoryTypeFilter,)
+class CommonCategoryViewSet(WatchViewSet[CommonCategory]):
     model = CommonCategory
+    icon = 'kausal-category'
+    menu_label = _('Common categories')
+    # The "Common categories" menu in `admin_site.wagtail_hooks` has one item per type
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'actions/commoncategory'
+    list_display = ['name', 'identifier', 'type']
+    ordering = 'order'
+    sort_order_field = 'order'
+    bulk_delete_enabled = False
+    index_view_class = CommonCategoryIndexView
+    add_view_class = CommonCategoryCreateView
+    edit_view_class = CommonCategoryEditView
+    delete_view_class = CommonCategoryDeleteView
+    reorder_view_class = CommonCategoryReorderView
 
     panels = [
         FieldPanel('name'),
@@ -705,51 +806,5 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin[CommonCategory]):
         FieldPanel('help_text'),
     ]
 
-    create_view_class = CommonCategoryCreateView
-    edit_view_class = CommonCategoryEditView
-    # Do we need to create a view for inspect_view?
-    delete_view_class = CommonCategoryDeleteView
-    button_helper_class = CommonCategoryAdminButtonHelper  # type: ignore[assignment]
 
-    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
-    # wagtailorderable hasn't accounted for this.
-    @admin.display(ordering='order', description=_('Order'))
-    def index_order(self, obj):
-        return mark_safe(
-            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
-            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
-            '<use href="#icon-grip"></use>'
-            '</svg>'
-            '</div>',
-        )
-
-    def get_menu_item(self, order=None):
-        return CommonCategoryAdminMenuItem(self, order or self.get_menu_order())
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        user = user_or_bust(request.user)
-        instance = ctx_instance.get_as_type(CommonCategory)
-        panels = list[Panel[Any]](self.panels)
-
-        if user.is_superuser:
-            # Didn't use CondensedInlinePanel for the following because there is a bug:
-            # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
-            # and only if the inline instance is collapsed.
-            panels.append(
-                InlinePanel(
-                    'icons',
-                    heading=_('Icons'),
-                    panels=[
-                        FieldPanel('language'),
-                        FieldPanel('image'),
-                    ],
-                )
-            )
-
-        tabs: list[Panel[Any]] = [ObjectList(panels, heading=_('Basic information'))]
-
-        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
-        tabs += i18n_tabs
-
-        return CommonCategoryEditHandler(tabs)
+register_snippet(CommonCategoryViewSet)
