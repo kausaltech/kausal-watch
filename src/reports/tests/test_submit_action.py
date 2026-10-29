@@ -68,14 +68,13 @@ def test_action_menu_offers_submitting_in_a_reporting_section(rf, plan_admin_use
     assert button['url'] == SUBMIT_PATH.format(action=action.pk, report=report.pk)
 
 
-def test_action_menu_offers_resubmitting_and_undoing_a_submission(rf, plan_admin_user, action, report):
+def test_action_menu_offers_resubmitting_a_submission(rf, plan_admin_user, action, report):
+    """Undoing the submission is offered in the report's list of submissions instead."""
     action.mark_as_complete_for_report(report, plan_admin_user)
     submitted_on = date_format(timezone.localtime(action.submitted_at_for_report(report)), 'SHORT_DATE_FORMAT')
-    resubmit, undo = _reporting_buttons(rf, plan_admin_user, action)
+    [resubmit] = _reporting_buttons(rf, plan_admin_user, action)
     assert resubmit['label'] == f'Resubmit for Quarterly report • Q3 2026 (submitted {submitted_on})'
     assert resubmit['url'] == RESUBMIT_PATH.format(action=action.pk, report=report.pk)
-    assert undo['label'] == 'Undo submission for Quarterly report • Q3 2026'
-    assert undo['url'] == UNDO_PATH.format(action=action.pk, report=report.pk)
 
 
 def test_confirmation_lists_the_indicators_the_submission_captures(admin_client, action, report):

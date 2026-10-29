@@ -775,20 +775,6 @@ class ActionButtonHelper(AplansButtonHelper):
             'section': _('Reporting'),
         }
 
-    def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.mark_as_complete_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _('Undo submission for %s') % report_label(report),
-            'classname': cn,
-            'title': _('Undo submitting this action to the report %s') % report_label(report),
-            'icon': 'fontawesome-rotate-left',
-            'section': _('Reporting'),
-        }
-
     def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
         user = user_or_none(self.request.user)
@@ -808,8 +794,8 @@ class ActionButtonHelper(AplansButtonHelper):
             if submitted_at is None:
                 buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
             else:
+                # Undoing a submission is offered in the report's list of submissions instead
                 buttons.append(self.resubmit_button(obj.pk, latest_report, submitted_at, **kwargs))
-                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
 
 

@@ -1,0 +1,57 @@
+{% load i18n wagtailadmin_tags %}
+<p class="help">
+    {% blocktranslate trimmed count counter=submissions|length %}
+        {{ counter }} action
+    {% plural %}
+        {{ counter }} actions
+    {% endblocktranslate %}
+    ·
+    {% blocktranslate trimmed %}{{ submitted_count }} submitted{% endblocktranslate %}
+    ·
+    {% blocktranslate trimmed %}{{ not_submitted_count }} not submitted{% endblocktranslate %}
+</p>
+{% if submissions %}
+    <table class="listing report-submissions">
+        <thead>
+            <tr>
+                <th>{% translate "Identifier" %}</th>
+                <th>{% translate "Action" %}</th>
+                <th>{% translate "Submitted" %}</th>
+                <th>{% translate "Contact person" %}</th>
+                <th><span class="w-sr-only">{% translate "Undo" %}</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+                <tr>
+                    <td>{{ submission.action.identifier }}</td>
+                    <td><a href="{% url 'actions_action_modeladmin_edit' submission.action.pk %}">{{ submission.action.name }}</a></td>
+                    <td>
+                        {% if submission.submitted_at %}
+                            {% translate "Submitted" as submitted_label %}
+                            {% status submitted_label classname="w-status--primary" %}
+                            <div class="help">
+                                {% if submission.submitted_by %}
+                                    {% blocktranslate trimmed with date=submission.submitted_at|date:"DATE_FORMAT" user=submission.submitted_by %}
+                                        {{ date }} by {{ user }}
+                                    {% endblocktranslate %}
+                                {% else %}
+                                    {{ submission.submitted_at|date:"DATE_FORMAT" }}
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            {% translate "Not submitted" as not_submitted_label %}
+                            {% status not_submitted_label %}
+                        {% endif %}
+                    </td>
+                    <td>{{ submission.contact_persons }}</td>
+                    <td>
+                        {% if submission.undo_url %}
+                            <a href="{{ submission.undo_url }}" class="button button-small button-secondary">{% translate "Undo submission" %}</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
