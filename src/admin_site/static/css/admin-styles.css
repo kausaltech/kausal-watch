@@ -633,3 +633,9 @@ with Wagtail's styles but so far these are required.
     transition: none;
   }
 }
+
+/* The report template editor lays out the template next to the field bank, so let it use the form's width
+   instead of the width Wagtail gives a single input */
+.w-field__wrapper:has(> .w-field--report_template_fields_widget) {
+  max-width: 75rem;
+}

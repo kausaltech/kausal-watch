@@ -205,6 +205,11 @@ class ReportTemplateFieldsPanel(FieldPanel):
     class BoundPanel(FieldPanel.BoundPanel):
         template_name = 'reports/panels/report_template_fields_panel.html'
 
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            # The Fields tab already names the editor; without a heading, Wagtail renders no collapsible panel header
+            self.heading = ''
+
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
             # The editor's mount script needs what the page's context processors provide, but Wagtail renders the
