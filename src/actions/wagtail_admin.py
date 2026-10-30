@@ -1763,14 +1763,14 @@ class CategoryChangeLogMessageCreateView(
     CategoryChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageCreateView[CategoryChangeLogMessage, Category],
 ):
-    success_url_name = 'actions_category_modeladmin_index'
+    success_url_name = 'wagtailsnippets_actions_category:list'
 
 
 class CategoryChangeLogMessageEditView(
     CategoryChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category],
 ):
-    success_url_name = 'actions_category_modeladmin_edit'
+    success_url_name = 'wagtailsnippets_actions_category:edit'
 
 
 class CategoryChangeLogMessageDeleteView(

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from django.apps import AppConfig
 
-from wagtailorderable.signals import post_reorder
-
 
 def post_reorder_categories(sender, **kwargs):
     from actions.models import CategoryType
@@ -18,13 +16,6 @@ class PagesConfig(AppConfig):
     name = 'pages'
 
     def ready(self):
-        from actions.category_admin import CategoryAdmin
         from pages.wagtail_localize_compat import patch_segment_extraction
 
         patch_segment_extraction()
-
-        post_reorder.connect(
-            post_reorder_categories,
-            sender=CategoryAdmin,
-            dispatch_uid='reorder_category_pages',
-        )

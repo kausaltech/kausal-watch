@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from django.contrib import admin, messages
-from django.contrib.admin import SimpleListFilter
+from django.contrib import messages
 from django.contrib.admin.utils import unquote
-from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Model
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.functional import cached_property
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels import (
@@ -23,39 +22,34 @@ from wagtail.admin.panels import (
     ObjectList,
 )
 from wagtail.admin.panels.base import Panel
+from wagtail.models import Page, ReferenceIndex
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views import snippets as snippet_views
 
 from dal import autocomplete
 from wagtail_color_panel.edit_handlers import NativeColorPanel
-from wagtail_modeladmin.helpers.permission import PermissionHelper
-from wagtail_modeladmin.menus import ModelAdminMenuItem
-from wagtail_modeladmin.options import modeladmin_register
-from wagtail_modeladmin.views import DeleteView
-from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from kausal_common.users import user_or_bust
 
-from aplans.context_vars import ctx_instance, ctx_request, get_admin_cache
+from aplans.context_vars import ctx_request
 from aplans.utils import append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.models.plan import Plan
-from admin_site.utils import admin_req
-from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
+from admin_site.viewsets import (
+    InstancePermissionCheckedMixin,
+    WatchCreateView,
+    WatchDeleteView,
+    WatchEditView,
+    WatchIndexView,
+    WatchViewSet,
+)
 from admin_site.wagtail import (
     AplansAdminModelForm,
-    AplansCreateView,
-    AplansEditView,
-    AplansIndexView,
-    AplansModelAdmin,
     AplansTabbedInterface,
     CondensedInlinePanel,
-    InitializeFormWithInitialPlanMixin,
-    InitializeFormWithPlanMixin,
     PlanFilteredFieldPanel,
-    QueryParameterButtonHelper,
-    get_dataset_buttons,
+    get_dataset_listing_buttons,
     get_translation_tabs,
     insert_model_translation_panels,
 )
@@ -72,213 +66,7 @@ if TYPE_CHECKING:
 
     from wagtail_modeladmin.views import InstanceSpecificView
 
-
-class CategoryTypeFilter(SimpleListFilter):
-    title = _('Category type')
-    parameter_name = 'category_type'
-
-    def lookups(self, request: HttpRequest, model_admin):
-        user = admin_req(request).user
-        plan = user.get_active_admin_plan()
-        choices = [(i.pk, i.name) for i in plan.category_types.all()]
-        return choices
-
-    def queryset(self, request, queryset):
-        if self.value() is not None:
-            return queryset.filter(type=self.value())
-        return queryset
-
-
-class CategoryTypeCreateView(
-    InitializeFormWithPlanMixin[CategoryType], InitializeFormWithInitialPlanMixin[CategoryType], AplansCreateView[CategoryType]
-):
-    pass
-
-
-class CategoryTypeEditView(
-    InitializeFormWithPlanMixin[CategoryType], InitializeFormWithInitialPlanMixin[CategoryType], AplansEditView[CategoryType]
-):
-    pass
-
-
-class CategoryTypeDeleteView(DeleteView[CategoryType]):
-    def delete_instance(self):
-        # When deleting a category type which is an instantiation of a common category type, remove link from plan
-        assert isinstance(self.instance, CategoryType)
-        plan = self.instance.plan
-        cct = self.instance.common
-        if cct is not None:
-            plan.common_category_types.remove(cct)
-        for page in self.instance.category_type_pages.all():
-            page.delete()
-        return super().delete_instance()
-
-
-class CategoryTypePermissionHelper(PermissionHelper[CategoryType]):
-    def _is_admin_of_active_plan(self, user) -> bool:
-        active_plan = user.get_active_admin_plan()
-        return user.is_general_admin_for_plan(active_plan)
-
-    def user_can_list(self, user):
-        return self._is_admin_of_active_plan(user)
-
-    def user_can_create(self, user):
-        return self._is_admin_of_active_plan(user)
-
-    def user_can_delete_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj.plan)
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj.plan)
-
-
-@modeladmin_register
-class CategoryTypeAdmin(AplansModelAdmin[CategoryType]):
-    model = CategoryType
-    menu_icon = 'kausal-category'
-    menu_label = _('Category types')
-    menu_order = 1100
-    list_display = ('name',)
-    search_fields = ('name',)
-    add_to_settings_menu = True
-    create_view_class = CategoryTypeCreateView
-    edit_view_class = CategoryTypeEditView
-    delete_view_class = CategoryTypeDeleteView
-    permission_helper_class = CategoryTypePermissionHelper
-
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('identifier'),
-        FieldPanel('lead_paragraph'),
-        FieldPanel('help_text'),
-        FieldPanel('admin_help_text'),
-        FieldPanel('hide_category_identifiers'),
-        FieldPanel('select_widget'),
-        MultiFieldPanel(
-            [
-                FieldRowPanel([
-                    FieldPanel('usable_for_actions'),
-                    FieldPanel('editable_for_actions'),
-                ]),
-                FieldRowPanel([
-                    FieldPanel('usable_for_indicators'),
-                    FieldPanel('editable_for_indicators'),
-                ]),
-            ],
-            heading=_('Action and indicator categorization'),
-            classname='collapsible',
-        ),
-        FieldPanel('synchronize_with_pages'),
-        FieldPanel('instances_editable_by'),
-        FieldPanel('action_list_filter_section'),
-        FieldPanel('action_detail_content_section'),
-    ]
-
-    levels_panels = [
-        FieldPanel('name'),
-        FieldPanel('name_plural'),
-    ]
-
-    def get_form_fields_exclude(self, request: HttpRequest):  # type: ignore[override]
-        exclude = super().get_form_fields_exclude(request)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
-        exclude += ['plan']
-        return exclude
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        return qs.filter(plan=plan)
-
-    def get_edit_handler(self):
-        request = ctx_request.get_admin_request()
-        instance = ctx_instance.get_as_type(CategoryType)
-        plan = instance.plan
-
-        panels = list[Panel[Any]](self.panels)
-
-        if instance and instance.common:
-            panels.insert(1, FieldPanel('common'))
-
-        levels_panels = insert_model_translation_panels(CategoryLevel, self.levels_panels, request, plan)
-        panels.append(
-            CondensedInlinePanel('levels', panels=levels_panels, heading=_('Category levels')),
-        )
-
-        tabs: list[Panel[Any]] = [ObjectList(panels, heading=_('Basic information'))]
-
-        i18n_tabs = get_translation_tabs(instance, request)
-        tabs += i18n_tabs
-
-        return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
-
-
-class CategoryAdminForm(WagtailAdminModelForm[Category]):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # For the parent field, only show categories of the same type
-        parent_field = cast('ModelChoiceField[Category]', self.fields['parent'])
-        assert parent_field.queryset is not None
-        parent_field.queryset = parent_field.queryset.filter(type=self.instance.type)
-
-    def clean_identifier(self):
-        # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
-        # `type`, in which case the unique_together constraints of Category will not be checked. We do it manually here.
-        # Similarly, the unique_together containing `external_identifier` will not be checked, but `external_identifier`
-        # is not part of the form, so no need to check.
-        identifier = self.cleaned_data['identifier']
-        type = self.instance.type
-        if Category.objects.filter(type=type, identifier=identifier).exclude(pk=self.instance.pk).exists():
-            raise ValidationError(_('There is already a category with this identifier.'))
-        return identifier
-
-    def save(self, commit=True):
-        obj = super().save(commit)
-        user = self._user
-        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
-        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
-        # (I copied that from ActionAdminForm, where, in contrast to categories at the moment, we indeed can have
-        # drafts, but who knows, maybe we'll soon have draft categories... Anyway, good to be consistent.)
-        if commit:
-            attribute_types = obj.get_editable_attribute_types(user)
-        else:
-            attribute_types = obj.get_visible_attribute_types(user)
-        for attribute_type in attribute_types:
-            attribute_type.on_form_save(obj, self.cleaned_data, commit=commit)
-        return obj
-
-
-class CategoryEditHandler(AplansTabbedInterface[Category, CategoryAdminForm]):
-    def get_form_class(self):
-        request = ctx_request.get_admin_request()
-        instance = ctx_instance.get_as_type(Category)
-        user = request.user
-        plan = request.get_active_admin_plan()
-        if instance is not None:
-            attribute_types = instance.get_visible_attribute_types(user)
-            attribute_fields = {
-                field.name: field.django_field
-                for attribute_type in attribute_types
-                for field in attribute_type.get_form_fields(user, plan, instance)
-            }
-        else:
-            attribute_fields = {}
-
-        self.base_form_class = type(
-            'CategoryAdminForm',
-            (CategoryAdminForm,),
-            {**attribute_fields, '_user': user},
-        )
-        form_class = super().get_form_class()
-        if instance and instance.common:
-            if 'identifier' in form_class.base_fields:
-                form_class.base_fields['identifier'].disabled = True
-                form_class.base_fields['identifier'].required = False
-            if 'parent' in form_class.base_fields:
-                # TODO: Hide "parent" field instead of disabling?
-                form_class.base_fields['parent'].disabled = True
-                form_class.base_fields['parent'].required = False
-        return form_class
+    from users.models import User
 
 
 class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm[CategoryType]):
@@ -286,6 +74,11 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm[Catego
         self.plan = kwargs.pop('plan')
         self.initial_plan_id = kwargs.pop('initial_plan_id')
         super().__init__(*args, **kwargs)
+        common_field = self.fields.get('common')
+        # The field is only shown for a category type that has a common category type, and then read-only
+        if common_field:
+            common_field.disabled = True
+            common_field.required = False
 
     def clean_identifier(self):
         # Since plan is not a form field, `validate_unique()` will be called with `exclude` containing `plan`, in
@@ -318,16 +111,248 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm[Catego
         return obj
 
 
-class CategoryTypeEditHandler(AplansTabbedInterface[CategoryType, CategoryTypeForm]):
+class PanelFormMixin:
+    """Use the form of the panel built for the request, not the one the viewset built at startup."""
+
+    panel: ClassVar[Panel | None]
+
     def get_form_class(self):
-        form_class = super().get_form_class()
-        common_field = form_class.base_fields.get('common')
-        # The field should be displayed if and only if editing an instance that has a common category type. If it is,
-        # make it read-only.
-        if common_field:
-            common_field.disabled = True
-            common_field.required = False
-        return form_class
+        assert self.panel is not None
+        return self.panel.get_form_class()
+
+
+class InitialPlanFormMixin:
+    """Like `InitializeFormWithInitialPlanMixin`, for snippet views."""
+
+    request: HttpRequest
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'GET':
+            request.session['initial_plan_id'] = str(user_or_bust(request.user).get_active_admin_plan().id)
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+    def get_form_kwargs(self):
+        return {
+            **super().get_form_kwargs(),  # type: ignore[misc]
+            'initial_plan_id': self.request.session.get('initial_plan_id'),
+        }
+
+
+CATEGORY_TYPE_PANELS: list[Panel[Any]] = [
+    FieldPanel('name'),
+    FieldPanel('identifier'),
+    FieldPanel('lead_paragraph'),
+    FieldPanel('help_text'),
+    FieldPanel('admin_help_text'),
+    FieldPanel('hide_category_identifiers'),
+    FieldPanel('select_widget'),
+    MultiFieldPanel(
+        [
+            FieldRowPanel([
+                FieldPanel('usable_for_actions'),
+                FieldPanel('editable_for_actions'),
+            ]),
+            FieldRowPanel([
+                FieldPanel('usable_for_indicators'),
+                FieldPanel('editable_for_indicators'),
+            ]),
+        ],
+        heading=_('Action and indicator categorization'),
+        classname='collapsible',
+    ),
+    FieldPanel('synchronize_with_pages'),
+    FieldPanel('instances_editable_by'),
+    FieldPanel('action_list_filter_section'),
+    FieldPanel('action_detail_content_section'),
+]
+
+CATEGORY_LEVEL_PANELS = [
+    FieldPanel('name'),
+    FieldPanel('name_plural'),
+]
+
+
+def get_category_type_panel(
+    request: HttpRequest, instance: CategoryType
+) -> AplansTabbedInterface[CategoryType, CategoryTypeForm]:
+    panels = list(CATEGORY_TYPE_PANELS)
+    if instance.common:
+        panels.insert(1, FieldPanel('common'))
+    levels_panels = insert_model_translation_panels(CategoryLevel, CATEGORY_LEVEL_PANELS, request, instance.plan)
+    panels.append(CondensedInlinePanel('levels', panels=levels_panels, heading=_('Category levels')))
+    tabs: list[Panel[Any]] = [
+        ObjectList(panels, heading=_('Basic information')),
+        *get_translation_tabs(instance, request),
+    ]
+    return AplansTabbedInterface[CategoryType, CategoryTypeForm](tabs, base_form_class=CategoryTypeForm).bind_to_model(
+        CategoryType
+    )
+
+
+class CategoryTypeCreateView(InitialPlanFormMixin, PanelFormMixin, WatchCreateView[CategoryType]):
+    def get_panel(self):
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        return get_category_type_panel(self.request, CategoryType(plan=plan))
+
+
+class CategoryTypeEditView(InitialPlanFormMixin, PanelFormMixin, WatchEditView[CategoryType]):
+    def get_panel(self):
+        return get_category_type_panel(self.request, self.object)
+
+
+class DeleteOwnPagesMixin[M: Model]:
+    """Delete the pages generated for the object along with it, so that they don't protect it from deletion."""
+
+    object: M
+
+    def get_own_pages(self) -> QuerySet[Page]:
+        raise NotImplementedError
+
+    def get_usage(self):
+        if super().get_usage() is None:  # type: ignore[misc]
+            return None
+        page_ids = [str(pk) for pk in self.get_own_pages().values_list('pk', flat=True)]
+        references = ReferenceIndex.get_references_to(self.object).exclude(
+            base_content_type=ContentType.objects.get_for_model(Page), object_id__in=page_ids
+        )
+        return references.group_by_source_object()
+
+    def delete_action(self):
+        for page in list(self.get_own_pages()):
+            page.delete()
+        super().delete_action()  # type: ignore[misc]
+
+
+class CategoryTypeDeleteView(DeleteOwnPagesMixin[CategoryType], WatchDeleteView[CategoryType]):
+    def get_own_pages(self):
+        return Page.objects.filter(pk__in=self.object.category_type_pages.values('pk'))
+
+    def delete_action(self):
+        # When deleting a category type which is an instantiation of a common category type, remove link from plan
+        category_type = self.object
+        if category_type.common is not None:
+            category_type.plan.common_category_types.remove(category_type.common)
+        super().delete_action()
+
+
+class CategoryTypeViewSet(WatchViewSet[CategoryType]):
+    model = CategoryType
+    icon = 'kausal-category'
+    menu_label = _('Category types')
+    menu_order = 1100
+    add_to_settings_menu = True
+    url_prefix = 'actions/categorytype'
+    list_display = ['name']
+    search_fields = ['name']
+    bulk_delete_enabled = False
+    add_view_class = CategoryTypeCreateView
+    edit_view_class = CategoryTypeEditView
+    delete_view_class = CategoryTypeDeleteView
+
+    edit_handler = ObjectList(CATEGORY_TYPE_PANELS, base_form_class=CategoryTypeForm)
+
+    def get_queryset(self, request: HttpRequest):
+        plan = user_or_bust(request.user).get_active_admin_plan()
+        return CategoryType.objects.filter(plan=plan)
+
+
+register_snippet(CategoryTypeViewSet)
+
+
+class CategoryAdminForm(WagtailAdminModelForm[Category]):
+    _user: User
+
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
+        # For the parent field, only show categories of the same type
+        parent_field = cast('ModelChoiceField[Category]', self.fields['parent'])
+        assert parent_field.queryset is not None
+        parent_field.queryset = parent_field.queryset.filter(type=self.instance.type)
+        if self.instance.common:
+            # TODO: Hide "parent" field instead of disabling?
+            for field_name in ('identifier', 'parent'):
+                if field_name in self.fields:
+                    self.fields[field_name].disabled = True
+                    self.fields[field_name].required = False
+
+    def clean_identifier(self):
+        # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
+        # `type`, in which case the unique_together constraints of Category will not be checked. We do it manually here.
+        # Similarly, the unique_together containing `external_identifier` will not be checked, but `external_identifier`
+        # is not part of the form, so no need to check.
+        identifier = self.cleaned_data['identifier']
+        type = self.instance.type
+        if Category.objects.filter(type=type, identifier=identifier).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(_('There is already a category with this identifier.'))
+        return identifier
+
+    def save(self, commit=True):
+        obj = super().save(commit)
+        user = self._user
+        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
+        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
+        # (I copied that from ActionAdminForm, where, in contrast to categories at the moment, we indeed can have
+        # drafts, but who knows, maybe we'll soon have draft categories... Anyway, good to be consistent.)
+        if commit:
+            attribute_types = obj.get_editable_attribute_types(user)
+        else:
+            attribute_types = obj.get_visible_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.on_form_save(obj, self.cleaned_data, commit=commit)
+        return obj
+
+
+def get_category_panel(request: HttpRequest, instance: Category) -> AplansTabbedInterface[Category, CategoryAdminForm]:
+    user = user_or_bust(request.user)
+    plan = user.get_active_admin_plan()
+    panels = list[Panel[Any]](CategoryViewSet.panels)
+    # If the category type doesn't have semantic identifiers, we hide the whole panel.
+    if instance.type.hide_category_identifiers:
+        panels = [p for p in panels if getattr(p, 'field_name', None) != 'identifier']
+
+    main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(user)
+    panels += main_attribute_panels
+
+    if user.is_superuser:
+        # Didn't use CondensedInlinePanel for the following because there is a bug:
+        # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
+        # and only if the inline instance is collapsed.
+        panels.append(
+            InlinePanel(
+                'icons',
+                heading=_('Icons'),
+                panels=[
+                    FieldPanel('language'),
+                    FieldPanel('image'),
+                ],
+            )
+        )
+        panels.append(FieldPanel('kausal_paths_node_uuid'))
+
+    panels.append(
+        InlinePanel(
+            'indicator_relationships',
+            heading=_('Indicators'),
+            panels=[
+                FieldPanel('indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                FieldPanel('type', heading=_('Type')),
+            ],
+        )
+    )
+
+    tabs: list[Panel[Any]] = [
+        ObjectList(panels, heading=_('Basic information')),
+        *get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels),
+    ]
+
+    attribute_fields = {
+        field.name: field.django_field
+        for attribute_type in instance.get_visible_attribute_types(user)
+        for field in attribute_type.get_form_fields(user, plan, instance)
+    }
+    base_form_class = type('CategoryAdminForm', (CategoryAdminForm,), {**attribute_fields, '_user': user})
+    return AplansTabbedInterface[Category, CategoryAdminForm](tabs, base_form_class=base_form_class).bind_to_model(Category)
 
 
 if TYPE_CHECKING:
@@ -341,6 +366,7 @@ else:
         pass
 
 
+# Used by the category grid editor in kausal-extensions
 class CategoryTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
     @property
     def index_url(self):
@@ -359,102 +385,183 @@ class CategoryTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
         return append_query_parameter(self.request, super().delete_url, 'category_type')
 
 
-class CategoryCreateView(CategoryTypeQueryParameterMixin[Category], AplansCreateView[Category]):
-    instance: Category
+def get_category_type_from_request(request: HttpRequest) -> CategoryType | None:
+    type_id = request.GET.get('category_type')
+    if not type_id:
+        return None
+    if not type_id.isdigit():
+        raise Http404
+    plan = user_or_bust(request.user).get_active_admin_plan()
+    return get_object_or_404(CategoryType, pk=int(type_id), plan=plan)
 
-    def check_action_permitted(self, user):
-        category_type_param = self.request.GET.get('category_type')
-        if category_type_param:
-            category_type = CategoryType.objects.get(pk=int(category_type_param))
-            plan = category_type.plan
-            if not category_type.is_instance_editable_by(user, plan, None):
-                return False
-        return super().check_action_permitted(user)
 
-    def initialize_instance(self, request):
+def get_categories_index_url(category_type: CategoryType) -> str:
+    url = reverse('wagtailsnippets_actions_category:list')
+    return f'{url}?category_type={category_type.pk}'
+
+
+def with_category_type(request: HttpRequest, url: str | None) -> str | None:
+    if url is None or '?' in url:
+        return url
+    return append_query_parameter(request, url, 'category_type')
+
+
+def scope_category_breadcrumbs_to_type(
+    items: Sequence[BreadcrumbItem], category_type: CategoryType | None
+) -> Sequence[BreadcrumbItem]:
+    if category_type is None:
+        return items
+    index_url = reverse('wagtailsnippets_actions_category:list')
+    type_url = get_categories_index_url(category_type)
+    result: list[BreadcrumbItem] = [{**item, 'url': type_url} if item['url'] == index_url else item for item in items]
+    return result
+
+
+def get_change_log_message_url(category: Category) -> str | None:
+    if not category.type.plan.features.enable_change_log:
+        return None
+    change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
+    return f'{change_log_create_url}?category={category.pk}'
+
+
+class CategoryIndexView(WatchIndexView[Category]):
+    # The menu links to one type's categories. Scoping the queryset instead of filtering keeps reordering available.
+    def get_base_queryset(self):
+        qs = super().get_base_queryset().select_related('type')
+        category_type = get_category_type_from_request(self.request)
+        if category_type is None:
+            return qs
+        return qs.filter(type=category_type)
+
+    def get_add_url(self):
+        # A category needs a type, which only the menu item of each category type gives
+        if get_category_type_from_request(self.request) is None:
+            return None
+        return with_category_type(self.request, super().get_add_url())
+
+    def get_edit_url(self, instance: Category):
+        return with_category_type(self.request, super().get_edit_url(instance))
+
+    def get_delete_url(self, instance: Category):
+        return with_category_type(self.request, super().get_delete_url(instance))
+
+    @cached_property
+    def show_ordering_column(self):
+        # Positions are only meaningful within one type
+        return get_category_type_from_request(self.request) is not None and super().show_ordering_column
+
+    @cached_property
+    def reorder_button(self):
+        # Wagtail's button would drop the type from the URL
+        button = super().reorder_button
+        category_type = get_category_type_from_request(self.request)
+        if button is None or category_type is None:
+            return None
+        button.url = f'{get_categories_index_url(category_type)}&ordering={self.sort_order_field}'
+        return button
+
+    def get_list_more_buttons(self, instance: Category):
+        return [*super().get_list_more_buttons(instance), *get_dataset_listing_buttons(self.request, instance)]
+
+
+class CategoryCreateView(PanelFormMixin, WatchCreateView[Category]):
+    def dispatch(self, request, *args, **kwargs):
+        category_type = get_category_type_from_request(request)
+        if category_type is None:
+            raise Http404
+        if not category_type.is_instance_editable_by(request.user, category_type.plan, None):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_panel(self):
+        return get_category_panel(self.request, Category(type=get_category_type_from_request(self.request)))
+
+    def initialize_instance(self, request, instance):
         """Set the new category's type to the one given in the GET data."""
-        assert self.instance.pk is None
-        category_type_param = request.GET.get('category_type')
-        if category_type_param:
-            assert not hasattr(self.instance, 'type')
-            self.instance.type = CategoryType.objects.get(pk=int(category_type_param))
-            assert not self.instance.identifier
-            if self.instance.type.hide_category_identifiers:
-                self.instance.generate_identifier()
+        super().initialize_instance(request, instance)
+        category_type = get_category_type_from_request(request)
+        assert category_type is not None
+        instance.type = category_type
+        if category_type.hide_category_identifiers:
+            instance.generate_identifier()
 
     def get_success_url(self):
-        plan = self.instance.type.plan
-        if plan.features.enable_change_log:
-            change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
-            return f'{change_log_create_url}?category={self.instance.pk}'
-        return super().get_success_url()
+        assert self.object is not None
+        change_log_message_url = get_change_log_message_url(self.object)
+        if change_log_message_url is not None:
+            return change_log_message_url
+        if self.continue_editing_active():
+            return super().get_success_url()
+        return get_categories_index_url(self.object.type)
+
+    def get_breadcrumbs_items(self):
+        return scope_category_breadcrumbs_to_type(super().get_breadcrumbs_items(), get_category_type_from_request(self.request))
 
 
-class CategoryEditView(CategoryTypeQueryParameterMixin[Category], AplansEditView[Category]):
+class CategoryEditView(InstancePermissionCheckedMixin, PanelFormMixin, WatchEditView[Category]):
+    def get_panel(self):
+        return get_category_panel(self.request, self.object)
+
     def get_success_url(self):
-        plan = self.instance.type.plan
-        if plan.features.enable_change_log:
-            change_log_create_url = reverse('wagtailsnippets_actions_categorychangelogmessage:add')
-            return f'{change_log_create_url}?category={self.instance.pk}'
-        return super().get_success_url()
+        change_log_message_url = get_change_log_message_url(self.object)
+        if change_log_message_url is not None:
+            return change_log_message_url
+        if self.continue_editing_active():
+            return super().get_success_url()
+        return get_categories_index_url(self.object.type)
+
+    def get_delete_url(self):
+        return with_category_type(self.request, super().get_delete_url())
+
+    def get_breadcrumbs_items(self):
+        return scope_category_breadcrumbs_to_type(super().get_breadcrumbs_items(), self.object.type)
 
 
-class CategoryDeleteView(CategoryTypeQueryParameterMixin[Category], DeleteView[Category]):
-    def delete_instance(self):
-        assert self.instance is not None
-        cat: Category = self.instance
-        for page in list(cat.category_pages.all()):
-            page.delete()
-        return super().delete_instance()
+class CategoryDeleteView(DeleteOwnPagesMixin[Category], WatchDeleteView[Category]):
+    def get_own_pages(self):
+        return Page.objects.filter(pk__in=self.object.category_pages.values('pk'))
+
+    def get_success_url(self):
+        return get_categories_index_url(self.object.type)
 
 
-class CategoryAdminButtonHelper(QueryParameterButtonHelper):
-    parameter_name = 'category_type'
+class CategoryReorderView(snippet_views.ReorderView):  # type: ignore[name-defined]  # pyright: ignore[reportAttributeAccessIssue]
+    def get_category(self) -> Category:
+        return get_object_or_404(Category, pk=unquote(str(self.kwargs['pk'])))
 
-    def get_buttons_for_obj(self, obj: Category, exclude=None, classnames_add=None, classnames_exclude=None):
-        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
-        dataset_buttons = get_dataset_buttons(self, obj, classnames_add or [], classnames_exclude)
-        buttons.extend(dataset_buttons)
-        return buttons
+    def get_queryset(self):
+        # Each type numbers its categories separately
+        return self.get_category().filter_siblings(super().get_queryset())
 
-
-class CategoryAdminMenuItem(ModelAdminMenuItem[Category]):
-    def is_shown(self, request):
-        # Hide it because we will have menu items for listing categories of specific types.
-        # Note that we need to register CategoryAdmin nonetheless, otherwise the URLs wouldn't be set up.
-        return False
-
-
-class CategoryPermissionHelper(PermissionHelper[Category]):
-    # Does not handle instance creation because we'd need the category type for that, for which we need the request. We
-    # check these permissions in CategoryCreateView.
-    def user_can_edit_obj(self, user, obj):
-        return obj.type.is_instance_editable_by(user, obj.type.plan, None) and super().user_can_edit_obj(user, obj)
-
-    def user_can_delete_obj(self, user, obj):
-        return obj.type.is_instance_editable_by(user, obj.type.plan, None) and super().user_can_delete_obj(user, obj)
+    def post(self, request, *args, **kwargs):
+        category = self.get_category()
+        if not self.permission_policy.user_has_permission_for_instance(request.user, 'change', category):
+            raise PermissionDenied
+        response = super().post(request, *args, **kwargs)
+        if category.type.synchronize_with_pages:
+            category.type.synchronize_pages()
+        return response
 
 
-class CategoryIndexView(AplansIndexView[Category]):
-    def get_queryset(self, request: HttpRequest | None = None) -> None:
-        qs = super().get_queryset(self.request)
-        cache = get_admin_cache(self.request)
-        for obj in qs:
-            ct = cache.category_types_by_id.get(obj.type_id)
-            if ct is not None:
-                obj.type = ct
-        return qs
-
-
-@modeladmin_register
-class CategoryAdmin(OrderableMixin, AplansModelAdmin[Category]):
-    menu_label = _('Categories')
-    menu_icon = 'kausal-category'
-    list_display = ('__str__', 'parent', 'type')
-    list_filter = (CategoryTypeFilter,)
+class CategoryViewSet(WatchViewSet[Category]):
     model = Category
+    icon = 'kausal-category'
+    menu_label = _('Categories')
+    # The "Categories" menu in `admin_site.wagtail_hooks` has one item per category type
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'actions/category'
+    list_display = ['__str__', 'parent', 'type']
+    ordering = 'order'
+    sort_order_field = 'order'
+    bulk_delete_enabled = False
+    index_view_class = CategoryIndexView
+    add_view_class = CategoryCreateView
+    edit_view_class = CategoryEditView
+    delete_view_class = CategoryDeleteView
+    reorder_view_class = CategoryReorderView
 
-    panels: list[FieldPanel[Any]] = [
+    panels = [
         PlanFilteredFieldPanel('parent'),
         FieldPanel('name'),
         FieldPanel('identifier'),
@@ -464,86 +571,12 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin[Category]):
         FieldPanel('help_text'),
     ]
 
-    create_view_class = CategoryCreateView
-    edit_view_class = CategoryEditView
-    # Do we need to create a view for inspect_view?
-    delete_view_class = CategoryDeleteView
-    button_helper_class = CategoryAdminButtonHelper  # type: ignore[assignment]
-    index_view_class = CategoryIndexView
-    permission_helper_class = CategoryPermissionHelper
-
-    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
-    # wagtailorderable hasn't accounted for this.
-    @admin.display(ordering='order', description=_('Order'))
-    def index_order(self, obj):
-        return mark_safe(
-            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
-            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
-            '<use href="#icon-grip"></use>'
-            '</svg>'
-            '</div>',
-        )
-
-    def get_menu_item(self, order=None):
-        return CategoryAdminMenuItem(self, order or self.get_menu_order())
-
     def get_queryset(self, request: HttpRequest):
-        qs = cast('QuerySet[Category]', super().get_queryset(request))
-        cache = get_admin_cache(request)
-        plan = cache.plan
-        return qs.filter(type__plan=plan).distinct()
+        plan = user_or_bust(request.user).get_active_admin_plan()
+        return Category.objects.filter(type__plan=plan)
 
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get_as_type(Category)
-        panels = list(self.panels)
-        # If the category type doesn't have semantic identifiers, we
-        # hide the whole panel.
-        if instance.type.hide_category_identifiers:
-            for p in panels:
-                if p.field_name == 'identifier':
-                    panels.remove(p)
-                    break
 
-        main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(request.user)
-        panels += main_attribute_panels
-
-        all_panels = cast('list[Panel[Any]]', panels)
-
-        user = user_or_bust(request.user)
-        if user.is_superuser:
-            # Didn't use CondensedInlinePanel for the following because there is a bug:
-            # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
-            # and only if the inline instance is collapsed.
-            all_panels.append(
-                InlinePanel(
-                    'icons',
-                    heading=_('Icons'),
-                    panels=[
-                        FieldPanel('language'),
-                        FieldPanel('image'),
-                    ],
-                )
-            )
-            all_panels.append(FieldPanel('kausal_paths_node_uuid'))
-
-        all_panels.append(
-            InlinePanel(
-                'indicator_relationships',
-                heading=_('Indicators'),
-                panels=[
-                    FieldPanel('indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                    FieldPanel('type', heading=_('Type')),
-                ],
-            )
-        )
-
-        tabs: list[Panel[Any]] = [ObjectList(panels, heading=_('Basic information'))]
-
-        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
-        tabs += i18n_tabs
-
-        return CategoryEditHandler(tabs)
+register_snippet(CategoryViewSet)
 
 
 class CommonCategoryTypeForm(AplansAdminModelForm[CommonCategoryType]):
@@ -562,16 +595,6 @@ def get_common_category_type_panel(
     return AplansTabbedInterface[CommonCategoryType, CommonCategoryTypeForm](
         tabs, base_form_class=CommonCategoryTypeForm
     ).bind_to_model(CommonCategoryType)
-
-
-class PanelFormMixin:
-    """Use the form of the panel built for the request, not the one the viewset built at startup."""
-
-    panel: ClassVar[Panel | None]
-
-    def get_form_class(self):
-        assert self.panel is not None
-        return self.panel.get_form_class()
 
 
 class CommonCategoryTypeCreateView(PanelFormMixin, WatchCreateView[CommonCategoryType]):
