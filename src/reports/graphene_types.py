@@ -20,12 +20,16 @@ def get_report_field_block() -> StreamFieldBlock | None:
     return grapple_registry.streamfield_blocks.get(ReportFieldBlock)
 
 
+FORMATTED_VALUE_DESCRIPTION = "The action's value as HTML to show as it is, or null if it is empty or an action field's value"
+
+
 class ReportValueInterface(graphene.Interface[Any]):
     field = graphene.NonNull(get_report_field_block)
+    formatted_value = graphene.String(description=FORMATTED_VALUE_DESCRIPTION)
 
 
 class ActionReportValue(graphene.ObjectType[Any]):
-    pass
+    formatted_value = graphene.String(description=FORMATTED_VALUE_DESCRIPTION)
 
 
 @dataclass(eq=True, frozen=True)
