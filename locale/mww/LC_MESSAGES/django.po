@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-09-28 07:48+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hmong Daw <https://weblate.kausal.tech/projects/watch/django/mww/>\n"
@@ -539,6 +539,7 @@ msgid "Late"
 msgstr ""
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr ""
 
@@ -809,6 +810,14 @@ msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Mark the tasks whose due date has passed."
 msgstr ""
 
 #: src/actions/blocks/action_content_blocks.py

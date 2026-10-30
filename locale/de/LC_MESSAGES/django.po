@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-09-28 14:31+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -544,6 +544,7 @@ msgid "Late"
 msgstr "Verspätet"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr "Gestrichen"
 
@@ -815,6 +816,16 @@ msgstr "Kategorie"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Überschrift, die anstelle der Standardüberschrift angezeigt wird"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Mark this user feedback as processed"
+msgid "Mark the tasks whose due date has passed."
+msgstr "Markiere dieses Benutzer-Feedback als bearbeitet"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

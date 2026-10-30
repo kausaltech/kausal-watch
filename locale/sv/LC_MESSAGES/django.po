@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -544,6 +544,7 @@ msgid "Late"
 msgstr "Sen"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr "Avbruten"
 
@@ -815,6 +816,16 @@ msgstr "Kategori"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Rubrik som ska visas istället för standardrubriken"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Mark this user feedback as processed"
+msgid "Mark the tasks whose due date has passed."
+msgstr "Markera denna användarfeedback som behandlad"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

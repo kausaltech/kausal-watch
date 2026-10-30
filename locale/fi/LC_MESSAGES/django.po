@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -545,6 +545,7 @@ msgid "Late"
 msgstr "Myöhässä"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr "Peruttu"
 
@@ -816,6 +817,16 @@ msgstr "Luokka"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Otsikko, joka näytetään oletusarvon sijasta"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Mark this user feedback as processed"
+msgid "Mark the tasks whose due date has passed."
+msgstr "Merkitse tämä käyttäjäpalaute käsitellyksi"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -590,6 +590,7 @@ msgid "Late"
 msgstr "Vēlā"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr "Atcelts"
 
@@ -874,6 +875,16 @@ msgstr "Kategorija"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Virsraksts, kas tiek rādīts noklusējuma vietā"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Mark this user feedback as processed"
+msgid "Mark the tasks whose due date has passed."
+msgstr "Atzīmējiet šo lietotāja atsauksmi kā apstrādātu"
 
 #: src/actions/blocks/action_content_blocks.py
 #, fuzzy
