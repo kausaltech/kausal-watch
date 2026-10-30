@@ -344,7 +344,11 @@ def test_plan_listing_groups_children_under_their_umbrella(superuser, client):
     assert response.status_code == 200
 
     umb, new_child, old_child, alone = _marker_positions(
-        response, 'grp-umbrella', 'grp-child-new', 'grp-child-old', 'grp-standalone',
+        response,
+        'grp-umbrella',
+        'grp-child-new',
+        'grp-child-old',
+        'grp-standalone',
     )
     # The group block is contiguous and ranked above the standalone (its newest child is newest
     # overall); the umbrella leads, then children oldest-first (creation order).
@@ -373,7 +377,10 @@ def test_plan_listing_orders_children_by_manual_order(superuser, client):
     assert response.status_code == 200
 
     umb, old_child, new_child = _marker_positions(
-        response, 'ord-umbrella', 'ord-child-old', 'ord-child-new',
+        response,
+        'ord-umbrella',
+        'ord-child-old',
+        'ord-child-new',
     )
     assert umb < old_child < new_child
 
@@ -417,13 +424,18 @@ def test_plan_listing_child_order_matches_gql_child_order(superuser, client, gra
 
     data = graphql_client_query_data(_PLAN_CHILDREN_GQL, variables={'id': umbrella.identifier})
     gql_children_order = [c['identifier'] for c in data['plan']['children']]
-    gql_related_children_order = [
-        p['identifier'] for p in data['plan']['allRelatedPlans'] if p['parent'] is not None
-    ]
+    gql_related_children_order = [p['identifier'] for p in data['plan']['allRelatedPlans'] if p['parent'] is not None]
 
-    assert listing_order == gql_children_order == gql_related_children_order == [
-        'par-child-middle', 'par-child-first', 'par-child-last',
-    ]
+    assert (
+        listing_order
+        == gql_children_order
+        == gql_related_children_order
+        == [
+            'par-child-middle',
+            'par-child-first',
+            'par-child-last',
+        ]
+    )
 
 
 def test_plan_listing_explicit_sort_bypasses_multiplan_grouping(superuser, client):
@@ -441,7 +453,10 @@ def test_plan_listing_explicit_sort_bypasses_multiplan_grouping(superuser, clien
     assert response.status_code == 200
 
     child_a, standalone, child_b = _marker_positions(
-        response, 'grp-child-a', 'grp-standalone', 'grp-child-b',
+        response,
+        'grp-child-a',
+        'grp-standalone',
+        'grp-child-b',
     )
     assert child_a < standalone < child_b
 

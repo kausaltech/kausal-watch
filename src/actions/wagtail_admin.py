@@ -1137,8 +1137,11 @@ class PlanIndexView(IndexView[Plan, 'PlanQuerySet']):
         qs = qs.annotate(_multiplan_latest=Window(Max('created_at'), partition_by=[F('_multiplan_key')]))
         # django-stubs can't resolve the window-annotation alias in order_by.
         return qs.order_by(  # type: ignore[misc]
-            '-_multiplan_latest', '_multiplan_key', F('parent_id').asc(nulls_first=True),
-            F('order').asc(nulls_last=True), 'created_at',
+            '-_multiplan_latest',
+            '_multiplan_key',
+            F('parent_id').asc(nulls_first=True),
+            F('order').asc(nulls_last=True),
+            'created_at',
         )
 
     def get_publish_url(self, instance: Plan) -> str:
