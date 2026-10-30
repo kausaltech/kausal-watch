@@ -820,13 +820,11 @@ msgstr "Otsikko, joka näytetään oletusarvon sijasta"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Highlight late tasks"
-msgstr ""
+msgstr "Korosta myöhässä olevat tehtävät"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Mark this user feedback as processed"
 msgid "Mark the tasks whose due date has passed."
-msgstr "Merkitse tämä käyttäjäpalaute käsitellyksi"
+msgstr "Merkitse tehtävät, joiden tavoitepäivämäärä on ohitettu."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

@@ -861,13 +861,11 @@ msgstr "Encabezado a mostrar en lugar del predeterminado"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Highlight late tasks"
-msgstr ""
+msgstr "Resaltar las tareas atrasadas"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Mark this user feedback as processed"
 msgid "Mark the tasks whose due date has passed."
-msgstr "Marcar esta opinión como procesada"
+msgstr "Marcar las tareas cuya fecha de vencimiento ya ha pasado."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

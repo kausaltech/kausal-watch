@@ -819,13 +819,11 @@ msgstr "Überschrift, die anstelle der Standardüberschrift angezeigt wird"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Highlight late tasks"
-msgstr ""
+msgstr "Verspätete Aufgaben hervorheben"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Mark this user feedback as processed"
 msgid "Mark the tasks whose due date has passed."
-msgstr "Markiere dieses Benutzer-Feedback als bearbeitet"
+msgstr "Die Aufgaben markieren, deren Frist abgelaufen ist."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"

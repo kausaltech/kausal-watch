@@ -858,13 +858,11 @@ msgstr "Overskrift, der skal vises i stedet for standarden"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Highlight late tasks"
-msgstr ""
+msgstr "Fremhæv forsinkede projekter"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
-#| msgid "Mark this user feedback as processed"
 msgid "Mark the tasks whose due date has passed."
-msgstr "Markere denne brugerfeedback som behandlet"
+msgstr "Markér de projekter, hvis afleveringsdato er overskredet."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"
