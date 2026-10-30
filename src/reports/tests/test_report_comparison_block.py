@@ -7,14 +7,18 @@ import importlib
 import json
 
 from django.apps import apps as django_apps
+from django.contrib.contenttypes.models import ContentType
 from wagtail.blocks.struct_block import StructBlockValidationError
 from wagtail.models import Revision
 
 import pytest
 
+from actions.models import Action, AttributeType
+from actions.tests.factories import AttributeTypeFactory
 from admin_site.tests.factories import ClientPlanFactory
 from pages.models import ActionListPage
-from reports.blocks.report_comparison_block import ReportComparisonBlock
+from reports.blocks.choosers import ReportTypeFieldSelect
+from reports.blocks.report_comparison_block import ReportComparisonBlock, comparable_fields
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 
 pytestmark = pytest.mark.django_db
@@ -22,9 +26,35 @@ pytestmark = pytest.mark.django_db
 fill_migration = importlib.import_module('pages.migrations.0076_fill_report_comparison_reports')
 
 
+PUBLIC_FIELD = '6b0c1d2e-0000-4000-8000-000000000001'
+LOGGED_IN_FIELD = '6b0c1d2e-0000-4000-8000-000000000002'
+BUILT_IN_FIELD = '6b0c1d2e-0000-4000-8000-000000000003'
+TASKS_FIELD = '6b0c1d2e-0000-4000-8000-000000000004'
+
+
+def _action_field(plan, name: str, visible_for: str):
+    return AttributeTypeFactory.create(
+        object_content_type=ContentType.objects.get_for_model(Action),
+        scope=plan,
+        name=name,
+        instances_visible_for=visible_for,
+    )
+
+
 @pytest.fixture
 def report_type(plan_with_pages):
-    return ReportTypeFactory.create(plan=plan_with_pages)
+    public = _action_field(plan_with_pages, 'Progress', AttributeType.VisibleFor.PUBLIC)
+    logged_in = _action_field(plan_with_pages, 'Internal comment', AttributeType.VisibleFor.AUTHENTICATED)
+    report_type = ReportTypeFactory.create(plan=plan_with_pages)
+    report_type.fields = json.dumps([
+        {'type': 'attribute', 'value': {'attribute_type': public.pk}, 'id': PUBLIC_FIELD},
+        {'type': 'attribute', 'value': {'attribute_type': logged_in.pk}, 'id': LOGGED_IN_FIELD},
+        {'type': 'implementation_phase', 'value': {}, 'id': BUILT_IN_FIELD},
+        # The public API has no values for tasks
+        {'type': 'tasks', 'value': {}, 'id': TASKS_FIELD},
+    ])
+    report_type.save()
+    return report_type
 
 
 @pytest.fixture
@@ -44,11 +74,11 @@ def _report(report_type, name: str, year: int, is_complete=True):
     )
 
 
-def _block_value(block: ReportComparisonBlock, report_type, reports):
+def _block_value(block: ReportComparisonBlock, report_type, reports, report_field=PUBLIC_FIELD):
     return block.to_python({
         'report_type': report_type.pk,
         'reports': [report.pk for report in reports],
-        'report_field': 'some-uuid',
+        'report_field': report_field,
     })
 
 
@@ -108,6 +138,47 @@ def test_chooser_offers_the_completed_reports_of_the_active_plan(client, plan_wi
     assert 'Completed report' in content
     assert 'Open report' not in content
     assert 'Report of another plan' not in content
+
+
+def test_compares_the_public_fields_of_the_template(report_type):
+    assert comparable_fields(report_type) == [(PUBLIC_FIELD, 'Progress'), (BUILT_IN_FIELD, 'Implementation phase')]
+
+
+@pytest.mark.parametrize('report_field', [LOGGED_IN_FIELD, TASKS_FIELD, 'not-a-field'])
+def test_refuses_a_field_it_cannot_compare(report_type, report_field):
+    block = ReportComparisonBlock()
+    report = _report(report_type, '2025', 2025)
+
+    with pytest.raises(StructBlockValidationError) as excinfo:
+        block.clean(_block_value(block, report_type, [report], report_field=report_field))
+    assert 'report_field' in excinfo.value.block_errors
+
+
+def test_field_options_list_the_comparable_fields(client, plan_with_pages, plan_admin_user, report_type):
+    ClientPlanFactory.create(plan=plan_with_pages)
+    client.force_login(plan_admin_user)
+
+    response = client.get(f'/admin/plan_reports/report_type/report-fields/?report_type={report_type.pk}')
+    assert response.json() == {
+        'fields': [{'id': PUBLIC_FIELD, 'label': 'Progress'}, {'id': BUILT_IN_FIELD, 'label': 'Implementation phase'}]
+    }
+
+
+@pytest.mark.parametrize('query', ['other-plan', 'not-a-number', ''])
+def test_field_options_only_cover_templates_of_plans_the_user_administers(client, plan_with_pages, plan_admin_user, query):
+    ClientPlanFactory.create(plan=plan_with_pages)
+    client.force_login(plan_admin_user)
+    if query == 'other-plan':
+        query = str(ReportTypeFactory.create().pk)
+
+    response = client.get(f'/admin/plan_reports/report_type/report-fields/?report_type={query}')
+    assert response.status_code == 404
+
+
+def test_field_select_keeps_the_value_in_a_hidden_input():
+    html = ReportTypeFieldSelect().render('block-report_field', PUBLIC_FIELD, {'id': 'block-report_field'})
+    assert f'<input type="hidden" name="block-report_field" value="{PUBLIC_FIELD}"' in html
+    assert '<select id="block-report_field"' in html
 
 
 def _old_block(report_type_id) -> dict:
