@@ -33,6 +33,7 @@ from wagtail.admin.panels import (
     TabbedInterface,
 )
 from wagtail.admin.panels.field_panel import FieldPanel
+from wagtail.admin.widgets.button import ListingButton
 
 from wagtail_modeladmin.helpers.button import ButtonHelper
 from wagtail_modeladmin.helpers.permission import PermissionHelper
@@ -489,6 +490,28 @@ def get_dataset_buttons(
                 'icon': 'plus',
             }
         buttons.append(button)
+    return buttons
+
+
+def get_dataset_listing_buttons(request: HttpRequest, obj: DatasetScopeType) -> list[ListingButton]:
+    """Return the dataset buttons of `get_dataset_buttons()` for a snippet listing."""
+    if find_spec('kausal_watch_extensions') is None:
+        return []
+    from kausal_watch_extensions.dataset_editor import DatasetViewSet  # type: ignore[import-not-found]
+
+    cache: PlanSpecificCache = getattr(request, 'admin_cache')  # noqa: B009
+    buttons: list[ListingButton] = []
+    for schema, matching_dataset in cache.get_dataset_schemas_for_object(obj):
+        if matching_dataset:
+            url = reverse(DatasetViewSet().get_url_name('edit'), args=[matching_dataset.pk])
+            label = _('Edit %(schema_name)s') % {'schema_name': schema.name}
+            icon_name = 'edit'
+        else:
+            url = reverse(DatasetViewSet().get_url_name('add'))
+            url += f'?dataset_schema_uuid={schema.uuid}&model={obj._meta.label}&object_id={obj.pk}'
+            label = _('Add %(schema_name)s') % {'schema_name': schema.name}
+            icon_name = 'plus'
+        buttons.append(ListingButton(label, url=url, icon_name=icon_name))
     return buttons
 
 

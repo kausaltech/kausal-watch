@@ -50,9 +50,10 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK, MLMM, RevMany, RevManyQS, RevManyToManyQS
     from kausal_common.users import UserOrAnon
 
+    from actions.category_permissions import CategoryPermissionPolicy
     from actions.models.plan import Plan
     from admin_site.models import BaseChangeLogMessage
-    from admin_site.permissions import SuperuserOnlyPermissionPolicy
+    from admin_site.permissions import PlanAdminOnlyPermissionPolicy, SuperuserOnlyPermissionPolicy
     from indicators.models import Indicator
     from pages.models import CategoryPage, CategoryTypePage, CategoryTypePageLevelLayout
 
@@ -288,6 +289,12 @@ class CategoryType(
         ordering = ('plan', 'name')
         verbose_name = _('category type')
         verbose_name_plural = _('category types')
+
+    @classmethod
+    def permission_policy(cls) -> PlanAdminOnlyPermissionPolicy:
+        from admin_site.permissions import PlanAdminOnlyPermissionPolicy
+
+        return PlanAdminOnlyPermissionPolicy(cls)
 
     def __str__(self):
         return '%s (%s:%s)' % (self.name, self.plan.identifier, self.identifier)
@@ -598,6 +605,12 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         verbose_name = _('category')
         verbose_name_plural = _('categories')
         ordering = ('type', 'order')
+
+    @classmethod
+    def permission_policy(cls) -> CategoryPermissionPolicy:
+        from actions.category_permissions import CategoryPermissionPolicy
+
+        return CategoryPermissionPolicy(cls)
 
     def clean(self):
         if self.parent_id is not None:

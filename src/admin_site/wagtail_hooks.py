@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class CategoryMenuItem(MenuItem):
     def __init__(self, category_type, **kwargs):
         self.category_type = category_type
-        self.base_url = reverse('actions_category_modeladmin_index')
+        self.base_url = reverse('wagtailsnippets_actions_category:list')
         url = f'{self.base_url}?category_type={category_type.id}'
         label = category_type.name
         super().__init__(label, url, icon_name='kausal-category', **kwargs)
