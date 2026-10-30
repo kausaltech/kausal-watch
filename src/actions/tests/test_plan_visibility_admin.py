@@ -8,7 +8,7 @@ who may read a plan is not a choice a plan's own admins make.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 
@@ -19,9 +19,7 @@ from actions.models import Plan
 from actions.tests.factories import CategoryTypeFactory
 from actions.wagtail_admin import PlanAdmin
 from admin_site.tests.factories import ClientPlanFactory
-
-if TYPE_CHECKING:
-    from django.forms import BaseFormSet, Form
+from admin_site.tests.utils import post_data
 
 pytestmark = pytest.mark.django_db
 
@@ -35,26 +33,6 @@ def _edit_form(rf, user, plan: Plan, data: dict[str, Any] | None = None):
     with ctx_request.activate(request), ctx_instance.activate(plan):
         form_class = PlanAdmin().get_edit_handler().bind_to_model(Plan).get_form_class()
         return form_class(data=data, instance=plan, for_user=user)
-
-
-def _post_data(form: Form) -> dict[str, Any]:
-    """Flatten an unbound form, formsets included, into the data that submitting it unchanged would post."""
-    data: dict[str, Any] = {}
-
-    def add(form: Form) -> None:
-        for bound_field in form:
-            value = bound_field.value()
-            if value is None or value is False:
-                continue
-            data[bound_field.html_name] = value
-
-    add(form)
-    formsets: dict[str, BaseFormSet] = getattr(form, 'formsets', {})
-    for formset in formsets.values():
-        add(formset.management_form)
-        for child in formset.forms:
-            add(child)
-    return data
 
 
 class TestVisibilityPanel:
@@ -83,7 +61,7 @@ class TestVisibilityPanel:
         ClientPlanFactory.create(plan=plan, is_primary=True)
         plan.primary_action_classification = CategoryTypeFactory.create(plan=plan)
         plan.save(update_fields=['primary_action_classification'])
-        data = _post_data(_edit_form(rf, superuser, plan))
+        data = post_data(_edit_form(rf, superuser, plan))
         data['visibility'] = after
 
         form = _edit_form(rf, superuser, plan, data=data)

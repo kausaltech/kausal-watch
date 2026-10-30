@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import re
 
 import pytest
 
 from actions.tests.factories import PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
+from admin_site.tests.utils import submenu_links
 from reports.models import Report, ReportType
 from reports.tests.factories import ReportFactory, ReportTypeFactory
 
@@ -51,39 +51,20 @@ def _add_report_path(response_content: bytes, report_type: ReportType) -> str:
     return match.group(1)
 
 
-def _menu_links(response_content: bytes) -> list[tuple[str, str]]:
-    match = re.search(r'<script id="wagtail-sidebar-props" type="application/json">(.*?)</script>', response_content.decode())
-    assert match is not None
-    links: list[tuple[str, str]] = []
-
-    def collect(node):
-        if isinstance(node, dict):
-            if node.get('_type') == 'wagtail.sidebar.LinkMenuItem':
-                links.append((node['_args'][0]['label'], node['_args'][0]['url']))
-            for value in node.values():
-                collect(value)
-        elif isinstance(node, list):
-            for value in node:
-                collect(value)
-
-    collect(json.loads(match.group(1)))
-    return links
-
-
 def test_admin_menu_links_each_report_type(admin_client, own_report_type, other_plan_report_type):
-    links = _menu_links(admin_client.get('/admin/account/').content)
+    links = submenu_links(admin_client.get('/admin/account/').content)
     assert (own_report_type.name, f'{REPORTS_PATH}?report_type={own_report_type.pk}') in links
     assert not any(label == other_plan_report_type.name for label, _url in links)
 
 
 def test_admin_menu_links_report_types(admin_client):
-    links = _menu_links(admin_client.get('/admin/account/').content)
+    links = submenu_links(admin_client.get('/admin/account/').content)
     assert ('Report types', REPORT_TYPES_PATH) in links
 
 
 def test_contact_person_menu_has_no_report_links(client, action_contact_person_user, own_report_type):
     client.force_login(action_contact_person_user)
-    links = _menu_links(client.get('/admin/account/').content)
+    links = submenu_links(client.get('/admin/account/').content)
     assert links
     assert not any(url.startswith('/admin/plan_reports/') for _label, url in links)
 
