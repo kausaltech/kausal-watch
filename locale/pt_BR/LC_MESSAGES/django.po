@@ -584,7 +584,6 @@ msgstr "Atrasado"
 
 #: src/actions/action_status_summary.py
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
 msgid "Cancelled"
 msgstr "Cancelado"
 
@@ -890,12 +889,11 @@ msgstr "Título a ser exibido em vez do padrão"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Highlight late tasks"
-msgstr ""
+msgstr "Destacar as tarefas atrasadas"
 
 #: src/actions/blocks/action_content_blocks.py
-#, fuzzy
 msgid "Mark the tasks whose due date has passed."
-msgstr "Marcar esse feedback do usuário como processado"
+msgstr "Marcar as tarefas cuja data de vencimento já passou."
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"
