@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import datetime
 import typing
 from abc import ABC, abstractmethod
 from typing import Any, override
 
 from django.apps import apps
 from django.db.models.fields import Field
-from django.utils.formats import date_format
+from django.utils import timezone
+from django.utils.formats import date_format, number_format
+from django.utils.html import escape
 from django.utils.translation import gettext, gettext_lazy as _, pgettext
 from wagtail import fields
 
@@ -65,6 +68,23 @@ if typing.TYPE_CHECKING:
 type ValueType = Model | Iterable[Any] | str | None
 
 
+def format_report_value_html(value: Any) -> str | None:
+    """Format a report value of an action as escaped text, or return None if it is empty."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, bool):
+        text = gettext('Yes') if value else gettext('No')
+    elif isinstance(value, datetime.datetime):
+        text = date_format(timezone.localtime(value) if timezone.is_aware(value) else value, 'DATE_FORMAT')
+    elif isinstance(value, datetime.date):
+        text = date_format(value, 'DATE_FORMAT')
+    elif isinstance(value, float):
+        text = number_format(value)
+    else:
+        text = str(value)
+    return escape(text)
+
+
 class ReportFieldFormatter(ABC):
     block: ActionReportContentField[Any]
     ValueClass: type[graphene.ObjectType[Any]]
@@ -87,10 +107,16 @@ class ReportFieldFormatter(ABC):
     def graphql_value_for_action_snapshot(self, field, snapshot):
         value_class_properties = self.get_graphene_value_class_properties()
         value_field_name = value_class_properties.value_field_name
+        value = self.value_for_action_snapshot(field.value, snapshot)
         return self.ValueClass(
             field=field,
-            **{value_field_name: self.value_for_action_snapshot(field.value, snapshot)},
+            formatted_value=self.format_value_html(field.value, value),
+            **{value_field_name: value},
         )
+
+    def format_value_html(self, block_value: dict[str, Any], value: Any) -> str | None:
+        """Return a value of `value_for_action_snapshot` as HTML that the public site can show as it is."""
+        return format_report_value_html(value)
 
     @abstractmethod
     def extract_action_values(
@@ -123,6 +149,11 @@ class ActionSimpleFieldFormatter(ReportFieldFormatter):
         field_name = self.block.meta.field_name
         value = snapshot.action_version.field_dict[field_name]
         return value
+
+    def format_value_html(self, block_value: dict[str, Any], value: Any) -> str | None:
+        if isinstance(Action._meta.get_field(self.block.meta.field_name), fields.RichTextField):
+            return value or None
+        return super().format_value_html(block_value, value)
 
     def extract_action_values(
         self,
@@ -597,6 +628,9 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
         if level:
             return level.name
         return block_value.get('category_type').name
+
+    def format_value_html(self, block_value: dict[str, Any], value: Any) -> str | None:
+        return format_report_value_html(', '.join(str(category) for category in value) if value is not None else None)
 
     def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         category_type = block_value['category_type']

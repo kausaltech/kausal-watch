@@ -34,7 +34,7 @@ from .template_editor import (
 )
 from .usage import get_report_type_usage
 from .utils import get_field_unique_key
-from .views import DownloadReportView, MarkReportAsCompleteView
+from .views import DownloadReportView, MarkReportAsCompleteView, ReportFieldOptionsView
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -116,6 +116,7 @@ class ReportTypeViewSet(WatchViewSet[ReportType]):
         return [
             *super().get_urlpatterns(),
             path('reporting-fields/new/', CreateReportingFieldView.as_view(), name='create_reporting_field'),
+            path('report-fields/', ReportFieldOptionsView.as_view(), name='report_field_options'),
         ]
 
 

@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -28,12 +28,15 @@ from kausal_common.users import user_or_bust
 
 from actions.models import Action, Plan
 
+from .blocks.report_comparison_block import comparable_fields
 from .export import export_dashboard_report_for_plan
-from .models import ActionListPageNotFoundError, ActionSnapshot, Report
+from .models import ActionListPageNotFoundError, ActionSnapshot, Report, ReportType
 from .submissions import get_action_submissions, user_can_submit_action
 from .utils import report_label
 
 if TYPE_CHECKING:
+    from django.http import HttpRequest
+
     from indicators.models import Indicator
 
 ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
@@ -315,3 +318,18 @@ def export_report_view(request, plan_identifier):
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+class ReportFieldOptionsView(View):
+    """List the fields a report comparison block can compare, for a template of a plan the user administers."""
+
+    http_method_names = ['get']
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        # A page of another plan than the active one can be edited too, so allow any plan the user administers
+        plans = user_or_bust(request.user).get_adminable_plans()
+        try:
+            report_type = ReportType.objects.get(plan__in=plans, pk=int(request.GET.get('report_type', '')))
+        except ReportType.DoesNotExist, ValueError:
+            raise Http404 from None
+        return JsonResponse({'fields': [{'id': id_, 'label': label} for id_, label in comparable_fields(report_type)]})
