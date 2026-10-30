@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLString
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 
 from kausal_common.blocks.fields import FieldBlockMetaInterface
 from kausal_common.datasets.models import DatasetSchema
@@ -22,9 +22,7 @@ from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from grapple.models import GraphQLField
+    from django_stubs_ext import StrOrPromise
 
 
 @register_streamfield_block
@@ -81,7 +79,8 @@ class ActionTaskSectionBlock(blocks.StructBlock):  # child
     One section of the task list on the action page, listing the tasks in one state.
 
     The section's child name in `ActionTaskSectionsBlock` is the task state it lists, and the
-    public UI reads it from `field`. So every state shares this class.
+    public UI reads it from `field`. So the states share this class, unless a state has settings
+    of its own.
     """
 
     heading = blocks.CharBlock(
@@ -96,22 +95,44 @@ class ActionTaskSectionBlock(blocks.StructBlock):  # child
     ]
 
 
-TASK_SECTION_STATES = (
-    (ActionTask.NOT_STARTED, _('Not started')),
-    (ActionTask.IN_PROGRESS, _('In progress')),
-    (ActionTask.COMPLETED, _('Completed')),
+@register_streamfield_block
+class ActionInProgressTaskSectionBlock(ActionTaskSectionBlock):  # child
+    highlight_late_tasks = blocks.BooleanBlock(
+        required=False,
+        default=False,
+        label=_('Highlight late tasks'),
+        help_text=_('Mark the tasks whose due date has passed.'),
+    )
+
+    graphql_fields = [
+        *ActionTaskSectionBlock.graphql_fields,
+        GraphQLBoolean('highlight_late_tasks'),
+    ]
+
+
+TASK_SECTIONS: tuple[tuple[str, StrOrPromise, type[ActionTaskSectionBlock]], ...] = (
+    (ActionTask.NOT_STARTED, _('Not started'), ActionTaskSectionBlock),
+    (ActionTask.IN_PROGRESS, _('In progress'), ActionInProgressTaskSectionBlock),
+    (ActionTask.COMPLETED, _('Completed'), ActionTaskSectionBlock),
+    (ActionTask.CANCELLED, _('Cancelled'), ActionTaskSectionBlock),
 )
+
+# The sections the action page has always shown, in that order. Cancelled tasks stay hidden unless an
+# admin adds their section.
+DEFAULT_TASK_SECTIONS = (ActionTask.NOT_STARTED, ActionTask.IN_PROGRESS, ActionTask.COMPLETED)
 
 
 class ActionTaskSectionsBlock(blocks.StreamBlock):
     def __init__(self, **kwargs):
-        child_blocks = [(state, ActionTaskSectionBlock(label=label)) for state, label in TASK_SECTION_STATES]
-        kwargs.setdefault('default', [(state, {'heading': ''}) for state in dict(TASK_SECTION_STATES)])
+        child_blocks = [(state, block_class(label=label)) for state, label, block_class in TASK_SECTIONS]
+        # Spell out every child value: `StructBlock.normalize()` only fills in the keys it is given.
+        default_values = {state: dict(block.get_default()) for state, block in child_blocks}
+        kwargs.setdefault('default', [(state, default_values[state]) for state in DEFAULT_TASK_SECTIONS])
         super().__init__(child_blocks, **kwargs)
 
     class Meta:
         min_num = 1
-        block_counts = {state: {'max_num': 1} for state in dict(TASK_SECTION_STATES)}
+        block_counts = {state: {'max_num': 1} for state, _label, _block_class in TASK_SECTIONS}
 
 
 @register_streamfield_block
@@ -123,8 +144,7 @@ class ActionTasksBlock(ActionContentBlockBase):  # block.details.custom
 
     graphql_fields = [
         *ActionContentBlockBase.graphql_fields,
-        # The sections stream has a single child block type, so this resolves to a plain field.
-        cast('Callable[[], GraphQLField]', make_grapple_streamfield(lambda: ActionTasksBlock, 'sections')),
+        GraphQLStreamfield('sections'),
     ]
 
 
