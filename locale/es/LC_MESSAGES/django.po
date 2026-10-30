@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 18:12+0200\n"
+"POT-Creation-Date: 2026-10-30 15:27+0200\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -578,6 +578,7 @@ msgid "Late"
 msgstr "Tarde"
 
 #: src/actions/action_status_summary.py
+#: src/actions/blocks/action_content_blocks.py
 msgid "Cancelled"
 msgstr "Cancelado"
 
@@ -857,6 +858,16 @@ msgstr "Categoría"
 #: src/actions/blocks/action_content_blocks.py
 msgid "Heading to show instead of the default"
 msgstr "Encabezado a mostrar en lugar del predeterminado"
+
+#: src/actions/blocks/action_content_blocks.py
+msgid "Highlight late tasks"
+msgstr ""
+
+#: src/actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Mark this user feedback as processed"
+msgid "Mark the tasks whose due date has passed."
+msgstr "Marcar esta opinión como procesada"
 
 #: src/actions/blocks/action_content_blocks.py
 msgid "Sections"
