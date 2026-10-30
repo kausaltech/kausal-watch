@@ -6,10 +6,11 @@ import html
 import re
 
 from reversion.models import Version
+from wagtail.models import Page
 
 import pytest
 
-from actions.models import Category, CategoryType
+from actions.models import AttributeType, Category, CategoryChangeLogMessage, CategoryType
 from actions.tests.factories import (
     AttributeTypeFactory,
     CategoryFactory,
@@ -261,6 +262,33 @@ def test_editing_category_offers_change_log_message(admin_client, plan_with_page
     assert response.status_code == 302
     assert response['Location'] == f'/admin/snippets/actions/categorychangelogmessage/add/?category={category.pk}'
 
+    add_path = response['Location']
+    message_page = admin_client.get(add_path)
+    assert message_page.context['skip_url'] == CATEGORIES_PATH
+    response = admin_client.post(add_path, {'category': category.pk, 'content': 'Renamed'})
+    assert response.status_code == 302
+    assert response['Location'] == CATEGORIES_PATH
+    message = CategoryChangeLogMessage.objects.get(category=category)
+    assert message.content == 'Renamed'
+    edit_path = f'/admin/snippets/actions/categorychangelogmessage/edit/{message.pk}/'
+    data = post_data(admin_client.get(edit_path).context['form'])
+    response = admin_client.post(edit_path, data)
+    assert response.status_code == 302
+    assert response['Location'] == f'{CATEGORIES_PATH}edit/{category.pk}/'
+
+
+def test_editing_category_saves_attributes(admin_client, category_type):
+    category = _category(category_type)
+    attribute_type = AttributeTypeFactory.create(scope=category_type, format=AttributeType.AttributeFormat.TEXT)
+    path = f'{CATEGORIES_PATH}edit/{category.pk}/'
+    data = post_data(admin_client.get(path).context['form'])
+    data[f'attribute_type_{attribute_type.pk}'] = 'Some text'
+    response = admin_client.post(path, data)
+    assert response.status_code == 302
+    assert category.text_attributes.get(type=attribute_type).text == 'Some text'
+    form = admin_client.get(path).context['form']
+    assert form.fields[f'attribute_type_{attribute_type.pk}'].initial == 'Some text'
+
 
 @pytest.fixture
 def not_editable_category(category_type):
@@ -272,7 +300,7 @@ def not_editable_category(category_type):
 def test_not_editable_type_refuses_plan_admin(admin_client, category_type, not_editable_category):
     for path in (
         f'{CATEGORIES_PATH}edit/{not_editable_category.pk}/',
-        f'{CATEGORIES_PATH}create/?category_type={category_type.pk}',
+        f'{CATEGORIES_PATH}add/?category_type={category_type.pk}',
     ):
         assert admin_client.get(path).status_code == 302, path
     admin_client.post(f'{CATEGORIES_PATH}delete/{not_editable_category.pk}/')
@@ -297,3 +325,127 @@ def test_deleting_category_deletes_its_pages(admin_client, plan_with_pages, cate
     assert response['Location'] == _categories_path(category_type)
     assert not Category.objects.filter(pk=category.pk).exists()
     assert not CategoryPage.objects.filter(pk=page.pk).exists()
+
+
+def test_other_plan_category_cannot_be_deleted(admin_client, other_plan_category_type):
+    other_plan_category_type.instances_editable_by = CategoryType.EditableBy.AUTHENTICATED
+    other_plan_category_type.save()
+    category = _category(other_plan_category_type)
+    admin_client.post(f'{CATEGORIES_PATH}delete/{category.pk}/')
+    assert Category.objects.filter(pk=category.pk).exists()
+
+
+@pytest.fixture
+def stale_category_pages(plan_with_pages, category_type):
+    parent = _category(category_type)
+    type_page = CategoryTypePageFactory.create(parent=plan_with_pages.root_page, category_type=category_type)
+    parent_page = CategoryPageFactory.create(parent=type_page, category=parent)
+    child_page = CategoryPageFactory.create(parent=parent_page, category=_category(category_type, parent=parent))
+    Page.objects.filter(pk__in=[type_page.pk, parent_page.pk]).update(numchild=0)
+    return parent, child_page
+
+
+def test_deleting_category_deletes_child_pages_despite_stale_numchild(admin_client, stale_category_pages):
+    parent, child_page = stale_category_pages
+    admin_client.post(f'{CATEGORIES_PATH}delete/{parent.pk}/')
+    assert not Page.objects.filter(pk=child_page.pk).exists()
+
+
+def test_deleting_type_deletes_pages_despite_stale_numchild(admin_client, category_type, stale_category_pages):
+    admin_client.post(f'{TYPES_PATH}delete/{category_type.pk}/')
+    assert not CategoryType.objects.filter(pk=category_type.pk).exists()
+    assert not CategoryPage.objects.filter(category__type=category_type).exists()
+
+
+def _move_to(client, category: Category, position: int):
+    return client.post(f'{CATEGORIES_PATH}reorder/{category.pk}/?position={position}')
+
+
+def _orders(category_type: CategoryType) -> list[int]:
+    return list(category_type.categories.order_by('order').values_list('pk', flat=True))
+
+
+def test_reordering_stays_within_type(admin_client, plan_with_pages, category_type):
+    first, second, third = (_category(category_type) for _ in range(3))
+    other_type = CategoryTypeFactory.create(plan=plan_with_pages, common=None)
+    others = [_category(other_type) for _ in range(3)]
+    assert _move_to(admin_client, first, 1).status_code == 200
+    assert _orders(category_type) == [second.pk, first.pk, third.pk]
+    assert _orders(other_type) == [o.pk for o in others]
+
+
+def test_reordering_moves_category_pages(admin_client, plan_with_pages, category_type):
+    first, second = _category(category_type), _category(category_type)
+    category_type.synchronize_with_pages = True
+    category_type.save()
+    _move_to(admin_client, first, 1)
+    for type_page in category_type.category_type_pages.all():
+        pages = CategoryPage.objects.child_of(type_page).order_by('path')
+        assert [page.category_id for page in pages] == [second.pk, first.pk]
+
+
+def test_reordering_needs_edit_rights(admin_client, category_type, not_editable_category):
+    other = _category(category_type)
+    _move_to(admin_client, not_editable_category, 1)
+    assert _orders(category_type) == [not_editable_category.pk, other.pk]
+
+
+def test_reordering_is_offered_only_within_a_type(admin_client, category_type):
+    _category(category_type)
+    assert 'data-w-orderable' in admin_client.get(_categories_path(category_type)).content.decode()
+    assert 'data-w-orderable' not in admin_client.get(CATEGORIES_PATH).content.decode()
+
+
+def test_sort_item_order_keeps_the_type(admin_client, category_type):
+    _category(category_type)
+    content = admin_client.get(f'{_categories_path(category_type)}&ordering=name').content.decode()
+    assert html.escape(f'{_categories_path(category_type)}&ordering=order') in content
+
+
+def test_listing_without_type_offers_no_add(admin_client, category_type):
+    _category(category_type)
+    content = admin_client.get(CATEGORIES_PATH).content.decode()
+    assert re.search(rf'href="{CATEGORIES_PATH}(create|add)/', content) is None
+
+
+def test_listing_links_keep_the_type(admin_client, category_type):
+    category = _category(category_type)
+    content = admin_client.get(_categories_path(category_type)).content.decode()
+    assert html.escape(f'{CATEGORIES_PATH}edit/{category.pk}/?category_type={category_type.pk}') in content
+    assert html.escape(f'{CATEGORIES_PATH}delete/{category.pk}/?category_type={category_type.pk}') in content
+
+
+def test_breadcrumbs_link_back_to_the_type(admin_client, category_type):
+    category = _category(category_type)
+    type_link = f'href="{html.escape(_categories_path(category_type))}"'
+    for path in (f'{CATEGORIES_PATH}edit/{category.pk}/', f'{CATEGORIES_PATH}add/?category_type={category_type.pk}'):
+        assert type_link in admin_client.get(path).content.decode(), path
+
+
+@pytest.mark.parametrize('type_id', ['999999', 'abc'])
+def test_unknown_type_is_not_found(admin_client, type_id):
+    for path in (CATEGORIES_PATH, f'{CATEGORIES_PATH}add/'):
+        assert admin_client.get(f'{path}?category_type={type_id}').status_code == 404, path
+
+
+def test_other_plan_type_is_not_found(admin_client, other_plan_category_type):
+    for path in (CATEGORIES_PATH, f'{CATEGORIES_PATH}add/'):
+        assert admin_client.get(f'{path}?category_type={other_plan_category_type.pk}').status_code == 404, path
+
+
+def test_delete_page_is_offered_despite_category_pages(admin_client, plan_with_pages, category_type):
+    category = _category(category_type)
+    type_page = CategoryTypePageFactory.create(parent=plan_with_pages.root_page, category_type=category_type)
+    CategoryPageFactory.create(parent=type_page, category=category)
+    for path in (f'{CATEGORIES_PATH}delete/{category.pk}/', f'{TYPES_PATH}delete/{category_type.pk}/'):
+        response = admin_client.get(path)
+        assert response.status_code == 200, path
+        assert not response.context['is_protected'], path
+
+
+def test_bulk_delete_is_not_available(admin_client, category_type):
+    category = _category(category_type)
+    admin_client.post(f'/admin/bulk/actions/category/delete/?id={category.pk}')
+    admin_client.post(f'/admin/bulk/actions/categorytype/delete/?id={category_type.pk}')
+    assert Category.objects.filter(pk=category.pk).exists()
+    assert CategoryType.objects.filter(pk=category_type.pk).exists()
