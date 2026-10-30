@@ -26,8 +26,17 @@ TASKS_BLOCK_QUERY = """
             ... on ActionTasksBlock {
               fieldLabel
               sections {
-                field
-                heading
+                __typename
+                ... on StreamFieldInterface {
+                  field
+                }
+                ... on ActionTaskSectionBlock {
+                  heading
+                }
+                ... on ActionInProgressTaskSectionBlock {
+                  heading
+                  highlightLateTasks
+                }
               }
             }
           }
@@ -37,9 +46,9 @@ TASKS_BLOCK_QUERY = """
 """
 
 DEFAULT_SECTIONS = [
-    {'field': 'not_started', 'heading': ''},
-    {'field': 'in_progress', 'heading': ''},
-    {'field': 'completed', 'heading': ''},
+    {'__typename': 'ActionTaskSectionBlock', 'field': 'not_started', 'heading': ''},
+    {'__typename': 'ActionInProgressTaskSectionBlock', 'field': 'in_progress', 'heading': '', 'highlightLateTasks': False},
+    {'__typename': 'ActionTaskSectionBlock', 'field': 'completed', 'heading': ''},
 ]
 
 
@@ -61,7 +70,7 @@ def query_tasks_blocks(graphql_client_query_data, plan) -> list[dict]:
 )
 def test_stored_tasks_block_gets_default_sections(plan_with_pages, graphql_client_query_data, stored_value):
     # Tasks blocks saved before the block had sections, and the `None` values that new plans get, must
-    # keep showing the sections in the order the public UI always used.
+    # keep showing the sections in the order the public UI always used, still without cancelled tasks.
     page = get_action_list_page(plan_with_pages)
     page.details_main_top = json.dumps([{'type': 'tasks', 'value': stored_value, 'id': 'b1'}])
     page.save()
@@ -82,7 +91,8 @@ def test_tasks_block_returns_sections_in_saved_order(plan_with_pages, graphql_cl
             'tasks',
             {
                 'sections': [
-                    ('in_progress', {'heading': 'Under way'}),
+                    ('in_progress', {'heading': 'Under way', 'highlight_late_tasks': True}),
+                    ('cancelled', {'heading': ''}),
                     ('not_started', {'heading': ''}),
                 ],
             },
@@ -93,8 +103,14 @@ def test_tasks_block_returns_sections_in_saved_order(plan_with_pages, graphql_cl
     blocks_data = query_tasks_blocks(graphql_client_query_data, plan_with_pages)
 
     assert blocks_data[0]['sections'] == [
-        {'field': 'in_progress', 'heading': 'Under way'},
-        {'field': 'not_started', 'heading': ''},
+        {
+            '__typename': 'ActionInProgressTaskSectionBlock',
+            'field': 'in_progress',
+            'heading': 'Under way',
+            'highlightLateTasks': True,
+        },
+        {'__typename': 'ActionTaskSectionBlock', 'field': 'cancelled', 'heading': ''},
+        {'__typename': 'ActionTaskSectionBlock', 'field': 'not_started', 'heading': ''},
     ]
 
 
