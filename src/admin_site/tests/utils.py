@@ -8,8 +8,8 @@ if TYPE_CHECKING:
     from django.forms import BaseFormSet, Form
 
 
-def submenu_links(response_content: bytes, submenu_label: str) -> list[tuple[str, str]]:
-    """Return the (label, URL) pairs of the links in the admin sidebar's submenu with the given label."""
+def submenu_links(response_content: bytes, submenu_label: str | None = None) -> list[tuple[str, str]]:
+    """Return the (label, URL) pairs of the links in the admin sidebar's submenu with the given label, or in the whole menu."""
     match = re.search(r'<script id="wagtail-sidebar-props" type="application/json">(.*?)</script>', response_content.decode())
     assert match is not None
     links: list[tuple[str, str]] = []
@@ -26,7 +26,7 @@ def submenu_links(response_content: bytes, submenu_label: str) -> list[tuple[str
             for value in node:
                 collect(value, inside)
 
-    collect(json.loads(match.group(1)), inside=False)
+    collect(json.loads(match.group(1)), inside=submenu_label is None)
     return links
 
 
