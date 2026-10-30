@@ -6,10 +6,13 @@ import pytest
 
 from kausal_common.datasets.models import DataPoint, Dataset, DatasetSchema, DataSource
 
+from actions.category_permissions import CategoryPermissionPolicy
 from actions.models import (
     ActionChangeLogMessage,
     ActionImpact,
+    Category,
     CategoryChangeLogMessage,
+    CategoryType,
     CommonCategoryType,
     IndicatorChangeLogMessage,
     Plan,
@@ -69,6 +72,8 @@ def test_declared_permission_policy_is_registered(model):
         (Report, PlanRelatedPermissionPolicy),
         (Dimension, DimensionPermissionPolicy),
         (CommonCategoryType, SuperuserOnlyPermissionPolicy),
+        (CategoryType, PlanAdminOnlyPermissionPolicy),
+        (Category, CategoryPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):
