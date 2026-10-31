@@ -235,6 +235,7 @@ exclude = [
   "^private/",
   "^local_settings\\.py$",
   "^typings/",
+  "^scratchpad/",
   "^kausal_common/deployment/gunicorn\\.py$",
   "node_modules",
   "^.*/__generated__/.*$",
@@ -323,6 +324,7 @@ exclude = [
   "**/node_modules",
   "Attic/",
   "private/",
+  "scratchpad/",
   "local_settings.py",
 ]
 stubPath = "kausal_common/typings"
