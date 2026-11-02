@@ -43,6 +43,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 
 from modelsearch import index
 
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
 from kausal_common.models.types import MLModelManager
 from kausal_common.users import user_or_none
 
@@ -368,6 +369,7 @@ def _renormalize_pks_for_unique_constraint(
 
 @reversion.register(follow=ACTION_FIELDS_TO_ADD_TO_REVERSION)
 class Action(
+    RichTextEditorCompatibleMixin,
     PlanRelatedOrderedModel,
     WorkflowMixin,
     DraftStateMixin,
@@ -931,6 +933,7 @@ class Action(
         yield 'name', self.name
 
     def clean(self):
+        super().clean()
         if self.merged_with is not None:
             other = self.merged_with
             if other.merged_with == self:
