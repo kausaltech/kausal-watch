@@ -433,6 +433,28 @@ class TestCreateAction:
         assert result['description'] == 'A test action'
         assert Action.objects.filter(plan=plan, identifier='new-action-1').exists()
 
+    def test_create_action_normalizes_editor_incompatible_description(
+        self, graphql_client_query_data, client, superuser: User, plan: Plan
+    ):
+        # The MCP server calls this mutation in-process with raw HTML; a bare <br> would
+        # otherwise be stored verbatim and crash the admin editor on read.
+        client.force_login(superuser)
+        data = graphql_client_query_data(
+            CREATE_ACTION,
+            variables={
+                'input': {
+                    'planId': plan.identifier,
+                    'name': 'Void Tag Action',
+                    'identifier': 'void-tag-action',
+                    'description': '<p>a<br>b</p>',
+                }
+            },
+        )
+        result = data['action']['createAction']
+        assert result['description'] == '<p>a<br/>b</p>'
+        action = Action.objects.get(plan=plan, identifier='void-tag-action')
+        assert action.description == '<p>a<br/>b</p>'
+
     def test_create_action_generates_identifier_when_not_required(
         self,
         graphql_client_query_data,
