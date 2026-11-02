@@ -9,6 +9,7 @@ from uuid import UUID
 import rest_framework.fields
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import F, Prefetch, QuerySet
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -28,6 +29,7 @@ from kausal_common.api.exceptions import HandleProtectedErrorMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
 from kausal_common.api.utils import register_view_helper
 from kausal_common.model_images import ModelWithImageSerializerMixin
+from kausal_common.models.rich_text import make_editor_compatible
 from kausal_common.people.api import PersonSerializer as BasePersonSerializer
 from kausal_common.users import user_or_bust, user_or_none
 
@@ -37,7 +39,13 @@ from aplans.rest_api import PlanRelatedModelSerializer, get_plan_from_view
 from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ContactPersonDict
-from actions.models.attributes import AttributeType, AttributeTypeChoiceOption, ModelWithAttributes
+from actions.models.attributes import (
+    AttributeChoiceWithText,
+    AttributeRichText,
+    AttributeType,
+    AttributeTypeChoiceOption,
+    ModelWithAttributes,
+)
 from actions.validation import get_action_dates_error, get_task_completion_date_error
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.models import PlanScopedModel, PlanScopedModelLogEntry
@@ -687,6 +695,29 @@ def _reject_unassignable_archived_choices(serializer, data, extract_choice) -> N
         raise serializers.ValidationError(errors)
 
 
+def _reject_editor_incompatible_rich_text(serializer, data, rich_text_field, extract_text) -> None:
+    """
+    Reject incoming rich-text attribute values the Draftail editor cannot read back.
+
+    Runs during DRF's `is_valid()`, before any save — a fast-failing 400 complement to the
+    model-layer `set_attribute()` guard (which also normalizes the stored value). Values that
+    only need void-tag normalization pass; genuinely unparseable markup is rejected.
+    """
+    if not data:
+        return
+    errors: dict[str, str] = {}
+    for identifier, value in data.items():
+        text = extract_text(value)
+        if not text:
+            continue
+        try:
+            make_editor_compatible(text, rich_text_field)
+        except DjangoValidationError as exc:
+            errors[identifier] = ' '.join(exc.messages)
+    if errors:
+        raise serializers.ValidationError(errors)
+
+
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_formats = (AttributeType.AttributeFormat.ORDERED_CHOICE, AttributeType.AttributeFormat.UNORDERED_CHOICE)
 
@@ -725,6 +756,12 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
             self,
             data,
             extract_choice=lambda v: v.get('choice') if isinstance(v, dict) else None,
+        )
+        _reject_editor_incompatible_rich_text(
+            self,
+            data,
+            AttributeChoiceWithText._meta.get_field('text'),
+            extract_text=lambda v: v.get('text') if isinstance(v, dict) else None,
         )
         return data
 
@@ -787,6 +824,15 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
         return {v.type.identifier: v.text for v in values if self.is_attribute_visible(v)}
 
     def to_internal_value(self, data):
+        return data
+
+    def validate(self, data):
+        _reject_editor_incompatible_rich_text(
+            self,
+            data,
+            AttributeRichText._meta.get_field('text'),
+            extract_text=lambda v: v,
+        )
         return data
 
     def to_value_parameter(self, item):

@@ -24,6 +24,7 @@ from autoslug.fields import AutoSlugField
 
 from kausal_common.i18n.helpers import get_supported_languages
 from kausal_common.models.language import ModelWithPrimaryLanguage
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
 from kausal_common.models.types import MLModelManager
 
 from aplans.utils import (
@@ -620,7 +621,7 @@ class AttributeChoice(Attribute):
 
 
 @reversion.register(follow=['choice'])
-class AttributeChoiceWithText(Attribute):
+class AttributeChoiceWithText(RichTextEditorCompatibleMixin, Attribute):
     type: PK[AttributeType] = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -685,7 +686,7 @@ class AttributeText(Attribute):
 
 
 @reversion.register()
-class AttributeRichText(Attribute):
+class AttributeRichText(RichTextEditorCompatibleMixin, Attribute):
     type: PK[AttributeType] = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -835,6 +836,8 @@ class ModelWithAttributes(ClusterableModel):
             # bulk_create(), which bypass both save() and full_clean().
             if isinstance(new_attribute, AttributeChoice | AttributeChoiceWithText):
                 _validate_attribute_choice_is_assignable(new_attribute)
+            if isinstance(new_attribute, RichTextEditorCompatibleMixin):
+                new_attribute.clean_rich_text_fields()
             return ('create', new_attribute)
         if self._value_is_empty(value_parameters):
             return ('delete', existing_attribute)
@@ -842,6 +845,8 @@ class ModelWithAttributes(ClusterableModel):
             setattr(existing_attribute, k, v)
         if isinstance(existing_attribute, AttributeChoice | AttributeChoiceWithText):
             _validate_attribute_choice_is_assignable(existing_attribute)
+        if isinstance(existing_attribute, RichTextEditorCompatibleMixin):
+            existing_attribute.clean_rich_text_fields()
         return ('update', existing_attribute, list(value_parameters.keys()))
 
     def set_category_choice_attribute(self, attribute_type, existing_attribute, category_ids):
