@@ -17,6 +17,7 @@ from wagtail.models.i18n import Locale
 from modelsearch import index
 
 from kausal_common.i18n.helpers import convert_language_code
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
 from kausal_common.models.types import ModelManager
 
 from aplans.utils import IdentifierField, PlanRelatedModelQuerySet, PlanRelatedOrderedModel
@@ -70,6 +71,7 @@ else:
 
 @reversion.register(follow=['pledge_action_through'] + ModelWithAttributes.REVERSION_FOLLOW)
 class Pledge(
+    RichTextEditorCompatibleMixin,
     PlanRelatedOrderedModel,
     ModelWithAttributes,
     SearchableModel[PledgeQuerySet],

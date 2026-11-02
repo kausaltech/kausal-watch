@@ -25,6 +25,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 from dateutil.relativedelta import relativedelta
 from modelsearch import index
 
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
 from kausal_common.models.types import MLModelManager, ModelManager
 
 from aplans.utils import (
@@ -183,6 +184,7 @@ class NormalizationGap:
 
 @reversion.register(follow=('goals',))
 class Indicator(
+    RichTextEditorCompatibleMixin,
     ClusterableModel,
     SearchableModel[IndicatorQuerySet],
     ModificationTracking,
@@ -670,6 +672,7 @@ class Indicator(
         return '%s/indicators/%s' % (plan_url, self.id)
 
     def clean(self):
+        super().clean()
         if self.updated_values_due_at:
             if self.time_resolution != 'year':
                 raise ValidationError({

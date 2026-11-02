@@ -2051,7 +2051,7 @@ class ActionRelatedModelTransModelMixin:
 
 
 @reversion.register(follow=['responsible_parties', 'contact_persons'])
-class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelatedModel):
+class ActionTask(RichTextEditorCompatibleMixin, ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelatedModel):
     """
     A task that should be completed during the execution of an action.
 
@@ -2156,6 +2156,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, ClusterableModel, PlanRelate
         return self.name
 
     def clean(self):
+        super().clean()
         if self.state != ActionTask.COMPLETED and self.completed_at is not None:
             raise ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if self.state == ActionTask.COMPLETED and self.completed_at is None:

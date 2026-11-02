@@ -11,6 +11,8 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.fields import RichTextField
 
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
+
 from aplans.utils import IdentifierField
 
 from indicators.models.relationships import IndicatorRelationship
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
 
 
 @reversion.register()
-class CommonIndicator(ClusterableModel):
+class CommonIndicator(RichTextEditorCompatibleMixin, ClusterableModel):
     identifier = IdentifierField[str | None](null=True, blank=True, max_length=70)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     description = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('description'))

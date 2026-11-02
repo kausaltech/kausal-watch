@@ -22,6 +22,7 @@ from wagtail.models import RevisionMixin
 
 from wagtail_color_panel.fields import ColorField
 
+from kausal_common.models.rich_text import RichTextEditorCompatibleMixin
 from kausal_common.models.types import ModelManager
 
 from aplans.utils import PlanRelatedModel, PlanRelatedModelWithRevision
@@ -467,7 +468,7 @@ class AutomaticNotificationTemplate(NotificationTemplate):
         ]
 
 
-class ManuallyScheduledNotificationTemplate(NotificationTemplate):
+class ManuallyScheduledNotificationTemplate(RichTextEditorCompatibleMixin, NotificationTemplate):
     type = models.CharField(
         verbose_name=_('type'),
         max_length=100,
@@ -550,7 +551,7 @@ class ContentBlockManager[M: ContentBlock](ModelManager[M, QuerySet['ContentBloc
         )
 
 
-class ContentBlock(models.Model):
+class ContentBlock(RichTextEditorCompatibleMixin, models.Model):
     content = RichTextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
     base_id: int
