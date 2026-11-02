@@ -430,6 +430,15 @@ class Indicator(
         help_text=_("Do not show this indicator's values in a table on the indicator page."),
         default=False,
     )
+    # Keeps an indicator out of the public UI indicator lists (planIndicators /
+    # relatedPlanIndicators) while leaving it reachable by direct link or embed.
+    # Set programmatically (e.g. by the emission-tree grouping command); intentionally
+    # not editable in the admin (no panel).
+    hide_from_indicator_list = models.BooleanField(
+        default=False,
+        editable=False,
+        verbose_name=_('hide from indicator list'),
+    )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 

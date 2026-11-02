@@ -483,7 +483,7 @@ class Query:
             return None
 
         qs = Indicator.objects.get_queryset().visible_for_user(info.context.user)
-        qs = qs.filter(levels__plan=plan_obj).distinct()
+        qs = qs.filter(levels__plan=plan_obj, hide_from_indicator_list=False).distinct()
 
         if has_data is not None:
             qs = qs.filter(latest_value__isnull=not has_data)
@@ -557,7 +557,7 @@ def plans_indicators_queryset(plans, user, **kwargs) -> IndicatorQuerySet:
     first = kwargs.get('first')
     order_by = kwargs.get('order_by')
     qs = Indicator.objects.get_queryset().visible_for_user(user)
-    qs = qs.filter(plans__in=plans)
+    qs = qs.filter(plans__in=plans, hide_from_indicator_list=False)
 
     if isinstance(plans, list) and len(plans) == 1:
         plan = plans[0]
