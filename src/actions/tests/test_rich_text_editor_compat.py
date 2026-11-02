@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from wagtail.admin.rich_text.converters.contentstate import ContentstateConverter
 
 import pytest
@@ -57,3 +59,14 @@ def test_targeted_update_fields_save_skips_untouched_rich_text() -> None:
     # ...and the DB keeps the original, still-valid value.
     action.refresh_from_db()
     assert action.description == '<p>ok</p>'
+
+
+def test_guard_issues_no_database_queries() -> None:
+    # The guard must stay pure CPU so it does not slow bulk writes down with per-row queries.
+    action = ActionFactory.create(description='<p>a<br>b</p>')
+    action.clean_rich_text_fields()  # warm the cached converter
+    action.description = '<p>c<br>d</p>'
+    with CaptureQueriesContext(connection) as ctx:
+        action.clean_rich_text_fields()
+    assert len(ctx.captured_queries) == 0, ctx.captured_queries
+    assert action.description == '<p>c<br/>d</p>'
