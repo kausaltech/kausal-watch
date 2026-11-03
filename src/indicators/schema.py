@@ -11,6 +11,7 @@ from wagtail.rich_text import RichText
 import graphene_django_optimizer as gql_optimizer
 
 from kausal_common.datasets.models import Dataset
+from kausal_common.users import user_or_none
 
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import RestrictedVisibilityModel, public_fields
@@ -36,6 +37,7 @@ from indicators.models import (
     Unit,
 )
 from indicators.models.indicator import VisualizationType
+from indicators.normalization import get_normalization_warnings
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -48,6 +50,7 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan, PlanQuerySet
     from admin_site.models import BaseChangeLogMessage
     from indicators.models import CommonIndicatorNormalizator, IndicatorLevelQuerySet, IndicatorQuerySet
+    from indicators.normalization import NormalizationWarning
 
 
 class UnitNode(DjangoNode[Unit]):
@@ -248,6 +251,12 @@ class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode[IndicatorGoal]):
         return None
 
 
+class IndicatorNormalizationWarning(graphene.ObjectType):
+    message = graphene.String(required=True)
+    normalizer_url = graphene.String(description="Admin URL where the normalizer indicator's data can be fixed")
+    normalizer_link_text = graphene.String()
+
+
 @register_django_node
 class IndicatorNode(DjangoNode[Indicator]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at']
@@ -270,6 +279,13 @@ class IndicatorNode(DjangoNode[Indicator]):
 
     datasets = graphene.List(graphene.NonNull('datasets.schema.DatasetNode'), required=True)
     default_visualization = graphene.Field(lambda: IndicatorDefaultVisualization)
+    normalization_warnings = graphene.List(
+        graphene.NonNull(IndicatorNormalizationWarning),
+        required=True,
+        description=(
+            'Why some of the data cannot be normalized. Only given to users who may modify the indicator in the active plan.'
+        ),
+    )
 
     @staticmethod
     def resolve_datasets(root: Indicator, info) -> QuerySet[Dataset]:
@@ -381,6 +397,16 @@ class IndicatorNode(DjangoNode[Indicator]):
     def resolve_plans(root: Indicator, info) -> PlanQuerySet:
         plans = cast('PlanQuerySet', root.plans.all())
         return plans.visible_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_normalization_warnings(root: Indicator, info: GQLInfo) -> list[NormalizationWarning]:
+        user = user_or_none(info.context.user)
+        plan = info.context.active_plan
+        if user is None or plan is None:
+            return []
+        if not user.can_modify_indicator(indicator=root, plan=plan):
+            return []
+        return get_normalization_warnings(root, user, plan)
 
     @staticmethod
     def resolve_change_log_message(root: Indicator, _info: GQLInfo) -> BaseChangeLogMessage | None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import uuid
+from dataclasses import dataclass
 from datetime import date
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast, override
 
@@ -34,9 +35,9 @@ from aplans.utils import (
     RestrictedVisibilityModel,
 )
 
-from indicators.models.common_indicator import CommonIndicatorNormalizator
+from indicators.models.common_indicator import CommonIndicator, CommonIndicatorNormalizator
 from indicators.models.import_log import IndicatorValuesImportLog
-from indicators.models.values import IndicatorValue
+from indicators.models.values import IndicatorValue, IndicatorValueCategory
 from orgs.models import Organization
 from search.backends import TranslatedAutocompleteField, TranslatedSearchField
 from search.models import SearchableModel
@@ -163,6 +164,20 @@ class VisualizationType(models.TextChoices):
 class IndicatorNonQuantifiedGoalTarget(models.TextChoices):
     INCREASE = 'increase', _('Increase')
     DECREASE = 'decrease', _('Decrease')
+
+
+@dataclass
+class NormalizationGap:
+    """Values and goals of an indicator that one of its normalizers has not normalized."""
+
+    normalizer: CommonIndicator
+    # The organization's indicator for `normalizer`; without it, nothing can be normalized by it.
+    normalizer_indicator: Indicator | None
+    # Dates of the values (not for dimension categories) and goals that the normalizer lacks data for
+    value_dates: list[date]
+    goal_dates: list[date]
+    # Values for dimension categories are not normalized at all
+    has_unnormalized_categorized_values: bool
 
 
 @reversion.register(follow=('goals',))
@@ -721,11 +736,49 @@ class Indicator(
                 person_id=d['person'],
             )
 
+    def get_normalizer_indicator(self, normalizer: CommonIndicator) -> Indicator | None:
+        """Return this indicator's organization's indicator for the common indicator `normalizer`."""
+        return Indicator.objects.filter(common=normalizer, organization=self.organization).first()
+
+    def get_normalization_gaps(self) -> list[NormalizationGap]:
+        """
+        Find the values and goals that a normalizer of this indicator has not normalized.
+
+        This reads the stored `normalized_values`, as that is what the public UI decides on: it hides
+        its normalization switch if some value or goal it would show lacks a normalized value. That
+        includes the values for dimension categories, which are never normalized.
+        Only normalizers with gaps are returned.
+        """
+        if self.common is None:
+            return []
+        values = list(self.values.order_by('date'))
+        categorized_value_ids = set(
+            IndicatorValueCategory.objects.filter(indicator_value__indicator=self).values_list('indicator_value_id', flat=True)
+        )
+        goals = list(self.goals.order_by('date'))
+        if not values and not goals:
+            return []
+
+        gaps = []
+        for cin in self.common.normalizations.select_related('normalizer'):
+            key = str(cin.normalizer_id)
+            unnormalized_values = [v for v in values if key not in (v.normalized_values or {})]
+            gap = NormalizationGap(
+                normalizer=cin.normalizer,
+                normalizer_indicator=self.get_normalizer_indicator(cin.normalizer),
+                value_dates=[v.date for v in unnormalized_values if v.pk not in categorized_value_ids],
+                goal_dates=[g.date for g in goals if key not in (g.normalized_values or {})],
+                has_unnormalized_categorized_values=any(v.pk in categorized_value_ids for v in unnormalized_values),
+            )
+            if gap.normalizer_indicator is None or gap.value_dates or gap.goal_dates or gap.has_unnormalized_categorized_values:
+                gaps.append(gap)
+        return gaps
+
     def generate_normalized_values(self, cin: CommonIndicatorNormalizator):
         assert cin.normalizable == self.common
         nci = cin.normalizer
 
-        ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
+        ni = self.get_normalizer_indicator(nci)
         if not ni:
             return
 
@@ -751,7 +804,7 @@ class Indicator(
         assert cin.normalizable == self.common
         nci = cin.normalizer
 
-        ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
+        ni = self.get_normalizer_indicator(nci)
         if not ni:
             return
 
