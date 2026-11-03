@@ -13,6 +13,7 @@ from actions.tests.factories import ActionFactory, PlanFactory
 from indicators.models.action_links import ActionIndicator
 from indicators.models.indicator import Indicator, IndicatorLevel
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
+from orgs.tests.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -292,3 +293,110 @@ class TestVisibilityChecksDoNotScaleWithIndicatorCount:
         many = self._query_count(graphql_client_query, plan, 5, visibility)
 
         assert many == one
+
+
+INDICATOR_QUERY = """
+query indicator($plan: ID!, $id: ID, $identifier: ID, $restrictToPubliclyVisible: Boolean!) {
+  indicator(plan: $plan, id: $id, identifier: $identifier, restrictToPubliclyVisible: $restrictToPubliclyVisible) {
+    id
+  }
+}
+"""
+
+
+class TestIndicatorQueryInAdmin:
+    """
+    The admin's indicator value editor resolves indicators that the plan may connect but hasn't.
+
+    It passes `restrictToPubliclyVisible: false`. With that, the query matches the indicators
+    the admin's indicator listing offers, while the public query stays limited to the plan.
+    """
+
+    def _query(self, graphql_client_query, plan, restrict_to_publicly_visible=False, **variables) -> str | None:
+        response = graphql_client_query(
+            INDICATOR_QUERY,
+            variables={'plan': plan.identifier, 'restrictToPubliclyVisible': restrict_to_publicly_visible, **variables},
+        )
+        assert 'errors' not in response, json.dumps(response)
+        indicator = response['data']['indicator']
+        return indicator['id'] if indicator else None
+
+    def _resolves(self, graphql_client_query, plan, indicator, restrict_to_publicly_visible=False) -> bool:
+        resolved_id = self._query(graphql_client_query, plan, restrict_to_publicly_visible, id=str(indicator.id))
+        return resolved_id is not None
+
+    @pytest.fixture
+    def unconnected_indicator(self, plan):
+        related_org = OrganizationFactory.create()
+        plan.related_organizations.add(related_org)
+        return IndicatorFactory.create(organization=related_org)
+
+    def test_general_admin_resolves_an_unconnected_indicator_of_a_related_organization(
+        self, plan, unconnected_indicator, client, plan_admin_user, graphql_client_query
+    ):
+        client.force_login(plan_admin_user)
+
+        assert self._resolves(graphql_client_query, plan, unconnected_indicator)
+
+    def test_general_admin_resolves_an_indicator_of_the_plan(
+        self, plan, internal_indicator, client, plan_admin_user, graphql_client_query
+    ):
+        client.force_login(plan_admin_user)
+
+        assert self._resolves(graphql_client_query, plan, internal_indicator)
+
+    def test_user_without_admin_access_does_not_resolve_an_unconnected_indicator(
+        self, plan, unconnected_indicator, client, user, person, graphql_client_query
+    ):
+        client.force_login(user)
+
+        assert not self._resolves(graphql_client_query, plan, unconnected_indicator)
+
+    def test_contact_person_does_not_resolve_an_unconnected_indicator(
+        self, plan, unconnected_indicator, client, action_contact_person_user, graphql_client_query
+    ):
+        """Admin access alone is not enough; connecting indicators is for general admins."""
+        client.force_login(action_contact_person_user)
+
+        assert not self._resolves(graphql_client_query, plan, unconnected_indicator)
+
+    def test_public_query_does_not_resolve_an_unconnected_indicator(
+        self, plan, unconnected_indicator, client, plan_admin_user, graphql_client_query
+    ):
+        client.force_login(plan_admin_user)
+
+        assert not self._resolves(graphql_client_query, plan, unconnected_indicator, restrict_to_publicly_visible=True)
+
+    def test_internal_indicator_of_another_plan_stays_hidden_from_general_admin(
+        self, plan, client, plan_admin_user, graphql_client_query
+    ):
+        """
+        The plan's organization owns the indicator, so the admin may connect it, but it is internal to another plan.
+
+        Visibility still applies on top of what the admin may work with.
+        """
+        indicator = IndicatorFactory.create(
+            organization=plan.organization, visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL
+        )
+        IndicatorLevelFactory.create(indicator=indicator, plan=PlanFactory.create())
+        client.force_login(plan_admin_user)
+
+        assert not self._resolves(graphql_client_query, plan, indicator)
+
+    def test_superuser_resolves_an_indicator_of_the_plan_owned_by_an_unrelated_organization(
+        self, plan, client, superuser, graphql_client_query
+    ):
+        indicator = IndicatorFactory.create()
+        IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+        client.force_login(superuser)
+
+        assert self._resolves(graphql_client_query, plan, indicator)
+
+    def test_lookup_by_identifier_stays_within_the_plan(self, plan, client, plan_admin_user, graphql_client_query):
+        """Identifiers aren't unique, so an unconnected indicator with the same one must not make the lookup ambiguous."""
+        connected = IndicatorFactory.create(organization=plan.organization, identifier='shared')
+        IndicatorLevelFactory.create(indicator=connected, plan=plan)
+        IndicatorFactory.create(organization=plan.organization, identifier='shared')
+        client.force_login(plan_admin_user)
+
+        assert self._query(graphql_client_query, plan, identifier='shared') == str(connected.id)

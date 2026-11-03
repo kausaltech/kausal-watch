@@ -152,6 +152,12 @@ def test_adminable_in_plan_by_superuser_includes_indicators_of_other_plans(plan,
     assert indicator in Indicator.objects.qs.adminable_in_plan_by(superuser, plan)
 
 
+def test_adminable_in_plan_by_superuser_includes_indicators_of_the_plan_owned_by_unrelated_organizations(plan, superuser):
+    indicator = IndicatorFactory.create()
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    assert list(Indicator.objects.qs.adminable_in_plan_by(superuser, plan)) == [indicator]
+
+
 def test_adminable_in_plan_by_includes_indicators_of_the_plan(plan, user):
     indicator = IndicatorFactory.create()
     IndicatorLevelFactory.create(indicator=indicator, plan=plan)

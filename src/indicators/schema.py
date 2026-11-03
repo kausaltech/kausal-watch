@@ -531,12 +531,15 @@ class Query:
                 return None
             if not plan_obj.is_visible_for_user(user):
                 return None
-            if not restrict_to_publicly_visible and user.can_access_admin(plan_obj):
-                qs = qs.visible_for_user(user)
+            is_admin_request = not restrict_to_publicly_visible and user.can_access_admin(plan_obj)
+            qs = qs.visible_for_user(user) if is_admin_request else qs.visible_for_public()
+            if is_admin_request and obj_id:
+                # The admin also works with indicators that the plan may connect but hasn't, e.g.
+                # when entering their values, so match what the admin's indicator listing offers.
+                # Identifiers aren't unique, so a lookup by identifier stays within the plan.
+                qs = qs.adminable_in_plan_by(user, plan_obj)
             else:
-                qs = qs.visible_for_public()
-
-            qs = qs.filter(levels__plan=plan_obj).distinct()
+                qs = qs.filter(levels__plan=plan_obj).distinct()
         else:
             qs = qs.visible_for_public()
 

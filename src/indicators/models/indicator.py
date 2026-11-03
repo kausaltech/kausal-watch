@@ -104,12 +104,11 @@ class IndicatorQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Indicator
         that they can find and connect them. Superusers get everything owned by an organization
         related to the plan.
         """
-        if user.is_superuser:
-            return self.available_for_plan(plan)
-
         # Every clause is a subquery so that the filter needs no join, which would list an indicator
         # once per plan that has connected it.
         query = Q(pk__in=Indicator.objects.qs.in_plan(plan).values('pk'))
+        if user.is_superuser:
+            return self.filter(query | Q(pk__in=Indicator.objects.qs.available_for_plan(plan).values('pk')))
         if user.is_general_admin_for_plan(plan):
             # The indicators that the plan has access to without having connected them, i.e. the
             # queryset counterpart of Indicator.get_plans_with_access() for this plan
