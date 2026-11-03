@@ -280,7 +280,7 @@ def _shared_indicator_with_other_adminable_plan(plan, plan_admin_person):
 
 
 def test_indicator_permission_helper_allows_editing_in_the_administered_plan(plan, plan_admin_person):
-    from indicators.wagtail_admin import IndicatorPermissionHelper
+    from indicators.permission_policy import IndicatorPermissionPolicy
 
     indicator, _other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
     user = plan_admin_person.user
@@ -289,11 +289,11 @@ def test_indicator_permission_helper_allows_editing_in_the_administered_plan(pla
     user.save()
 
     assert user.get_active_admin_plan() == plan
-    assert IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+    assert IndicatorPermissionPolicy().user_has_permission_for_instance(user, 'change', indicator)
 
 
 def test_indicator_permission_helper_scopes_editing_to_the_active_plan(plan, plan_admin_person):
-    from indicators.wagtail_admin import IndicatorPermissionHelper
+    from indicators.permission_policy import IndicatorPermissionPolicy
 
     indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
     user = plan_admin_person.user
@@ -303,7 +303,7 @@ def test_indicator_permission_helper_scopes_editing_to_the_active_plan(plan, pla
 
     # Editing would write the indicator level of the other plan, where the user is no admin
     assert user.get_active_admin_plan() == other_plan
-    assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+    assert not IndicatorPermissionPolicy().user_has_permission_for_instance(user, 'change', indicator)
 
 
 @pytest.fixture
@@ -326,7 +326,7 @@ def post_request_with_initial_plan(rf):
 def test_indicator_permission_helper_allows_editing_the_plan_the_form_was_opened_with(
     plan, plan_admin_person, post_request_with_initial_plan
 ):
-    from indicators.wagtail_admin import IndicatorPermissionHelper
+    from indicators.permission_policy import IndicatorPermissionPolicy
 
     indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
     user = plan_admin_person.user
@@ -336,13 +336,13 @@ def test_indicator_permission_helper_allows_editing_the_plan_the_form_was_opened
     user.save()
 
     with post_request_with_initial_plan(plan):
-        assert IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+        assert IndicatorPermissionPolicy().user_has_permission_for_instance(user, 'change', indicator)
 
 
 def test_indicator_permission_helper_denies_editing_the_plan_the_form_was_opened_with(
     plan, plan_admin_person, post_request_with_initial_plan
 ):
-    from indicators.wagtail_admin import IndicatorPermissionHelper
+    from indicators.permission_policy import IndicatorPermissionPolicy
 
     indicator, other_plan = _shared_indicator_with_other_adminable_plan(plan, plan_admin_person)
     user = plan_admin_person.user
@@ -352,7 +352,7 @@ def test_indicator_permission_helper_denies_editing_the_plan_the_form_was_opened
 
     # The form was opened with the other plan, so its level is written even though `plan` is active
     with post_request_with_initial_plan(other_plan):
-        assert not IndicatorPermissionHelper(model=Indicator).user_can_edit_obj(user, indicator)
+        assert not IndicatorPermissionPolicy().user_has_permission_for_instance(user, 'change', indicator)
 
 
 @pytest.fixture
@@ -360,15 +360,18 @@ def indicator_create_view(rf):
     """Build an IndicatorCreateView that just saved `instance` on behalf of `user`."""
 
     def func(user, instance):
-        from indicators.wagtail_admin import IndicatorAdmin, IndicatorCreateView
+        from actions.tests.utils import instantiate_view
+        from indicators.wagtail_admin import IndicatorCreateView
 
-        # Only the views for an existing instance take an instance_pk, but they share a base class
-        view = IndicatorCreateView(model_admin=IndicatorAdmin())  # type: ignore[call-arg]
-        request = rf.post('/admin/indicators/indicator/create/')
+        view = instantiate_view(Indicator.snippet_viewset.add_view, IndicatorCreateView)  # type: ignore[attr-defined]
+        request = rf.post('/admin/indicators/indicator/add/')
         request.user = user
         request.session = {}
         view.request = request
-        view.instance = instance
+        # Set by setup(), which needs more of the admin than these tests
+        view.locale = None  # type: ignore[misc]
+        view.draftstate_enabled = False
+        view.object = instance
         return view
 
     return func

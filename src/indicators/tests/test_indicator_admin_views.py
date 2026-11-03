@@ -353,7 +353,7 @@ def test_editing_indicator_of_another_own_plan_offers_a_plan_switch(client, plan
 
 
 def test_indicator_contact_person_cannot_create(indicator_contact_client):
-    response = indicator_contact_client.get(f'{INDICATORS_PATH}create/')
+    response = indicator_contact_client.get(f'{INDICATORS_PATH}add/')
     assert response.status_code == 302
     assert response['Location'] == '/admin/'
 
@@ -377,3 +377,23 @@ def test_adding_a_factor_returns_to_the_factors_panel(admin_client, plan_with_pa
     indicator.refresh_from_db()
     assert indicator.dataset_schema is not None
     assert list(indicator.dataset_schema.metrics.values_list('label', flat=True)) == ['Emission factor', 'Emissions']
+
+
+def test_listing_links_to_the_live_indicator(admin_client, plan_with_pages):
+    indicator = _indicator(plan_with_pages)
+    view_url = indicator.get_view_url(plan=plan_with_pages)
+    assert view_url
+    content = html.unescape(admin_client.get(INDICATORS_PATH).content.decode())
+    assert f'href="{view_url}"' in content
+    assert 'View live' in content
+
+
+def test_bulk_delete_is_not_available(admin_client, plan_with_pages):
+    indicator = _indicator(plan_with_pages)
+    admin_client.post(f'/admin/bulk/indicators/indicator/delete/?id={indicator.pk}')
+    assert Indicator.objects.filter(pk=indicator.pk).exists()
+
+
+def test_listing_menu_labels_editing_the_indicator_apart_from_its_data(admin_client, plan_with_pages):
+    _indicator(plan_with_pages)
+    assert 'Edit properties' in admin_client.get(INDICATORS_PATH).content.decode()

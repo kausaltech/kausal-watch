@@ -2,7 +2,7 @@
 
 <li>
     {% icon name="kausal-indicator" %}
-    <a href="{% url 'indicators_indicator_modeladmin_index' %}">
+    <a href="{% url 'wagtailsnippets_indicators_indicator:list' %}">
     {% blocktranslate count counter=total_indicators with total=total_indicators|intcomma plan=plan.name %}
         <span>{{ total }}</span> indicator <span class="w-sr-only">monitored in {{ plan }}</span>
     {% plural %}

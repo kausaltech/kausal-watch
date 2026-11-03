@@ -19,11 +19,11 @@
                     <tr>
                         <td class="title" valign="top">
                             <div class="title-wrapper">
-                                <a href="{% url 'indicators_indicator_modeladmin_edit' indicator.id %}" title="{% trans 'Edit this indicator' %}">{{ indicator.name }}</a>
+                                <a href="{% url 'wagtailsnippets_indicators_indicator:edit' indicator.id %}" title="{% trans 'Edit this indicator' %}">{{ indicator.name }}</a>
                             </div>
                             <ul class="actions">
-                                <li><a href="{% url 'indicators_indicator_modeladmin_edit' indicator.id %}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
-                                <li><a href="{% url 'indicators_indicator_modeladmin_edit_values' indicator.id %}" class="button button-small button-secondary">{% trans "Edit data" %}</a></li>
+                                <li><a href="{% url 'wagtailsnippets_indicators_indicator:edit' indicator.id %}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
+                                <li><a href="{% url 'indicators_indicator_edit_values' indicator.id %}" class="button button-small button-secondary">{% trans "Edit data" %}</a></li>
                             </ul>
                         </td>
                         <td valign="top"><div class="human-readable-date" title="{{ indicator.updated_at|date }}">{% blocktrans with time_period=indicator.updated_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div></td>

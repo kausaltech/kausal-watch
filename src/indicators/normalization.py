@@ -38,8 +38,8 @@ def get_indicator_data_edit_url(indicator: Indicator) -> str:
     """Return the admin URL for editing the values of `indicator`, or its edit page if there is no data editor."""
     # The data editor is part of the extensions
     if 'kausal_watch_extensions' in settings.INSTALLED_APPS:
-        return reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=indicator.pk))
-    return reverse('indicators_indicator_modeladmin_edit', kwargs=dict(instance_pk=indicator.pk))
+        return reverse('indicators_indicator_edit_values', kwargs=dict(instance_pk=indicator.pk))
+    return reverse('wagtailsnippets_indicators_indicator:edit', args=[indicator.pk])
 
 
 def _make_missing_data_warning(

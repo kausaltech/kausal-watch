@@ -1703,7 +1703,7 @@ class IndicatorChangeLogMessageCreateView(
     IndicatorChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageCreateView[IndicatorChangeLogMessage, Indicator],
 ):
-    success_url_name = 'indicators_indicator_modeladmin_index'
+    success_url_name = 'wagtailsnippets_indicators_indicator:list'
 
     def _get_indicator_edit_url(self) -> str | None:
         """Redirect to the indicator edit page's factors panel, or None."""
@@ -1713,7 +1713,8 @@ class IndicatorChangeLogMessageCreateView(
         related_id = self.get_related_id()
         if not related_id:
             return None
-        return reverse('indicators_indicator_modeladmin_edit', args=[related_id]) + '#panel-child-relationships-factors-section'
+        edit_url = reverse('wagtailsnippets_indicators_indicator:edit', args=[related_id])
+        return f'{edit_url}#panel-child-relationships-factors-section'
 
     def get_success_url(self):
         return self._get_indicator_edit_url() or super().get_success_url()
@@ -1726,7 +1727,7 @@ class IndicatorChangeLogMessageEditView(
     IndicatorChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator],
 ):
-    success_url_name = 'indicators_indicator_modeladmin_edit'
+    success_url_name = 'wagtailsnippets_indicators_indicator:edit'
 
 
 class IndicatorChangeLogMessageDeleteView(
