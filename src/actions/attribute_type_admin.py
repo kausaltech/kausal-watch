@@ -738,7 +738,13 @@ class AttributeTypeCreateView(PanelFormMixin, WatchCreateView[AttributeType]):
         content_type = get_object_content_type_from_request(self.request)
         if content_type is None:
             raise Http404
-        return get_attribute_type_panel(self.request, AttributeType(object_content_type=content_type))
+        plan = user_or_bust(self.request.user).get_active_admin_plan()
+        instance = AttributeType(
+            object_content_type=content_type,
+            primary_language=plan.primary_language,
+            other_languages=plan.other_languages,
+        )
+        return get_attribute_type_panel(self.request, instance)
 
     def get_page_subtitle(self):
         content_type = get_object_content_type_from_request(self.request)

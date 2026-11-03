@@ -393,3 +393,28 @@ def test_bulk_delete_is_not_available(admin_client, plan_with_pages):
     attribute_type = _action_type(plan_with_pages)
     admin_client.post(f'/admin/bulk/actions/attributetype/delete/?id={attribute_type.pk}')
     assert AttributeType.objects.filter(pk=attribute_type.pk).exists()
+
+
+def test_add_form_saves_translations(admin_client, plan_with_pages, action_ct):
+    plan_with_pages.other_languages = ['fi']
+    plan_with_pages.save()
+    add_path = _add_path(admin_client.get(_list_path(action_ct)).content)
+    form = admin_client.get(add_path).context['form']
+    assert 'name_fi' in form.fields
+    assert 'name_fi' in form.formsets['choice_options'].empty_form.fields
+    data = post_data(form)
+    data.update({
+        'name': 'Cost',
+        'name_fi': 'Kustannus',
+        'identifier': 'cost',
+        'format': AttributeType.AttributeFormat.ORDERED_CHOICE,
+        'choice_options-TOTAL_FORMS': '1',
+        'choice_options-0-name': 'High',
+        'choice_options-0-name_fi': 'Korkea',
+        'choice_options-0-ORDER': '1',
+    })
+    assert admin_client.post(add_path, data).status_code == 302
+    attribute_type = AttributeType.objects.get(identifier='cost')
+    assert attribute_type.other_languages == ['fi']
+    assert attribute_type.name_fi == 'Kustannus'  # type: ignore[attr-defined]
+    assert attribute_type.choice_options.get().name_fi == 'Korkea'  # type: ignore[attr-defined]
