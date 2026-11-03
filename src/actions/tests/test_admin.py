@@ -1274,6 +1274,70 @@ def test_action_contact_person_swap_should_succeed(plan_admin_user, action, clie
     )
 
 
+def test_stale_form_adding_existing_contact_person_is_rejected(plan_admin_user, action, client):
+    """
+    Publishing a form that adds an already linked contact person as a new row must fail validation, not crash.
+
+    This happens when the edit form is submitted twice: the first submission creates the contact person row, and the
+    second one, still holding the row without an id, would otherwise hit the unique (action, person) constraint.
+    """
+    from actions.models import ActionContactPerson
+    from actions.tests.factories import ActionContactFactory, WorkflowFactory, WorkflowTaskFactory
+    from people.tests.factories import PersonFactory
+
+    ClientPlanFactory.create(plan=action.plan)
+    # Without moderation, saving the form publishes already; only with it does publishing commit the formset rows.
+    workflow = WorkflowFactory.create()
+    WorkflowTaskFactory.create(workflow=workflow)
+    action.plan.features.moderation_workflow = workflow
+    action.plan.features.save()
+    person_a = PersonFactory.create()
+    person_b = PersonFactory.create()
+    acp_a = ActionContactFactory.create(action=action, person=person_a, role=ActionContactPerson.Role.EDITOR)
+    # Created by the first submission; the stale form doesn't know its id.
+    ActionContactFactory.create(action=action, person=person_b, role=ActionContactPerson.Role.EDITOR)
+
+    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    client.force_login(plan_admin_user)
+    post_data = {
+        'identifier': action.identifier,
+        'name': action.name,
+        'visibility': 'public',
+        'action-publish': 'action-publish',
+        'contact_persons_editor-TOTAL_FORMS': '2',
+        'contact_persons_editor-INITIAL_FORMS': '1',
+        'contact_persons_editor-MIN_NUM_FORMS': '0',
+        'contact_persons_editor-MAX_NUM_FORMS': '1000',
+        'contact_persons_editor-0-id': acp_a.pk,
+        'contact_persons_editor-0-person': person_a.pk,
+        'contact_persons_editor-0-ORDER': '1',
+        'contact_persons_editor-1-id': '',
+        'contact_persons_editor-1-person': person_b.pk,
+        'contact_persons_editor-1-ORDER': '2',
+        'contact_persons_moderator-TOTAL_FORMS': '0',
+        'contact_persons_moderator-INITIAL_FORMS': '0',
+        'tasks-TOTAL_FORMS': '0',
+        'tasks-INITIAL_FORMS': '0',
+        'links-TOTAL_FORMS': '0',
+        'links-INITIAL_FORMS': '0',
+        'responsible_parties_primary-TOTAL_FORMS': '0',
+        'responsible_parties_primary-INITIAL_FORMS': '0',
+        'responsible_parties_collaborator-TOTAL_FORMS': '0',
+        'responsible_parties_collaborator-INITIAL_FORMS': '0',
+    }
+
+    response = client.post(edit_url, data=post_data)
+
+    assert response.status_code == 200
+    assert response.context['form'].non_field_errors() == [
+        f'{person_b} has been added to the action in the meantime. Please reload the page and try again.'
+    ]
+    assert sorted(ActionContactPerson.objects.filter(action=action).values_list('person_id', flat=True)) == sorted([
+        person_a.pk,
+        person_b.pk,
+    ])
+
+
 def test_action_contact_person_swap_on_publish_draft(plan):
     """
     Test that publishing a Wagtail draft revision with swapped contact persons succeeds.
