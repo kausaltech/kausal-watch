@@ -10,6 +10,7 @@ from actions.category_permissions import CategoryPermissionPolicy
 from actions.models import (
     ActionChangeLogMessage,
     ActionImpact,
+    AttributeType,
     Category,
     CategoryChangeLogMessage,
     CategoryType,
@@ -74,6 +75,7 @@ def test_declared_permission_policy_is_registered(model):
         (CommonCategoryType, SuperuserOnlyPermissionPolicy),
         (CategoryType, PlanAdminOnlyPermissionPolicy),
         (Category, CategoryPermissionPolicy),
+        (AttributeType, PlanRelatedPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):

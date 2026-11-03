@@ -2143,11 +2143,11 @@ class TestArchiveNotification:
         # The view's super().form_valid would normally trigger model saves and
         # a redirect; we only care about what our own override layers on top.
         monkeypatch.setattr(
-            'actions.attribute_type_admin.AplansEditView.form_valid',
+            'actions.attribute_type_admin.WatchEditView.form_valid',
             lambda *_a, **_k: HttpResponseRedirect('/done'),
         )
 
-        # The view's __init__ requires modeladmin context we don't need to
+        # The view's __init__ requires viewset context we don't need to
         # exercise here; bypass it and set the request directly.
         view = AttributeTypeEditView.__new__(AttributeTypeEditView)
         view.request = request
@@ -2190,11 +2190,11 @@ class TestArchiveNotification:
         request.session = SimpleNamespace()
         request._messages = FallbackStorage(request)
         monkeypatch.setattr(
-            'actions.attribute_type_admin.AplansEditView.form_valid',
+            'actions.attribute_type_admin.WatchEditView.form_valid',
             lambda *_a, **_k: HttpResponseRedirect('/done'),
         )
 
-        # The view's __init__ requires modeladmin context we don't need to
+        # The view's __init__ requires viewset context we don't need to
         # exercise here; bypass it and set the request directly.
         view = AttributeTypeEditView.__new__(AttributeTypeEditView)
         view.request = request
