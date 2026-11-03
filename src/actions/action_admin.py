@@ -196,50 +196,57 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             raise ValidationError(_('There is already an action with this identifier.'))
         return identifier
 
-    def get_related_objects_with_role(
-        self,
-        _cls: type[ModelWithRole[Any]],
-        role: str,
-        relation_name: str,
-        wrapped_cls: type[Model],
-        wrapped_object_attr: str,
-    ) -> Iterable[Model]:
-        formset = self.formsets.get(f'{relation_name}_{role}')
-        # There is a corresponding formset for a role if and only if we can edit the relations of that role.
-        if formset:
-            if not formset.is_valid():
-                return []  # Help! But apparently if the formset is invalid, there won't be `cleaned_data` in it!?
-            return [data[wrapped_object_attr] for data in formset.cleaned_data if not data['DELETE']]
-        obj_ids = getattr(self.instance, relation_name).filter(role=role).values_list(wrapped_object_attr, flat=True)
-        return wrapped_cls._default_manager.filter(id__in=obj_ids)
+    def _get_formsets_for_relation(self, _cls: type[ModelWithRole[Any]], relation_name: str) -> list[BaseModelFormSet[Any, Any]]:
+        """Return the formsets editing the given relation: either one for all roles or one per editable role."""
+        names = [relation_name, *(f'{relation_name}_{role}' for role in _cls.get_roles())]
+        return [self.formsets[name] for name in names if name in self.formsets]
 
     def _validate_unique_relations_with_roles(
         self,
         _cls: type[ModelWithRole[Any]],
         relation_name: str,
-        wrapped_object_cls: type[Model],
         wrapped_object_attr: str,
     ) -> None:
-        seen_related_objects = set()
-        for role in _cls.get_roles():
-            if role is None:
-                role = 'None'  # noqa: PLW2901
-            for obj in self.get_related_objects_with_role(
-                _cls,
-                role,
-                relation_name,
-                wrapped_object_cls,
-                wrapped_object_attr,
-            ):
-                if obj.pk in seen_related_objects:
-                    raise ValidationError(
-                        _('%s is listed multiple times in the action.') % obj,
-                    )
-                seen_related_objects.add(obj.pk)
+        """
+        Check that no person (or organization) would end up in the relation twice after saving.
+
+        The result consists of the rows in the submitted forms plus the rows of the relation that no submitted form
+        covers. The latter are the rows of roles we cannot edit, but also rows that were added after the form was
+        loaded, e.g., by an earlier submission of the same form. If such a stale form adds one of those again, saving
+        would violate the unique constraint, so we reject it here.
+        """
+        formsets = self._get_formsets_for_relation(_cls, relation_name)
+        if not all(formset.is_valid() for formset in formsets):
+            # The formsets show their own errors, and invalid forms have no `cleaned_data` to check.
+            return
+
+        seen_wrapped_ids: set[int] = set()
+        covered_pks: set[int] = set()
+        for formset in formsets:
+            deleted_forms = formset.deleted_forms
+            for form in formset.forms:
+                if form.instance.pk is not None:
+                    covered_pks.add(form.instance.pk)
+                obj = form.cleaned_data.get(wrapped_object_attr)
+                if obj is None or form in deleted_forms:
+                    continue
+                if obj.pk in seen_wrapped_ids:
+                    raise ValidationError(_('%s is listed multiple times in the action.') % obj)
+                seen_wrapped_ids.add(obj.pk)
+
+        for item in getattr(self.instance, relation_name).all():
+            # Rows without a pk only exist in a draft; if no form covers them, saving drops them.
+            if item.pk is None or item.pk in covered_pks:
+                continue
+            if getattr(item, f'{wrapped_object_attr}_id') in seen_wrapped_ids:
+                raise ValidationError(
+                    _('%s has been added to the action in the meantime. Please reload the page and try again.')
+                    % getattr(item, wrapped_object_attr)
+                )
 
     def clean(self):
-        for _cls, relation_name, wrapped_object_cls, wrapped_object_attr in MODELS_WITH_ROLES:
-            self._validate_unique_relations_with_roles(_cls, relation_name, wrapped_object_cls, wrapped_object_attr)
+        for _cls, relation_name, __, wrapped_object_attr in MODELS_WITH_ROLES:
+            self._validate_unique_relations_with_roles(_cls, relation_name, wrapped_object_attr)
             # Persons can only have at most one role as a contact person.
             # Organizations can only have at most one role as a responsible party
 
