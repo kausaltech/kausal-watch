@@ -3,9 +3,17 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from django.utils.html import escape, strip_tags
 from django.utils.translation import gettext
 from wagtail.admin.rich_text import DraftailRichTextArea
 from wagtail.admin.rich_text.editors.draftail import DraftailRichTextAreaAdapter
+
+from loguru import logger
+from sentry_sdk import capture_exception
+
+from kausal_common.models.rich_text import normalize_void_tags, rich_text_source
+
+logger = logger.bind(name='admin_site.draftail')
 
 
 # Workaround until https://github.com/wagtail/wagtail/pull/11075 is merged
@@ -42,6 +50,22 @@ def _hack_rich_text_editor_options(options: dict) -> None:
 
 class DraftailRichTextAreaWithFixedTranslations(DraftailRichTextArea):
     options: dict[str, Any]
+
+    def format_value(self, value):
+        # Last resort: sanitize incompatible stored markup when the editor loads a value, so
+        # the admin edit page can never 500 on it (e.g. a bare <br>), regardless of how it got
+        # into the database. Normalizing void tags is semantically invisible for healthy data.
+        source = rich_text_source(value)
+        if not source:
+            return super().format_value(value)
+        try:
+            return super().format_value(normalize_void_tags(source))
+        except Exception as exc:
+            # Genuinely unparseable markup (the write-side guard prevents new such data).
+            # Report it, then degrade to the plain text so the editor still loads.
+            capture_exception(exc)
+            logger.warning('Degraded editor-incompatible rich text to plain text on load')
+            return super().format_value('<p>%s</p>' % escape(strip_tags(source)))
 
     def get_context(self, name, value, attrs):
         old_options: dict[str, Any] = self.options
