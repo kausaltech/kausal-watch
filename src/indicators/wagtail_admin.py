@@ -76,6 +76,7 @@ from admin_site.wagtail import (
     get_translation_tabs,
 )
 from indicators.chooser import DimensionChooser, IndicatorValueChooser
+from indicators.normalization import get_normalization_warnings
 from indicators.panels import IndicatorMetricsInlinePanel
 from indicators.permission_policy import DimensionPermissionPolicy
 
@@ -944,6 +945,15 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
     edit_handler = IndicatorEditHandler
     base_form_class = IndicatorForm
 
+    def _get_normalization_warning_panels(self, instance: Indicator, user: User, plan: Plan) -> list[Panel]:
+        panels: list[Panel] = []
+        for warning in get_normalization_warnings(instance, user, plan):
+            link = ''
+            if warning.normalizer_url is not None:
+                link = format_html(' <a href="{}">{}</a>', warning.normalizer_url, warning.normalizer_link_text)
+            panels.append(HelpPanel(format_html('<p class="help-block help-warning">{}{}</p>', warning.message, link)))
+        return panels
+
     def _get_basic_information_tab(self, instance, request) -> ObjectList:
         """Get basic information tab for edit view."""
         panels: list[Panel] = []
@@ -953,6 +963,9 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
         dimensions_str: str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
         if not dimensions_str:
             dimensions_str = str(_('none'))
+
+        if instance and instance.pk:
+            panels.extend(self._get_normalization_warning_panels(instance, request.user, plan))
 
         # Basic panels
         indicator_settings_panels: list[Panel] = [
