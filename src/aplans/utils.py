@@ -312,6 +312,8 @@ class ArchivableOrderedModelChildFormSet(OrderedModelChildFormSet):
         super().__init__(*args, **kwargs)
         self._pending_archive: list[Any] = []
         self._outer_commit = False
+        #: Set by the parent `ClusterForm`, which always saves formsets with `commit=False`.
+        self.commit_archives = False
         #: Populated by `save()` with objects archived during the latest save.
         #: Inspected by views to surface a post-save notification to the user.
         self.archived_on_last_save: list[Any] = []
@@ -342,12 +344,13 @@ class ArchivableOrderedModelChildFormSet(OrderedModelChildFormSet):
         # `commit=False`, regardless of the outer commit flag). Track the
         # outer commit here so the delete hook can decide whether to write
         # the archive immediately.
-        self._outer_commit = commit
+        commit_archives = commit or self.commit_archives
+        self._outer_commit = commit_archives
         try:
             saved_instances = super().save(commit)
         finally:
             self._outer_commit = False
-        if commit:
+        if commit_archives:
             self.archived_on_last_save = list(self._pending_archive)
             self._pending_archive = []
         return saved_instances
