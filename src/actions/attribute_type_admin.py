@@ -5,16 +5,15 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib import messages
-from django.contrib.admin import SimpleListFilter
-from django.contrib.admin.decorators import display
+from django.contrib.admin.utils import quote, unquote
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.forms import ValidationError
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
-from django.utils.safestring import mark_safe
+from django.utils.functional import cached_property
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from django.views.decorators.http import require_POST
@@ -22,29 +21,23 @@ from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList, Panel
 from wagtail.models import DraftStateMixin
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views import snippets as snippet_views
 
 from loguru import logger
-from wagtail_modeladmin.menus import ModelAdminMenuItem
-from wagtail_modeladmin.options import modeladmin_register
-from wagtail_modeladmin.views import DeleteView, IndexView
-from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from kausal_common.users import user_or_bust
 
-from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import ArchivableOrderedModelChildFormSet, append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
+from actions.category_admin import PanelFormMixin
 from actions.chooser import CategoryTypeChooser
+from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 from admin_site.wagtail import (
     AplansAdminModelForm,
-    AplansCreateView,
-    AplansEditView,
-    AplansModelAdmin,
     AplansTabbedInterface,
     CondensedInlinePanel,
-    InitializeFormWithPlanMixin,
-    QueryParameterButtonHelper,
     insert_model_translation_panels,
 )
 
@@ -62,18 +55,10 @@ from .models.attributes import (
 )
 
 if TYPE_CHECKING:
-    from django.db.models import Model
+    from collections.abc import Sequence
+
     from django.http.request import HttpRequest
-
-    from wagtail_modeladmin.views import InstanceSpecificView
-
-    class ModelAdminMixinBase[M: Model](InstanceSpecificView[M]):
-        pass
-
-else:
-
-    class ModelAdminMixinBase[M: Any]:
-        pass
+    from wagtail.admin.views.generic.base import BreadcrumbItem
 
 
 logger = logger.bind(name='actions.attribute_type_admin')
@@ -471,7 +456,7 @@ class ChoiceOptionArchivePanel(Panel):
             self.is_archived = bool(option and option.pk and not option.is_active)
             if option is not None and self.is_archived and option.type_id is not None:
                 self.unarchive_url = reverse(
-                    'actions_attributetype_modeladmin_unarchive_choice_option',
+                    'wagtailsnippets_actions_attributetype:unarchive_choice_option',
                     args=[option.type_id, option.pk],
                 )
             else:
@@ -531,152 +516,50 @@ class ChoiceOptionUsagePanel(Panel):
             return self.has_usage
 
 
-class AttributeTypeFilter(SimpleListFilter):
-    title = _('Object type')
-    parameter_name = 'content_type'
-
-    def lookups(self, request, model_admin):
-        action_ct_id = ContentType.objects.get_for_model(Action).id
-        category_ct_id = ContentType.objects.get_for_model(Category).id
-        result = [
-            (action_ct_id, Action._meta.verbose_name),
-            (category_ct_id, Category._meta.verbose_name),
-        ]
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
-        if plan.features.enable_community_engagement:
-            pledge_ct_id = ContentType.objects.get_for_model(Pledge).id
-            result.append((pledge_ct_id, Pledge._meta.verbose_name))
-        return result
-
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(object_content_type_id=self.value())
-        return queryset
+OBJECT_MODELS_WITH_ATTRIBUTES = ('action', 'category', 'pledge')
 
 
-class ContentTypeQueryParameterMixin[M: Any](ModelAdminMixinBase[M]):
-    request: HttpRequest
-
-    @property
-    def index_url(self):
-        return append_query_parameter(self.request, super().index_url, 'content_type')
-
-    @property
-    def create_url(self):
-        return append_query_parameter(self.request, super().create_url, 'content_type')
-
-    @property
-    def edit_url(self):
-        return append_query_parameter(self.request, super().edit_url, 'content_type')
-
-    @property
-    def delete_url(self):
-        return append_query_parameter(self.request, super().delete_url, 'content_type')
+def get_object_content_type_from_request(request: HttpRequest) -> ContentType | None:
+    content_type_id = request.GET.get('content_type')
+    if not content_type_id:
+        return None
+    if not content_type_id.isdigit():
+        raise Http404
+    return get_object_or_404(ContentType, pk=int(content_type_id), app_label='actions', model__in=OBJECT_MODELS_WITH_ATTRIBUTES)
 
 
-class AttributeTypeIndexView(IndexView):
-    page_title = _('Fields')
+def get_attribute_types_index_url(content_type: ContentType) -> str:
+    url = reverse('wagtailsnippets_actions_attributetype:list')
+    return f'{url}?content_type={content_type.pk}'
 
 
-class AttributeTypeCreateView(
-    ContentTypeQueryParameterMixin,
-    InitializeFormWithPlanMixin,
-    AplansCreateView,
-):
-    def get_object_content_type(self):
-        object_ct_id = self.request.GET.get('content_type')
-        if not object_ct_id:
-            return None
-        return ContentType.objects.get(pk=int(object_ct_id))
-
-    def get_page_subtitle(self):
-        content_type = self.get_object_content_type()
-        assert content_type is not None
-        model_name = content_type.model_class()._meta.verbose_name_plural
-        return _('Field for %s') % model_name
-
-    def get_instance(self):
-        """Create an attribute type instance and set its object content type to the one given in GET or POST data."""
-        instance = super().get_instance()
-        object_ct = self.get_object_content_type()
-        if object_ct is not None and not instance.pk:
-            assert not hasattr(instance, 'object_content_type')
-            assert not hasattr(instance, 'scope_content_type')
-            instance.object_content_type = object_ct
-            if (object_ct.app_label, object_ct.model) == ('actions', 'action'):
-                scope_ct_model = 'plan'
-            elif (object_ct.app_label, object_ct.model) == ('actions', 'category'):
-                scope_ct_model = 'categorytype'
-            elif (object_ct.app_label, object_ct.model) == ('actions', 'pledge'):
-                scope_ct_model = 'plan'
-            else:
-                raise Exception(f'Invalid content type {object_ct.app_label}.{object_ct.model}')
-            instance.scope_content_type = ContentType.objects.get(app_label='actions', model=scope_ct_model)
-
-        # If the instance is plan-specific, set plan to the active one just like we do in AplansCreateView for
-        # PlanRelatedModel instances. AttributeType cannot be a PlanRelatedModel because not all attribute types are
-        # plan-related.
-        if instance.scope_content_type.model == 'plan' and not instance.pk:
-            instance.scope_id = user_or_bust(self.request.user).get_active_admin_plan().pk
-
-        return instance
+def with_content_type(request: HttpRequest, url: str | None) -> str | None:
+    if url is None or '?' in url:
+        return url
+    return append_query_parameter(request, url, 'content_type')
 
 
-class AttributeTypeEditView(
-    ContentTypeQueryParameterMixin,
-    InitializeFormWithPlanMixin,
-    AplansEditView,
-):
-    def form_valid(self, form, *args, **kwargs):
-        response = super().form_valid(form, *args, **kwargs)
-        for formset in getattr(form, 'formsets', {}).values():
-            for archived in getattr(formset, 'archived_on_last_save', ()):
-                messages.warning(
-                    self.request,
-                    _(
-                        "Choice option '%(name)s' is still in use, so it was archived rather "
-                        'than deleted. Existing references continue to resolve; the option is '
-                        'hidden from new selections. Use the "Unarchive" button on the option to '
-                        'restore it.'
-                    )
-                    % {'name': archived.name},
-                )
-        return response
-
-
-class AttributeTypeDeleteView(ContentTypeQueryParameterMixin, DeleteView):
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['usage_info'] = _get_attribute_type_usage(self.instance)
-        return context
-
-    def get_template_names(self):
-        return ['aplans/attribute_type_delete.html']
-
-
-class AttributeTypeAdminButtonHelper(QueryParameterButtonHelper):
-    parameter_name = 'content_type'
-
-
-class AttributeTypeAdminMenuItem(ModelAdminMenuItem):
-    def is_shown(self, request):
-        # Hide it because we will have menu items for listing attribute types of specific content types.
-        # Note that we need to register AttributeTypeAdmin nonetheless, otherwise the URLs wouldn't be set up.
-        return False
+def scope_breadcrumbs_to_content_type(
+    items: Sequence[BreadcrumbItem], content_type: ContentType | None
+) -> Sequence[BreadcrumbItem]:
+    if content_type is None:
+        return items
+    index_url = reverse('wagtailsnippets_actions_attributetype:list')
+    type_url = get_attribute_types_index_url(content_type)
+    result: list[BreadcrumbItem] = [{**item, 'url': type_url} if item['url'] == index_url else item for item in items]
+    return result
 
 
 class AttributeTypeMenuItem(MenuItem):
     def __init__(self, content_type, **kwargs):
         self.content_type = content_type
-        self.base_url = reverse('actions_attributetype_modeladmin_index')
+        self.base_url = reverse('wagtailsnippets_actions_attributetype:list')
         url = f'{self.base_url}?content_type={content_type.id}'
         model_name = capfirst(content_type.model_class()._meta.verbose_name)
         label = _('Fields (%(model)s)') % {'model': model_name}
         super().__init__(label, url, **kwargs)
 
     def is_active(self, request):
-        _path, _ = self.url.split('?', maxsplit=1)
         content_type = request.GET.get('content_type')
         return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
 
@@ -697,7 +580,7 @@ def add_attribute_types_to_settings_menu(request, items: list):
             items.append(AttributeTypeMenuItem(pledge_ct, icon_name='kausal-attribute'))
 
 
-class AttributeTypeForm(AplansAdminModelForm):
+class AttributeTypeForm(AplansAdminModelForm[AttributeType]):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
@@ -727,151 +610,251 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
     pass
 
 
-class AttributeTypeEditHandler(AplansTabbedInterface):
+class AttributeTypeEditHandler(AplansTabbedInterface[AttributeType, AttributeTypeForm]):
     def get_form_options(self):
         options = super().get_form_options()
         options['formsets']['choice_options']['formset'] = ArchivableOrderedModelChildFormSet
         return options
 
 
-@modeladmin_register
-class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin[AttributeType]):
-    model = AttributeType
-    menu_icon = 'kausal-attribute'
-    menu_label = _('Fields')
-    menu_order = 510
-    list_display = ('name', 'format')
-    list_filter = (AttributeTypeFilter,)
+CHOICE_OPTION_PANELS: list[Panel[Any]] = [
+    FieldPanel('name'),
+]
 
+
+def get_attribute_type_panel(request: HttpRequest, instance: AttributeType) -> AttributeTypeEditHandler:
     choice_option_panels: list[Panel[Any]] = [
-        FieldPanel('name'),
+        ChoiceOptionArchivePanel(),
+        *insert_model_translation_panels(
+            AttributeTypeChoiceOption,
+            CHOICE_OPTION_PANELS,
+            request,
+            instance,
+        ),
     ]
 
+    if instance.pk is not None:
+        usage_by_option = _get_choice_option_usage(instance)
+        if usage_by_option:
+            choice_option_panels = [*choice_option_panels, ChoiceOptionUsagePanel(usage_by_option)]
+
+    creating = instance.pk is None
+    if not creating and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
+        format_field_panel = FieldPanel(
+            'format',
+            read_only=True,
+            help_text=_(
+                'This field already has values. If you want to change the format, you need to delete the existing values first.',
+            ),
+        )
+    else:
+        format_field_panel = FieldPanel('format')
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('help_text'),
+        FieldPanel('admin_help_text'),
+        FieldPanel('icon'),
+        format_field_panel,
+        FieldPanel('unit'),
+        FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
+        CondensedInlinePanel('choice_options', heading=_('Choice options'), panels=choice_option_panels),
+        FieldPanel('show_choice_names'),
+        FieldPanel('has_zero_option'),
+        FieldPanel('max_length'),
+        FieldPanel('instances_visible_for'),
+        FieldPanel('instances_editable_by'),
+        FieldPanel('show_in_reporting_tab'),
+    ]
+    panels = insert_model_translation_panels(AttributeType, panels, request, instance)
+    content_type = instance.object_content_type
+
+    base_form_class: type[AttributeTypeForm] = AttributeTypeForm  # For action attribute types, we use a special subclass
+    if (content_type.app_label, content_type.model) == ('actions', 'action'):
+        # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
+        # don't add a panel for choosing a plan.
+        base_form_class = ActionAttributeTypeForm
+        panels.append(FieldPanel('action_list_filter_section'))
+        panels.append(FieldPanel('action_detail_content_section'))
+    elif (content_type.app_label, content_type.model) == ('actions', 'category'):
+        panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_('Category type')))
+    elif (content_type.app_label, content_type.model) == ('actions', 'pledge'):
+        # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
+        # don't add a panel for choosing a plan.
+        # Remove show_in_reporting_tab since pledges are not used with reporting
+        panels = [p for p in panels if getattr(p, 'field_name', None) != 'show_in_reporting_tab']
+    else:
+        raise Exception(f'Invalid content type {content_type.app_label}.{content_type.model}')
+
+    tabs: list[Panel[Any]] = [ObjectList(panels, heading=_('General'))]
+    return AttributeTypeEditHandler(tabs, base_form_class=base_form_class).bind_to_model(AttributeType)
+
+
+class AttributeTypeIndexView(WatchIndexView[AttributeType]):
+    # The menu links to one object type's fields. Scoping the queryset instead of filtering keeps reordering available.
+    def get_base_queryset(self):
+        qs = super().get_base_queryset()
+        content_type = get_object_content_type_from_request(self.request)
+        if content_type is None:
+            return qs
+        return qs.filter(object_content_type=content_type)
+
+    def get_add_url(self):
+        # A field needs an object type, which only the menu item of each object type gives
+        if get_object_content_type_from_request(self.request) is None:
+            return None
+        return with_content_type(self.request, super().get_add_url())
+
+    def get_edit_url(self, instance: AttributeType):
+        return with_content_type(self.request, super().get_edit_url(instance))
+
+    def get_delete_url(self, instance: AttributeType):
+        return with_content_type(self.request, super().get_delete_url(instance))
+
+    @cached_property
+    def has_single_scope(self):
+        # Positions are only meaningful among the fields of one scope, such as one category type
+        if get_object_content_type_from_request(self.request) is None:
+            return False
+        return self.get_base_queryset().values('scope_content_type', 'scope_id').distinct().count() <= 1
+
+    @cached_property
+    def show_ordering_column(self):
+        return self.has_single_scope and super().show_ordering_column
+
+    @cached_property
+    def reorder_button(self):
+        # Wagtail's button would drop the object type from the URL
+        button = super().reorder_button
+        content_type = get_object_content_type_from_request(self.request)
+        if button is None or content_type is None or not self.has_single_scope:
+            return None
+        button.url = f'{get_attribute_types_index_url(content_type)}&ordering={self.sort_order_field}'
+        return button
+
+
+class AttributeTypeCreateView(PanelFormMixin, WatchCreateView[AttributeType]):
+    def get_panel(self):
+        content_type = get_object_content_type_from_request(self.request)
+        if content_type is None:
+            raise Http404
+        return get_attribute_type_panel(self.request, AttributeType(object_content_type=content_type))
+
+    def get_page_subtitle(self):
+        content_type = get_object_content_type_from_request(self.request)
+        assert content_type is not None
+        model = content_type.model_class()
+        assert model is not None
+        model_name = model._meta.verbose_name_plural
+        return _('Field for %s') % model_name
+
+    def initialize_instance(self, request, instance):
+        """Set the object content type to the one given in the GET data, and the scope to the active plan if plan-specific."""
+        super().initialize_instance(request, instance)
+        object_ct = get_object_content_type_from_request(request)
+        assert object_ct is not None
+        instance.object_content_type = object_ct
+        if object_ct.model == 'category':
+            scope_ct_model = 'categorytype'
+        else:
+            scope_ct_model = 'plan'
+        instance.scope_content_type = ContentType.objects.get(app_label='actions', model=scope_ct_model)
+        # AttributeType cannot use the plan defaults of PlanRelatedModel because not all attribute types are
+        # plan-related.
+        if scope_ct_model == 'plan':
+            instance.scope_id = user_or_bust(request.user).get_active_admin_plan().pk
+
+    def get_success_url(self):
+        if self.continue_editing_active():
+            return super().get_success_url()
+        assert self.object is not None
+        return get_attribute_types_index_url(self.object.object_content_type)
+
+    def get_breadcrumbs_items(self):
+        return scope_breadcrumbs_to_content_type(
+            super().get_breadcrumbs_items(), get_object_content_type_from_request(self.request)
+        )
+
+
+class AttributeTypeEditView(PanelFormMixin, WatchEditView[AttributeType]):
+    def get_panel(self):
+        return get_attribute_type_panel(self.request, self.object)
+
+    def form_valid(self, form, *args, **kwargs):
+        response = super().form_valid(form, *args, **kwargs)
+        for formset in getattr(form, 'formsets', {}).values():
+            for archived in getattr(formset, 'archived_on_last_save', ()):
+                messages.warning(
+                    self.request,
+                    _(
+                        "Choice option '%(name)s' is still in use, so it was archived rather "
+                        'than deleted. Existing references continue to resolve; the option is '
+                        'hidden from new selections. Use the "Unarchive" button on the option to '
+                        'restore it.'
+                    )
+                    % {'name': archived.name},
+                )
+        return response
+
+    def get_success_url(self):
+        if self.continue_editing_active():
+            return super().get_success_url()
+        return get_attribute_types_index_url(self.object.object_content_type)
+
+    def get_delete_url(self):
+        return with_content_type(self.request, super().get_delete_url())
+
+    def get_breadcrumbs_items(self):
+        return scope_breadcrumbs_to_content_type(super().get_breadcrumbs_items(), self.object.object_content_type)
+
+
+class AttributeTypeDeleteView(WatchDeleteView[AttributeType]):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['usage_info'] = _get_attribute_type_usage(self.object)
+        return context
+
+    def get_success_url(self):
+        return get_attribute_types_index_url(self.object.object_content_type)
+
+
+class AttributeTypeReorderView(snippet_views.ReorderView):  # type: ignore[name-defined]  # pyright: ignore[reportAttributeAccessIssue]
+    def get_attribute_type(self) -> AttributeType:
+        return get_object_or_404(AttributeType, pk=unquote(str(self.kwargs['pk'])))
+
+    def get_queryset(self):
+        # Each scope numbers its fields separately
+        return self.get_attribute_type().filter_siblings(super().get_queryset())
+
+    def post(self, request, *args, **kwargs):
+        if not self.permission_policy.user_has_permission_for_instance(request.user, 'change', self.get_attribute_type()):
+            raise PermissionDenied
+        return super().post(request, *args, **kwargs)
+
+
+class AttributeTypeViewSet(WatchViewSet[AttributeType]):
+    model = AttributeType
+    icon = 'kausal-attribute'
+    menu_label = _('Fields')
+    # The settings menu has one item per object type instead
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'actions/attributetype'
+    list_display = ['name', 'format']
+    ordering = 'order'
+    sort_order_field = 'order'
+    bulk_delete_enabled = False
     index_view_class = AttributeTypeIndexView
-    create_view_class = AttributeTypeCreateView
+    add_view_class = AttributeTypeCreateView
     edit_view_class = AttributeTypeEditView
     delete_view_class = AttributeTypeDeleteView
-    button_helper_class = AttributeTypeAdminButtonHelper
+    reorder_view_class = AttributeTypeReorderView
+    delete_template_name = 'aplans/attribute_type_delete.html'
 
-    def unarchive_choice_option_view(self, request, attribute_type_pk, option_pk):
-        if not self.permission_helper.user_can_edit_obj(
-            request.user,
-            get_object_or_404(AttributeType, pk=attribute_type_pk),
-        ):
-            raise PermissionDenied
-        option = get_object_or_404(
-            AttributeTypeChoiceOption,
-            pk=option_pk,
-            type_id=attribute_type_pk,
-        )
-        option.unarchive()
-        messages.success(request, _("Choice option '%s' has been restored.") % option.name)
-        return HttpResponseRedirect(self.url_helper.get_action_url('edit', attribute_type_pk))
+    edit_handler = ObjectList([FieldPanel('name')], base_form_class=AttributeTypeForm)
 
-    def get_admin_urls_for_registration(self):
-        urls = super().get_admin_urls_for_registration()
-        unarchive_url = path(
-            f'{self.opts.app_label}/{self.opts.model_name}/<int:attribute_type_pk>/unarchive-choice-option/<int:option_pk>/',
-            require_POST(self.unarchive_choice_option_view),
-            name=self.url_helper.get_action_url_name('unarchive_choice_option'),
-        )
-        return (*urls, unarchive_url)
-
-    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
-    # wagtailorderable hasn't accounted for this.
-    @display(ordering='order', description=_('Order'))
-    def index_order(self, obj):
-        return mark_safe(
-            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
-            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
-            '<use href="#icon-grip"></use>'
-            '</svg>'
-            '</div>',
-        )
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get_as_type(AttributeType)
-        choice_option_panels: list[Panel[Any]] = [
-            ChoiceOptionArchivePanel(),
-            *insert_model_translation_panels(
-                AttributeTypeChoiceOption,
-                self.choice_option_panels,
-                request,
-                instance,
-            ),
-        ]
-
-        if instance.pk is not None:
-            usage_by_option = _get_choice_option_usage(instance)
-            if usage_by_option:
-                choice_option_panels = [*choice_option_panels, ChoiceOptionUsagePanel(usage_by_option)]
-
-        creating = instance.pk is None
-        if not creating and instance and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
-            format_field_panel = FieldPanel(
-                'format',
-                read_only=True,
-                help_text=_(
-                    'This field already has values. If you want to change the format, you need to delete the existing '
-                    'values first.',
-                ),
-            )
-        else:
-            format_field_panel = FieldPanel('format')
-
-        panels = [
-            FieldPanel('name'),
-            FieldPanel('help_text'),
-            FieldPanel('admin_help_text'),
-            FieldPanel('icon'),
-            format_field_panel,
-            FieldPanel('unit'),
-            FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
-            CondensedInlinePanel('choice_options', heading=_('Choice options'), panels=choice_option_panels),
-            FieldPanel('show_choice_names'),
-            FieldPanel('has_zero_option'),
-            FieldPanel('max_length'),
-            FieldPanel('instances_visible_for'),
-            FieldPanel('instances_editable_by'),
-            FieldPanel('show_in_reporting_tab'),
-        ]
-        panels = insert_model_translation_panels(AttributeType, panels, request, instance)
-        if instance is None or instance.object_content_type_id is None:
-            content_type_id = request.GET['content_type']
-        else:
-            content_type_id = instance.object_content_type_id
-        content_type = ContentType.objects.get(pk=content_type_id)
-
-        base_form_class = AttributeTypeForm  # For action attribute types, we use a special subclass
-        if (content_type.app_label, content_type.model) == ('actions', 'action'):
-            # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
-            # don't add a panel for choosing a plan.
-            base_form_class = ActionAttributeTypeForm
-            panels.append(FieldPanel('action_list_filter_section'))
-            panels.append(FieldPanel('action_detail_content_section'))
-        elif (content_type.app_label, content_type.model) == ('actions', 'category'):
-            panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_('Category type')))
-        elif (content_type.app_label, content_type.model) == ('actions', 'pledge'):
-            # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
-            # don't add a panel for choosing a plan.
-            # Remove show_in_reporting_tab since pledges are not used with reporting
-            panels = [p for p in panels if getattr(p, 'field_name', None) != 'show_in_reporting_tab']
-        else:
-            raise Exception(f'Invalid content type {content_type.app_label}.{content_type.model}')
-
-        tabs = [ObjectList(panels, heading=_('General'))]
-
-        handler = AttributeTypeEditHandler(tabs, base_form_class=base_form_class)
-        return handler
-
-    def get_menu_item(self, order=None):
-        return AttributeTypeAdminMenuItem(self, order or self.get_menu_order())
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = user_or_bust(request.user)
-        plan = user.get_active_admin_plan()
+    def get_queryset(self, request: HttpRequest):
+        plan = user_or_bust(request.user).get_active_admin_plan()
         action_ct = ContentType.objects.get(app_label='actions', model='action')
         category_ct = ContentType.objects.get(app_label='actions', model='category')
         pledge_ct = ContentType.objects.get(app_label='actions', model='pledge')
@@ -889,4 +872,26 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin[AttributeType]):
         q = actions_q | categories_q
         if plan.features.enable_community_engagement:
             q |= pledges_q
-        return qs.filter(q)
+        return AttributeType.objects.filter(q)
+
+    def unarchive_choice_option_view(self, request, attribute_type_pk, option_pk):
+        attribute_type = get_object_or_404(AttributeType, pk=attribute_type_pk)
+        if not self.permission_policy.user_has_permission_for_instance(request.user, 'change', attribute_type):
+            raise PermissionDenied
+        option = get_object_or_404(AttributeTypeChoiceOption, pk=option_pk, type=attribute_type)
+        option.unarchive()
+        messages.success(request, _("Choice option '%s' has been restored.") % option.name)
+        return HttpResponseRedirect(reverse(self.get_url_name('edit'), args=[quote(attribute_type.pk)]))
+
+    def get_urlpatterns(self):
+        return [
+            *super().get_urlpatterns(),
+            path(
+                '<int:attribute_type_pk>/unarchive-choice-option/<int:option_pk>/',
+                require_POST(self.unarchive_choice_option_view),
+                name='unarchive_choice_option',
+            ),
+        ]
+
+
+register_snippet(AttributeTypeViewSet)

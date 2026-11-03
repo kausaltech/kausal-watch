@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.attributes import AttributeFieldPanel, AttributeType as AttributeTypeWrapper, DraftAttributes
+    from admin_site.permissions import PlanRelatedPermissionPolicy
     from images.models import AplansImage
     from users.models import User
 
@@ -215,6 +216,12 @@ class AttributeType(  # type: ignore[django-manager-missing]
         verbose_name = _('field')
         verbose_name_plural = _('fields')
         ordering = ('scope_content_type', 'scope_id', 'order')
+
+    @classmethod
+    def permission_policy(cls) -> PlanRelatedPermissionPolicy:
+        from admin_site.permissions import PlanRelatedPermissionPolicy
+
+        return PlanRelatedPermissionPolicy(cls)
 
     def clean(self):
         from actions.models.action import Action

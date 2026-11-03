@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 
 import pytest
 
-from actions.models import Action, AttributeType, AttributeTypeChoiceOption, Category, Pledge
+from actions.models import Action, AttributeType, AttributeTypeChoiceOption, Category, Plan, Pledge
 from actions.tests.factories import (
     ActionFactory,
     AttributeChoiceFactory,
@@ -317,3 +317,79 @@ def test_choice_options_keep_their_order(admin_client, plan_with_pages):
         .values_list('name', flat=True)
     )
     assert names == [second.name, first.name]
+
+
+def _move_to(client, attribute_type: AttributeType, position: int):
+    return client.post(f'{TYPES_PATH}reorder/{attribute_type.pk}/?position={position}')
+
+
+def _orders(attribute_type: AttributeType) -> list[int]:
+    return list(attribute_type.filter_siblings(AttributeType.objects.order_by('order')).values_list('pk', flat=True))
+
+
+def test_reordering_stays_within_scope(admin_client, plan_with_pages, category_type):
+    first, second, third = (_action_type(plan_with_pages) for _ in range(3))
+    others = [AttributeTypeFactory.create(scope=category_type) for _ in range(3)]
+    assert _move_to(admin_client, first, 1).status_code == 200
+    assert _orders(first) == [second.pk, first.pk, third.pk]
+    assert _orders(others[0]) == [o.pk for o in others]
+
+
+def test_other_plan_type_cannot_be_reordered(admin_client):
+    plan = PlanFactory.create()
+    first, second = _action_type(plan), _action_type(plan)
+    _move_to(admin_client, first, 1)
+    assert _orders(first) == [first.pk, second.pk]
+
+
+def test_reordering_is_offered_only_within_one_scope(admin_client, plan_with_pages, action_ct, category_ct, category_type):
+    _action_type(plan_with_pages)
+    AttributeTypeFactory.create(scope=category_type)
+    assert 'data-w-orderable' in admin_client.get(_list_path(action_ct)).content.decode()
+    assert 'data-w-orderable' in admin_client.get(_list_path(category_ct)).content.decode()
+    assert 'data-w-orderable' not in admin_client.get(TYPES_PATH).content.decode()
+    AttributeTypeFactory.create(scope=CategoryTypeFactory.create(plan=plan_with_pages, common=None))
+    content = admin_client.get(_list_path(category_ct)).content.decode()
+    assert 'data-w-orderable' not in content
+    assert 'ordering=order' not in content
+
+
+def test_sort_item_order_keeps_the_object_type(admin_client, plan_with_pages, action_ct):
+    _action_type(plan_with_pages)
+    content = admin_client.get(f'{_list_path(action_ct)}&ordering=name').content.decode()
+    assert html.escape(f'{_list_path(action_ct)}&ordering=order') in content
+
+
+def test_listing_without_object_type_offers_no_add(admin_client, plan_with_pages):
+    _action_type(plan_with_pages)
+    content = admin_client.get(TYPES_PATH).content.decode()
+    assert re.search(rf'href="{TYPES_PATH}(create|add)/', content) is None
+    assert admin_client.get(f'{TYPES_PATH}add/').status_code == 404
+
+
+def test_unknown_object_type_is_not_found(admin_client):
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    for type_id in ('999999', 'abc', str(plan_ct.pk)):
+        for path in (TYPES_PATH, f'{TYPES_PATH}add/'):
+            assert admin_client.get(f'{path}?content_type={type_id}').status_code == 404, (path, type_id)
+
+
+def test_breadcrumbs_link_back_to_the_object_type(admin_client, plan_with_pages, action_ct):
+    attribute_type = _action_type(plan_with_pages)
+    type_link = f'href="{html.escape(_list_path(action_ct))}"'
+    for path in (f'{TYPES_PATH}edit/{attribute_type.pk}/', f'{TYPES_PATH}add/?content_type={action_ct.pk}'):
+        assert type_link in admin_client.get(path).content.decode(), path
+
+
+def test_delete_page_warns_about_usage(admin_client, plan_with_pages):
+    attribute_type = _action_type(plan_with_pages, format=AttributeType.AttributeFormat.TEXT)
+    AttributeTextFactory.create(type=attribute_type, content_object=ActionFactory.create(plan=plan_with_pages))
+    content = admin_client.get(f'{TYPES_PATH}delete/{attribute_type.pk}/').content.decode()
+    assert 'This field is currently in use.' in content
+    assert f'action="{TYPES_PATH}delete/{attribute_type.pk}/"' in content
+
+
+def test_bulk_delete_is_not_available(admin_client, plan_with_pages):
+    attribute_type = _action_type(plan_with_pages)
+    admin_client.post(f'/admin/bulk/actions/attributetype/delete/?id={attribute_type.pk}')
+    assert AttributeType.objects.filter(pk=attribute_type.pk).exists()

@@ -15,8 +15,8 @@ import pytest
 from pytest_django.asserts import assertContains, assertNotContains
 
 from actions.action_admin import ActionAdmin
-from actions.attribute_type_admin import AttributeTypeAdmin
-from actions.models import AttributeType, Plan
+from actions.attribute_type_admin import AttributeTypeViewSet
+from actions.models import Plan
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
 from actions.tests.factories import (
     ActionFactory,
@@ -816,7 +816,7 @@ def test_action_admin(
 
 
 class TestAttributeTypeAdminQueryset:
-    """Tests for AttributeTypeAdmin.get_queryset filtering based on community engagement feature."""
+    """Tests for AttributeTypeViewSet.get_queryset filtering based on community engagement feature."""
 
     @pytest.fixture
     def action_attribute_type(self, plan):
@@ -868,11 +868,10 @@ class TestAttributeTypeAdminQueryset:
         plan.features.enable_community_engagement = False
         plan.features.save()
 
-        admin = AttributeTypeAdmin()
         request = rf.get('/admin/')
         request.user = plan_admin_user
 
-        qs = admin.get_queryset(request)
+        qs = AttributeTypeViewSet().get_queryset(request)
 
         assert action_attribute_type in qs
         assert category_attribute_type in qs
@@ -891,88 +890,14 @@ class TestAttributeTypeAdminQueryset:
         plan.features.enable_community_engagement = True
         plan.features.save()
 
-        admin = AttributeTypeAdmin()
         request = rf.get('/admin/')
         request.user = plan_admin_user
 
-        qs = admin.get_queryset(request)
+        qs = AttributeTypeViewSet().get_queryset(request)
 
         assert action_attribute_type in qs
         assert category_attribute_type in qs
         assert pledge_attribute_type in qs
-
-
-class TestAttributeTypeAdminButtonHelper:
-    """Tests for AttributeTypeAdminButtonHelper preserving content_type parameter."""
-
-    @pytest.fixture
-    def attribute_type(self, plan):
-        """Create an attribute type for testing."""
-        action_ct = ContentType.objects.get(app_label='actions', model='action')
-        plan_ct = ContentType.objects.get(app_label='actions', model='plan')
-        return AttributeTypeFactory.create(
-            object_content_type=action_ct,
-            scope_content_type=plan_ct,
-            scope_id=plan.id,
-            name='Test Attribute',
-        )
-
-    def test_add_button_shown_with_content_type_parameter(self, rf, plan, plan_admin_user, attribute_type):
-        """Add button should be shown when content_type parameter is present."""
-        from actions.attribute_type_admin import AttributeTypeAdmin, AttributeTypeAdminButtonHelper
-
-        admin = AttributeTypeAdmin()
-        request = rf.get(f'/admin/?content_type={attribute_type.object_content_type.id}')
-        request.user = plan_admin_user
-
-        view = Mock()
-        view.model = admin.model
-        view.url_helper = Mock()
-        view.url_helper.create_url = '/admin/create/'
-        view.permission_helper = Mock()
-
-        helper = AttributeTypeAdminButtonHelper(view, request)
-        result = helper.add_button()
-
-        assert result is not None
-        assert f'content_type={attribute_type.object_content_type.id}' in result['url']
-
-    def test_add_button_hidden_without_content_type_parameter(self, rf, plan, plan_admin_user):
-        """Add button should be hidden when content_type parameter is missing."""
-        from actions.attribute_type_admin import AttributeTypeAdmin, AttributeTypeAdminButtonHelper
-
-        admin = AttributeTypeAdmin()
-        request = rf.get('/admin/')
-        request.user = plan_admin_user
-
-        view = Mock()
-        view.model = admin.model
-        view.url_helper = Mock()
-        view.permission_helper = Mock()
-
-        helper = AttributeTypeAdminButtonHelper(view, request)
-        result = helper.add_button()
-
-        assert result is None
-
-    def test_edit_button_preserves_content_type_parameter(self, rf, plan, plan_admin_user, attribute_type):
-        """Edit button should preserve content_type parameter in URL."""
-        from actions.attribute_type_admin import AttributeTypeAdminButtonHelper
-
-        request = rf.get(f'/admin/?content_type={attribute_type.object_content_type.id}')
-        request.user = plan_admin_user
-
-        view = Mock()
-        view.model = AttributeType._meta.model
-        view.url_helper = Mock()
-        view.url_helper.get_action_url = Mock(side_effect=lambda action, pk: f'/admin/{action}/{pk}/')
-        view.permission_helper = Mock()
-
-        helper = AttributeTypeAdminButtonHelper(view, request)
-        result = helper.edit_button(pk=attribute_type.id)
-
-        assert result is not None
-        assert f'content_type={attribute_type.object_content_type.id}' in result['url']
 
 
 def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, client):
