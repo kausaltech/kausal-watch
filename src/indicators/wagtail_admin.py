@@ -548,15 +548,20 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
             )
         return organization
 
-    def clean(self):
+    def _post_clean(self) -> None:
+        # Django runs the model's validation here, after clean(). Indicator.clean() has to check the grouping dimension
+        # against the dimensions the formset is about to save, not the ones currently in the database.
         pending_dimension_ids = self.get_dimension_ids_from_formset()
         if pending_dimension_ids is not None:
             self.instance._pending_dimension_ids = pending_dimension_ids
         try:
-            super().clean()
+            super()._post_clean()
         finally:
             if hasattr(self.instance, '_pending_dimension_ids'):
                 del self.instance._pending_dimension_ids
+
+    def clean(self):
+        super().clean()
 
         common = self.cleaned_data.get('common')
         # Dimensions cannot be accessed from self.instance.dimensions yet
