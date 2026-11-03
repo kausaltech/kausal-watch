@@ -26,6 +26,7 @@ from wagtail.admin.panels import (
     ObjectList,
     TabbedInterface,
 )
+from wagtail.admin.ui.tables import Column
 from wagtail.snippets.models import register_snippet
 
 from dal import autocomplete, forward as dal_forward
@@ -50,6 +51,7 @@ from aplans.context_vars import ctx_instance, ctx_request, get_admin_cache
 from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields
 
+from actions.category_admin import PanelFormMixin
 from actions.models.plan import Plan
 from admin_site.field_customization import register_customizable_fields
 from admin_site.utils import admin_req
@@ -1297,6 +1299,10 @@ class IndicatorAdmin(AplansModelAdmin[Indicator]):
 
 
 class CommonIndicatorForm(AplansAdminModelForm[CommonIndicator]):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         if self.instance.pk and 'dimensions' in self.formsets:
             # Dimensions cannot be accessed from self.instance.dimensions yet
@@ -1309,74 +1315,94 @@ class CommonIndicatorForm(AplansAdminModelForm[CommonIndicator]):
         return super().clean()
 
 
-class CommonIndicatorAdmin(AplansModelAdmin[CommonIndicator]):
-    model = CommonIndicator
-    menu_icon = 'kausal-indicator'  # FIXME
-    menu_label = _('Common indicators')
-    list_display = ('name', 'unit_display', 'quantity')
-    search_fields = ('name',)
+COMMON_INDICATOR_BASIC_PANELS: list[Panel[Any]] = [
+    FieldPanel('identifier'),
+    FieldPanel('name'),
+    FieldPanel('description'),
+]
 
-    basic_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('name'),
-        FieldPanel('description'),
-    ]
 
-    @admin.display(description=_('Unit'))
-    def unit_display(self, obj):
-        unit = obj.unit
-        if not unit:
-            return ''
-        return unit.short_name or unit.name
+def get_common_indicator_panel(instance: CommonIndicator) -> ObjectList[CommonIndicator, CommonIndicatorForm]:
+    basic_panels = list(COMMON_INDICATOR_BASIC_PANELS)
 
-    def get_edit_handler(self):
-        instance = ctx_instance.get_as_type(CommonIndicator)  # FIXME: Fails when creating a new common indicator
-        basic_panels: list[Panel[Any]] = list(self.basic_panels)
-
-        # Some fields should only be editable if no indicator is linked to the common indicator
-        if not instance.pk or not instance.indicators.exists():
-            basic_panels.insert(1, FieldPanel('quantity'))
-            basic_panels.insert(2, FieldPanel('unit'))
-            basic_panels.append(
-                CondensedInlinePanel(
-                    'dimensions',
-                    panels=[
-                        FieldPanel('dimension'),
-                    ],
-                    heading=_('Dimensions'),
-                )
+    # Some fields should only be editable if no indicator is linked to the common indicator
+    if not instance.pk or not instance.indicators.exists():
+        basic_panels.insert(1, FieldPanel('quantity'))
+        basic_panels.insert(2, FieldPanel('unit'))
+        basic_panels.append(
+            CondensedInlinePanel(
+                'dimensions',
+                panels=[
+                    FieldPanel('dimension'),
+                ],
+                heading=_('Dimensions'),
             )
-        else:
-            dimensions_str: str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
-            if not dimensions_str:
-                dimensions_str = str(_('none'))
-            info_text = _(
-                'This common indicator has indicators linked to it, so quantity, unit and dimensions cannot '
-                'be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s'
-            ) % {
-                'quantity': instance.quantity,
-                'unit': instance.unit,
-                'dimensions': dimensions_str,
-            }
-            basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
+        )
+    else:
+        dimensions_str: str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
+        if not dimensions_str:
+            dimensions_str = str(_('none'))
+        info_text = _(
+            'This common indicator has indicators linked to it, so quantity, unit and dimensions cannot '
+            'be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s'
+        ) % {
+            'quantity': instance.quantity,
+            'unit': instance.unit,
+            'dimensions': dimensions_str,
+        }
+        basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
-        handler = ObjectList[CommonIndicator, CommonIndicatorForm](basic_panels)
-        handler.base_form_class = CommonIndicatorForm
-        return handler
+    return ObjectList[CommonIndicator, CommonIndicatorForm](basic_panels, base_form_class=CommonIndicatorForm).bind_to_model(
+        CommonIndicator
+    )
+
+
+def get_unit_display(obj: CommonIndicator) -> str:
+    unit = obj.unit
+    if not unit:
+        return ''
+    return unit.short_name or unit.name
+
+
+class CommonIndicatorCreateView(PanelFormMixin, WatchCreateView[CommonIndicator]):
+    def get_panel(self):
+        return get_common_indicator_panel(CommonIndicator())
+
+
+class CommonIndicatorEditView(PanelFormMixin, WatchEditView[CommonIndicator]):
+    def get_panel(self):
+        return get_common_indicator_panel(self.object)
+
+
+class CommonIndicatorViewSet(WatchViewSet[CommonIndicator]):
+    model = CommonIndicator
+    icon = 'kausal-indicator'  # FIXME
+    menu_label = _('Common indicators')
+    # The "Indicators" menu adds the menu item
+    add_to_admin_menu = False
+    menu_item_is_registered = True
+    url_prefix = 'indicators/commonindicator'
+    list_display = ['name', Column('unit', label=_('Unit'), accessor=get_unit_display), 'quantity']
+    search_fields = ['name']
+    bulk_delete_enabled = False
+    add_view_class = CommonIndicatorCreateView
+    edit_view_class = CommonIndicatorEditView
+
+    edit_handler = ObjectList(COMMON_INDICATOR_BASIC_PANELS, base_form_class=CommonIndicatorForm)
+
+
+register_snippet(CommonIndicatorViewSet)
 
 
 class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'kausal-indicator'
     menu_order = 20
-    items: tuple[type[AplansModelAdmin[Any]], ...] = (
-        IndicatorAdmin,
-        CommonIndicatorAdmin,
-    )
+    items: tuple[type[AplansModelAdmin[Any]], ...] = (IndicatorAdmin,)
 
     def get_submenu_items(self):
         menu_items = super().get_submenu_items()
-        for model in (Dimension, Unit, Quantity):
+        for model in (CommonIndicator, Dimension, Unit, Quantity):
             viewset = model.snippet_viewset  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
             menu_items.append(viewset.get_menu_item(order=len(menu_items) + 1))
         return menu_items

@@ -141,3 +141,16 @@ def test_deleting_common_indicator(superuser_client):
     assert response.status_code == 302
     assert response['Location'] == COMMON_INDICATORS_PATH
     assert not CommonIndicator.objects.filter(pk=common_indicator.pk).exists()
+
+
+def test_common_indicator_in_use_is_not_deleted(superuser_client):
+    common_indicator = CommonIndicatorFactory.create()
+    IndicatorFactory.create(common=common_indicator, quantity=common_indicator.quantity, unit=common_indicator.unit)
+    superuser_client.post(f'{COMMON_INDICATORS_PATH}delete/{common_indicator.pk}/')
+    assert CommonIndicator.objects.filter(pk=common_indicator.pk).exists()
+
+
+def test_bulk_delete_is_not_available(superuser_client):
+    common_indicator = CommonIndicatorFactory.create()
+    superuser_client.post(f'/admin/bulk/indicators/commonindicator/delete/?id={common_indicator.pk}')
+    assert CommonIndicator.objects.filter(pk=common_indicator.pk).exists()
