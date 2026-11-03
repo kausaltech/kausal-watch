@@ -702,6 +702,12 @@ class AttributeTypeForm(AplansAdminModelForm):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
 
+    def save(self, commit=True):
+        for formset in self.formsets.values():
+            if isinstance(formset, ArchivableOrderedModelChildFormSet):
+                formset.commit_archives = commit
+        return super().save(commit=commit)
+
     def clean_attribute_category_type(self):
         attribute_category_type = self.cleaned_data['attribute_category_type']
         format = self.cleaned_data.get('format')  # avoid blowing up if None (will fail validation elsewhere)
