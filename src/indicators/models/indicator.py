@@ -63,6 +63,7 @@ if typing.TYPE_CHECKING:
     from indicators.models.metadata import Unit
     from indicators.models.relationships import RelatedIndicator
     from indicators.models.values import IndicatorGoal
+    from indicators.permission_policy import IndicatorPermissionPolicy
     from paths_integration.__generated__.graphql_client.node_values import NodeValuesNodeMetricDim
     from people.models import Person
     from users.models import User
@@ -533,6 +534,12 @@ class Indicator(
         unique_together = (('common', 'organization'),)
         ordering = ('-updated_at',)
 
+    @classmethod
+    def permission_policy(cls) -> IndicatorPermissionPolicy:
+        from indicators.permission_policy import IndicatorPermissionPolicy
+
+        return IndicatorPermissionPolicy()
+
     def handle_admin_save(self, context: AdminSaveContext):
         for rel_action in self.related_actions.get_queryset().all():
             rel_action.action.recalculate_status()
@@ -637,7 +644,7 @@ class Indicator(
 
         if 'kausal_watch_extensions' in settings.INSTALLED_APPS:
             edit_values_url = settings.ADMIN_BASE_URL + reverse(
-                'indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id)
+                'indicators_indicator_edit_values', kwargs=dict(instance_pk=self.id)
             )
         else:
             edit_values_url = None

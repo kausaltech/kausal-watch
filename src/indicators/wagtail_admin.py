@@ -3,20 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
-from django.contrib import admin, messages
-from django.contrib.admin import SimpleListFilter
+from django.contrib import messages
+from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models import prefetch_related_objects
 from django.forms import inlineformset_factory
 from django.http import HttpResponseRedirect, QueryDict
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.functional import lazy
+from django.utils.functional import cached_property, lazy
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, ngettext_lazy, pgettext_lazy
 from wagtail import hooks
+from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import (
     FieldPanel,
     FieldRowPanel,
@@ -26,15 +28,16 @@ from wagtail.admin.panels import (
     ObjectList,
     TabbedInterface,
 )
-from wagtail.admin.ui.tables import Column
+from wagtail.admin.ui.tables import BooleanColumn, Column
+from wagtail.admin.widgets.button import Button
 from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
+import django_filters
 from dal import autocomplete, forward as dal_forward
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail_color_panel.edit_handlers import NativeColorPanel
-from wagtail_modeladmin.helpers.permission import PermissionHelper
-from wagtail_modeladmin.options import ModelAdminGroup
 
 from kausal_common.datasets.models import (
     DataPoint,
@@ -48,10 +51,9 @@ from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request, get_admin_cache
-from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields
 
-from actions.category_admin import PanelFormMixin
+from actions.category_admin import InitialPlanFormMixin, PanelFormMixin
 from actions.models.plan import Plan
 from admin_site.field_customization import register_customizable_fields
 from admin_site.utils import admin_req
@@ -60,20 +62,16 @@ from admin_site.viewsets import (
     WatchCreateView,
     WatchDeleteView,
     WatchEditView,
+    WatchIndexView,
     WatchViewSet,
 )
 from admin_site.wagtail import (
     AplansAdminModelForm,
-    AplansCreateView,
-    AplansEditView,
-    AplansIndexView,
-    AplansModelAdmin,
     AplansTabbedInterface,
     BuiltInFieldCustomizationAwareEditHandlerMixin,
     CondensedInlinePanel,
     CustomizableBuiltInFieldPanel,
-    InitializeFormWithInitialPlanMixin,
-    InitializeFormWithPlanMixin,
+    get_dataset_listing_buttons,
     get_default_language_tab_heading,
     get_translation_tabs,
 )
@@ -81,6 +79,7 @@ from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.normalization import get_normalization_warnings
 from indicators.panels import IndicatorMetricsInlinePanel
 from indicators.permission_policy import DimensionPermissionPolicy
+from orgs.models import Organization
 
 from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, PlanDimension, Quantity, Unit
 from .models.goal_data_point import IndicatorGoalDataPoint
@@ -93,8 +92,6 @@ if TYPE_CHECKING:
     from wagtail.admin.panels.base import Panel
 
     from users.models import User
-
-    from .models.indicator import IndicatorQuerySet
 
 
 class UnitSuffixWidget(autocomplete.ListSelect2):
@@ -175,6 +172,13 @@ class FactorForm(forms.ModelForm[DatasetMetric]):
             if comp:
                 self.fields['result_label'].initial = comp.target_metric.label
 
+    # Wagtail's edit action calls these on the forms of all formsets of the indicator form
+    def defer_required_fields(self):
+        pass
+
+    def restore_required_fields(self):
+        pass
+
     def save(self, commit=True):
         # Append "/{indicator_unit}" to form the compound factor unit before saving
         numerator = self.cleaned_data.get('unit', '').strip()
@@ -216,100 +220,6 @@ def _make_factor_formset(  # noqa: ANN202
     if schema is not None:
         formset.queryset = formset.queryset.filter(computed_by__isnull=True)  # type: ignore[union-attr]
     return formset
-
-
-class DisconnectedIndicatorFilter(SimpleListFilter):
-    title = _('Show indicators')
-    parameter_name = 'disconnected'
-
-    def lookups(self, request, model_admin):
-        return (
-            (None, _('in active plan')),
-            ('2', _('not in active plan')),
-            ('1', _('all')),
-        )
-
-    def queryset(self, request, queryset):
-        plan = admin_req(request).user.get_active_admin_plan()
-        if self.value() == '1':
-            pass
-        elif self.value() == '2':
-            queryset = queryset.exclude(id__in=IndicatorLevel.objects.filter(plan=plan).values_list('indicator_id'))
-        else:
-            queryset = queryset.filter(levels__plan=plan)
-        return queryset
-
-    def choices(self, changelist):
-        assert self.parameter_name is not None
-        for lookup, title in self.lookup_choices:
-            lookup_value = str(lookup) if lookup is not None else None
-            yield {
-                'selected': self.value() == lookup_value,
-                'query_string': changelist.get_query_string({self.parameter_name: lookup_value}),
-                'display': title,
-            }
-
-
-class IndicatorPermissionHelper(PermissionHelper[Indicator]):
-    def user_can_inspect_obj(self, user: User, obj: Indicator) -> bool:
-        if not super().user_can_inspect_obj(user, obj):
-            return False
-
-        # The user has view permission to all actions if he is either
-        # a general admin for actions or a contact person for any
-        # actions.
-        if user.is_superuser:
-            return True
-
-        adminable_plans = user.get_adminable_plans()
-        obj_plans = obj.plans.all()
-        return any(plan in obj_plans for plan in adminable_plans)
-
-    def _get_plan_of_edit(self, user: User) -> Plan:
-        """
-        Return the plan whose rights decide about editing an indicator.
-
-        Editing writes the indicator level of one plan, which is the active one unless the user
-        switched plans while the form was open: IndicatorForm.save() then keeps writing for the plan
-        the form was opened with, and the rights have to be checked for that same plan.
-        """
-        active_plan = user.get_active_admin_plan()
-        if not ctx_request.is_set():
-            return active_plan
-        request = ctx_request.get()
-        if request.method != 'POST':
-            return active_plan
-        initial_plan_id = request.session.get('initial_plan_id')
-        if not initial_plan_id or str(initial_plan_id) == str(active_plan.id):
-            return active_plan
-        return Plan.objects.filter(id=initial_plan_id).first() or active_plan
-
-    def user_can_edit_obj(self, user: User, obj: Indicator):
-        if not super().user_can_edit_obj(user, obj):
-            return False
-        # Editing an indicator here writes an indicator level (see IndicatorForm._save_m2m), so the
-        # rights of the plan that the level belongs to decide it.
-        return user.can_modify_indicator(obj, plan=self._get_plan_of_edit(user))
-
-    def user_can_delete_obj(self, user: User, obj: Indicator):
-        if not super().user_can_delete_obj(user, obj):
-            return False
-
-        obj_plans = obj.plans.all()
-        admin_for_all = all(user.is_general_admin_for_plan(plan) for plan in obj_plans)
-        if not admin_for_all:
-            return False
-
-        return True
-
-    def user_can_create(self, user):
-        if not super().user_can_create(user):
-            return False
-
-        plan = user.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
-            return True
-        return False
 
 
 class QuantityChooserViewSet(ModelChooserViewSet[Quantity]):
@@ -408,9 +318,6 @@ class DimensionViewSet(WatchViewSet[Dimension]):
         return Dimension.objects.filter(plans__plan=plan)
 
 
-register_snippet(DimensionViewSet)
-
-
 def get_shared_lookup_table_edit_handler[M: Quantity | Unit](
     model: type[M], panels: Sequence[Panel[Any, Any]], base_form_class: type[AplansAdminModelForm[M]]
 ) -> TabbedInterface[M, AplansAdminModelForm[M]]:
@@ -450,9 +357,6 @@ class QuantityViewSet(WatchViewSet[Quantity]):
         return Quantity.objects.order_by('name_i18n')
 
 
-register_snippet(QuantityViewSet)
-
-
 class UnitForm(AplansAdminModelForm[Unit]):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
@@ -478,9 +382,6 @@ class UnitViewSet(WatchViewSet[Unit]):
 
     def get_edit_handler(self):
         return get_shared_lookup_table_edit_handler(Unit, self.panels, UnitForm)
-
-
-register_snippet(UnitViewSet)
 
 
 class IndicatorForm(AplansAdminModelForm[Indicator]):
@@ -838,42 +739,441 @@ class IndicatorForm(AplansAdminModelForm[Indicator]):
         return super()._save_m2m()
 
 
-class IndicatorAdminOrganizationFilter(SimpleListFilter):
-    title = _('Organization')
-    parameter_name = 'organization'
+def get_unit_display(obj: Indicator | CommonIndicator) -> str:
+    unit = obj.unit
+    if not unit:
+        return ''
+    return unit.short_name or unit.name
 
-    def lookups(self, request: HttpRequest, model_admin):
+
+class IndicatorFilterSet(WagtailFilterSet):
+    disconnected = django_filters.ChoiceFilter(
+        label=_('Show indicators'),
+        choices=(('2', _('not in active plan')), ('1', _('all'))),
+        empty_label=_('in active plan'),
+        method='filter_disconnected',
+    )
+    organization = django_filters.ModelChoiceFilter(label=_('Organization'), queryset=Organization.objects.none())
+
+    class Meta:
+        model = Indicator
+        fields: list[str] = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not user_or_bust(self.request.user).is_superuser:
+            del self.filters['organization']
+            return
         # Only show organizations that have indicators and are related to the current plan
         orgs_with_indicators = Indicator.objects.values_list('organization')
-        plan = get_admin_cache(request).plan
-        filtered_orgs = plan.related_organizations.filter(id__in=orgs_with_indicators)
-        return [(org.id, org.name) for org in filtered_orgs]
+        plan = get_admin_cache(self.request).plan
+        organization_filter = cast('django_filters.ModelChoiceFilter', self.filters['organization'])
+        organization_filter.queryset = plan.related_organizations.filter(id__in=orgs_with_indicators)
 
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(organization=self.value())
-        return queryset
+    def filter_disconnected(self, queryset, name, value):
+        # Showing the indicators of the active plan is the default, which the index view applies
+        if value != '2':
+            return queryset
+        plan = admin_req(self.request).user.get_active_admin_plan()
+        return queryset.exclude(id__in=IndicatorLevel.objects.filter(plan=plan).values_list('indicator_id'))
 
 
-class IndicatorCreateView(
-    InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansCreateView[Indicator]
+class IndicatorInstanceContextMixin:
+    """Make the indicator available as `ctx_instance`, which the edit handler needs for building the form class."""
+
+    def get_context_instance(self) -> Indicator:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        with ctx_instance.activate(self.get_context_instance()):
+            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class IndicatorEditHandler(
+    BuiltInFieldCustomizationAwareEditHandlerMixin[Indicator, IndicatorForm], AplansTabbedInterface[Indicator, IndicatorForm]
 ):
+    def get_form_class(self):
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(Indicator)
+        plan = request.get_active_admin_plan()
+        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+
+        self.base_form_class = type(
+            'IndicatorForm',
+            (IndicatorForm,),
+            {**cat_fields},
+        )
+
+        form_class = super().get_form_class()
+
+        return form_class
+
+
+def _get_normalization_warning_panels(instance: Indicator, user: User, plan: Plan) -> list[Panel]:
+    panels: list[Panel] = []
+    for warning in get_normalization_warnings(instance, user, plan):
+        link = ''
+        if warning.normalizer_url is not None:
+            link = format_html(' <a href="{}">{}</a>', warning.normalizer_url, warning.normalizer_link_text)
+        panels.append(HelpPanel(format_html('<p class="help-block help-warning">{}{}</p>', warning.message, link)))
+    return panels
+
+
+def _get_basic_information_tab(instance: Indicator, request) -> ObjectList:
+    """Get basic information tab for edit view."""
+    panels: list[Panel] = []
+    plan = request.user.get_active_admin_plan()
+    is_general_admin = request.user.is_general_admin_for_plan(plan)
+    is_linked_to_common_indicator = bool(instance and instance.common)
+    dimensions_str: str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
+    if not dimensions_str:
+        dimensions_str = str(_('none'))
+
+    if instance and instance.pk:
+        panels.extend(_get_normalization_warning_panels(instance, request.user, plan))
+
+    # Basic panels
+    indicator_settings_panels: list[Panel] = [
+        CustomizableBuiltInFieldPanel('name'),
+        CustomizableBuiltInFieldPanel('time_resolution'),
+        CustomizableBuiltInFieldPanel('level'),
+    ]
+    if is_linked_to_common_indicator:
+        info_text = _(
+            'This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. '
+            'Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s',
+        ) % {
+            'quantity': instance.quantity,
+            'unit': instance.unit,
+            'dimensions': dimensions_str,
+        }
+        indicator_settings_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
+    else:
+        quantity_panel = FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete'))
+        unit_panel = FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete'))
+        indicator_settings_panels.insert(1, quantity_panel)
+        indicator_settings_panels.insert(2, unit_panel)
+        if is_general_admin:
+            indicator_settings_panels.insert(4, CustomizableBuiltInFieldPanel('visibility'))
+    panels.append(
+        MultiFieldPanel(
+            indicator_settings_panels,
+            heading=_('Indicator settings'),
+        ),
+    )
+
+    # Categories
+    category_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+    category_panels = [FieldPanel(key, heading=field.label) for key, field in category_fields.items()]
+    if category_panels:
+        panels.append(MultiFieldPanel(category_panels, heading=_('Classification'), classname='collapsed'))
+
+    # Further information
+    panels.append(
+        MultiFieldPanel(
+            children=[
+                CustomizableBuiltInFieldPanel('description'),
+                CustomizableBuiltInFieldPanel('reference'),
+            ],
+            heading=_('Description'),
+            classname='collapsed',
+        ),
+    )
+
+    indicator_page_settings_panels = [FieldPanel('hide_indicator_graph'), FieldPanel('hide_indicator_table')]
+
+    # Visualisation settings
+    visualisation_settings_panels = [
+        FieldRowPanel(
+            children=[
+                CustomizableBuiltInFieldPanel('min_value'),
+                CustomizableBuiltInFieldPanel('max_value'),
+            ],
+        ),
+        FieldRowPanel(
+            children=[
+                CustomizableBuiltInFieldPanel('ticks_count'),
+                CustomizableBuiltInFieldPanel('ticks_rounding'),
+            ],
+        ),
+        CustomizableBuiltInFieldPanel('value_rounding'),
+        CustomizableBuiltInFieldPanel('show_total_line'),
+        CustomizableBuiltInFieldPanel('show_trendline'),
+        CustomizableBuiltInFieldPanel('desired_trend'),
+        CustomizableBuiltInFieldPanel('data_categories_are_stackable'),
+        FieldPanel('visualization_type'),
+        FieldPanel('bar_type'),
+        FieldPanel('grouping_dimension'),
+        FieldPanel('pie_chart_year'),
+    ]
+    panels.append(
+        MultiFieldPanel(
+            indicator_page_settings_panels,
+            heading=_('Indicator page settings'),
+            classname='collapsed',
+        )
+    )
+
+    panels.append(
+        MultiFieldPanel(
+            visualisation_settings_panels,
+            heading=_('Visualization settings'),
+            classname='collapsed',
+        )
+    )
+
+    # Advanced settings
+    advanced_panels: list[Panel] = [
+        FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+    ]
+    if instance and instance.pk and not instance.dimensions.exists():
+        advanced_panels.append(FieldPanel('reference_value', widget=IndicatorValueChooser(indicator_id=instance.id)))
+
+    advanced_panels.append(
+        FieldPanel('sort_key'),
+    )
+
+    advanced_panels.extend([
+        FieldPanel('goal_description'),
+        FieldPanel('non_quantified_goal'),
+        FieldPanel('non_quantified_goal_date'),
+    ])
+
+    if instance and instance.pk and plan.kausal_paths_instance_uuid:
+        advanced_panels.append(FieldPanel('kausal_paths_node_uuid'))
+
+    if not is_linked_to_common_indicator and is_general_admin:
+        advanced_panels.append(
+            CondensedInlinePanel(
+                'dimensions',
+                panels=[FieldPanel('dimension', widget=DimensionChooser(include_plan_dimensions=True))],
+                heading=_('Dimensions'),
+            ),
+        )
+
+        # If the indicator has values, show a warning that these would be deleted by changing dimensions
+        num_values = instance.values.count() if instance else 0
+        if num_values:
+            warning_text = ngettext_lazy(
+                'If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted.',
+                'If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d '
+                'values will be deleted.',
+                num_values,
+            ) % {
+                'dimensions': dimensions_str,
+                'num': num_values,
+            }
+            # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
+            # the ugly gap, but it seems nontrivial to do properly.
+            advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+
+    panels.append(
+        MultiFieldPanel(advanced_panels, heading=_('Advanced settings'), classname='collapsed'),
+    )
+
+    return ObjectList(panels, heading=_('Basic information'))
+
+
+def _get_contact_persons_tab() -> ObjectList:
+    """Get contact persons tab for edit view."""
+    panels: list[Panel] = [
+        CondensedInlinePanel(
+            'contact_persons',
+            panels=[
+                FieldPanel('person', widget=PersonChooser),
+            ],
+        ),
+    ]
+    return ObjectList(panels, heading=_('Contact persons'))
+
+
+def _get_reporting_tab() -> ObjectList:
+    """Get reporting tab for edit view."""
+    panels: list[Panel] = [
+        CustomizableBuiltInFieldPanel('internal_notes'),
+        CustomizableBuiltInFieldPanel('updated_values_due_at'),
+    ]
+    return ObjectList(panels, heading=_('Reporting'))
+
+
+def _get_dataset_editor_url(instance: Indicator | None) -> str | None:
+    """Return the URL to the dataset editor for this indicator's factors, or None."""
+    if instance is None or not instance.pk or instance.dataset_schema is None:
+        return None
+    try:
+        from kausal_watch_extensions.dataset_editor import DatasetViewSet as DatasetEditorViewSet
+    except ImportError:
+        return None
+    schema = instance.dataset_schema
+    dataset = Dataset.objects.filter(schema=schema, scope_id=instance.pk).first()
+    editor_vs = DatasetEditorViewSet()
+    if dataset is not None:
+        return reverse(editor_vs.get_url_name('edit'), args=[dataset.pk])
+    url = reverse(editor_vs.get_url_name('add'))
+    url += f'?dataset_schema_uuid={schema.uuid}&model=indicators.Indicator&object_id={instance.pk}'
+    return url
+
+
+def _get_dataset_editor_link_panel(instance: Indicator | None) -> HelpPanel | None:
+    """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
+    if instance is None:
+        return None
+    schema = instance.dataset_schema
+    if schema is None:
+        return None
+    url = _get_dataset_editor_url(instance)
+    if url is None:
+        return None
+    dataset_exists = Dataset.objects.filter(schema=schema, scope_id=instance.pk).exists()
+    label = _('Edit factor data') if dataset_exists else _('Add factor data')
+    return HelpPanel(
+        content=format_html('<a href="{}" class="button button-small button-secondary">{}</a>', url, label),
+    )
+
+
+def _get_relationships_tab(instance: Indicator | None = None) -> ObjectList:
+    """Get relationships tab for edit view."""
+    request = ctx_request.get()
+    plan = get_admin_cache(request).plan
+
+    actions_panels: list[Panel] = [
+        InlinePanel(
+            'related_actions',
+            panels=[
+                CustomizableBuiltInFieldPanel(
+                    'action',
+                    widget=autocomplete.ModelSelect2(
+                        url='action-autocomplete',
+                        forward=(dal_forward.Const(val=True, dst='only_modifiable'),),
+                    ),
+                ),
+                CustomizableBuiltInFieldPanel('effect_type'),
+                CustomizableBuiltInFieldPanel('indicates_action_progress'),
+            ],
+            heading=_('Indicator for actions'),
+        ),
+    ]
+
+    other_indicators_panels = [
+        InlinePanel(
+            'related_effects',
+            panels=[
+                FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                FieldPanel('effect_type'),
+                FieldPanel('confidence_level'),
+            ],
+            heading=_('Effects'),
+        ),
+        InlinePanel(
+            'related_causes',
+            panels=[
+                FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                FieldPanel('effect_type'),
+                FieldPanel('confidence_level'),
+            ],
+            heading=_('Causes'),
+        ),
+    ]
+
+    panels: list[Panel] = [
+        FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
+        MultiFieldPanel(actions_panels, heading=pgettext_lazy('Action model', 'Actions')),
+        MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
+    ]
+
+    if plan.features.enable_indicator_factors:
+        if instance is not None and not instance.supports_factors(plan):
+            factors_panels: list[Panel] = [
+                HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
+            ]
+        else:
+            editor_url = _get_dataset_editor_url(instance)
+            if editor_url is not None:
+                link_start = format_html('<a href="{}">', editor_url)
+                link_end = mark_safe('</a>')
+            else:
+                link_start = ''
+                link_end = ''
+            help_content = format_html(
+                str(
+                    _(
+                        "Factors are multiplied with this indicator's values to calculate a derived output, "
+                        'such as total emissions or cost. '
+                        'Add factor values to the {link_start}indicator data editor{link_end}.'
+                    )
+                ),
+                link_start=link_start,
+                link_end=link_end,
+            )
+            factors_panels = [
+                HelpPanel(content=help_content),
+                IndicatorMetricsInlinePanel(
+                    'metrics',
+                    panels=[
+                        FieldPanel('label', heading=_('Name')),
+                        FieldPanel('unit'),
+                        FieldPanel('result_label'),
+                    ],
+                    label=_('factor'),
+                ),
+            ]
+            dataset_link_panel = _get_dataset_editor_link_panel(instance)
+            if dataset_link_panel is not None:
+                factors_panels.append(dataset_link_panel)
+            else:
+                factors_panels.append(HelpPanel(content=_('Save the indicator after adding a factor to enable the data editor.')))
+        panels.append(MultiFieldPanel(factors_panels, heading=_('Factors')))
+
+    return ObjectList(panels, heading=_('Relationships'))
+
+
+def get_indicator_panel(request: HttpRequest, instance: Indicator) -> IndicatorEditHandler:
+    tabs = [
+        _get_basic_information_tab(instance, request),
+        _get_contact_persons_tab(),
+        _get_reporting_tab(),
+        _get_relationships_tab(instance),
+        *get_translation_tabs(instance, request),
+    ]
+    return IndicatorEditHandler(tabs).bind_to_model(Indicator)
+
+
+class IndicatorCreateView(InitialPlanFormMixin, IndicatorInstanceContextMixin, PanelFormMixin, WatchCreateView[Indicator]):
+    def get_context_instance(self) -> Indicator:
+        return self.new_indicator
+
+    @cached_property
+    def new_indicator(self) -> Indicator:
+        instance = Indicator()
+        self.initialize_instance(self.request, instance)
+        return instance
+
+    def get_panel(self):
+        return get_indicator_panel(self.request, self.new_indicator)
+
     def get_success_url(self):
         user = user_or_bust(self.request.user)
         plan = user.get_active_admin_plan()
+        assert self.object is not None
         # A change log message is written for the active plan, so only send the user on to write one
         # if they may modify the indicator in that plan. They may not, for instance, if they switched
         # plans while the form was open, in which case the indicator was saved for the original plan.
-        if plan.features.enable_change_log and user.can_modify_indicator(self.instance, plan=plan):
+        if plan.features.enable_change_log and user.can_modify_indicator(self.object, plan=plan):
             change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-            return f'{change_log_create_url}?indicator={self.instance.pk}'
+            return f'{change_log_create_url}?indicator={self.object.pk}'
         return super().get_success_url()
 
 
 class IndicatorEditView(
-    InitializeFormWithPlanMixin[Indicator], InitializeFormWithInitialPlanMixin[Indicator], AplansEditView[Indicator]
+    InitialPlanFormMixin, IndicatorInstanceContextMixin, InstancePermissionCheckedMixin, PanelFormMixin, WatchEditView[Indicator]
 ):
     _form: IndicatorForm
+
+    def get_context_instance(self) -> Indicator:
+        return self.object
+
+    def get_panel(self):
+        return get_indicator_panel(self.request, self.object)
 
     def form_valid(self, form: IndicatorForm, *args, **kwargs):
         self._form = form
@@ -897,405 +1197,92 @@ class IndicatorEditView(
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         if plan.features.enable_change_log:
             change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-            return f'{change_log_create_url}?indicator={self.instance.pk}'
+            return f'{change_log_create_url}?indicator={self.object.pk}'
         # Redirect to the factors panel so the user can access the data editor link.
         if redirect_to_factors:
-            return self.url_helper.get_action_url('edit', self.instance.pk) + '#panel-child-relationships-factors-section'
+            return reverse(self.edit_url_name, args=[quote(self.object.pk)]) + '#panel-child-relationships-factors-section'
         return super().get_success_url()
 
 
-class IndicatorIndexView(AplansIndexView[Indicator]):
-    def get_queryset(self, request: HttpRequest | None = None):
-        qs = super().get_queryset(request)
-        qs = qs.prefetch_related('organization').prefetch_related('plans').prefetch_related('levels')
-        return qs
+class IndicatorIndexView(WatchIndexView[Indicator]):
+    def get_base_queryset(self):
+        qs = super().get_base_queryset()
+        if self.request.GET.get('disconnected') not in ('1', '2'):
+            plan = admin_req(self.request).user.get_active_admin_plan()
+            qs = qs.filter(levels__plan=plan)
+        return qs.prefetch_related('organization').prefetch_related('plans').prefetch_related('levels')
 
+    def _user_has_permission_for(self, action: str, instance: Indicator) -> bool:
+        assert self.permission_policy is not None
+        return self.permission_policy.user_has_permission_for_instance(self.request.user, action, instance)
 
-class IndicatorEditHandler(
-    BuiltInFieldCustomizationAwareEditHandlerMixin[Indicator, IndicatorForm], AplansTabbedInterface[Indicator, IndicatorForm]
-):
-    def get_form_class(self):
-        request = ctx_request.get_admin_request()
-        instance = ctx_instance.get_as_type(Indicator)
-        plan = request.get_active_admin_plan()
-        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+    def get_edit_url(self, instance: Indicator):
+        if not self._user_has_permission_for('change', instance):
+            return None
+        return super().get_edit_url(instance)
 
-        self.base_form_class = type(
-            'IndicatorForm',
-            (IndicatorForm,),
-            {**cat_fields},
-        )
+    def get_delete_url(self, instance: Indicator):
+        if not self._user_has_permission_for('delete', instance):
+            return None
+        return super().get_delete_url(instance)
 
-        form_class = super().get_form_class()
-
-        return form_class
-
-
-class IndicatorAdmin(AplansModelAdmin[Indicator]):
-    model = Indicator
-    create_view_class = IndicatorCreateView
-    edit_view_class = IndicatorEditView
-    index_view_class = IndicatorIndexView
-    menu_icon = 'kausal-indicator'
-    menu_order = 3
-    menu_label = _('Indicators')
-    list_display = ('name', 'organization', 'unit_display', 'quantity', 'has_data')
-    list_filter = (DisconnectedIndicatorFilter,)
-    search_fields = ('name',)
-    permission_helper_class = IndicatorPermissionHelper
-
-    edit_handler = IndicatorEditHandler
-    base_form_class = IndicatorForm
-
-    def _get_normalization_warning_panels(self, instance: Indicator, user: User, plan: Plan) -> list[Panel]:
-        panels: list[Panel] = []
-        for warning in get_normalization_warnings(instance, user, plan):
-            link = ''
-            if warning.normalizer_url is not None:
-                link = format_html(' <a href="{}">{}</a>', warning.normalizer_url, warning.normalizer_link_text)
-            panels.append(HelpPanel(format_html('<p class="help-block help-warning">{}{}</p>', warning.message, link)))
-        return panels
-
-    def _get_basic_information_tab(self, instance, request) -> ObjectList:
-        """Get basic information tab for edit view."""
-        panels: list[Panel] = []
+    def get_list_more_buttons(self, instance: Indicator):
+        buttons = list(super().get_list_more_buttons(instance))
+        # Tell editing the indicator apart from editing its data, which is in the same menu
+        edit_url = self.get_edit_url(instance)
+        for button in buttons:
+            if edit_url and button.url == edit_url:
+                button.label = _('Edit properties')
+        request = admin_req(self.request)
         plan = request.user.get_active_admin_plan()
-        is_general_admin = request.user.is_general_admin_for_plan(plan)
-        is_linked_to_common_indicator = bool(instance and instance.common)
-        dimensions_str: str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
-        if not dimensions_str:
-            dimensions_str = str(_('none'))
-
-        if instance and instance.pk:
-            panels.extend(self._get_normalization_warning_panels(instance, request.user, plan))
-
-        # Basic panels
-        indicator_settings_panels: list[Panel] = [
-            CustomizableBuiltInFieldPanel('name'),
-            CustomizableBuiltInFieldPanel('time_resolution'),
-            CustomizableBuiltInFieldPanel('level'),
-        ]
-        if is_linked_to_common_indicator:
-            info_text = _(
-                'This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. '
-                'Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s',
-            ) % {
-                'quantity': instance.quantity,
-                'unit': instance.unit,
-                'dimensions': dimensions_str,
-            }
-            indicator_settings_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
-        else:
-            quantity_panel = FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete'))
-            unit_panel = FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete'))
-            indicator_settings_panels.insert(1, quantity_panel)
-            indicator_settings_panels.insert(2, unit_panel)
-            if is_general_admin:
-                indicator_settings_panels.insert(4, CustomizableBuiltInFieldPanel('visibility'))
-        panels.append(
-            MultiFieldPanel(
-                indicator_settings_panels,
-                heading=_('Indicator settings'),
-            ),
-        )
-
-        # Categories
-        category_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
-        category_panels = [FieldPanel(key, heading=field.label) for key, field in category_fields.items()]
-        if category_panels:
-            panels.append(MultiFieldPanel(category_panels, heading=_('Classification'), classname='collapsed'))
-
-        # Further information
-        panels.append(
-            MultiFieldPanel(
-                children=[
-                    CustomizableBuiltInFieldPanel('description'),
-                    CustomizableBuiltInFieldPanel('reference'),
-                ],
-                heading=_('Description'),
-                classname='collapsed',
-            ),
-        )
-
-        indicator_page_settings_panels = [FieldPanel('hide_indicator_graph'), FieldPanel('hide_indicator_table')]
-
-        # Visualisation settings
-        visualisation_settings_panels = [
-            FieldRowPanel(
-                children=[
-                    CustomizableBuiltInFieldPanel('min_value'),
-                    CustomizableBuiltInFieldPanel('max_value'),
-                ],
-            ),
-            FieldRowPanel(
-                children=[
-                    CustomizableBuiltInFieldPanel('ticks_count'),
-                    CustomizableBuiltInFieldPanel('ticks_rounding'),
-                ],
-            ),
-            CustomizableBuiltInFieldPanel('value_rounding'),
-            CustomizableBuiltInFieldPanel('show_total_line'),
-            CustomizableBuiltInFieldPanel('show_trendline'),
-            CustomizableBuiltInFieldPanel('desired_trend'),
-            CustomizableBuiltInFieldPanel('data_categories_are_stackable'),
-            FieldPanel('visualization_type'),
-            FieldPanel('bar_type'),
-            FieldPanel('grouping_dimension'),
-            FieldPanel('pie_chart_year'),
-        ]
-        panels.append(
-            MultiFieldPanel(
-                indicator_page_settings_panels,
-                heading=_('Indicator page settings'),
-                classname='collapsed',
-            )
-        )
-
-        panels.append(
-            MultiFieldPanel(
-                visualisation_settings_panels,
-                heading=_('Visualization settings'),
-                classname='collapsed',
-            )
-        )
-
-        # Advanced settings
-        advanced_panels: list[Panel] = [
-            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        ]
-        if instance and instance.pk and not instance.dimensions.exists():
-            advanced_panels.append(FieldPanel('reference_value', widget=IndicatorValueChooser(indicator_id=instance.id)))
-
-        advanced_panels.append(
-            FieldPanel('sort_key'),
-        )
-
-        advanced_panels.extend([
-            FieldPanel('goal_description'),
-            FieldPanel('non_quantified_goal'),
-            FieldPanel('non_quantified_goal_date'),
-        ])
-
-        if instance and instance.pk and plan.kausal_paths_instance_uuid:
-            advanced_panels.append(FieldPanel('kausal_paths_node_uuid'))
-
-        if not is_linked_to_common_indicator and is_general_admin:
-            advanced_panels.append(
-                CondensedInlinePanel(
-                    'dimensions',
-                    panels=[FieldPanel('dimension', widget=DimensionChooser(include_plan_dimensions=True))],
-                    heading=_('Dimensions'),
-                ),
-            )
-
-            # If the indicator has values, show a warning that these would be deleted by changing dimensions
-            num_values = instance.values.count() if instance else 0
-            if num_values:
-                warning_text = ngettext_lazy(
-                    'If you change the dimensions of this indicator (currently %(dimensions)s), its single value will '
-                    'be deleted.',
-                    'If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d '
-                    'values will be deleted.',
-                    num_values,
-                ) % {
-                    'dimensions': dimensions_str,
-                    'num': num_values,
-                }
-                # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
-                # the ugly gap, but it seems nontrivial to do properly.
-                advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
-
-        panels.append(
-            MultiFieldPanel(advanced_panels, heading=_('Advanced settings'), classname='collapsed'),
-        )
-
-        return ObjectList(panels, heading=_('Basic information'))
-
-    def _get_contact_persons_tab(self) -> ObjectList:
-        """Get contact persons tab for edit view."""
-        panels: list[Panel] = [
-            CondensedInlinePanel(
-                'contact_persons',
-                panels=[
-                    FieldPanel('person', widget=PersonChooser),
-                ],
-            ),
-        ]
-        return ObjectList(panels, heading=_('Contact persons'))
-
-    def _get_reporting_tab(self) -> ObjectList:
-        """Get reporting tab for edit view."""
-        panels: list[Panel] = [
-            CustomizableBuiltInFieldPanel('internal_notes'),
-            CustomizableBuiltInFieldPanel('updated_values_due_at'),
-        ]
-        return ObjectList(panels, heading=_('Reporting'))
-
-    @staticmethod
-    def _get_dataset_editor_url(instance: Indicator | None) -> str | None:
-        """Return the URL to the dataset editor for this indicator's factors, or None."""
-        if instance is None or not instance.pk or instance.dataset_schema is None:
-            return None
-        try:
-            from kausal_watch_extensions.dataset_editor import DatasetViewSet as DatasetEditorViewSet
-        except ImportError:
-            return None
-        schema = instance.dataset_schema
-        dataset = Dataset.objects.filter(schema=schema, scope_id=instance.pk).first()
-        editor_vs = DatasetEditorViewSet()
-        if dataset is not None:
-            return reverse(editor_vs.get_url_name('edit'), args=[dataset.pk])
-        url = reverse(editor_vs.get_url_name('add'))
-        url += f'?dataset_schema_uuid={schema.uuid}&model=indicators.Indicator&object_id={instance.pk}'
-        return url
-
-    @classmethod
-    def _get_dataset_editor_link_panel(cls, instance: Indicator | None) -> HelpPanel | None:
-        """Return a HelpPanel with a link to the dataset editor, or None if no schema exists."""
-        if instance is None:
-            return None
-        schema = instance.dataset_schema
-        if schema is None:
-            return None
-        url = cls._get_dataset_editor_url(instance)
-        if url is None:
-            return None
-        dataset_exists = Dataset.objects.filter(schema=schema, scope_id=instance.pk).exists()
-        label = _('Edit factor data') if dataset_exists else _('Add factor data')
-        return HelpPanel(
-            content=format_html('<a href="{}" class="button button-small button-secondary">{}</a>', url, label),
-        )
-
-    def _get_relationships_tab(self, instance: Indicator | None = None) -> ObjectList:
-        """Get relationships tab for edit view."""
-        request = ctx_request.get()
-        plan = get_admin_cache(request).plan
-
-        actions_panels: list[Panel] = [
-            InlinePanel(
-                'related_actions',
-                panels=[
-                    CustomizableBuiltInFieldPanel(
-                        'action',
-                        widget=autocomplete.ModelSelect2(
-                            url='action-autocomplete',
-                            forward=(dal_forward.Const(val=True, dst='only_modifiable'),),
-                        ),
-                    ),
-                    CustomizableBuiltInFieldPanel('effect_type'),
-                    CustomizableBuiltInFieldPanel('indicates_action_progress'),
-                ],
-                heading=_('Indicator for actions'),
-            ),
-        ]
-
-        other_indicators_panels = [
-            InlinePanel(
-                'related_effects',
-                panels=[
-                    FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                    FieldPanel('effect_type'),
-                    FieldPanel('confidence_level'),
-                ],
-                heading=_('Effects'),
-            ),
-            InlinePanel(
-                'related_causes',
-                panels=[
-                    FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                    FieldPanel('effect_type'),
-                    FieldPanel('confidence_level'),
-                ],
-                heading=_('Causes'),
-            ),
-        ]
-
-        panels: list[Panel] = [
-            FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
-            MultiFieldPanel(actions_panels, heading=pgettext_lazy('Action model', 'Actions')),
-            MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
-        ]
-
-        if plan.features.enable_indicator_factors:
-            if instance is not None and not instance.supports_factors(plan):
-                factors_panels: list[Panel] = [
-                    HelpPanel(content=_('Factors cannot be added to indicators that have dimensions in their data.')),
-                ]
-            else:
-                editor_url = self._get_dataset_editor_url(instance)
-                if editor_url is not None:
-                    link_start = format_html('<a href="{}">', editor_url)
-                    link_end = mark_safe('</a>')
-                else:
-                    link_start = ''
-                    link_end = ''
-                help_content = format_html(
-                    str(
-                        _(
-                            "Factors are multiplied with this indicator's values to calculate a derived output, "
-                            'such as total emissions or cost. '
-                            'Add factor values to the {link_start}indicator data editor{link_end}.'
-                        )
-                    ),
-                    link_start=link_start,
-                    link_end=link_end,
+        # The button is built for every row of a listing, all for the same plan instance.
+        prefetch_related_objects([plan], 'domains')
+        view_url = instance.get_view_url(plan=plan, request=request)
+        if view_url:
+            buttons.append(
+                Button(
+                    _('View live'),
+                    url=view_url,
+                    icon_name='view',
+                    attrs={'target': '_blank', 'title': _('View %s live') % Indicator._meta.verbose_name},
+                    priority=60,
                 )
-                factors_panels = [
-                    HelpPanel(content=help_content),
-                    IndicatorMetricsInlinePanel(
-                        'metrics',
-                        panels=[
-                            FieldPanel('label', heading=_('Name')),
-                            FieldPanel('unit'),
-                            FieldPanel('result_label'),
-                        ],
-                        label=_('factor'),
-                    ),
-                ]
-                dataset_link_panel = self._get_dataset_editor_link_panel(instance)
-                if dataset_link_panel is not None:
-                    factors_panels.append(dataset_link_panel)
-                else:
-                    factors_panels.append(
-                        HelpPanel(content=_('Save the indicator after adding a factor to enable the data editor.'))
-                    )
-            panels.append(MultiFieldPanel(factors_panels, heading=_('Factors')))
-
-        return ObjectList(panels, heading=_('Relationships'))
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = cast('Indicator', ctx_instance.get())  # FIXME: Fails when creating a new indicator
-
-        tabs = [
-            self._get_basic_information_tab(instance, request),
-            self._get_contact_persons_tab(),
-            self._get_reporting_tab(),
-            self._get_relationships_tab(instance),
-            *get_translation_tabs(instance, request),
+            )
+        # Shown in the row menu with the other indicator actions, not as row buttons
+        dataset_buttons = [
+            Button(button.label, url=cast('str', button.url), icon_name=button.icon_name, priority=70)
+            for button in get_dataset_listing_buttons(self.request, instance)
         ]
+        return [*buttons, *dataset_buttons]
 
-        return IndicatorEditHandler(tabs)
 
-    def get_list_filter(self, request):
-        list_filter = super().get_list_filter(request)
-        if request.user.is_superuser:
-            list_filter += (IndicatorAdminOrganizationFilter,)
+class IndicatorViewSet(WatchViewSet[Indicator]):
+    model = Indicator
+    icon = 'kausal-indicator'
+    menu_label = _('Indicators')
+    url_prefix = 'indicators/indicator'
+    list_display = [
+        'name',
+        'organization',
+        Column('unit', label=_('Unit'), accessor=get_unit_display),
+        'quantity',
+        BooleanColumn('has_data', label=_('Has data')),
+    ]
+    search_fields = ['name']
+    # Search the database like the ModelAdmin did, as the search index cannot filter by plan
+    search_backend_name = None
+    filterset_class = IndicatorFilterSet
+    bulk_delete_enabled = False
+    index_view_class = IndicatorIndexView
+    add_view_class = IndicatorCreateView
+    edit_view_class = IndicatorEditView
 
-        return list_filter
-
-    @admin.display(description=_('Unit'))
-    def unit_display(self, obj):
-        unit = obj.unit
-        if not unit:
-            return ''
-        return unit.short_name or unit.name
+    edit_handler = ObjectList([FieldPanel('name')], base_form_class=IndicatorForm)
 
     def get_queryset(self, request: HttpRequest):
-        qs = cast('IndicatorQuerySet', super().get_queryset(request))
         user = user_or_bust(request.user)
         plan = get_admin_cache(request).plan
-        return qs.adminable_in_plan_by(user, plan).select_related('unit', 'quantity')
+        return Indicator.objects.qs.adminable_in_plan_by(user, plan).select_related('unit', 'quantity')
 
 
 class CommonIndicatorForm(AplansAdminModelForm[CommonIndicator]):
@@ -1357,13 +1344,6 @@ def get_common_indicator_panel(instance: CommonIndicator) -> ObjectList[CommonIn
     )
 
 
-def get_unit_display(obj: CommonIndicator) -> str:
-    unit = obj.unit
-    if not unit:
-        return ''
-    return unit.short_name or unit.name
-
-
 class CommonIndicatorCreateView(PanelFormMixin, WatchCreateView[CommonIndicator]):
     def get_panel(self):
         return get_common_indicator_panel(CommonIndicator())
@@ -1391,28 +1371,18 @@ class CommonIndicatorViewSet(WatchViewSet[CommonIndicator]):
     edit_handler = ObjectList(COMMON_INDICATOR_BASIC_PANELS, base_form_class=CommonIndicatorForm)
 
 
-register_snippet(CommonIndicatorViewSet)
-
-
-class IndicatorGroup(ModelAdminGroup):
+class IndicatorGroup(SnippetViewSetGroup):
     menu_label = _('Indicators')
     menu_icon = 'kausal-indicator'
     menu_order = 20
-    items: tuple[type[AplansModelAdmin[Any]], ...] = (IndicatorAdmin,)
-
-    def get_submenu_items(self):
-        menu_items = super().get_submenu_items()
-        for model in (CommonIndicator, Dimension, Unit, Quantity):
-            viewset = model.snippet_viewset  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
-            menu_items.append(viewset.get_menu_item(order=len(menu_items) + 1))
-        return menu_items
+    items = (IndicatorViewSet, CommonIndicatorViewSet, DimensionViewSet, UnitViewSet, QuantityViewSet)
 
 
-modeladmin_register(IndicatorGroup)
+register_snippet(IndicatorGroup)
 
 
 # Built-in fields of indicators that plan admins may customize. These mirror the
-# `CustomizableBuiltInFieldPanel` declarations in `IndicatorAdmin`, which are built per request and
+# `CustomizableBuiltInFieldPanel` declarations of the indicator edit form, which is built per request and
 # hence cannot be derived automatically.
 register_customizable_fields(
     Indicator,

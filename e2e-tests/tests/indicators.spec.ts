@@ -21,14 +21,14 @@ async function setIndicatorFactorsFlag(page: Page, enabled: boolean) {
 async function createIndicator(page: Page, name: string): Promise<string> {
   await page.goto(listIndicatorsPath);
   await page.getByRole('link', { name: 'Add indicator' }).first().click();
-  await page.waitForURL((url) => url.pathname.includes('/create'));
+  await page.waitForURL((url) => url.pathname.includes('/add/'));
   await page.getByRole('textbox', { name: 'Name' }).fill(name);
   const unitField = page.locator('[data-contentpath="unit"]');
   await unitField.getByRole('combobox').last().click();
   await page.locator('.select2-search__field').fill('t');
   await page.locator('.select2-results__option').first().click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.waitForURL((url) => !url.pathname.includes('/create/'));
+  await page.waitForURL((url) => !url.pathname.includes('/add/'));
   // Verify no validation errors on the resulting page
   await expect(page.getByText('could not be created due to errors')).not.toBeVisible();
 

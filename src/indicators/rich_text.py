@@ -59,7 +59,7 @@ class IndicatorLinkElementHandler(LinkElementHandler):
         return {
             'id': indicator.id,
             'uuid': str(indicator.uuid),
-            'edit_url': reverse('indicators_indicator_modeladmin_edit', args=[indicator.id]),
+            'edit_url': reverse('wagtailsnippets_indicators_indicator:edit', args=[indicator.id]),
             'name': indicator.name,
         }
 
