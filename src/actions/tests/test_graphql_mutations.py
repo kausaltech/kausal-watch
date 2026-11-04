@@ -4,7 +4,9 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
+from django.forms import ValidationError
 from django.utils import timezone
+from wagtail.admin.rich_text.converters.html_to_contentstate import HtmlToContentStateHandler
 
 import pytest
 
@@ -19,6 +21,7 @@ from actions.models.attributes import (
     AttributeText,
     AttributeTypeChoiceOption,
 )
+from actions.mutations_action import validate_rich_text
 from actions.tests.factories import ActionFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 from orgs.tests.factories import OrganizationFactory
 
@@ -213,6 +216,53 @@ UPDATE_ACTIONS = (
 """
     + OP_INFO_FRAGMENT
 )
+
+
+def _invalid_rich_text_message(field_name: str) -> OperationMessage:
+    return OperationMessage(
+        kind='VALIDATION',
+        message=(
+            f'Invalid rich text HTML in {field_name}: Unmatched tags: expected br, got p. Every element must be closed; '
+            'write void elements in self-closing form, e.g. <br/> instead of <br>.'
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    ('html', 'detail'),
+    [
+        ('<p>Line 1<br>Line 2</p>', 'Unmatched tags: expected br, got p'),
+        ('<p>Text</div>', 'Unmatched tags: expected p, got div'),
+        ('<p><strong>Unfinished', 'Unclosed elements: <p>, <strong>'),
+        ('<p><a linktype="page">Link</a></p>', "KeyError: 'id'"),
+    ],
+)
+def test_validate_rich_text_rejects_html_the_editor_cannot_load(html: str, detail: str):
+    with pytest.raises(ValidationError) as exc_info:
+        validate_rich_text(html, 'description')
+    assert exc_info.value.messages == [
+        f'Invalid rich text HTML in description: {detail}. Every element must be closed; '
+        'write void elements in self-closing form, e.g. <br/> instead of <br>.'
+    ]
+
+
+def test_validate_rich_text_does_not_rely_on_wagtail_assertion(monkeypatch: pytest.MonkeyPatch):
+    # Under `python -O`, Wagtail's end tag check is stripped; simulate that
+    def handle_endtag_without_assert(self: HtmlToContentStateHandler, name: str) -> None:
+        if not self.open_elements:
+            return
+        _expected_name, element_handler = self.open_elements.pop()
+        if element_handler:
+            element_handler.handle_endtag(name, self.state, self.contentstate)
+
+    monkeypatch.setattr(HtmlToContentStateHandler, 'handle_endtag', handle_endtag_without_assert)
+    with pytest.raises(ValidationError, match='Unmatched tags: expected p, got div'):
+        validate_rich_text('<p>Text</div>', 'description')
+
+
+@pytest.mark.parametrize('html', [None, '', 'Plain text', '<p>Line 1<br/>Line 2</p>', '<ul><li>One</li><li>Two</li></ul>'])
+def test_validate_rich_text_accepts_html_the_editor_can_load(html: str | None):
+    validate_rich_text(html, 'description')
 
 
 # -- Permission tests ---------------------------------------------------------
@@ -432,6 +482,49 @@ class TestCreateAction:
         assert result['identifier'] == 'new-action-1'
         assert result['description'] == 'A test action'
         assert Action.objects.filter(plan=plan, identifier='new-action-1').exists()
+
+    def test_create_action_rejects_invalid_rich_text(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        response = graphql_client_query(
+            CREATE_ACTION,
+            variables={
+                'input': {
+                    'planId': plan.identifier,
+                    'name': 'New Climate Action',
+                    'identifier': 'new-action-1',
+                    'description': '<p>Line 1<br>Line 2</p>',
+                }
+            },
+        )
+        assert_operation_errors(response['data']['action']['createAction'], [_invalid_rich_text_message('description')])
+        assert not Action.objects.filter(plan=plan, identifier='new-action-1').exists()
+
+    def test_create_action_rolls_back_when_attribute_is_invalid(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.RICH_TEXT,
+        )
+
+        response = graphql_client_query(
+            CREATE_ACTION_WITH_METADATA,
+            variables={
+                'input': {
+                    'planId': str(plan.pk),
+                    'name': 'Full action',
+                    'identifier': 'full-action',
+                    'attributeValues': [
+                        {'attributeTypeId': str(attr_type.pk), 'value': {'richText': '<p>Line 1<br>Line 2</p>'}},
+                    ],
+                }
+            },
+        )
+        assert_operation_errors(
+            response['data']['action']['createAction'], [_invalid_rich_text_message(f'attribute {attr_type.identifier}')]
+        )
+        # The action is saved before its attributes are set; it must not survive the error
+        assert not Action.objects.filter(plan=plan, identifier='full-action').exists()
 
     def test_create_action_generates_identifier_when_not_required(
         self,
@@ -1131,6 +1224,140 @@ class TestUpdateActions:
         rts = AttributeRichText.objects.filter(type=attr_type, content_type=action_ct, object_id=action.pk)
         assert rts.count() == 1
         assert rts.get().text == '<p>Updated content</p>'
+
+    def test_update_rejects_invalid_rich_text_description(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        a1 = self._create_action(plan, 'upd-1', 'Action 1')
+        a2 = self._create_action(plan, 'upd-2', 'Action 2')
+        a1_description = a1.description
+
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {'id': str(a1.pk), 'description': '<p>Valid</p>'},
+                    {'id': str(a2.pk), 'description': '<p>Line 1<br>Line 2</p>'},
+                ],
+            },
+        )
+        assert_operation_errors(response['data']['action']['updateActions'], [_invalid_rich_text_message('description')])
+
+        # The whole bulk update is rolled back
+        a1.refresh_from_db()
+        assert a1.description == a1_description
+
+    def test_update_rolls_back_categories_when_attribute_is_invalid(
+        self, graphql_client_query, client, superuser: User, plan: Plan
+    ):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-cat-rt', 'Action Cat RT')
+        ct = CategoryTypeFactory.create(plan=plan, editable_for_actions=True)
+        cat = CategoryFactory.create(type=ct)
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.RICH_TEXT,
+        )
+
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {
+                        'id': str(action.pk),
+                        'categoryIds': [str(cat.pk)],
+                        'attributeValues': [
+                            {'attributeTypeId': str(attr_type.pk), 'value': {'richText': '<p>Line 1<br>Line 2</p>'}},
+                        ],
+                    }
+                ],
+            },
+        )
+        assert_operation_errors(
+            response['data']['action']['updateActions'], [_invalid_rich_text_message(f'attribute {attr_type.identifier}')]
+        )
+        # Categories are set before attributes; they must not survive the error
+        assert not action.categories.exists()
+
+    def test_update_accepts_self_closing_br(self, graphql_client_query_data, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-br', 'Action BR')
+
+        data = graphql_client_query_data(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [{'id': str(action.pk), 'description': '<p>Line 1<br/>Line 2</p>'}],
+            },
+        )
+        assert data['action']['updateActions']['count'] == 1
+
+        action.refresh_from_db()
+        assert action.description == '<p>Line 1<br/>Line 2</p>'
+
+    def test_update_rejects_invalid_rich_text_attribute(self, graphql_client_query, client, superuser: User, plan: Plan):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-rt', 'Action RT')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.RICH_TEXT,
+        )
+
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {
+                        'id': str(action.pk),
+                        'attributeValues': [
+                            {'attributeTypeId': str(attr_type.pk), 'value': {'richText': '<p>Line 1<br>Line 2</p>'}},
+                        ],
+                    }
+                ],
+            },
+        )
+        assert_operation_errors(
+            response['data']['action']['updateActions'], [_invalid_rich_text_message(f'attribute {attr_type.identifier}')]
+        )
+        assert not AttributeRichText.objects.filter(type=attr_type, object_id=action.pk).exists()
+
+    def test_update_rejects_invalid_rich_text_in_choice_with_text(
+        self, graphql_client_query, client, superuser: User, plan: Plan
+    ):
+        client.force_login(superuser)
+        action = self._create_action(plan, 'upd-cwt', 'Action CWT')
+        attr_type = AttributeTypeFactory.create(
+            scope=plan,
+            object_content_type=ContentType.objects.get_for_model(Action),
+            format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+        )
+        opt = AttributeTypeChoiceOption.objects.create(type=attr_type, identifier='yes', name='Yes', order=0)
+
+        response = graphql_client_query(
+            UPDATE_ACTIONS,
+            variables={
+                'planId': str(plan.pk),
+                'actions': [
+                    {
+                        'id': str(action.pk),
+                        'attributeValues': [
+                            {
+                                'attributeTypeId': str(attr_type.pk),
+                                'value': {'choice': {'choiceId': str(opt.pk), 'text': '<p>Line 1<br>Line 2</p>'}},
+                            },
+                        ],
+                    }
+                ],
+            },
+        )
+        assert_operation_errors(
+            response['data']['action']['updateActions'], [_invalid_rich_text_message(f'attribute {attr_type.identifier}')]
+        )
+        assert not AttributeChoiceWithText.objects.filter(type=attr_type, object_id=action.pk).exists()
 
     def test_update_responsible_parties(self, graphql_client_query_data, client, superuser: User, plan: Plan):
         client.force_login(superuser)

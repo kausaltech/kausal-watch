@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, NoReturn, cast
 
 import strawberry as sb
 import strawberry_django
 from django.contrib.contenttypes.models import ContentType
 from django.forms import ValidationError
+from wagtail.admin.rich_text.converters.contentstate import ContentstateConverter
+from wagtail.admin.rich_text.converters.html_to_contentstate import HtmlToContentStateHandler
+from wagtail.rich_text import features as feature_registry
 
 from kausal_common.strawberry.errors import NotFoundError, PermissionDeniedError
 from kausal_common.strawberry.helpers import get_or_error
@@ -32,6 +35,59 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from actions.models.category import CategoryType
+
+
+class _UnmatchedTagError(Exception):
+    pass
+
+
+class _StrictHtmlToContentStateHandler(HtmlToContentStateHandler):
+    """
+    Check end tags explicitly.
+
+    Wagtail only checks them with an `assert`, which `python -O` strips -- and it pops the
+    open element before that, so a mismatch would leave no trace in `open_elements` either.
+    """
+
+    def handle_endtag(self, name: str) -> None:
+        if self.open_elements and self.open_elements[-1][0] != name:
+            raise _UnmatchedTagError(f'Unmatched tags: expected {self.open_elements[-1][0]}, got {name}')
+        super().handle_endtag(name)
+
+
+def validate_rich_text(value: str | None, field_name: str) -> None:
+    """
+    Reject HTML that the Wagtail rich text editor cannot load.
+
+    Wagtail stores rich text in its own HTML dialect (e.g. `<br/>`, never `<br>`) and the
+    admin converts it to the editor format when rendering the edit form. HTML the converter
+    chokes on makes the whole edit page crash, so refuse to store it in the first place.
+    """
+    if not value:
+        return
+    features = feature_registry.get_default_features()
+    converter = ContentstateConverter(features=features)
+    handler = _StrictHtmlToContentStateHandler(features)
+    converter.html_to_contentstate_handler = handler
+    try:
+        converter.from_database_format(value)
+    except _UnmatchedTagError as e:
+        _raise_invalid_rich_text(field_name, str(e), e)
+    except Exception as e:
+        # E.g. a KeyError from an entity handler for `<a linktype="page">` without an `id`
+        _raise_invalid_rich_text(field_name, f'{type(e).__name__}: {e}', e)
+
+    # The converter does not complain about elements left open at the end
+    if handler.open_elements:
+        names = ', '.join(f'<{name}>' for name, _ in handler.open_elements)
+        _raise_invalid_rich_text(field_name, f'Unclosed elements: {names}')
+
+
+def _raise_invalid_rich_text(field_name: str, detail: str, cause: Exception | None = None) -> NoReturn:
+    raise ValidationError(
+        f'Invalid rich text HTML in {field_name}: {detail.rstrip(".")}. Every element must be closed; '
+        'write void elements in self-closing form, e.g. <br/> instead of <br>.'
+    ) from cause
 
 
 @sb.type(description='Result of a bulk action update')
@@ -220,6 +276,7 @@ class ActionMutations:
             obj = existing
         else:
             obj = AttributeRichText(**kwargs)
+        validate_rich_text(value, f'attribute {attribute_type.identifier}')
         obj.text = value
         obj.full_clean()
         obj.save()
@@ -266,6 +323,7 @@ class ActionMutations:
             self._reject_inactive_choice(choice_obj, existing_act, attribute_type)
             act_obj.choice = choice_obj
             act_obj.text = value.text.value if value.text is not None else ''
+            validate_rich_text(act_obj.text, f'attribute {attribute_type.identifier}')
             obj = act_obj
         else:
             existing_ac = AttributeChoice.objects.filter(**kwargs).first()
@@ -371,6 +429,8 @@ class ActionMutations:
                 raise ValidationError('Action primary organizations are not enabled for this plan.')
             primary_org = get_or_error(info, Organization, pk=input.primary_org_id)
 
+        validate_rich_text(input.description, 'description')
+
         # Create action
         action = Action(
             plan=plan,
@@ -409,6 +469,7 @@ class ActionMutations:
             action.identifier = input.identifier
             updated = True
         if input.description is not sb.UNSET:
+            validate_rich_text(input.description, 'description')
             action.description = input.description
             updated = True
         if input.lead_paragraph is not sb.UNSET:
