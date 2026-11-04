@@ -131,7 +131,7 @@ class IndicatorShowcaseBlock(StructBlock):
     significant_digits = IntegerBlock(
         required=False,
         min_value=1,
-        max_value=5,
+        max_value=21,
         help_text=_('How many significants digits to use for the values displayed'),
     )
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
