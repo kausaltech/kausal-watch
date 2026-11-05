@@ -1,26 +1,29 @@
 """
 Tests for the columns of the person listing in the admin.
 
-Rendering the whole index page needs a built staticfiles manifest, so the list display callables
-are exercised directly against the queryset the listing uses.
+Rendering the whole index page needs a built staticfiles manifest, so the columns are exercised
+directly against the queryset the listing uses.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from django.urls import reverse
+from wagtail.admin.ui.tables import TitleColumn
+
 import pytest
 
 from actions.models import PlanPublicSiteViewer
 from actions.tests.factories import ActionFactory, PlanFactory
+from actions.tests.utils import instantiate_view
 from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory
 from orgs.tests.factories import OrganizationPlanAdminFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
-from people.wagtail_admin import PersonAdmin, PersonIndexView, PersonRoleFilter
+from people.wagtail_admin import PersonIndexView, PersonRoleFilterSet, PersonTable
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
     from django.test.client import RequestFactory
 
     from actions.models import Plan
@@ -29,15 +32,22 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.django_db
 
 
-def get_cell(rf: RequestFactory, user: User, person: Person, column: str, **params: str) -> Any:
+def make_index_view(rf: RequestFactory, user: User, **params: str) -> PersonIndexView:
     request = rf.get('/', params)
     request.user = user
-    person_admin = PersonAdmin()
-    # The index view renders the listing with the active plan set on the permission helper
-    with person_admin.permission_helper.activate_plan_context(user.get_active_admin_plan()):
-        listed = person_admin.get_queryset(request).get(pk=person.pk)
-        fields = {getattr(f, '__name__', f): f for f in person_admin.get_list_display(request)}
-        return fields[column](listed)
+    view = instantiate_view(Person.snippet_viewset.index_view, PersonIndexView)  # type: ignore[attr-defined]
+    view.setup(request)
+    return view
+
+
+def get_cell(rf: RequestFactory, user: User, person: Person, column: str, **params: str) -> Any:
+    view = make_index_view(rf, user, **params)
+    assert view.permission_policy is not None
+    # The index view renders the listing with the active plan set on the permission policy
+    with view.permission_policy.activate_plan_context(user.get_active_admin_plan()):  # type: ignore[attr-defined]
+        listed = view.get_base_queryset().get(pk=person.pk)
+        columns = {c.name: c for c in view.columns}
+        return columns[column].get_value(listed)
 
 
 def test_nameless_person_email_is_only_in_the_email_column(rf: RequestFactory, plan: Plan, plan_admin_user: User):
@@ -99,17 +109,10 @@ class TestRoleColumn:
         assert 'Plan admin' in get_cell(rf, action_contact_person_user, person, 'role')
 
 
-def make_role_filter(request: HttpRequest, person_admin: PersonAdmin, params: dict[str, list[str]]) -> PersonRoleFilter:
-    # The wagtail_modeladmin index view passes its own ModelAdmin where Django's stubs expect Django's
-    return PersonRoleFilter(request, params, Person, person_admin)  # type: ignore[arg-type]
-
-
 def filter_by_role(rf: RequestFactory, user: User, value: str) -> set[Person]:
-    request = rf.get('/', {'role': value})
-    request.user = user
-    person_admin = PersonAdmin()
-    role_filter = make_role_filter(request, person_admin, {'role': [value]})
-    return set(role_filter.queryset(request, person_admin.get_queryset(request)))
+    view = make_index_view(rf, user, role=value)
+    filterset = PersonRoleFilterSet({'role': value}, queryset=view.get_base_queryset(), request=view.request)
+    return set(filterset.qs)
 
 
 class TestRoleFilter:
@@ -129,13 +132,10 @@ class TestRoleFilter:
         }
 
     def test_listing_is_filtered_by_role_only(self):
-        assert PersonAdmin.list_filter == (PersonRoleFilter,)
+        assert list(PersonRoleFilterSet.base_filters) == ['role']
 
-    def test_lookups_offer_every_role_and_no_role(self, rf: RequestFactory, plan_admin_user: User):
-        request = rf.get('/')
-        request.user = plan_admin_user
-        role_filter = make_role_filter(request, PersonAdmin(), {})
-        assert [value for value, _label in role_filter.lookup_choices] == [
+    def test_lookups_offer_every_role_and_no_role(self):
+        assert [value for value, _label in PersonRoleFilterSet.base_filters['role'].extra['choices']] == [
             'plan_admin',
             'organization_admin',
             'contact_person',
@@ -156,9 +156,7 @@ class TestRoleFilter:
 
 class TestContactColumns:
     def get_columns(self, rf: RequestFactory, user: User, **params: str) -> list[str]:
-        request = rf.get('/', params)
-        request.user = user
-        return [getattr(f, '__name__', f) for f in PersonAdmin().get_list_display(request)]
+        return get_column_names(rf, user, **params)
 
     def test_shown_when_filtering_by_contact_person(self, rf: RequestFactory, plan_admin_user: User):
         columns = self.get_columns(rf, plan_admin_user, role='contact_person')
@@ -221,16 +219,12 @@ class TestAvatar:
 
 
 def get_column_names(rf: RequestFactory, user: User, **params: str) -> list[str]:
-    request = rf.get('/', params)
-    request.user = user
-    return [getattr(f, '__name__', f) for f in PersonAdmin().get_list_display(request)]
+    return [c.name for c in make_index_view(rf, user, **params).columns]
 
 
 def get_column_header(rf: RequestFactory, user: User, column: str) -> str:
-    request = rf.get('/')
-    request.user = user
-    fields = {getattr(f, '__name__', f): f for f in PersonAdmin().get_list_display(request)}
-    return str(fields[column].short_description)  # type: ignore[union-attr]
+    columns = {c.name: c for c in make_index_view(rf, user).columns}
+    return str(columns[column].label)
 
 
 class TestEmailColumn:
@@ -247,7 +241,7 @@ class TestEmailColumn:
 
     def test_links_to_the_edit_view(self, rf: RequestFactory, plan: Plan, plan_admin_user: User):
         person = PersonFactory.create(email='listed@example.com', organization=plan.organization)
-        edit_url = PersonAdmin().url_helper.get_action_url('edit', person.pk)
+        edit_url = reverse('wagtailsnippets_people_person:edit', args=[person.pk])
         assert get_cell(rf, plan_admin_user, person, 'email') == f'<a href="{edit_url}">listed@example.com</a>'
 
     def test_is_plain_text_without_edit_rights(self, rf: RequestFactory, plan: Plan, action_contact_person_user: User):
@@ -274,10 +268,8 @@ class TestAttendedTrainingColumn:
 
 
 class TestActionsMenu:
-    def test_rows_have_no_hover_buttons(self, plan: Plan):
-        person = PersonFactory.create(organization=plan.organization)
-        view = PersonIndexView.__new__(PersonIndexView)
-        assert view.get_buttons_for_obj(person) == []
+    def test_rows_have_no_hover_buttons(self, rf: RequestFactory, plan_admin_user: User):
+        assert not any(isinstance(c, TitleColumn) for c in make_index_view(rf, plan_admin_user).columns)
 
     def test_is_the_last_column(self, rf: RequestFactory, plan_admin_user: User):
         assert get_column_names(rf, plan_admin_user)[-1] == 'actions'
@@ -331,9 +323,8 @@ class TestNoAdminAccessWarning:
         if access_requests:
             self.enable_access_requests(plan)
         person = self.make_viewer(plan)
-        request = rf.get('/')
-        request.user = plan_admin_user
-        person_admin = PersonAdmin()
-        listed = person_admin.get_queryset(request).get(pk=person.pk)
-        attrs = person_admin.get_extra_attrs_for_row(listed, {'request': request})
-        assert ('warning-row' in attrs.get('class', '')) is highlighted
+        view = make_index_view(rf, plan_admin_user)
+        listed = view.get_base_queryset().get(pk=person.pk)
+        table = view.get_table([listed])
+        assert isinstance(table, PersonTable)
+        assert ('warning-row' in table.get_row_attrs(listed).get('class', '')) is highlighted

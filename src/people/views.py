@@ -4,35 +4,65 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.admin.utils import unquote
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes
+from django.utils.functional import cached_property
 from django.utils.http import urlsafe_base64_encode
+from django.utils.text import capfirst
 from django.utils.translation import gettext as _, gettext_lazy
+from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.forms.auth import PasswordResetForm
-
-from wagtail_modeladmin.views import WMABaseView
 
 from people.models import Person
 
 if TYPE_CHECKING:
+    from django.http import HttpRequest
+    from django.utils.functional import _StrOrPromise as StrOrPromise
+
     from users.models import User
 
 
-class ResetPasswordView(WMABaseView[Person]):
-    page_title = gettext_lazy('Reset password')
-    target_person_pk: str = ''
-    template_name = 'aplans/confirmation.html'
+class PersonActionView(TemplateView):
+    """A confirmation page for an action on one person."""
 
-    def __init__(self, model_admin, target_person_pk):
-        self.target_person_pk = unquote(target_person_pk)
+    request: HttpRequest
+    page_title: StrOrPromise = ''
+    page_subtitle: StrOrPromise = ''
+    header_icon = 'user'
+    target_person: Person
+    target_person_pk: str
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.target_person_pk = unquote(str(kwargs['instance_pk']))
         self.target_person = get_object_or_404(Person, pk=self.target_person_pk)
-        super().__init__(model_admin)
+
+    def check_action_permitted(self, user) -> bool:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.check_action_permitted(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_page_title(self):
+        return self.page_title or capfirst(Person._meta.verbose_name_plural)
+
+    def get_page_subtitle(self):
+        return self.page_subtitle
+
+    @cached_property
+    def index_url(self):
+        return reverse('wagtailsnippets_people_person:list')
+
+
+class ResetPasswordView(PersonActionView):
+    page_title = gettext_lazy('Reset password')
+    template_name = 'aplans/confirmation.html'
 
     def check_action_permitted(self, user):
         plan = user.get_active_admin_plan()
@@ -43,12 +73,6 @@ class ResetPasswordView(WMABaseView[Person]):
         # Better safe than sorry...
         target_in_same_plan = Person.objects.qs.available_for_plan(plan).filter(pk=self.target_person_pk).exists()
         return user_is_admin and target_in_same_plan and not target_user.is_superuser and not target_is_admin_of_any_plan
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        if not self.check_action_permitted(request.user):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
         msg = _('Confirm sending password reset link to %(person)s')
@@ -109,16 +133,10 @@ class ResetPasswordView(WMABaseView[Person]):
         return redirect(self.index_url)
 
 
-class ImpersonateUserView(WMABaseView[Person]):
+class ImpersonateUserView(PersonActionView):
     page_title = gettext_lazy('View as user')
-    target_person_pk: str = ''
     template_name = 'people/view_as_user.html'
     post_url = reverse_lazy('hijack:acquire')
-
-    def __init__(self, model_admin, target_person_pk):
-        self.target_person_pk = unquote(target_person_pk)
-        self.target_person = get_object_or_404(Person, pk=self.target_person_pk)
-        super().__init__(model_admin)
 
     def check_action_permitted(self, user: User) -> bool:
         target_user = self.target_person.user
@@ -129,12 +147,6 @@ class ImpersonateUserView(WMABaseView[Person]):
         target_is_active = target_user.is_active
 
         return user.is_superuser and not impersonate_themselves and target_is_active
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        if not self.check_action_permitted(request.user):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
         msg = _('Confirm viewing the site as user %(person)s')

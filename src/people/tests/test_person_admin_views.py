@@ -104,6 +104,13 @@ def test_role_badges(admin_client, plan_with_pages, plan_admin_person):
     assert 'person-role--contact_person' in _row(content, contact)
 
 
+@pytest.mark.parametrize(('ordering', 'admin_first'), [('role', True), ('-role', False)])
+def test_listing_can_be_sorted_by_role(admin_client, plan_with_pages, plan_admin_person, ordering, admin_first):
+    nobody = _person(plan_with_pages)
+    content = _listing(admin_client, f'?ordering={ordering}')
+    assert (content.index(plan_admin_person.email) < content.index(nobody.email)) is admin_first
+
+
 @pytest.mark.parametrize(('role', 'listed'), [('plan_admin', 'admin'), ('contact_person', 'contact'), ('none', 'nobody')])
 def test_listing_can_be_filtered_by_role(admin_client, plan_with_pages, plan_admin_person, role, listed):
     people = {'admin': plan_admin_person, 'contact': _contact_person(plan_with_pages), 'nobody': _person(plan_with_pages)}

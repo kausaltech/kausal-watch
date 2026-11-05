@@ -2023,7 +2023,7 @@ class PersonViewSet(AuditLoggingBulkModelViewSet[Person]):
     def perform_destroy(self, instance):
         # Log the deletion before actually deleting
         self._log_action(instance, 'wagtail.delete')
-        # FIXME: Duplicated in people.wagtail_admin.PersonDeleteView.delete_instance()
+        # FIXME: Duplicated in people.wagtail_admin.PersonDeleteView.delete_action()
         acting_admin_user = self.request.user
         instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
