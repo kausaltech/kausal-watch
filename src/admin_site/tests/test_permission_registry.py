@@ -42,6 +42,8 @@ from indicators.permission_policy import DimensionPermissionPolicy
 from notifications.models import BaseTemplate, NotificationSettings
 from orgs.models import Organization
 from pages.models import PageChangeLogMessage
+from people.models import Person
+from people.permission_policy import PersonPermissionPolicy
 from reports.models import Report, ReportType
 
 
@@ -76,6 +78,7 @@ def test_declared_permission_policy_is_registered(model):
         (CategoryType, PlanAdminOnlyPermissionPolicy),
         (Category, CategoryPermissionPolicy),
         (AttributeType, PlanRelatedPermissionPolicy),
+        (Person, PersonPermissionPolicy),
     ],
 )
 def test_viewset_models_keep_their_permission_policy(model, policy_class):
