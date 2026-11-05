@@ -319,7 +319,7 @@ msgstr "%s wird mehrfach in der Massnahme aufgeführt."
 #: src/actions/action_admin.py
 #, python-format
 msgid "%s has been added to the action in the meantime. Please reload the page and try again."
-msgstr ""
+msgstr "%s wurde der Massnahme in der Zwischenzeit hinzugefügt. Bitte laden Sie die Seite neu und versuchen Sie es erneut."
 
 #: src/actions/action_admin.py
 #, python-format
@@ -599,7 +599,7 @@ msgstr ""
 
 #: src/actions/api.py
 msgid "Some of these actions were modified by someone else. Please reload the latest version and try again."
-msgstr ""
+msgstr "Einige dieser Massnahmen wurden von jemand anderem geändert. Bitte laden Sie die neueste Version und versuchen Sie es erneut."
 
 #: src/actions/api.py
 msgid "Identifier must be set"
@@ -1485,10 +1485,8 @@ msgid "updated at"
 msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "revision"
 msgid "version"
-msgstr "Überarbeitung"
+msgstr ""
 
 #: src/actions/models/action.py
 msgid "Monotonic counter used as an optimistic-concurrency token for bulk edits. Bumped on every conflict-checked write; not meant for display."
@@ -1576,16 +1574,14 @@ msgid "Active tasks"
 msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "These are sent when a visitor has left feedback for this action."
+#, python-format
 msgid "The report %s does not belong to the plan of this action."
-msgstr "Diese werden versendet, wenn ein Besucher Feedback zu dieser Massnahme hinterlassen hat."
+msgstr "Der Bericht %s gehört nicht zum Plan dieser Massnahme."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "The action is already marked as complete for report %s."
+#, python-format
 msgid "The report %s is already marked as complete."
-msgstr "Die Massnahme ist für den Bericht %s bereits als abgeschlossen markiert."
+msgstr ""
 
 #: src/actions/models/action.py
 #, python-format
@@ -3107,19 +3103,15 @@ msgstr ""
 
 #: src/actions/models/pledge.py
 msgid "required"
+msgstr "erforderlich"
+
+#: src/actions/models/pledge.py
+msgid "pledge form field"
 msgstr ""
 
 #: src/actions/models/pledge.py
-#, fuzzy
-#| msgid "Action list pages"
-msgid "pledge form field"
-msgstr "Massnahmenlistenseiten"
-
-#: src/actions/models/pledge.py
-#, fuzzy
-#| msgid "Action field"
 msgid "pledge form fields"
-msgstr "Massnahmenfeld"
+msgstr ""
 
 #: src/actions/models/pledge.py
 msgid "The identifier cannot be changed because answers are stored under it."
@@ -3603,20 +3595,16 @@ msgid "Action classifications"
 msgstr "Massnahmenklassifizierungen"
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Connected actions"
 msgid "Collected data fields"
-msgstr "Verbundene Massnahmen"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Information people are asked to give when they commit to a pledge. Only collect information that your privacy notice covers. Leave empty to collect nothing."
 msgstr ""
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "pledge actions"
 msgid "Pledge accounts"
-msgstr "Massnahmen der Mitmach-Aktion"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "Only used when the plan offers accounts for community engagement."
@@ -4072,10 +4060,8 @@ msgid "Edit data"
 msgstr ""
 
 #: src/admin_site/templates/admin_site/panels/translations_panel.html
-#, fuzzy
-#| msgid "For an action"
 msgid "Translations"
-msgstr "Für eine Massnahme"
+msgstr "Übersetzungen"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -5573,10 +5559,8 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Massnahmenansprechpersonen"
 
 #: src/indicators/models/indicator.py
-#, fuzzy
-#| msgid "action indicators"
 msgid "hide from indicator list"
-msgstr "Massnahmenindikatoren"
+msgstr ""
 
 #: src/indicators/models/indicator.py
 msgid "Has data"
@@ -7345,16 +7329,12 @@ msgid "action snapshots"
 msgstr "Massnahmen-Snapshots"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "action snapshot"
 msgid "indicator snapshot"
-msgstr "Massnahmen-Snapshot"
+msgstr ""
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "action snapshots"
 msgid "indicator snapshots"
-msgstr "Massnahmen-Snapshots"
+msgstr ""
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7401,10 +7381,8 @@ msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
-#, fuzzy
-#| msgid "Large image"
 msgid "Target date"
-msgstr "Grosses Bild"
+msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
@@ -7413,17 +7391,13 @@ msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
-#, fuzzy
-#| msgid "Large image"
 msgid "Target value"
-msgstr "Grosses Bild"
+msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Has action identifiers"
 msgid "Action identifier"
-msgstr "Hat Massnahmenkennungen"
+msgstr "Massnahmenkennung"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
@@ -7442,10 +7416,8 @@ msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "action implementation phase"
 msgid "Completion date"
-msgstr "Massnahmenumsetzungsphase"
+msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
@@ -7454,10 +7426,8 @@ msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Has primary organizations for actions"
 msgid "Responsible organizations"
-msgstr "Hat Hauptorganisationen für Massnahmen"
+msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_excel_roundtrip.py

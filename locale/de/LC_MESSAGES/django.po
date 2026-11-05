@@ -36,10 +36,8 @@ msgid "Your request to view %(plan_name)s has been approved."
 msgstr "Ihre Anfrage für den Zugang zu %(plan_name)s wurde genehmigt."
 
 #: src/access_requests/emails.py
-#, fuzzy
-#| msgid "You can sign in at %(plan_url)s with this email address."
 msgid "You can sign in with this email address."
-msgstr "Sie können sich unter %(plan_url)s mit dieser E-Mail-Adresse anmelden."
+msgstr "Sie können sich mit dieser E-Mail-Adresse anmelden."
 
 #: src/access_requests/emails.py
 #, python-format
@@ -314,7 +312,7 @@ msgstr "%s wird mehrfach in der Maßnahme aufgeführt."
 #: src/actions/action_admin.py
 #, python-format
 msgid "%s has been added to the action in the meantime. Please reload the page and try again."
-msgstr ""
+msgstr "%s wurde der Maßnahme in der Zwischenzeit hinzugefügt. Bitte laden Sie die Seite neu und versuchen Sie es erneut."
 
 #: src/actions/action_admin.py
 #, python-format
@@ -594,7 +592,7 @@ msgstr "Diese Wahlmöglichkeit ist archiviert und kann nicht als neuer Wert ausg
 
 #: src/actions/api.py
 msgid "Some of these actions were modified by someone else. Please reload the latest version and try again."
-msgstr ""
+msgstr "Einige dieser Maßnahmen wurden von jemand anderem geändert. Bitte laden Sie die neueste Version und versuchen Sie es erneut."
 
 #: src/actions/api.py
 msgid "Identifier must be set"
@@ -1461,14 +1459,12 @@ msgid "updated at"
 msgstr "aktualisiert am"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "version name"
 msgid "version"
-msgstr "Versionsname"
+msgstr "Version"
 
 #: src/actions/models/action.py
 msgid "Monotonic counter used as an optimistic-concurrency token for bulk edits. Bumped on every conflict-checked write; not meant for display."
-msgstr ""
+msgstr "Monoton steigender Zähler, der bei Massenbearbeitungen als Token für optimistische Nebenläufigkeitskontrolle dient. Wird bei jedem auf Konflikte geprüften Schreibvorgang erhöht; nicht zur Anzeige bestimmt."
 
 #: src/actions/models/action.py src/reports/models.py
 msgid "start date"
@@ -1552,16 +1548,14 @@ msgid "Active tasks"
 msgstr "Aktive Aufgaben"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "These are sent when a visitor has left feedback for this action."
+#, python-format
 msgid "The report %s does not belong to the plan of this action."
-msgstr "Diese werden versendet, wenn ein Besucher Feedback zu dieser Maßnahme hinterlassen hat."
+msgstr "Der Bericht %s gehört nicht zum Plan dieser Maßnahme."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "The report is already marked as complete."
+#, python-format
 msgid "The report %s is already marked as complete."
-msgstr "Der Bericht ist bereits als abgeschlossen markiert."
+msgstr "Der Bericht %s ist bereits als abgeschlossen markiert."
 
 #: src/actions/models/action.py
 #, python-format
@@ -2371,14 +2365,12 @@ msgid "Enable community engagement features such as pledges for this plan."
 msgstr "Aktiviere Funktionen für das Bürgerengagement, wie z. B. Mitmach-Aktionen, für diesen Plan."
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Enable community engagement"
 msgid "Offer accounts for community engagement"
-msgstr "Bürgerengagement aktivieren"
+msgstr "Konten für das Bürgerengagement anbieten"
 
 #: src/actions/models/features.py
 msgid "Let people create an account with their email after committing to a pledge, so they can come back to their pledges. When off, everyone takes part anonymously."
-msgstr ""
+msgstr "Ermöglicht es Personen, nach der Teilnahme an einer Mitmach-Aktion mit ihrer E-Mail-Adresse ein Konto zu erstellen, damit sie später zu ihren Mitmach-Aktionen zurückkehren können. Wenn deaktiviert, nehmen alle anonym teil."
 
 #: src/actions/models/features.py
 msgid "Enable access requests"
@@ -2434,11 +2426,11 @@ msgstr "Für das Bürgerengagement muss im Plan ein primärer Kunde festgelegt s
 
 #: src/actions/models/features.py
 msgid "Accounts require community engagement to be enabled."
-msgstr ""
+msgstr "Konten setzen voraus, dass das Bürgerengagement aktiviert ist."
 
 #: src/actions/models/features.py
 msgid "Add a link to the terms of use in the plan settings (Community engagement tab) before offering accounts."
-msgstr ""
+msgstr "Fügen Sie in den Planeinstellungen (Reiter „Bürgerengagement“) einen Link zu den Nutzungsbedingungen hinzu, bevor Sie Konten anbieten."
 
 #: src/actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
@@ -2578,45 +2570,43 @@ msgstr "Wird Personen angezeigt, die Zugang anfragen, sowie in der E-Mail, die i
 
 #: src/actions/models/plan.py
 msgid "Link to terms of use for pledge accounts"
-msgstr ""
+msgstr "Link zu den Nutzungsbedingungen für Konten bei Mitmach-Aktionen"
 
 #: src/actions/models/plan.py
 msgid "People must accept these terms when they create an account. Required before accounts can be offered."
-msgstr ""
+msgstr "Personen müssen diese Bedingungen akzeptieren, wenn sie ein Konto erstellen. Erforderlich, bevor Konten angeboten werden können."
 
 #: src/actions/models/plan.py
 msgid "Link to privacy notice for pledge accounts"
-msgstr ""
+msgstr "Link zur Datenschutzerklärung für Konten bei Mitmach-Aktionen"
 
 #: src/actions/models/plan.py
 msgid "Linked next to the terms of use when people create an account."
-msgstr ""
+msgstr "Wird neben den Nutzungsbedingungen verlinkt, wenn Personen ein Konto erstellen."
 
 #: src/actions/models/plan.py
 msgid "Account invitation title"
-msgstr ""
+msgstr "Titel der Einladung zur Kontoerstellung"
 
 #: src/actions/models/plan.py
 msgid "Shown when people are invited to create an account. Leave empty to use \"Create an account\"."
-msgstr ""
+msgstr "Wird angezeigt, wenn Personen eingeladen werden, ein Konto zu erstellen. Leer lassen, um „Konto erstellen“ zu verwenden."
 
 #: src/actions/models/plan.py
 msgid "Account invitation text"
-msgstr ""
+msgstr "Text der Einladung zur Kontoerstellung"
 
 #: src/actions/models/plan.py
 msgid "Shown below the title. Leave empty to use \"Save your pledges and come back to track your progress.\""
-msgstr ""
+msgstr "Wird unter dem Titel angezeigt. Leer lassen, um „Speichern Sie Ihre Mitmach-Aktionen und verfolgen Sie später Ihren Fortschritt.“ zu verwenden."
 
 #: src/actions/models/plan.py
-#, fuzzy
-#| msgid "marketing consented at"
 msgid "Marketing consent label"
-msgstr "Marketing-Einwilligung erteilt am"
+msgstr "Beschriftung der Marketing-Einwilligung"
 
 #: src/actions/models/plan.py
 msgid "Label of an optional checkbox for agreeing to receive updates from the plan. Leave empty to not ask for marketing consent."
-msgstr ""
+msgstr "Beschriftung eines optionalen Kontrollkästchens, mit dem Personen zustimmen, Neuigkeiten zum Plan zu erhalten. Leer lassen, um nicht nach einer Marketing-Einwilligung zu fragen."
 
 #: src/actions/models/plan.py
 msgid "Link to external feedback form"
@@ -3035,7 +3025,7 @@ msgstr "Maßnahmen der Mitmach-Aktion"
 
 #: src/actions/models/pledge.py
 msgid "The key under which answers are stored, e.g. postal_code. It cannot be changed after the field is saved."
-msgstr ""
+msgstr "Der Schlüssel, unter dem die Antworten gespeichert werden, z. B. postal_code. Er kann nach dem Speichern des Feldes nicht mehr geändert werden."
 
 #: src/actions/models/pledge.py src/admin_site/models.py
 msgid "label"
@@ -3043,29 +3033,23 @@ msgstr "Beschriftung"
 
 #: src/actions/models/pledge.py
 msgid "placeholder"
-msgstr ""
+msgstr "Platzhalter"
 
 #: src/actions/models/pledge.py
-#, fuzzy
-#| msgid "Required"
 msgid "required"
-msgstr "Erforderlich"
+msgstr "erforderlich"
 
 #: src/actions/models/pledge.py
-#, fuzzy
-#| msgid "pledge commitment"
 msgid "pledge form field"
-msgstr "Teilnahme"
+msgstr "Formularfeld für Mitmach-Aktionen"
 
 #: src/actions/models/pledge.py
-#, fuzzy
-#| msgid "pledge commitments"
 msgid "pledge form fields"
-msgstr "Teilnahmen"
+msgstr "Formularfelder für Mitmach-Aktionen"
 
 #: src/actions/models/pledge.py
 msgid "The identifier cannot be changed because answers are stored under it."
-msgstr ""
+msgstr "Die Kennung kann nicht geändert werden, da unter ihr Antworten gespeichert sind."
 
 #: src/actions/models/public_user.py
 msgid "user data"
@@ -3204,7 +3188,7 @@ msgstr "Teilnehmende der Mitmach-Aktion"
 
 #: src/actions/pledge_participants_admin.py
 msgid "There are no pledge participants who have provided their email."
-msgstr ""
+msgstr "Es gibt keine Teilnehmenden der Mitmach-Aktion, die ihre E-Mail-Adresse angegeben haben."
 
 #: src/actions/pledge_participants_admin.py
 msgid "Copy opted-in emails"
@@ -3485,7 +3469,7 @@ msgstr "Domänen"
 
 #: src/actions/wagtail_admin.py
 msgid "Links to the plan use the first domain in this list that serves the plan: a production domain once the plan is published, a preview domain before that. Domains that redirect elsewhere are skipped."
-msgstr ""
+msgstr "Links zum Plan verwenden die erste Domäne in dieser Liste, unter der der Plan erreichbar ist: nach der Veröffentlichung des Plans eine Produktionsdomäne, davor eine Vorschaudomäne. Domänen, die auf andere Adressen weiterleiten, werden übersprungen."
 
 #: src/actions/wagtail_admin.py
 msgid "Child plans"
@@ -3516,30 +3500,24 @@ msgid "Action classifications"
 msgstr "Maßnahmenklassifizierungen"
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Connected actions"
 msgid "Collected data fields"
-msgstr "Verbundene Maßnahmen"
+msgstr "Erhobene Datenfelder"
 
 #: src/actions/wagtail_admin.py
 msgid "Information people are asked to give when they commit to a pledge. Only collect information that your privacy notice covers. Leave empty to collect nothing."
-msgstr ""
+msgstr "Angaben, um die Personen bei der Teilnahme an einer Mitmach-Aktion gebeten werden. Erheben Sie nur Daten, die von Ihrer Datenschutzerklärung abgedeckt sind. Leer lassen, um keine Daten zu erheben."
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "pledge actions"
 msgid "Pledge accounts"
-msgstr "Maßnahmen der Mitmach-Aktion"
+msgstr "Konten für Mitmach-Aktionen"
 
 #: src/actions/wagtail_admin.py
 msgid "Only used when the plan offers accounts for community engagement."
-msgstr ""
+msgstr "Wird nur verwendet, wenn der Plan Konten für das Bürgerengagement anbietet."
 
 #: src/actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Enable community engagement"
 msgid "Community engagement"
-msgstr "Bürgerengagement aktivieren"
+msgstr "Bürgerengagement"
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -3967,10 +3945,8 @@ msgid "Edit data"
 msgstr "Daten bearbeiten"
 
 #: src/admin_site/templates/admin_site/panels/translations_panel.html
-#, fuzzy
-#| msgid "Organizations"
 msgid "Translations"
-msgstr "Organisationen"
+msgstr "Übersetzungen"
 
 #: src/admin_site/templates/admin_site/pledge_participants_panel.html
 msgid "Opted in"
@@ -4055,7 +4031,7 @@ msgstr "Eintrag im Änderungsverlauf hinzufügen"
 #: src/admin_site/wagtail.py
 #, python-format
 msgid "%(heading)s (%(language)s)"
-msgstr ""
+msgstr "%(heading)s (%(language)s)"
 
 #: src/admin_site/wagtail.py
 #, python-format
@@ -4150,7 +4126,7 @@ msgstr "Finnisch"
 
 #: src/aplans/settings.py
 msgid "French"
-msgstr ""
+msgstr "Französisch"
 
 #: src/aplans/settings.py
 msgid "Latvian"
@@ -5377,10 +5353,8 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Die Werte dieses Indikators nicht in einer Tabelle auf der Indikatorseite anzeigen."
 
 #: src/indicators/models/indicator.py
-#, fuzzy
-#| msgid "Other indicators"
 msgid "hide from indicator list"
-msgstr "Andere Indikatoren"
+msgstr "aus Indikatorliste ausblenden"
 
 #: src/indicators/models/indicator.py
 msgid "Has data"
@@ -5506,30 +5480,29 @@ msgid "indicator goals"
 msgstr "Indikatorziele"
 
 #: src/indicators/normalization.py
-#, fuzzy, python-format
-#| msgid "Update goals"
+#, python-format
 msgid "%(date)s (goal)"
-msgstr "Ziele aktualisieren"
+msgstr "%(date)s (Ziel)"
 
 #: src/indicators/normalization.py
 #, python-format
 msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
-msgstr ""
+msgstr "Dieser Indikator kann nur teilweise nach „%(normalizer)s“ normalisiert werden, da es für folgende Zeitpunkte keinen Wert (oder den Wert null) hat: %(dates)s. Solange dies nicht behoben ist, bieten Websites möglicherweise nicht an, diesen Indikator normalisiert nach „%(normalizer)s“ anzuzeigen."
 
 #: src/indicators/normalization.py
 #, python-format
 msgid "Edit the data of \"%(normalizer)s\""
-msgstr ""
+msgstr "Daten von „%(normalizer)s“ bearbeiten"
 
 #: src/indicators/normalization.py
 #, python-format
 msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
-msgstr ""
+msgstr "Dieser Indikator wird nach „%(normalizer)s“ normalisiert, aber seine Organisation hat keinen Indikator dafür. Solange es keinen gibt, bieten Websites möglicherweise nicht an, diesen Indikator normalisiert nach „%(normalizer)s“ anzuzeigen."
 
 #: src/indicators/normalization.py
 #, python-format
 msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
-msgstr ""
+msgstr "Werte für Dimensionskategorien können nicht normalisiert werden, daher bieten Websites möglicherweise nicht an, das Diagramm dieses Indikators normalisiert nach „%(normalizer)s“ anzuzeigen."
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -7077,16 +7050,12 @@ msgid "action snapshots"
 msgstr "Maßnahmen-Snapshots"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "indicator goals"
 msgid "indicator snapshot"
-msgstr "Indikatorziele"
+msgstr "Indikator-Snapshot"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "action snapshots"
 msgid "indicator snapshots"
-msgstr "Maßnahmen-Snapshots"
+msgstr "Indikator-Snapshots"
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7119,83 +7088,65 @@ msgstr "Aus Kausal Watch exportiert"
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Data frozen at"
-msgstr ""
+msgstr "Daten eingefroren am"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Date of value at start of reporting period"
-msgstr ""
+msgstr "Datum des Werts zu Beginn des Berichtszeitraums"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
-#, fuzzy
-#| msgid "Latest value"
 msgid "Date of latest value"
-msgstr "Letzter Wert"
+msgstr "Datum des letzten Werts"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
-#, fuzzy
-#| msgid "start date"
 msgid "Target date"
-msgstr "Beginndatum"
+msgstr "Zieldatum"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Value at start of reporting period"
-msgstr ""
+msgstr "Wert zu Beginn des Berichtszeitraums"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
-#, fuzzy
-#| msgid "Earliest value"
 msgid "Target value"
-msgstr "Frühester Wert"
+msgstr "Zielwert"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Has action identifiers"
 msgid "Action identifier"
-msgstr "Hat Maßnahmenkennungen"
+msgstr "Maßnahmenkennung"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "due date"
 msgid "Due date"
 msgstr "Frist"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "state"
 msgid "State"
 msgstr "Status"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
 msgid "State at start of reporting period"
-msgstr ""
+msgstr "Status zu Beginn des Berichtszeitraums"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "completion date"
 msgid "Completion date"
 msgstr "Fertigstellungsdatum"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "details"
 msgid "Details"
 msgstr "Details"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "responsible organizations"
 msgid "Responsible organizations"
 msgstr "Zuständige Organisationen"
 
