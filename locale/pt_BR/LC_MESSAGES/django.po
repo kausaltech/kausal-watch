@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2026-09-28 07:47+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -332,6 +332,11 @@ msgstr "Já existe uma ação com esse identificador."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s é listado várias vezes na ação."
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -731,26 +736,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/actions/attribute_type_admin.py
-#, fuzzy
-msgid "Object type"
-msgstr "Tipo de objeto"
-
-#: src/actions/attribute_type_admin.py
-#, fuzzy
-msgid "Fields"
-msgstr "Campos"
-
-#: src/actions/attribute_type_admin.py
-#, fuzzy, python-format
-msgid "Field for %s"
-msgstr "Campo para %s"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
 #, fuzzy, python-format
 msgid "Fields (%(model)s)"
 msgstr "Campos (%(model)s)"
@@ -766,16 +751,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Se o formato for \"Numérico\", uma unidade deverá ser definida"
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-#, fuzzy
-msgid "Order"
-msgstr "ordem"
-
-#: src/actions/attribute_type_admin.py
 #, fuzzy
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr "Esse campo já tem valores. Se quiser alterar o formato, você precisará excluir os valores existentes primeiro."
@@ -786,7 +761,7 @@ msgid "Choice options"
 msgstr "Opções de escolha"
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 #, fuzzy
 msgid "Category type"
 msgstr "Tipo de categoria"
@@ -796,6 +771,26 @@ msgstr "Tipo de categoria"
 #, fuzzy
 msgid "General"
 msgstr "Geral"
+
+#: src/actions/attribute_type_admin.py
+#, fuzzy, python-format
+msgid "Field for %s"
+msgstr "Campo para %s"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+#, fuzzy
+msgid "Fields"
+msgstr "Campos"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr ""
 
 #: src/actions/attributes.py
 msgid "A choice option used in this draft no longer exists. The selection has been cleared."
@@ -1344,13 +1339,13 @@ msgstr ""
 
 #: src/actions/category_admin.py
 #, fuzzy
-msgid "Common category type"
-msgstr "Tipo de categoria comum"
+msgid "There is already a category type with this identifier."
+msgstr "Já existe uma categoria com esse identificador."
 
 #: src/actions/category_admin.py
-#, fuzzy
-msgid "Category types"
-msgstr "Tipos de categoria"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: src/actions/category_admin.py
 #, fuzzy
@@ -1364,18 +1359,13 @@ msgstr "Níveis de categoria"
 
 #: src/actions/category_admin.py
 #, fuzzy
-msgid "There is already a category with this identifier."
-msgstr "Já existe uma categoria com esse identificador."
+msgid "Category types"
+msgstr "Tipos de categoria"
 
 #: src/actions/category_admin.py
 #, fuzzy
-msgid "There is already a category type with this identifier."
+msgid "There is already a category with this identifier."
 msgstr "Já existe uma categoria com esse identificador."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
-msgstr ""
 
 #: src/actions/category_admin.py
 #, fuzzy
@@ -6201,6 +6191,11 @@ msgstr "pessoas de contato do indicador"
 
 #: src/indicators/models/indicator.py
 #, fuzzy
+msgid "hide from indicator list"
+msgstr "outros indicadores"
+
+#: src/indicators/models/indicator.py
+#, fuzzy
 msgid "Has data"
 msgstr "Possui dados"
 
@@ -6348,6 +6343,31 @@ msgstr "meta do indicador"
 #, fuzzy
 msgid "indicator goals"
 msgstr "metas de indicadores"
+
+#: src/indicators/normalization.py
+#, fuzzy, python-format
+msgid "%(date)s (goal)"
+msgstr "Atualizado em"
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -7880,13 +7900,11 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' está atualmente conectado aos seguintes itens. Verifique a exclusão:"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 #, fuzzy
 msgid "Yes, delete"
 msgstr "Sim, excluir"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 #, fuzzy
 msgid "No, don't delete"
 msgstr "Não, não exclua"
@@ -8648,6 +8666,18 @@ msgstr "Salvando…"
 #, fuzzy
 msgid "Save"
 msgstr "Salvar"
+
+#, fuzzy
+#~ msgid "Object type"
+#~ msgstr "Tipo de objeto"
+
+#, fuzzy
+#~ msgid "Order"
+#~ msgstr "ordem"
+
+#, fuzzy
+#~ msgid "Common category type"
+#~ msgstr "Tipo de categoria comum"
 
 #, fuzzy
 #~ msgid "Is contact person"

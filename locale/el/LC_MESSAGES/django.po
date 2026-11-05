@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -341,6 +341,11 @@ msgstr "Υπάρχει ήδη μια ενέργεια με αυτό το ανα�
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s αναφέρεται πολλές φορές στη δράση."
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -721,24 +726,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/actions/attribute_type_admin.py
-msgid "Object type"
-msgstr "Τύπος αντικειμένου"
-
-#: src/actions/attribute_type_admin.py
-msgid "Fields"
-msgstr "Πεδία"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Field for %s"
-msgstr "Πεδίο για %s"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
 msgstr "Πεδία (%(model)s)"
@@ -752,15 +739,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Εάν η μορφή είναι \"Numeric\", πρέπει να οριστεί μια μονάδα"
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-msgid "Order"
-msgstr "Παραγγελία"
-
-#: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr "Αυτό το πεδίο έχει ήδη τιμές. Αν θέλετε να αλλάξετε τη μορφή, πρέπει πρώτα να διαγράψετε τις υπάρχουσες τιμές."
 
@@ -769,7 +747,7 @@ msgid "Choice options"
 msgstr "Επιλογές επιλογής"
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 msgid "Category type"
 msgstr "Τύπος κατηγορίας"
 
@@ -777,6 +755,25 @@ msgstr "Τύπος κατηγορίας"
 #: src/indicators/wagtail_admin.py src/people/wagtail_admin.py
 msgid "General"
 msgstr "Γενικά"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr "Πεδίο για %s"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+msgid "Fields"
+msgstr "Πεδία"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr ""
 
 #: src/actions/attributes.py
 msgid "A choice option used in this draft no longer exists. The selection has been cleared."
@@ -1305,12 +1302,15 @@ msgid "%(count)d actions failed to release; see logs for details."
 msgstr ""
 
 #: src/actions/category_admin.py
-msgid "Common category type"
-msgstr "Κοινός τύπος κατηγορίας"
+#, fuzzy
+#| msgid "There is already a category with this identifier."
+msgid "There is already a category type with this identifier."
+msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
 
 #: src/actions/category_admin.py
-msgid "Category types"
-msgstr "Τύποι κατηγορίας"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr ""
 
 #: src/actions/category_admin.py
 msgid "Action and indicator categorization"
@@ -1321,19 +1321,12 @@ msgid "Category levels"
 msgstr "Επίπεδα κατηγορίας"
 
 #: src/actions/category_admin.py
+msgid "Category types"
+msgstr "Τύποι κατηγορίας"
+
+#: src/actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
-
-#: src/actions/category_admin.py
-#, fuzzy
-#| msgid "There is already a category with this identifier."
-msgid "There is already a category type with this identifier."
-msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
-msgstr ""
 
 #: src/actions/category_admin.py
 msgid "Icons"
@@ -5917,6 +5910,12 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Επιλέξτε τον τρόπο διάταξης των δεικτών στις σελίδες δράσης"
 
 #: src/indicators/models/indicator.py
+#, fuzzy
+#| msgid "other indicators"
+msgid "hide from indicator list"
+msgstr "άλλοι δείκτες"
+
+#: src/indicators/models/indicator.py
 msgid "Has data"
 msgstr "Έχει δεδομένα"
 
@@ -6044,6 +6043,32 @@ msgstr "στόχος του δείκτη"
 #: src/indicators/models/values.py
 msgid "indicator goals"
 msgstr "στόχοι του δείκτη"
+
+#: src/indicators/normalization.py
+#, fuzzy, python-format
+#| msgid "Updated at"
+msgid "%(date)s (goal)"
+msgstr "Ενημερώθηκε στις"
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -7400,12 +7425,10 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "Το '%(instance_name)s' είναι συνδεδεμένο με τα ακόλουθα στοιχεία. Παρακαλώ επαληθεύστε τη διαγραφή:"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ναι, διαγράψτε"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Όχι, μη διαγράψετε"
 
@@ -8151,6 +8174,15 @@ msgstr "Εξοικονόμηση…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Αποθήκευση"
+
+#~ msgid "Object type"
+#~ msgstr "Τύπος αντικειμένου"
+
+#~ msgid "Order"
+#~ msgstr "Παραγγελία"
+
+#~ msgid "Common category type"
+#~ msgstr "Κοινός τύπος κατηγορίας"
 
 #~ msgid "Inactive, not in use currently"
 #~ msgstr "Ανενεργό, δεν χρησιμοποιείται επί του παρόντος"

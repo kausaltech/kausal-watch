@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -311,6 +311,11 @@ msgstr "Tällä tunnisteella on jo toimenpide."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s toistuu toimenpiteen tiedoissa"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -681,24 +686,6 @@ msgstr[0] "%(count)d toimenpideluonnos"
 msgstr[1] "%(count)d toimenpideluonnosta"
 
 #: src/actions/attribute_type_admin.py
-msgid "Object type"
-msgstr "Objektin tyyppi"
-
-#: src/actions/attribute_type_admin.py
-msgid "Fields"
-msgstr "Kentät"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Field for %s"
-msgstr "Kohteen %s kenttä"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr "Valintavaihtoehto \"%(name)s\" on vielä käytössä, joten se arkistoitiin poistamisen sijaan. Aiemmat viittaukset toimivat edelleen, mutta vaihtoehtoa ei voi enää valita uudelleen. Palauta se vaihtoehdon \"Poista arkistosta\" -painikkeella."
-
-#: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
 msgstr "Kentät (%(model)s)"
@@ -712,15 +699,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Jos muoto on 'numeerinen', yksikkö vaaditaan"
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr "Valintavaihtoehto \"%s\" on palautettu."
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-msgid "Order"
-msgstr "järjestys"
-
-#: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr "Tässä kentässä on jo arvoja. Jos haluat muuttaa muotoa, sinun on ensin poistettava nykyiset arvot."
 
@@ -729,7 +707,7 @@ msgid "Choice options"
 msgstr "Valintavaihtoehdot"
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
 
@@ -737,6 +715,25 @@ msgstr "Luokan tyyppi"
 #: src/indicators/wagtail_admin.py src/people/wagtail_admin.py
 msgid "General"
 msgstr "Yleinen"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr "Kohteen %s kenttä"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr "Valintavaihtoehto \"%(name)s\" on vielä käytössä, joten se arkistoitiin poistamisen sijaan. Aiemmat viittaukset toimivat edelleen, mutta vaihtoehtoa ei voi enää valita uudelleen. Palauta se vaihtoehdon \"Poista arkistosta\" -painikkeella."
+
+#: src/actions/attribute_type_admin.py
+msgid "Fields"
+msgstr "Kentät"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr "Valintavaihtoehto \"%s\" on palautettu."
 
 #: src/actions/attributes.py
 msgid "A choice option used in this draft no longer exists. The selection has been cleared."
@@ -1209,12 +1206,13 @@ msgid "%(count)d actions failed to release; see logs for details."
 msgstr "%(count)d toimenpiteen vapauttaminen epäonnistui; katso lisätiedot lokeista."
 
 #: src/actions/category_admin.py
-msgid "Common category type"
-msgstr "Yleisten luokkien tyypit"
+msgid "There is already a category type with this identifier."
+msgstr "Tällä tunnisteella on jo luokan tyyppi."
 
 #: src/actions/category_admin.py
-msgid "Category types"
-msgstr "Luokkien tyypit"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr "Olet vaihtanut toiseen toimenpideohjelmaan tämän luokan tyypin muokkaamisen aikana. Luokan tyyppi tallennettiin edelleen alkuperäiseen toimenpideohjelmaan \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Action and indicator categorization"
@@ -1225,17 +1223,12 @@ msgid "Category levels"
 msgstr "Kategorian tasot"
 
 #: src/actions/category_admin.py
+msgid "Category types"
+msgstr "Luokkien tyypit"
+
+#: src/actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Tällä tunnisteella on jo luokka."
-
-#: src/actions/category_admin.py
-msgid "There is already a category type with this identifier."
-msgstr "Tällä tunnisteella on jo luokan tyyppi."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
-msgstr "Olet vaihtanut toiseen toimenpideohjelmaan tämän luokan tyypin muokkaamisen aikana. Luokan tyyppi tallennettiin edelleen alkuperäiseen toimenpideohjelmaan \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Icons"
@@ -5389,6 +5382,12 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Älä näytä tämän mittarin arvoja taulukkona mittarisivulla."
 
 #: src/indicators/models/indicator.py
+#, fuzzy
+#| msgid "Other indicators"
+msgid "hide from indicator list"
+msgstr "muut mittarit"
+
+#: src/indicators/models/indicator.py
 msgid "Has data"
 msgstr "On dataa"
 
@@ -5510,6 +5509,32 @@ msgstr "mittarin tavoite"
 #: src/indicators/models/values.py
 msgid "indicator goals"
 msgstr "mittarin tavoitteet"
+
+#: src/indicators/normalization.py
+#, fuzzy, python-format
+#| msgid "Update goals"
+msgid "%(date)s (goal)"
+msgstr "Päivitä tavoitteet"
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -6838,12 +6863,10 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' on yhteydessä seuraaviin kohteisiin. Ole hyvä ja varmista poistaminen:"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Kyllä, poista"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Ei, älä poista"
 
@@ -7537,6 +7560,15 @@ msgstr "Tallennetaan…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Tallenna ja poistu"
+
+#~ msgid "Object type"
+#~ msgstr "Objektin tyyppi"
+
+#~ msgid "Order"
+#~ msgstr "järjestys"
+
+#~ msgid "Common category type"
+#~ msgstr "Yleisten luokkien tyypit"
 
 #~ msgid "Inactive, not in use currently"
 #~ msgstr "Ei aktiivinen, ei tällä hetkellä käytössä"

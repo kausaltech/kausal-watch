@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -310,6 +310,11 @@ msgstr "Det finns redan en åtgärd med denna identifierare."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s anges flera gånger i åtgärden."
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -680,24 +685,6 @@ msgstr[0] "%(count)d åtgärdsutkast"
 msgstr[1] "%(count)d åtgärdsutkast"
 
 #: src/actions/attribute_type_admin.py
-msgid "Object type"
-msgstr "Typ av objekt"
-
-#: src/actions/attribute_type_admin.py
-msgid "Fields"
-msgstr "Fält"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Field for %s"
-msgstr "Fält för %s"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr "Valalternativet \"%(name)s\" används fortfarande och arkiverades därför i stället för att tas bort. Befintliga referenser fungerar även i fortsättningen, men alternativet visas inte för nya val. Använd knappen \"Återställ från arkiv\" på alternativet för att återställa det."
-
-#: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
 msgstr "Fält (%(model)s)"
@@ -711,15 +698,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Om formatet är \"Numerisk\" måste en enhet anges"
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr "Valalternativet \"%s\" har återställts."
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-msgid "Order"
-msgstr "Ordning"
-
-#: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr "Detta fält har redan värden. Om du vill ändra formatet måste du först ta bort de befintliga värdena."
 
@@ -728,7 +706,7 @@ msgid "Choice options"
 msgstr "Valmöjligheter"
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 msgid "Category type"
 msgstr "Kategorityp"
 
@@ -736,6 +714,25 @@ msgstr "Kategorityp"
 #: src/indicators/wagtail_admin.py src/people/wagtail_admin.py
 msgid "General"
 msgstr "Allmänt"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr "Fält för %s"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr "Valalternativet \"%(name)s\" används fortfarande och arkiverades därför i stället för att tas bort. Befintliga referenser fungerar även i fortsättningen, men alternativet visas inte för nya val. Använd knappen \"Återställ från arkiv\" på alternativet för att återställa det."
+
+#: src/actions/attribute_type_admin.py
+msgid "Fields"
+msgstr "Fält"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr "Valalternativet \"%s\" har återställts."
 
 #: src/actions/attributes.py
 msgid "A choice option used in this draft no longer exists. The selection has been cleared."
@@ -1208,12 +1205,13 @@ msgid "%(count)d actions failed to release; see logs for details."
 msgstr "%(count)d åtgärder kunde inte släppas; se loggarna för detaljer."
 
 #: src/actions/category_admin.py
-msgid "Common category type"
-msgstr "Gemensam kategorityp"
+msgid "There is already a category type with this identifier."
+msgstr "Det finns redan en kategorityp med denna beteckning."
 
 #: src/actions/category_admin.py
-msgid "Category types"
-msgstr "Kategorityper"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr "Du har bytt till en annan plan medan du redigerade denna kategorityp. Kategoritypen sparades ändå med den ursprungliga planen \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Action and indicator categorization"
@@ -1224,17 +1222,12 @@ msgid "Category levels"
 msgstr "Kategorinivåer"
 
 #: src/actions/category_admin.py
+msgid "Category types"
+msgstr "Kategorityper"
+
+#: src/actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Det finns redan en kategori med denna beteckning."
-
-#: src/actions/category_admin.py
-msgid "There is already a category type with this identifier."
-msgstr "Det finns redan en kategorityp med denna beteckning."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
-msgstr "Du har bytt till en annan plan medan du redigerade denna kategorityp. Kategoritypen sparades ändå med den ursprungliga planen \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Icons"
@@ -5388,6 +5381,12 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Visa inte denna indikators värden i en tabell på indikatorsidan."
 
 #: src/indicators/models/indicator.py
+#, fuzzy
+#| msgid "Other indicators"
+msgid "hide from indicator list"
+msgstr "Andra indikatorer"
+
+#: src/indicators/models/indicator.py
 msgid "Has data"
 msgstr "Har data"
 
@@ -5509,6 +5508,32 @@ msgstr "indikatormål"
 #: src/indicators/models/values.py
 msgid "indicator goals"
 msgstr "indikatormål"
+
+#: src/indicators/normalization.py
+#, fuzzy, python-format
+#| msgid "Update goals"
+msgid "%(date)s (goal)"
+msgstr "Uppdatera mål"
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -6798,12 +6823,10 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' är för närvarande ansluten till följande artiklar. Vänligen verifiera raderingen:"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ja, radera"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nej, radera inte"
 
@@ -7497,6 +7520,15 @@ msgstr "Sparar…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Spara"
+
+#~ msgid "Object type"
+#~ msgstr "Typ av objekt"
+
+#~ msgid "Order"
+#~ msgstr "Ordning"
+
+#~ msgid "Common category type"
+#~ msgstr "Gemensam kategorityp"
 
 #~ msgid "Inactive, not in use currently"
 #~ msgstr "Inaktiv, används inte för närvarande"

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -342,6 +342,11 @@ msgstr "Der er allerede en handling med denne identifikator."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s er anført flere gange i handlingen."
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -719,24 +724,6 @@ msgstr[0] "%(count)d handlingsudkast"
 msgstr[1] "%(count)d handlingsudkast"
 
 #: src/actions/attribute_type_admin.py
-msgid "Object type"
-msgstr "Objekttype"
-
-#: src/actions/attribute_type_admin.py
-msgid "Fields"
-msgstr "Felter"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Field for %s"
-msgstr "Felt for %s"
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr "Valgmuligheden \"%(name)s\" er stadig i brug og blev derfor arkiveret i stedet for slettet. Eksisterende referencer virker fortsat, men muligheden vises ikke ved nye valg. Brug knappen \"Fjern fra arkiv\" på muligheden for at gendanne den."
-
-#: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
 msgstr "Felter (%(model)s)"
@@ -750,15 +737,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Hvis formatet er 'Numerisk', skal der angives en enhed"
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr "Valgmuligheden \"%s\" er blevet gendannet."
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-msgid "Order"
-msgstr "Rækkefølge"
-
-#: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr "Dette felt har allerede værdier. Hvis du vil ændre formatet, skal du først slette de eksisterende værdier."
 
@@ -767,7 +745,7 @@ msgid "Choice options"
 msgstr "Valgmuligheder"
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 msgid "Category type"
 msgstr "Kategoritype"
 
@@ -775,6 +753,25 @@ msgstr "Kategoritype"
 #: src/indicators/wagtail_admin.py src/people/wagtail_admin.py
 msgid "General"
 msgstr "Generel"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr "Felt for %s"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr "Valgmuligheden \"%(name)s\" er stadig i brug og blev derfor arkiveret i stedet for slettet. Eksisterende referencer virker fortsat, men muligheden vises ikke ved nye valg. Brug knappen \"Fjern fra arkiv\" på muligheden for at gendanne den."
+
+#: src/actions/attribute_type_admin.py
+msgid "Fields"
+msgstr "Felter"
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
+msgstr "Valgmuligheden \"%s\" er blevet gendannet."
 
 #: src/actions/attributes.py
 msgid "A choice option used in this draft no longer exists. The selection has been cleared."
@@ -1250,12 +1247,13 @@ msgid "%(count)d actions failed to release; see logs for details."
 msgstr ""
 
 #: src/actions/category_admin.py
-msgid "Common category type"
-msgstr "Fælles kategoritype"
+msgid "There is already a category type with this identifier."
+msgstr "Der er allerede en kategoritype med denne identifikator."
 
 #: src/actions/category_admin.py
-msgid "Category types"
-msgstr "Kategorityper"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgstr "Du har skiftet til en anden plan, mens du redigerede denne kategoritype. Kategoritypen blev alligevel gemt med den oprindelige plan \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Action and indicator categorization"
@@ -1266,17 +1264,12 @@ msgid "Category levels"
 msgstr "Kategoriniveauer"
 
 #: src/actions/category_admin.py
+msgid "Category types"
+msgstr "Kategorityper"
+
+#: src/actions/category_admin.py
 msgid "There is already a category with this identifier."
 msgstr "Der er allerede en kategori med denne identifikator."
-
-#: src/actions/category_admin.py
-msgid "There is already a category type with this identifier."
-msgstr "Der er allerede en kategoritype med denne identifikator."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
-msgstr "Du har skiftet til en anden plan, mens du redigerede denne kategoritype. Kategoritypen blev alligevel gemt med den oprindelige plan \"%s\"."
 
 #: src/actions/category_admin.py
 msgid "Icons"
@@ -5502,6 +5495,12 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Vis ikke denne indikators værdier i en tabel på indikatorsiden."
 
 #: src/indicators/models/indicator.py
+#, fuzzy
+#| msgid "Other indicators"
+msgid "hide from indicator list"
+msgstr "Andre indikatorer"
+
+#: src/indicators/models/indicator.py
 msgid "Has data"
 msgstr "Har data"
 
@@ -5625,6 +5624,32 @@ msgstr "indikator mål"
 #: src/indicators/models/values.py
 msgid "indicator goals"
 msgstr "indikator mål"
+
+#: src/indicators/normalization.py
+#, fuzzy, python-format
+#| msgid "Update goals"
+msgid "%(date)s (goal)"
+msgstr "Opdater mål"
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
@@ -6916,12 +6941,10 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr "'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft venligst sletning:"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr "Ja, slet"
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr "Nej, slet ikke"
 
@@ -7634,6 +7657,15 @@ msgstr "Gemmer…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Gemme"
+
+#~ msgid "Object type"
+#~ msgstr "Objekttype"
+
+#~ msgid "Order"
+#~ msgstr "Rækkefølge"
+
+#~ msgid "Common category type"
+#~ msgstr "Fælles kategoritype"
 
 #~ msgid "Inactive, not in use currently"
 #~ msgstr "Inaktiv, ikke i brug i øjeblikket"

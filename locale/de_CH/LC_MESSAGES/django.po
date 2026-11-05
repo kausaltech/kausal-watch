@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 15:27+0200\n"
+"POT-Creation-Date: 2026-11-05 15:41+0200\n"
 "PO-Revision-Date: 2025-04-02 07:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: German (Switzerland) <https://weblate.kausal.tech/projects/watch/django/de_CH/>\n"
@@ -315,6 +315,11 @@ msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s wird mehrfach in der Massnahme aufgeführt."
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "%s has been added to the action in the meantime. Please reload the page and try again."
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -686,24 +691,6 @@ msgstr[0] "%(count)d Massnahmenentwurf"
 msgstr[1] "%(count)d Massnahmenentwürfe"
 
 #: src/actions/attribute_type_admin.py
-msgid "Object type"
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
-msgid "Fields"
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Field for %s"
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py
 #, python-format
 msgid "Fields (%(model)s)"
 msgstr ""
@@ -717,15 +704,6 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr ""
 
 #: src/actions/attribute_type_admin.py
-#, python-format
-msgid "Choice option '%s' has been restored."
-msgstr ""
-
-#: src/actions/attribute_type_admin.py src/actions/category_admin.py
-msgid "Order"
-msgstr "Sortierung"
-
-#: src/actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr ""
 
@@ -734,13 +712,32 @@ msgid "Choice options"
 msgstr ""
 
 #: src/actions/attribute_type_admin.py src/actions/blocks/choosers.py
-#: src/actions/category_admin.py src/pages/models.py
+#: src/pages/models.py
 msgid "Category type"
 msgstr ""
 
 #: src/actions/attribute_type_admin.py src/feedback/models.py
 #: src/indicators/wagtail_admin.py src/people/wagtail_admin.py
 msgid "General"
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+msgid "Fields"
+msgstr ""
+
+#: src/actions/attribute_type_admin.py
+#, python-format
+msgid "Choice option '%s' has been restored."
 msgstr ""
 
 #: src/actions/attributes.py
@@ -1226,11 +1223,14 @@ msgid "%(count)d actions failed to release; see logs for details."
 msgstr "%(count)d Massnahmen konnten nicht freigegeben werden; Details siehe Protokolle."
 
 #: src/actions/category_admin.py
-msgid "Common category type"
-msgstr ""
+#, fuzzy
+#| msgid "There is already an action with this identifier."
+msgid "There is already a category type with this identifier."
+msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
 
 #: src/actions/category_admin.py
-msgid "Category types"
+#, python-format
+msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
 msgstr ""
 
 #: src/actions/category_admin.py
@@ -1242,18 +1242,11 @@ msgid "Category levels"
 msgstr ""
 
 #: src/actions/category_admin.py
-msgid "There is already a category with this identifier."
+msgid "Category types"
 msgstr ""
 
 #: src/actions/category_admin.py
-#, fuzzy
-#| msgid "There is already an action with this identifier."
-msgid "There is already a category type with this identifier."
-msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
-
-#: src/actions/category_admin.py
-#, python-format
-msgid "While editing this category type you have switched to a different plan. This category type was still saved with the original plan \"%s\"."
+msgid "There is already a category with this identifier."
 msgstr ""
 
 #: src/actions/category_admin.py
@@ -5580,6 +5573,12 @@ msgid "Do not show this indicator's values in a table on the indicator page."
 msgstr "Massnahmenansprechpersonen"
 
 #: src/indicators/models/indicator.py
+#, fuzzy
+#| msgid "action indicators"
+msgid "hide from indicator list"
+msgstr "Massnahmenindikatoren"
+
+#: src/indicators/models/indicator.py
 msgid "Has data"
 msgstr ""
 
@@ -5706,6 +5705,31 @@ msgstr ""
 
 #: src/indicators/models/values.py
 msgid "indicator goals"
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "%(date)s (goal)"
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator can only partly be normalized by \"%(normalizer)s\", which has no value (or a value of zero) for these dates: %(dates)s. Until this is fixed, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Edit the data of \"%(normalizer)s\""
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "This indicator is normalized by \"%(normalizer)s\", but its organization has no indicator for it. Until there is one, websites may not offer to show this indicator normalized by \"%(normalizer)s\"."
+msgstr ""
+
+#: src/indicators/normalization.py
+#, python-format
+msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
 msgstr ""
 
 #: src/indicators/templates/site_summary/indicators.html
@@ -7056,12 +7080,10 @@ msgid "'%(instance_name)s' is currently connected to the following items. Please
 msgstr ""
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "Yes, delete"
 msgstr ""
 
 #: src/people/templates/people/delete.html
-#: templates/aplans/attribute_type_delete.html
 msgid "No, don't delete"
 msgstr ""
 
@@ -7768,6 +7790,9 @@ msgstr "Wird gespeichert…"
 #: templates/modeladmin/create.html
 msgid "Save"
 msgstr "Speichern"
+
+#~ msgid "Order"
+#~ msgstr "Sortierung"
 
 #, python-format
 #~ msgid "For an action in %(plan)s"
