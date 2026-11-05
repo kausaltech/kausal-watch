@@ -473,8 +473,18 @@ class CategoryCreateView(PanelFormMixin, WatchCreateView[Category]):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get_add_url(self):
+        # Keep the category type in the form's POST target; without it the save view builds a
+        # typeless category and crashes.
+        return with_category_type(self.request, super().get_add_url())
+
     def get_panel(self):
-        return get_category_panel(self.request, Category(type=get_category_type_from_request(self.request)))
+        category_type = get_category_type_from_request(self.request)
+        if category_type is None:
+            # setup() builds the panel before dispatch() runs, so guard here too to 404 rather
+            # than raise a 500 when the type is missing (e.g. a stale form posting to the bare URL).
+            raise Http404
+        return get_category_panel(self.request, Category(type=category_type))
 
     def initialize_instance(self, request, instance):
         """Set the new category's type to the one given in the GET data."""

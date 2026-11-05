@@ -187,6 +187,19 @@ def test_creating_category_gets_type_from_query(admin_client, category_type):
     assert Category.objects.get(identifier='energy').type == category_type
 
 
+def test_add_form_action_keeps_the_type(admin_client, category_type):
+    # The form must post back to a URL that still carries ?category_type=, or the save view
+    # builds a typeless category and crashes.
+    response = admin_client.get(f'{CATEGORIES_PATH}add/?category_type={category_type.pk}')
+    assert response.context['action_url'] == f'{CATEGORIES_PATH}add/?category_type={category_type.pk}'
+
+
+def test_add_without_type_is_not_found(admin_client, category_type):
+    # A bare add URL (e.g. a stale form) must 404, not raise a 500 from the panel builder.
+    assert admin_client.get(f'{CATEGORIES_PATH}add/').status_code == 404
+    assert admin_client.post(f'{CATEGORIES_PATH}add/', {'name': 'Energy', 'identifier': 'energy'}).status_code == 404
+
+
 def test_creating_category_generates_hidden_identifier(admin_client, category_type):
     category_type.hide_category_identifiers = True
     category_type.save()
