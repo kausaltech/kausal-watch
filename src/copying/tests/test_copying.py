@@ -5,6 +5,7 @@ from copy import copy as shallow_copy
 from uuid import uuid4
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.utils import timezone
@@ -33,11 +34,12 @@ from kausal_common.datasets.models import (
     Dimension as DatasetDimension,
     DimensionScope,
 )
+from kausal_common.models.rich_text import make_editor_compatible, skip_rich_text_validation
 
 from aplans.utils import RestrictedVisibilityModel
 
 from actions.models.action import Action
-from actions.models.attributes import AttributeType
+from actions.models.attributes import AttributeRichText, AttributeType
 from actions.models.category import Category, CategoryIcon, CategoryType
 from actions.models.plan import Plan
 from actions.tests.factories import (
@@ -1000,6 +1002,36 @@ def test_indicator_reference_in_attribute_rich_text_updated_when_copying_indicat
     at_copy = AttributeType.objects.get(scope_content_type=plan_ct, scope_id=plan_copy.pk, name=attribute_type.name)
     rich_text_attr_copy = at_copy.rich_text_attributes.get()
     assert rich_text_attr_copy.text == html_with_references([indicator_copy])
+
+
+def test_copying_skips_rich_text_validation_on_legacy_values(plan_with_pages, action):
+    """
+    Copying a plan must not re-validate already-stored rich text.
+
+    The clone engine saves every node with a bare ``save()``, which would otherwise run the
+    editor-compatibility guard over each rich-text field. A plan containing a legacy value the
+    guard rejects (markup predating the guard) must still copy, verbatim, rather than abort.
+    """
+    action_ct = ContentType.objects.get_for_model(Action)
+    plan_ct = ContentType.objects.get_for_model(Plan)
+    attribute_type = AttributeTypeFactory.create(
+        scope=plan_with_pages,
+        object_content_type=action_ct,
+        format=AttributeType.AttributeFormat.RICH_TEXT,
+    )
+    # Crossed tags: the editor converter rejects this, so the guard would raise on save().
+    invalid_html = '<p><em>text</p></em>'
+    with pytest.raises(ValidationError):
+        make_editor_compatible(invalid_html, AttributeRichText._meta.get_field('text'))
+    # Plant it the way legacy data exists in the database: past the guard.
+    with skip_rich_text_validation():
+        AttributeRichTextFactory.create(type=attribute_type, content_object=action, text=invalid_html)
+
+    plan_copy = copy_plan(plan_with_pages)
+
+    at_copy = AttributeType.objects.get(scope_content_type=plan_ct, scope_id=plan_copy.pk, name=attribute_type.name)
+    attr_copy = at_copy.rich_text_attributes.get()
+    assert attr_copy.text == invalid_html
 
 
 @pytest.mark.parametrize('indicator__common', [None])

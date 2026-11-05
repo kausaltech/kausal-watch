@@ -49,6 +49,7 @@ from kausal_common.datasets.models import (
     DimensionCategory as DatasetDimensionCategory,
     DimensionScope,
 )
+from kausal_common.models.rich_text import skip_rich_text_validation
 
 from aplans.utils import RestrictedVisibilityModel
 
@@ -2603,7 +2604,10 @@ def copy_plan(
         supersede_original_actions=supersede_original_actions,
     )
 
-    with _default_skip_page_synchronization(), transaction.atomic():
+    # Copying moves rich text that is already stored (and was validated at its original
+    # write). Re-running the editor-compatibility guard over every cloned node would be wasted
+    # CPU and, worse, a single legacy value predating the guard would abort the whole copy.
+    with skip_rich_text_validation(), _default_skip_page_synchronization(), transaction.atomic():
         return _clone_plan_objects(plan, clone_visitor, root_page_title_suffix, copy_indicators)
 
 
