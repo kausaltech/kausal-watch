@@ -145,6 +145,14 @@ def test_listing_can_be_searched_by_organization(admin_client, plan_with_pages):
     assert other.email not in content
 
 
+def test_listing_can_be_searched_by_full_name(admin_client, plan_with_pages):
+    match = _person(plan_with_pages, first_name='Ada', last_name='Lovelace')
+    other = _person(plan_with_pages, first_name='Ada', last_name='Byron')
+    content = _listing(admin_client, '?q=Ada+Lovelace')
+    assert match.email in content
+    assert other.email not in content
+
+
 def test_people_without_admin_access_are_highlighted(admin_client, plan_with_pages):
     without_access = _person(plan_with_pages)
     contact = _contact_person(plan_with_pages)
