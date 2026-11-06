@@ -4,6 +4,8 @@ import json
 import re
 from typing import TYPE_CHECKING, Any
 
+from wagtail.admin.rich_text import DraftailRichTextArea
+
 if TYPE_CHECKING:
     from django.forms import BaseFormSet, Form
 
@@ -39,12 +41,16 @@ def post_data(form: Form) -> dict[str, Any]:
             value = bound_field.value()
             if value is None or value is False:
                 continue
+            if isinstance(bound_field.field.widget, DraftailRichTextArea):
+                # The editor posts its content state, not the HTML that is stored
+                value = bound_field.field.widget.format_value(value)
             data[bound_field.html_name] = value
+        # A child form can have formsets of its own, e.g., an action's tasks have their assignees.
+        formsets: dict[str, BaseFormSet[Any]] = getattr(form, 'formsets', {})
+        for formset in formsets.values():
+            add(formset.management_form)
+            for child in formset.forms:
+                add(child)
 
     add(form)
-    formsets: dict[str, BaseFormSet[Any]] = getattr(form, 'formsets', {})
-    for formset in formsets.values():
-        add(formset.management_form)
-        for child in formset.forms:
-            add(child)
     return data
