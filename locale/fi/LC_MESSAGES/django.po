@@ -3413,13 +3413,11 @@ msgstr "%(model_name)s ”%(title)s” on hyväksytty kommentilla työnkulussa �
 
 #: src/actions/validation.py
 msgid "The end date can't be before the start date"
-msgstr ""
+msgstr "Loppupäivämäärä ei voi olla ennen alkupäivämäärää"
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
-msgstr "Toimenpiteen toteutumisaste prosenteissa"
+msgstr "Valmistumispäivämäärä ei voi olla tulevaisuudessa"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"

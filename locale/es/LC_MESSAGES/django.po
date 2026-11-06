@@ -3656,13 +3656,11 @@ msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación
 
 #: src/actions/validation.py
 msgid "The end date can't be before the start date"
-msgstr ""
+msgstr "La fecha final no puede ser anterior a la fecha de inicio"
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
-msgstr "El porcentaje de finalización de esta acción"
+msgstr "La fecha de finalización no puede estar en el futuro"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy

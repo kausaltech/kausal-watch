@@ -3392,13 +3392,11 @@ msgstr "Das „%(model_name)s“-Objekt %(title)s wurde in „%(workflow)s“ mi
 
 #: src/actions/validation.py
 msgid "The end date can't be before the start date"
-msgstr ""
+msgstr "Das Enddatum darf nicht vor dem Beginndatum liegen"
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
-msgstr "Der Fertigstellungsprozentsatz dieser Maßnahme"
+msgstr "Das Fertigstellungsdatum darf nicht in der Zukunft liegen"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
