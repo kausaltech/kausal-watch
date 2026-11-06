@@ -84,6 +84,7 @@ from .models.action import (
     ActionResponsibleParty,
     ActionTask,
 )
+from .validation import get_action_dates_error, get_task_completion_date_error
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -244,11 +245,67 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                     % getattr(item, wrapped_object_attr)
                 )
 
+    def _is_field_editable(self, field_name: str) -> bool:
+        """Return whether the form lets the user edit the field, i.e., field customization neither hid nor disabled it."""
+        field = self.fields.get(field_name)
+        return field is not None and not field.disabled
+
+    def _get_value(self, field_name: str) -> Any:
+        """Return the field's submitted value, or the stored one if the form doesn't have the field."""
+        if field_name in self.fields:
+            return self.cleaned_data.get(field_name)
+        return getattr(self.instance, field_name)
+
+    def _validate_dates(self) -> None:
+        """
+        Check that the end date is not before the start date, but only if this save changes one of them.
+
+        The error goes on the end date unless field customization hides it from the user or makes it
+        read-only, as the user could not fix it there.
+        """
+        date_fields = ('start_date', 'end_date')
+        if not any(name in self.changed_data for name in date_fields):
+            return
+        if any(name in self.fields and name not in self.cleaned_data for name in date_fields):
+            # The field has an error of its own already
+            return
+        error = get_action_dates_error(self._get_value('start_date'), self._get_value('end_date'))
+        if error is None:
+            return
+        field_name = next((name for name in reversed(date_fields) if self._is_field_editable(name)), None)
+        self.add_error(field_name, error)
+
+    def _validate_task_completion_dates(self) -> None:
+        """
+        Check that no task's completion date is in the future, but only for the tasks whose completion date this save changes.
+
+        `ActionTask.clean()` can't do this check as it can't look up the plan's time zone: a new task
+        doesn't have its action yet, as `ActionTask.action` is a `ParentalKey`.
+        """
+        formset = self.formsets.get('tasks')
+        if formset is None:
+            return
+        plan = self.instance.plan
+        # Make the task forms clean themselves, if they haven't yet. Invalid ones are checked too, as far as
+        # their completion date is valid.
+        formset.is_valid()
+        for form in formset.forms:
+            cleaned_data = getattr(form, 'cleaned_data', None)
+            if not cleaned_data or cleaned_data.get('DELETE'):
+                continue
+            if 'completed_at' not in form.changed_data:
+                continue
+            error = get_task_completion_date_error(cleaned_data.get('completed_at'), plan)
+            if error is not None:
+                form.add_error('completed_at', error)
+
     def clean(self):
         for _cls, relation_name, __, wrapped_object_attr in MODELS_WITH_ROLES:
             self._validate_unique_relations_with_roles(_cls, relation_name, wrapped_object_attr)
             # Persons can only have at most one role as a contact person.
             # Organizations can only have at most one role as a responsible party
+        self._validate_dates()
+        self._validate_task_completion_dates()
 
     def save(self, commit=True):  # noqa: C901, PLR0912
         initial_plan_id = self.initial_plan_id
