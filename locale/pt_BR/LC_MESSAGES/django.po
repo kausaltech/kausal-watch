@@ -3903,12 +3903,11 @@ msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
 
 #: src/actions/validation.py
 msgid "The end date can't be before the start date"
-msgstr ""
+msgstr "A data final não pode ser anterior à data de início"
 
 #: src/actions/validation.py
-#, fuzzy
 msgid "The completion date can't be in the future"
-msgstr "A porcentagem de conclusão dessa ação"
+msgstr "A data de conclusão não pode estar no futuro"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy

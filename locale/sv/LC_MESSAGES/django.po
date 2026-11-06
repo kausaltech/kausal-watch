@@ -3411,16 +3411,12 @@ msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" wi
 msgstr "%(model_name)s \"%(title)s\" har godkänts i \"%(workflow)s\" med en kommentar."
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "Date can't be in the future"
 msgid "The end date can't be before the start date"
-msgstr "Datum kan inte vara i framtiden"
+msgstr "Slutdatumet kan inte vara före startdatumet"
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "Date can't be in the future"
 msgid "The completion date can't be in the future"
-msgstr "Datum kan inte vara i framtiden"
+msgstr "Slutdatumet kan inte vara i framtiden"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"

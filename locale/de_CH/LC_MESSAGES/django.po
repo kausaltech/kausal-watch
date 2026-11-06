@@ -3480,10 +3480,8 @@ msgid "The end date can't be before the start date"
 msgstr ""
 
 #: src/actions/validation.py
-#, fuzzy
-#| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
-msgstr "Der Fertigstellungsprozentsatz dieser Massnahme"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
