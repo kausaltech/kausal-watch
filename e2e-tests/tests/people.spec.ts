@@ -23,31 +23,37 @@ test.describe('Test people', () => {
     await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
 
-    await expect(page.getByRole('textbox', { name: 'Search for' })).toBeVisible();
-    await page.getByPlaceholder('Search people').fill('Rest Yser');
+    const search = page.getByRole('textbox', { name: 'Search term' });
+    await expect(search).toBeVisible();
+    await search.fill('Rest Yser');
     await page.keyboard.press('Enter');
     await expect(page.getByText('Test User')).toBeHidden();
-    await expect(page.getByText('Sorry, there are no people matching your search parameters.')).toBeVisible();
-    await page.getByPlaceholder('Search people').fill('Test User');
+    await expect(page.getByText('No people match your query.')).toBeVisible();
+    await search.fill('Test User');
     await page.keyboard.press('Enter');
     await expect(page.getByText('Test User')).toBeVisible();
   });
 
   test('Filter by role', async ({ page }) => {
-    test.setTimeout(40000);
+    test.setTimeout(60000);
     await page.goto('/admin/');
     await page.getByRole('link', { name: 'People', exact: true }).click();
+    const listingUrl = page.url();
 
-    await expect(page.getByRole('heading', { name: 'Filter' })).toBeVisible();
-    const filters = page.locator('.changelist-filter');
+    const filterByRole = async (role: string) => {
+      await page.goto(listingUrl);
+      await page.getByRole('button', { name: 'Show filters' }).click();
+      await page.getByRole('button', { name: 'Role', exact: true }).click();
+      await page.getByLabel('Role').selectOption({ label: role });
+    };
     // The test user has no role in the test plan
     for (const role of ['Plan admin', 'Organization admin', 'Contact person', 'Viewer']) {
-      await filters.getByRole('link', { name: role, exact: true }).click();
+      await filterByRole(role);
       await expect(page.getByText('Test User')).toBeHidden();
     }
-    await filters.getByRole('link', { name: 'No role', exact: true }).click();
+    await filterByRole('No role');
     await expect(page.getByText('Test User')).toBeVisible();
-    await filters.getByRole('link', { name: 'All', exact: true }).click();
+    await page.goto(listingUrl);
     await expect(page.getByText('Test User')).toBeVisible();
   });
 });

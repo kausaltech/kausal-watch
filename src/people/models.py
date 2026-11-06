@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from actions.models.plan import Plan, PlanPublicSiteViewer
     from indicators.models import Indicator
     from orgs.models import OrganizationMetadataAdmin, OrganizationPlanAdmin, OrganizationQuerySet
+    from people.permission_policy import PersonPermissionPolicy
     from users.models import User as UserModel
 
 
@@ -157,6 +158,12 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
     metadata_adminable_organizations: RevManyToManyQS[Organization, OrganizationMetadataAdmin, OrganizationQuerySet]
     organization_id: int
     created_by_id: int
+
+    @classmethod
+    def permission_policy(cls) -> PersonPermissionPolicy:
+        from people.permission_policy import PersonPermissionPolicy
+
+        return PersonPermissionPolicy()
 
     def initialize_plan_defaults(self, plan: Plan):
         self.organization = plan.organization
