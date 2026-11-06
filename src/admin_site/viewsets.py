@@ -206,7 +206,7 @@ class WatchDeleteView[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelFo
 
 
 class WatchHistoryView(InstancePermissionCheckedMixin, HistoryView):
-    pass
+    any_permission_required = ['change', 'delete']
 
 
 class WatchUsageView[ModelT: Model](InstancePermissionCheckedMixin, UsageView[ModelT]):
