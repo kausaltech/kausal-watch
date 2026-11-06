@@ -312,6 +312,16 @@ def test_other_plan_person_cannot_be_edited(admin_client):
     assert person.first_name == 'Ada'
 
 
+def test_history_of_own_plan_person(admin_client, plan_with_pages):
+    person = _person(plan_with_pages)
+    assert admin_client.get(f'{PEOPLE_PATH}history/{person.pk}/').status_code == 200
+
+
+def test_history_of_other_plan_person_is_refused(admin_client):
+    person = _person(PlanFactory.create())
+    assert admin_client.get(f'{PEOPLE_PATH}history/{person.pk}/').status_code == 302
+
+
 def test_resetting_a_password(admin_client, plan_with_pages):
     contact = _contact_person(plan_with_pages)
     path = f'{PEOPLE_PATH}reset_password/{contact.pk}/'

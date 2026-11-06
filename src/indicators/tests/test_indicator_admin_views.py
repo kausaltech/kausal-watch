@@ -397,3 +397,14 @@ def test_bulk_delete_is_not_available(admin_client, plan_with_pages):
 def test_listing_menu_labels_editing_the_indicator_apart_from_its_data(admin_client, plan_with_pages):
     _indicator(plan_with_pages)
     assert 'Edit properties' in admin_client.get(INDICATORS_PATH).content.decode()
+
+
+def test_history_of_own_plan_indicator(admin_client, plan_with_pages):
+    indicator = _indicator(plan_with_pages)
+    assert admin_client.get(f'{INDICATORS_PATH}history/{indicator.pk}/').status_code == 200
+
+
+def test_history_of_other_plan_indicator_is_refused(admin_client):
+    other_plan = PlanFactory.create()
+    indicator = _indicator(other_plan)
+    assert admin_client.get(f'{INDICATORS_PATH}history/{indicator.pk}/').status_code == 302
