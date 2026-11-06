@@ -527,6 +527,17 @@ class PersonIndexView(WatchIndexView[Person]):
         )
         return columns
 
+    def search_queryset(self, queryset):
+        # Every word has to match one of the fields, as in the ModelAdmin
+        if not self.is_searching:
+            return queryset
+        for word in (self.search_query or '').split():
+            query = Q()
+            for field in self.search_fields or []:
+                query |= Q(**{f'{field}__icontains': word})
+            queryset = queryset.filter(query)
+        return queryset
+
     def order_queryset(self, queryset):
         # People who never logged in sort last when sorting by the newest login, and first otherwise
         if self.ordering == '-user__last_login':
@@ -587,6 +598,7 @@ class PersonViewSet(WatchViewSet[Person]):
     # Search the database like the ModelAdmin did, as the search index cannot search the organization names
     search_backend_name = None
     filterset_class = PersonRoleFilterSet
+    list_per_page = 100
     bulk_delete_enabled = False
     index_view_class = PersonIndexView
     add_view_class = PersonCreateView
