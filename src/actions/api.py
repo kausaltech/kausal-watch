@@ -38,6 +38,7 @@ from aplans.utils import generate_identifier, public_fields
 
 from actions.models.action import ActionContactPerson, ActionImplementationPhase, ContactPersonDict
 from actions.models.attributes import AttributeType, AttributeTypeChoiceOption, ModelWithAttributes
+from actions.validation import get_action_dates_error, get_task_completion_date_error
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.models import PlanScopedModel, PlanScopedModelLogEntry
 from orgs.models import Organization
@@ -1281,6 +1282,29 @@ class ActionSerializer(  # type: ignore[misc]
 
         return field_class, field_kwargs
 
+    def validate(self, data):
+        data = super().validate(data)
+        self._validate_dates(data)
+        return data
+
+    def _validate_dates(self, data: dict[str, Any]) -> None:
+        """
+        Check that the end date is not before the start date, but only if this save changes one of them.
+
+        A date missing from `data` (in a partial update) is taken from the stored action.
+        """
+        action = self._instance
+        date_fields = ('start_date', 'end_date')
+        stored = {name: getattr(action, name) if action is not None else None for name in date_fields}
+        if not any(name in data and data[name] != stored[name] for name in date_fields):
+            return
+        values = {name: data.get(name, stored[name]) for name in date_fields}
+        error = get_action_dates_error(values['start_date'], values['end_date'])
+        if error is None:
+            return
+        field_name = 'end_date' if 'end_date' in data else 'start_date'
+        raise serializers.ValidationError({field_name: error})
+
     def validate_identifier(self, value):
         if not self.plan.features.has_action_identifiers:
             return value
@@ -2298,9 +2322,24 @@ class ActionTaskSerializer(
             raise serializers.ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if state == ActionTask.COMPLETED and completed_at is None:
             raise serializers.ValidationError({'completed_at': _('Completed tasks must have a completion date')})
+        self._validate_completion_date(data)
         for relation_name in TASK_ASSIGNMENT_FIELDS:
             self._validate_assignments(data, relation_name)
         return data
+
+    def _validate_completion_date(self, data: dict[str, Any]) -> None:
+        """Check that the completion date is not in the future, but only if this save changes it."""
+        task = self._instance
+        if 'completed_at' not in data:
+            return
+        if task is not None and data['completed_at'] == task.completed_at:
+            return
+        action: Action | None = data.get('action') or (task.action if task is not None else None)
+        assert action is not None  # required on create
+        plan: Plan = self.context.get('plan') or action.plan
+        error = get_task_completion_date_error(data['completed_at'], plan)
+        if error is not None:
+            raise serializers.ValidationError({'completed_at': error})
 
     def _validate_assignments(self, data: dict[str, Any], relation_name: str) -> None:
         """
