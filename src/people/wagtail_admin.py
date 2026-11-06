@@ -11,7 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.db.models import Exists, F, ManyToManyField, Model, OneToOneRel, OuterRef, Prefetch, Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
-from django.forms import BooleanField, ChoiceField, ModelMultipleChoiceField
+from django.forms import BooleanField, CharField, ChoiceField, ModelMultipleChoiceField, TextInput
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import path, reverse
@@ -21,6 +21,7 @@ from django.utils.html import format_html, format_html_join
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.filters import WagtailFilterSet
+from wagtail.admin.forms.choosers import BaseFilterForm
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.ui.tables import BooleanColumn, Column, Table
 from wagtail.log_actions import log
@@ -37,6 +38,11 @@ from actions.category_admin import PanelFormMixin
 from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan, PlanPublicSiteViewer
 from actions.perms import get_people_with_login_rights
 from admin_site.mixins import ActivatePermissionHelperPlanContextMixin
+from admin_site.scoped_choosers import (
+    PermissionScopedChooseResultsView,
+    PermissionScopedChooseView,
+    PermissionScopedSnippetChooserViewSet,
+)
 from admin_site.viewsets import (
     InstancePermissionCheckedMixin,
     WatchCreateView,
@@ -295,6 +301,45 @@ def _warn_about_missing_admin_access(person: Person, plan: Plan) -> bool:
     return not _person_can_access_admin(person)
 
 
+PERSON_SEARCH_FIELDS = ['first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation']
+
+
+def search_people(queryset: models.QuerySet[Person], search_query: str) -> models.QuerySet[Person]:
+    """Search the database so that every word matches one of the fields, as the ModelAdmin did."""
+    for word in search_query.split():
+        query = Q()
+        for field in PERSON_SEARCH_FIELDS:
+            query |= Q(**{f'{field}__icontains': word})
+        queryset = queryset.filter(query)
+    return queryset
+
+
+class PersonChooserFilterForm(BaseFilterForm):
+    q = CharField(label=_('Search term'), widget=TextInput(attrs={'placeholder': _('Search')}), required=False)
+
+    def filter(self, objects):
+        objects = super().filter(objects)
+        search_query = self.cleaned_data.get('q')
+        if search_query:
+            objects = search_people(objects, search_query)
+            self.is_searching = True
+            self.search_query = search_query
+        return objects
+
+
+class PersonChooseView(PermissionScopedChooseView):
+    filter_form_class = PersonChooserFilterForm
+
+
+class PersonChooseResultsView(PermissionScopedChooseResultsView):
+    filter_form_class = PersonChooserFilterForm
+
+
+class PersonChooserViewSet(PermissionScopedSnippetChooserViewSet):
+    choose_view_class = PersonChooseView
+    choose_results_view_class = PersonChooseResultsView
+
+
 def _get_orgs_for_listing(plan) -> list[Organization]:
     all_orgs = list(Organization.objects.get_queryset().available_for_plan(plan))
     ancestor_paths: set[str] = set()
@@ -528,15 +573,9 @@ class PersonIndexView(WatchIndexView[Person]):
         return columns
 
     def search_queryset(self, queryset):
-        # Every word has to match one of the fields, as in the ModelAdmin
         if not self.is_searching:
             return queryset
-        for word in (self.search_query or '').split():
-            query = Q()
-            for field in self.search_fields or []:
-                query |= Q(**{f'{field}__icontains': word})
-            queryset = queryset.filter(query)
-        return queryset
+        return search_people(queryset, self.search_query or '')
 
     def order_queryset(self, queryset):
         # People who never logged in sort last when sorting by the newest login, and first otherwise
@@ -594,9 +633,10 @@ class PersonViewSet(WatchViewSet[Person]):
     menu_order = 210
     add_to_admin_menu = True
     url_prefix = 'people/person'
-    search_fields = ['first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation']
+    search_fields = PERSON_SEARCH_FIELDS
     # Search the database like the ModelAdmin did, as the search index cannot search the organization names
     search_backend_name = None
+    chooser_viewset_class = PersonChooserViewSet
     filterset_class = PersonRoleFilterSet
     list_per_page = 100
     bulk_delete_enabled = False
@@ -617,9 +657,12 @@ class PersonViewSet(WatchViewSet[Person]):
         )
         return annotate_person_roles(qs, plan)
 
+    def get_common_view_kwargs(self, **kwargs):
+        return {**super().get_common_view_kwargs(**kwargs), 'usage_url_name': None}
+
     def get_urlpatterns(self):
         return [
-            *super().get_urlpatterns(),
+            *(pattern for pattern in super().get_urlpatterns() if getattr(pattern, 'name', None) != 'usage'),
             path('reset_password/<str:instance_pk>/', ResetPasswordView.as_view(), name='reset_password'),
             path('view_as_user/<str:instance_pk>/', ImpersonateUserView.as_view(), name='view_as_user'),
         ]

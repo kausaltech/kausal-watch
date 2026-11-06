@@ -330,6 +330,24 @@ def test_history_of_other_plan_person_is_refused(admin_client):
     assert admin_client.get(f'{PEOPLE_PATH}history/{person.pk}/').status_code == 302
 
 
+def test_people_have_no_usage_page(admin_client, plan_with_pages):
+    person = _person(plan_with_pages)
+    assert admin_client.get(f'{PEOPLE_PATH}usage/{person.pk}/').status_code == 404
+    assert f'{PEOPLE_PATH}usage/' not in admin_client.get(_edit_path(person)).content.decode()
+
+
+def test_person_chooser_searches_own_plan_people_by_full_name(admin_client, plan_with_pages):
+    match = _person(plan_with_pages, first_name='Ada', last_name='Lovelace')
+    other = _person(plan_with_pages, first_name='Ada', last_name='Byron')
+    other_plan = _person(PlanFactory.create(), first_name='Ada', last_name='Lovelace')
+    response = admin_client.get('/admin/snippets/choose/people/person/results/', {'q': 'Ada Lovelace'})
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert f'/admin/snippets/choose/people/person/chosen/{match.pk}/' in content
+    assert f'/chosen/{other.pk}/' not in content
+    assert f'/chosen/{other_plan.pk}/' not in content
+
+
 def test_resetting_a_password(admin_client, plan_with_pages):
     contact = _contact_person(plan_with_pages)
     path = f'{PEOPLE_PATH}reset_password/{contact.pk}/'
