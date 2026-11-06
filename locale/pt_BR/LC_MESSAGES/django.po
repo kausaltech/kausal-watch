@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 15:41+0200\n"
+"POT-Creation-Date: 2026-11-06 15:53+0200\n"
 "PO-Revision-Date: 2026-09-28 07:47+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -3900,6 +3900,15 @@ msgstr "A página \"%(title)s\" foi enviada para aprovação no estágio de mode
 #, fuzzy, python-format
 msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with a comment."
 msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
+
+#: src/actions/validation.py
+msgid "The end date can't be before the start date"
+msgstr ""
+
+#: src/actions/validation.py
+#, fuzzy
+msgid "The completion date can't be in the future"
+msgstr "A porcentagem de conclusão dessa ação"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy

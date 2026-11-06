@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 15:41+0200\n"
+"POT-Creation-Date: 2026-11-06 15:53+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -3409,6 +3409,18 @@ msgstr "Sidan \"%(title)s\" har godkänts i \"%(workflow)s med en kommentar."
 #, python-format
 msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with a comment."
 msgstr "%(model_name)s \"%(title)s\" har godkänts i \"%(workflow)s\" med en kommentar."
+
+#: src/actions/validation.py
+#, fuzzy
+#| msgid "Date can't be in the future"
+msgid "The end date can't be before the start date"
+msgstr "Datum kan inte vara i framtiden"
+
+#: src/actions/validation.py
+#, fuzzy
+#| msgid "Date can't be in the future"
+msgid "The completion date can't be in the future"
+msgstr "Datum kan inte vara i framtiden"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -8208,9 +8220,6 @@ msgstr "Spara"
 
 #~ msgid "Category metadata"
 #~ msgstr "Kategorimetadata"
-
-#~ msgid "Date can't be in the future"
-#~ msgstr "Datum kan inte vara i framtiden"
 
 #~ msgid "category metadata"
 #~ msgstr "kategorimetadata"

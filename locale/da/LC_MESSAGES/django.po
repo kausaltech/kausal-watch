@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 15:41+0200\n"
+"POT-Creation-Date: 2026-11-06 15:53+0200\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -3504,6 +3504,18 @@ msgstr "Siden \"%(title)s\" er blevet godkendt i \"%(workflow)s med en kommentar
 #, python-format
 msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with a comment."
 msgstr "%(model_name)s \"%(title)s\" er blevet godkendt i \"%(workflow)s\" med en kommentar."
+
+#: src/actions/validation.py
+#, fuzzy
+#| msgid "Date can't be in the future"
+msgid "The end date can't be before the start date"
+msgstr "Datoen kan ikke ligge i fremtiden"
+
+#: src/actions/validation.py
+#, fuzzy
+#| msgid "Date can't be in the future"
+msgid "The completion date can't be in the future"
+msgstr "Datoen kan ikke ligge i fremtiden"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -8396,9 +8408,6 @@ msgstr "Gemme"
 
 #~ msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
 #~ msgstr "Oftest værtsnavnet, dvs. alt efter @-tegnet i medarbejder-mailadresser"
-
-#~ msgid "Date can't be in the future"
-#~ msgstr "Datoen kan ikke ligge i fremtiden"
 
 #~ msgid "Report"
 #~ msgstr "Rapport"

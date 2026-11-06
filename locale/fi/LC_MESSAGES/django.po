@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 15:41+0200\n"
+"POT-Creation-Date: 2026-11-06 15:53+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -3410,6 +3410,16 @@ msgstr "Sivu ”%(title)s” on hyväksytty  kommentilla työnkulussa ”%(workf
 #, python-format
 msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with a comment."
 msgstr "%(model_name)s ”%(title)s” on hyväksytty kommentilla työnkulussa ”%(workflow)s”."
+
+#: src/actions/validation.py
+msgid "The end date can't be before the start date"
+msgstr ""
+
+#: src/actions/validation.py
+#, fuzzy
+#| msgid "The completion percentage for this action"
+msgid "The completion date can't be in the future"
+msgstr "Toimenpiteen toteutumisaste prosenteissa"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
