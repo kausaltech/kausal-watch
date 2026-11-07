@@ -380,6 +380,11 @@ else:
             raise ImproperlyConfigured('S3_MEDIA_STORAGE_URL only supports s3 scheme')
         STORAGES['default'] = storage_settings_from_s3_url(media_storage_url, DEPLOYMENT_TYPE)
 
+# The manifest storage needs `collectstatic` to have run, and fails on every static file added since.
+# The test suite uses a storage that needs no manifest but still fails on a missing static file.
+if RUNNING_TESTS:
+    STORAGES['staticfiles']['BACKEND'] = 'kausal_common.storage.static.CheckedStaticFilesStorage'
+
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
