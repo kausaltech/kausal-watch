@@ -179,14 +179,6 @@ class TestContactColumns:
 
 
 class TestAvatar:
-    @pytest.fixture(autouse=True)
-    def _plain_static_storage(self, settings) -> None:
-        # The manifest storage needs collectstatic to have run
-        settings.STORAGES = {
-            **settings.STORAGES,
-            'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
-        }
-
     @pytest.fixture
     def uploaded_avatar(self, monkeypatch: pytest.MonkeyPatch) -> str:
         url = '/media/avatar.png'

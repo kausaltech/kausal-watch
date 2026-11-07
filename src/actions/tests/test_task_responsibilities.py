@@ -489,23 +489,26 @@ def test_graphql_redacts_task_contact_persons(graphql_client_query_data, action)
     assert tasks[0]['contactPersons'] == []
 
 
-def test_read_only_relation_lists_its_rows(rf, action, action_contact_person_user):
-    """
-    The read-only panel must actually show the assignments, not just replace the editable panel.
-
-    The panel is exercised directly: rendering the whole edit page needs a built staticfiles manifest,
-    which this environment does not have (the same reason `test_admin.py::test_action_admin` fails here).
-    """
+def test_read_only_relation_lists_its_rows(client, action, action_contact_person_user):
+    """The read-only panel must actually show the assignments, not just replace the editable panel."""
+    ClientPlanFactory.create(plan=action.plan)
+    _customize(
+        action.plan,
+        'responsible_parties',
+        visible_for=InstancesVisibleForMixin.VisibleFor.PUBLIC,
+        editable_by=InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+    )
     organization = OrganizationFactory.create(name='Read-only department')
     task = ActionTaskFactory.create(action=action)
     ActionTaskResponsibleParty.objects.create(task=task, organization=organization)
-    request = rf.get('/')
-    request.user = action_contact_person_user
+    client.force_login(action_contact_person_user)
 
-    panel = ReadOnlyInlinePanel('responsible_parties', heading='Responsible parties').bind_to_model(ActionTask)
-    bound = panel.get_bound_panel(instance=task, request=request, form=None)
+    response = client.get(_edit_url(action))
 
-    assert [item['value'] for item in bound.get_context_data()['items']] == ['Read-only department']
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'Read-only department' in content
+    assert 'tasks-0-responsible_parties-TOTAL_FORMS' not in content, 'the relation must not be editable'
 
 
 def _chooser_names(client, url_name: str) -> str:
@@ -749,15 +752,12 @@ def test_cross_plan_task_contacts_use_their_own_plans_privacy_setting(
         ('responsible_parties', 'organization', OrganizationFactory.create),
     ],
 )
-def test_assignees_from_outside_the_plan_are_rejected(rf, action, plan_admin_user, relation, field, make_outsider):
+def test_assignees_from_outside_the_plan_are_rejected(client, action, plan_admin_user, relation, field, make_outsider):
     """
     The chooser only filters what is offered; the posted id has to be rejected server-side.
 
     Otherwise an editor can assign another tenant's person or organization by posting its id, and the
     task API then publishes it under this plan's privacy settings.
-
-    The form is validated directly rather than through the edit view, because re-rendering an invalid
-    action form needs a built staticfiles manifest that this environment does not have.
     """
     outsider = make_outsider()
     if relation == 'contact_persons':
@@ -779,11 +779,15 @@ def test_assignees_from_outside_the_plan_are_rejected(rf, action, plan_admin_use
         f'tasks-0-{relation}-0-{field}': str(outsider.pk),
     }
 
-    form = _form_class(rf, plan_admin_user, action)(data=data, instance=action)
+    ClientPlanFactory.create(plan=action.plan)
+    client.force_login(plan_admin_user)
 
-    assert not form.is_valid(), 'an assignee from outside the plan must not validate'
-    child_form = form.formsets['tasks'].forms[0].formsets[relation].forms[0]
+    response = client.post(_edit_url(action), data=data)
+
+    assert response.status_code == 200, 'an assignee from outside the plan must not validate'
+    child_form = response.context['form'].formsets['tasks'].forms[0].formsets[relation].forms[0]
     assert field in child_form.errors
+    assert not action.tasks.exists()
 
 
 @pytest.mark.parametrize(
