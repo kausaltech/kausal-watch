@@ -26,6 +26,7 @@ from rest_framework_nested import routers
 
 from kausal_common.api.bulk import BulkListSerializer, BulkModelViewSet, BulkSerializerValidationInstanceMixin
 from kausal_common.api.exceptions import HandleProtectedErrorMixin
+from kausal_common.api.rich_text import RichTextEditorCompatSerializerMixin
 from kausal_common.api.tree import PrevSiblingField, TreebeardModelSerializerMixin
 from kausal_common.api.utils import register_view_helper
 from kausal_common.model_images import ModelWithImageSerializerMixin
@@ -1239,6 +1240,7 @@ class ConcurrentModificationError(exceptions.APIException):
 
 
 class ActionSerializer(  # type: ignore[misc]
+    RichTextEditorCompatSerializerMixin,
     ModelWithAttributesSerializerMixin[Action],
     NonTreebeardModelWithTreePositionSerializerMixin[Action],
     BulkSerializerValidationInstanceMixin[Action],
@@ -1949,7 +1951,11 @@ class OrganizationPermission(WatchObjectPermissions):
         return False
 
 
-class OrganizationSerializer(TreebeardModelSerializerMixin[Organization], serializers.ModelSerializer[Organization]):  # type: ignore[misc]
+class OrganizationSerializer(  # type: ignore[misc]
+    RichTextEditorCompatSerializerMixin,
+    TreebeardModelSerializerMixin[Organization],
+    serializers.ModelSerializer[Organization],
+):
     uuid = serializers.UUIDField(required=False)
 
     class Meta:
@@ -2267,6 +2273,7 @@ class TaskContactPersonsField(TaskAssignmentsField):
 
 
 class ActionTaskSerializer(
+    RichTextEditorCompatSerializerMixin,
     I18nFieldPlanLanguagesSerializerMixin[ActionTask],
     BulkSerializerValidationInstanceMixin[ActionTask],
     serializers.ModelSerializer[ActionTask],

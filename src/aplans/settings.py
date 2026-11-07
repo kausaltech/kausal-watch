@@ -502,6 +502,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': f'{PROJECT_NAME}.openapi.AutoSchema',
+    # Render Django model-level ValidationError (e.g. the rich-text editor guard raised from
+    # save()) as a 400 instead of an uncaught 500.
+    'EXCEPTION_HANDLER': 'kausal_common.api.exceptions.api_exception_handler',
 }
 
 

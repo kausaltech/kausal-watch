@@ -949,6 +949,28 @@ def test_action_task_put_creates_log_entry(api_client, plan, action, action_task
     assert_log_entry_created(task, 'wagtail.edit', admin_person.user, plan)
 
 
+def test_action_task_put_rejects_irreparable_details(api_client, plan, action, person_factory):
+    """Irreparable rich text in the task's core `details` field must 400, not 500."""
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+    api_client.raise_request_exception = False
+
+    task = ActionTask.objects.create(action=action, name='Task', due_at='2025-12-31', state='not_started')
+    task_detail_url = reverse('action-task-detail', kwargs={'plan_pk': plan.pk, 'pk': task.pk})
+
+    response = api_client.put(
+        task_detail_url,
+        data={
+            'action': action.pk,
+            'name': 'Task',
+            'due_at': '2025-12-31',
+            'state': 'in_progress',
+            'details': '<p><em>crossed</p></em>',
+        },
+    )
+    assert response.status_code == 400, response.content
+
+
 def test_action_task_delete_creates_log_entry(api_client, plan, action, person_factory):
     """Test that deleting an action task creates a PlanScopedModelLogEntry with action='wagtail.delete'."""
     admin_person = person_factory(general_admin_plans=[plan])

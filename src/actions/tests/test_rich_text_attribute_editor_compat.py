@@ -83,3 +83,36 @@ def test_rest_bulk_rich_text_attribute_rejects_irreparable(plan, plan_admin_user
     action = ActionFactory.create(plan=plan)
     resp = _put_rich_text(plan, plan_admin_user, action, at, '<p><em>crossed</p></em>')
     assert resp.status_code == 400, resp.content
+
+
+def _put_description(plan, user, action, html: str):
+    url = reverse('action-list', args=(plan.pk,))
+    payload = [
+        {
+            'id': action.pk,
+            'identifier': action.identifier,
+            'name': action.name,
+            'version': action.version,
+            'description': html,
+        },
+    ]
+    client = APIClient()
+    client.raise_request_exception = False
+    client.force_authenticate(user)
+    return client.put(url, data=payload, format='json')
+
+
+def test_rest_bulk_description_is_normalized(plan, plan_admin_user) -> None:
+    # description is a core Action rich-text field (not an attribute); a bare <br> must still
+    # be accepted and normalized, not rejected.
+    action = ActionFactory.create(plan=plan)
+    resp = _put_description(plan, plan_admin_user, action, '<p>a<br>b</p>')
+    assert resp.status_code == 200, resp.content
+
+
+def test_rest_bulk_description_rejects_irreparable(plan, plan_admin_user) -> None:
+    # Irreparable markup in the core description field must fail fast with a 400, not a 500
+    # from the model-level guard raised during save().
+    action = ActionFactory.create(plan=plan)
+    resp = _put_description(plan, plan_admin_user, action, '<p><em>crossed</p></em>')
+    assert resp.status_code == 400, resp.content

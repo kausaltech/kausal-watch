@@ -16,6 +16,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 
 from kausal_common.api.bulk import BulkListSerializer
+from kausal_common.api.rich_text import RichTextEditorCompatSerializerMixin
 from kausal_common.api.utils import register_view_helper
 from kausal_common.users import user_or_bust, user_or_none
 
@@ -490,7 +491,7 @@ class IndicatorSerializerMixin:
                 field_context['_cache'] = cache
 
 
-class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer[Indicator]):
+class IndicatorSerializer(RichTextEditorCompatSerializerMixin, IndicatorSerializerMixin, serializers.ModelSerializer[Indicator]):
     _modifiable_indicators_cache: IndicatorQuerySet
 
     uuid = serializers.UUIDField(required=False)
