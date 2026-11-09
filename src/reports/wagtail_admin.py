@@ -53,6 +53,7 @@ class ReportTypeDeleteView(WatchDeleteView[ReportType]):
 
 class ReportTypeViewSet(WatchViewSet[ReportType]):
     model = ReportType
+    list_per_page = 100
     menu_label = _('Report types')
     icon = 'doc-full'
     menu_order = 1200
@@ -197,6 +198,7 @@ class ReportFilterSet(WagtailFilterSet):
 
 class ReportViewSet(WatchViewSet[Report]):
     model = Report
+    list_per_page = 100
     # Each report type has its own menu item instead
     add_to_admin_menu = False
     menu_item_is_registered = True

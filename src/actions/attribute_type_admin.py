@@ -840,6 +840,7 @@ class AttributeTypeReorderView(snippet_views.ReorderView):  # type: ignore[name-
 
 class AttributeTypeViewSet(WatchViewSet[AttributeType]):
     model = AttributeType
+    list_per_page = 100
     icon = 'kausal-attribute'
     menu_label = _('Fields')
     # The settings menu has one item per object type instead

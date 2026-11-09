@@ -289,6 +289,7 @@ class DimensionDeleteView(WatchDeleteView[Dimension]):
 
 class DimensionViewSet(WatchViewSet[Dimension]):
     model = Dimension
+    list_per_page = 100
     icon = 'kausal-dimension'
     menu_label = _('Indicator dimensions')
     # The menu item is in `IndicatorGroup`
@@ -338,6 +339,7 @@ class QuantityForm(AplansAdminModelForm[Quantity]):
 
 class QuantityViewSet(WatchViewSet[Quantity]):
     model = Quantity
+    list_per_page = 100
     icon = 'kausal-dimension'  # FIXME
     menu_label = _('Quantities')
     add_to_admin_menu = False
@@ -365,6 +367,7 @@ class UnitForm(AplansAdminModelForm[Unit]):
 
 class UnitViewSet(WatchViewSet[Unit]):
     model = Unit
+    list_per_page = 100
     icon = 'kausal-dimension'  # FIXME
     menu_label = _('Units')
     add_to_admin_menu = False
@@ -1258,6 +1261,7 @@ class IndicatorIndexView(WatchIndexView[Indicator]):
 
 class IndicatorViewSet(WatchViewSet[Indicator]):
     model = Indicator
+    list_per_page = 100
     icon = 'kausal-indicator'
     menu_label = _('Indicators')
     url_prefix = 'indicators/indicator'
@@ -1356,6 +1360,7 @@ class CommonIndicatorEditView(PanelFormMixin, WatchEditView[CommonIndicator]):
 
 class CommonIndicatorViewSet(WatchViewSet[CommonIndicator]):
     model = CommonIndicator
+    list_per_page = 100
     icon = 'kausal-indicator'  # FIXME
     menu_label = _('Common indicators')
     # The "Indicators" menu adds the menu item
