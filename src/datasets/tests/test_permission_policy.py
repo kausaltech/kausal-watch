@@ -9,14 +9,11 @@ Covered code paths:
   - Indicator contact person can access datasets scoped to their indicator
   - Organization plan admin can access datasets of their organization's actions, but only in their plan
   - User without any relevant role has no access
-  - Dataset with no scope: only superuser can access
   - construct_perm_q filters correctly (queryset level)
   - user_can_create respects model/object_id query params
 """
 
 from __future__ import annotations
-
-import uuid
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
@@ -123,23 +120,6 @@ class TestUserHasPermIndicatorScoped:
 
     def test_unrelated_user(self, policy, user, indicator_dataset):
         assert policy.user_has_perm(user, 'change', indicator_dataset) is False
-
-
-# ---------------------------------------------------------------------------
-# user_has_perm — dataset with no scope
-# ---------------------------------------------------------------------------
-
-
-class TestUserHasPermNoScope:
-    def test_superuser_can_access_scopeless_dataset(self, policy, superuser):
-        schema = DatasetSchemaFactory.create()
-        dataset = Dataset.objects.create(uuid=uuid.uuid4(), schema=schema)
-        assert policy.user_has_perm(superuser, 'change', dataset) is True
-
-    def test_regular_user_cannot_access_scopeless_dataset(self, policy, user):
-        schema = DatasetSchemaFactory.create()
-        dataset = Dataset.objects.create(uuid=uuid.uuid4(), schema=schema)
-        assert policy.user_has_perm(user, 'change', dataset) is False
 
 
 # ---------------------------------------------------------------------------

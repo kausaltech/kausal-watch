@@ -10,6 +10,7 @@ import pytest
 from kausal_common.datasets.computation import _apply_op, compute_dataset_values, compute_for_queryset
 from kausal_common.datasets.models import DataPoint, Dataset, DatasetMetric, DatasetMetricComputation, DatasetSchema
 
+from actions.tests.factories import ActionFactory
 from indicators.models.goal_data_point import IndicatorGoalDataPoint
 from indicators.tests.factories import IndicatorFactory, IndicatorValueFactory
 
@@ -72,7 +73,9 @@ def _create_schema_with_computation(operation='multiply'):
         operand_a=metric_a,
         operand_b=metric_b,
     )
-    dataset = Dataset.objects.create(schema=schema)
+    # Datasets require a scope; use a non-indicator (Action) scope so the plain
+    # computation path is exercised without triggering indicator virtual values.
+    dataset = Dataset.objects.create(schema=schema, scope=ActionFactory.create())
     return dataset, metric_a, metric_b, target
 
 
@@ -105,7 +108,7 @@ class TestComputeDatasetValues:
     def test_no_computations_returns_empty(self):
         schema = DatasetSchema.objects.create(name='Empty')
         metric = DatasetMetric.objects.create(schema=schema, label='M')
-        dataset = Dataset.objects.create(schema=schema)
+        dataset = Dataset.objects.create(schema=schema, scope=ActionFactory.create())
         DataPoint.objects.create(dataset=dataset, metric=metric, date=datetime.date(2024, 1, 1))
 
         assert compute_dataset_values(dataset) == []
@@ -165,7 +168,7 @@ class TestComputeDatasetGoalValues:
     def test_no_computations_returns_empty(self):
         schema = DatasetSchema.objects.create(name='Empty')
         metric = DatasetMetric.objects.create(schema=schema, label='M')
-        dataset = Dataset.objects.create(schema=schema)
+        dataset = Dataset.objects.create(schema=schema, scope=ActionFactory.create())
         IndicatorGoalDataPoint.objects.create(
             dataset=dataset,
             metric=metric,
@@ -342,7 +345,7 @@ class TestNullOperandComputation:
             operand_a=None,
             operand_b=factor,
         )
-        dataset = Dataset.objects.create(schema=schema)
+        dataset = Dataset.objects.create(schema=schema, scope=ActionFactory.create())
         d = datetime.date(2024, 1, 1)
         DataPoint.objects.create(dataset=dataset, metric=factor, date=d, value=Decimal(5))
 
