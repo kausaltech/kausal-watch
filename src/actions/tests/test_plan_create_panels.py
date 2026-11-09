@@ -1,6 +1,6 @@
 import pytest
 
-from actions.wagtail_admin import PlanAdmin
+from actions.wagtail_admin import get_plan_edit_handler
 from admin_site.tests.factories import ClientFactory
 
 pytestmark = pytest.mark.django_db
@@ -27,8 +27,7 @@ class TestPlanOrganizationPanel:
         instance = Plan()
 
         with ctx_request.activate(request), ctx_instance.activate(instance):
-            admin = PlanAdmin()
-            return admin.get_edit_handler()
+            return get_plan_edit_handler()
 
     def _get_create_form_class(self, rf, superuser):
         from aplans.context_vars import ctx_instance, ctx_request
@@ -40,8 +39,7 @@ class TestPlanOrganizationPanel:
         instance = Plan()
 
         with ctx_request.activate(request), ctx_instance.activate(instance):
-            admin = PlanAdmin()
-            edit_handler = admin.get_edit_handler()
+            edit_handler = get_plan_edit_handler()
             bound = edit_handler.bind_to_model(Plan)
             return bound.get_form_class()
 

@@ -37,7 +37,7 @@ class ChildPlanOrderPanel(Panel):
             ctx = super().get_context_data(parent_context) or {}
             plan = self.instance
             ctx['child_plans'] = child_plans_in_order(plan)
-            ctx['reorder_url'] = reverse('actions_plan_reorder_child', args=(plan.pk, 999999))
+            ctx['reorder_url'] = reverse('wagtailsnippets_actions_plan:reorder_child', args=(plan.pk, 999999))
             ctx['success_message'] = _("'%(plan)s' has been moved successfully.") % {'plan': '__LABEL__'}
             return ctx
 

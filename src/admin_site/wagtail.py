@@ -11,7 +11,6 @@ from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
 from django.db.models import Model, ProtectedError, prefetch_related_objects
 from django.forms.models import ModelForm
 from django.http.request import QueryDict
@@ -998,30 +997,3 @@ def diff_common_category_types(
     added = [cct for pk, cct in new_by_pk.items() if pk not in old_by_pk]
     removed = [cct for pk, cct in old_by_pk.items() if pk not in new_by_pk]
     return added, removed
-
-
-class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
-    @transaction.atomic()
-    def form_valid(self, form):
-        added_ccts, removed_ccts = diff_common_category_types(
-            self.instance.common_category_types.all(), form.cleaned_data['common_category_types']
-        )
-        for added_cct in added_ccts:
-            # Create category type corresponding to this common category type and link it to this plan
-            ct = added_cct.instantiate_for_plan(self.instance)
-            # Create categories for the common categories having that common category type
-            for common_category in added_cct.categories.all():
-                common_category.instantiate_for_category_type(ct)
-        for removed_cct in removed_ccts:
-            try:
-                self.instance.category_types.filter(common=removed_cct).delete()
-            except ProtectedError:
-                # Actually validation should have been done before this method is called, but it seems to work for now
-                error = _(
-                    'Could not remove common category type "%(removed_cct)" from the plan because categories '
-                    'with the corresponding category type exist.',
-                ) % {'removed_cct': removed_cct}
-                form.add_error('common_category_types', error)
-                messages.validation_error(self.request, self.get_error_message(), form)
-                return self.render_to_response(self.get_context_data(form=form))
-        return super().form_valid(form)

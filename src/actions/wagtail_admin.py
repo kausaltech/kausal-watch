@@ -11,13 +11,14 @@ from django.db import transaction
 from django.db.models import Case, F, IntegerField, Max, ProtectedError, Q, Value, When, Window
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect
-from django.urls import path, re_path, reverse
+from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import get_language_info, gettext_lazy as _, pgettext_lazy
 from django.views.generic import TemplateView
+from wagtail import hooks
 from wagtail.admin import messages
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.forms import WagtailAdminModelForm
@@ -39,16 +40,14 @@ from wagtail.admin.widgets import Button
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.log_actions import log
 from wagtail.models import Revision
+from wagtail.permissions import register_permission_policy
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
+from wagtail.snippets.views.snippets import IndexView
 
 import sentry_sdk
 from dal import autocomplete
 from django_filters import filters
 from wagtail_color_panel.edit_handlers import NativeColorPanel
-from wagtail_modeladmin.helpers.permission import PermissionHelper
-from wagtail_modeladmin.menus import ModelAdminMenuItem
-from wagtail_modeladmin.options import modeladmin_register
 
 from kausal_common.people.chooser import PersonChooser
 from kausal_common.users import user_or_bust, user_or_none
@@ -60,6 +59,7 @@ from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from actions.models.plan import UsageStatus
 from actions.models.public_user import PublicUser
+from actions.permission_policy import PlanAdminPermissionPolicy
 from admin_site.chooser import ClientChooser
 from admin_site.forms import WatchAdminModelForm
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
@@ -71,17 +71,14 @@ from admin_site.viewsets import (
     BaseChangeLogMessageEditView,
     BaseChangeLogMessageViewSet,
     ChangeLogMessageRelatedObjectMixin,
+    InstancePermissionCheckedMixin,
+    WatchCreateView,
     WatchEditView,
     WatchViewSet,
 )
 from admin_site.wagtail import (
-    ActivePlanEditView,
     AplansAdminModelForm,
-    AplansCreateView,
-    AplansEditView,
-    AplansModelAdmin,
     CondensedInlinePanel,
-    SuccessUrlEditPageModelAdminMixin,
     diff_common_category_types,
     insert_model_translation_panels,
 )
@@ -98,6 +95,7 @@ from . import (
     category_admin,  # noqa: F401
     pledge_admin,  # noqa: F401
 )
+from .category_admin import PanelFormMixin
 from .models import (
     Action,
     ActionChangeLogMessage,
@@ -114,6 +112,7 @@ from .plan_children_admin import ChildPlanOrderPanel, reorder_child_plan_view
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
+    from django.http.response import HttpResponseBase
     from wagtail.admin.menu import MenuItem
     from wagtail.admin.panels.base import Panel
 
@@ -329,26 +328,348 @@ class PlanDomainsPanel(InlinePanel):
         return options
 
 
-class PlanCreateView(AplansCreateView[Plan]):
+PLAN_PANELS: list[Panel[Any, Any]] = [
+    FieldPanel('name'),
+    FieldPanel('short_name'),
+    FieldPanel('identifier'),
+    FieldPanel('short_identifier'),
+    FieldPanel('version_name'),
+    FieldPanel('actions_locked'),
+    FieldPanel('accessibility_statement_url'),
+    FieldPanel('access_request_contact_email'),
+    FieldPanel('access_request_eligibility_text'),
+    FieldPanel('primary_language'),
+    FieldPanel('other_languages'),
+    FieldPanel('country'),
+    FieldPanel('timezone'),
+    CondensedInlinePanel(
+        'general_admins_ordered',
+        panels=[
+            FieldPanel('person', widget=PersonChooser),
+        ],
+        heading=_('General administrators'),
+    ),
+    FieldPanel('image'),
+    FieldPanel('superseded_by', widget=PlanChooser),
+    FieldPanel('copy_of', widget=PlanChooser, read_only=True),
+]
+
+ACTION_IMPACT_PANELS = [
+    FieldPanel('identifier'),
+    FieldPanel('name'),
+]
+
+ACTION_SCHEDULE_PANELS = [
+    FieldPanel('name'),
+    FieldPanel('begins_at'),
+    FieldPanel('ends_at'),
+]
+
+PLEDGE_FORM_FIELD_PANELS = [
+    FieldPanel('identifier'),
+    FieldPanel('label'),
+    FieldPanel('help_text'),
+    FieldPanel('placeholder'),
+    FieldPanel('required'),
+]
+
+PLEDGE_ACCOUNT_PANELS = [
+    FieldPanel('pledge_terms_url'),
+    FieldPanel('pledge_privacy_url'),
+    FieldPanel('pledge_account_title'),
+    FieldPanel('pledge_account_description'),
+    FieldPanel('pledge_marketing_consent_label'),
+]
+
+COLOR_HELP_TEXT = _(
+    "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example "
+    'red070 or grey030.',
+)
+
+
+def get_action_status_panels(user: User):
+    result = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+        FieldPanel('is_completed'),
+    ]
+    if user.is_superuser:
+        # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
+        # from the UI theme's graphColors, such as "red030", instead of hex colors.
+        result.append(NativeColorPanel('color', help_text=COLOR_HELP_TEXT))
+    return result
+
+
+def get_action_implementation_phase_panels(user: User):
+    result = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+    ]
+    if user.is_superuser:
+        # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
+        # from the UI theme's graphColors, such as "red030", instead of hex colors.
+        result.append(NativeColorPanel('color', help_text=COLOR_HELP_TEXT))
+    return result
+
+
+def get_plan_edit_handler():
+    request = ctx_request.get()
+    instance = ctx_instance.get_as_type(Plan)
+
+    creating = instance.pk is None
+    panels_enabled_when_creating = {
+        'name',
+        'identifier',
+        'short_name',
+        'primary_language',
+        'other_languages',
+        'country',
+    }
+
+    panels: list[Panel[Any, Any]] = list(PLAN_PANELS)
+
+    if creating:
+        # Accidentally changing a plan organization would be dangerous, so don't show this for existing plans
+        org_panel = MultiFieldPanel(
+            [
+                FieldPanel(
+                    'organization',
+                    heading='',
+                    help_text=_('Choose an existing organization'),
+                    widget=organization_chooser_viewset.widget_class(),
+                ),
+                FieldPanel(
+                    'organization_name',
+                    heading='',
+                ),
+            ],
+            heading=_('Main organization'),
+            help_text=_('Select an existing organization or enter a name to create a new one.'),
+        )
+        create_panels = [p for p in panels if getattr(p, 'field_name', None) in panels_enabled_when_creating]
+        # Insert org panel after the identifier field
+        insert_idx = next(
+            (i + 1 for i, p in enumerate(create_panels) if getattr(p, 'field_name', None) == 'identifier'),
+            len(create_panels),
+        )
+        create_panels.insert(insert_idx, org_panel)
+        panels = create_panels
+
+    user = user_or_bust(request.user)
+    action_status_panels = insert_model_translation_panels(
+        ActionStatus,
+        get_action_status_panels(user),
+        request,
+        instance,
+    )
+    action_implementation_phase_panels = insert_model_translation_panels(
+        ActionStatus,
+        get_action_implementation_phase_panels(user),
+        request,
+        instance,
+    )
+    action_impact_panels = insert_model_translation_panels(
+        ActionImpact,
+        ACTION_IMPACT_PANELS,
+        request,
+        instance,
+    )
+    action_schedule_panels = insert_model_translation_panels(
+        ActionSchedule,
+        ACTION_SCHEDULE_PANELS,
+        request,
+        instance,
+    )
+
+    panels = list(
+        insert_model_translation_panels(
+            Plan,
+            panels,
+            request,
+            instance,
+        )
+    )
+    if user.is_superuser:
+        panels.append(
+            InlinePanel(
+                'clients',
+                min_num=1,
+                label=_('Client'),
+                panels=[
+                    FieldPanel('client', widget=ClientChooser),
+                    FieldPanel('is_primary'),
+                ],
+                heading=_('Clients'),
+            )
+        )
+        panels.append(FieldPanel('usage_status'))
+        panels.append(FieldPanel('kausal_paths_instance_uuid'))
+    if not creating and user.is_superuser:
+        # Publishing opens a plan up and unpublishing leaves it open, so this is where it is
+        # narrowed again. Who may read a plan is not for the plan's own admins to decide.
+        panels.append(FieldPanel('visibility'))
+        panels.append(FieldPanel('theme_identifier'))
+        panels.append(
+            PlanDomainsPanel(
+                'domains',
+                panels=[
+                    FieldPanel('hostname'),
+                    FieldPanel('base_path'),
+                    FieldPanel('redirect_to_hostname'),
+                    FieldPanel('deployment_environment'),
+                    FieldPanel('redirect_aliases'),
+                    FieldPanel('google_site_verification_tag'),
+                    FieldPanel('matomo_analytics_url'),
+                ],
+                heading=_('Domains'),
+                help_text=_(
+                    'Links to the plan use the first domain in this list that serves the plan: a '
+                    'production domain once the plan is published, a preview domain before that. '
+                    'Domains that redirect elsewhere are skipped.'
+                ),
+            )
+        )
+
+    links_panel = CondensedInlinePanel[Plan, PlanLink](  # type: ignore[assignment]
+        'links',
+        panels=(
+            FieldPanel('url'),
+            FieldPanel('title'),
+        ),
+        heading=_('External links'),
+    )
+    assert links_panel.panels is not None
+    links_panel.panels = insert_model_translation_panels(PlanLink, links_panel.panels, request, instance)
+    if not creating:
+        panels.append(links_panel)
+        panels.append(FieldPanel('external_feedback_url'))
+        panels.append(ChildPlanOrderPanel(heading=_('Child plans')))
+
+    tabs = [ObjectList(panels, heading=_('Basic information'))]
+    if not creating:
+        tabs.append(
+            ObjectList(
+                [
+                    FieldPanel('primary_action_classification', widget=CategoryTypeChooser),
+                    CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
+                    CondensedInlinePanel(
+                        'action_implementation_phases',
+                        panels=action_implementation_phase_panels,
+                        heading=_('Action implementation phases'),
+                    ),
+                    CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
+                    CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
+                    FieldPanel(
+                        'common_category_types',
+                        widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
+                    ),
+                    FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
+                    FieldPanel('settings_action_update_target_interval'),
+                    FieldPanel('settings_action_update_acceptable_interval'),
+                    FieldPanel('action_days_until_considered_stale'),
+                    CondensedInlinePanel(
+                        'action_dependency_roles',
+                        panels=[
+                            FieldPanel('name'),
+                        ],
+                        heading=_('Action dependency roles'),
+                    ),
+                ],
+                heading=_('Action classifications'),
+            ),
+        )
+
+    features = getattr(instance, 'features', None)
+    if not creating and features is not None and features.enable_community_engagement:
+        pledge_form_field_panels = insert_model_translation_panels(
+            PledgeFormField,
+            PLEDGE_FORM_FIELD_PANELS,
+            request,
+            instance,
+        )
+        tabs.append(
+            ObjectList(
+                [
+                    CondensedInlinePanel(
+                        'pledge_form_fields',
+                        panels=pledge_form_field_panels,
+                        heading=_('Collected data fields'),
+                        help_text=_(
+                            'Information people are asked to give when they commit to a pledge. Only collect '
+                            'information that your privacy notice covers. Leave empty to collect nothing.'
+                        ),
+                    ),
+                    MultiFieldPanel(
+                        insert_model_translation_panels(Plan, PLEDGE_ACCOUNT_PANELS, request, instance),
+                        heading=_('Pledge accounts'),
+                        help_text=_('Only used when the plan offers accounts for community engagement.'),
+                    ),
+                ],
+                heading=_('Community engagement'),
+            ),
+        )
+
+    handler = TabbedInterface[Plan, PlanForm](tabs, base_form_class=PlanForm)
+    return handler
+
+
+class PlanFormViewMixin:
+    """Build the plan form for the request, which needs the plan as `ctx_instance`."""
+
+    request: HttpRequest
+
+    def get_context_instance(self) -> Plan:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        with ctx_instance.activate(self.get_context_instance()):
+            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+    def get_panel(self):
+        # Wagtail builds the panel in setup(), before dispatch()
+        with ctx_instance.activate(self.get_context_instance()):
+            return get_plan_edit_handler().bind_to_model(Plan)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()  # type: ignore[misc]
+        # The plan form is not bound to the active plan
+        kwargs.pop('plan', None)
+        return kwargs
+
+
+class PlanCreateView(PlanFormViewMixin, PanelFormMixin, WatchCreateView[Plan]):
+    @cached_property
+    def new_plan(self) -> Plan:
+        return Plan()
+
+    def get_context_instance(self) -> Plan:
+        return self.new_plan
+
     def get_success_url(self):
-        return reverse('change-admin-plan', kwargs=dict(plan_id=self.instance.id))
+        assert self.object is not None
+        return reverse('change-admin-plan', kwargs=dict(plan_id=self.object.id))
 
 
-class PlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]):
+class PlanEditView(
+    PlanFormViewMixin, SuccessUrlEditPageMixin, InstancePermissionCheckedMixin, PanelFormMixin, WatchEditView[Plan]
+):
+    def get_context_instance(self) -> Plan:
+        return self.object
+
     @transaction.atomic()
     def form_valid(self, form):
         added_ccts, removed_ccts = diff_common_category_types(
-            self.instance.common_category_types.all(), form.cleaned_data['common_category_types']
+            self.object.common_category_types.all(), form.cleaned_data['common_category_types']
         )
         for added_cct in added_ccts:
             # Create category type corresponding to this common category type and link it to this plan
-            ct = added_cct.instantiate_for_plan(self.instance)
+            ct = added_cct.instantiate_for_plan(self.object)
             # Create categories for the common categories having that common category type
             for common_category in added_cct.categories.all():
                 common_category.instantiate_for_category_type(ct)
         for removed_cct in removed_ccts:
             try:
-                self.instance.category_types.filter(common=removed_cct).delete()
+                self.object.category_types.filter(common=removed_cct).delete()
             except ProtectedError:
                 # Actually validation should have been done before this method is called, but it seems to work for now
                 error = _(
@@ -359,350 +680,6 @@ class PlanEditView(SuccessUrlEditPageModelAdminMixin[Plan], AplansEditView[Plan]
                 validation_error(self.request, self.get_error_message(), form)
                 return self.render_to_response(self.get_context_data(form=form))
         return super().form_valid(form)
-
-
-class PlanModelAdminPermissionHelper(PermissionHelper[Plan]):
-    def user_can_list(self, user):
-        return user.is_superuser
-
-    def user_can_create(self, user):
-        return user.is_superuser
-
-    def user_can_inspect_obj(self, user, obj):
-        return False
-
-    def user_can_delete_obj(self, user, obj):
-        return False
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj)
-
-
-class PlanAdmin(AplansModelAdmin[Plan]):
-    model = Plan
-    add_to_admin_menu = False  # We only have PlanViewSet in the menu and use the views of PlanAdmin in that viewset
-    list_display = ('name',)
-    search_fields = ('name',)
-    permission_helper_class = PlanModelAdminPermissionHelper
-    create_view_class = PlanCreateView
-    copy_view_class = PlanCopyView
-    edit_view_class = PlanEditView
-
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('short_name'),
-        FieldPanel('identifier'),
-        FieldPanel('short_identifier'),
-        FieldPanel('version_name'),
-        FieldPanel('actions_locked'),
-        FieldPanel('accessibility_statement_url'),
-        FieldPanel('access_request_contact_email'),
-        FieldPanel('access_request_eligibility_text'),
-        FieldPanel('primary_language'),
-        FieldPanel('other_languages'),
-        FieldPanel('country'),
-        FieldPanel('timezone'),
-        CondensedInlinePanel(
-            'general_admins_ordered',
-            panels=[
-                FieldPanel('person', widget=PersonChooser),
-            ],
-            heading=_('General administrators'),
-        ),
-        FieldPanel('image'),
-        FieldPanel('superseded_by', widget=PlanChooser),
-        FieldPanel('copy_of', widget=PlanChooser, read_only=True),
-    ]
-
-    action_impact_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('name'),
-    ]
-
-    action_schedule_panels = [
-        FieldPanel('name'),
-        FieldPanel('begins_at'),
-        FieldPanel('ends_at'),
-    ]
-
-    pledge_form_field_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('label'),
-        FieldPanel('help_text'),
-        FieldPanel('placeholder'),
-        FieldPanel('required'),
-    ]
-
-    pledge_account_panels = [
-        FieldPanel('pledge_terms_url'),
-        FieldPanel('pledge_privacy_url'),
-        FieldPanel('pledge_account_title'),
-        FieldPanel('pledge_account_description'),
-        FieldPanel('pledge_marketing_consent_label'),
-    ]
-
-    COLOR_HELP_TEXT = _(
-        "Only set if explicitly required by the customer. Use a color key from the UI theme's graphColors, for example "
-        'red070 or grey030.',
-    )
-
-    def copy_view(self, request, instance_pk):
-        # Copying a plan creates a plan, and the copy view may supersede the original plan and its actions
-        if not self.permission_helper.user_can_create(request.user):
-            raise PermissionDenied
-        kwargs = {'plan_id': instance_pk}
-        view_class = self.copy_view_class
-        return view_class.as_view(**kwargs)(request)
-
-    def get_admin_urls_for_registration(self):
-        urls = super().get_admin_urls_for_registration()
-        urls += (
-            re_path(
-                self.url_helper.get_action_url_pattern('copy'),
-                self.copy_view,
-                name=self.url_helper.get_action_url_name('copy'),
-            ),
-            path(
-                'actions/plan/<int:parent_pk>/children/<int:child_pk>/reorder/',
-                reorder_child_plan_view,
-                name='actions_plan_reorder_child',
-            ),
-        )
-        return urls
-
-    def get_action_status_panels(self, user: User):
-        result = [
-            FieldPanel('identifier'),
-            FieldPanel('name'),
-            FieldPanel('is_completed'),
-        ]
-        if user.is_superuser:
-            # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
-            # from the UI theme's graphColors, such as "red030", instead of hex colors.
-            result.append(NativeColorPanel('color', help_text=self.COLOR_HELP_TEXT))
-        return result
-
-    def get_action_implementation_phase_panels(self, user: User):
-        result = [
-            FieldPanel('identifier'),
-            FieldPanel('name'),
-        ]
-        if user.is_superuser:
-            # We deliberately don't use NativeColorPanel from wagtail_color_panel here because here we expect color keys
-            # from the UI theme's graphColors, such as "red030", instead of hex colors.
-            result.append(NativeColorPanel('color', help_text=self.COLOR_HELP_TEXT))
-        return result
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get_as_type(Plan)
-
-        creating = instance.pk is None
-        panels_enabled_when_creating = {
-            'name',
-            'identifier',
-            'short_name',
-            'primary_language',
-            'other_languages',
-            'country',
-        }
-
-        panels: list[Panel[Any, Any]] = list(self.panels)
-
-        if creating:
-            # Accidentally changing a plan organization would be dangerous, so don't show this for existing plans
-            org_panel = MultiFieldPanel(
-                [
-                    FieldPanel(
-                        'organization',
-                        heading='',
-                        help_text=_('Choose an existing organization'),
-                        widget=organization_chooser_viewset.widget_class(),
-                    ),
-                    FieldPanel(
-                        'organization_name',
-                        heading='',
-                    ),
-                ],
-                heading=_('Main organization'),
-                help_text=_('Select an existing organization or enter a name to create a new one.'),
-            )
-            create_panels = [p for p in panels if getattr(p, 'field_name', None) in panels_enabled_when_creating]
-            # Insert org panel after the identifier field
-            insert_idx = next(
-                (i + 1 for i, p in enumerate(create_panels) if getattr(p, 'field_name', None) == 'identifier'),
-                len(create_panels),
-            )
-            create_panels.insert(insert_idx, org_panel)
-            panels = create_panels
-
-        user = user_or_bust(request.user)
-        action_status_panels = insert_model_translation_panels(
-            ActionStatus,
-            self.get_action_status_panels(user),
-            request,
-            instance,
-        )
-        action_implementation_phase_panels = insert_model_translation_panels(
-            ActionStatus,
-            self.get_action_implementation_phase_panels(user),
-            request,
-            instance,
-        )
-        action_impact_panels = insert_model_translation_panels(
-            ActionImpact,
-            self.action_impact_panels,
-            request,
-            instance,
-        )
-        action_schedule_panels = insert_model_translation_panels(
-            ActionSchedule,
-            self.action_schedule_panels,
-            request,
-            instance,
-        )
-
-        panels = list(
-            insert_model_translation_panels(
-                Plan,
-                panels,
-                request,
-                instance,
-            )
-        )
-        if user.is_superuser:
-            panels.append(
-                InlinePanel(
-                    'clients',
-                    min_num=1,
-                    label=_('Client'),
-                    panels=[
-                        FieldPanel('client', widget=ClientChooser),
-                        FieldPanel('is_primary'),
-                    ],
-                    heading=_('Clients'),
-                )
-            )
-            panels.append(FieldPanel('usage_status'))
-            panels.append(FieldPanel('kausal_paths_instance_uuid'))
-        if not creating and user.is_superuser:
-            # Publishing opens a plan up and unpublishing leaves it open, so this is where it is
-            # narrowed again. Who may read a plan is not for the plan's own admins to decide.
-            panels.append(FieldPanel('visibility'))
-            panels.append(FieldPanel('theme_identifier'))
-            panels.append(
-                PlanDomainsPanel(
-                    'domains',
-                    panels=[
-                        FieldPanel('hostname'),
-                        FieldPanel('base_path'),
-                        FieldPanel('redirect_to_hostname'),
-                        FieldPanel('deployment_environment'),
-                        FieldPanel('redirect_aliases'),
-                        FieldPanel('google_site_verification_tag'),
-                        FieldPanel('matomo_analytics_url'),
-                    ],
-                    heading=_('Domains'),
-                    help_text=_(
-                        'Links to the plan use the first domain in this list that serves the plan: a '
-                        'production domain once the plan is published, a preview domain before that. '
-                        'Domains that redirect elsewhere are skipped.'
-                    ),
-                )
-            )
-
-        links_panel = CondensedInlinePanel[Plan, PlanLink](  # type: ignore[assignment]
-            'links',
-            panels=(
-                FieldPanel('url'),
-                FieldPanel('title'),
-            ),
-            heading=_('External links'),
-        )
-        assert links_panel.panels is not None
-        links_panel.panels = insert_model_translation_panels(PlanLink, links_panel.panels, request, instance)
-        if not creating:
-            panels.append(links_panel)
-            panels.append(FieldPanel('external_feedback_url'))
-            panels.append(ChildPlanOrderPanel(heading=_('Child plans')))
-
-        tabs = [ObjectList(panels, heading=_('Basic information'))]
-        if not creating:
-            tabs.append(
-                ObjectList(
-                    [
-                        FieldPanel('primary_action_classification', widget=CategoryTypeChooser),
-                        CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
-                        CondensedInlinePanel(
-                            'action_implementation_phases',
-                            panels=action_implementation_phase_panels,
-                            heading=_('Action implementation phases'),
-                        ),
-                        CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
-                        CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
-                        FieldPanel(
-                            'common_category_types',
-                            widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
-                        ),
-                        FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
-                        FieldPanel('settings_action_update_target_interval'),
-                        FieldPanel('settings_action_update_acceptable_interval'),
-                        FieldPanel('action_days_until_considered_stale'),
-                        CondensedInlinePanel(
-                            'action_dependency_roles',
-                            panels=[
-                                FieldPanel('name'),
-                            ],
-                            heading=_('Action dependency roles'),
-                        ),
-                    ],
-                    heading=_('Action classifications'),
-                ),
-            )
-
-        features = getattr(instance, 'features', None)
-        if not creating and features is not None and features.enable_community_engagement:
-            pledge_form_field_panels = insert_model_translation_panels(
-                PledgeFormField,
-                self.pledge_form_field_panels,
-                request,
-                instance,
-            )
-            tabs.append(
-                ObjectList(
-                    [
-                        CondensedInlinePanel(
-                            'pledge_form_fields',
-                            panels=pledge_form_field_panels,
-                            heading=_('Collected data fields'),
-                            help_text=_(
-                                'Information people are asked to give when they commit to a pledge. Only collect '
-                                'information that your privacy notice covers. Leave empty to collect nothing.'
-                            ),
-                        ),
-                        MultiFieldPanel(
-                            insert_model_translation_panels(Plan, self.pledge_account_panels, request, instance),
-                            heading=_('Pledge accounts'),
-                            help_text=_('Only used when the plan offers accounts for community engagement.'),
-                        ),
-                    ],
-                    heading=_('Community engagement'),
-                ),
-            )
-
-        handler = TabbedInterface[Plan, PlanForm](tabs, base_form_class=PlanForm)
-        return handler
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        person = user.get_corresponding_person()
-        if not user.is_superuser and person:
-            qs = qs.filter(general_admins=person).distinct()
-        return qs
-
-
-modeladmin_register(PlanAdmin)
 
 
 class PlanFeaturesViewSet(WatchViewSet[PlanFeatures]):
@@ -1509,8 +1486,9 @@ class PlanPublishView(
         return reverse(self.index_url_name)
 
 
-class PlanViewSet(SnippetViewSet[Plan]):
+class PlanViewSet(WatchViewSet[Plan]):
     model = Plan
+    url_prefix = 'actions/plan'
     add_to_admin_menu = True
     icon = 'kausal-plan'
     menu_label = _('Plans')
@@ -1539,9 +1517,14 @@ class PlanViewSet(SnippetViewSet[Plan]):
     # resolves the generic wagtailsnippets index_results template ahead of a view-level
     # fallback. The same template is used for the full page and the AJAX filter/search refresh.
     index_results_template_name = 'admin_site/scrollable_index_results.html'
+    add_view_class = PlanCreateView
+    edit_view_class = PlanEditView
+    copy_view_enabled = True
+    bulk_delete_enabled = False
     publish_url_name = 'publish'
     unpublish_url_name = 'unpublish'
-    # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView
+
+    edit_handler = ObjectList([FieldPanel('name')], base_form_class=PlanForm)
 
     # Copied from UserFeedbackViewSet
     # FIXME: As of writing this latest Wagtail (6.1.X) has a bug which only
@@ -1556,15 +1539,20 @@ class PlanViewSet(SnippetViewSet[Plan]):
         menu_item.is_shown = lambda request: True  # type: ignore[method-assign] # noqa: ARG005
         return menu_item
 
-    def get_url_name(self, view_name: str) -> str:
-        # We use a terrifying mix of modeladmin and snippet views. Once we got rid of modeladmin, change this.
-        if view_name == 'add':
-            return 'actions_plan_modeladmin_create'
-        if view_name == 'copy':
-            return 'actions_plan_modeladmin_copy'
-        if view_name == 'edit':
-            return 'actions_plan_modeladmin_edit'
-        return super().get_url_name(view_name)
+    def register_permissions(self):
+        # Plan.permission_policy() is the GraphQL policy, so the admin one is registered here
+        register_permission_policy(Plan, PlanAdminPermissionPolicy(Plan), exact_class=True)
+        super().register_permissions()
+
+    @property
+    def copy_view(self):
+        # Copying a plan creates a plan, and the copy view may supersede the original plan and its actions
+        def view(request: HttpRequest, pk: str) -> HttpResponseBase:
+            if not self.permission_policy.user_has_permission(request.user, 'add'):
+                raise PermissionDenied
+            return PlanCopyView.as_view(plan_id=pk)(request)
+
+        return view
 
     def get_queryset(self, request: HttpRequest) -> PlanQuerySet | None:
         if request.user.is_anonymous:
@@ -1594,11 +1582,17 @@ class PlanViewSet(SnippetViewSet[Plan]):
         return super().get_common_view_kwargs(
             publish_url_name=self.get_url_name(self.publish_url_name),
             unpublish_url_name=self.get_url_name(self.unpublish_url_name),
+            usage_url_name=None,
             **kwargs,
         )
 
     def get_urlpatterns(self):
-        urls = super().get_urlpatterns()
+        urls = [pattern for pattern in super().get_urlpatterns() if getattr(pattern, 'name', None) != 'usage']
+        reorder_child_url = path(
+            '<int:parent_pk>/children/<int:child_pk>/reorder/',
+            view=reorder_child_plan_view,
+            name='reorder_child',
+        )
         publish_url = path(
             f'{self.publish_url_name}/<str:pk>/',
             view=self.publish_view,
@@ -1609,7 +1603,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
             view=self.unpublish_view,
             name=self.unpublish_url_name,
         )
-        return [*urls, publish_url, unpublish_url]
+        return [*urls, publish_url, unpublish_url, reorder_child_url]
 
 
 register_snippet(PlanViewSet)
@@ -1793,69 +1787,16 @@ class CategoryChangeLogMessageViewSet(BaseChangeLogMessageViewSet[CategoryChange
 register_snippet(CategoryChangeLogMessageViewSet)
 
 
-# FIXME: This is partly duplicated in content/admin.py.
-class ActivePlanModelAdminPermissionHelper(PermissionHelper[Any]):
-    def user_can_list(self, user):
-        return user.is_superuser
+class ActivePlanMenuItem(PlanSpecificSingletonModelMenuItem):
+    def __init__(self, view_set, order):
+        super().__init__(view_set, order)
+        self.label = _('Plan')
+        self.name = 'plan'
 
-    def user_can_create(self, user):
-        return user.is_superuser
-
-    def user_can_inspect_obj(self, user, obj):
-        return False
-
-    def user_can_delete_obj(self, user, obj):
-        return False
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj)
-
-
-# TODO: Reimplemented in admin_site/menu.py to make this work without
-# ModelAdmin. Use that when implementing new classes or migrating away from
-# ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem[Plan]):
-    def get_one_to_one_field(self, _plan):
-        # Implement in subclass
-        raise NotImplementedError()
-
-    def render_component(self, request):
-        # When clicking the menu item, use the edit view instead of the index view.
-        link_menu_item = super().render_component(request)
-        plan = user_or_bust(request.user).get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
-        return link_menu_item
-
-    def is_shown(self, request: HttpRequest):
-        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan features instance, not listing.
-        user = user_or_bust(request.user)
-        if user.is_superuser:
-            return True
-        plan = user.get_active_admin_plan(required=False)
-        if plan is None:
-            return False
-        field = self.get_one_to_one_field(plan)
-        return self.model_admin.permission_helper.user_can_edit_obj(user, field)
-
-
-class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         return plan
 
 
-class ActivePlanAdmin(PlanAdmin):
-    edit_view_class = ActivePlanEditView  # type: ignore[assignment]
-    permission_helper_class = ActivePlanModelAdminPermissionHelper  # type: ignore[assignment]
-    menu_label = _('Plan')
-    menu_icon = 'kausal-plan'
-    add_to_settings_menu = True
-    menu_order = 500
-
-    def get_menu_item(self, order=None):
-        item = ActivePlanMenuItem(self, order or self.get_menu_order())
-        return item
-
-
-modeladmin_register(ActivePlanAdmin)
+@hooks.register('register_settings_menu_item')
+def register_active_plan_menu_item():
+    return ActivePlanMenuItem(Plan.snippet_viewset, 500)  # type: ignore[attr-defined]

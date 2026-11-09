@@ -1,5 +1,4 @@
 from django.core.exceptions import ImproperlyConfigured
-from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.permissions import policy_registry
 
 import pytest
@@ -21,6 +20,7 @@ from actions.models import (
     Pledge,
     PublicUser,
 )
+from actions.permission_policy import PlanAdminPermissionPolicy
 from actions.pledge_permissions import ParticipantsPermissionPolicy, PledgePermissionPolicy
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.permissions import (
@@ -85,8 +85,8 @@ def test_viewset_models_keep_their_permission_policy(model, policy_class):
     assert type(policy_registry.get_by_type(model, fallback=False)) is policy_class
 
 
-def test_plan_keeps_wagtail_default_permission_policy():
-    assert type(policy_registry.get_by_type(Plan)) is ModelPermissionPolicy
+def test_plan_uses_the_admin_permission_policy():
+    assert type(policy_registry.get_by_type(Plan)) is PlanAdminPermissionPolicy
 
 
 def test_watch_viewset_requires_a_permission_policy_for_plan_related_models():
