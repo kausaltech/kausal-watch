@@ -20,7 +20,9 @@ from actions.tests.factories import (
     ActionImpactFactory,
     ActionLinkFactory,
     ActionResponsiblePartyFactory,
+    ActionTaskContactFactory,
     ActionTaskFactory,
+    ActionTaskResponsiblePartyFactory,
     WorkflowFactory,
     WorkflowTaskFactory,
 )
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
     from django.db.models import Model
     from wagtail.models import Workflow
 
-    from actions.models import Plan
+    from actions.models import ActionTask, Plan
     from people.models import Person
     from users.models import User
 
@@ -95,6 +97,28 @@ def test_deleted_child_is_dereferenced_in_draft(plan: Plan, relation: str, creat
     action.refresh_from_db()
     assert action.latest_revision is not None
     assert [item['pk'] for item in action.latest_revision.content[relation]] == [None]
+
+
+TASK_CHILD_RELATIONS: list[tuple[str, Callable[[ActionTask], Model]]] = [
+    ('responsible_parties', lambda task: ActionTaskResponsiblePartyFactory.create(task=task)),
+    ('contact_persons', lambda task: ActionTaskContactFactory.create(task=task)),
+]
+
+
+@pytest.mark.parametrize(
+    ('relation', 'create_child'), TASK_CHILD_RELATIONS, ids=[relation for relation, _ in TASK_CHILD_RELATIONS]
+)
+def test_deleted_task_child_is_dereferenced_in_draft(plan: Plan, relation: str, create_child: Callable[[ActionTask], Model]):
+    action = ActionFactory.create(plan=plan)
+    child = create_child(ActionTaskFactory.create(action=action))
+    action.save_revision()
+
+    child.delete()
+
+    action.refresh_from_db()
+    assert action.latest_revision is not None
+    [task] = action.latest_revision.content['tasks']
+    assert [item['pk'] for item in task[relation]] == [None]
 
 
 def test_cascade_deleted_child_leaves_the_draft_untouched(plan: Plan):
