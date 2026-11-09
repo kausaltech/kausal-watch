@@ -237,6 +237,7 @@ class CategoryTypeDeleteView(DeleteOwnPagesMixin[CategoryType], WatchDeleteView[
 
 class CategoryTypeViewSet(WatchViewSet[CategoryType]):
     model = CategoryType
+    list_per_page = 100
     icon = 'kausal-category'
     menu_label = _('Category types')
     menu_order = 1100
@@ -555,6 +556,7 @@ class CategoryReorderView(snippet_views.ReorderView):  # type: ignore[name-defin
 
 class CategoryViewSet(WatchViewSet[Category]):
     model = Category
+    list_per_page = 100
     icon = 'kausal-category'
     menu_label = _('Categories')
     # The "Categories" menu in `admin_site.wagtail_hooks` has one item per category type
@@ -619,6 +621,7 @@ class CommonCategoryTypeEditView(PanelFormMixin, WatchEditView[CommonCategoryTyp
 
 class CommonCategoryTypeViewSet(WatchViewSet[CommonCategoryType]):
     model = CommonCategoryType
+    list_per_page = 100
     icon = 'kausal-category'
     menu_label = _('Common category types')
     menu_order = 1101
@@ -814,6 +817,7 @@ class CommonCategoryReorderView(snippet_views.ReorderView):  # type: ignore[name
 
 class CommonCategoryViewSet(WatchViewSet[CommonCategory]):
     model = CommonCategory
+    list_per_page = 100
     icon = 'kausal-category'
     menu_label = _('Common categories')
     # The "Common categories" menu in `admin_site.wagtail_hooks` has one item per type
