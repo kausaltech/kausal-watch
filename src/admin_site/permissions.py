@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -96,11 +97,15 @@ class PlanSpecificSingletonModelPermissionPolicy(ModelPermissionPolicy):
 
 
 class PlanContextPermissionPolicy(ModelPermissionPolicy):
-    plan: Plan | None
+    """Policy with a plan context that is local to each request, as one instance serves all of them."""
 
     def __init__(self, model, inspect_view_enabled=False):
-        self.plan = None
+        self._plan: ContextVar[Plan | None] = ContextVar(f'{model._meta.label}_plan', default=None)
         super().__init__(model, inspect_view_enabled)
+
+    @property
+    def plan(self) -> Plan | None:
+        return self._plan.get()
 
     def prefetch_cache(self):
         """Prefetch plan-related content for permission checking."""
@@ -111,13 +116,13 @@ class PlanContextPermissionPolicy(ModelPermissionPolicy):
 
     @contextmanager
     def activate_plan_context(self, plan: Plan):
-        self.plan = plan
+        token = self._plan.set(plan)
         self.prefetch_cache()
         try:
             yield
         finally:
             self.clean_cache()
-            self.plan = None
+            self._plan.reset(token)
 
 
 class PlanRelatedPermissionPolicy(ModelPermissionPolicy):

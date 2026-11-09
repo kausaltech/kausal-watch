@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 from kausal_common.users import user_or_bust
@@ -23,20 +24,18 @@ class PersonPermissionPolicy(PlanContextPermissionPolicy):
     contact person role other than editor.
     """
 
-    _org_map: dict[int, Organization] | None
-
     def __init__(self):
-        self._org_map = None
+        self._org_map: ContextVar[dict[int, Organization] | None] = ContextVar('person_policy_org_map', default=None)
         super().__init__(Person)
 
     def prefetch_cache(self):
         if self.plan is None:
             return
         org_qs = Organization.objects.get_queryset().available_for_plan(self.plan)
-        self._org_map = {org.id: org for org in org_qs}
+        self._org_map.set({org.id: org for org in org_qs})
 
     def clean_cache(self):
-        self._org_map = None
+        self._org_map.set(None)
 
     def _get_plan(self, user: User) -> Plan:
         return self.plan or user.get_active_admin_plan()
@@ -71,4 +70,4 @@ class PersonPermissionPolicy(PlanContextPermissionPolicy):
         # Users can always edit themselves
         if action == 'change' and instance.user == user:
             return True
-        return user.can_edit_or_delete_person_within_plan(instance, plan=self._get_plan(user), orgs=self._org_map)
+        return user.can_edit_or_delete_person_within_plan(instance, plan=self._get_plan(user), orgs=self._org_map.get())
