@@ -35,7 +35,7 @@ def test_plan_copy_view_accepts_as_view_kwargs():
 
 @pytest.fixture
 def copy_url(plan):
-    return reverse('actions_plan_modeladmin_copy', kwargs={'instance_pk': plan.pk})
+    return reverse('wagtailsnippets_actions_plan:copy', kwargs={'pk': plan.pk})
 
 
 @pytest.mark.django_db

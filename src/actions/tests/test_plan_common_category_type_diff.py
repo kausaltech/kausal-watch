@@ -6,8 +6,9 @@ import pytest
 from actions.models import Plan
 from actions.models.category import CategoryType, CommonCategoryType
 from actions.tests.factories import CategoryTypeFactory, CommonCategoryTypeFactory
-from actions.wagtail_admin import PlanAdmin, PlanEditView
-from admin_site.wagtail import AplansEditView, diff_common_category_types
+from actions.wagtail_admin import PlanEditView
+from admin_site.viewsets import WatchEditView
+from admin_site.wagtail import diff_common_category_types
 
 pytestmark = pytest.mark.django_db
 
@@ -55,8 +56,9 @@ def test_plan_edit_clears_common_category_types(plan, monkeypatch):
         form.save()
         return expected_response
 
-    monkeypatch.setattr(AplansEditView, 'form_valid', save_form)
-    view = PlanEditView(PlanAdmin(), str(plan.pk))
+    monkeypatch.setattr(WatchEditView, 'form_valid', save_form)
+    view = PlanEditView()
+    view.object = plan
 
     response = view.form_valid(form)
 

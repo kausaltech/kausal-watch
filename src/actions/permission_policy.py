@@ -3,8 +3,10 @@ from __future__ import annotations
 import typing
 
 from django.db.models import Q
+from wagtail.permission_policies.base import ModelPermissionPolicy as WagtailModelPermissionPolicy
 
 from kausal_common.models.permission_policy import ModelPermissionPolicy, PermissionBlock
+from kausal_common.users import user_or_bust
 
 from aplans.utils import RestrictedVisibilityModel
 
@@ -80,3 +82,22 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', None, 'PlanQuerySet']):
     def user_can_create(self, user: User, context: None) -> bool:
         """Check if user can create new plans."""
         return False  # implement proper creation permissions when needed
+
+
+class PlanAdminPermissionPolicy(WagtailModelPermissionPolicy):
+    """
+    Decide about plans in the Wagtail admin.
+
+    Editing a plan needs general admin rights for it, and adding or deleting one is for superusers
+    only. Everything else follows the Django model permissions.
+    """
+
+    def user_has_permission(self, user, action):
+        if action in ('add', 'delete'):
+            return user_or_bust(user).is_superuser
+        return super().user_has_permission(user, action)
+
+    def user_has_permission_for_instance(self, user, action, instance):
+        if action == 'change':
+            return user_or_bust(user).is_general_admin_for_plan(instance)
+        return super().user_has_permission_for_instance(user, action, instance)

@@ -3,7 +3,7 @@ import pytest
 from actions.models import Plan
 from actions.models.plan import PlanDomain
 from actions.tests.factories import PlanDomainFactory
-from actions.wagtail_admin import PlanAdmin
+from actions.wagtail_admin import get_plan_edit_handler
 
 pytestmark = pytest.mark.django_db
 
@@ -14,7 +14,7 @@ def _domains_formset_class(rf, superuser, plan):
     request = rf.get('/')
     request.user = superuser
     with ctx_request.activate(request), ctx_instance.activate(plan):
-        form_class = PlanAdmin().get_edit_handler().bind_to_model(Plan).get_form_class()
+        form_class = get_plan_edit_handler().bind_to_model(Plan).get_form_class()
     return form_class.formsets['domains']
 
 
@@ -56,7 +56,7 @@ def test_domains_panel_explains_which_domain_is_used(rf, superuser, plan):
     request = rf.get('/')
     request.user = superuser
     with ctx_request.activate(request), ctx_instance.activate(plan):
-        handler = PlanAdmin().get_edit_handler()
+        handler = get_plan_edit_handler()
 
     def find(panel):
         if getattr(panel, 'relation_name', None) == 'domains':

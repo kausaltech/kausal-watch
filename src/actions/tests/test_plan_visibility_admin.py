@@ -17,7 +17,7 @@ from aplans.utils import RestrictedVisibilityModel
 
 from actions.models import Plan
 from actions.tests.factories import CategoryTypeFactory
-from actions.wagtail_admin import PlanAdmin
+from actions.wagtail_admin import get_plan_edit_handler
 from admin_site.tests.factories import ClientPlanFactory
 from admin_site.tests.utils import post_data
 
@@ -31,7 +31,7 @@ def _edit_form(rf, user, plan: Plan, data: dict[str, Any] | None = None):
     request = rf.get('/')
     request.user = user
     with ctx_request.activate(request), ctx_instance.activate(plan):
-        form_class = PlanAdmin().get_edit_handler().bind_to_model(Plan).get_form_class()
+        form_class = get_plan_edit_handler().bind_to_model(Plan).get_form_class()
         return form_class(data=data, instance=plan, for_user=user)
 
 

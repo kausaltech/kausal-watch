@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import re
 
+from django.contrib.auth.models import Permission
 from django.test import Client
 from django.urls import reverse
 from reversion.models import Version
@@ -111,10 +112,18 @@ def test_plan_admin_cannot_open_creating_or_copying(admin_client, superuser_clie
     assert admin_client.get(copy_url).status_code != 200
 
 
+def test_add_plan_permission_is_not_enough_to_create(admin_client, superuser_client, plan_admin_user, plan_with_pages):
+    plan_admin_user.user_permissions.add(Permission.objects.get(codename='add_plan'))
+    superuser_listing = _listing(superuser_client)
+    add_url = next(link for link in _links(superuser_listing) if link.endswith(('/create/', '/add/')))
+    copy_url = _link_ending(superuser_listing, f'/copy/{plan_with_pages.pk}/')
+    assert admin_client.get(add_url).status_code != 200
+    assert admin_client.get(copy_url).status_code != 200
+
+
 def test_superuser_is_offered_deleting(superuser_client, plan_with_pages):
     content = _listing(superuser_client)
     assert any(link.endswith(f'/delete/{plan_with_pages.pk}/') for link in _links(content))
-    assert '/admin/bulk/actions/plan/delete/' in _links(content)
 
 
 def test_superuser_deletes_a_plan(superuser_client):
@@ -125,11 +134,12 @@ def test_superuser_deletes_a_plan(superuser_client):
     assert not Plan.objects.filter(pk=plan.pk).exists()
 
 
-def test_superuser_bulk_deletes_plans(superuser_client):
+def test_bulk_delete_is_off(superuser_client):
     plans = [PlanFactory.create(), PlanFactory.create()]
     query = '&'.join(f'id={plan.pk}' for plan in plans)
+    assert 'bulk-action-checkbox' not in _listing(superuser_client)
     superuser_client.post(f'/admin/bulk/actions/plan/delete/?{query}')
-    assert not Plan.objects.filter(pk__in=[plan.pk for plan in plans]).exists()
+    assert Plan.objects.filter(pk__in=[plan.pk for plan in plans]).count() == 2
 
 
 def test_plan_admin_is_not_offered_deleting(admin_client, plan_with_pages):
@@ -142,6 +152,14 @@ def test_plan_admin_cannot_delete(admin_client, superuser_client, plan_with_page
     admin_client.post(delete_url)
     admin_client.post(f'/admin/bulk/actions/plan/delete/?id={plan_with_pages.pk}')
     assert Plan.objects.filter(pk=plan_with_pages.pk).exists()
+
+
+def test_delete_plan_permission_is_not_enough_to_delete(admin_client, superuser_client, plan_admin_user, plan_with_pages):
+    plan_admin_user.user_permissions.add(Permission.objects.get(codename='delete_plan'))
+    other = PlanFactory.create()
+    delete_url = _link_ending(_listing(superuser_client), f'/delete/{other.pk}/')
+    admin_client.post(delete_url)
+    assert Plan.objects.filter(pk=other.pk).exists()
 
 
 def test_plan_admin_edits_own_plan(admin_client, plan_with_pages, plan_admin_user):
@@ -163,6 +181,20 @@ def test_editing_records_a_revision_and_an_audit_entry(admin_client, plan_with_p
     admin_client.post(edit_url, data)
     assert Version.objects.get_for_object(plan_with_pages).exists()
     assert PlanScopedModelLogEntry.objects.filter(action='wagtail.edit', object_id=str(plan_with_pages.pk)).exists()
+
+
+def test_edit_page_links_to_the_history(admin_client, plan_with_pages, plan_admin_user):
+    edit_url = _edit_url(plan_admin_user, plan_with_pages)
+    admin_client.post(edit_url, post_data(admin_client.get(edit_url).context['form']))
+    history_url = _link_ending(admin_client.get(edit_url).content.decode(), f'/history/{plan_with_pages.pk}/')
+    response = admin_client.get(history_url)
+    assert response.status_code == 200
+
+
+def test_plan_admin_cannot_open_another_plans_history(admin_client, superuser_client, superuser, plan_with_pages):
+    other = PlanFactory.create(name='Other plan')
+    history_url = _link_ending(superuser_client.get(_edit_url(superuser, other)).content.decode(), f'/history/{other.pk}/')
+    assert admin_client.get(history_url).status_code != 200
 
 
 def test_plan_admin_cannot_edit_another_plan(admin_client, superuser, plan_with_pages):

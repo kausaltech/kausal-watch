@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _reorder_url(parent: Plan, child: Plan, position: int) -> str:
-    return reverse('actions_plan_reorder_child', args=(parent.pk, child.pk)) + f'?position={position}'
+    return reverse('wagtailsnippets_actions_plan:reorder_child', args=(parent.pk, child.pk)) + f'?position={position}'
 
 
 def _children(parent: Plan) -> list[Plan]:
@@ -62,7 +62,7 @@ def test_reorder_requires_general_admin_of_parent(client, plan, children):
 def test_edit_page_lists_children(client, plan_admin_user, plan, children):
     client.force_login(plan_admin_user)
 
-    response = client.get(reverse('actions_plan_modeladmin_edit', args=(plan.pk,)))
+    response = client.get(reverse('wagtailsnippets_actions_plan:edit', args=(plan.pk,)))
 
     assert response.status_code == 200
     for child in children:
