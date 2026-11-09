@@ -28,8 +28,6 @@ from .models import (
     Action,
     ActionContactPerson,
     ActionResponsibleParty,
-    ActionTaskContactPerson,
-    ActionTaskResponsibleParty,
     GeneralPlanAdmin,
     Plan,
     PlanFeatures,
@@ -70,19 +68,6 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
             f"Email send status '{recipient_status.status}' (message ID {recipient_status.message_id}) from {esp_name} for "
             f"email with subject '{message.subject}' to recipient {email}",
         )
-
-
-@receiver(post_delete, sender=ActionTaskResponsibleParty)
-def fix_deleted_task_responsible_party_in_draft(sender, instance, **kwargs):
-    # Nested under tasks in the action's draft, so not covered by register_draft_reference_cleanup().
-    assert isinstance(instance, ActionTaskResponsibleParty)
-    instance.fix_action_draft_after_deletion()
-
-
-@receiver(post_delete, sender=ActionTaskContactPerson)
-def fix_deleted_task_contact_person_in_draft(sender, instance, **kwargs):
-    assert isinstance(instance, ActionTaskContactPerson)
-    instance.fix_action_draft_after_deletion()
 
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
