@@ -790,6 +790,11 @@ WAGTAILEMBEDS_FINDERS = [
     },
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'domain_whitelist': ('energiemonitor.de',),
+        'title': 'Energiemonitor',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         # If we leave the provider out, the "default" provider will be used
         'domain_whitelist': ('kort.holb.dk',),
         'title': 'Map',
