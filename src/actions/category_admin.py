@@ -761,6 +761,14 @@ class CommonCategoryCreateView(PanelFormMixin, WatchCreateView[CommonCategory]):
             instance.type = common_category_type
         return get_common_category_panel(self.request, instance)
 
+    def get_add_url(self):
+        # Wagtail posts the form to the bare add URL, which would drop the type
+        url = super().get_add_url()
+        common_category_type = get_common_category_type_from_request(self.request)
+        if common_category_type is None:
+            return url
+        return f'{url}?common_category_type={common_category_type.pk}'
+
     def initialize_instance(self, request, instance):
         """Set the new common category's type to the one given in the GET data."""
         super().initialize_instance(request, instance)

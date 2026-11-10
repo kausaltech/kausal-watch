@@ -135,9 +135,10 @@ def test_creating_category_instantiates_it_for_plans(superuser_client, plan_with
     plan_with_pages.common_category_types.add(common_category_type)
     category_type = CategoryTypeFactory.create(plan=plan_with_pages, common=common_category_type)
     add_path = _add_path(superuser_client.get(_categories_path(common_category_type)).content, CATEGORIES_PATH)
-    data = post_data(superuser_client.get(add_path).context['form'])
+    form_page = superuser_client.get(add_path)
+    data = post_data(form_page.context['form'])
     data.update({'name': 'Clean water', 'identifier': 'water'})
-    response = superuser_client.post(add_path, data)
+    response = superuser_client.post(form_page.context['action_url'], data)
     assert response.status_code == 302
     category = CommonCategory.objects.get(identifier='water')
     assert category.type == common_category_type
