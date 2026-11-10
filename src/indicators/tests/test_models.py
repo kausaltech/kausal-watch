@@ -1,4 +1,5 @@
 from datetime import date
+from unittest import mock
 
 from django.core.exceptions import ValidationError
 
@@ -304,6 +305,18 @@ def test_indicator_permission_helper_scopes_editing_to_the_active_plan(plan, pla
     # Editing would write the indicator level of the other plan, where the user is no admin
     assert user.get_active_admin_plan() == other_plan
     assert not IndicatorPermissionPolicy().user_has_permission_for_instance(user, 'change', indicator)
+
+
+def test_single_indicator_save_still_reindexes_search():
+    """
+    Outside a bulk write the search guard delegates to modelsearch, so single edits stay fresh.
+
+    Only the bulk endpoint suppresses the per-row reindex (and reindexes once afterwards).
+    """
+    indicator = IndicatorFactory.create()
+    with mock.patch('modelsearch.signal_handlers.insert_or_update_object_task') as search_task:
+        indicator.save()
+    search_task.enqueue.assert_called()
 
 
 @pytest.fixture
