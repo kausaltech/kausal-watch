@@ -10,6 +10,7 @@ from rest_framework import exceptions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from wagtail.signal_handlers import disable_reference_index_auto_update  # type: ignore[attr-defined]
 
 import django_filters as filters
 from drf_spectacular.types import OpenApiTypes
@@ -25,6 +26,8 @@ from aplans.rest_api import get_plan_from_view
 
 from actions.api import AuditLoggingBulkModelViewSet, PlanViewSet, plan_router
 from actions.models import Plan
+from indicators.reference_indexing import refresh_reference_index_after_bulk, snapshot_reference_state
+from indicators.search_indexing import disable_indicator_search_auto_update, reindex_indicators
 from people.models import Person
 
 from .models import (
@@ -674,6 +677,28 @@ class IndicatorPermission(WatchObjectPermissions):
 class IndicatorViewSet(AuditLoggingBulkModelViewSet[Indicator]):
     serializer_class = IndicatorSerializer
     filterset_class = IndicatorFilter
+
+    def bulk_update(self, request, *args, **kwargs):
+        # A bulk grid write saves every row one by one, and each Indicator.save() fires two
+        # synchronous, per-row reindexes that dominate the request:
+        #   - Wagtail's reference index: Indicator has a ParentalKey to Organization, so the save
+        #     walks up and rebuilds that whole organization's reference index -- O(indicators in
+        #     the organization) -- which on its own timed the request out.
+        #   - modelsearch's search index: a per-row reindex, including a title-norm recomputation
+        #     that scans the index, plus (with Elasticsearch) one round-trip each.
+        # Neither is needed per row, so suppress both for the bulk write and do them once afterwards
+        # in batched form: reindex search for every written row, and rebuild the reference index
+        # only for the organizations whose indicators actually changed a reference-carrying field
+        # (the rich-text description/reference, or a move to another organization). An edit that
+        # changes no reference-carrying field skips the reference rebuild entirely; one that does
+        # rebuilds each affected organization once instead of once per row.
+        ids = [row['id'] for row in request.data if isinstance(row, dict) and 'id' in row]
+        reference_state_before = snapshot_reference_state(ids)
+        with disable_reference_index_auto_update(), disable_indicator_search_auto_update():
+            result = super().bulk_update(request, *args, **kwargs)
+        reindex_indicators(ids)
+        refresh_reference_index_after_bulk(reference_state_before, snapshot_reference_state(ids))
+        return result
 
     def get_plan(self) -> Plan | None:
         plan_pk = self.kwargs.get('plan_pk')

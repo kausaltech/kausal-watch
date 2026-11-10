@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from typing import cast
+from unittest import mock
 
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -354,6 +355,163 @@ def test_update_single_select_category(api_client, plan, plan_admin_user, indica
     indicator.refresh_from_db()
     assert indicator.categories.count() == 1
     assert indicator.categories.first().id == category.id
+
+
+def test_bulk_update_categories_does_not_trigger_reference_index(
+    api_client, plan, plan_admin_user, indicator, indicator_list_url
+):
+    """
+    Bulk-setting a category on many indicators must not rebuild the reference index.
+
+    It would otherwise walk up to the organization and re-index it per indicator, timing out.
+    """
+    category_type = CategoryTypeFactory.create(
+        plan=plan, usable_for_indicators=True, editable_for_indicators=True, select_widget='single'
+    )
+    category = CategoryFactory.create(type=category_type)
+    # All indicators must share the plan's organization to be available for the plan's bulk endpoint.
+    indicators = [indicator, *IndicatorFactory.create_batch(2, plans=[plan], organization=indicator.organization)]
+
+    body = [
+        {
+            'id': ind.pk,
+            'name': ind.name,
+            'unit': ind.unit_id,
+            'organization': ind.organization_id,
+            'categories': {category_type.identifier: category.id},
+        }
+        for ind in indicators
+    ]
+
+    api_client.force_login(plan_admin_user)
+    with mock.patch('wagtail.signal_handlers.update_reference_index_task') as task:
+        response = api_client.put(indicator_list_url, body)
+
+    assert response.status_code == 200, response.json_data
+    task.enqueue.assert_not_called()
+    for ind in indicators:
+        ind.refresh_from_db()
+        assert set(ind.categories.values_list('id', flat=True)) == {category.id}
+
+
+def test_bulk_update_suppresses_per_row_search_reindex_and_reindexes_once(
+    api_client, plan, plan_admin_user, indicator, indicator_list_url
+):
+    """
+    A bulk write must not reindex search per row, but must reindex the affected indicators once.
+
+    The per-row reindex (incl. a title-norm recomputation and, with Elasticsearch, a round-trip
+    each) is what made the bulk save slow; a single batched reindex afterwards keeps search fresh.
+    """
+    indicators = [indicator, *IndicatorFactory.create_batch(2, plans=[plan], organization=indicator.organization)]
+    body = [{'id': ind.pk, 'name': ind.name, 'unit': ind.unit_id, 'organization': ind.organization_id} for ind in indicators]
+
+    api_client.force_login(plan_admin_user)
+    with (
+        mock.patch('modelsearch.signal_handlers.insert_or_update_object_task') as search_task,
+        mock.patch('indicators.api.reindex_indicators') as reindex,
+    ):
+        response = api_client.put(indicator_list_url, body)
+
+    assert response.status_code == 200, response.json_data
+    search_task.enqueue.assert_not_called()
+    reindex.assert_called_once()
+    assert set(reindex.call_args.args[0]) == {ind.pk for ind in indicators}
+
+
+def test_bulk_update_rebuilds_reference_index_when_description_changes(
+    api_client, plan, plan_admin_user, indicator, indicator_list_url
+):
+    """
+    A bulk write that changes a rich-text description must refresh the reference index.
+
+    The bulk write suppresses the per-row reference-index update for speed, but rich-text fields
+    carry references to other objects. When one changes, the affected organization must be rebuilt
+    once afterwards, or the index would serve stale references to usage checks, copying and export.
+    """
+    from wagtail.models import ReferenceIndex
+
+    target = IndicatorFactory.create(plans=[plan], organization=indicator.organization)
+    indicator_ct = ContentType.objects.get_for_model(Indicator)
+
+    def references_to_target():
+        return ReferenceIndex.objects.filter(to_content_type=indicator_ct, to_object_id=str(target.pk))
+
+    assert not references_to_target().exists()
+
+    description = f'<p data-block-key="foo"><a linktype="indicator" id="{target.id}" uuid="{target.uuid}">{target.name}</a></p>'
+    body = [
+        {
+            'id': indicator.pk,
+            'name': indicator.name,
+            'unit': indicator.unit_id,
+            'organization': indicator.organization_id,
+            'description': description,
+        }
+    ]
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.put(indicator_list_url, body)
+
+    assert response.status_code == 200, response.json_data
+    indicator.refresh_from_db()
+    assert indicator.description == description
+    assert references_to_target().exists()
+
+
+def test_bulk_update_skips_reference_index_rebuild_when_no_reference_field_changes(
+    api_client, plan, plan_admin_user, indicator, indicator_list_url
+):
+    """
+    A bulk write that changes no reference-carrying field must not rebuild any reference index.
+
+    Rebuilding an organization's reference index is O(its indicators); doing it when only
+    non-reference fields change (here categories) would give back the per-row cost the suppression
+    removes.
+    """
+    category_type = CategoryTypeFactory.create(
+        plan=plan, usable_for_indicators=True, editable_for_indicators=True, select_widget='single'
+    )
+    category = CategoryFactory.create(type=category_type)
+    indicators = [indicator, *IndicatorFactory.create_batch(2, plans=[plan], organization=indicator.organization)]
+    body = [
+        {
+            'id': ind.pk,
+            'name': ind.name,
+            'unit': ind.unit_id,
+            'organization': ind.organization_id,
+            'categories': {category_type.identifier: category.id},
+        }
+        for ind in indicators
+    ]
+
+    api_client.force_login(plan_admin_user)
+    with mock.patch('wagtail.models.ReferenceIndex.create_or_update_for_object') as rebuild:
+        response = api_client.put(indicator_list_url, body)
+
+    assert response.status_code == 200, response.json_data
+    rebuild.assert_not_called()
+
+
+def test_reference_state_snapshot_detects_translated_description_change():
+    """
+    The reference snapshot must notice a change to a translated (non-default-language) description.
+
+    ``description`` is a modeltrans rich-text field: translations live in the ``i18n`` JSON column,
+    not the base column. Tracking only the base column would miss a translated edit and leave the
+    reference index stale, so the snapshot must cover whatever columns actually back the references.
+    """
+    from indicators.reference_indexing import snapshot_reference_state
+
+    ind = IndicatorFactory.create()
+    before = snapshot_reference_state([ind.pk])
+
+    # A translated description is stored in the i18n JSON column, not the base `description` column.
+    ind.i18n = {**(ind.i18n or {}), 'description_fi': '<p>uusi kuvaus</p>'}
+    ind.save()
+
+    after = snapshot_reference_state([ind.pk])
+    assert before[ind.pk] != after[ind.pk]
 
 
 def test_update_categories_invalid_type(api_client, plan, plan_admin_user, indicator_detail_url):
