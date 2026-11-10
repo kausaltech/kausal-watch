@@ -147,6 +147,16 @@ def test_creating_action_type_uses_active_plan(admin_client, plan_with_pages, ac
     assert attribute_type.scope == plan_with_pages
 
 
+def test_create_form_posts_to_url_with_object_type(admin_client, action_ct):
+    add_path = _add_path(admin_client.get(_list_path(action_ct)).content)
+    response = admin_client.get(add_path)
+    action_url = response.context['action_url']
+    assert action_url == add_path
+    data = post_data(response.context['form'])
+    data.update({'name': 'Cost', 'identifier': 'cost', 'format': AttributeType.AttributeFormat.TEXT})
+    assert admin_client.post(action_url, data).status_code == 302
+
+
 def test_creating_category_type_uses_chosen_category_type(admin_client, category_ct, category_type):
     add_path = _add_path(admin_client.get(_list_path(category_ct)).content)
     data = post_data(admin_client.get(add_path).context['form'])

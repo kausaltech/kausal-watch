@@ -746,6 +746,9 @@ class AttributeTypeCreateView(PanelFormMixin, WatchCreateView[AttributeType]):
         )
         return get_attribute_type_panel(self.request, instance)
 
+    def get_add_url(self):
+        return with_content_type(self.request, super().get_add_url())
+
     def get_page_subtitle(self):
         content_type = get_object_content_type_from_request(self.request)
         assert content_type is not None
