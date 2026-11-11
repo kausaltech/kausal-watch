@@ -59,6 +59,7 @@
       src="{% static 'admin_site/js/accessibility.js' %}"
       data-active-plan-accessibility-level="{{ active_plan.features.admin_accessibility_conformance_level|default:"default" }}">
     </script>
+    <script src="{% static 'admin_site/js/listing-scroll.js' %}"></script>
     {{ block.super }}
     {% sentry_init %}
     {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
