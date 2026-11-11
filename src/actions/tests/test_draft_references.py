@@ -3,13 +3,10 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING
 
-from django.urls import reverse
-
 import pytest
 
 from aplans.draft_references import strip_missing_references
 
-from actions.action_admin import ActionAdmin
 from actions.attributes import DraftAttributes
 from actions.models import Action, ActionContactPerson, ActionTaskResponsibleParty
 from actions.tests.factories import (
@@ -165,7 +162,7 @@ def test_action_can_be_saved_after_contact_person_was_deleted(
             'contact_persons_moderator-0-ORDER': '1',
         },
     )
-    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
     client.force_login(plan_admin_user)
 
     response = client.post(edit_url, data=post_data)
@@ -193,7 +190,7 @@ def test_action_can_be_saved_after_child_was_cascade_deleted(
 
     draft = Action.objects.get(pk=action.pk).get_latest_revision_as_object()
     assert list(draft.related_indicators.all()) == []
-    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
     client.force_login(plan_admin_user)
 
     response = client.post(edit_url, data=edit_post_data(action))
@@ -226,7 +223,7 @@ def test_cascade_deleted_relationship_is_absent_from_the_dependencies_formset(
     if delete_dependent:
         relationship.dependent.delete()  # cascades to the relationship
 
-    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
     client.force_login(plan_admin_user)
 
     response = client.get(edit_url)

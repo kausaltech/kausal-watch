@@ -13,7 +13,7 @@ from aplans.utils import RestrictedVisibilityModel
 if typing.TYPE_CHECKING:
     from kausal_common.models.permission_policy import BaseObjectAction, ObjectSpecificAction
 
-    from actions.models import Plan
+    from actions.models import Action, Plan
     from actions.models.plan import PlanQuerySet  # noqa: F401
     from users.models import User
 
@@ -101,3 +101,41 @@ class PlanAdminPermissionPolicy(WagtailModelPermissionPolicy):
         if action == 'change':
             return user_or_bust(user).is_general_admin_for_plan(instance)
         return super().user_has_permission_for_instance(user, action, instance)
+
+
+class ActionPermissionPolicy(WagtailModelPermissionPolicy):
+    """
+    Decide about actions in the Wagtail admin.
+
+    On top of the Django model permissions, an action can only be acted on in its own plan while that
+    plan is the active one, and the user's role in the plan decides what they may do with it.
+    """
+
+    def user_has_permission(self, user, action):
+        if not super().user_has_permission(user, action):
+            return False
+        if action != 'add':
+            return True
+        user = user_or_bust(user)
+        plan = user.get_active_admin_plan(required=False)
+        return plan is not None and user.can_create_action(plan)
+
+    def user_has_permission_for_instance(self, user, action, instance):
+        user = user_or_bust(user)
+        if instance.plan != user.get_active_admin_plan(required=False):
+            return False
+        return self.user_has_permission_in_own_plan(user, action, instance)
+
+    def user_has_permission_in_own_plan(self, user: User, action: str, instance: Action) -> bool:
+        """Decide like `user_has_permission_for_instance()`, but whichever plan is the active one."""
+        # Deleting needs the right to change, as it did before actions had a permission policy
+        if not super().user_has_permission(user, 'change' if action == 'delete' else action):
+            return False
+        if action == 'change':
+            return user.can_modify_action(instance)
+        if action == 'delete':
+            plan = instance.plan
+            return user.can_modify_action(instance) and not plan.actions_locked and user.is_general_admin_for_plan(plan)
+        if action == 'publish':
+            return user.can_publish_action(instance)
+        return True

@@ -12,13 +12,11 @@ from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError, transaction
-from django.urls import reverse
 
 import pytest
 
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.action_admin import ActionAdmin
 from actions.models import ActionTask
 from actions.monitoring_quality import determine_future_task
 from actions.tests.factories import ActionStatusFactory, ActionTaskFactory
@@ -39,7 +37,7 @@ VisibleFor = InstancesVisibleForMixin.VisibleFor
 
 
 def _edit_url(action: Action) -> str:
-    return reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    return action.get_admin_edit_url()
 
 
 def _unchanged_post_data(client: Client, user: User, action: Action) -> dict:

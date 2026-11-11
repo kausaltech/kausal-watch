@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
-from actions.action_admin import ActionAdmin
 from actions.models import ActionContactPerson
 from actions.models.action import ActionModeratorApprovalTask
 from actions.tests.factories import ActionContactFactory, WorkflowFactory, WorkflowTaskFactory
@@ -27,15 +26,15 @@ if TYPE_CHECKING:
 
 
 def _url(view_name: str, *args: Any) -> str:
-    return reverse(ActionAdmin().url_helper.get_action_url_name(view_name), args=args)
+    return reverse(f'wagtailsnippets_actions_action:{view_name}', args=args)
 
 
 def index_url() -> str:
-    return _url('index')
+    return _url('list')
 
 
 def create_url() -> str:
-    return _url('create')
+    return _url('add')
 
 
 def edit_url(action: Action) -> str:
@@ -52,6 +51,10 @@ def unpublish_url(action: Action) -> str:
 
 def usage_url(action: Action) -> str:
     return _url('usage', action.pk)
+
+
+def history_url(action: Action) -> str:
+    return _url('history', action.pk)
 
 
 def confirm_workflow_cancellation_url(action: Action) -> str:
@@ -121,6 +124,11 @@ def make_organization_admin(action: Action) -> User:
     person = PersonFactory.create(user=user, organization=organization)
     OrganizationPlanAdminFactory.create(organization=organization, plan=action.plan, person=person)
     return user
+
+
+def get_edit_page(client: Client, user: User, action: Action) -> HttpResponse:
+    client.force_login(user)
+    return client.get(edit_url(action))
 
 
 def unchanged_post_data(client: Client, user: User, action: Action) -> dict[str, Any]:

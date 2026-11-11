@@ -4,7 +4,6 @@ from django.urls import reverse
 
 import pytest
 
-from actions.action_admin import ActionAdmin
 from actions.models.action import ActionChangeLogMessage
 from actions.tests.factories import PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
@@ -27,13 +26,11 @@ CHANGE_LOG_QUERY = """
 
 
 def get_action_create_url():
-    admin = ActionAdmin()
-    return reverse(admin.url_helper.get_action_url_name('create'))
+    return reverse('wagtailsnippets_actions_action:add')
 
 
 def get_action_edit_url(action_pk):
-    admin = ActionAdmin()
-    return reverse(admin.url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action_pk})
+    return reverse('wagtailsnippets_actions_action:edit', args=[action_pk])
 
 
 def get_minimal_action_post_data(*, identifier='test-1', name='Test Action'):

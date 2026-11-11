@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from datetime import timedelta
 from unittest.mock import Mock
 
@@ -14,7 +13,6 @@ from wagtail.models import Locale
 import pytest
 from pytest_django.asserts import assertContains, assertNotContains
 
-from actions.action_admin import ActionAdmin
 from actions.attribute_type_admin import AttributeTypeViewSet
 from actions.models import Plan
 from actions.pledge_admin import PledgeIndexView, PledgeViewSet
@@ -29,13 +27,6 @@ from actions.tests.factories import (
 from actions.tests.utils import instantiate_view
 from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
-
-if typing.TYPE_CHECKING:
-    from aplans.pytest_fixtures import ModelAdminEditTest
-
-    from actions.models import Action
-    from people.models import Person
-    from users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -768,53 +759,6 @@ def test_cannot_access_other_plan_edit_page(plan, plan_admin_user, client):
     assert response.url == reverse('wagtailadmin_home')
 
 
-def test_action_admin(
-    plan_admin_user: User,
-    action_contact_person: Person,
-    action: Action,
-    test_modeladmin_edit: ModelAdminEditTest,
-):
-    ClientPlanFactory(plan=action.plan)
-    post_data = dict(name='Modified name', identifier=action.identifier)
-    test_modeladmin_edit(
-        ActionAdmin,
-        action,
-        plan_admin_user,
-        post_data=post_data,
-        can_inspect=True,
-        can_edit=True,
-    )
-    return
-    # FIXME
-    action.refresh_from_db()
-    # assert action.name == post_data['name']
-    test_modeladmin_edit(
-        ActionAdmin,
-        action,
-        action_contact_person.user,
-        post_data=post_data,
-        can_inspect=True,
-        can_edit=True,
-    )
-    other_action = ActionFactory.create(plan=action.plan)
-    test_modeladmin_edit(
-        ActionAdmin,
-        other_action,
-        plan_admin_user,
-        post_data=post_data,
-        can_inspect=True,
-        can_edit=True,
-    )
-    test_modeladmin_edit(
-        ActionAdmin,
-        other_action,
-        action_contact_person.user,
-        post_data=post_data,
-        can_inspect=True,
-        can_edit=False,
-    )
-
-
 class TestAttributeTypeAdminQueryset:
     """Tests for AttributeTypeViewSet.get_queryset filtering based on community engagement feature."""
 
@@ -909,7 +853,6 @@ def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, c
     each organization appearing only once, so this should be a valid operation.
 
     """
-    from actions.action_admin import ActionAdmin
     from actions.models import ActionResponsibleParty
     from actions.tests.factories import ActionResponsiblePartyFactory
     from admin_site.tests.factories import ClientPlanFactory
@@ -936,9 +879,7 @@ def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, c
     )
 
     # Get the edit URL for the action
-    admin = ActionAdmin()
-    edit_url_name = admin.url_helper.get_action_url_name('edit')
-    edit_url = reverse(edit_url_name, kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
 
     # Login as plan admin
     client.force_login(plan_admin_user)
@@ -1013,7 +954,6 @@ def test_action_responsible_party_swap_on_publish_draft(plan):
     the fix in Action._renormalize_revision_items().
     """
     from actions.models import ActionResponsibleParty
-    from actions.tests.factories import ActionFactory
     from orgs.tests.factories import OrganizationFactory
 
     # Create two organizations
@@ -1107,7 +1047,6 @@ def test_action_contact_person_swap_should_succeed(plan_admin_user, action, clie
 
     This tests the renormalization logic in ActionAdminForm._renormalize_pks_for_swaps().
     """
-    from actions.action_admin import ActionAdmin
     from actions.models import ActionContactPerson
     from actions.tests.factories import ActionContactFactory
     from admin_site.tests.factories import ClientPlanFactory
@@ -1134,9 +1073,7 @@ def test_action_contact_person_swap_should_succeed(plan_admin_user, action, clie
     )
 
     # Get the edit URL for the action
-    admin = ActionAdmin()
-    edit_url_name = admin.url_helper.get_action_url_name('edit')
-    edit_url = reverse(edit_url_name, kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
 
     # Login as plan admin
     client.force_login(plan_admin_user)
@@ -1222,7 +1159,7 @@ def test_stale_form_adding_existing_contact_person_is_rejected(plan_admin_user, 
     # Created by the first submission; the stale form doesn't know its id.
     ActionContactFactory.create(action=action, person=person_b, role=ActionContactPerson.Role.EDITOR)
 
-    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
     client.force_login(plan_admin_user)
     post_data = {
         'identifier': action.identifier,
@@ -1273,7 +1210,6 @@ def test_action_contact_person_swap_on_publish_draft(plan):
     the fix in Action._renormalize_revision_items().
     """
     from actions.models import ActionContactPerson
-    from actions.tests.factories import ActionFactory
     from people.tests.factories import PersonFactory
 
     # Create two persons
@@ -1368,7 +1304,6 @@ def test_publish_with_new_contact_person_already_in_live_db(plan):
     from wagtail.models import Revision
 
     from actions.models import ActionContactPerson
-    from actions.tests.factories import ActionFactory
     from people.tests.factories import PersonFactory
 
     person_kept = PersonFactory.create()  # stays as moderator
@@ -1453,7 +1388,6 @@ def test_publish_with_duplicate_contact_person_in_revision_raises(plan):
     from wagtail.models import Revision
 
     from actions.models import ActionContactPerson
-    from actions.tests.factories import ActionFactory
     from people.tests.factories import PersonFactory
 
     person = PersonFactory.create()
@@ -1512,7 +1446,6 @@ def test_publish_does_not_overwrite_order(plan):
     from wagtail.models import Revision
 
     from actions.models import Action
-    from actions.tests.factories import ActionFactory
 
     action = ActionFactory.create(plan=plan)
     action.order = 5

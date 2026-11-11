@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from django.urls import reverse
-
 import pytest
 
-from actions.action_admin import ActionAdmin
 from actions.models import Action
 from actions.tests.factories import ActionFactory
 
@@ -12,7 +9,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _edit_url(action: Action) -> str:
-    return reverse(ActionAdmin().get_url_name('edit'), args=[action.pk])
+    return action.get_admin_edit_url()
 
 
 def _login_with_plan(client, superuser, plan) -> None:
