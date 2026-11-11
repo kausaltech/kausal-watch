@@ -17,6 +17,13 @@ def _backend(language_code: str | None) -> mock.Mock:
     return backend
 
 
+def test_reindex_indicators_is_a_noop_for_empty_pks():
+    """An empty pk list must return without consulting any search backend."""
+    with mock.patch('modelsearch.backends.get_search_backends_with_name') as get_backends:
+        reindex_indicators([])
+    get_backends.assert_not_called()
+
+
 def test_reindex_indicators_indexes_each_backend_in_its_own_language():
     """
     Each language backend must receive the indicators that belong to its language.
