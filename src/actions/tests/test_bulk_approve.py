@@ -15,7 +15,7 @@ from actions.tests.test_change_log_graphql import make_plan_admin
 pytestmark = pytest.mark.django_db
 
 
-BULK_APPROVE_URL_NAME = 'actions_action_modeladmin_bulk_approve_in_moderation'
+BULK_APPROVE_URL_NAME = 'wagtailsnippets_actions_action:bulk_approve_in_moderation'
 
 
 def _submit_to_moderation(plan, action, user):

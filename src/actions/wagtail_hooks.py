@@ -19,9 +19,12 @@ from admin_site.wagtail import execute_admin_post_save_tasks
 
 from . import pledge_participants_admin, wagtail_admin  # noqa: F401
 from .bulk_approve import SKIP_LOG_ACTION
+from .models import Action
+from .save_actions import ActionCreateAction, ActionEditAction
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
+    from wagtail.actions.registry import ActionRegistry
     from wagtail.log_actions import LogActionRegistry
 
     from laces.typing import RenderContext
@@ -60,6 +63,12 @@ def after_edit_snippet(request, snippet):
     execute_admin_post_save_tasks(snippet, request.user)
 
 
+@hooks.register('register_actions')
+def register_action_save_actions(registry: ActionRegistry) -> None:
+    registry.register(Action, ActionCreateAction)
+    registry.register(Action, ActionEditAction)
+
+
 @hooks.register('register_log_actions')
 def register_plan_log_actions(actions: LogActionRegistry):
     actions.register_action('plan.publish', _('Publish plan'), _('Plan published'))
@@ -81,7 +90,7 @@ class ActionsSearchArea(SearchArea):
 def register_documents_search_area():
     return ActionsSearchArea(
         _('Actions'),
-        reverse('actions_action_modeladmin_index'),
+        reverse('wagtailsnippets_actions_action:list'),
         name='actions',
         icon_name='kausal-action',
         order=200,
@@ -103,7 +112,7 @@ class BulkApproveMenuItem(MenuItem):
 def register_bulk_approve_menu_item():
     return BulkApproveMenuItem(
         _('Release actions from moderation'),
-        reverse('actions_action_modeladmin_bulk_approve_in_moderation'),
+        reverse('wagtailsnippets_actions_action:bulk_approve_in_moderation'),
         icon_name='lock-open',
         order=210,
     )

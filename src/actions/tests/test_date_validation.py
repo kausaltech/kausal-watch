@@ -11,13 +11,10 @@ import datetime
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-from django.urls import reverse
-
 import pytest
 
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.action_admin import ActionAdmin
 from actions.models import ActionTask
 from actions.tests.factories import ActionFactory, ActionTaskFactory, PlanFactory
 from actions.validation import (
@@ -54,7 +51,7 @@ def frozen_now():
 
 
 def _edit_url(action: Action) -> str:
-    return reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    return action.get_admin_edit_url()
 
 
 def _unchanged_post_data(client: Client, user: User, action: Action) -> dict:

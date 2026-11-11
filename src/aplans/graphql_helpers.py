@@ -10,19 +10,17 @@ from graphql.utilities.ast_to_dict import ast_to_dict
 
 from kausal_common.users import user_or_bust
 
-from admin_site.wagtail import PlanRelatedModelAdminPermissionHelper
+from aplans.context_vars import ctx_request
 
 from .graphql_types import AdminButton
 
 if TYPE_CHECKING:
     from django.db.models import Model
     from graphql import GraphQLResolveInfo
-    from wagtail.admin.widgets.button import Button
 
     from kausal_common.graphene import GQLInfo
 
     from admin_site.viewsets import WatchViewSet
-    from admin_site.wagtail import AplansModelAdmin
 
 
 def collect_fields(node, fragments):
@@ -109,25 +107,6 @@ class GraphQLAuthRequiredError(GraphQLError):
             }
 
 
-class ModelAdminAdminButtonsMixin:
-    admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
-
-    @staticmethod
-    def resolve_admin_buttons(root: Model, info: GQLInfo) -> list[Button]:
-        ModelAdmin: type[AplansModelAdmin[Any]] = import_string(root.MODEL_ADMIN_CLASS)  # type: ignore
-
-        if not info.context.user.is_staff:
-            return []
-        adm = ModelAdmin()
-        index_view = adm.index_view_class(adm)  # type: ignore[var-annotated]
-        helper_class = adm.get_button_helper_class()
-        helper = helper_class(index_view, info.context)
-        if isinstance(helper.permission_helper, PlanRelatedModelAdminPermissionHelper):
-            helper.permission_helper.disable_admin_plan_check()
-        buttons = helper.get_buttons_for_obj(root)
-        return buttons
-
-
 class AdminButtonsMixin:
     admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
 
@@ -143,7 +122,9 @@ class AdminButtonsMixin:
             raise ValueError(f'get_index_view_buttons method not found for view set {view_set.__class__.__name__}')
         user = user_or_bust(info.context.user)
         plan = user.get_active_admin_plan()
-        buttons = view_set.get_index_view_buttons(user, root, plan)  # type: ignore[attr-defined]
+        # The request middleware's context does not reach the resolvers
+        with ctx_request.activate(info.context):  # type: ignore[arg-type]
+            buttons = view_set.get_index_view_buttons(user, root, plan)  # type: ignore[attr-defined]
 
         # TODO: Temporary workaround to support both the new and old attribute
         # name for icon, making the code work for modeladmin code as well. The

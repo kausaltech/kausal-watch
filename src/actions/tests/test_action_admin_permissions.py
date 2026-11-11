@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.urls import NoReverseMatch, reverse
+
 import pytest
 
+from actions.action_admin import DISABLED_URL_NAMES
 from actions.models import Action
 from actions.tests import action_admin_helpers as h
 from actions.tests.factories import ActionFactory, PlanFactory
@@ -186,3 +189,17 @@ def test_admin_can_open_usage_and_unpublish(client, action, role):
 
     assert can_open(client, user, h.usage_url(action))
     assert can_open(client, user, h.unpublish_url(action))
+
+
+@pytest.mark.parametrize('role', OUTSIDER_ROLES)
+def test_outsider_cannot_open_usage_or_history(client, action, role):
+    user = ROLES[role](action)
+
+    assert not can_open(client, user, h.usage_url(action))
+    assert not can_open(client, user, h.history_url(action))
+
+
+@pytest.mark.parametrize('view_name', sorted(DISABLED_URL_NAMES))
+def test_views_not_offered_for_actions_have_no_url(view_name):
+    with pytest.raises(NoReverseMatch):
+        reverse(f'wagtailsnippets_actions_action:{view_name}', args=[1])
