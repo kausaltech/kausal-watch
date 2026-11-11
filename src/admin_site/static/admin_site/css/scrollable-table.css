@@ -125,6 +125,15 @@
 .kw-scroll-table td.kw-col--pin:has([data-tippy-root]) {
   z-index: 5;
 }
+/* On narrow or heavily zoomed viewports the pinned block would cover the whole scroller and
+   hide the scrolled columns, so unpin. `!important` beats the JS-set inline `left`. */
+@media (max-width: 48rem) {
+  .kw-scroll-table th.kw-col--pin,
+  .kw-scroll-table td.kw-col--pin {
+    position: relative;
+    left: 0 !important;
+  }
+}
 /* Divider at the boundary between the pinned block and the scrolling block. */
 .kw-scroll-table .kw-col--pin-last {
   box-shadow: inset -1px 0 0 var(--w-color-border-furniture, #d9d9d9);
