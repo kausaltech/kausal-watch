@@ -106,6 +106,13 @@ def reindex_indicators(pks: Sequence[int]) -> None:
         if objs:
             backend.add_bulk(Indicator, objs)
 
+    # Delete only indicators that left the index entirely (indexed by no backend), not ones that
+    # merely fall outside one backend's language. An indicator can only leave a single language's
+    # index by changing its plan/language membership, and that is not writable through this bulk
+    # endpoint (IndicatorSerializer exposes no plan field); the only reachable departure is a global
+    # one (e.g. visibility -> internal), which drops it from every backend. Deleting per-backend
+    # exclusions instead would issue one delete per cross-language indicator per backend -- the
+    # per-row search traffic this batched path exists to avoid.
     dropped_pks = [pk for pk in requested_pks if pk not in indexed_anywhere]
     if not dropped_pks:
         return
