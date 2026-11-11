@@ -43,10 +43,11 @@ def _reference_relevant_columns() -> tuple[str, ...]:
     Return the Indicator columns whose value feeds the reference index.
 
     Derived from the model so new reference-carrying fields are covered automatically: the walk-up
-    root (for relocation), the ``i18n`` JSON column that holds translated rich text, every field
-    that extracts references (rich text), and every non-parental, non-ignored foreign key (which
-    Wagtail records as a reference). Parental keys other than the root are skipped -- they are not
-    recorded as references and do not change which organization holds the index.
+    root (for relocation), the ``i18n`` JSON column that holds translated rich text (narrowed to the
+    reference-bearing keys in ``snapshot_reference_state``), every field that extracts references
+    (rich text), and every non-parental, non-ignored foreign key (which Wagtail records as a
+    reference). Parental keys other than the root are skipped -- they are not recorded as references
+    and do not change which organization holds the index.
     """
     from indicators.models import Indicator
 
@@ -69,18 +70,52 @@ def _reference_relevant_columns() -> tuple[str, ...]:
     return tuple(sorted(columns))
 
 
+@lru_cache(maxsize=1)
+def _reference_translation_key_prefixes() -> tuple[str, ...]:
+    """
+    Return the ``i18n`` key prefixes for translated fields that can carry references.
+
+    modeltrans stores every translated field in the one ``i18n`` JSON column, keyed
+    ``<field>_<lang>`` -- reference-bearing ones (``description``) alongside plain ones (``name``).
+    Only the reference-bearing keys matter; comparing the whole column would make an ordinary
+    translated-``name`` edit look like a reference change and force a needless organization rebuild.
+    """
+    from indicators.models import Indicator
+
+    i18n_field = Indicator._meta.get_field('i18n')
+    return tuple(
+        f'{name}_'
+        for name in i18n_field.fields  # type: ignore[attr-defined]
+        if hasattr(Indicator._meta.get_field(name), 'extract_references')
+    )
+
+
+def _reference_i18n(value: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Keep only the reference-bearing translation keys from an ``i18n`` column value."""
+    if not value:
+        return None
+    prefixes = _reference_translation_key_prefixes()
+    return {key: val for key, val in value.items() if key.startswith(prefixes)} or None
+
+
 def snapshot_reference_state(pks: Sequence[int]) -> ReferenceState:
     """
     Capture the reference-relevant column values of the given indicators.
 
     A later snapshot can be compared against this one to detect whether a bulk write changed
-    anything the reference index depends on, and to find the organization that holds it.
+    anything the reference index depends on, and to find the organization that holds it. The
+    ``i18n`` column is narrowed to its reference-bearing keys so an unrelated translated-field edit
+    (e.g. a translated name) does not count as a reference change.
     """
     from indicators.models import Indicator
 
     columns = _reference_relevant_columns()
+
+    def _column_value(column: str, raw: Any) -> Any:
+        return _reference_i18n(raw) if column == 'i18n' else raw
+
     return {
-        row['pk']: {column: row[column] for column in columns}
+        row['pk']: {column: _column_value(column, row[column]) for column in columns}
         for row in Indicator.objects.filter(pk__in=pks).values('pk', *columns)
     }
 
