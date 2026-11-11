@@ -514,6 +514,26 @@ def test_reference_state_snapshot_detects_translated_description_change():
     assert before[ind.pk] != after[ind.pk]
 
 
+def test_reference_state_snapshot_ignores_translated_non_reference_field_change():
+    """
+    A change to a translated non-reference field (name) must not look like a reference change.
+
+    name is translated into the same i18n JSON column as description but cannot carry references, so
+    snapshotting the whole column would trigger an unnecessary full-organization reference rebuild.
+    """
+    from indicators.reference_indexing import snapshot_reference_state
+
+    ind = IndicatorFactory.create()
+    before = snapshot_reference_state([ind.pk])
+
+    # A translated name lands in the same i18n column as translated descriptions.
+    ind.i18n = {**(ind.i18n or {}), 'name_fi': 'suomenkielinen nimi'}
+    ind.save()
+
+    after = snapshot_reference_state([ind.pk])
+    assert before[ind.pk] == after[ind.pk]
+
+
 def test_update_categories_invalid_type(api_client, plan, plan_admin_user, indicator_detail_url):
     category_type = CategoryTypeFactory.create(plan=plan, usable_for_indicators=False, select_widget='single')
     category = CategoryFactory.create(type=category_type)
