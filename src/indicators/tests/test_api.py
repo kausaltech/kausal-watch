@@ -534,6 +534,25 @@ def test_reference_state_snapshot_ignores_translated_non_reference_field_change(
     assert before[ind.pk] == after[ind.pk]
 
 
+def test_refresh_reference_index_rebuilds_org_for_pk_only_in_after_snapshot():
+    """
+    A pk present only in the after-snapshot (absent from before) still rebuilds its organization.
+
+    before.get(pk) is None then; the refresh must skip the None side and rebuild from the after
+    organization rather than crash or do nothing.
+    """
+    from indicators.reference_indexing import refresh_reference_index_after_bulk
+
+    ind = IndicatorFactory.create()
+    org = ind.organization
+
+    with mock.patch('indicators.reference_indexing.ReferenceIndex.create_or_update_for_object') as rebuild:
+        refresh_reference_index_after_bulk({}, {ind.pk: {'organization_id': org.pk}})
+
+    rebuild.assert_called_once()
+    assert rebuild.call_args.args[0].pk == org.pk
+
+
 def test_update_categories_invalid_type(api_client, plan, plan_admin_user, indicator_detail_url):
     category_type = CategoryTypeFactory.create(plan=plan, usable_for_indicators=False, select_widget='single')
     category = CategoryFactory.create(type=category_type)
