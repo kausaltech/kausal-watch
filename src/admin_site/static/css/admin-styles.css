@@ -620,3 +620,18 @@ with Wagtail's styles but so far these are required.
     transition: none;
   }
 }
+
+/* Wagtail clips wide listing tables (body has overflow-x: hidden). Scroll them instead, keep the
+   scrollbar visible on overlay-scrollbar systems, and keep the header row in view when
+   listing-scroll.js caps the height so the scrollbar stays on screen. */
+#listing-results {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--w-color-border-furniture, #c7c7c7) transparent;
+}
+#listing-results.is-capped thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--w-color-surface-page, #fff);
+}
