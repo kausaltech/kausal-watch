@@ -41,7 +41,7 @@ from kausal_common.users import is_authenticated, user_or_none
 
 from aplans import gql
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_helpers import ModelAdminAdminButtonsMixin, validate_client_url
+from aplans.graphql_helpers import AdminButtonsMixin, validate_client_url
 from aplans.graphql_types import (
     DjangoNode,
     WorkflowStateDescription,
@@ -55,7 +55,6 @@ from aplans.graphql_types import (
 from aplans.schema_context import PUBLIC_USER_TOKEN_HEADER
 from aplans.utils import PlanRelatedModel, get_hostname_redirect_hostname, hyphenate_fi, public_fields
 
-from actions.action_admin import ActionAdmin
 from actions.action_status_summary import (
     ActionStatusSummaryIdentifier,
     ActionTimelinessIdentifier,
@@ -1908,7 +1907,7 @@ class PageChangeLogMessageNode(DjangoNode[PageChangeLogMessage]):
 
 
 @register_django_node
-class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action]):
+class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode[Action]):
     ORDERABLE_FIELDS: ClassVar[Sequence[str]] = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
@@ -2094,8 +2093,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode[Action
         if client_plan is None:
             return None
         base_url = client_plan.client.get_admin_url().rstrip('/')
-        url_helper = ActionAdmin().url_helper
-        edit_url = url_helper.get_action_url('edit', root.id).lstrip('/')
+        edit_url = root.get_admin_edit_url().lstrip('/')
         return f'{base_url}/{edit_url}'
 
     @staticmethod

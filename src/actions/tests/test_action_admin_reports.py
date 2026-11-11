@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
+
 import pytest
 
+from aplans.cache import PlanSpecificCache
+from aplans.context_vars import ctx_request
+
+from actions.schema import ActionNode
 from actions.tests import action_admin_helpers as h
 from actions.tests.factories import ActionFactory, PlanFactory
 from reports.tests.factories import ReportFactory
+
+if TYPE_CHECKING:
+    from kausal_common.graphene import GQLInfo
 
 pytestmark = pytest.mark.django_db
 
@@ -122,3 +132,15 @@ def test_listing_offers_no_button_to_contact_persons_when_only_admins_can_mark(g
 
     assert url not in button_urls(graphql_client_query_data, client, contact_person, action)
     assert url in button_urls(graphql_client_query_data, client, plan_admin, action)
+
+
+def test_buttons_resolve_without_the_request_middleware_context(rf, action, report):
+    user = h.make_contact_person(action)
+    request = rf.get('/')
+    request.user = user
+    request.admin_cache = PlanSpecificCache(plan=action.plan)
+    assert not ctx_request.is_set()
+
+    buttons = ActionNode.resolve_admin_buttons(action, cast('GQLInfo', SimpleNamespace(context=request)))
+
+    assert h.mark_as_complete_url(action, report.pk) in [button.url for button in buttons]

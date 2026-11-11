@@ -5,16 +5,14 @@ import logging
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.translation import override
+from wagtail.admin.admin_url_finder import AdminURLFinder
 from wagtail.admin.mail import EmailNotificationMixin, Notifier, WorkflowStateApprovalEmailNotifier
 from wagtail.models import TaskState
-
-from wagtail_modeladmin.helpers.url import ModelAdminURLFinder
 
 from aplans.email_sender import EmailSender
 
 from users.models import User
 
-from .action_admin import ActionAdmin
 from .models import Action, ActionContactPerson
 
 logger = logging.getLogger(__name__)
@@ -24,20 +22,6 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
     """A base notifier to send updates for UserApprovalTask events."""
 
     notification: str
-
-    class AllowAllUsersAdminURLFinder(ModelAdminURLFinder):
-        """
-        Only use where permissions checks are impossible and unnecessary.
-
-        This currently applies when rendering emails to non-logged in users.
-        """
-
-        class PermissionHelper:
-            def user_can_edit_obj(self, user, instance):
-                return True
-
-        url_helper = ActionAdmin().url_helper
-        permission_helper = PermissionHelper
 
     def __init__(self):
         # Allow TaskState to send notifications
@@ -49,7 +33,8 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         context['object'] = content_object
         context['plan'] = getattr(content_object, 'plan', None)
         context['task'] = task_state.task.specific
-        context['admin_url_finder'] = self.AllowAllUsersAdminURLFinder(None)
+        # Without a user, the finder skips the permission check; the recipients are not logged in
+        context['admin_url_finder'] = AdminURLFinder(None)
         context['model_name'] = content_object._meta.verbose_name
         return context
 

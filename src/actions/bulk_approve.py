@@ -164,7 +164,7 @@ class BulkApproveView(WagtailAdminTemplateMixin, TemplateView):
         raise RuntimeError(f'Workflow state {ws.pk} did not finish while being released')
 
     def get_index_url(self) -> str:
-        return reverse('actions_action_modeladmin_index')
+        return reverse('wagtailsnippets_actions_action:list')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

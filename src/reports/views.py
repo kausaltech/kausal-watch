@@ -18,7 +18,6 @@ from django.views.generic import TemplateView, View
 from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
 
 import sentry_sdk
-from wagtail_modeladmin.views import WMABaseView
 
 from kausal_common.auth.tokens import authenticate_from_authorization_header
 from kausal_common.users import user_or_bust
@@ -32,19 +31,23 @@ ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
 ALL_FIELDS = 'all'
 
 
-class MarkActionAsCompleteView(WMABaseView[Action]):
-    action_pk: str = ''
-    report_pk: str = ''
+class MarkActionAsCompleteView(WagtailAdminTemplateMixin, TemplateView):
     complete = True
     template_name = 'aplans/confirmation.html'
+    header_icon = 'kausal-action'
+    index_url_name: str | None = None
+    action: Action
+    report: Report
 
-    def __init__(self, model_admin, action_pk, report_pk, complete=True):
-        self.action_pk = unquote(action_pk)
-        self.report_pk = unquote(report_pk)
-        self.complete = complete
-        self.action = get_object_or_404(Action, pk=self.action_pk)
-        self.report = get_object_or_404(Report, pk=self.report_pk)
-        super().__init__(model_admin)
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.action = get_object_or_404(Action, pk=unquote(str(kwargs['action_pk'])))
+        self.report = get_object_or_404(Report, pk=unquote(str(kwargs['report_pk'])))
+
+    @cached_property
+    def index_url(self) -> str:
+        assert self.index_url_name is not None
+        return reverse(self.index_url_name)
 
     def get_page_title(self):
         if self.complete:

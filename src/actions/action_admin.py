@@ -4,20 +4,24 @@ import json
 import logging
 import typing
 from functools import cached_property
+from importlib.util import find_spec
 from typing import Any, ClassVar, Unpack, cast
 
-from django.contrib import admin, messages
+from django.conf import settings
+from django.contrib import messages as django_messages
 from django.contrib.admin.utils import quote
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Q, prefetch_related_objects
 from django.forms import BaseModelForm, BaseModelFormSet, ModelChoiceField
-from django.urls import path, re_path, reverse
+from django.shortcuts import redirect
+from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from django.views.generic.detail import SingleObjectMixin
 from modelcluster.forms import childformset_factory
 from wagtail import hooks
+from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm, formfield_for_dbfield
 from wagtail.admin.panels import (
     FieldPanel,
@@ -26,23 +30,20 @@ from wagtail.admin.panels import (
     ObjectList,
 )
 from wagtail.admin.panels.base import Panel, get_form_for_model
+from wagtail.admin.ui.components import MediaContainer
+from wagtail.admin.ui.tables import Column
+from wagtail.admin.utils import get_latest_str
 from wagtail.admin.widgets import AdminAutoHeightTextInput
-from wagtail.permissions import ModelPermissionPolicy
-from wagtail.snippets.action_menu import SnippetActionMenu
-from wagtail.snippets.views.snippets import (
-    CollectWorkflowActionDataView,
-    ConfirmWorkflowCancellationView,
-    UnpublishView,
-    UsageView,
-)
+from wagtail.admin.widgets.button import ListingButton
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import UnpublishView
 
 from dal import autocomplete, forward as dal_forward
 
 from kausal_common.people.chooser import PersonChooser
-from kausal_common.users import user_or_bust, user_or_none
+from kausal_common.users import user_or_bust
 
 from aplans.context_vars import ctx_instance, ctx_request, get_admin_cache
-from aplans.extensions import modeladmin_register
 from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
 
@@ -51,22 +52,18 @@ from actions.models.action import _renormalize_pks_for_unique_constraint
 from actions.models.plan import Plan
 from admin_site.field_customization import collect_customizable_field_names, register_customizable_fields
 from admin_site.models import BuiltInFieldCustomization
-from admin_site.utils import FieldLabelRenderer
+from admin_site.utils import FieldLabelRenderer, admin_req
+from admin_site.viewsets import InstancePermissionCheckedMixin, WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
 from admin_site.wagtail import (
     AdminOnlyPanel,
-    AplansButtonHelper,
-    AplansCreateView,
-    AplansEditView,
-    AplansModelAdmin,
     AplansTabbedInterface,
     BuiltInFieldCustomizationAwareEditHandlerMixin,
     CondensedInlinePanel,
     CustomizableBuiltInFieldPanel,
     CustomizableBuiltInPlanFilteredFieldPanel,
-    InitializeFormWithInitialPlanMixin,
     PlanFilteredFieldPanel,
-    PlanRelatedModelAdminPermissionHelper,
     gate_panel_visibility,
+    get_dataset_listing_buttons,
     get_translation_tabs,
     insert_model_translation_panels,
 )
@@ -75,9 +72,9 @@ from people.chooser import TaskPersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
-from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .admin_utils import change_log_message_url_or_none
 from .bulk_approve import BulkApproveView
+from .category_admin import InitialPlanFormMixin, PanelFormMixin
 from .models.action import (
     Action,
     ActionContactPerson,
@@ -91,13 +88,12 @@ if typing.TYPE_CHECKING:
 
     from django.db.models import Model
     from django.http import HttpRequest
-    from django.urls import URLPattern
-    from django.utils.safestring import SafeString
     from django_stubs_ext import StrOrPromise
     from wagtail.admin.panels.group import PanelGroupInitArgs
     from wagtail.snippets.action_menu import ActionMenuItem
 
     from actions.attributes import DraftAttributes
+    from actions.permission_policy import ActionPermissionPolicy
     from users.models import User
 
     from .models.action import ModelWithRole
@@ -139,36 +135,6 @@ class ReadOnlyInlinePanel(Panel):
             return context
 
 
-class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper[Action]):
-    def get_plans(self, obj: Action) -> list[Plan]:
-        return [obj.plan]
-
-    def user_can_edit_obj(self, user: User, obj: Action) -> bool:
-        if not super().user_can_edit_obj(user, obj):
-            return False
-        return user.can_modify_action(obj)
-
-    def user_can_delete_obj(self, user: User, obj: Action) -> bool:
-        if not super().user_can_delete_obj(user, obj):
-            return False
-
-        if not user.can_modify_action(obj):
-            return False
-
-        plan = obj.plan
-        if plan.actions_locked:
-            return False
-
-        return user.is_general_admin_for_plan(plan)
-
-    def user_can_create(self, user: User) -> bool:
-        if not super().user_can_create(user):
-            return False
-
-        plan = user.get_active_admin_plan()
-        return user.can_create_action(plan)
-
-
 MODELS_WITH_ROLES: list[tuple[type[ModelWithRole[Any]], str, type[Model], str]] = [
     (ActionContactPerson, 'contact_persons', Person, 'person'),
     (ActionResponsibleParty, 'responsible_parties', Organization, 'organization'),
@@ -193,6 +159,7 @@ class CustomizedFieldAccessMixin[M: Model](BaseModelForm[M]):
 class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[Action]):
     def __init__(self, *args, **kwargs):
         self.initial_plan_id = kwargs.pop('initial_plan_id', None)
+        kwargs.pop('plan', None)
         super().__init__(*args, **kwargs)
         # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
         for cls, relation_name, __, ___ in MODELS_WITH_ROLES:
@@ -318,9 +285,9 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
             initial_plan = Plan.objects.get(id=initial_plan_id)
 
             request = ctx_request.get()
-            messages.add_message(
+            django_messages.add_message(
                 request,
-                messages.WARNING,
+                django_messages.WARNING,
                 _(
                     'While editing this action you have switched to a different plan. '
                     'This action was still saved with the original plan "%s".'
@@ -784,106 +751,162 @@ class ActionEditHandler(
         return form_class
 
 
-class ActionCreateView(InitializeFormWithInitialPlanMixin[Action], AplansCreateView[Action]):
-    def initialize_instance(self, request):
-        plan = request.user.get_active_admin_plan()
-        assert self.instance.pk is None
-        assert not hasattr(self.instance, 'plan')
-        self.instance.plan = plan
+class ActionInstanceContextMixin:
+    """Make the action available as `ctx_instance`, which the edit handler needs for building the form class."""
+
+    def get_context_instance(self) -> Action:
+        raise NotImplementedError
+
+    def dispatch(self, request, *args, **kwargs):
+        with ctx_instance.activate(self.get_context_instance()):
+            response = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+            if hasattr(response, 'render'):
+                response = response.render()
+            return response
+
+
+def _get_action_viewset() -> ActionViewSet:
+    return cast('ActionViewSet', Action.snippet_viewset)  # type: ignore[attr-defined]
+
+
+class ActionCreateView(
+    InitialPlanFormMixin, ActionInstanceContextMixin, PanelFormMixin, WatchCreateView[Action, ActionAdminForm]
+):
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        # A new action is saved as it is; only later edits are held back as drafts
+        self.draftstate_enabled = False
+        self.autosave_enabled = False
+        self.saving_as_draft = False
+
+    @cached_property
+    def new_action(self) -> Action:
+        instance = Action()
+        self.initialize_instance(self.request, instance)
+        return instance
+
+    def get_context_instance(self) -> Action:
+        return self.new_action
+
+    def get_initial_form_instance(self):
+        return self.new_action
+
+    def get_panel(self):
+        with ctx_instance.activate(self.new_action):
+            return _get_action_viewset().build_edit_handler().bind_to_model(Action)
+
+    def get_side_panels(self):
+        return MediaContainer()
+
+    def initialize_instance(self, request, instance: Action) -> None:
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        assert instance.pk is None
+        assert not hasattr(instance, 'plan')
+        instance.plan = plan
         if not plan.features.has_action_identifiers:
-            assert not self.instance.identifier
-            self.instance.generate_identifier()
+            assert not instance.identifier
+            instance.generate_identifier()
         if plan.features.has_action_primary_orgs:
-            assert self.instance.primary_org is None
-            person = request.user.get_corresponding_person()
+            assert instance.primary_org is None
+            person = user.get_corresponding_person()
             if person is not None:
                 available_orgs = Organization.objects.get_queryset().available_for_plan(plan)
                 default_org = available_orgs.filter(id=person.organization_id).first()
-                self.instance.primary_org = default_org
+                instance.primary_org = default_org
 
     def get_success_url(self):
-        if self.instance.plan.features.moderation_workflow is None:
-            url = change_log_message_url_or_none(self.instance, moderation_enabled=False)
+        assert self.object is not None
+        if self.object.plan.features.moderation_workflow is None:
+            url = change_log_message_url_or_none(self.object, moderation_enabled=False)
             return url or super().get_success_url()
         return super().get_success_url()
-
-
-class ActionButtonHelper(AplansButtonHelper):
-    mark_as_complete_button_classnames: list[str] = []
-
-    def mark_as_complete_button(self, action_pk, report, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.mark_as_complete_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _('Mark as complete for report %s') % report.name,
-            'classname': cn,
-            'title': _('Mark this action as complete for the report %s') % str(report),
-        }
-
-    def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
-        classnames_add = kwargs.get('classnames_add', [])
-        classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.mark_as_complete_button_classnames + classnames_add
-        cn = self.finalise_classname(classnames, classnames_exclude)
-        return {
-            'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _('Undo marking as complete for report %s') % report.name,
-            'classname': cn,
-            'title': _('Undo marking this action as complete for the report %s') % str(report),
-        }
-
-    def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
-        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
-        user = user_or_none(self.request.user)
-        if not user or not self.permission_helper.user_can_edit_obj(user, obj):
-            return buttons
-
-        latest_reports = get_admin_cache(self.request).latest_reports
-        # For each report type, display one button for the latest report of that type
-        for latest_report in latest_reports:
-            if latest_report.is_complete:
-                continue
-            if latest_report.type.only_plan_admins_can_mark_actions_as_complete and not user.is_general_admin_for_plan(
-                latest_report.type.plan
-            ):
-                continue
-            if obj.is_complete_for_report(latest_report):
-                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
-            else:
-                buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
-        return buttons
 
 
 class ActionEditView(
-    InitializeFormWithInitialPlanMixin[Action, ActionAdminForm],
-    SnippetsEditViewCompatibilityMixin[Action, ActionAdminForm],
-    SingleObjectMixin[Action],
-    AplansEditView[Action, ActionAdminForm],
+    InitialPlanFormMixin,
+    ActionInstanceContextMixin,
+    PanelFormMixin,
+    WatchEditView[Action, ActionAdminForm],
+    # Last, so that the workflow rules of Wagtail's edit view come before the check of the action itself
+    InstancePermissionCheckedMixin,
 ):
-    model_admin: ActionAdmin
-    instance: Action
     object: Action
-    model: type[Action]
+    live_object: Action
+    workflow_action: str
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.autosave_enabled = False
+        self.saving_as_draft = False
+
+    def get_object(self, queryset=None):
+        # Plans without a moderation workflow save actions directly, without drafts or locks
+        self.draftstate_enabled = False
+        live_object = super().get_object(queryset)
+        if not live_object.plan.features.enable_moderation_workflow:
+            self.locking_enabled = False
+            return live_object
+        self.draftstate_enabled = True
+        return live_object.get_latest_revision_as_object()
+
+    def get_context_instance(self) -> Action:
+        return self.object
+
+    def get_panel(self):
+        with ctx_instance.activate(self.object):
+            return _get_action_viewset().build_edit_handler(instance_being_edited=self.object).bind_to_model(Action)
+
+    def get_side_panels(self):
+        return MediaContainer()
+
+    def get_editing_sessions(self):
+        return None
+
+    def get_available_actions(self):
+        actions = super().get_available_actions()
+        if 'publish' in actions and not self.user_has_permission('publish'):
+            actions.remove('publish')
+        return actions
+
+    def submit_action(self):
+        try:
+            super().submit_action()
+        except ValidationError as e:
+            messages.validation_error(self.request, ' '.join(e.messages), self.form)
+            self.run_after_hook()
+            return redirect(self.get_edit_url())
+        url = change_log_message_url_or_none(self.object, moderation_enabled=True)
+        if url is None:
+            return None
+        self.run_after_hook()
+        return redirect(url)
+
+    def get_success_message(self, instance=None):
+        if (
+            self.action == 'workflow-action'
+            and self.workflow_action == 'approve'
+            and self.workflow_state
+            and self.workflow_state.is_at_final_task
+            and not getattr(settings, 'WAGTAIL_WORKFLOW_REQUIRE_REAPPROVAL_ON_EDIT', False)
+        ):
+            return _("%(model_name)s '%(object)s' approved and published.") % {
+                'model_name': capfirst(Action._meta.verbose_name),
+                'object': get_latest_str(instance or self.object),
+            }
+        return super().get_success_message(instance)
 
     def get_success_url(self):
-        if self.instance.plan.features.moderation_workflow is None:
-            url = change_log_message_url_or_none(self.instance, moderation_enabled=False)
+        if self.object.plan.features.moderation_workflow is None:
+            url = change_log_message_url_or_none(self.object, moderation_enabled=False)
             return url or super().get_success_url()
         return super().get_success_url()
 
-    def get_context_data(self, **kwargs):  # type: ignore[override]
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.instance.plan.features.enable_moderation_workflow:
-            context['action_menu'] = SnippetActionMenu(
-                self.request,
-                view='edit',
-                model=self.model,
-                instance=self.instance,
-                locked_for_user=self.locked_for_user,
-            )
+        if self.draftstate_enabled:
+            menu = context['action_menu']
+            menu.menu_items = [item for item in menu.menu_items if item.name != self.ContinueEditingActionMenuItem.name]
         # Display warnings for any attributes that were lost during draft deserialization
         self._display_draft_attribute_warnings()
         return context
@@ -906,31 +929,7 @@ class ActionEditView(
                 }
             else:
                 msg = warning.message
-            messages.warning(self.request, msg)
-
-    def get_description(self):
-        action = self.instance
-        primary_action_classification = action.plan.primary_action_classification
-        if primary_action_classification is None:
-            return ''
-        category_qs = action.categories.filter(type=primary_action_classification)
-        category = category_qs.first()
-        if category is None:
-            return ''
-        crumb = [category]
-        parent = category.parent
-        while parent is not None:
-            crumb.append(parent)
-            parent = parent.parent
-        return ' / '.join([str(c) for c in reversed(crumb)])
-
-    def get_edit_handler(self):
-        # We need to inject this view's instance to be accessible to the edit handler
-        # since it needs to know whether we are editing a draft or a live
-        # object (there is a difference in how the form panels are constructed)
-        assert self.model_admin is not None
-        edit_handler = self.model_admin.get_edit_handler(instance_being_edited=self.object)
-        return edit_handler.bind_to_model(self.model_admin.model)
+            django_messages.warning(self.request, msg)
 
 
 # Task relations that are edited in an inline panel of their own inside the tasks tab.
@@ -1040,28 +1039,85 @@ class TaskAssignmentInlinePanel(InlinePanel):
         return options
 
 
-@modeladmin_register
-class ActionAdmin(AplansModelAdmin[Action]):
+class ActionIndexView(WatchIndexView[Action]):
+    def get_base_queryset(self):
+        return super().get_base_queryset().order_by('order')
+
+    @cached_property
+    def columns(self):  # type: ignore[override]
+        plan = admin_req(self.request).user.get_active_admin_plan()
+        columns: list[Column] = [self._get_title_column('name')]
+        if plan.features.has_action_identifiers:
+            columns.insert(0, Column('identifier', label=_('Identifier'), sort_key='identifier'))
+        if plan.features.has_action_primary_orgs:
+            columns.insert(0, Column('primary_org', label=_('Primary organization')))
+        category_type = plan.category_types.filter(identifier='action').first()
+        if category_type is not None:
+            columns.append(
+                Column(
+                    'action_category',
+                    label=category_type.name,
+                    accessor=lambda action: '; '.join(
+                        str(category) for category in action.categories.all() if category.type_id == category_type.id
+                    ),
+                )
+            )
+        columns.append(Column('updated_at_delta', label=_('Last updated'), accessor=_get_updated_at_delta))
+        return columns
+
+    def get_edit_url(self, instance: Action):
+        assert self.permission_policy is not None
+        if not self.permission_policy.user_has_permission_for_instance(self.request.user, 'change', instance):
+            return None
+        return super().get_edit_url(instance)
+
+    def get_list_more_buttons(self, instance: Action):
+        user = admin_req(self.request).user
+        return _get_action_viewset().get_index_view_buttons(user, instance, user.get_active_admin_plan())
+
+
+def _get_updated_at_delta(action: Action) -> str | None:
+    if not action.updated_at:
+        return None
+    return naturaltime(action.plan.now_in_local_timezone() - action.updated_at)
+
+
+class ActionUnpublishView(InstancePermissionCheckedMixin, UnpublishView):
+    pass
+
+
+# Views of Wagtail's snippet viewset that are not offered for actions
+DISABLED_URL_NAMES = frozenset({
+    'lock',
+    'unlock',
+    'revisions_revert',
+    'revisions_compare',
+    'revisions_unschedule',
+    'workflow_action',
+    'workflow_history',
+    'workflow_history_detail',
+})
+
+
+class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
     model = Action
-    create_view_class = ActionCreateView
-    edit_view_class = ActionEditView
-    menu_icon = 'kausal-action'
+    url_prefix = 'actions/action'
+    icon = 'kausal-action'
     menu_order = 10
     menu_label = pgettext_lazy('Action model', 'Actions')
-    list_display = ('identifier', 'name_link')
-    list_display_add_buttons = 'name_link'
-    search_fields = ('identifier', 'name')
-    permission_helper_class = ActionPermissionHelper
-    button_helper_class = ActionButtonHelper
-    index_order_field = 'order'
-
-    ordering = ['order']
-
-    usage_view_class = UsageView
-    unpublish_view_class = UnpublishView
-    collect_workflow_action_data_view_class = CollectWorkflowActionDataView
-    confirm_workflow_cancellation_view_class = ConfirmWorkflowCancellationView
+    add_to_admin_menu = True
+    search_fields = ['identifier', 'name']
+    # Search the database like the ModelAdmin did, as the search index cannot filter by plan
+    search_backend_name = None
+    bulk_delete_enabled = False
+    index_view_class = ActionIndexView
+    add_view_class = ActionCreateView
+    edit_view_class = ActionEditView
+    unpublish_view_class = ActionUnpublishView
     bulk_approve_view_class = BulkApproveView
+
+    # The form is built per request in `build_edit_handler()`; this one only serves the registration
+    edit_handler = ObjectList([FieldPanel('name')], base_form_class=ActionAdminForm)
 
     basic_panels: Sequence[Panel[Action]] = (
         CustomizableBuiltInFieldPanel[Action]('identifier'),
@@ -1140,96 +1196,12 @@ class ActionAdmin(AplansModelAdmin[Action]):
         getHeader(form);
     """
 
-    def register_with_wagtail(self):
-        super().register_with_wagtail()
-
-        class FakeSnippetViewSet:
-            def __init__(self, modeladmin: ActionAdmin):
-                self.modeladmin = modeladmin
-
-            def get_url_name(self, view_name: str) -> str:
-                return self.modeladmin.get_url_name(view_name)
-
-            def get_menu_item_is_registered(self) -> bool:
-                return False
-
-            @cached_property
-            def permission_policy(self) -> ModelPermissionPolicy:
-                return ModelPermissionPolicy(Action)
-
-        Action.snippet_viewset = FakeSnippetViewSet(self)
-
-        from wagtail.snippets.models import SNIPPET_MODELS
-
-        SNIPPET_MODELS.append(Action)
-        SNIPPET_MODELS.sort(key=lambda x: x._meta.verbose_name)
-
-    def get_url_name(self, view_name):
-        if view_name == 'list':
-            view_name = 'index'
-        return self.url_helper.get_action_url_name(view_name)
-
-    @admin.display(description=_('Last updated'))
-    def updated_at_delta(self, obj):
-        if not obj.updated_at:
-            return None
-        now = obj.plan.now_in_local_timezone()
-        delta = now - obj.updated_at
-        return naturaltime(delta)
-
-    def get_list_display(self, request: HttpRequest):
-        cached_list_display = getattr(request, '_action_admin_list_display', None)
-        if cached_list_display:
-            return cached_list_display
-
-        user = user_or_bust(request.user)
-
-        @admin.display(description=_('Name'))
-        def name_link(obj: Action) -> SafeString | str:  # -> SafeString | Any:
-            from django.utils.html import format_html
-
-            if self.permission_helper.user_can_edit_obj(user, obj):
-                url = self.url_helper.get_action_url('edit', obj.pk)
-                return format_html('<a href="{}">{}</a>', url, obj.name)
-            return obj.name
-
-        self.name_link = name_link
-
-        plan = user.get_active_admin_plan()
-
-        list_display = ['name_link']
-        if plan.features.has_action_identifiers:
-            list_display.insert(0, 'identifier')
-        if plan.features.has_action_primary_orgs:
-            list_display.insert(0, 'primary_org')
-
-        ct = plan.category_types.filter(identifier='action').first()
-        if ct:
-
-            @admin.display(description=ct.name)
-            def action_category(obj: Action) -> str:
-                return '; '.join([str(cat) for cat in obj.categories.all() if cat.type_id == ct.id])
-
-            self.action_category = action_category
-            list_display.append('action_category')
-
-        list_display.append('updated_at_delta')
-
-        """
-        if not plan.actions_locked and request.user.is_general_admin_for_plan(plan):
-            list_display.insert(0, 'index_order')
-        """
-
-        out = tuple(list_display)
-        setattr(request, '_action_admin_list_display', out)  # noqa: B010
-        return out
-
     def get_task_header_formatter(self):
         states = {key: str(label) for key, label in list(ActionTask.STATES)}
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self, instance_being_edited: Action | None = None):  # noqa: C901, PLR0912, PLR0915
+    def build_edit_handler(self, instance_being_edited: Action | None = None):  # noqa: C901, PLR0912, PLR0915
         request = ctx_request.get()
         instance = ctx_instance.get_as_type(Action)
         # TODO: find out how to include the relevant draftable mixin state
@@ -1419,126 +1391,134 @@ class ActionAdmin(AplansModelAdmin[Action]):
         )
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        plan = request.user.get_active_admin_plan()
-        if not request.user.is_general_admin_for_plan(plan):
+        user = user_or_bust(request.user)
+        plan = user.get_active_admin_plan()
+        qs = Action.objects.get_queryset()
+        if not user.is_general_admin_for_plan(plan):
             qs = qs.unmerged()
         qs = qs.filter(plan=plan)
         qs = qs.select_related('plan').prefetch_related('categories')
         return qs
 
-    def mark_action_as_complete_view(self, request, action_pk, report_pk):
-        return MarkActionAsCompleteView.as_view(
-            model_admin=self,
-            action_pk=action_pk,
-            report_pk=report_pk,
-            complete=True,
-        )(request)
+    def get_common_view_kwargs(self, **kwargs):
+        # Locking by hand, reverting, comparing and scheduling are not offered for actions
+        return super().get_common_view_kwargs(**{
+            'lock_url_name': None,
+            'unlock_url_name': None,
+            'revisions_revert_url_name': None,
+            'revisions_compare_url_name': None,
+            'revisions_unschedule_url_name': None,
+            **kwargs,
+        })
 
-    def undo_marking_action_as_complete_view(self, request, action_pk, report_pk):
-        return MarkActionAsCompleteView.as_view(
-            model_admin=self,
-            action_pk=action_pk,
-            report_pk=report_pk,
-            complete=False,
-        )(request)
+    def get_edit_view_kwargs(self, **kwargs):
+        return {**super().get_edit_view_kwargs(**kwargs), 'workflow_history_url_name': None}
 
     @property
-    def permission_policy(self):
-        return ModelPermissionPolicy(Action)
+    def mark_action_as_complete_view(self):
+        return MarkActionAsCompleteView.as_view(index_url_name=self.get_url_name('list'), complete=True)
 
     @property
-    def usage_view(self):
-        return self.usage_view_class.as_view(
-            model=self.model,
-            # template_name=self.get_templates(
-            #     "usage", fallback=self.usage_view_class.template_name
-            # ),
-            template_name=self.usage_view_class.template_name,
-            # header_icon=self.icon,
-            permission_policy=self.permission_policy,
-            index_url_name=self.get_url_name('list'),
-            edit_url_name=self.get_url_name('edit'),
-        )
-
-    @property
-    def unpublish_view(self):
-        return self.unpublish_view_class.as_view(
-            model=self.model,
-            # template_name=self.get_templates(
-            #     "unpublish", fallback=self.unpublish_view_class.template_name
-            # ),
-            template_name=self.unpublish_view_class.template_name,
-            # header_icon=self.icon,
-            permission_policy=self.permission_policy,
-            index_url_name=self.get_url_name('list'),
-            edit_url_name=self.get_url_name('edit'),
-            unpublish_url_name=self.get_url_name('unpublish'),
-            usage_url_name=self.get_url_name('usage'),
-        )
-
-    @property
-    def collect_workflow_action_data_view(self):
-        return self.collect_workflow_action_data_view_class.as_view(
-            model=self.model,
-            redirect_url_name=self.get_url_name('edit'),
-            submit_url_name=self.get_url_name('collect_workflow_action_data'),
-        )
-
-    @property
-    def confirm_workflow_cancellation_view(self):
-        return self.confirm_workflow_cancellation_view_class.as_view(model=self.model)
+    def undo_marking_action_as_complete_view(self):
+        return MarkActionAsCompleteView.as_view(index_url_name=self.get_url_name('list'), complete=False)
 
     @property
     def bulk_approve_in_moderation_view(self):
         return self.bulk_approve_view_class.as_view(model=self.model)
 
-    def get_admin_urls_for_registration(self):
-        urls: tuple[URLPattern, ...] = super().get_admin_urls_for_registration()
-        mark_as_complete_url = re_path(
-            # self.url_helper.get_action_url_pattern('mark_action_as_complete'),
-            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$'
-            % (
-                self.opts.app_label,
-                self.opts.model_name,
-                'mark_action_as_complete',
-            ),
-            self.mark_action_as_complete_view,
-            name=self.url_helper.get_action_url_name('mark_action_as_complete'),
-        )
-        undo_marking_as_complete_url = re_path(
-            # self.url_helper.get_action_url_pattern('undo_marking_action_as_complete'),
-            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$'
-            % (
-                self.opts.app_label,
-                self.opts.model_name,
-                'undo_marking_action_as_complete',
-            ),
-            self.undo_marking_action_as_complete_view,
-            name=self.url_helper.get_action_url_name('undo_marking_action_as_complete'),
-        )
-        snippet_view_routes = {
-            'usage': '<str:pk>',
-            'unpublish': '<str:pk>',
-            'collect_workflow_action_data': '<str:pk>/<slug:action_name>/<int:task_state_id>',
-            'confirm_workflow_cancellation': '<str:pk>',
-            'bulk_approve_in_moderation': '',
-        }
-        snippet_view_urls: tuple[URLPattern, ...] = tuple(
+    def get_urlpatterns(self):
+        urlpatterns = [pattern for pattern in super().get_urlpatterns() if pattern.name not in DISABLED_URL_NAMES]
+        return [
+            *urlpatterns,
             path(
-                # A view without route parameters must not produce a doubled slash: proxies in front of the
-                # application merge duplicate slashes, and the merged path would no longer match.
-                f'{self.opts.app_label}/{self.opts.model_name}/{view_name}/' + (f'{route}/' if route else ''),
-                getattr(self, f'{view_name}_view'),
-                name=self.url_helper.get_action_url_name(view_name),
+                'mark_action_as_complete/<str:action_pk>/<str:report_pk>/',
+                self.mark_action_as_complete_view,
+                name='mark_action_as_complete',
+            ),
+            path(
+                'undo_marking_action_as_complete/<str:action_pk>/<str:report_pk>/',
+                self.undo_marking_action_as_complete_view,
+                name='undo_marking_action_as_complete',
+            ),
+            path('bulk_approve_in_moderation/', self.bulk_approve_in_moderation_view, name='bulk_approve_in_moderation'),
+        ]
+
+    def _get_report_buttons(self, user: User, instance: Action, plan: Plan) -> list[ListingButton]:
+        buttons: list[ListingButton] = []
+        # For each report type, one button for the latest report of that type
+        for report in get_admin_cache(ctx_request.get_admin_request()).latest_reports:
+            if report.is_complete:
+                continue
+            if report.type.only_plan_admins_can_mark_actions_as_complete and not user.is_general_admin_for_plan(report.type.plan):
+                continue
+            args = (quote(instance.pk), quote(report.pk))
+            if instance.is_complete_for_report(report):
+                button = ListingButton(
+                    _('Undo marking as complete for report %s') % report.name,
+                    url=reverse(self.get_url_name('undo_marking_action_as_complete'), args=args),
+                    attrs={'title': _('Undo marking this action as complete for the report %s') % str(report)},
+                )
+            else:
+                button = ListingButton(
+                    _('Mark as complete for report %s') % report.name,
+                    url=reverse(self.get_url_name('mark_action_as_complete'), args=args),
+                    attrs={'title': _('Mark this action as complete for the report %s') % str(report)},
+                )
+            buttons.append(button)
+        return buttons
+
+    def get_index_view_buttons(self, user: User, instance: Action, plan: Plan) -> list[ListingButton]:
+        """
+        Return the buttons of an action's row in the listing.
+
+        Defined here and not in the index view so that they can also be queried through GraphQL, for
+        the listing that the extensions render themselves.
+        """
+        policy = cast('ActionPermissionPolicy', self.permission_policy)
+        can_edit = policy.user_has_permission_in_own_plan(user, 'change', instance)
+        buttons: list[ListingButton] = []
+        if can_edit:
+            buttons.append(
+                ListingButton(
+                    _('Edit'),
+                    url=reverse(self.get_url_name('edit'), args=(quote(instance.pk),)),
+                    icon_name='edit',
+                    attrs={'aria-label': _("Edit '%(title)s'") % {'title': str(instance)}},
+                    priority=10,
+                )
             )
-            for view_name, route in snippet_view_routes.items()
-        )
-        return urls + (
-            mark_as_complete_url,
-            undo_marking_as_complete_url,
-            *snippet_view_urls,
-        )
+        if policy.user_has_permission_in_own_plan(user, 'delete', instance):
+            buttons.append(
+                ListingButton(
+                    _('Delete'),
+                    url=reverse(self.get_url_name('delete'), args=(quote(instance.pk),)),
+                    icon_name='bin',
+                    attrs={'aria-label': _("Delete '%(title)s'") % {'title': str(instance)}},
+                    priority=30,
+                )
+            )
+        request = ctx_request.get_admin_request()
+        # Built for every row of a listing, all for the same plan instance
+        prefetch_related_objects([plan], 'domains')
+        view_url = instance.get_view_url(plan=plan, request=request)
+        if view_url:
+            buttons.append(
+                ListingButton(
+                    _('View live'),
+                    url=view_url,
+                    icon_name='view',
+                    attrs={'target': '_blank', 'title': _('View %s live') % Action._meta.verbose_name},
+                    priority=60,
+                )
+            )
+        buttons.extend(get_dataset_listing_buttons(request, instance))
+        if can_edit:
+            buttons.extend(self._get_report_buttons(user, instance, plan))
+        for button in buttons:
+            # The GraphQL type reads these as attributes
+            button.title = button.attrs.get('title')  # type: ignore[attr-defined]
+            button.target = button.attrs.get('target')  # type: ignore[attr-defined]
+        return buttons
 
     def _get_field_customization_panels(
         self,
@@ -1656,10 +1636,10 @@ register_customizable_fields(
     Action,
     [
         *collect_customizable_field_names([
-            *ActionAdmin.basic_panels,
-            *ActionAdmin.basic_related_panels,
-            *ActionAdmin.basic_related_panels_general_admin,
-            *ActionAdmin.progress_panels,
+            *ActionViewSet.basic_panels,
+            *ActionViewSet.basic_related_panels,
+            *ActionViewSet.basic_related_panels_general_admin,
+            *ActionViewSet.progress_panels,
         ]),
         'dependency_role',
         # Relations that get a tab or panel of their own. Only their access rights are customizable;
@@ -1673,7 +1653,7 @@ register_customizable_fields(
 register_customizable_fields(
     ActionTask,
     [
-        *collect_customizable_field_names(ActionAdmin.task_panels),
+        *collect_customizable_field_names(ActionViewSet.task_panels),
         # Relations edited in a panel of their own. As for the action-level relations above, only their
         # access rights are customizable; `label_override` and `help_text_override` have no effect.
         *TASK_ASSIGNMENT_RELATIONS,
@@ -1692,6 +1672,10 @@ def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: Htt
         return
 
     model: type[Action] = context['model']
+    instance: Action | None = context.get('instance')
+    moderated = instance is not None and instance.plan.features.enable_moderation_workflow
+    # Decides between "Save" and "Save draft"
+    context['draftstate_enabled'] = moderated
 
     class RestartWorkflowMenuItem(action_menu.RestartWorkflowMenuItem):
         label = _('Resubmit for moderation')
@@ -1752,13 +1736,13 @@ def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: Htt
         def is_shown(self, context) -> bool:
             from wagtail.snippets.permissions import get_permission_name
 
-            delete_permission = get_permission_name('delete', context['model'])
-
-            return (
-                context['view'] == 'edit'
-                and context['request'].user.has_perm(delete_permission)
-                and not context.get('locked_for_user')
-            )
+            if context['view'] != 'edit' or context.get('locked_for_user'):
+                return False
+            user = context['request'].user
+            if moderated:
+                return user.has_perm(get_permission_name('delete', context['model']))
+            policy = context['instance'].snippet_viewset.permission_policy
+            return policy.user_has_permission_for_instance(user, 'delete', context['instance'])
 
         def get_url(self, context) -> str | None:
             instance = context['instance']
@@ -1789,19 +1773,20 @@ def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: Htt
         action_menu.SaveMenuItem(order=0),
         DeleteMenuItem(order=102),
     ]
-    if issubclass(model, DraftStateMixin):
+    # Only plans with a moderation workflow have drafts, and with them publishing and locks
+    if moderated and issubclass(model, DraftStateMixin):
         menu_items += [
             # UnpublishMenuItem(order=20),
             # PublishMenuItem(order=30),
             PublishMenuItem(order=5),
         ]
-    if issubclass(model, WorkflowMixin):
+    if moderated and issubclass(model, WorkflowMixin):
         menu_items += [
             SubmitForModerationMenuItem(order=40),
             RestartWorkflowMenuItem(order=50),
             CancelWorkflowMenuItem(order=60),
         ]
-    if issubclass(model, LockableMixin):
+    if moderated and issubclass(model, LockableMixin):
         menu_items.append(action_menu.LockedMenuItem(order=10000))
 
     for menu_item in list(menu_items):
@@ -1809,3 +1794,8 @@ def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: Htt
             menu_items.remove(menu_item)
     menu_items.sort(key=lambda x: x.order)
     return
+
+
+# If kausal_watch_extensions is installed, an extended version of the view set is registered there
+if not find_spec('kausal_watch_extensions'):
+    register_snippet(ActionViewSet)

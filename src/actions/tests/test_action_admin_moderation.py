@@ -376,3 +376,50 @@ class TestContactPersons:
         form = client.get(h.edit_url(action)).context['form']
 
         assert {'contact_persons_editor', 'contact_persons_moderator'} <= set(form.formsets)
+
+
+class TestPublishRights:
+    @pytest.mark.parametrize('make_user', [h.make_contact_person, h.make_organization_admin])
+    def test_user_without_publish_rights_cannot_publish_by_posting(self, client, action, make_user):
+        response = h.post_edit(client, make_user(action), action, 'publish', name='New name')
+
+        assert response.status_code == 302
+        action.refresh_from_db()
+        assert action.name == 'Published name'
+        assert action.latest_revision.content['name'] == 'New name'
+        assert action.live_revision is None
+
+    def test_moderator_cannot_publish_by_posting_in_a_two_step_workflow(self, client, two_step_plan):
+        action = ActionFactory.create(plan=two_step_plan, name='Published name')
+
+        h.post_edit(client, h.make_moderator(action), action, 'publish', name='New name')
+
+        action.refresh_from_db()
+        assert action.name == 'Published name'
+
+    @pytest.mark.parametrize(
+        'make_user',
+        [
+            h.make_contact_person,
+            lambda action: h.make_contact_person(ActionFactory.create(plan=action.plan)),
+            lambda _action: h.make_contact_person(ActionFactory.create()),
+            lambda _action: h.make_plan_admin(PlanFactory.create()),
+        ],
+        ids=['editor', 'contact_person_of_another_action', 'contact_person_in_another_plan', 'admin_of_another_plan'],
+    )
+    def test_user_without_publish_rights_cannot_unpublish(self, client, action, make_user):
+        client.force_login(make_user(action))
+
+        assert client.get(h.unpublish_url(action)).status_code != 200
+        client.post(h.unpublish_url(action))
+
+        action.refresh_from_db()
+        assert action.live
+
+    def test_moderator_can_unpublish(self, client, action, moderator):
+        client.force_login(moderator)
+
+        client.post(h.unpublish_url(action))
+
+        action.refresh_from_db()
+        assert not action.live
