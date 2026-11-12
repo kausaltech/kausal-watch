@@ -326,8 +326,12 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
                 completed_at_date = data['completed_at']
                 state += f' {date_format(completed_at_date)}'
             else:
+                # Versions saved before tasks could be continuous lack the field
+                if data.get('is_continuous'):
+                    state += f', {_("continuous")}'
                 due_date = data['due_at']
-                state += f', {_("due date")}: {date_format(due_date)}'
+                if due_date is not None:
+                    state += f', {_("due date")}: {date_format(due_date)}'
             line = f'• {data["name"]} [{state}]'
             assignees = self._format_assignees(report, related_objects, int(data['id']), action)
             if assignees:

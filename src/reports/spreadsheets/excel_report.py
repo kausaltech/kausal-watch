@@ -409,6 +409,7 @@ class ExcelReport:
         plan_label = _('Plan')
         name_label = _('Name')
         due_label = _('Due date')
+        continuous_label = _('Continuous')
         state_label = _('State')
         start_state_label = _('State at start of reporting period')
         completed_label = _('Completion date')
@@ -427,6 +428,8 @@ class ExcelReport:
                     action_label: action.data['name'].replace('\n', ' '),
                     name_label: data['name'],
                     due_label: data['due_at'],
+                    # Versions saved before tasks could be continuous lack the field
+                    continuous_label: bool(data.get('is_continuous', False)),
                     state_label: state_labels.get(data['state'], data['state']),
                     start_state_label: state_labels.get(start_states.get(int(data['id'])) or '', ''),
                     completed_label: data['completed_at'],
@@ -447,6 +450,7 @@ class ExcelReport:
             **({plan_label: pl.String()} if plan_names is not None else {}),
             name_label: pl.String(),
             due_label: pl.Date(),
+            continuous_label: pl.Boolean(),
             state_label: pl.String(),
             start_state_label: pl.String(),
             completed_label: pl.Date(),

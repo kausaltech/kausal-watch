@@ -179,6 +179,9 @@ class NotificationEngine:
             raise InvalidStateException('Task %s in wrong state: %s' % (str(task), task.state))
         if task.completed_at:
             raise InvalidStateException('Task %s already completed' % (str(task),))
+        if task.due_at is None:
+            # A continuous task without a due date has no deadline to remind of
+            return
 
         diff = (task.due_at - self.now.date()).days
         notif: TaskDueSoonNotification | TaskLateNotification
@@ -238,6 +241,10 @@ class NotificationEngine:
         active_tasks = action.tasks.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
         count = 0
         for task in active_tasks:
+            if task.due_at is None:
+                # A continuous task without a due date is ongoing work, which counts as planned
+                count += 1
+                continue
             diff = (task.due_at - self.now.date()).days
             if diff <= N_DAYS:
                 count += 1

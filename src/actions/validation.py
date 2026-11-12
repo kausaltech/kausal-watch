@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 ACTION_END_BEFORE_START_MESSAGE = _("The end date can't be before the start date")
 TASK_COMPLETED_IN_FUTURE_MESSAGE = _("The completion date can't be in the future")
+TASK_DUE_DATE_REQUIRED_MESSAGE = _('Tasks that are not continuous must have a due date')
 
 
 def get_action_dates_error(start_date: date | None, end_date: date | None) -> StrPromise | None:
