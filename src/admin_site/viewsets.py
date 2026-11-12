@@ -13,6 +13,7 @@ from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
+from wagtail.admin.ui.components import MediaContainer
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.models import Page
@@ -329,6 +330,9 @@ class BaseChangeLogMessageCreateView[
 ](ChangeLogMessageRelatedObjectMixin[RelatedModel], WatchCreateView[M, FormT]):
     success_url_name: str
 
+    def get_side_panels(self):
+        return MediaContainer()
+
     def get_related_id(self) -> str | None:
         """Get related object ID from GET params or POST data (hidden field)."""
         if self.request.method == 'POST':
@@ -402,6 +406,9 @@ class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPubl
     ChangeLogMessageInstanceViewMixin[RelatedModel], WatchEditView[M]
 ):
     success_url_name: str
+
+    def get_side_panels(self):
+        return MediaContainer()
 
     def get_success_url(self):
         assert self.object is not None
