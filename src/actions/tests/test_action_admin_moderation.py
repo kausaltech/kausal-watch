@@ -2,17 +2,39 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from wagtail.models import Workflow, WorkflowState
 
 import pytest
 
-from actions.models import Action, ActionContactPerson
+from actions.attributes import (
+    AttributeComparison,
+    AttributeFieldPanel,
+    AttributeType as AttributeTypeWrapper,
+    DraftAttributes,
+)
+from actions.models import Action, ActionContactPerson, AttributeType
 from actions.tests import action_admin_helpers as h
-from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+from actions.tests.factories import (
+    ActionFactory,
+    AttributeChoiceFactory,
+    AttributeRichTextFactory,
+    AttributeTextFactory,
+    AttributeTypeChoiceOptionFactory,
+    AttributeTypeFactory,
+    CategoryFactory,
+    CategoryTypeFactory,
+    PlanFactory,
+)
+
+if TYPE_CHECKING:
+    from actions.models.attributes import ModelWithAttributes
 
 pytestmark = pytest.mark.django_db
 
@@ -511,6 +533,218 @@ class TestModerationStatus:
         assert response.status_code == 200
         changes = h.table_rows(response)
         assert any(row.startswith('Name') and 'First' in row and 'Second' in row for row in changes)
+
+
+class TestComparingAttributes:
+    @pytest.fixture
+    def make_attribute_type(self, plan):
+        def make(attribute_format: AttributeType.AttributeFormat, name: str) -> AttributeType:
+            return AttributeTypeFactory.create(
+                scope=plan,
+                object_content_type=ContentType.objects.get_for_model(Action),
+                format=attribute_format,
+                name=name,
+            )
+
+        return make
+
+    @staticmethod
+    def changes(client, action: Action) -> list[str]:
+        *_, before, after = action.revisions.order_by('pk')
+        response = client.get(h.compare_url(action, before.pk, after.pk))
+        assert response.status_code == 200
+        return h.table_rows(response)
+
+    def test_text_number_and_choice_changes_are_listed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        cost = make_attribute_type(AttributeType.AttributeFormat.NUMERIC, 'Cost')
+        priority = make_attribute_type(AttributeType.AttributeFormat.ORDERED_CHOICE, 'Priority')
+        low = AttributeTypeChoiceOptionFactory.create(type=priority, name='Low')
+        high = AttributeTypeChoiceOptionFactory.create(type=priority, name='High')
+        fields = {attribute_type: f'attribute_type_{attribute_type.pk}' for attribute_type in (note, cost, priority)}
+        h.post_edit(
+            client, plan_admin, action, None, **{fields[note]: 'One million', fields[cost]: '10', fields[priority]: low.pk}
+        )
+
+        h.post_edit(
+            client, plan_admin, action, None, **{fields[note]: 'Two million', fields[cost]: '25', fields[priority]: high.pk}
+        )
+
+        changes = self.changes(client, action)
+        assert any(row.startswith('Budget note') and 'One' in row and 'Two' in row for row in changes)
+        assert any(row.startswith('Cost') and '10' in row and '25' in row for row in changes)
+        assert any(row.startswith('Priority') and 'Low' in row and 'High' in row for row in changes)
+
+    def test_unchanged_attribute_is_not_listed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        h.post_edit(client, plan_admin, action, **{f'attribute_type_{note.pk}': 'One million'})
+
+        h.post_edit(client, plan_admin, action, name='Another name')
+
+        assert not any(row.startswith('Budget note') for row in self.changes(client, action))
+
+    def test_translation_is_listed_only_when_it_changed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        field = f'attribute_type_{note.pk}'
+        h.post_edit(client, plan_admin, action, **{field: 'One million', f'{field}_fi': 'Miljoona'})
+
+        h.post_edit(client, plan_admin, action, **{f'{field}_fi': 'Kaksi miljoonaa'})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Budget note')]
+        assert len(changes) == 1
+        assert changes[0].startswith('Budget note (fi)')
+        assert 'Miljoona' in changes[0]
+
+    def test_plain_text_is_compared_as_written(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        field = f'attribute_type_{note.pk}'
+        h.post_edit(client, plan_admin, action, None, **{field: 'Cost 5'})
+
+        h.post_edit(client, plan_admin, action, None, **{field: 'Cost <baseline> 5'})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Budget note')]
+        assert len(changes) == 1
+        assert '<baseline>' in changes[0]
+
+    @pytest.fixture
+    def compare_rich_text(self, make_attribute_type):
+        background = make_attribute_type(AttributeType.AttributeFormat.RICH_TEXT, 'Background')
+        panel: AttributeFieldPanel[Action] = AttributeFieldPanel(
+            f'attribute_type_{background.pk}',
+            attribute_type=AttributeTypeWrapper.from_model_instance(background),
+            language='',
+        )
+
+        def revision(text: str) -> ModelWithAttributes:
+            content = {'rich_text': {str(background.pk): {'text': text}}}
+            return cast('ModelWithAttributes', SimpleNamespace(draft_attributes=DraftAttributes.from_revision_content(content)))
+
+        def compare(text_a: str, text_b: str) -> AttributeComparison:
+            return AttributeComparison(panel, revision(text_a), revision(text_b))
+
+        return compare
+
+    def test_rich_text_diff_is_shown_without_markup(self, compare_rich_text):
+        comparison = compare_rich_text('<p>One million</p>', '<p>Two million</p>')
+
+        diff = comparison.htmldiff()
+        assert comparison.has_changed()
+        assert 'One' in diff
+        assert 'Two' in diff
+        assert '<p>' not in diff
+
+    def test_change_in_rich_text_formatting_alone_is_listed(self, compare_rich_text):
+        assert compare_rich_text('<p>Some text</p>', '<p>Some <b>text</b></p>').has_changed()
+
+    def test_empty_rich_text_editor_is_no_change(self, compare_rich_text):
+        assert not compare_rich_text('', '<p data-block-key="abcde"></p>').has_changed()
+
+    def test_saving_again_does_not_list_rich_text_or_its_empty_translation(
+        self, client, plan, action, plan_admin, make_attribute_type
+    ):
+        background = make_attribute_type(AttributeType.AttributeFormat.RICH_TEXT, 'Background')
+        AttributeRichTextFactory.create(type=background, content_object=action, text='<p>Some <b>bold</b> text</p>')
+        h.post_edit(client, plan_admin, action, name='First draft')
+
+        h.post_edit(client, plan_admin, action, name='Second draft')
+
+        assert not any(row.startswith('Background') for row in self.changes(client, action))
+
+    def test_attribute_left_out_of_a_draft_keeps_its_stored_value(self, client, action, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Admin note')
+        note.instances_editable_by = AttributeType.EditableBy.PLAN_ADMINS
+        note.save()
+        AttributeTextFactory.create(type=note, content_object=action, text='Stored value')
+        editor = h.make_contact_person(action)
+        h.post_edit(client, editor, action, name='First draft')
+        h.post_edit(client, editor, action, name='Second draft')
+        client.force_login(h.make_plan_admin(action.plan))
+
+        assert not any(row.startswith('Admin note') for row in self.changes(client, action))
+        assert not any(row.startswith('Admin note') for row in self.changes_from_live(client, action))
+
+    def test_choice_label_beside_rich_text_is_shown_as_written(self, client, action, plan_admin, make_attribute_type):
+        risk = make_attribute_type(AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT, 'Risk')
+        small = AttributeTypeChoiceOptionFactory.create(type=risk, name='Small')
+        baseline = AttributeTypeChoiceOptionFactory.create(type=risk, name='<baseline>')
+        choice_field = f'attribute_type_{risk.pk}_choice'
+        h.post_edit(client, plan_admin, action, None, **{choice_field: small.pk})
+
+        h.post_edit(client, plan_admin, action, None, **{choice_field: baseline.pk})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Risk')]
+        assert len(changes) == 1
+        assert '<baseline>' in changes[0]
+
+    @staticmethod
+    def changes_from_live(client, action: Action) -> list[str]:
+        latest = action.revisions.order_by('pk').last()
+        assert latest is not None
+        response = client.get(h.compare_url(action, 'live', latest.pk))
+        assert response.status_code == 200
+        return h.table_rows(response)
+
+    def test_live_attributes_are_read_from_the_database(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        priority = make_attribute_type(AttributeType.AttributeFormat.ORDERED_CHOICE, 'Priority')
+        AttributeTextFactory.create(type=note, content_object=action, text='One million')
+        AttributeChoiceFactory.create(type=priority, content_object=action, choice__type=priority, choice__name='High')
+
+        h.post_edit(client, plan_admin, action, name='Draft name')
+
+        changes = self.changes_from_live(client, action)
+        assert any(row.startswith('Name') for row in changes)
+        assert not any(row.startswith(('Budget note', 'Priority')) for row in changes)
+
+    def test_attribute_removed_in_the_draft_is_listed_against_live(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        AttributeTextFactory.create(type=note, content_object=action, text='One million')
+
+        h.post_edit(client, plan_admin, action, None, **{f'attribute_type_{note.pk}': ''})
+
+        changes = [row for row in self.changes_from_live(client, action) if row.startswith('Budget note')]
+        assert len(changes) == 1
+        assert 'One million' in changes[0]
+
+    def test_switch_between_options_of_the_same_name_is_listed(self, client, action, plan_admin, make_attribute_type):
+        priority = make_attribute_type(AttributeType.AttributeFormat.ORDERED_CHOICE, 'Priority')
+        first = AttributeTypeChoiceOptionFactory.create(type=priority, name='Medium')
+        second = AttributeTypeChoiceOptionFactory.create(type=priority, name='Medium')
+        field = f'attribute_type_{priority.pk}'
+        h.post_edit(client, plan_admin, action, None, **{field: first.pk})
+
+        h.post_edit(client, plan_admin, action, None, **{field: second.pk})
+
+        assert any(row.startswith('Priority') for row in self.changes(client, action))
+
+    def test_switch_between_categories_of_the_same_name_is_listed(self, client, plan, action, plan_admin, make_attribute_type):
+        sector = make_attribute_type(AttributeType.AttributeFormat.CATEGORY_CHOICE, 'Sector')
+        # Categories are shown by name alone when their type hides the identifiers
+        sector.attribute_category_type = CategoryTypeFactory.create(plan=plan, hide_category_identifiers=True)
+        sector.save()
+        first = CategoryFactory.create(type=sector.attribute_category_type, name='Other')
+        second = CategoryFactory.create(type=sector.attribute_category_type, name='Other')
+        field = f'attribute_type_{sector.pk}'
+        h.post_edit(client, plan_admin, action, None, **{field: [first.pk]})
+
+        h.post_edit(client, plan_admin, action, None, **{field: [second.pk]})
+
+        assert any(row.startswith('Sector') for row in self.changes(client, action))
+
+    def test_choice_and_its_text_are_compared_separately(self, client, action, plan_admin, make_attribute_type):
+        risk = make_attribute_type(AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT, 'Risk')
+        small = AttributeTypeChoiceOptionFactory.create(type=risk, name='Small')
+        large = AttributeTypeChoiceOptionFactory.create(type=risk, name='Large')
+        choice_field = f'attribute_type_{risk.pk}_choice'
+        h.post_edit(client, plan_admin, action, None, **{choice_field: small.pk})
+
+        h.post_edit(client, plan_admin, action, None, **{choice_field: large.pk})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Risk')]
+        assert len(changes) == 1
+        assert 'choice' in changes[0]
+        assert 'Small' in changes[0]
+        assert 'Large' in changes[0]
 
 
 class TestComparingCategories:
