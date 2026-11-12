@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
+from bs4 import BeautifulSoup
+
 from actions.models import ActionContactPerson
 from actions.models.action import ActionModeratorApprovalTask
 from actions.tests.factories import ActionContactFactory, WorkflowFactory, WorkflowTaskFactory
@@ -55,6 +57,18 @@ def usage_url(action: Action) -> str:
 
 def history_url(action: Action) -> str:
     return _url('history', action.pk)
+
+
+def workflow_history_url(action: Action) -> str:
+    return _url('workflow_history', action.pk)
+
+
+def workflow_history_detail_url(action: Action, workflow_state_id: int) -> str:
+    return _url('workflow_history_detail', action.pk, workflow_state_id)
+
+
+def compare_url(action: Action, revision_a: int, revision_b: int) -> str:
+    return _url('revisions_compare', action.pk, revision_a, revision_b)
 
 
 def confirm_workflow_cancellation_url(action: Action) -> str:
@@ -166,3 +180,16 @@ def action_menu_names(response: HttpResponse) -> list[str]:
     if menu is None:
         return []
     return [item.name for item in (menu.default_item, *menu.menu_items) if item is not None]
+
+
+def status_side_panel_text(response: HttpResponse) -> str:
+    """Return the visible text of the edit page's status side panel."""
+    soup = BeautifulSoup(response.content.decode(), 'html.parser')
+    panel = soup.select_one('[data-side-panel="status"]')
+    assert panel is not None
+    return ' '.join(panel.get_text(' ').split())
+
+
+def table_rows(response: HttpResponse) -> list[str]:
+    soup = BeautifulSoup(response.content.decode(), 'html.parser')
+    return [' '.join(row.get_text(' ').split()) for row in soup.select('table tr')]

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.urls import reverse
 from reversion.models import Version
+from wagtail.admin.models import EditingSession
 
 import pytest
 
@@ -267,7 +268,7 @@ def test_history_page_lists_the_saves(client, moderated):
     response = client.get(h.history_url(action))
 
     assert response.status_code == 200
-    assert b'revisions/' not in response.content
+    assert b'/revert/' not in response.content
 
 
 def test_core_listing_shows_the_actions_of_the_active_plan(rf, plan):
@@ -306,3 +307,23 @@ def test_save_button_says_draft_only_where_saves_are_drafts(client, moderated, e
 
     assert save_button_label(client.get(h.create_url())) == 'Save'
     assert save_button_label(client.get(h.edit_url(action))) == edit_label
+
+
+@pytest.mark.parametrize('moderated', [False, True])
+def test_edit_page_tracks_who_else_is_editing(client, moderated):
+    plan = PlanFactory.create()
+    if moderated:
+        h.enable_moderation(plan)
+    action = ActionFactory.create(plan=plan)
+    first_user = h.make_plan_admin(plan)
+    second_user = h.make_plan_admin(plan)
+    h.get_edit_page(client, first_user, action)
+
+    response = h.get_edit_page(client, second_user, action)
+
+    sessions = EditingSession.objects.filter(object_id=str(action.pk))
+    assert {session.user for session in sessions} == {first_user, second_user}
+    ping_url = response.context['editing_sessions'].ping_url
+    ping = client.post(ping_url)
+    assert ping.status_code == 200
+    assert [other['user'] for other in ping.json()['other_sessions']] == [first_user.get_full_name() or str(first_user)]
