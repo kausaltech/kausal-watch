@@ -246,3 +246,42 @@ def test_plan_admin_cannot_write_contact_person_from_unrelated_organization(api_
     assert response.status_code == 403
     outsider.refresh_from_db()
     assert outsider.first_name == 'Original'
+
+
+def test_person_post_rejects_organization_outside_the_plan(api_client, person_list_url):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    unrelated_organization = OrganizationFactory.create()
+    api_client.force_login(admin_person.user)
+
+    response = api_client.post(person_list_url + f'?plan={plan.identifier}', data=_person_payload(unrelated_organization))
+
+    assert response.status_code == 400, response.content
+    assert 'organization' in response.json_data['0']
+    assert not Person.objects.filter(email='new.person@example.com').exists()
+
+
+def test_person_put_rejects_moving_person_to_organization_outside_the_plan(api_client, person_list_url):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    target = PersonFactory.create(organization=plan.organization)
+    unrelated_organization = OrganizationFactory.create()
+    api_client.force_login(admin_person.user)
+
+    response = api_client.put(
+        person_list_url + f'?plan={plan.identifier}',
+        data=[
+            {
+                'id': target.id,
+                'first_name': target.first_name,
+                'last_name': target.last_name,
+                'email': target.email,
+                'organization': unrelated_organization.pk,
+            }
+        ],
+    )
+
+    assert response.status_code == 400, response.content
+    assert 'organization' in response.json_data['0']
+    target.refresh_from_db()
+    assert target.organization == plan.organization

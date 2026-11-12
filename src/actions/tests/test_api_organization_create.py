@@ -256,3 +256,20 @@ def test_update_organization_preserves_primary_language_when_omitted(api_client,
     org = Organization.objects.get(pk=org_id)
     assert org.name == 'Renamed Org'
     assert org.primary_language == 'de'
+
+
+def test_delete_organization_requires_general_admin_of_the_requested_plan(api_client):
+    plan = PlanFactory.create()
+    organization = OrganizationFactory.create()
+    plan.related_organizations.add(organization)
+    # A general admin of another plan who is only a contact person in this one
+    other_plan = PlanFactory.create()
+    person = PersonFactory.create(organization=other_plan.organization, general_admin_plans=[other_plan])
+    ActionContactFactory.create(action__plan=plan, person=person)
+    api_client.force_login(person.user)
+
+    detail_url = reverse('organization-detail', kwargs={'pk': organization.pk})
+    response = api_client.delete(detail_url, QUERY_STRING=f'plan={plan.identifier}')
+
+    assert response.status_code == 403
+    assert Organization.objects.filter(pk=organization.pk).exists()

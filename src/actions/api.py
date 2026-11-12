@@ -1993,6 +1993,11 @@ class OrganizationPermission(WatchObjectPermissions):
 
     @override
     def check_permission(self, perm: str, user: User, view: APIView, obj: Model | None = None) -> bool:
+        # Every write needs a general admin of the plan the request names. Being one of some
+        # other plan is not enough, which is all the checks below would establish on their own.
+        assert isinstance(view, RequiredPlanQueryParamMixin)
+        if not user.is_general_admin_for_plan(view.get_plan()):
+            return False
         match perm:
             case 'orgs.change_organization':
                 if obj is None:
@@ -2095,10 +2100,23 @@ class PersonPermission(WatchObjectPermissions):
 
 
 class PersonSerializer(BasePersonSerializer):
+    _plan_organization_ids: set[int]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.context.get('authorized_for_plan') is None:
             self.fields.pop('email')
+
+    def validate_organization(self, value: Organization) -> Organization:
+        # A person may keep the organization they already have, but can only be placed in one of the plan's
+        if self._instance is not None and self._instance.organization_id == value.pk:
+            return value
+        if not hasattr(self, '_plan_organization_ids'):
+            plan: Plan = self.context['authorized_for_plan']
+            self._plan_organization_ids = set(Organization.objects.qs.available_for_plan(plan).values_list('id', flat=True))
+        if value.pk not in self._plan_organization_ids:
+            raise serializers.ValidationError(_('The organization is not available for the plan'))
+        return value
 
 
 @register_view
