@@ -1698,6 +1698,16 @@ msgstr "stat"
 msgid "details"
 msgstr "detaljer"
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous task"
+msgstr "kontinuerlig åtgärd"
+
+#: src/actions/models/action.py
+msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "förfallodatum"
@@ -3417,6 +3427,10 @@ msgstr "Slutdatumet kan inte vara före startdatumet"
 #: src/actions/validation.py
 msgid "The completion date can't be in the future"
 msgstr "Slutdatumet kan inte vara i framtiden"
+
+#: src/actions/validation.py
+msgid "Tasks that are not continuous must have a due date"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -7101,6 +7115,13 @@ msgid "indicator snapshots"
 msgstr "ögonblicksbild av åtgärder"
 
 #: src/reports/report_formatters.py
+#: src/reports/tests/test_task_assignees_export.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous"
+msgstr "kontinuerlig åtgärd"
+
+#: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Har målsättningar"
 
@@ -7177,6 +7198,13 @@ msgstr "Har åtgärdsidentifierare"
 #| msgid "due date"
 msgid "Due date"
 msgstr "förfallodatum"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Continuous Action"
+msgid "Continuous"
+msgstr "Kontinuerlig åtgärd"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py

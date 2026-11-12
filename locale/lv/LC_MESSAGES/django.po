@@ -1828,6 +1828,16 @@ msgstr "statuss"
 msgid "details"
 msgstr ""
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous task"
+msgstr "nepārtraukta rīcība"
+
+#: src/actions/models/action.py
+msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "termiņš"
@@ -3734,6 +3744,10 @@ msgstr ""
 #| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
 msgstr "Šīs rīcības pabeigšanas procentuālā daļa"
+
+#: src/actions/validation.py
+msgid "Tasks that are not continuous must have a due date"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -7795,6 +7809,13 @@ msgid "indicator snapshots"
 msgstr "rīcības momentuzņēmumi"
 
 #: src/reports/report_formatters.py
+#: src/reports/tests/test_task_assignees_export.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous"
+msgstr "nepārtraukta rīcība"
+
+#: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Ir mērķi"
 
@@ -7871,6 +7892,13 @@ msgstr "Ir rīcības identifikatori"
 #| msgid "due date"
 msgid "Due date"
 msgstr "termiņš"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "Continuous"
+msgstr "nepārtraukta rīcība"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
