@@ -82,7 +82,7 @@ if TYPE_CHECKING:
     from kausal_common.api.utils import RegisteredAPIView
     from kausal_common.users import UserOrAnon
 
-    from aplans.types import WatchAdminRequest, WatchAPIRequest
+    from aplans.types import WatchAPIRequest
 
     from actions.attributes import AttributeType as AttributeTypeWrapper, AttributeValue
     from actions.models.action import ActionQuerySet
@@ -2026,10 +2026,7 @@ class OrganizationSerializer(  # type: ignore[misc]
         }
 
     def create(self, validated_data):
-        plan = self.context.get('plan')
-        if plan is None:
-            request = cast('WatchAdminRequest', self.context.get('request'))
-            plan = request.get_active_admin_plan()
+        plan: Plan = self.context['plan']
         if not validated_data.get('primary_language'):
             validated_data['primary_language'] = plan.primary_language
         instance = super().create(validated_data)
@@ -2038,9 +2035,11 @@ class OrganizationSerializer(  # type: ignore[misc]
 
 
 @register_view
-class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet[Organization]):
+@extend_schema(parameters=[PLAN_QUERY_PARAMETER])
+class OrganizationViewSet(RequiredPlanQueryParamMixin, HandleProtectedErrorMixin, AuditLoggingBulkModelViewSet[Organization]):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    permission_classes = (OrganizationPermission,)
     filterset_fields = {
         'name': ('exact', 'in'),
     }
@@ -2053,44 +2052,14 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
     def put(self, request, *args, **kwargs):
         return self.bulk_update(request, *args, **kwargs)
 
-    def get_permissions(self):
-        if self.action == 'list':
-            return [AnonReadOnly()]
-        return [OrganizationPermission()]
-
-    def get_plan(self) -> Plan | None:
-        plan_identifier = self.request.query_params.get('plan', None)
-        if plan_identifier is None:
-            return None
-        try:
-            return Plan.objects.get(identifier=plan_identifier)
-        except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail='Plan not found') from None
-
-    def user_is_authorized_for_plan(self, plan: Plan) -> bool:
-        user = user_or_none(self.request.user)
-        return (
-            user is not None
-            and user.is_authenticated
-            and (
-                user.is_general_admin_for_plan(plan)
-                or user.is_contact_person_in_plan(plan)
-                or user.is_organization_admin_in_plan(plan)
-            )
-        )
-
-    def user_is_general_admin_for_plan(self, plan: Plan) -> bool:
-        user = user_or_none(self.request.user)
-        return user is not None and user.is_authenticated and user.is_general_admin_for_plan(plan)
-
     def get_serializer_context(self):
         context = dict(super().get_serializer_context())
-        plan = self.get_plan()
-        if plan is None:
+        if getattr(self, 'swagger_fake_view', False):
             return context
-        if not self.user_is_general_admin_for_plan(plan):
-            # Non-admin reads are still permitted (get_queryset gates them via
-            # user_is_authorized_for_plan); writes are not.
+        plan = self.get_plan()
+        user = user_or_none(self.request.user)
+        if user is None or not user.is_general_admin_for_plan(plan):
+            # Reads are open to everyone with a role in the plan; writes are not.
             if self.request.method not in permissions.SAFE_METHODS:
                 raise exceptions.PermissionDenied(detail='Not authorized')
             return context
@@ -2098,15 +2067,11 @@ class OrganizationViewSet(HandleProtectedErrorMixin, AuditLoggingBulkModelViewSe
         return context
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Organization.objects.none()
         # Order by `id`, not by the model's default `path`: bulk updates move nodes one at a
         # time, so the paths change while the queryset is being iterated.
-        queryset = super().get_queryset().order_by('id')
-        plan = self.get_plan()
-        if plan is None:
-            return queryset
-        if not self.user_is_authorized_for_plan(plan):
-            raise exceptions.PermissionDenied(detail='Not authorized')
-        return Organization.objects.qs.available_for_plan(plan).order_by('id')
+        return Organization.objects.qs.available_for_plan(self.get_plan()).order_by('id')
 
 
 class PersonPermission(WatchObjectPermissions):

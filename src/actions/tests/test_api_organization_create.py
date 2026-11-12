@@ -4,6 +4,8 @@ from django.urls import reverse
 
 import pytest
 
+from aplans.utils import RestrictedVisibilityModel
+
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
@@ -110,7 +112,7 @@ def test_create_organization_gets_primary_language_from_plan_query_param(api_cli
     assert plan.related_organizations.filter(pk=org.pk).exists()
 
 
-def test_create_organization_falls_back_to_active_admin_plan(api_client, organization_list_url):
+def test_create_organization_without_plan_returns_400(api_client, organization_list_url):
     plan = PlanFactory.create(primary_language='sv')
     admin_person = PersonFactory.create(
         organization=plan.organization,
@@ -122,10 +124,57 @@ def test_create_organization_falls_back_to_active_admin_plan(api_client, organiz
         organization_list_url,
         data={'name': 'Fallback Org', 'parent': None, 'left_sibling': None},
     )
-    assert response.status_code == 201, response.json_data
-    org = Organization.objects.get(pk=response.json_data['id'])
-    assert org.primary_language == 'sv'
-    assert plan.related_organizations.filter(pk=org.pk).exists()
+    assert response.status_code == 400, response.json_data
+    assert list(response.json_data.keys()) == ['plan']
+    assert not Organization.objects.filter(name='Fallback Org').exists()
+
+
+def test_organization_list_without_plan_returns_400(api_client, organization_list_url):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+
+    response = api_client.get(organization_list_url)
+    assert response.status_code == 400
+    assert list(response.json_data.keys()) == ['plan']
+
+    api_client.force_login(admin_person.user)
+    assert api_client.get(organization_list_url).status_code == 400
+
+
+def test_organization_detail_without_plan_returns_400(api_client):
+    plan = PlanFactory.create()
+    detail_url = reverse('organization-detail', kwargs={'pk': plan.organization.pk})
+
+    response = api_client.get(detail_url)
+    assert response.status_code == 400
+    assert list(response.json_data.keys()) == ['plan']
+
+
+def test_organization_detail_is_scoped_to_plan(api_client):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    unrelated_organization = OrganizationFactory.create()
+    api_client.force_login(admin_person.user)
+
+    detail_url = reverse('organization-detail', kwargs={'pk': plan.organization.pk})
+    response = api_client.get(detail_url, data={'plan': plan.identifier})
+    assert response.status_code == 200
+
+    detail_url = reverse('organization-detail', kwargs={'pk': unrelated_organization.pk})
+    response = api_client.get(detail_url, data={'plan': plan.identifier})
+    assert response.status_code == 404
+
+
+def test_organization_list_internal_plan_is_not_found_for_outsiders(api_client, organization_list_url):
+    internal_plan = PlanFactory.create(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    response = api_client.get(organization_list_url, data={'plan': internal_plan.identifier})
+    assert response.status_code == 404
+
+    other_admin = PersonFactory.create(general_admin_plans=[PlanFactory.create()])
+    api_client.force_login(other_admin.user)
+    response = api_client.get(organization_list_url, data={'plan': internal_plan.identifier})
+    assert response.status_code == 404
 
 
 def test_create_organization_explicit_language_overrides_plan_query_param(api_client, organization_list_url):
@@ -144,23 +193,6 @@ def test_create_organization_explicit_language_overrides_plan_query_param(api_cl
     assert response.status_code == 201, response.json_data
     org = Organization.objects.get(pk=response.json_data['id'])
     assert org.primary_language == 'de'
-
-
-def test_create_organization_explicit_language_overrides_active_admin_plan(api_client, organization_list_url):
-    plan = PlanFactory.create(primary_language='sv')
-    admin_person = PersonFactory.create(
-        organization=plan.organization,
-        general_admin_plans=[plan],
-    )
-    api_client.force_login(admin_person.user)
-
-    response = api_client.post(
-        organization_list_url,
-        data={'name': 'Explicit Org 2', 'parent': None, 'left_sibling': None, 'primary_language': 'en'},
-    )
-    assert response.status_code == 201, response.json_data
-    org = Organization.objects.get(pk=response.json_data['id'])
-    assert org.primary_language == 'en'
 
 
 def test_create_organization_rejects_invalid_language_choice(api_client, organization_list_url):
@@ -218,6 +250,7 @@ def test_update_organization_preserves_primary_language_when_omitted(api_client,
     response = api_client.patch(
         detail_url,
         data={'id': org_id, 'uuid': org_uuid, 'name': 'Renamed Org', 'parent': None, 'left_sibling': None},
+        QUERY_STRING=f'plan={plan.identifier}',
     )
     assert response.status_code == 200, response.json_data
     org = Organization.objects.get(pk=org_id)
