@@ -167,3 +167,14 @@ def test_details_saved_before_the_field_rename_are_shown(action, superuser, repo
     version.save()
 
     assert _rows(report, superuser)['Insulate the depot'][_('Details')] == 'Old text'
+
+
+def test_continuous_task_without_due_date(action, report):
+    ActionTaskFactory.create(action=action, name='Summer lunches', is_continuous=True, due_at=None)
+    ActionTaskFactory.create(action=action, name='Insulate the depot', due_at=datetime.date(2027, 1, 1))
+
+    rows = _rows(report, None)
+
+    assert rows['Summer lunches'][_('Continuous')] is True
+    assert rows['Summer lunches'][_('Due date')] is None
+    assert rows['Insulate the depot'][_('Continuous')] is False

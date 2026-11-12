@@ -11,7 +11,7 @@ from django.contrib.admin.utils import quote
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import BaseModelFormSet, ModelChoiceField
+from django.forms import BaseModelForm, BaseModelFormSet, ModelChoiceField
 from django.urls import path, re_path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
@@ -25,7 +25,7 @@ from wagtail.admin.panels import (
     MultiFieldPanel,
     ObjectList,
 )
-from wagtail.admin.panels.base import Panel
+from wagtail.admin.panels.base import Panel, get_form_for_model
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.action_menu import SnippetActionMenu
@@ -84,7 +84,7 @@ from .models.action import (
     ActionResponsibleParty,
     ActionTask,
 )
-from .validation import get_action_dates_error, get_task_completion_date_error
+from .validation import TASK_DUE_DATE_REQUIRED_MESSAGE, get_action_dates_error, get_task_completion_date_error
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -175,7 +175,22 @@ MODELS_WITH_ROLES: list[tuple[type[ModelWithRole[Any]], str, type[Model], str]] 
 ]
 
 
-class ActionAdminForm(WagtailAdminModelForm[Action]):
+class CustomizedFieldAccessMixin[M: Model](BaseModelForm[M]):
+    """Helpers for a model form whose fields field customization may leave out or disable."""
+
+    def _is_field_editable(self, field_name: str) -> bool:
+        """Return whether the form lets the user edit the field, i.e., field customization neither hid nor disabled it."""
+        field = self.fields.get(field_name)
+        return field is not None and not field.disabled
+
+    def _get_value(self, field_name: str) -> Any:
+        """Return the field's submitted value, or the stored one if the form doesn't have the field."""
+        if field_name in self.fields:
+            return self.cleaned_data.get(field_name)
+        return getattr(self.instance, field_name)
+
+
+class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[Action]):
     def __init__(self, *args, **kwargs):
         self.initial_plan_id = kwargs.pop('initial_plan_id', None)
         super().__init__(*args, **kwargs)
@@ -244,17 +259,6 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
                     _('%s has been added to the action in the meantime. Please reload the page and try again.')
                     % getattr(item, wrapped_object_attr)
                 )
-
-    def _is_field_editable(self, field_name: str) -> bool:
-        """Return whether the form lets the user edit the field, i.e., field customization neither hid nor disabled it."""
-        field = self.fields.get(field_name)
-        return field is not None and not field.disabled
-
-    def _get_value(self, field_name: str) -> Any:
-        """Return the field's submitted value, or the stored one if the form doesn't have the field."""
-        if field_name in self.fields:
-            return self.cleaned_data.get(field_name)
-        return getattr(self.instance, field_name)
 
     def _validate_dates(self) -> None:
         """
@@ -969,6 +973,44 @@ class PlanScopedAssignmentForm(WagtailAdminModelForm):
             organization_field.queryset = Organization.objects.filter(allowed)
 
 
+class ActionTaskForm(CustomizedFieldAccessMixin[ActionTask], WagtailAdminModelForm[ActionTask]):
+    """
+    Child form for an action task, which requires a due date unless the task is continuous.
+
+    The `ActionTask` check constraint can't do this for the form: Django skips a constraint when the form
+    leaves out one of its fields, which field customization may do to either of them. The error goes on
+    the field the user can change: the due date if possible, otherwise the continuity flag.
+    """
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if 'due_at' in self.errors:
+            # The field has an error of its own already
+            return cleaned_data
+        if self._get_value('is_continuous') or self._get_value('due_at') is not None:
+            return cleaned_data
+        field_name = next((name for name in ('due_at', 'is_continuous') if self._is_field_editable(name)), None)
+        self.add_error(field_name, TASK_DUE_DATE_REQUIRED_MESSAGE)
+        return cleaned_data
+
+
+class ActionTaskInlinePanel(CondensedInlinePanel[Action, ActionTask]):
+    """Inline panel for an action's tasks, with `ActionTaskForm` as the child form."""
+
+    def get_form_options(self):
+        options = super().get_form_options()
+        # Like `InlinePanel.get_form_options()`, which sets a child form of its own if there are fields to defer
+        # the `required` check on, and those must not get lost.
+        meta_options = {}
+        defer_required_on_fields = self.child_edit_handler.get_form_options().get('defer_required_on_fields')
+        if defer_required_on_fields:
+            meta_options['defer_required_on_fields'] = defer_required_on_fields
+        options['formsets'][self.relation_name]['form'] = get_form_for_model(
+            ActionTask, form_class=ActionTaskForm, **meta_options
+        )
+        return options
+
+
 class TaskAssignmentInlinePanel(InlinePanel):
     """Inline panel for a task assignment relation, with its child form scoped to `plan`."""
 
@@ -1055,6 +1097,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
 
     task_panels: list[Panel[Any]] = [
         CustomizableBuiltInFieldPanel('name'),
+        CustomizableBuiltInFieldPanel('is_continuous'),
         CustomizableBuiltInFieldPanel('due_at'),
         CustomizableBuiltInFieldPanel('date_format'),
         CustomizableBuiltInFieldPanel('state'),
@@ -1308,7 +1351,7 @@ class ActionAdmin(AplansModelAdmin[Action]):
             all_tabs += [
                 ObjectList(
                     [
-                        CondensedInlinePanel(
+                        ActionTaskInlinePanel(
                             'tasks',
                             panels=task_panels,
                         ),

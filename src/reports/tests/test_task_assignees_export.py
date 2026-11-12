@@ -9,6 +9,7 @@ from typing import Any
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
+from django.utils.translation import gettext as _
 
 import pytest
 
@@ -83,6 +84,16 @@ def test_export_of_a_task_without_assignees_is_unchanged(plan, action, user, rep
 
     assert value.startswith('• Lonely task [')
     assert '—' not in value
+
+
+def test_export_of_a_continuous_task_without_due_date(plan, action, user, report_with_tasks):
+    ActionTaskFactory.create(action=action, name='Summer lunches', state=ActionTask.IN_PROGRESS, is_continuous=True, due_at=None)
+
+    report_with_tasks.mark_as_complete(user)
+    value = _format_tasks(report_with_tasks, action)
+
+    in_progress = dict(ActionTask.STATES)[ActionTask.IN_PROGRESS]
+    assert value == f'• Summer lunches [{in_progress}, {_("continuous")}]'
 
 
 def test_export_skips_an_organization_that_left_the_plan(plan, action, user, report_with_tasks):

@@ -48,7 +48,7 @@ from actions.models.attributes import (
     AttributeTypeChoiceOption,
     ModelWithAttributes,
 )
-from actions.validation import get_action_dates_error, get_task_completion_date_error
+from actions.validation import TASK_DUE_DATE_REQUIRED_MESSAGE, get_action_dates_error, get_task_completion_date_error
 from admin_site.models import BuiltInFieldCustomization
 from audit_logging.models import PlanScopedModel, PlanScopedModelLogEntry
 from orgs.models import Organization
@@ -2383,6 +2383,11 @@ class ActionTaskSerializer(
             raise serializers.ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if state == ActionTask.COMPLETED and completed_at is None:
             raise serializers.ValidationError({'completed_at': _('Completed tasks must have a completion date')})
+        # `_instance`, not `instance`: in a bulk update, `instance` is the whole queryset
+        is_continuous = data.get('is_continuous', getattr(self._instance, 'is_continuous', False))
+        due_at = data.get('due_at', getattr(self._instance, 'due_at', None))
+        if not is_continuous and due_at is None:
+            raise serializers.ValidationError({'due_at': TASK_DUE_DATE_REQUIRED_MESSAGE})
         self._validate_completion_date(data)
         for relation_name in TASK_ASSIGNMENT_FIELDS:
             self._validate_assignments(data, relation_name)

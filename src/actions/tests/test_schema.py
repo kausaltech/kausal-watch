@@ -1302,7 +1302,7 @@ def test_action_task_node(graphql_client_query_data):
                         # graphene_django puts choices into upper case in converter.convert_choice_name()
                         'state': action_task.state.upper(),
                         'details': action_task.details,
-                        'dueAt': action_task.due_at.isoformat(),
+                        'dueAt': str(action_task.due_at),
                         'completedAt': None,
                         # 'completedBy': action_task.completed_by,
                         'createdAt': action_task.created_at.isoformat(),

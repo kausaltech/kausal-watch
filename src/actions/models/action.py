@@ -70,6 +70,7 @@ from users.models import User
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
 from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
+from ..validation import TASK_DUE_DATE_REQUIRED_MESSAGE
 from .action_deps import ActionDependencyRelationship
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from .features import PlanFeatures
@@ -2079,7 +2080,14 @@ class ActionTask(RichTextEditorCompatibleMixin, ActionRelatedModelTransModelMixi
     name = models.CharField(max_length=500, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
     details = RichTextField[str | None, str | None](null=True, blank=True, verbose_name=_('details'))
+    is_continuous = models.BooleanField(
+        default=False,
+        verbose_name=_('continuous task'),
+        help_text=_('Set if the task is ongoing or repeating. Continuous tasks do not need a due date.'),
+    )
     due_at = models.DateField(
+        null=True,
+        blank=True,
         verbose_name=_('due date'),
         help_text=_('The date by which the task should be completed (deadline)'),
     )
@@ -2127,6 +2135,7 @@ class ActionTask(RichTextEditorCompatibleMixin, ActionRelatedModelTransModelMixi
         'name',
         'state',
         'details',
+        'is_continuous',
         'due_at',
         'date_format',
         'completed_at',
@@ -2149,6 +2158,13 @@ class ActionTask(RichTextEditorCompatibleMixin, ActionRelatedModelTransModelMixi
             models.CheckConstraint(
                 condition=Q(completed_at__isnull=True) | Q(state='completed'),
                 name='%(app_label)s_%(class)s_completed_if_completed_at',
+            ),
+            # Only continuous tasks may go without a due date. This is not checked in `clean()`, as that
+            # can't tell which of the two fields the form shows; the admin's `ActionTaskForm` does that.
+            models.CheckConstraint(
+                condition=Q(is_continuous=True) | Q(due_at__isnull=False),
+                name='%(app_label)s_%(class)s_due_at_unless_continuous',
+                violation_error_message=TASK_DUE_DATE_REQUIRED_MESSAGE,
             ),
         ]
 

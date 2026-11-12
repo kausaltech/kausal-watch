@@ -796,7 +796,7 @@ class ActionDetailsTasks(ObjectBaseModel):
     id: str
     name: str
     state: ActionTaskState
-    due_at: str = Field(alias='dueAt')
+    due_at: str | None = Field(default=None, alias='dueAt')
     'The date by which the task should be completed (deadline)'
     completed_at: str | None = Field(default=None, alias='completedAt')
     'The date when the task was completed'

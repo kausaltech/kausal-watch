@@ -95,6 +95,32 @@ def test_not_enough_tasks():
     assert len(mail.outbox) == 1
 
 
+@pytest.mark.parametrize('notification_type', [NotificationType.TASK_LATE, NotificationType.TASK_DUE_SOON])
+def test_continuous_task_without_due_date_gets_no_deadline_notification(notification_type):
+    plan = PlanFactory.create()
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=notification_type.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    task = ActionTaskFactory.create(action__plan=plan, is_continuous=True, due_at=None)
+    ActionContactFactory.create(action=task.action)
+    ClientPlanFactory.create(plan=plan)
+    engine = NotificationEngine(plan, only_type=notification_type.identifier, now=now)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 0
+
+
+def test_continuous_task_without_due_date_counts_as_enough_tasks():
+    plan = PlanFactory.create()
+    ClientPlanFactory.create(plan=plan)
+    AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.NOT_ENOUGH_TASKS.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0, tzinfo=UTC))
+    action = ActionFactory.create(plan=plan)
+    ActionContactFactory.create(action=action)
+    ActionTaskFactory.create(action=action, is_continuous=True, due_at=None)
+    engine = NotificationEngine(plan, only_type=NotificationType.NOT_ENOUGH_TASKS.identifier, now=now)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 0
+
+
 def test_updated_indicator_values_late():
     plan = PlanFactory.create()
     AutomaticNotificationTemplateFactory(base__plan=plan, type=NotificationType.UPDATED_INDICATOR_VALUES_LATE.identifier)

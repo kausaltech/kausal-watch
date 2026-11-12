@@ -339,7 +339,7 @@ class TestTaskApi:
             'id': task.pk,
             'action': task.action_id,
             'name': task.name,
-            'due_at': task.due_at.isoformat(),
+            'due_at': str(task.due_at),
             'state': task.state,
             **fields,
         }

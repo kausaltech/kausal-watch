@@ -1,6 +1,8 @@
 import logging
 from datetime import timedelta
 
+from django.db.models import Q
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,8 @@ def determine_basic_info(action):
 def determine_future_task(action):
     now = action.plan.now_in_local_timezone()
     year_from_now = now + timedelta(days=365)
-    if not action.tasks.active().filter(due_at__lte=year_from_now).exists():
+    # A continuous task without a due date is ongoing work, which counts as planned
+    if not action.tasks.active().filter(Q(due_at__lte=year_from_now) | Q(due_at__isnull=True)).exists():
         return False
     return True
 
