@@ -36,7 +36,8 @@ from wagtail.admin.utils import get_latest_str
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.admin.widgets.button import ListingButton
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import UnpublishView
+from wagtail.snippets.side_panels import SnippetStatusSidePanel
+from wagtail.snippets.views.snippets import UnpublishView, WorkflowHistoryDetailView, WorkflowHistoryView
 
 from dal import autocomplete, forward as dal_forward
 
@@ -53,7 +54,14 @@ from actions.models.plan import Plan
 from admin_site.field_customization import collect_customizable_field_names, register_customizable_fields
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.utils import FieldLabelRenderer, admin_req
-from admin_site.viewsets import InstancePermissionCheckedMixin, WatchCreateView, WatchEditView, WatchIndexView, WatchViewSet
+from admin_site.viewsets import (
+    InstancePermissionCheckedMixin,
+    WatchCreateView,
+    WatchEditView,
+    WatchIndexView,
+    WatchRevisionsCompareView,
+    WatchViewSet,
+)
 from admin_site.wagtail import (
     AdminOnlyPanel,
     AplansTabbedInterface,
@@ -857,11 +865,20 @@ class ActionEditView(
         with ctx_instance.activate(self.object):
             return _get_action_viewset().build_edit_handler(instance_being_edited=self.object).bind_to_model(Action)
 
-    def get_side_panels(self):
-        return MediaContainer()
+    def get_lock_context(self):
+        context = super().get_lock_context()
+        if context:
+            # Locking by hand is not offered for actions
+            context['user_can_lock'] = False
+            context['user_can_unlock'] = False
+        return context
 
-    def get_editing_sessions(self):
-        return None
+    def get_side_panels(self):
+        side_panels = super().get_side_panels()
+        for side_panel in side_panels:
+            if isinstance(side_panel, SnippetStatusSidePanel):
+                side_panel.locking_enabled = self.locking_enabled
+        return side_panels
 
     def get_available_actions(self):
         actions = super().get_available_actions()
@@ -1086,16 +1103,34 @@ class ActionUnpublishView(InstancePermissionCheckedMixin, UnpublishView):
     pass
 
 
+class ActionWorkflowHistoryView(InstancePermissionCheckedMixin, WorkflowHistoryView):
+    pass
+
+
+class ActionWorkflowHistoryDetailView(InstancePermissionCheckedMixin, WorkflowHistoryDetailView):
+    pass
+
+
+class ActionRevisionsCompareView(WatchRevisionsCompareView[Action]):
+    def get_edit_handler(self):
+        with ctx_instance.activate(self.object):
+            return _get_action_viewset().build_edit_handler(instance_being_edited=self.object).bind_to_model(Action)
+
+    def dispatch(self, request, *args, **kwargs):
+        with ctx_instance.activate(self.object):
+            response = super().dispatch(request, *args, **kwargs)
+            if hasattr(response, 'render'):
+                response = response.render()
+            return response
+
+
 # Views of Wagtail's snippet viewset that are not offered for actions
 DISABLED_URL_NAMES = frozenset({
     'lock',
     'unlock',
     'revisions_revert',
-    'revisions_compare',
     'revisions_unschedule',
     'workflow_action',
-    'workflow_history',
-    'workflow_history_detail',
 })
 
 
@@ -1114,6 +1149,9 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
     add_view_class = ActionCreateView
     edit_view_class = ActionEditView
     unpublish_view_class = ActionUnpublishView
+    revisions_compare_view_class = ActionRevisionsCompareView
+    workflow_history_view_class = ActionWorkflowHistoryView
+    workflow_history_detail_view_class = ActionWorkflowHistoryDetailView
     bulk_approve_view_class = BulkApproveView
 
     # The form is built per request in `build_edit_handler()`; this one only serves the registration
@@ -1401,18 +1439,14 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
         return qs
 
     def get_common_view_kwargs(self, **kwargs):
-        # Locking by hand, reverting, comparing and scheduling are not offered for actions
+        # Locking by hand, reverting and scheduling are not offered for actions
         return super().get_common_view_kwargs(**{
             'lock_url_name': None,
             'unlock_url_name': None,
             'revisions_revert_url_name': None,
-            'revisions_compare_url_name': None,
             'revisions_unschedule_url_name': None,
             **kwargs,
         })
-
-    def get_edit_view_kwargs(self, **kwargs):
-        return {**super().get_edit_view_kwargs(**kwargs), 'workflow_history_url_name': None}
 
     @property
     def mark_action_as_complete_view(self):

@@ -423,3 +423,89 @@ class TestPublishRights:
 
         action.refresh_from_db()
         assert not action.live
+
+
+class TestModerationStatus:
+    def test_side_panel_tells_who_last_published(self, client, action, plan_admin):
+        h.post_edit(client, plan_admin, action, 'publish', name='New name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, plan_admin, action))
+
+        assert 'Live' in panel
+        assert str(plan_admin) in panel or plan_admin.get_full_name() in panel
+
+    def test_editor_sees_the_comment_after_changes_were_requested(self, client, action, editor, moderator):
+        submit(client, editor, action)
+        h.post_workflow_action(client, moderator, action, 'reject', {'comment': 'Please fix the heading'})
+
+        response = h.get_edit_page(client, editor, action)
+
+        assert 'Changes requested' in h.status_side_panel_text(response)
+        assert 'Please fix the heading' in response.content.decode()
+
+    def test_side_panel_does_not_mention_locking_without_moderation(self, client):
+        action = ActionFactory.create()
+        admin = h.make_plan_admin(action.plan)
+        h.post_edit(client, admin, action, name='New name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, admin, action))
+
+        assert 'Live' in panel
+        assert 'Locking' not in panel
+
+    def test_side_panel_offers_no_lock_switch_even_to_a_superuser(self, client, plan, action, editor):
+        superuser = h.make_superuser(plan)
+
+        unlocked = h.status_side_panel_text(h.get_edit_page(client, superuser, action))
+        submit(client, editor, action)
+        in_moderation = h.status_side_panel_text(h.get_edit_page(client, superuser, action))
+
+        assert 'Anyone can edit this action' in unlocked
+        assert 'lock it' not in unlocked
+        assert 'Locked by workflow' in in_moderation
+        assert 'lock it' not in in_moderation
+
+    def test_workflow_history_lists_the_moderation_rounds(self, client, action, editor, moderator):
+        submit(client, editor, action)
+        h.post_workflow_action(client, moderator, action, 'reject', {'comment': 'Please fix the heading'})
+        state = action.workflow_states.get()
+
+        history = client.get(h.workflow_history_url(action))
+        detail = client.get(h.workflow_history_detail_url(action, state.pk))
+
+        assert history.status_code == 200
+        assert detail.status_code == 200
+        assert 'Please fix the heading' in detail.content.decode()
+
+    @pytest.mark.parametrize(
+        'make_user',
+        [
+            lambda action: h.make_contact_person(ActionFactory.create(plan=action.plan)),
+            lambda _action: h.make_plan_admin(PlanFactory.create()),
+        ],
+        ids=['contact_person_of_another_action', 'admin_of_another_plan'],
+    )
+    def test_outsider_cannot_open_the_workflow_history_or_comparison(self, client, action, editor, moderator, make_user):
+        h.post_edit(client, editor, action, name='First draft')
+        submit(client, editor, action)
+        state = action.workflow_states.get()
+        first, second = action.revisions.order_by('pk')
+        client.force_login(make_user(action))
+
+        for url in (
+            h.workflow_history_url(action),
+            h.workflow_history_detail_url(action, state.pk),
+            h.compare_url(action, first.pk, second.pk),
+        ):
+            assert client.get(url).status_code != 200
+
+    def test_comparison_shows_what_changed_between_two_drafts(self, client, action, editor):
+        h.post_edit(client, editor, action, name='First draft')
+        h.post_edit(client, editor, action, name='Second draft')
+        first, second = action.revisions.order_by('pk')
+
+        response = client.get(h.compare_url(action, first.pk, second.pk))
+
+        assert response.status_code == 200
+        changes = h.table_rows(response)
+        assert any(row.startswith('Name') and 'First' in row and 'Second' in row for row in changes)
