@@ -524,23 +524,30 @@ class PersonIndexView(WatchIndexView[Person]):
         columns: list[Column] = [
             HTMLColumn('avatar', label='', accessor=avatar),
             HTMLColumn('cannot_access_admin_warning', label='', accessor=cannot_access_admin_warning),
-            HTMLColumn('email', label=_('email address'), sort_key='email', accessor=lambda obj: link_to_edit(obj, obj.email)),
+            HTMLColumn(
+                'email', label=capfirst(_('email address')), sort_key='email', accessor=lambda obj: link_to_edit(obj, obj.email)
+            ),
             HTMLColumn(
                 'first_name',
-                label=_('first name'),
+                label=capfirst(_('first name')),
                 sort_key='first_name',
                 accessor=lambda obj: link_to_edit(obj, obj.first_name),
             ),
             HTMLColumn(
-                'last_name', label=_('last name'), sort_key='last_name', accessor=lambda obj: link_to_edit(obj, obj.last_name)
+                'last_name',
+                label=capfirst(_('last name')),
+                sort_key='last_name',
+                accessor=lambda obj: link_to_edit(obj, obj.last_name),
             ),
             HTMLColumn('title', label=capfirst(Person._meta.get_field('title').verbose_name), sort_key='title'),
-            HTMLColumn('organization', label=_('organization'), sort_key='organization__name', accessor=organization),
+            HTMLColumn('organization', label=capfirst(_('organization')), sort_key='organization__name', accessor=organization),
             HTMLColumn('role', label=_('Role'), sort_key='role', accessor=role),
         ]
         if user.is_general_admin_for_plan(plan):
             columns.append(
-                HTMLColumn('last_logged_in', label=_('last login'), sort_key='user__last_login', accessor=last_logged_in)
+                HTMLColumn(
+                    'last_logged_in', label=capfirst(_('last login')), sort_key='user__last_login', accessor=last_logged_in
+                )
             )
             columns.append(
                 BooleanColumn(
@@ -555,14 +562,14 @@ class PersonIndexView(WatchIndexView[Person]):
             columns.append(
                 HTMLColumn(
                     'contact_for_actions',
-                    label=_('contact for actions'),
+                    label=capfirst(_('contact for actions')),
                     accessor=lambda obj: '; '.join([smart_truncate(str(act), 40) for act in obj.plan_contact_for_actions]),
                 )
             )
             columns.append(
                 HTMLColumn(
                     'contact_for_indicators',
-                    label=_('contact for indicators'),
+                    label=capfirst(_('contact for indicators')),
                     accessor=lambda obj: '; '.join([smart_truncate(str(ind), 40) for ind in obj.plan_contact_for_indicators]),
                 )
             )
