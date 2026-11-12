@@ -1786,14 +1786,12 @@ msgid "details"
 msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous task"
-msgstr "acción continua"
+msgstr "tarea continua"
 
 #: src/actions/models/action.py
 msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
-msgstr ""
+msgstr "Establecer si la tarea es continua o recurrente. Las tareas continuas no necesitan fecha de vencimiento."
 
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
@@ -3674,7 +3672,7 @@ msgstr "La fecha de finalización no puede estar en el futuro"
 
 #: src/actions/validation.py
 msgid "Tasks that are not continuous must have a due date"
-msgstr ""
+msgstr "Las tareas que no son continuas deben tener una fecha de vencimiento"
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -7687,10 +7685,8 @@ msgstr "instantáneas de la acción"
 
 #: src/reports/report_formatters.py
 #: src/reports/tests/test_task_assignees_export.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous"
-msgstr "acción continua"
+msgstr "continua"
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7772,10 +7768,8 @@ msgstr "fecha de vencimiento"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Continuous Action"
 msgid "Continuous"
-msgstr "Acción continua"
+msgstr "Continua"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py

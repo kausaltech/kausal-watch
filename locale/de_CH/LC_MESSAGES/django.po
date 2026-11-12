@@ -1719,10 +1719,8 @@ msgid "details"
 msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous task"
-msgstr "laufende Massnahme"
+msgstr ""
 
 #: src/actions/models/action.py
 msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
@@ -7360,10 +7358,8 @@ msgstr ""
 
 #: src/reports/report_formatters.py
 #: src/reports/tests/test_task_assignees_export.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous"
-msgstr "laufende Massnahme"
+msgstr ""
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7435,10 +7431,8 @@ msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Continuous Action"
 msgid "Continuous"
-msgstr "laufende Massnahme"
+msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
