@@ -1738,17 +1738,6 @@ class ActionResponsibleParty(OrderedModel, ModelWithRole['ActionResponsibleParty
     def filter_siblings(self, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         return qs.filter(action=self.action)
 
-    def fix_action_draft_after_deletion(self):
-        # This should only be called after self just got deleted
-        revision = self.action.latest_revision
-        if not revision:
-            return
-        assert isinstance(revision, Revision)
-        for acp_dict in revision.content.get('responsible_parties', []):
-            if acp_dict.get('pk') == self.pk:
-                acp_dict['pk'] = None
-        revision.save()
-
     @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> Sequence[Role | None]:
         is_contact_person = (
@@ -1837,17 +1826,6 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
 
     def is_moderator(self) -> bool:
         return self.role == self.Role.MODERATOR
-
-    def fix_action_draft_after_deletion(self):
-        # This should only be called after self just got deleted
-        revision = self.action.latest_revision
-        if not revision:
-            return
-        assert isinstance(revision, Revision)
-        for acp_dict in revision.content.get('contact_persons', []):
-            if acp_dict.get('pk') == self.pk:
-                acp_dict['pk'] = None
-        revision.save()
 
     @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> Sequence[Role]:
@@ -2284,27 +2262,6 @@ class ActionTask(RichTextEditorCompatibleMixin, ActionRelatedModelTransModelMixi
         }
 
 
-def _fix_task_child_draft_after_deletion(child: ActionTaskResponsibleParty | ActionTaskContactPerson, relation_name: str) -> None:
-    """
-    Drop a deleted task child's pk from the action's draft so publishing recreates it.
-
-    Mirrors `ActionResponsibleParty.fix_action_draft_after_deletion()` one level down: these rows live
-    under `content['tasks'][i][relation_name]`, not at the top level of the revision content.
-    """
-    revision = child.task.action.latest_revision
-    if not revision:
-        return
-    assert isinstance(revision, Revision)
-    changed = False
-    for task_dict in revision.content.get('tasks', []):
-        for child_dict in task_dict.get(relation_name, []):
-            if child_dict.get('pk') == child.pk:
-                child_dict['pk'] = None
-                changed = True
-    if changed:
-        revision.save()
-
-
 @reversion.register()
 class ActionTaskResponsibleParty(models.Model):
     """An organization responsible for carrying out an action task."""
@@ -2344,10 +2301,6 @@ class ActionTaskResponsibleParty(models.Model):
 
     def get_value(self):
         return self.organization.name
-
-    def fix_action_draft_after_deletion(self):
-        # This should only be called after self just got deleted
-        _fix_task_child_draft_after_deletion(self, 'responsible_parties')
 
 
 @reversion.register()
@@ -2389,10 +2342,6 @@ class ActionTaskContactPerson(models.Model):
 
     def get_value(self):
         return str(self.person)
-
-    def fix_action_draft_after_deletion(self):
-        # This should only be called after self just got deleted
-        _fix_task_child_draft_after_deletion(self, 'contact_persons')
 
 
 class ActionImpact(PlanRelatedModelWithRevision, OrderedModel):
