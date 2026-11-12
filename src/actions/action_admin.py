@@ -878,6 +878,8 @@ class ActionEditView(
         for side_panel in side_panels:
             if isinstance(side_panel, SnippetStatusSidePanel):
                 side_panel.locking_enabled = self.locking_enabled
+                # The reference index does not cover references between actions
+                side_panel.usage_url = None
         return side_panels
 
     def get_available_actions(self):

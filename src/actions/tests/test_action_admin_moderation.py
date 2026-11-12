@@ -462,6 +462,11 @@ class TestModerationStatus:
         assert 'Locked by workflow' in in_moderation
         assert 'lock it' not in in_moderation
 
+    def test_side_panel_has_no_usage_count(self, client, action, plan_admin):
+        panel = h.status_side_panel_text(h.get_edit_page(client, plan_admin, action))
+
+        assert 'Used' not in panel
+
     def test_workflow_history_lists_the_moderation_rounds(self, client, action, editor, moderator):
         submit(client, editor, action)
         h.post_workflow_action(client, moderator, action, 'reject', {'comment': 'Please fix the heading'})
