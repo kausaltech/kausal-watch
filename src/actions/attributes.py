@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import re
 import typing
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -8,11 +10,15 @@ from typing import Any, Generic, TypeVar, cast
 
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import ForeignKey, Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.compare import diff_text
 from wagtail.admin.panels import FieldPanel, field_panel
+from wagtail.fields import RichTextField
 from wagtail.models import DraftStateMixin, RevisionMixin
+from wagtail.utils.text import text_from_html
 
 from dal import autocomplete, forward as dal_forward
 from loguru import logger
@@ -25,6 +31,8 @@ import actions.models.attributes as models
 from admin_site.utils import FieldLabelRenderer
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Hashable
+
     from django.db.models import Field, QuerySet
 
     from aplans.cache import PlanSpecificCache
@@ -33,6 +41,9 @@ if typing.TYPE_CHECKING:
     from copying.main import CloneVisitor
     from reports.types import SerializedAttributeVersion, SerializedVersion
     from users.models import User
+
+
+EMPTY_RICH_TEXT = re.compile(r'(?:\s|<p(?:\s[^>]*)?>|</p>|<br\s*/?>)*')
 
 
 class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
@@ -89,8 +100,108 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
             with translation.override(self.panel.language):
                 return get_value()
 
+        def get_comparison(self):
+            return [functools.partial(AttributeComparison, self.panel)]
+
     def format_value_for_display(self, value):
         return value()
+
+    def get_revision_value(self, obj: M) -> tuple[Hashable, str]:
+        """
+        Return the attribute's value in a revision of the object.
+
+        The first item identifies the value for telling whether it changed, the second is its text for display.
+        Choices are identified by the option or categories chosen, as two of them can have the same name.
+        """
+        attribute_value = self.attribute_type.get_draft_value(getattr(obj, 'draft_attributes', None))
+        if attribute_value is None:
+            # The live object has its attributes in the database, and a draft that leaves out an attribute type it
+            # couldn't edit keeps the stored value
+            return self._get_committed_value(obj)
+        if not attribute_value.should_exist_in_database():
+            return None, ''
+        if self._is_choice_field():
+            option = getattr(attribute_value, 'option', None)
+            return (option.pk if option else None), str(option or '')
+        text_vals: dict[str, str] | None = getattr(attribute_value, 'text_vals', None)
+        if text_vals is not None:
+            # Each language has a panel of its own, so no falling back to another language here
+            key = f'text_{self.language}' if self.language else 'text'
+            text = self._normalize_text(text_vals.get(key) or '')
+            return text or None, text
+        display = str(attribute_value.instantiate_attribute(self.attribute_type, obj))
+        if isinstance(attribute_value, OrderedChoiceAttributeValue):
+            return (attribute_value.option.pk if attribute_value.option else None), display
+        if isinstance(attribute_value, CategoryChoiceAttributeValue):
+            return frozenset(category.pk for category in attribute_value.categories), display
+        if isinstance(attribute_value, NumericAttributeValue):
+            return attribute_value.value, display
+        return display, display
+
+    def _get_committed_value(self, obj: M) -> tuple[Hashable, str]:
+        attribute = self.attribute_type.get_attributes(obj).first()
+        if attribute is None:
+            return None, ''
+        if self._is_choice_field():
+            return getattr(attribute, 'choice_id', None), str(getattr(attribute, 'choice', None) or '')
+        if self._get_text_field() is not None:
+            key = f'text_{self.language}' if self.language else 'text'
+            text = self._normalize_text(getattr(attribute, key, None) or '')
+            return text or None, text
+        display = str(attribute)
+        if isinstance(attribute, models.AttributeChoice):
+            return attribute.choice_id, display
+        if isinstance(attribute, models.AttributeCategoryChoice):
+            return frozenset(category.pk for category in attribute.categories.all()), display
+        if isinstance(attribute, models.AttributeNumericValue):
+            return attribute.value, display
+        return display, display
+
+    def _normalize_text(self, text: str) -> str:
+        if self.stores_rich_text() and EMPTY_RICH_TEXT.fullmatch(text):
+            # An empty editor saves an empty paragraph, which is no content either
+            return ''
+        return text
+
+    def _get_text_field(self) -> Field | None:
+        attribute_model = getattr(self.attribute_type, 'ATTRIBUTE_MODEL', None)
+        if attribute_model is None:
+            return None
+        try:
+            return attribute_model._meta.get_field('text')
+        except FieldDoesNotExist:
+            return None
+
+    def _is_choice_field(self) -> bool:
+        return self.field_name == getattr(self.attribute_type, 'choice_form_field_name', None)
+
+    def stores_rich_text(self) -> bool:
+        # The choice of an optional choice with text is a plain label, although the text beside it is rich
+        return not self._is_choice_field() and isinstance(self._get_text_field(), RichTextField)
+
+
+class AttributeComparison:
+    """Compare the value of an attribute between two revisions, for Wagtail's revision comparison."""
+
+    is_field = True
+    is_child_relation = False
+
+    def __init__(self, panel: AttributeFieldPanel[Any], obj_a: models.ModelWithAttributes, obj_b: models.ModelWithAttributes):
+        self.panel = panel
+        # Rich text is compared with its markup, so that a change in formatting alone counts as a change
+        self.key_a, self.val_a = panel.get_revision_value(obj_a)
+        self.key_b, self.val_b = panel.get_revision_value(obj_b)
+
+    def field_label(self) -> str:
+        return str(self.panel.heading)
+
+    def htmldiff(self) -> str:
+        if self.panel.stores_rich_text():
+            return diff_text(text_from_html(self.val_a), text_from_html(self.val_b)).to_html()
+        return diff_text(self.val_a, self.val_b).to_html()
+
+    def has_changed(self) -> bool:
+        return self.key_a != self.key_b
 
 
 @dataclass

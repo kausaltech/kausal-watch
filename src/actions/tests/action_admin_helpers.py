@@ -67,7 +67,7 @@ def workflow_history_detail_url(action: Action, workflow_state_id: int) -> str:
     return _url('workflow_history_detail', action.pk, workflow_state_id)
 
 
-def compare_url(action: Action, revision_a: int, revision_b: int) -> str:
+def compare_url(action: Action, revision_a: int | str, revision_b: int | str) -> str:
     return _url('revisions_compare', action.pk, revision_a, revision_b)
 
 
