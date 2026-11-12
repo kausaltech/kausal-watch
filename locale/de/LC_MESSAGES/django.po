@@ -1692,6 +1692,16 @@ msgstr "Status"
 msgid "details"
 msgstr "Details"
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous task"
+msgstr "laufende Maßnahme"
+
+#: src/actions/models/action.py
+msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "Frist"
@@ -3397,6 +3407,10 @@ msgstr "Das Enddatum darf nicht vor dem Beginndatum liegen"
 #: src/actions/validation.py
 msgid "The completion date can't be in the future"
 msgstr "Das Fertigstellungsdatum darf nicht in der Zukunft liegen"
+
+#: src/actions/validation.py
+msgid "Tasks that are not continuous must have a due date"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -7066,6 +7080,13 @@ msgid "indicator snapshots"
 msgstr "Indikator-Snapshots"
 
 #: src/reports/report_formatters.py
+#: src/reports/tests/test_task_assignees_export.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous"
+msgstr "laufende Maßnahme"
+
+#: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Hat Ziele"
 
@@ -7132,6 +7153,13 @@ msgstr "Maßnahmenkennung"
 #: src/reports/tests/test_tasks_sheet.py
 msgid "Due date"
 msgstr "Frist"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Continuous Action"
+msgid "Continuous"
+msgstr "laufende Maßnahme"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py

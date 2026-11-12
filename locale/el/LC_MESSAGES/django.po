@@ -1809,6 +1809,16 @@ msgstr "κράτος"
 msgid "details"
 msgstr ""
 
+#: src/actions/models/action.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous task"
+msgstr "συνεχής δράση"
+
+#: src/actions/models/action.py
+msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
+msgstr ""
+
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
 msgstr "ημερομηνία λήξης"
@@ -3691,6 +3701,10 @@ msgstr ""
 #| msgid "The completion percentage for this action"
 msgid "The completion date can't be in the future"
 msgstr "Το ποσοστό ολοκλήρωσης αυτής της ενέργειας"
+
+#: src/actions/validation.py
+msgid "Tasks that are not continuous must have a due date"
+msgstr ""
 
 #: src/actions/wagtail_admin.py
 #, fuzzy
@@ -7723,6 +7737,13 @@ msgid "indicator snapshots"
 msgstr "στιγμιότυπα δράσης"
 
 #: src/reports/report_formatters.py
+#: src/reports/tests/test_task_assignees_export.py
+#, fuzzy
+#| msgid "continuous action"
+msgid "continuous"
+msgstr "συνεχής δράση"
+
+#: src/reports/report_formatters.py
 msgid "Has goals"
 msgstr "Έχει στόχους"
 
@@ -7799,6 +7820,13 @@ msgstr "Έχει αναγνωριστικά δράσης"
 #| msgid "due date"
 msgid "Due date"
 msgstr "ημερομηνία λήξης"
+
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+#, fuzzy
+#| msgid "Continuous Action"
+msgid "Continuous"
+msgstr "Συνεχής δράση"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
