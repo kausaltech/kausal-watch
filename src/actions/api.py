@@ -2114,17 +2114,16 @@ class PersonPermission(WatchObjectPermissions):
 
     @override
     def check_permission(self, perm: str, user: User, view: View, obj: Model | None = None) -> bool:
+        # Writes are authorized against the plan the request names, not the user's active admin plan
+        assert isinstance(view, RequiredPlanQueryParamMixin)
+        plan = view.get_plan()
         match perm:
-            case 'people.change_person':
-                assert obj is None or isinstance(obj, Person)
-                return user.can_modify_person(person=obj)
             case 'people.add_person':
                 assert obj is None
-                return user.can_create_person()
-            case 'people.delete_person':
-                plan = user.get_active_admin_plan()
+                return user.is_general_admin_for_plan(plan)
+            case 'people.change_person' | 'people.delete_person':
                 if obj is None:
-                    return user.is_superuser or user.is_general_admin_for_plan(plan)
+                    return user.is_general_admin_for_plan(plan)
                 assert isinstance(obj, Person)
                 return user.can_edit_or_delete_person_within_plan(obj, plan=plan)
         return False

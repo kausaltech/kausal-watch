@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 import pytest
 
+from actions.tests.factories import ActionContactFactory, PlanFactory
 from actions.tests.utils import assert_log_entry_created, count_log_entries
 from audit_logging.models import PlanScopedModelLogEntry
+from orgs.tests.factories import OrganizationFactory
 from people.models import Person
+from people.tests.factories import PersonFactory
+
+if TYPE_CHECKING:
+    from actions.models import Plan
 
 pytestmark = pytest.mark.django_db
 
@@ -145,3 +153,96 @@ def test_bulk_person_put_creates_individual_log_entries(api_client, person_list_
     for person in persons:
         total_logs = count_log_entries(instance=person, plan=plan)
         assert total_logs >= 1, f'Expected at least 1 log entry for person {person.email}'
+
+
+def _person_payload(organization, email='new.person@example.com'):
+    return [{'first_name': 'New', 'last_name': 'Person', 'email': email, 'organization': organization.pk}]
+
+
+def _detail_url(person: Person, plan: Plan) -> str:
+    return reverse('person-detail', kwargs={'pk': person.pk}) + f'?plan={plan.identifier}'
+
+
+@pytest.fixture
+def admin_elsewhere_and_contact_here():
+    """Return a plan and a person who is a general admin of another plan but only a contact person in this one."""
+    plan = PlanFactory.create()
+    other_plan = PlanFactory.create()
+    person = PersonFactory.create(organization=other_plan.organization, general_admin_plans=[other_plan])
+    ActionContactFactory.create(action__plan=plan, person=person)
+    return plan, person
+
+
+def test_person_post_requires_general_admin_of_the_requested_plan(api_client, person_list_url, admin_elsewhere_and_contact_here):
+    plan, person = admin_elsewhere_and_contact_here
+    api_client.force_login(person.user)
+
+    response = api_client.post(person_list_url + f'?plan={plan.identifier}', data=_person_payload(plan.organization))
+
+    assert response.status_code == 403
+    assert not Person.objects.filter(email='new.person@example.com').exists()
+
+
+def test_person_bulk_put_requires_general_admin_of_the_requested_plan(
+    api_client, person_list_url, admin_elsewhere_and_contact_here
+):
+    plan, person = admin_elsewhere_and_contact_here
+    target = PersonFactory.create(first_name='Original', organization=plan.organization)
+    api_client.force_login(person.user)
+
+    response = api_client.put(
+        person_list_url + f'?plan={plan.identifier}',
+        data=[
+            {
+                'id': target.id,
+                'first_name': 'Changed',
+                'last_name': target.last_name,
+                'email': target.email,
+                'organization': target.organization.pk,
+            }
+        ],
+    )
+
+    assert response.status_code == 403
+    target.refresh_from_db()
+    assert target.first_name == 'Original'
+
+
+def test_person_delete_requires_general_admin_of_the_requested_plan(api_client, admin_elsewhere_and_contact_here):
+    plan, person = admin_elsewhere_and_contact_here
+    target = PersonFactory.create(organization=plan.organization)
+    api_client.force_login(person.user)
+
+    response = api_client.delete(_detail_url(target, plan))
+
+    assert response.status_code == 403
+    assert Person.objects.filter(pk=target.pk).exists()
+
+
+@pytest.mark.parametrize('method', ['put', 'delete'])
+def test_plan_admin_cannot_write_contact_person_from_unrelated_organization(api_client, person_list_url, method):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    outsider = PersonFactory.create(first_name='Original', organization=OrganizationFactory.create())
+    ActionContactFactory.create(action__plan=plan, person=outsider)
+    api_client.force_login(admin_person.user)
+
+    if method == 'delete':
+        response = api_client.delete(_detail_url(outsider, plan))
+    else:
+        response = api_client.put(
+            person_list_url + f'?plan={plan.identifier}',
+            data=[
+                {
+                    'id': outsider.id,
+                    'first_name': 'Changed',
+                    'last_name': outsider.last_name,
+                    'email': outsider.email,
+                    'organization': outsider.organization.pk,
+                }
+            ],
+        )
+
+    assert response.status_code == 403
+    outsider.refresh_from_db()
+    assert outsider.first_name == 'Original'
