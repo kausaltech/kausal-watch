@@ -8,7 +8,7 @@ from django.urls import reverse
 
 import pytest
 
-from aplans.utils import InstancesEditableByMixin
+from aplans.utils import InstancesEditableByMixin, RestrictedVisibilityModel
 
 from actions.api import ActionSerializer, CategorySerializer, NonTreebeardModelWithTreePositionSerializerMixin
 from actions.models import Action, ActionTask, Category
@@ -20,6 +20,8 @@ from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFacto
 from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
+
+INTERNAL = RestrictedVisibilityModel.VisibilityState.INTERNAL
 
 
 def test_plan_api_get(api_client, plan_list_url, plan):
@@ -83,18 +85,69 @@ def test_action_api_includes_pledges_when_feature_enabled(api_client, action_lis
 PERSON_COUNT = 10
 
 
-def test_person_api_get_not_authenticated(api_client, person_list_url, action_contact_factory):
-    persons = [action_contact_factory().person for _ in range(PERSON_COUNT)]
-    response = api_client.get(person_list_url)
-    data = response.json_data
-    assert len(data['results']) == PERSON_COUNT
+def _person_detail_url(person) -> str:
+    return reverse('person-detail', kwargs={'pk': person.pk})
 
-    for person in persons:
-        obj = next(x for x in data['results'] if x['id'] == person.id)
-        assert obj['first_name'] == person.first_name
-        assert obj['last_name'] == person.last_name
-        # Important! The email addresses should not be exposed without authorization
-        assert 'email' not in obj
+
+def test_person_api_list_requires_plan_unauthenticated(api_client, person_list_url, action_contact_factory):
+    action_contact_factory()
+    response = api_client.get(person_list_url)
+    assert response.status_code == 400
+    assert list(response.json_data.keys()) == ['plan']
+
+
+def test_person_api_detail_requires_plan_unauthenticated(api_client, action_contact_factory):
+    person = action_contact_factory().person
+    response = api_client.get(_person_detail_url(person))
+    assert response.status_code == 400
+    assert list(response.json_data.keys()) == ['plan']
+
+
+def test_person_api_requires_plan_for_plan_admin(api_client, person_list_url):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+
+    assert api_client.get(person_list_url).status_code == 400
+    assert api_client.get(_person_detail_url(admin_person)).status_code == 400
+
+
+def test_person_api_internal_plan_is_not_found_for_outsiders(api_client, person_list_url):
+    internal_plan = PlanFactory.create(visibility=INTERNAL)
+    ActionContactFactory.create(action__plan=internal_plan)
+
+    response = api_client.get(person_list_url, {'plan': internal_plan.identifier})
+    assert response.status_code == 404
+
+    other_admin = PersonFactory.create(general_admin_plans=[PlanFactory.create()])
+    api_client.force_login(other_admin.user)
+    response = api_client.get(person_list_url, {'plan': internal_plan.identifier})
+    assert response.status_code == 404
+
+
+def test_person_api_internal_plan_is_readable_by_its_contact_person(api_client, person_list_url):
+    internal_plan = PlanFactory.create(visibility=INTERNAL)
+    contact_person = ActionContactFactory.create(action__plan=internal_plan).person
+    api_client.force_login(contact_person.user)
+
+    response = api_client.get(person_list_url, {'plan': internal_plan.identifier})
+    assert response.status_code == 200
+    assert contact_person.id in (d['id'] for d in response.json_data['results'])
+
+
+def test_person_api_detail_is_scoped_to_plan(api_client):
+    plan = PlanFactory.create()
+    admin_person = PersonFactory.create(organization=plan.organization, general_admin_plans=[plan])
+    person_in_plan = ActionContactFactory.create(action__plan=plan).person
+    person_elsewhere = ActionContactFactory.create(action__plan=PlanFactory.create()).person
+    api_client.force_login(admin_person.user)
+
+    response = api_client.get(_person_detail_url(person_in_plan), {'plan': plan.identifier})
+    assert response.status_code == 200
+    assert response.json_data['id'] == person_in_plan.id
+
+    response = api_client.get(_person_detail_url(person_elsewhere), {'plan': plan.identifier})
+    assert response.status_code == 404
 
 
 def test_person_api_get_for_plan_unauthenticated(api_client, person_list_url, plan, person):

@@ -18,6 +18,7 @@ from modeltrans.utils import build_localized_fieldname, get_available_languages
 from rest_framework import exceptions, permissions, serializers, status, viewsets
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
+from rest_framework.views import APIView
 
 from django_countries.serializers import CountryFieldMixin
 from drf_spectacular.types import OpenApiTypes
@@ -77,7 +78,6 @@ if TYPE_CHECKING:
     from django_stubs_ext import StrOrPromise
     from rest_framework.request import Request
     from rest_framework.routers import BaseRouter
-    from rest_framework.views import APIView
 
     from kausal_common.api.utils import RegisteredAPIView
     from kausal_common.users import UserOrAnon
@@ -1706,6 +1706,63 @@ class AuditLoggingBulkModelViewSet[M: PlanScopedModel](BulkModelViewSet[M], ABC)
         super().perform_destroy(instance)
 
 
+PLAN_QUERY_PARAMETER = OpenApiParameter(
+    name='plan',
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.QUERY,
+    required=True,
+    description='Identifier of the plan the request is made for',
+)
+
+
+class RequiredPlanQueryParamMixin(APIView):
+    """
+    Tie every request to the plan named in the mandatory `plan` query parameter.
+
+    For top-level endpoints whose model is shared between plans rather than owned by one.
+    Such a model has no plan of its own to check a caller against, so without a plan in the
+    request there is nothing to authorize, and the endpoint would have to serve every row.
+    Hence the parameter is required for every method, on list and detail routes alike, and
+    the caller must have a role in that plan.
+
+    Viewsets using this must build their queryset from `get_plan()`.
+    """
+
+    _plan: Plan
+
+    def get_plan(self) -> Plan:
+        if hasattr(self, '_plan'):
+            return self._plan
+        plan_identifier = self.request.query_params.get('plan', None)
+        if plan_identifier is None:
+            raise exceptions.ValidationError({'plan': ['This query parameter is required.']})
+        # A plan the caller may not see is reported like one that does not exist.
+        user = self.request.user or AnonymousUser()
+        plan = Plan.objects.get_queryset().visible_for_user(user).filter(identifier=plan_identifier).first()
+        if plan is None:
+            raise exceptions.NotFound(detail='Plan not found')
+        self._plan = plan
+        return plan
+
+    def user_is_authorized_for_plan(self, plan: Plan) -> bool:
+        user = user_or_none(self.request.user)
+        return (
+            user is not None
+            and user.is_authenticated
+            and (
+                user.is_general_admin_for_plan(plan)
+                or user.is_contact_person_in_plan(plan)
+                or user.is_organization_admin_in_plan(plan)
+            )
+        )
+
+    @override
+    def initial(self, request: Request, *args: Any, **kwargs: Any) -> None:
+        super().initial(request, *args, **kwargs)
+        if not self.user_is_authorized_for_plan(self.get_plan()):
+            raise exceptions.PermissionDenied(detail='Not authorized')
+
+
 @extend_schema(
     tags=['action'],
 )
@@ -2081,12 +2138,11 @@ class PersonSerializer(BasePersonSerializer):
 
 
 @register_view
-class PersonViewSet(AuditLoggingBulkModelViewSet[Person]):
+@extend_schema(parameters=[PLAN_QUERY_PARAMETER])
+class PersonViewSet(RequiredPlanQueryParamMixin, AuditLoggingBulkModelViewSet[Person]):
     queryset = Person.objects.get_queryset()
     serializer_class = PersonSerializer
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    permission_classes = (PersonPermission,)
 
     # This view set is not registered with a "bulk router" (see BulkRouter or NestedBulkRouter), so we need to define
     # patch and put ourselves
@@ -2103,49 +2159,19 @@ class PersonViewSet(AuditLoggingBulkModelViewSet[Person]):
         acting_admin_user = self.request.user
         instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
-    def get_permissions(self):
-        if self.action == 'list':
-            return [AnonReadOnly()]
-        return [PersonPermission()]
-
-    def get_plan(self):
-        plan_identifier = self.request.query_params.get('plan', None)
-        if plan_identifier is None:
-            return None
-        try:
-            return Plan.objects.get(identifier=plan_identifier)
-        except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail='Plan not found') from None
-
-    def user_is_authorized_for_plan(self, plan: Plan):
-        user = user_or_none(self.request.user)
-        return (
-            user is not None
-            and user.is_authenticated
-            and (
-                user.is_general_admin_for_plan(plan)
-                or user.is_contact_person_in_plan(plan)
-                or user.is_organization_admin_in_plan(plan)
-            )
-        )
-
     def get_serializer_context(self):
         context = dict(super().get_serializer_context())
-        plan = self.get_plan()
-        if plan is None:
+        if getattr(self, 'swagger_fake_view', False):
             return context
-        if self.user_is_authorized_for_plan(plan):
-            context.update({'authorized_for_plan': plan})
+        # Every caller who gets this far has a role in the plan
+        context.update({'authorized_for_plan': self.get_plan()})
         return context
 
     def get_queryset(self):
         queryset = cast('PersonQuerySet', super().get_queryset())
-        plan = self.get_plan()
-        if plan is None:
-            return queryset
-        if not self.user_is_authorized_for_plan(plan):
-            raise exceptions.PermissionDenied(detail='Not authorized')
-        return queryset.available_for_plan(plan, include_contact_persons=True)
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset.none()
+        return queryset.available_for_plan(self.get_plan(), include_contact_persons=True)
 
 
 # FIXME: This is very similar to kausal_common.datasets.api.I18nFieldSerializerMixin
