@@ -802,6 +802,9 @@ WAGTAILEMBEDS_FINDERS = [
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_ENABLE_UPDATE_CHECK = False
+# Autosave posts a create form to the create URL in the background, and the save button posts it
+# there again until that request has been answered, so a new object could be created twice.
+WAGTAIL_AUTOSAVE_INTERVAL = 0
 WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = True
 WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
 WAGTAIL_PASSWORD_RESET_ENABLED = True
