@@ -1741,14 +1741,12 @@ msgid "details"
 msgstr "detaljer"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous task"
-msgstr "kontinuerlig handling"
+msgstr "kontinuerlig opgave"
 
 #: src/actions/models/action.py
 msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
-msgstr ""
+msgstr "Indstil hvis opgaven er løbende eller gentagende. Kontinuerlige opgaver behøver ikke en afleveringsdato."
 
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
@@ -3525,7 +3523,7 @@ msgstr "Færdiggørelsesdatoen kan ikke ligge i fremtiden"
 
 #: src/actions/validation.py
 msgid "Tasks that are not continuous must have a due date"
-msgstr ""
+msgstr "Opgaver, der ikke er kontinuerlige, skal have en afleveringsdato"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -7246,10 +7244,8 @@ msgstr "handlingssnapshots"
 
 #: src/reports/report_formatters.py
 #: src/reports/tests/test_task_assignees_export.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous"
-msgstr "kontinuerlig handling"
+msgstr "kontinuerlig"
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7331,10 +7327,8 @@ msgstr "Afleveringsdato"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Continuous Action"
 msgid "Continuous"
-msgstr "Kontinuerlig handling"
+msgstr "Kontinuerlig"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py

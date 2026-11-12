@@ -1700,14 +1700,12 @@ msgid "details"
 msgstr "lisätiedot"
 
 #: src/actions/models/action.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous task"
-msgstr "jatkuva toimenpide"
+msgstr "jatkuva tehtävä"
 
 #: src/actions/models/action.py
 msgid "Set if the task is ongoing or repeating. Continuous tasks do not need a due date."
-msgstr ""
+msgstr "Aseta, jos tehtävä on jatkuva tai toistuva. Jatkuvilla tehtävillä ei tarvitse olla tavoitepäivämäärää."
 
 #: src/actions/models/action.py src/reports/report_formatters.py
 msgid "due date"
@@ -3431,7 +3429,7 @@ msgstr "Valmistumispäivämäärä ei voi olla tulevaisuudessa"
 
 #: src/actions/validation.py
 msgid "Tasks that are not continuous must have a due date"
-msgstr ""
+msgstr "Muilla kuin jatkuvilla tehtävillä pitää olla tavoitepäivämäärä"
 
 #: src/actions/wagtail_admin.py
 msgid "New organization name"
@@ -7156,10 +7154,8 @@ msgstr "toimenpiteiden tallenteet"
 
 #: src/reports/report_formatters.py
 #: src/reports/tests/test_task_assignees_export.py
-#, fuzzy
-#| msgid "continuous action"
 msgid "continuous"
-msgstr "jatkuva toimenpide"
+msgstr "jatkuva"
 
 #: src/reports/report_formatters.py
 msgid "Has goals"
@@ -7241,10 +7237,8 @@ msgstr "tavoitepäivämäärä"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
-#, fuzzy
-#| msgid "Continuous Action"
 msgid "Continuous"
-msgstr "Jatkuva toimenpide"
+msgstr "Jatkuva"
 
 #: src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
