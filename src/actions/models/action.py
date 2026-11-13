@@ -11,6 +11,7 @@ import reversion
 import strawberry as sb
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.admin.utils import quote
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -60,6 +61,7 @@ from aplans.utils import (
 )
 
 from actions.models.category import Category
+from actions.permission_policy import ActionPermissionPolicy
 from admin_site.models import BaseChangeLogMessage
 from indicators.models import Indicator
 from orgs.models import Organization
@@ -646,6 +648,7 @@ class Action(
         log_action=False,
         previous_revision=None,
         clean=True,
+        overwrite_revision=None,
     ):
         # This method has been overridden temporarily to manually publish the action that was just saved
         # *when moderation is not in use*. We want to save revisions so they are associated with an audit
@@ -659,13 +662,14 @@ class Action(
         # revision (which itself cannot be edited in a plan with workflows disabled currently).
         #
         # In the future we will probably want to explicitly enable drafting vs publishing for all plans.
-        new_revision = super().save_revision(
+        new_revision = super().save_revision(  # type: ignore[call-arg]
             user=user,
             approved_go_live_at=approved_go_live_at,
             changed=changed,
             log_action=log_action,
             previous_revision=previous_revision,
             clean=clean,
+            overwrite_revision=overwrite_revision,
         )
         if not self.plan.features.enable_moderation_workflow:
             new_revision.publish(user=user, skip_permission_checks=True, log_action=False)
@@ -917,7 +921,11 @@ class Action(
         unique_together = (('plan', 'identifier'),)
         permissions = (('admin_action', _('Can administrate all actions')),)  # type: ignore[assignment]
 
-    MODEL_ADMIN_CLASS = 'actions.action_admin.ActionAdmin'  # for AdminButtonsMixin
+    VIEWSET_CLASS = 'actions.action_admin.ActionViewSet'  # for AdminButtonsMixin
+
+    @classmethod
+    def permission_policy(cls) -> ActionPermissionPolicy:
+        return ActionPermissionPolicy(cls)
 
     def __str__(self):
         s = ''
@@ -1205,13 +1213,16 @@ class Action(
                 defaults={'role': d['role']},
             )
 
+    def get_admin_edit_url(self) -> str:
+        return reverse('wagtailsnippets_actions_action:edit', args=[quote(self.pk)])
+
     def generate_identifier(self):
         self.identifier = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def get_notification_context(self, plan=None, request=None):
         if plan is None:
             plan = self.plan
-        change_url = settings.ADMIN_BASE_URL + reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
+        change_url = settings.ADMIN_BASE_URL + self.get_admin_edit_url()
         return {
             'id': self.id,
             'identifier': self.identifier,

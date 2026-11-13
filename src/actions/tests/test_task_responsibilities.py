@@ -27,7 +27,7 @@ from aplans.cache import PlanSpecificCache
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.action_admin import TASK_ASSIGNMENT_RELATIONS, ActionAdmin, ReadOnlyInlinePanel
+from actions.action_admin import TASK_ASSIGNMENT_RELATIONS, ActionViewSet, ReadOnlyInlinePanel
 from actions.models import Action
 from actions.models.action import ActionContactPerson, ActionTask, ActionTaskContactPerson, ActionTaskResponsibleParty
 from actions.models.features import PlanFeatures
@@ -63,7 +63,7 @@ def _task_assignees_enabled(monkeypatch):
 
 
 def _edit_url(action: Action) -> str:
-    return reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    return action.get_admin_edit_url()
 
 
 def _base_post_data(action: Action) -> dict[str, str]:
@@ -93,7 +93,7 @@ def _form_class(rf, user, action):
     request.admin_cache = PlanSpecificCache(plan=action.plan)
     request.get_active_admin_plan = lambda: action.plan
     with ctx_request.activate(request), ctx_instance.activate(action):
-        edit_handler = ActionAdmin().get_edit_handler()
+        edit_handler = ActionViewSet().build_edit_handler()
         return edit_handler.bind_to_model(Action).get_form_class()
 
 
@@ -300,7 +300,7 @@ def test_visible_but_not_editable_relation_is_read_only(rf, action, action_conta
     )
     assert (is_visible, is_editable) == (True, False), 'the case under test must actually be (True, False)'
 
-    admin = ActionAdmin()
+    admin = ActionViewSet()
     plan = action.plan
     panels = admin.get_task_panels(action_contact_person_user, plan, action)
     by_relation = {getattr(p, 'relation_name', None): p for p in panels}
@@ -355,7 +355,7 @@ def test_a_plan_admin_sees_a_relation_hidden_from_others_but_read_only_if_not_ed
         editable_by=InstancesEditableByMixin.EditableBy.NOT_EDITABLE,
     )
 
-    panels = {getattr(p, 'relation_name', None): p for p in ActionAdmin().get_task_panels(plan_admin_user, action.plan, action)}
+    panels = {getattr(p, 'relation_name', None): p for p in ActionViewSet().get_task_panels(plan_admin_user, action.plan, action)}
     assert isinstance(panels['responsible_parties'], ReadOnlyInlinePanel)
 
     nested = _form_class(rf, plan_admin_user, action).formsets['tasks'].form.formsets
@@ -1640,7 +1640,7 @@ def test_assignment_panel_headings_tell_whether_the_relation_is_public(
     features.save()
     _customize(action.plan, relation, visible_for=visible_for, editable_by=EditableBy.PLAN_ADMINS)
 
-    panels = ActionAdmin().get_task_panels(plan_admin_user, action.plan, action)
+    panels = ActionViewSet().get_task_panels(plan_admin_user, action.plan, action)
 
     (panel,) = [p for p in panels if getattr(p, 'relation_name', None) == relation]
     assert ('Non-public field' not in str(panel.heading)) == public

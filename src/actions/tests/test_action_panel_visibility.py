@@ -4,7 +4,7 @@ from aplans.cache import PlanSpecificCache
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.action_admin import ActionAdmin
+from actions.action_admin import ActionViewSet
 from actions.models import Action
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory
 
@@ -22,7 +22,7 @@ def _admin_request(rf, user, plan):
 def _get_edit_handler(rf, user, action):
     request = _admin_request(rf, user, action.plan)
     with ctx_request.activate(request), ctx_instance.activate(action):
-        return ActionAdmin().get_edit_handler()
+        return ActionViewSet().build_edit_handler()
 
 
 def _tab_headings(edit_handler):
@@ -32,7 +32,7 @@ def _tab_headings(edit_handler):
 def _formsets(rf, user, action):
     request = _admin_request(rf, user, action.plan)
     with ctx_request.activate(request), ctx_instance.activate(action):
-        edit_handler = ActionAdmin().get_edit_handler()
+        edit_handler = ActionViewSet().build_edit_handler()
         return edit_handler.bind_to_model(Action).get_form_class().formsets
 
 
@@ -105,7 +105,6 @@ def test_role_panel_is_shown_for_plan_admin(rf, action, plan_admin_user, field_n
 
 def test_existing_tasks_survive_saving_when_tasks_are_hidden(client, action, action_contact_person_user):
     """Posting the edit form without a tasks formset must not delete the action's tasks."""
-    from django.urls import reverse
 
     from actions.tests.factories import ActionTaskFactory
     from admin_site.tests.factories import ClientPlanFactory
@@ -114,7 +113,7 @@ def test_existing_tasks_survive_saving_when_tasks_are_hidden(client, action, act
     task = ActionTaskFactory.create(action=action)
     _restrict(action, 'tasks')
     client.force_login(action_contact_person_user)
-    edit_url = reverse(ActionAdmin().url_helper.get_action_url_name('edit'), kwargs={'instance_pk': action.pk})
+    edit_url = action.get_admin_edit_url()
     post_data = {
         'identifier': action.identifier,
         'name': action.name,
@@ -140,7 +139,7 @@ def test_existing_tasks_survive_saving_when_tasks_are_hidden(client, action, act
 def _form_class(rf, user, action):
     request = _admin_request(rf, user, action.plan)
     with ctx_request.activate(request), ctx_instance.activate(action):
-        return ActionAdmin().get_edit_handler().bind_to_model(Action).get_form_class()
+        return ActionViewSet().build_edit_handler().bind_to_model(Action).get_form_class()
 
 
 @pytest.mark.parametrize('field_name', ['name', 'description'])

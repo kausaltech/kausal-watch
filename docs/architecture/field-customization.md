@@ -26,7 +26,7 @@ before assuming it hides anything from the public UI.
 | Plain fields (`Action.name`, `ActionTask.due_at`, ...) | Field removed or disabled (`BuiltInFieldCustomizationAwareEditHandlerMixin`) | Not enforced | Not enforced |
 | `Action.tasks` | Tab dropped when not visible | Not enforced | Not enforced |
 | `Action.contact_persons`, `Action.responsible_parties` | Tab gated; REST rejects edits when not editable | Not enforced | Not enforced |
-| `ActionTask.responsible_parties`, `ActionTask.contact_persons` | Panel dropped, read-only, or editable (`ActionAdmin.get_task_panels`); REST ignores hidden and rejects non-editable edits | **Enforced** | **Enforced** |
+| `ActionTask.responsible_parties`, `ActionTask.contact_persons` | Panel dropped, read-only, or editable (`ActionViewSet.get_task_panels`); REST ignores hidden and rejects non-editable edits | **Enforced** | **Enforced** |
 
 The visibility of the action-level relations is deliberately not enforced publicly. Plans have set
 those customizations expecting them to affect the admin only, and enforcing them would take data off

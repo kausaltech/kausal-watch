@@ -1624,7 +1624,7 @@ class ActionChangeLogMessageCreateView(
     ActionChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageCreateView[ActionChangeLogMessage, Action, WagtailAdminModelForm[ActionChangeLogMessage]],
 ):
-    success_url_name = 'actions_action_modeladmin_index'
+    success_url_name = 'wagtailsnippets_actions_action:list'
 
     def get_revision_id(self) -> str | None:
         """Get revision ID from GET params or POST data (hidden field)."""
@@ -1660,7 +1660,7 @@ class ActionChangeLogMessageCreateView(
 class ActionChangeLogMessageEditView(
     ActionChangeLogMessageRelatedObjectMixin, BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]
 ):
-    success_url_name = 'actions_action_modeladmin_edit'
+    success_url_name = 'wagtailsnippets_actions_action:edit'
 
 
 class ActionChangeLogMessageDeleteView(

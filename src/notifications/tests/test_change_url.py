@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db
 
 def test_action_change_url_is_absolute_admin_url():
     action = ActionFactory.create()
-    expected = settings.ADMIN_BASE_URL + reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=action.id))
+    expected = settings.ADMIN_BASE_URL + reverse('wagtailsnippets_actions_action:edit', args=[action.id])
     context = action.get_notification_context()
     assert context['change_url'] == expected
     assert context['change_url'].startswith(settings.ADMIN_BASE_URL)

@@ -5,12 +5,11 @@ from __future__ import annotations
 import itertools
 import json
 import typing
-from typing import Any, Protocol
+from typing import Any
 
 from django.conf import settings as django_settings
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
-from django.urls import reverse
 from django.utils import translation
 from graphene_django.utils.testing import graphql_query
 from rest_framework.authtoken.models import Token
@@ -39,12 +38,6 @@ from users.tests import factories as users_factories
 if typing.TYPE_CHECKING:
     from collections.abc import Generator
 
-    import django.test.client
-    from django.db.models import Model
-
-    from wagtail_modeladmin.options import ModelAdmin
-
-    from users.models import User
 
 import logging
 
@@ -271,67 +264,6 @@ def _reset_active_language() -> Generator[None]:
     translation.activate(django_settings.LANGUAGE_CODE)
     yield
     translation.deactivate()
-
-
-class ModelAdminEditTest(Protocol):
-    def __call__(
-        self,
-        admin_class: type[ModelAdmin[Any]],
-        instance: Model,
-        user: User,
-        post_data: dict[str, Any] | None = ...,
-        can_inspect: bool = True,
-        can_edit: bool = True,
-    ): ...
-
-
-@pytest.fixture
-def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTest:
-    def test_admin(
-        admin_class: type[ModelAdmin[Any]],
-        instance: Model,
-        user: User,
-        post_data: dict[str, Any] | None = None,
-        can_inspect: bool = True,
-        can_edit: bool = True,
-    ) -> None:
-        if post_data is None:
-            post_data = {}
-        adm = admin_class()
-        edit_name = adm.url_helper.get_action_url_name('edit')
-        edit_url = reverse(edit_name, kwargs=dict(instance_pk=instance.pk))
-        client.logout()
-        response = client.get(edit_url)
-        # Should return a redirect to login page
-        assert response.status_code == 302
-        client.force_login(user)
-
-        response = client.get(edit_url)
-        if can_inspect:
-            assert response.status_code == 200
-        else:
-            assert response.status_code == 403
-
-        # FIXME: Not working yet
-        """
-        # form = response.context_data['form']
-        response = client.post(edit_url, data=dict(post_data))
-        if can_edit:
-            assert response.status_code == 200
-        else:
-            assert response.status_code == 403
-
-        if response.status_code != 302:
-            form = response.context_data.get('form')
-            if form is not None:
-                print('Form errors:')
-                print(form.errors)
-                import ipdb; ipdb.set_trace()
-
-        assertRedirects(response, adm.url_helper.get_action_url_name('index'))
-        """
-
-    return test_admin
 
 
 @pytest.fixture
