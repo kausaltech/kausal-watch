@@ -4506,6 +4506,10 @@ msgid "Set if indicators should be copied instead of being shared with the origi
 msgstr ""
 
 #: src/copying/views.py
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr ""
+
+#: src/copying/views.py
 msgid "A plan with this identifier already exists"
 msgstr ""
 

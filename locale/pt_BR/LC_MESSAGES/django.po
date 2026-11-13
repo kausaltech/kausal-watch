@@ -5207,6 +5207,11 @@ msgstr ""
 
 #: src/copying/views.py
 #, fuzzy
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr "Se nenhum idioma principal for definido, não deve haver outros idiomas"
+
+#: src/copying/views.py
+#, fuzzy
 msgid "A plan with this identifier already exists"
 msgstr "Já existe uma pessoa com esse e-mail"
 

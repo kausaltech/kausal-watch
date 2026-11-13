@@ -4543,6 +4543,12 @@ msgid "Set if indicators should be copied instead of being shared with the origi
 msgstr "Ange om indikatorer ska kopieras i stället för att delas med den ursprungliga planen. Indikatorer kan endast kopieras om ingen indikator delas med en annan plan eller är en instans av en gemensam indikator."
 
 #: src/copying/views.py
+#, fuzzy
+#| msgid "If no primary language is set, there may not be other languages."
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr "Om inget huvudspråk anges får det inte finnas andra språk."
+
+#: src/copying/views.py
 msgid "A plan with this identifier already exists"
 msgstr "Det finns redan en plan med denna beteckning"
 
