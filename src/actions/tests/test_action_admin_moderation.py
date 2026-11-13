@@ -7,6 +7,7 @@ from unittest.mock import patch
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from wagtail.log_actions import log
 from wagtail.models import Workflow, WorkflowState
 
 import pytest
@@ -461,6 +462,29 @@ class TestModerationStatus:
         assert 'lock it' not in unlocked
         assert 'Locked by workflow' in in_moderation
         assert 'lock it' not in in_moderation
+
+    def test_live_line_does_not_credit_a_draft_to_the_live_version(self, client, action, editor):
+        assert action.live_revision is None
+        h.post_edit(client, editor, action, name='Draft name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, editor, action))
+
+        live_line = panel[panel.index('Live') : panel.index('Draft')]
+        assert live_line.split() == ['Live', 'Status:']
+
+    def test_live_line_shows_who_published_without_a_live_revision(self, client, action, editor, plan_admin):
+        plan_admin.first_name, plan_admin.last_name = 'Paula', 'Publisher'
+        plan_admin.save(update_fields=['first_name', 'last_name'])
+        editor.first_name, editor.last_name = 'Edith', 'Editor'
+        editor.save(update_fields=['first_name', 'last_name'])
+        log(instance=action, action='wagtail.publish', user=plan_admin)
+        h.post_edit(client, editor, action, name='Draft name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, editor, action))
+
+        live_line = panel[panel.index('Live') : panel.index('Draft')]
+        assert 'Paula Publisher' in live_line
+        assert 'Edith Editor' not in live_line
 
     def test_side_panel_has_no_usage_count(self, client, action, plan_admin):
         panel = h.status_side_panel_text(h.get_edit_page(client, plan_admin, action))

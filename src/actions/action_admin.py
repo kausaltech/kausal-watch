@@ -35,6 +35,7 @@ from wagtail.admin.ui.tables import Column
 from wagtail.admin.utils import get_latest_str
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.admin.widgets.button import ListingButton
+from wagtail.log_actions import registry as log_registry
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.side_panels import SnippetStatusSidePanel
 from wagtail.snippets.views.snippets import UnpublishView, WorkflowHistoryDetailView, WorkflowHistoryView
@@ -864,6 +865,13 @@ class ActionEditView(
     def get_panel(self):
         with ctx_instance.activate(self.object):
             return _get_action_viewset().build_edit_handler(instance_being_edited=self.object).bind_to_model(Action)
+
+    def get_last_updated_info(self):
+        live_object = getattr(self, 'live_object', None)
+        if self.draftstate_enabled and live_object is not None and live_object.live and live_object.live_revision is None:
+            # The newest revision would be a draft, not the live version
+            return log_registry.get_logs_for_instance(live_object).filter(action='wagtail.publish').first()
+        return super().get_last_updated_info()
 
     def get_lock_context(self):
         context = super().get_lock_context()
