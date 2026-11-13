@@ -18,6 +18,7 @@ from django.db import transaction
 from django.db.models import Field, ForeignKey, Manager, ManyToOneRel, Model, OneToOneField, Q, UniqueConstraint, signals
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel, get_all_child_relations
+from modeltrans.translator import get_i18n_field
 from wagtail.blocks import Block, ChooserBlock, ListBlock, StreamBlock, StructBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import DraftStateMixin, Page, Revision, RevisionMixin, Site
@@ -57,7 +58,7 @@ from actions.models.action import Action
 from actions.models.attributes import AttributeCategoryChoice, AttributeType
 from actions.models.category import Category, CategoryType, CommonCategory, CommonCategoryType, skip_page_synchronization_ctx
 from actions.models.features import PlanFeatures
-from actions.models.plan import Plan
+from actions.models.plan import Plan, translation_key
 from actions.models.pledge import Pledge
 from actions.perms import sync_all_group_permissions_for_plan
 from actions.signals import create_notification_settings, create_plan_features_and_sync_group_permissions
@@ -88,7 +89,7 @@ from reports.models import ReportActionPrintLayoutCustomization
 from users.models import User
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
 
     from wagtail.documents.models import AbstractDocument
     from wagtail.images.models import AbstractImage
@@ -847,6 +848,27 @@ def _validate_unique_field_copy_policy_applied(
         validator(original, copy, field, original_value, copy_value, removed_links)
 
 
+def _replace_translations(plan: Plan, field_name: str, translations: Mapping[str, str]) -> None:
+    """
+    Replace all stored translations of `field_name` in `plan` with `translations`.
+
+    A copy whose name or version name was replaced must not keep the original's translations of it:
+    those name the original, and they would show in every language they cover. Languages that
+    `translations` leaves out or gives an empty text for get no translation, so they fall back to the
+    primary-language value.
+    """
+    i18n_field = get_i18n_field(Plan)
+    assert i18n_field is not None
+    i18n = dict(plan.i18n or {})
+    for field in i18n_field.get_translated_fields():
+        if field.original_name == field_name:
+            i18n.pop(field.name, None)
+    for language, text in translations.items():
+        if text:
+            i18n[translation_key(field_name, language)] = text
+    plan.i18n = i18n
+
+
 class CloneVisitor(AbstractVisitor):
     """Visit a tree node and create a copy of its instance, keeping track of which copy belongs to which instance."""
 
@@ -861,7 +883,11 @@ class CloneVisitor(AbstractVisitor):
     # Identifier and name for the copy of the plan; overrides any suffix stuff
     plan_identifier: str | None
     plan_name: str | None
+    # Translations of `plan_name` and `version_name`, keyed by language. They replace the original's
+    # translations of these fields when the respective name is set; see `_replace_translations()`.
+    plan_name_translations: Mapping[str, str]
     version_name: str | None
+    version_name_translations: Mapping[str, str]
     supersede_original_plan: bool
     supersede_original_actions: bool
 
@@ -874,10 +900,14 @@ class CloneVisitor(AbstractVisitor):
         version_name: str | None = None,
         supersede_original_plan: bool = False,
         supersede_original_actions: bool = False,
+        plan_name_translations: Mapping[str, str] | None = None,
+        version_name_translations: Mapping[str, str] | None = None,
     ):
         self.site_hostname = site_hostname
         self.plan_identifier = plan_identifier
         self.plan_name = plan_name
+        self.plan_name_translations = plan_name_translations or {}
+        self.version_name_translations = version_name_translations or {}
         if copy_name_suffix:
             self.copy_name_suffix = ' ' + copy_name_suffix
         else:
@@ -1090,10 +1120,13 @@ class CloneVisitor(AbstractVisitor):
         self.prepare_instance_for_copy(instance)
         if self.plan_identifier:
             instance.identifier = self.plan_identifier
-        if self.plan_name:
+        if self.plan_name is not None:
             instance.name = self.plan_name
-        if self.version_name:
+            _replace_translations(instance, 'name', self.plan_name_translations)
+        if self.version_name is not None:
+            # Even an empty version name replaces the original's, or a copy could not drop it.
             instance.version_name = self.version_name
+            _replace_translations(instance, 'version_name', self.version_name_translations)
         # Temporarily break cycles; to be restored after everything has been copied
         self.remove_link(instance, 'primary_action_classification')
         self.remove_link(instance, 'secondary_action_classification')
@@ -2555,7 +2588,7 @@ def _clone_plan_objects(
     return plan_copy
 
 
-def copy_plan(
+def copy_plan(  # noqa: PLR0913
     plan: Plan,
     new_plan_identifier: str | None = None,
     new_plan_name: str | None = None,
@@ -2565,6 +2598,8 @@ def copy_plan(
     supersede_original_plan: bool = False,
     supersede_original_actions: bool = False,
     copy_indicators: bool = False,
+    new_plan_name_translations: Mapping[str, str] | None = None,
+    version_name_translations: Mapping[str, str] | None = None,
 ) -> Plan:
     """
     Copy the given plan.
@@ -2576,7 +2611,14 @@ def copy_plan(
 
     Does what you expect for `root_page_title_suffix`.
 
-    The plan version name of the copy can be specified with `version_name`.
+    The plan version name of the copy can be specified with `version_name`. If it is None, the copy keeps the
+    original's version name; an empty string removes it.
+
+    `new_plan_name_translations` and `version_name_translations` map languages to the translations of the
+    copy's name and version name. They replace the original's translations; a language they leave out or give
+    an empty text for falls back to the primary-language value. Without `new_plan_name_translations`, the copy
+    gets the defaults of `default_name_for_copying()` if `new_plan_name` is also None, and no translations
+    otherwise. `version_name_translations` is only allowed with a `version_name`.
 
     If `supersede_original_plan` is true, the copy will supersede the original plan; if
     `supersede_original_actions` is true, each action copy will supersede its original.
@@ -2590,6 +2632,14 @@ def copy_plan(
         new_plan_identifier = plan.default_identifier_for_copying()
     if new_plan_name is None:
         new_plan_name = plan.default_name_for_copying()
+        if new_plan_name_translations is None:
+            new_plan_name_translations = {language: plan.default_name_for_copying(language) for language in plan.other_languages}
+    if version_name is None and version_name_translations:
+        raise ValueError('Version name translations given without a version name')
+    for translations in (new_plan_name_translations, version_name_translations):
+        unknown_languages = set(translations or ()) - set(plan.other_languages)
+        if unknown_languages:
+            raise ValueError(f'Translations into languages the plan does not have: {sorted(unknown_languages)}')
 
     new_site_hostname = _new_site_hostname(plan, new_plan_identifier)
     _validate_copy_plan_args(plan, new_plan_identifier, new_site_hostname, copy_indicators)
@@ -2602,6 +2652,8 @@ def copy_plan(
         version_name=version_name,
         supersede_original_plan=supersede_original_plan,
         supersede_original_actions=supersede_original_actions,
+        plan_name_translations=new_plan_name_translations,
+        version_name_translations=version_name_translations,
     )
 
     # Copying moves rich text that is already stored (and was validated at its original

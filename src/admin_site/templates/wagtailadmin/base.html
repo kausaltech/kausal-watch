@@ -27,9 +27,11 @@
                 <span class="active-plan-locked" aria-label="{% trans 'locked plan' %}">{% icon name="lock" %}</span>
             {% endif %} -->
 
-            {% if active_plan.version_name %}
-                <span class="active-plan-version-name">{{ active_plan.version_name }}</span>
-            {% endif %}
+            {% with version_name=active_plan.version_name_i18n %}
+                {% if version_name %}
+                    <span class="active-plan-version-name">{{ version_name }}</span>
+                {% endif %}
+            {% endwith %}
 
             <div>
                 <span class="active-plan-live {{ active_plan.live_state }}"

@@ -16,6 +16,9 @@ def copy_plan(
     supersede_original_plan: bool,
     supersede_original_actions: bool,
     copy_indicators: bool,
+    # Defaulted, so that copies queued by a version without them still run after a deploy.
+    new_plan_name_translations: dict[str, str] | None = None,
+    version_name_translations: dict[str, str] | None = None,
 ):
     plan = Plan.objects.get(id=plan_id)
     copy_plan_implementation(
@@ -26,4 +29,6 @@ def copy_plan(
         supersede_original_plan=supersede_original_plan,
         supersede_original_actions=supersede_original_actions,
         copy_indicators=copy_indicators,
+        new_plan_name_translations=new_plan_name_translations,
+        version_name_translations=version_name_translations,
     )

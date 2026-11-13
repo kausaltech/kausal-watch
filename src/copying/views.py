@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django import forms
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -14,11 +15,15 @@ from wagtail.admin.views.generic.base import WagtailAdminTemplateMixin
 from celery.contrib.django.task import DjangoTask
 from loguru import logger
 
-from actions.models.plan import Plan
+from kausal_common.i18n.helpers import convert_language_code
+
+from actions.models.plan import Plan, translation_key
 from copying.main import may_copy_indicators
 from copying.tasks import copy_plan
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from django.http import HttpResponse
     from django_stubs_ext import StrOrPromise
 
@@ -43,12 +48,14 @@ class PlanCopyForm(forms.Form):
             help_text=_('Name to use for the copy'),
             initial=self.plan.default_name_for_copying(),
         )
+        self._add_translation_fields('name', self.plan.default_name_for_copying)
         self.fields['version_name'] = forms.CharField(
             label=_('Version name'),
             help_text=_('Version name to be set for the copied plan in order to distinguish it from other versions'),
             initial=self.plan.default_version_name_for_copying(),
             required=False,
         )
+        self._add_translation_fields('version_name', self.plan.default_version_name_for_copying)
         self.fields['supersede_original_plan'] = forms.BooleanField(
             label=_('Supersede original plan'),
             help_text=_('Set if the copy should supersede the original plan'),
@@ -72,6 +79,28 @@ class PlanCopyForm(forms.Form):
             required=False,
             disabled=not may_copy_indicators(self.plan),
         )
+
+    def _add_translation_fields(self, field_name: str, get_default: Callable[[str], str]) -> None:
+        """
+        Add a field for each of the plan's other languages that translates the field `field_name`.
+
+        The copy's translations replace the original's, which would otherwise keep naming the original in
+        those languages. The defaults are therefore computed for the copy, as for `field_name` itself.
+        """
+        language_names = {code.lower(): str(name) for code, name in settings.LANGUAGES}
+        label = self.fields[field_name].label
+        for language in self.plan.other_languages:
+            language_name = language_names.get(convert_language_code(language, 'django'), language)
+            self.fields[translation_key(field_name, language)] = forms.CharField(
+                label=f'{label} ({language_name})',
+                help_text=_('If left empty, the text in the primary language is shown in this language.'),
+                initial=get_default(language),
+                required=False,
+            )
+
+    def get_translations(self, field_name: str) -> dict[str, str]:
+        """Return the submitted translations of the field `field_name`, keyed by language."""
+        return {language: self.cleaned_data[translation_key(field_name, language)] for language in self.plan.other_languages}
 
     def clean_identifier(self) -> str:
         identifier = self.cleaned_data['identifier']
@@ -136,6 +165,8 @@ class PlanCopyView(WagtailAdminTemplateMixin, FormView):
             new_plan_identifier=form.cleaned_data['identifier'],
             new_plan_name=form.cleaned_data['name'],
             version_name=form.cleaned_data['version_name'],
+            new_plan_name_translations=form.get_translations('name'),
+            version_name_translations=form.get_translations('version_name'),
             supersede_original_plan=form.cleaned_data['supersede_original_plan'],
             supersede_original_actions=form.cleaned_data['supersede_original_actions'],
             copy_indicators=form.cleaned_data['copy_indicators'],
