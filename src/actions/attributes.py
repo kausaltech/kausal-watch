@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import typing
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -11,8 +12,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import ForeignKey, Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.compare import diff_text
 from wagtail.admin.panels import FieldPanel, field_panel
 from wagtail.models import DraftStateMixin, RevisionMixin
+from wagtail.utils.text import text_from_html
 
 from dal import autocomplete, forward as dal_forward
 from loguru import logger
@@ -91,8 +94,52 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
             with translation.override(self.panel.language):
                 return get_value()
 
+        def get_comparison(self):
+            return [functools.partial(AttributeComparison, self.panel)]
+
     def format_value_for_display(self, value):
         return value()
+
+    def get_revision_value(self, obj: M) -> str:
+        """Return the attribute's value in a revision of the object, as text."""
+        draft_attributes = getattr(obj, 'draft_attributes', None)
+        if draft_attributes is None:
+            return ''
+        try:
+            attribute_value = draft_attributes.get_value_for_attribute_type(self.attribute_type)
+        except KeyError:
+            return ''
+        if not attribute_value.should_exist_in_database():
+            return ''
+        text_vals: dict[str, str] | None = getattr(attribute_value, 'text_vals', None)
+        if self.field_name == getattr(self.attribute_type, 'choice_form_field_name', None):
+            return str(getattr(attribute_value, 'option', None) or '')
+        if text_vals is not None:
+            # Each language has a panel of its own, so no falling back to another language here
+            key = f'text_{self.language}' if self.language else 'text'
+            return text_from_html(text_vals.get(key) or '')
+        return text_from_html(str(attribute_value.instantiate_attribute(self.attribute_type, obj)))
+
+
+class AttributeComparison:
+    """Compare the value of an attribute between two revisions, for Wagtail's revision comparison."""
+
+    is_field = True
+    is_child_relation = False
+
+    def __init__(self, panel: AttributeFieldPanel[Any], obj_a: models.ModelWithAttributes, obj_b: models.ModelWithAttributes):
+        self.panel = panel
+        self.val_a = panel.get_revision_value(obj_a)
+        self.val_b = panel.get_revision_value(obj_b)
+
+    def field_label(self) -> str:
+        return str(self.panel.heading)
+
+    def htmldiff(self) -> str:
+        return diff_text(self.val_a, self.val_b).to_html()
+
+    def has_changed(self) -> bool:
+        return self.val_a != self.val_b
 
 
 @dataclass

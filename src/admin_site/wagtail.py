@@ -308,6 +308,9 @@ class BoundPlanFilteredFieldPanelMixin(BoundFieldPanelMixinBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if self.bound_field is None:
+            # Bound without a form, as when comparing revisions
+            return
         field = cast('ModelChoiceField[Any]', self.bound_field.field)
         queryset = field.queryset
         assert queryset is not None

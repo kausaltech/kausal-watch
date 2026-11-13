@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from wagtail.log_actions import log
 from wagtail.models import Workflow, WorkflowState
 
 import pytest
 
-from actions.models import ActionContactPerson
+from actions.models import Action, ActionContactPerson, AttributeType
 from actions.tests import action_admin_helpers as h
-from actions.tests.factories import ActionFactory, PlanFactory
-
-if TYPE_CHECKING:
-    from actions.models import Action
+from actions.tests.factories import ActionFactory, AttributeTypeChoiceOptionFactory, AttributeTypeFactory, PlanFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -423,3 +421,193 @@ class TestPublishRights:
 
         action.refresh_from_db()
         assert not action.live
+
+
+class TestModerationStatus:
+    def test_side_panel_tells_who_last_published(self, client, action, plan_admin):
+        h.post_edit(client, plan_admin, action, 'publish', name='New name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, plan_admin, action))
+
+        assert 'Live' in panel
+        assert str(plan_admin) in panel or plan_admin.get_full_name() in panel
+
+    def test_editor_sees_the_comment_after_changes_were_requested(self, client, action, editor, moderator):
+        submit(client, editor, action)
+        h.post_workflow_action(client, moderator, action, 'reject', {'comment': 'Please fix the heading'})
+
+        response = h.get_edit_page(client, editor, action)
+
+        assert 'Changes requested' in h.status_side_panel_text(response)
+        assert 'Please fix the heading' in response.content.decode()
+
+    def test_side_panel_does_not_mention_locking_without_moderation(self, client):
+        action = ActionFactory.create()
+        admin = h.make_plan_admin(action.plan)
+        h.post_edit(client, admin, action, name='New name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, admin, action))
+
+        assert 'Live' in panel
+        assert 'Locking' not in panel
+
+    def test_side_panel_offers_no_lock_switch_even_to_a_superuser(self, client, plan, action, editor):
+        superuser = h.make_superuser(plan)
+
+        unlocked = h.status_side_panel_text(h.get_edit_page(client, superuser, action))
+        submit(client, editor, action)
+        in_moderation = h.status_side_panel_text(h.get_edit_page(client, superuser, action))
+
+        assert 'Anyone can edit this action' in unlocked
+        assert 'lock it' not in unlocked
+        assert 'Locked by workflow' in in_moderation
+        assert 'lock it' not in in_moderation
+
+    def test_live_line_does_not_credit_a_draft_to_the_live_version(self, client, action, editor):
+        assert action.live_revision is None
+        h.post_edit(client, editor, action, name='Draft name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, editor, action))
+
+        live_line = panel[panel.index('Live') : panel.index('Draft')]
+        assert live_line.split() == ['Live', 'Status:']
+
+    def test_live_line_shows_who_published_without_a_live_revision(self, client, action, editor, plan_admin):
+        plan_admin.first_name, plan_admin.last_name = 'Paula', 'Publisher'
+        plan_admin.save(update_fields=['first_name', 'last_name'])
+        editor.first_name, editor.last_name = 'Edith', 'Editor'
+        editor.save(update_fields=['first_name', 'last_name'])
+        log(instance=action, action='wagtail.publish', user=plan_admin)
+        h.post_edit(client, editor, action, name='Draft name')
+
+        panel = h.status_side_panel_text(h.get_edit_page(client, editor, action))
+
+        live_line = panel[panel.index('Live') : panel.index('Draft')]
+        assert 'Paula Publisher' in live_line
+        assert 'Edith Editor' not in live_line
+
+    def test_side_panel_has_no_usage_count(self, client, action, plan_admin):
+        panel = h.status_side_panel_text(h.get_edit_page(client, plan_admin, action))
+
+        assert 'Used' not in panel
+
+    def test_workflow_history_lists_the_moderation_rounds(self, client, action, editor, moderator):
+        submit(client, editor, action)
+        h.post_workflow_action(client, moderator, action, 'reject', {'comment': 'Please fix the heading'})
+        state = action.workflow_states.get()
+
+        history = client.get(h.workflow_history_url(action))
+        detail = client.get(h.workflow_history_detail_url(action, state.pk))
+
+        assert history.status_code == 200
+        assert detail.status_code == 200
+        assert 'Please fix the heading' in detail.content.decode()
+
+    @pytest.mark.parametrize(
+        'make_user',
+        [
+            lambda action: h.make_contact_person(ActionFactory.create(plan=action.plan)),
+            lambda _action: h.make_plan_admin(PlanFactory.create()),
+        ],
+        ids=['contact_person_of_another_action', 'admin_of_another_plan'],
+    )
+    def test_outsider_cannot_open_the_workflow_history_or_comparison(self, client, action, editor, moderator, make_user):
+        h.post_edit(client, editor, action, name='First draft')
+        submit(client, editor, action)
+        state = action.workflow_states.get()
+        first, second = action.revisions.order_by('pk')
+        client.force_login(make_user(action))
+
+        for url in (
+            h.workflow_history_url(action),
+            h.workflow_history_detail_url(action, state.pk),
+            h.compare_url(action, first.pk, second.pk),
+        ):
+            assert client.get(url).status_code != 200
+
+    def test_comparison_shows_what_changed_between_two_drafts(self, client, action, editor):
+        h.post_edit(client, editor, action, name='First draft')
+        h.post_edit(client, editor, action, name='Second draft')
+        first, second = action.revisions.order_by('pk')
+
+        response = client.get(h.compare_url(action, first.pk, second.pk))
+
+        assert response.status_code == 200
+        changes = h.table_rows(response)
+        assert any(row.startswith('Name') and 'First' in row and 'Second' in row for row in changes)
+
+
+class TestComparingAttributes:
+    @pytest.fixture
+    def make_attribute_type(self, plan):
+        def make(attribute_format: AttributeType.AttributeFormat, name: str) -> AttributeType:
+            return AttributeTypeFactory.create(
+                scope=plan,
+                object_content_type=ContentType.objects.get_for_model(Action),
+                format=attribute_format,
+                name=name,
+            )
+
+        return make
+
+    @staticmethod
+    def changes(client, action: Action) -> list[str]:
+        *_, before, after = action.revisions.order_by('pk')
+        response = client.get(h.compare_url(action, before.pk, after.pk))
+        assert response.status_code == 200
+        return h.table_rows(response)
+
+    def test_text_number_and_choice_changes_are_listed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        cost = make_attribute_type(AttributeType.AttributeFormat.NUMERIC, 'Cost')
+        priority = make_attribute_type(AttributeType.AttributeFormat.ORDERED_CHOICE, 'Priority')
+        low = AttributeTypeChoiceOptionFactory.create(type=priority, name='Low')
+        high = AttributeTypeChoiceOptionFactory.create(type=priority, name='High')
+        fields = {attribute_type: f'attribute_type_{attribute_type.pk}' for attribute_type in (note, cost, priority)}
+        h.post_edit(
+            client, plan_admin, action, None, **{fields[note]: 'One million', fields[cost]: '10', fields[priority]: low.pk}
+        )
+
+        h.post_edit(
+            client, plan_admin, action, None, **{fields[note]: 'Two million', fields[cost]: '25', fields[priority]: high.pk}
+        )
+
+        changes = self.changes(client, action)
+        assert any(row.startswith('Budget note') and 'One' in row and 'Two' in row for row in changes)
+        assert any(row.startswith('Cost') and '10' in row and '25' in row for row in changes)
+        assert any(row.startswith('Priority') and 'Low' in row and 'High' in row for row in changes)
+
+    def test_unchanged_attribute_is_not_listed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        h.post_edit(client, plan_admin, action, **{f'attribute_type_{note.pk}': 'One million'})
+
+        h.post_edit(client, plan_admin, action, name='Another name')
+
+        assert not any(row.startswith('Budget note') for row in self.changes(client, action))
+
+    def test_translation_is_listed_only_when_it_changed(self, client, action, plan_admin, make_attribute_type):
+        note = make_attribute_type(AttributeType.AttributeFormat.TEXT, 'Budget note')
+        field = f'attribute_type_{note.pk}'
+        h.post_edit(client, plan_admin, action, **{field: 'One million', f'{field}_fi': 'Miljoona'})
+
+        h.post_edit(client, plan_admin, action, **{f'{field}_fi': 'Kaksi miljoonaa'})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Budget note')]
+        assert len(changes) == 1
+        assert changes[0].startswith('Budget note (fi)')
+        assert 'Miljoona' in changes[0]
+
+    def test_choice_and_its_text_are_compared_separately(self, client, action, plan_admin, make_attribute_type):
+        risk = make_attribute_type(AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT, 'Risk')
+        small = AttributeTypeChoiceOptionFactory.create(type=risk, name='Small')
+        large = AttributeTypeChoiceOptionFactory.create(type=risk, name='Large')
+        choice_field = f'attribute_type_{risk.pk}_choice'
+        h.post_edit(client, plan_admin, action, None, **{choice_field: small.pk})
+
+        h.post_edit(client, plan_admin, action, None, **{choice_field: large.pk})
+
+        changes = [row for row in self.changes(client, action) if row.startswith('Risk')]
+        assert len(changes) == 1
+        assert 'choice' in changes[0]
+        assert 'Small' in changes[0]
+        assert 'Large' in changes[0]
