@@ -60,3 +60,27 @@ def test_plan_copy_view_queues_copy_for_superusers(client, superuser, plan, copy
     response = client.post(copy_url, {'identifier': 'copy', 'name': 'Copy'})
     assert response.status_code == 302
     assert [str(kwargs['plan_id']) for kwargs in queued] == [str(plan.pk)]
+
+
+@pytest.mark.django_db
+def test_plan_copy_view_asks_for_name_translations(client, superuser, plan, copy_url, monkeypatch):
+    assert plan.other_languages == ['fi']
+    plan.i18n = {'name_fi': 'Suunnitelma'}
+    plan.save()
+    queued = []
+    monkeypatch.setattr('copying.views.copy_plan.delay_on_commit', lambda **kwargs: queued.append(kwargs))
+    client.force_login(superuser)
+
+    form = client.get(copy_url).context['form']
+    assert form['name_fi'].initial == plan.default_name_for_copying('fi')
+    assert form['version_name_fi'].initial == plan.default_version_name_for_copying('fi')
+
+    response = client.post(
+        copy_url,
+        {'identifier': 'copy', 'name': 'Copy', 'name_fi': 'Kopio', 'version_name': 'Draft', 'version_name_fi': ''},
+    )
+    assert response.status_code == 302
+    [kwargs] = queued
+    assert kwargs['new_plan_name_translations'] == {'fi': 'Kopio'}
+    assert kwargs['version_name'] == 'Draft'
+    assert kwargs['version_name_translations'] == {'fi': ''}

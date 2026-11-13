@@ -266,6 +266,15 @@ else:
     PlanManager = MLModelManager.from_queryset(PlanQuerySet)
 
 
+def translation_key(field_name: str, language: str) -> str:
+    """
+    Return the key under which a model's `i18n` stores the translation of `field_name` into `language`.
+
+    `language` may be given in any spelling `convert_language_code()` accepts, such as a plan's 'de-CH'.
+    """
+    return f'{field_name}_{convert_language_code(language, "modeltrans")}'
+
+
 def help_text_with_default_disclaimer(help_text, default_value=None):
     """Format lazily a help text with the default value injected for clarity if one is available."""
 
@@ -655,6 +664,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         fields=[
             'name',
             'short_name',
+            'version_name',
             'access_request_eligibility_text',
             'pledge_account_title',
             'pledge_account_description',
@@ -1701,14 +1711,22 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
             max_copy_number = 0
         return f'{identifier_base}{max_copy_number + 1}'
 
-    def default_name_for_copying(self) -> str:
-        """Get a name a copy of this plan should have by default."""
+    def get_translation(self, field_name: str, language: str) -> str:
+        """Return the stored translation of `field_name` into `language`, or '' if there is none."""
+        return (self.i18n or {}).get(translation_key(field_name, language)) or ''
+
+    def _next_copy_number_for_name(self) -> int | None:
+        """
+        Return the number a copy's default name must carry to be unique, or None if it needs none.
+
+        Plan names must be unique, but only the primary-language name is checked: the translations of a
+        default name carry the same number, so they are as distinct as the name itself.
+        """
         with translation.override(self.primary_language):
-            now = self.now_in_local_timezone()
-            today = date_format(now.date(), format='SHORT_DATE_FORMAT', use_l10n=True)
+            today = self._today_for_copy_names()
             candidate = _('%(plan)s (copy from %(date)s)') % {'plan': self.name, 'date': today}
             if not Plan.objects.filter(name=candidate).exists():
-                return candidate
+                return None
             # Build a regex from the translated template to find existing numbered copies
             num_marker = 'XNUMMARKERX'
             template = _('%(plan)s (copy %(n)s from %(date)s)') % {
@@ -1716,35 +1734,62 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
                 'n': num_marker,
                 'date': today,
             }
-            num_pos = template.index(num_marker)
-            chars_after_num = len(template) - num_pos - len(num_marker)
-            regex = '^' + re.escape(template).replace(num_marker, r'\d+') + '$'
-            max_copy_number = (
-                (
-                    Plan.objects
-                    .filter(name__regex=regex)
-                    .annotate(
-                        copy_number=Cast(
-                            Substr('name', num_pos + 1, Length('name') - num_pos - chars_after_num),
-                            models.IntegerField(),
-                        )
+        num_pos = template.index(num_marker)
+        chars_after_num = len(template) - num_pos - len(num_marker)
+        regex = '^' + re.escape(template).replace(num_marker, r'\d+') + '$'
+        max_copy_number = (
+            (
+                Plan.objects
+                .filter(name__regex=regex)
+                .annotate(
+                    copy_number=Cast(
+                        Substr('name', num_pos + 1, Length('name') - num_pos - chars_after_num),
+                        models.IntegerField(),
                     )
-                    .aggregate(Max('copy_number'))['copy_number__max']
                 )
-                or 1
+                .aggregate(Max('copy_number'))['copy_number__max']
             )
-            return _('%(plan)s (copy %(n)s from %(date)s)') % {
-                'plan': self.name,
-                'n': max_copy_number + 1,
-                'date': today,
-            }
+            or 1
+        )
+        return max_copy_number + 1
 
-    def default_version_name_for_copying(self) -> str:
-        """Get a version name a copy of this plan should have by default."""
-        with translation.override(self.primary_language):
-            now = self.now_in_local_timezone()
-            today = date_format(now.date(), format='SHORT_DATE_FORMAT', use_l10n=True)
-            return _('Copy from %(date)s') % {'date': today}
+    def _today_for_copy_names(self) -> str:
+        """Return today's date in the plan's time zone, formatted for the active language."""
+        return date_format(self.now_in_local_timezone().date(), format='SHORT_DATE_FORMAT', use_l10n=True)
+
+    def default_name_for_copying(self, language: str | None = None) -> str:
+        """
+        Get a name a copy of this plan should have by default.
+
+        Without `language`, this is the name in the primary language. With one of `other_languages`, it is
+        the same name in that language, built from the plan name's translation. If the plan name has no
+        translation into `language`, the result is empty, so that the copy falls back to its primary name
+        in that language just like the original does.
+        """
+        if language is None:
+            language = self.primary_language
+            plan_name = self.name
+        else:
+            plan_name = self.get_translation('name', language)
+            if not plan_name:
+                return ''
+        copy_number = self._next_copy_number_for_name()
+        with translation.override(language):
+            today = self._today_for_copy_names()
+            if copy_number is None:
+                return _('%(plan)s (copy from %(date)s)') % {'plan': plan_name, 'date': today}
+            return _('%(plan)s (copy %(n)s from %(date)s)') % {'plan': plan_name, 'n': copy_number, 'date': today}
+
+    def default_version_name_for_copying(self, language: str | None = None) -> str:
+        """
+        Get a version name a copy of this plan should have by default.
+
+        Without `language`, this is the version name in the primary language; otherwise it is the version
+        name in `language`. Unlike the name, it does not depend on the original's version name, so there is
+        a default in every language.
+        """
+        with translation.override(language or self.primary_language):
+            return _('Copy from %(date)s') % {'date': self._today_for_copy_names()}
 
     @admin.display(description=_('Clients'), ordering='clients__client__name')
     def clients_as_string(self) -> str:
