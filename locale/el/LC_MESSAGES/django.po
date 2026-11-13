@@ -4931,6 +4931,12 @@ msgstr ""
 
 #: src/copying/views.py
 #, fuzzy
+#| msgid "If no primary language is set, there must not be other languages"
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr "Εάν δεν έχει οριστεί κύρια γλώσσα, δεν πρέπει να υπάρχουν άλλες γλώσσες"
+
+#: src/copying/views.py
+#, fuzzy
 #| msgid "Person with this email already exists"
 msgid "A plan with this identifier already exists"
 msgstr "Άτομο με αυτό το email υπάρχει ήδη"

@@ -4983,6 +4983,12 @@ msgstr ""
 
 #: src/copying/views.py
 #, fuzzy
+#| msgid "If no primary language is set, there must not be other languages"
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr "Ja nav iestatīta pamatvaloda, nedrīkst būt citu valodu"
+
+#: src/copying/views.py
+#, fuzzy
 #| msgid "Person with this email already exists"
 msgid "A plan with this identifier already exists"
 msgstr "Persona ar šo e-pasta adresi jau eksistē"

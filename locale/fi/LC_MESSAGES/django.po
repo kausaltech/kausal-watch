@@ -4544,6 +4544,12 @@ msgid "Set if indicators should be copied instead of being shared with the origi
 msgstr "Aseta, jos mittarit tulee kopioida sen sijaan, että ne jaettaisiin alkuperäisen toimenpideohjelman kanssa. Mittarit voidaan kopioida vain, jos mikään mittari ei ole jaettu toisen toimenpideohjelman kanssa eikä ole yleisen mittarin ilmentymä."
 
 #: src/copying/views.py
+#, fuzzy
+#| msgid "If no primary language is set, there may not be other languages."
+msgid "If left empty, the text in the primary language is shown in this language."
+msgstr "Jos ensisijaista kieltä ei ole asetettu, muita kieliä ei voi olla."
+
+#: src/copying/views.py
 msgid "A plan with this identifier already exists"
 msgstr "Tällä tunnisteella on jo toimenpideohjelma"
 
