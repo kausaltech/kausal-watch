@@ -408,3 +408,111 @@ def test_history_of_other_plan_indicator_is_refused(admin_client):
     other_plan = PlanFactory.create()
     indicator = _indicator(other_plan)
     assert admin_client.get(f'{INDICATORS_PATH}history/{indicator.pk}/').status_code == 302
+
+
+class TestDeletingIndicatorShownOnPages:
+    """Deleting an indicator must not leave content blocks pointing at a missing indicator."""
+
+    @staticmethod
+    def _delete_path(indicator: Indicator) -> str:
+        return f'{INDICATORS_PATH}delete/{indicator.pk}/'
+
+    @staticmethod
+    def _group_block(indicator: Indicator) -> tuple[str, dict[str, object]]:
+        return ('indicator_group', {'title': '', 'indicators': [{'indicator': indicator, 'style': 'graph'}]})
+
+    def test_indicator_in_published_block_cannot_be_deleted(self, admin_client, plan_with_pages):
+        from actions.perms import sync_plan_admin_group_permissions
+
+        # Give the plan admins the page permissions that the site, created after the plan, lacks so far
+        sync_plan_admin_group_permissions(plan_with_pages)
+        indicator = _indicator(plan_with_pages)
+        page = plan_with_pages.root_page.specific
+        page.body = [self._group_block(indicator)]
+        page.save()
+
+        response = admin_client.get(self._delete_path(indicator))
+        assert response.status_code == 200
+        assert response.context['indicator_usage'].pages == [page]
+        assert f'/pages/{page.pk}/edit/'.encode() in response.content
+        assert b'Yes, delete' not in response.content
+
+        response = admin_client.post(self._delete_path(indicator))
+        assert response.status_code == 200
+        assert Indicator.objects.filter(pk=indicator.pk).exists()
+
+    def test_indicator_only_in_draft_cannot_be_deleted(self, admin_client, plan_with_pages):
+        indicator = _indicator(plan_with_pages)
+        page = plan_with_pages.root_page.specific
+        page.body = [self._group_block(indicator)]
+        page.save_revision()
+
+        usage = admin_client.get(self._delete_path(indicator)).context['indicator_usage']
+        assert usage.pages == []
+        assert [p.pk for p in usage.draft_pages] == [page.pk]
+
+        admin_client.post(self._delete_path(indicator))
+        assert Indicator.objects.filter(pk=indicator.pk).exists()
+
+    def test_indicator_nested_in_dashboard_row_cannot_be_deleted(self, admin_client, plan_with_pages):
+        indicator = _indicator(plan_with_pages)
+        page = plan_with_pages.root_page.specific
+        page.body = [('dashboard_row', [('indicator_summary', {'indicator': indicator})])]
+        page.save()
+
+        admin_client.post(self._delete_path(indicator))
+        assert Indicator.objects.filter(pk=indicator.pk).exists()
+
+    def test_indicator_shown_on_page_of_plan_it_left_cannot_be_deleted(self, admin_client, plan_with_pages):
+        from actions.tests.factories import PlanFactory
+
+        indicator = _indicator(plan_with_pages)
+        other_plan = PlanFactory.create()
+        other_plan.create_default_site()
+        page = other_plan.root_page.specific
+        page.body = [self._group_block(indicator)]
+        page.save()
+
+        response = admin_client.get(self._delete_path(indicator))
+        assert response.context['indicator_usage'].pages == [page]
+        # The page belongs to a plan the user can't administer, so it is not revealed
+        assert response.context['using_pages'][0]['can_edit'] is False
+        assert page.title.encode() not in response.content
+        assert f'/pages/{page.pk}/edit/'.encode() not in response.content
+        assert b'have access to' in response.content
+
+    def test_indicator_only_in_draft_of_plan_it_left_cannot_be_deleted(self, admin_client, plan_with_pages):
+        from actions.tests.factories import PlanFactory
+
+        indicator = _indicator(plan_with_pages)
+        other_plan = PlanFactory.create()
+        other_plan.create_default_site()
+        page = other_plan.root_page.specific
+        page.body = [self._group_block(indicator)]
+        page.save_revision()
+
+        usage = admin_client.get(self._delete_path(indicator)).context['indicator_usage']
+        assert [p.pk for p in usage.draft_pages] == [page.pk]
+
+    def test_block_with_other_indicator_does_not_block_deletion(self, admin_client, plan_with_pages):
+        indicator = _indicator(plan_with_pages)
+        page = plan_with_pages.root_page.specific
+        page.body = [self._group_block(_indicator(plan_with_pages))]
+        page.save()
+
+        response = admin_client.post(self._delete_path(indicator))
+        assert response.status_code == 302
+        assert not Indicator.objects.filter(pk=indicator.pk).exists()
+
+    def test_rich_text_link_does_not_block_deletion(self, admin_client, plan_with_pages):
+        from wagtail.rich_text import RichText
+
+        indicator = _indicator(plan_with_pages)
+        page = plan_with_pages.root_page.specific
+        link = f'<p><a linktype="indicator" id="{indicator.pk}" uuid="{indicator.uuid}">link</a></p>'
+        page.body = [('text', RichText(link))]
+        page.save()
+
+        response = admin_client.post(self._delete_path(indicator))
+        assert response.status_code == 302
+        assert not Indicator.objects.filter(pk=indicator.pk).exists()

@@ -1,0 +1,29 @@
+{% extends "wagtailadmin/generic/confirm_delete.html" %}
+{% load i18n %}
+
+{% block main_content %}
+    {% if indicator_usage.blocks_deletion %}
+        <h2>{% blocktrans trimmed with model_opts.verbose_name|capfirst as model_name %}{{ model_name }} could not be deleted{% endblocktrans %}</h2>
+        <p>
+            {% blocktrans trimmed with object as instance_name %}
+                '{{ instance_name }}' is shown in content blocks on the following pages. Deleting it would break these
+                pages. Remove the indicator from their content blocks first:
+            {% endblocktrans %}
+        </p>
+        <ul>
+            {% for entry in using_pages %}
+                <li>
+                    {% if entry.can_edit %}
+                        <a href="{% url 'wagtailadmin_pages:edit' entry.page.pk %}">{{ entry.page.get_admin_display_title }}</a>
+                    {% else %}
+                        {% trans "A page you don't have access to" %}
+                    {% endif %}
+                    {% if entry.is_draft %}({% trans "unpublished draft" %}){% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <p><a href="{{ view.get_success_url }}" class="button">{% trans 'Go back to listing' %}</a></p>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}
