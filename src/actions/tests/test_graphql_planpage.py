@@ -743,3 +743,42 @@ def test_category_page_action_list(graphql_client_query_data, plan_with_pages, c
             },
         },
     )
+
+
+def test_indicator_group_block_skips_deleted_indicators(graphql_client_query_data, plan_with_pages):
+    from indicators.tests.factories import IndicatorBlockFactory, IndicatorFactory
+
+    plan = plan_with_pages
+    kept = IndicatorFactory.create(plans=[plan])
+    deleted = IndicatorFactory.create(plans=[plan])
+    list_block = blocks.list_block.ListBlock(IndicatorBlock)
+    indicators = blocks.list_block.ListValue(
+        list_block, [IndicatorBlockFactory(indicator=deleted), IndicatorBlockFactory(indicator=kept)]
+    )
+    page = plan.root_page
+    page.body = [('indicator_group', IndicatorGroupBlockFactory(indicators=indicators))]
+    page.save()
+    deleted.delete()
+    page.refresh_from_db()
+
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_fields="""
+            indicators {
+              ... on IndicatorBlock {
+                indicator { id }
+              }
+            }
+            items {
+              id
+              ... on IndicatorBlock {
+                indicator { id }
+              }
+            }
+        """,
+        expected={
+            'indicators': [{'indicator': {'id': str(kept.id)}}],
+            'items': [{'id': str(kept.id), 'indicator': {'id': str(kept.id)}}],
+        },
+    )

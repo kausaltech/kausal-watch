@@ -102,11 +102,16 @@ class IndicatorGroupBlock(StructBlock):
     title = CharBlock(required=False)
     indicators = ListBlock(IndicatorBlock())
 
+    def get_indicators(self, info, values, **kwargs):
+        # An indicator chosen in the block resolves to None once it has been deleted. Leave it out instead of
+        # handing the UI an item without an indicator.
+        return [value for value in values['indicators'] if value['indicator'] is not None]
+
     def items(self, info, values, **kwargs):
         result = []
         # Our queries from the UI unfortunately want a field `id` there that probably shouldn't exist, but let's just
         # put some crap in our response to avoid raising an error and breaking the UI.
-        for value in values['indicators']:
+        for value in self.get_indicators(info, values):
             assert not hasattr(value, 'id')
             value.id = value['indicator'].id
             result.append(value)
@@ -114,7 +119,7 @@ class IndicatorGroupBlock(StructBlock):
 
     graphql_fields = [
         GraphQLString('title'),
-        GraphQLStreamfield('indicators'),
+        GraphQLStreamfield('indicators', source='get_indicators'),
         GraphQLStreamfield('items', deprecation_reason="Use 'indicators' instead"),
     ]
 
@@ -181,6 +186,9 @@ class DashboardIndicatorChartBaseBlock(StructBlock):
         from indicators.schema import compute_chart_series
 
         indicator = values['indicator']
+        if indicator is None:
+            # The indicator has been deleted since the block was saved
+            return []
         assert isinstance(indicator, Indicator)
         dimension = values['dimension']
         assert isinstance(dimension, Dimension | None)

@@ -79,6 +79,7 @@ from indicators.chooser import DimensionChooser, IndicatorValueChooser
 from indicators.normalization import get_normalization_warnings
 from indicators.panels import IndicatorMetricsInlinePanel
 from indicators.permission_policy import DimensionPermissionPolicy
+from indicators.usage import get_indicator_usage
 from orgs.models import Organization
 
 from .models import ActionIndicator, CommonIndicator, Dimension, Indicator, IndicatorLevel, PlanDimension, Quantity, Unit
@@ -1259,6 +1260,37 @@ class IndicatorIndexView(WatchIndexView[Indicator]):
         return [*buttons, *dataset_buttons]
 
 
+class IndicatorDeleteView(WatchDeleteView[Indicator]):
+    """
+    Refuse to delete an indicator that a content block on a page still shows.
+
+    The block would be left pointing at a missing indicator, which breaks the page in the public UI.
+    """
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usage = get_indicator_usage(self.object)
+        context['indicator_usage'] = usage
+        # The indicator may still be shown on pages of plans that the user can't administer. They need to know such
+        # pages exist, as they block the deletion, but not what they are.
+        user = user_or_bust(self.request.user)
+        context['using_pages'] = [
+            {'page': page, 'is_draft': is_draft, 'can_edit': page.permissions_for_user(user).can_edit()}
+            for pages, is_draft in ((usage.pages, False), (usage.draft_pages, True))
+            for page in pages
+        ]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if get_indicator_usage(self.object).blocks_deletion:
+            messages.error(
+                request,
+                _('The indicator is still shown on pages. Remove it from the content blocks of these pages first.'),
+            )
+            return self.get(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+
+
 class IndicatorViewSet(WatchViewSet[Indicator]):
     model = Indicator
     list_per_page = 100
@@ -1280,6 +1312,8 @@ class IndicatorViewSet(WatchViewSet[Indicator]):
     index_view_class = IndicatorIndexView
     add_view_class = IndicatorCreateView
     edit_view_class = IndicatorEditView
+    delete_view_class = IndicatorDeleteView
+    delete_template_name = 'indicators/indicator_delete.html'
 
     edit_handler = ObjectList([FieldPanel('name')], base_form_class=IndicatorForm)
 

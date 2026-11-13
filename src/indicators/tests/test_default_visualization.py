@@ -499,3 +499,10 @@ def test_bar_chart_interface_fields_queryable(graphql_client_query_data):
     assert viz['barType'] == 'grouped'
     assert viz['indicator']['id'] == str(indicator.id)
     assert len(viz['chartSeries']) == 1
+
+
+def test_dashboard_chart_without_indicator_has_no_series():
+    """A dashboard chart block whose indicator has been deleted shows no series instead of failing."""
+    from indicators.blocks import DashboardIndicatorBarChartBlock
+
+    assert DashboardIndicatorBarChartBlock().chart_series(None, {'indicator': None, 'dimension': None}) == []  # type: ignore[arg-type]
