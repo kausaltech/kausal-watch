@@ -1014,7 +1014,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
         from actions.models.attributes import AttributeType
 
         attribute_types = AttributeType.objects.get_queryset()
-        attribute_types = attribute_types.for_actions(self) | attribute_types.for_categories(self)
+        attribute_types = attribute_types.for_plan_scope(self) | attribute_types.for_categories(self)
         plan_languages = [primary_language, *other_languages]
         at_primary_languages = attribute_types.values_list('primary_language', flat=True).distinct().order_by()
         for at_primary_language in set(at_primary_languages):

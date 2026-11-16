@@ -143,7 +143,7 @@ class ActionMutations:
         for_create: bool = False,
     ) -> None:
         plan = action.plan
-        attr_types = list(plan.action_attribute_types.all())
+        attr_types = list(AttributeType.objects.for_actions(plan))
         attr_types_by_id = {str(attr_type.id): attr_type for attr_type in attr_types}
         attr_types_by_identifier = {attr_type.identifier: attr_type for attr_type in attr_types}
 

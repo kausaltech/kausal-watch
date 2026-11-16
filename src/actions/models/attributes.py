@@ -66,12 +66,23 @@ class AttributeTypeQuerySet(MultilingualQuerySet['AttributeType']):
         f = Q(scope_content_type=ct) & Q(scope_id__in=ct_qs)
         return self.filter(f)
 
-    def for_actions(self, plan: Plan):
+    def for_plan_scope(self, plan: Plan):
+        """
+        Return all attribute types scoped to the plan.
+
+        This includes the attribute types of every kind of object that has plan-scoped attributes, i.e., actions and
+        pledges. Use `for_actions()` to get only the action ones.
+        """
         from .plan import Plan
 
         ct = ContentType.objects.get_for_model(Plan)
         f = Q(scope_content_type=ct) & Q(scope_id=plan.id)
         return self.filter(f)
+
+    def for_actions(self, plan: Plan):
+        from .action import Action
+
+        return self.for_plan_scope(plan).filter(object_content_type=ContentType.objects.get_for_model(Action))
 
 
 if TYPE_CHECKING:

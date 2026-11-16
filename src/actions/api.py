@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import build_localized_fieldname, get_available_languages
 from rest_framework import exceptions, permissions, serializers, status, viewsets
+from rest_framework.fields import empty
 from rest_framework.relations import RelatedField
 from rest_framework.routers import SimpleRouter
 from rest_framework.views import APIView
@@ -71,7 +72,7 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Sequence
 
     from django.db.models import Model
     from django.views.generic import View
@@ -520,24 +521,57 @@ class AttributesSerializerMixin[InstanceT: Any](AttributesSerializerMixinBase[In
         fields = super().get_fields()
         request: Request | None = self.context.get('request')
         user = user_or_none(request.user) if request is not None else None
-        if user is not None:
-            plan = user.get_active_admin_plan()
-            attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
-            for attribute_type in attribute_types:
-                if not attribute_type.is_instance_visible_for(user, plan, None):
-                    continue
-                if attribute_type.instance_editability_is_action_specific:
-                    # Editability is specific to an action and we don't have one here
-                    instances_editable = True
-                else:
-                    # Editability is not action-specific, so it's safe to call this
-                    instances_editable = attribute_type.is_instance_editable_by(user, plan, None)
-                # FIXME: Why the hell is this a FloatField?
-                fields[attribute_type.identifier] = rest_framework.fields.FloatField(
-                    label=attribute_type.name,
-                    read_only=not instances_editable,
-                )
+        plan: Plan | None = self.context.get('plan')
+        if user is None or plan is None:
+            return fields
+        for attribute_type in self._get_attribute_types_in_scope():
+            if attribute_type.format not in self.attribute_formats:
+                continue
+            if not attribute_type.is_instance_visible_for(user, plan, None):
+                continue
+            if attribute_type.instance_editability_is_action_specific:
+                # Editability is specific to an action and we don't have one here
+                instances_editable = True
+            else:
+                # Editability is not action-specific, so it's safe to call this
+                instances_editable = attribute_type.is_instance_editable_by(user, plan, None)
+            # FIXME: Why the hell is this a FloatField?
+            fields[attribute_type.identifier] = rest_framework.fields.FloatField(
+                label=attribute_type.name,
+                read_only=not instances_editable,
+            )
         return fields
+
+    def _get_attribute_types_in_scope(self) -> list[AttributeType]:
+        """
+        Return the attribute types the serialized model can have.
+
+        These are the ones the host serializer cached in `ModelWithAttributesSerializerMixin.initialize_cache_context()`,
+        so the fields we expose are exactly the ones `update()` can write.
+        """
+        cache = self.context.get('_cache')
+        if cache is None:
+            return []
+        return [at.instance for at in cache['attribute_types'].values()]
+
+    def run_validation(self, data: Any = empty) -> Any:
+        value = super().run_validation(data)
+        self._reject_unknown_attribute_types(value)
+        return value
+
+    def _reject_unknown_attribute_types(self, data: Any) -> None:
+        """
+        Reject identifiers that are not attribute types of the serialized model in this plan.
+
+        `update()` can only write attribute types it has cached, so without this check an unknown identifier (e.g., one
+        of a pledge attribute type sent to the action endpoint) would end in a `KeyError` instead of a 400.
+        """
+        if not isinstance(data, dict) or '_cache' not in self.context:
+            return
+        known_identifiers = self.context['_cache']['attribute_types']
+        errors = {identifier: str(_('Unknown attribute type')) for identifier in data if identifier not in known_identifiers}
+        if errors:
+            raise serializers.ValidationError(errors)
 
     def get_cached_values(self, instance_pk: int | None = None):
         if '_cache' not in self.context:
@@ -893,7 +927,7 @@ class ModelWithAttributesSerializerMixin[M: ModelWithAttributes](
             return
         Model = cast('type[ModelWithAttributes]', self.Meta.model)
         assert issubclass(Model, ModelWithAttributes)
-        attribute_types = Model.get_attribute_types_for_plan(plan)
+        attribute_types = self.get_attribute_types_for_plan(plan)
         attribute_types_by_identifier = {at.instance.identifier: at for at in attribute_types}
         prepopulated_attributes: dict[str, dict] = {}
         content_type = ContentType.objects.get_for_model(Model)
@@ -919,6 +953,11 @@ class ModelWithAttributesSerializerMixin[M: ModelWithAttributes](
                 'persons_by_id': persons_by_id,
                 'organizations_by_id': organizations_by_id,
             }
+
+    def get_attribute_types_for_plan(self, plan: Plan) -> Sequence[AttributeTypeWrapper[Any]]:
+        """Return the attribute types that the serialized objects can have."""
+        Model = cast('type[ModelWithAttributes]', self.Meta.model)
+        return Model.get_attribute_types_for_plan(plan)
 
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
@@ -1919,6 +1958,13 @@ class CategorySerializer(  # type: ignore[misc]
                 # Probably called during schema generation
                 self.category_type = CategoryType.objects.first()
         super().__init__(*args, **kwargs)
+
+    def get_attribute_types_for_plan(self, plan: Plan) -> Sequence[AttributeTypeWrapper[Any]]:
+        # Only the attribute types of this category type apply, not those of the plan's other category types
+        attribute_types = super().get_attribute_types_for_plan(plan)
+        if self.category_type is None:
+            return attribute_types
+        return [at for at in attribute_types if at.instance.scope_id == self.category_type.pk]
 
     def create(self, validated_data: dict[str, Any]) -> Category:
         validated_data['type'] = self.category_type
