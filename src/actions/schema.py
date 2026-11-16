@@ -704,7 +704,7 @@ class PlanNode(DjangoNode[Plan]):
     @staticmethod
     def resolve_action_attribute_types(root: Plan, info: GQLInfo):
         user = info.context.user
-        attribute_types = root.action_attribute_types.order_by('pk')
+        attribute_types = AttributeType.objects.for_actions(root).order_by('pk')
         return [at for at in attribute_types if at.is_instance_visible_for(user, root, None)]
 
     @staticmethod
