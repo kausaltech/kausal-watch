@@ -1361,8 +1361,9 @@ class ActionSerializer(  # type: ignore[misc]
         if field_name in ('status', 'implementation_phase', 'decision_level'):
             field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan=self.plan)
         elif field_name == 'primary_org':
+            # The primary org stays optional even when the plan has the feature, as it is in the
+            # admin edit form; otherwise grid edits of actions without one fail.
             if self.plan.features.has_action_primary_orgs:
-                field_kwargs['allow_null'] = False
                 field_kwargs['queryset'] = Organization.objects.qs.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()

@@ -1214,3 +1214,44 @@ def test_action_task_post_non_completed_with_completion_date_returns_400(api_cli
     )
     assert response.status_code == 400
     assert not ActionTask.objects.filter(action=action).exists()
+
+
+def test_action_bulk_put_accepts_missing_primary_org_when_feature_enabled(api_client, plan, plan_admin_user, action_list_url):
+    """
+    A grid edit of an action without a primary org saves even if the plan has primary orgs.
+
+    The grid sends the whole row back, including `primary_org: null`. The admin edit form
+    treats the primary org as optional, so the REST API must not reject it either.
+    """
+    plan.features.has_action_primary_orgs = True
+    plan.features.save()
+    action = ActionFactory.create(plan=plan, primary_org=None)
+    api_client.force_login(plan_admin_user)
+
+    resp = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'renamed', 'primary_org': None}],
+    )
+    assert resp.status_code == 200, resp.json_data
+
+    action.refresh_from_db()
+    assert action.name == 'renamed'
+    assert action.primary_org is None
+
+
+def test_action_bulk_put_rejects_primary_org_not_available_for_plan(api_client, plan, plan_admin_user, action_list_url):
+    plan.features.has_action_primary_orgs = True
+    plan.features.save()
+    action = ActionFactory.create(plan=plan, primary_org=None)
+    unrelated_org = OrganizationFactory.create()
+    api_client.force_login(plan_admin_user)
+
+    resp = api_client.put(
+        action_list_url,
+        data=[{'id': action.pk, 'identifier': action.identifier, 'name': 'renamed', 'primary_org': unrelated_org.pk}],
+    )
+    assert resp.status_code == 400
+    assert 'primary_org' in resp.json_data['0'], resp.json_data
+
+    action.refresh_from_db()
+    assert action.primary_org is None
