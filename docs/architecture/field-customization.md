@@ -16,6 +16,14 @@ Admin modules fill it with `register_customizable_fields()`: `Action` and `Actio
 Fields under a `CustomizableBuiltInFieldPanel` are collected automatically. Relations edited in an
 `InlinePanel` must be listed by hand, and for them only the access settings do anything.
 
+The "Contact persons" and "Contact persons with moderator role" levels refer to the contact persons
+of an action, so `clean()` accepts them only for `Action` and `ActionTask` fields
+(`BuiltInFieldCustomization.is_action_scoped_model()`). For a task, the action is the one it belongs
+to. An `Indicator` or `ActionIndicator` field has no such action. The indicator form passes the
+indicator itself, including to the related-actions inline. If an older row still has one of these
+levels on such a field, the access checks treat it as "Plan admins". They don't fall back to the
+`None` case, because that would let in anyone who is a contact person for any action.
+
 ## Where it is enforced
 
 Unlike attribute types, a customization mostly affects **only the admin**. Check the table below

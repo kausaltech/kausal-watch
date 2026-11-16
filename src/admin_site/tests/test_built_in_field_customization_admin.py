@@ -115,6 +115,19 @@ def test_create_rejects_a_field_that_is_not_customizable(admin_client):
     assert not BuiltInFieldCustomization.objects.exists()
 
 
+def test_create_rejects_contact_person_edit_rights_for_an_indicator_field(admin_client):
+    response = admin_client.post(
+        reverse(ADD_URL_NAME),
+        data=_post_data(
+            field=make_field_choice_value(Indicator, 'description'),
+            instances_editable_by=InstancesEditableByMixin.EditableBy.CONTACT_PERSONS,
+        ),
+    )
+    assert response.status_code == 200
+    assert set(response.context['form'].errors) == {'instances_editable_by'}
+    assert not BuiltInFieldCustomization.objects.exists()
+
+
 def test_create_rejects_a_duplicate_customization(admin_client, plan):
     BuiltInFieldCustomizationFactory.create(
         plan=plan,

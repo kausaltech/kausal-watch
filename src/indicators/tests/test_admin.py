@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import typing
 
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from wagtail.admin.rich_text import DraftailRichTextArea
 
 import pytest
 
-from admin_site.tests.factories import ClientPlanFactory
+from aplans.utils import InstancesEditableByMixin
+
+from actions.tests.factories import ActionFactory
+from admin_site.tests.factories import BuiltInFieldCustomizationFactory, ClientPlanFactory
 from admin_site.tests.utils import post_data
+from indicators.models import ActionIndicator, Indicator
 from indicators.tests.factories import (
+    ActionIndicatorFactory,
     DimensionFactory,
     IndicatorDimensionFactory,
     IndicatorFactory,
@@ -83,3 +89,38 @@ def test_grouping_dimension_removed_from_dimensions_in_same_save_is_rejected(
     indicator.refresh_from_db()
     assert indicator.grouping_dimension is None
     assert set(indicator.dimensions.values_list('dimension', flat=True)) == {removed.pk, kept.pk}
+
+
+@pytest.mark.parametrize(
+    ('model', 'field_name'),
+    [(Indicator, 'description'), (ActionIndicator, 'effect_type')],
+)
+def test_edit_view_survives_action_specific_field_customization(
+    client: Client,
+    plan: Plan,
+    plan_admin_user: User,
+    model: type[Indicator | ActionIndicator],
+    field_name: str,
+):
+    # Such customizations are rejected by validation now, but rows saved before that used to crash the edit view for
+    # every non-superuser with an AssertionError.
+    ClientPlanFactory.create(plan=plan)
+    indicator = IndicatorFactory.create(organization=plan.organization, common=None)
+    IndicatorLevelFactory.create(indicator=indicator, plan=plan)
+    ActionIndicatorFactory.create(indicator=indicator, action=ActionFactory.create(plan=plan))
+    BuiltInFieldCustomizationFactory.create(
+        plan=plan,
+        content_type=ContentType.objects.get_for_model(model),
+        field_name=field_name,
+        instances_editable_by=InstancesEditableByMixin.EditableBy.CONTACT_PERSONS,
+    )
+    client.force_login(plan_admin_user)
+
+    response = client.get(f'/admin/indicators/indicator/edit/{indicator.pk}/')
+
+    assert response.status_code == 200
+    form = response.context['form']
+    if model is Indicator:
+        assert not form.fields[field_name].disabled
+    else:
+        assert not form.formsets['related_actions'].forms[0].fields[field_name].disabled

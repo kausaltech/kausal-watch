@@ -1,13 +1,17 @@
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 
 import pytest
 
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
-from actions.models import Action, ActionContactPerson
+from actions.models import Action, ActionContactPerson, ActionTask
 from actions.tests.factories import ActionContactFactory
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory
+from indicators.models import ActionIndicator, Indicator
+from indicators.tests.factories import IndicatorFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -154,3 +158,64 @@ def test_get_field_access_uses_field_name_and_model(action, plan_admin_user):
         True,
         True,
     )
+
+
+ACTION_SPECIFIC_ACCESS = [
+    pytest.param({'instances_editable_by': InstancesEditableByMixin.EditableBy.CONTACT_PERSONS}, id='editable-contacts'),
+    pytest.param({'instances_editable_by': InstancesEditableByMixin.EditableBy.MODERATORS}, id='editable-moderators'),
+    pytest.param({'instances_visible_for': InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS}, id='visible-contacts'),
+    pytest.param({'instances_visible_for': InstancesVisibleForMixin.VisibleFor.MODERATORS}, id='visible-moderators'),
+]
+
+
+@pytest.mark.parametrize('access', ACTION_SPECIFIC_ACCESS)
+@pytest.mark.parametrize(
+    ('model', 'field_name'),
+    [(Indicator, 'description'), (ActionIndicator, 'effect_type')],
+)
+def test_built_in_field_customization_rejects_action_specific_access_for_non_action_models(model, field_name, access):
+    customization = BuiltInFieldCustomizationFactory.create(
+        content_type=ContentType.objects.get_for_model(model),
+        field_name=field_name,
+        **access,
+    )
+    with pytest.raises(ValidationError) as excinfo:
+        customization.full_clean()
+    assert set(excinfo.value.message_dict) == set(access)
+
+
+@pytest.mark.parametrize('access', ACTION_SPECIFIC_ACCESS)
+def test_built_in_field_customization_accepts_action_specific_access_for_tasks(access):
+    BuiltInFieldCustomizationFactory.create(
+        content_type=ContentType.objects.get_for_model(ActionTask),
+        field_name='due_at',
+        **access,
+    ).full_clean()
+
+
+@pytest.mark.parametrize('access', ACTION_SPECIFIC_ACCESS)
+def test_action_specific_access_on_a_non_action_instance_is_for_plan_admins_only(access, plan, plan_admin_user):
+    """
+    A customization saved before validation rejected it must not crash, nor grant access to contact persons.
+
+    Passing `None` instead of the indicator would grant access to anyone who is a contact person for any action.
+    """
+    customization = BuiltInFieldCustomizationFactory.create(
+        plan=plan,
+        content_type=ContentType.objects.get_for_model(Indicator),
+        field_name='description',
+        **access,
+    )
+    indicator = IndicatorFactory.create(organization=plan.organization)
+    action_contact = ActionContactFactory.create(
+        action__plan=plan,
+        role=ActionContactPerson.Role.MODERATOR,
+    ).person.user
+    assert action_contact is not None
+
+    assert customization.is_instance_visible_for(plan_admin_user, plan, indicator)
+    assert customization.is_instance_editable_by(plan_admin_user, plan, indicator)
+    if 'instances_visible_for' in access:
+        assert not customization.is_instance_visible_for(action_contact, plan, indicator)
+    else:
+        assert not customization.is_instance_editable_by(action_contact, plan, indicator)

@@ -326,6 +326,31 @@ class BuiltInFieldCustomization(
                     'model': content_type.model,
                 }
             }) from err
+        self._validate_action_specific_access(model)
+
+    @staticmethod
+    def is_action_scoped_model(model: type[models.Model]) -> bool:
+        """
+        Return whether customizations of `model` are evaluated against a specific action.
+
+        Only for such models is an action passed to `is_instance_visible_for()` and
+        `is_instance_editable_by()`: the action itself, or the action a task belongs to. Fields of
+        other models, such as indicators, have no action whose contact persons could be meant.
+        """
+        from actions.models.action import Action, ActionTask
+
+        return issubclass(model, (Action, ActionTask))
+
+    def _validate_action_specific_access(self, model: type[models.Model]) -> None:
+        if self.is_action_scoped_model(model):
+            return
+        errors: dict[str, ValidationError] = {}
+        if self.instance_visibility_is_action_specific:
+            errors['instances_visible_for'] = ValidationError(_('This value is only allowed for action fields.'))
+        if self.instance_editability_is_action_specific:
+            errors['instances_editable_by'] = ValidationError(_('This value is only allowed for action fields.'))
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def content_type_label(self) -> str:
