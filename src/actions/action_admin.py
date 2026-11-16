@@ -1737,13 +1737,9 @@ def construct_snippet_action_menu(menu_items: list[ActionMenuItem], request: Htt
         icon_name = 'bin'
 
         def is_shown(self, context) -> bool:
-            from wagtail.snippets.permissions import get_permission_name
-
             if context['view'] != 'edit' or context.get('locked_for_user'):
                 return False
             user = context['request'].user
-            if moderated:
-                return user.has_perm(get_permission_name('delete', context['model']))
             policy = context['instance'].snippet_viewset.permission_policy
             return policy.user_has_permission_for_instance(user, 'delete', context['instance'])
 

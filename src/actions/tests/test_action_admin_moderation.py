@@ -84,6 +84,12 @@ class TestButtons:
     def test_admin_can_save_publish_and_delete(self, client, plan, action, make_user):
         assert menu(client, make_user(plan), action) == ['action-save', 'action-publish', 'action-delete']
 
+    def test_admin_is_not_offered_delete_when_the_plans_actions_are_locked(self, client, plan, action, plan_admin):
+        plan.actions_locked = True
+        plan.save(update_fields=['actions_locked'])
+
+        assert 'action-delete' not in menu(client, plan_admin, action)
+
     def test_moderator_submits_instead_of_publishing_in_a_two_step_workflow(self, client, two_step_plan):
         action = ActionFactory.create(plan=two_step_plan)
 
