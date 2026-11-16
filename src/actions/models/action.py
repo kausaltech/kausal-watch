@@ -1162,7 +1162,7 @@ class Action(
     def handle_admin_save(self, context: dict[str, Any] | None = None):
         self.recalculate_status(force_update=True)
 
-    def set_categories(self, type_: str | CategoryType, categories: list[Category | int]):
+    def set_categories(self, type_: str | CategoryType, categories: list[Category | int], save: bool = True):
         if isinstance(type_, str):
             type_ = self.plan.category_types.get(identifier=type_)
         all_cats = {x.id: x for x in type_.categories.all()}
@@ -1182,7 +1182,7 @@ class Action(
             self.categories.add(cat)
             changed = True
 
-        if changed:
+        if changed and save:
             self.save()
 
     def set_responsible_parties(self, data: list[ResponsiblePartyDict]):

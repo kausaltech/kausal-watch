@@ -338,7 +338,8 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
             if field_data is None:
                 continue
             cat_type = field.category_type
-            obj.set_categories(cat_type, field_data)
+            # Saved below if this is a commit; a draft's categories must not reach the live action
+            obj.set_categories(cat_type, field_data, save=False)
 
         if commit:
             # The instance was saved already when we called `super().save()`, but things like the categories may have
