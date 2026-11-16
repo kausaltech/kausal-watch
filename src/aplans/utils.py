@@ -454,6 +454,12 @@ class RestrictedVisibilityModel(models.Model):
         abstract = True
 
 
+def _is_action_or_none(attribute_holder: Model | None) -> bool:
+    from actions.models.action import Action
+
+    return attribute_holder is None or isinstance(attribute_holder, Action)
+
+
 class InstancesEditableByMixin(models.Model):
     """
     Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes.
@@ -465,8 +471,9 @@ class InstancesEditableByMixin(models.Model):
     If your model instance is not associated with a specific action, you may pass `action=None` to
     `is_instance_editable_by()`.
 
-    For example, action attribute types and built-in field customizations are action-specific, whereas category types
-    and category attribute types are not.
+    For example, action attribute types and built-in field customizations of action fields are action-specific, whereas
+    category types, category attribute types and customizations of indicator fields are not. If an instance that is
+    not an action is passed anyway, the action-specific values grant access to plan admins only.
     """
 
     class EditableBy(models.TextChoices):
@@ -505,6 +512,10 @@ class InstancesEditableByMixin(models.Model):
             return False
         is_plan_admin = user.is_general_admin_for_plan(plan)
         if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
+            return is_plan_admin
+        if self.instance_editability_is_action_specific and not _is_action_or_none(attribute_holder):
+            # The action-specific levels are meaningless for an instance that is not an action (e.g., an indicator).
+            # Validation should prevent this, but rows saved before that validation existed must not crash.
             return is_plan_admin
         if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
             assert isinstance(attribute_holder, Action) or attribute_holder is None
@@ -564,8 +575,9 @@ class InstancesVisibleForMixin(models.Model):
     If your model instance is not associated with a specific action, you may pass `action=None` to
     `is_instance_visible_for()`.
 
-    For example, action attribute types and built-in field customizations are action-specific, whereas category types
-    and category attribute types are not.
+    For example, action attribute types and built-in field customizations of action fields are action-specific, whereas
+    category types, category attribute types and customizations of indicator fields are not. If an instance that is
+    not an action is passed anyway, the action-specific values grant access to plan admins only.
     """
 
     class VisibleFor(models.TextChoices):
@@ -604,6 +616,9 @@ class InstancesVisibleForMixin(models.Model):
             return False
         is_plan_admin = user.is_general_admin_for_plan(plan)
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
+            return is_plan_admin
+        if self.instance_visibility_is_action_specific and not _is_action_or_none(attribute_holder):
+            # See the corresponding comment in `InstancesEditableByMixin.is_instance_editable_by()`.
             return is_plan_admin
         if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
             assert isinstance(attribute_holder, Action) or attribute_holder is None
