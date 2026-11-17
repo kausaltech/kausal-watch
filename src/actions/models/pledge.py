@@ -146,7 +146,7 @@ class Pledge(
         ),
     )
     impact_statement = RichTextField(
-        max_length=150,
+        max_length=250,
         blank=True,
         verbose_name=_('environmental impact at scale'),
         help_text=_(
@@ -156,7 +156,7 @@ class Pledge(
         ),
     )
     local_equivalency = RichTextField(
-        max_length=150,
+        max_length=250,
         blank=True,
         verbose_name=_('local equivalency comparison'),
         help_text=_(

@@ -817,6 +817,10 @@ class PlanNode(DjangoNode[Plan]):
         required=True,
         description='Fields shown to a community member when they commit to a pledge.',
     )
+    pledge_feedback_enabled = graphene.Boolean(
+        required=True,
+        description='Whether pledge pages show a rating scale and comment form for feedback.',
+    )
     pledge_terms_url = graphene.String(description='Terms of use people accept when creating a pledge account.')
     pledge_privacy_url = graphene.String(description='Privacy notice linked when creating a pledge account.')
     pledge_account_title = graphene.String(description='Title of the invitation to create a pledge account.')

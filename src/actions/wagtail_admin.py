@@ -590,6 +590,7 @@ def get_plan_edit_handler():
         tabs.append(
             ObjectList(
                 [
+                    FieldPanel('pledge_feedback_enabled'),
                     CondensedInlinePanel(
                         'pledge_form_fields',
                         panels=pledge_form_field_panels,
