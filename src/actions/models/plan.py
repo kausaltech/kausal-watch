@@ -494,6 +494,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel, Search
     # Pledge account settings, used only when the plan offers accounts for community engagement. The links
     # are one per plan; the texts are translated, which is why they are nullable rather than having a
     # database default (see access_request_eligibility_text).
+    pledge_feedback_enabled = models.BooleanField(
+        default=True,
+        db_default=True,
+        verbose_name=_('Ask for feedback on pledges'),
+        help_text=_('Show a rating scale and comment form at the bottom of each pledge page.'),
+    )
     pledge_terms_url = models.URLField(
         blank=True,
         null=True,
