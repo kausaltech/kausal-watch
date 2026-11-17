@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
@@ -10,6 +12,10 @@ from actions.tests.factories import PlanFactory
 from actions.wagtail_admin import PlanViewSet
 from admin_site.tests.factories import ClientFactory, ClientPlanFactory
 from copying.main import copy_plan
+
+if TYPE_CHECKING:
+    from django import forms
+    from wagtail.fields import RichTextField
 
 pytestmark = pytest.mark.django_db
 
@@ -69,17 +75,18 @@ def test_copying_a_plan_keeps_its_pledge_feedback_setting(plan_with_pages):
     assert plan_copy.pledge_feedback_enabled is False
 
 
+def _form_field(field_name: str) -> forms.Field:
+    model_field = cast('RichTextField', Pledge._meta.get_field(field_name))
+    return cast('forms.Field', model_field.formfield())
+
+
 @pytest.mark.parametrize('field_name', ['impact_statement', 'local_equivalency'])
 class TestImpactTextLength:
     """The admin form limits the text, not counting HTML tags."""
 
     def test_250_characters_are_allowed(self, field_name):
-        form_field = Pledge._meta.get_field(field_name).formfield()
-
-        form_field.clean('<p>' + 'a' * 250 + '</p>')
+        _form_field(field_name).clean('<p>' + 'a' * 250 + '</p>')
 
     def test_more_than_250_characters_are_refused(self, field_name):
-        form_field = Pledge._meta.get_field(field_name).formfield()
-
         with pytest.raises(ValidationError):
-            form_field.clean('<p>' + 'a' * 251 + '</p>')
+            _form_field(field_name).clean('<p>' + 'a' * 251 + '</p>')
