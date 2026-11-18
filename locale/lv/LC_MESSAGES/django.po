@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 15:53+0200\n"
+"POT-Creation-Date: 2026-11-18 20:11+0200\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -206,7 +206,7 @@ msgstr "Pieprasīt izmaiņas"
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/wagtail_hooks.py
 #: src/people/templates/people/person_actions_menu.html
-#: src/people/wagtail_admin.py templates/modeladmin/create.html
+#: src/people/wagtail_admin.py
 #, fuzzy
 #| msgid "Actions"
 msgid "Actions"
@@ -372,30 +372,29 @@ msgid "Contact persons"
 msgstr "Kontaktpersonas"
 
 #: src/actions/action_admin.py
-#, python-format
-msgid "Mark as complete for report %s"
-msgstr "Atzīmēt kā pabeigtu ziņojumam %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
-msgstr "Atzīmējiet šo rīcību kā pabeigtu ziņojumam %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Atcelt ziņojuma atzīmēšanu kā pabeigtu %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Atcelt šīs rīcības atzīmēšanu kā pabeigtu ziņojumam %s"
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' updated and published."
+msgid "%(model_name)s '%(object)s' approved and published."
+msgstr "%(model_name)s '%(object)s' atjaunināts un publicēts."
 
 #: src/actions/action_admin.py
 #, fuzzy, python-format
 #| msgid "%(attribute_type)s (text)"
 msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "%(attribute_type)s (teksts)"
+
+#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
+#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Identifikators"
+
+#: src/actions/action_admin.py src/actions/blocks/filters.py
+msgid "Primary organization"
+msgstr "Primārā organizācija"
+
+#: src/actions/action_admin.py
+msgid "Last updated"
+msgstr "Pēdējo reizi atjaunināts"
 
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
@@ -407,19 +406,6 @@ msgstr "%(attribute_type)s (teksts)"
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Rīcības"
-
-#: src/actions/action_admin.py
-msgid "Last updated"
-msgstr "Pēdējo reizi atjaunināts"
-
-#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
-msgid "Name"
-msgstr "Nosaukums"
 
 #: src/actions/action_admin.py src/actions/category_admin.py
 #: src/admin_site/wagtail_hooks.py src/indicators/wagtail_admin.py
@@ -468,97 +454,62 @@ msgid "Dependencies"
 msgstr ""
 
 #: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking as complete for report %s"
+msgstr "Atcelt ziņojuma atzīmēšanu kā pabeigtu %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking this action as complete for the report %s"
+msgstr "Atcelt šīs rīcības atzīmēšanu kā pabeigtu ziņojumam %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark as complete for report %s"
+msgstr "Atzīmēt kā pabeigtu ziņojumam %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark this action as complete for the report %s"
+msgstr "Atzīmējiet šo rīcību kā pabeigtu ziņojumam %s"
+
+#: src/actions/action_admin.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+msgid "Edit"
+msgstr "Rediģēt"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, fuzzy, python-format
+#| msgid "site title"
+msgid "Edit '%(title)s'"
+msgstr "vietnes nosaukums"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+msgid "Delete"
+msgstr "Dzēst"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Delete '%(title)s'"
+msgstr ""
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+msgid "View live"
+msgstr "Skatīt tiešraidē"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+#, python-format
+msgid "View %s live"
+msgstr "Skatīt %s tiešraidē"
+
+#: src/actions/action_admin.py
 msgid "Resubmit for moderation"
 msgstr "Atkārtoti iesniedziet moderēšanai"
 
 #: src/actions/action_admin.py
 msgid "Cancel moderation"
 msgstr "Atcelt moderēšanu"
-
-#: src/actions/action_admin.py src/orgs/wagtail_admin.py
-#: templates/modeladmin/edit.html
-msgid "Delete"
-msgstr "Dzēst"
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "The %(model_name)s could not be saved as it is locked"
-msgstr "Portālu %(model_name)s nevarēja saglabāt, jo tas ir bloķēts"
-
-#: src/actions/action_admin_mixins.py src/admin_site/wagtail.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated."
-msgstr "%(model_name)s '%(object)s' atjaunināts."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created."
-msgstr "%(model_name)s '%(object)s' izveidots."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' ir plānots publicēt."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' izveidots un plānots publicēt."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' ir pieejams, un šī versija ir plānota publicēšanai."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated and published."
-msgstr "%(model_name)s '%(object)s' atjaunināts un publicēts."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and published."
-msgstr "%(model_name)s '%(object)s' izveidots un publicēts."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr "%(model_name)s '%(object)s' ir iesniegts rediģēšanai."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr "%(model_name)s '%(object)s' izveidots un iesniegts rediģēšanai."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr "Darbplūsma vietnē %(model_name)s '%(object)s' ir atsākta."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr "Darbplūsma vietnē %(model_name)s '%(object)s' ir atcelta."
-
-#: src/actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' updated and published."
-msgid "%(model_name)s '%(object)s' approved and published."
-msgstr "%(model_name)s '%(object)s' atjaunināts un publicēts."
-
-#: src/actions/action_admin_mixins.py
-msgid "Unlock"
-msgstr "Atbloķēt"
-
-#: src/actions/action_admin_mixins.py
-msgid "Cancel scheduled publish"
-msgstr "Atcelt plānoto publicēšanu"
-
-#: src/actions/action_admin_mixins.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/admin_site/wagtail.py src/orgs/wagtail_admin.py
-msgid "Edit"
-msgstr "Rediģēt"
 
 #: src/actions/action_fields.py src/actions/tests/fixtures_stream_block.py
 #, fuzzy
@@ -634,6 +585,12 @@ msgstr "Organizācija kā atbildīgā puse parādās vairākas reizes"
 msgid "Person occurs multiple times as contact person"
 msgstr "Persona vairākkārt parādās kā kontaktpersona"
 
+#: src/actions/api.py
+#, fuzzy
+#| msgid "%(attribute_type)s (text)"
+msgid "Unknown attribute type"
+msgstr "%(attribute_type)s (teksts)"
+
 #: src/actions/api.py src/actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
 msgstr ""
@@ -659,6 +616,12 @@ msgstr ""
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "The organization is not included in the plan"
+msgid "The organization is not available for the plan"
+msgstr "Organizācija nav iekļauta plānā"
 
 #: src/actions/api.py
 msgid "You do not have permission to change the responsible parties of this task."
@@ -1214,10 +1177,6 @@ msgstr "Dziļums"
 #: src/actions/blocks/filters.py
 msgid "Responsible party"
 msgstr "Atbildīgā puse"
-
-#: src/actions/blocks/filters.py
-msgid "Primary organization"
-msgstr "Primārā organizācija"
 
 #: src/actions/blocks/filters.py
 #: src/actions/templates/actions/chooser_results.html
@@ -2141,7 +2100,7 @@ msgstr "Vienība jāizmanto tikai ciparu laukiem"
 msgid "If no primary language is set, there may not be other languages."
 msgstr "Ja nav iestatīta pamatvaloda, nedrīkst būt citu valodu"
 
-#: src/actions/models/attributes.py
+#: src/actions/models/attributes.py src/admin_site/models.py
 #, fuzzy
 #| msgid "This value is only allowed for action fields"
 msgid "This value is only allowed for action fields."
@@ -2806,6 +2765,14 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Ask for feedback on pledges"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Show a rating scale and comment form at the bottom of each pledge page."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3597,10 +3564,14 @@ msgstr "sagatavošanas procesā"
 msgid "Select"
 msgstr ""
 
-#: src/actions/templates/actions/bulk_approve.html src/copying/views.py
-#: src/reports/spreadsheets/excel_report.py
-msgid "Identifier"
-msgstr "Identifikators"
+#: src/actions/templates/actions/bulk_approve.html
+#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/audit_logging/templates/site_history_results.html src/copying/views.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Name"
+msgstr "Nosaukums"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Current task"
@@ -3798,12 +3769,6 @@ msgstr ""
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
 msgstr ""
 
-#: src/actions/wagtail_admin.py src/admin_site/wagtail.py
-#, fuzzy
-#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Nevarēja no plāna dzēst kopējo kategorijas tipu '{removed_cct}', jo pastāv kategorijas ar atbilstošo kategorijas tipu."
-
 #: src/actions/wagtail_admin.py
 msgid "General administrators"
 msgstr "Vispārējie administratori"
@@ -3901,6 +3866,12 @@ msgstr ""
 #| msgid "comment"
 msgid "Community engagement"
 msgstr "komentārs"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Nevarēja no plāna dzēst kopējo kategorijas tipu '{removed_cct}', jo pastāv kategorijas ar atbilstošo kategorijas tipu."
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -4255,8 +4226,7 @@ msgstr "Nevar noteikt autentifikācijas metodi. E-pasta adreses domēns var būt
 msgid "Password authentication is required, but the user has no password."
 msgstr "Ir nepieciešama paroles autentifikācija, bet lietotājam nav paroles."
 
-#: src/admin_site/mixins.py templates/modeladmin/create.html
-#: templates/modeladmin/edit.html
+#: src/admin_site/mixins.py
 msgid "Save and continue editing"
 msgstr "Saglabāt un turpināt rediģēšanu"
 
@@ -4441,17 +4411,17 @@ msgstr "Publiski"
 msgid "Non-public field"
 msgstr ""
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
 msgstr "Kļūda dzēšot vienumus. Vispirms mēģiniet izdzēst visus %(name)s, kas tiek izmantoti."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
 msgstr "Lietošanā: \"%(instance)s\"."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s nevarēja izveidot kļūdu dēļ."
@@ -4493,13 +4463,9 @@ msgid "Add %(schema_name)s"
 msgstr ""
 
 #: src/admin_site/wagtail.py
-msgid "View live"
-msgstr "Skatīt tiešraidē"
-
-#: src/admin_site/wagtail.py
 #, python-format
-msgid "View %s live"
-msgstr "Skatīt %s tiešraidē"
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' atjaunināts."
 
 #: src/admin_site/wagtail_admin.py
 msgid "Email domains"
@@ -5991,7 +5957,7 @@ msgstr "rādītāju kontaktpersonas"
 msgid "hide from indicator list"
 msgstr "citi rādītāji"
 
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/indicators/wagtail_admin.py
 msgid "Has data"
 msgstr "Ir dati"
 
@@ -6146,6 +6112,36 @@ msgstr ""
 msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
 msgstr ""
 
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s could not be deleted"
+msgstr "%(model_name)s '%(object)s' svītrots."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, python-format
+msgid "'%(instance_name)s' is shown in content blocks on the following pages. Deleting it would break these pages. Remove the indicator from their content blocks first:"
+msgstr ""
+
+#: src/indicators/templates/indicators/indicator_delete.html
+msgid "A page you don't have access to"
+msgstr ""
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "published at"
+msgid "unpublished draft"
+msgstr "publicēts vietnē"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "contact for actions"
+msgid "Go back to listing"
+msgstr "kontaktinformācija par rīcībām"
+
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -6167,22 +6163,6 @@ msgstr ""
 #: src/indicators/wagtail_admin.py
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
-
-#: src/indicators/wagtail_admin.py
-msgid "Show indicators"
-msgstr "Rādīt rādītājus"
-
-#: src/indicators/wagtail_admin.py
-msgid "in active plan"
-msgstr "aktīvajā plānā"
-
-#: src/indicators/wagtail_admin.py
-msgid "not in active plan"
-msgstr "nav aktīvajā plānā"
-
-#: src/indicators/wagtail_admin.py
-msgid "all"
-msgstr "visi"
 
 #: src/indicators/wagtail_admin.py
 msgid "Choose a quantity"
@@ -6244,6 +6224,22 @@ msgstr "Pasākumu rādītājs"
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
+
+#: src/indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr "Rādīt rādītājus"
+
+#: src/indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr "nav aktīvajā plānā"
+
+#: src/indicators/wagtail_admin.py
+msgid "all"
+msgstr "visi"
+
+#: src/indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr "aktīvajā plānā"
 
 #: src/indicators/wagtail_admin.py
 msgid "none"
@@ -6349,6 +6345,16 @@ msgstr ""
 msgid "Relationships"
 msgstr "Saistītās rīcības"
 
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit rights"
+msgid "Edit properties"
+msgstr "Rediģēšanas tiesības"
+
+#: src/indicators/wagtail_admin.py
+msgid "The indicator is still shown on pages. Remove it from the content blocks of these pages first."
+msgstr ""
+
 #: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
@@ -6359,13 +6365,13 @@ msgid "Dimensions must be the same as in all indicators linked to this one"
 msgstr "Izmēriem jābūt tādiem pašiem kā visos rādītājos, kas saistīti ar šo rādītāju"
 
 #: src/indicators/wagtail_admin.py
-msgid "Common indicators"
-msgstr "Kopējie rādītāji"
-
-#: src/indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Šim kopējam rādītājam ir piesaistīti rādītāji, tāpēc daudzumu, vienību un izmērus nevar rediģēt. Pašreizējais daudzums: %(quantity)s; vienība: %(unit)s; izmēri: %(dimensions)s"
+
+#: src/indicators/wagtail_admin.py
+msgid "Common indicators"
+msgstr "Kopējie rādītāji"
 
 #: src/indicators/wagtail_hooks.py
 #, fuzzy
@@ -6799,11 +6805,11 @@ msgstr "Paziņojuma saturs"
 msgid "Notification preferences"
 msgstr "Paziņojumu preferences"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search term"
 msgstr ""
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search"
 msgstr ""
 
@@ -6914,12 +6920,6 @@ msgid "Permissions"
 msgstr "Atļaujas"
 
 #: src/orgs/wagtail_admin.py
-#, fuzzy, python-format
-#| msgid "site title"
-msgid "Edit '%(title)s'"
-msgstr "vietnes nosaukums"
-
-#: src/orgs/wagtail_admin.py
 #, fuzzy
 #| msgid "Choose plan"
 msgid "Copy"
@@ -6928,11 +6928,6 @@ msgstr "Izvēlieties plānu"
 #: src/orgs/wagtail_admin.py
 #, python-format
 msgid "Copy '%(title)s'"
-msgstr ""
-
-#: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Delete '%(title)s'"
 msgstr ""
 
 #: src/orgs/wagtail_admin.py
@@ -7514,21 +7509,8 @@ msgstr "%(model_name)s '%(object)s' svītrots."
 
 #: src/people/templates/people/delete.html
 #, python-format
-msgid "Confirm deletion of %(model_name)s"
-msgstr "Apstiprināt dzēšanu %(model_name)s"
-
-#: src/people/templates/people/delete.html
-#, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
 msgstr "'%(instance_name)s' pašlaik ir savienots ar šādiem elementiem. Lūdzu, pārbaudiet dzēšanu:"
-
-#: src/people/templates/people/delete.html
-msgid "Yes, delete"
-msgstr "Jā, dzēst"
-
-#: src/people/templates/people/delete.html
-msgid "No, don't delete"
-msgstr "Nē, neizdzēst"
 
 #: src/people/templates/people/view_as_user.html
 #: src/reports/report_formatters.py templates/aplans/confirmation.html
@@ -7614,16 +7596,6 @@ msgid "Viewer"
 msgstr "Skatīt tiešraidē"
 
 #: src/people/wagtail_admin.py
-msgid "Role"
-msgstr ""
-
-#: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "role"
-msgid "No role"
-msgstr "loma"
-
-#: src/people/wagtail_admin.py
 msgid "Access to public site only"
 msgstr ""
 
@@ -7644,8 +7616,28 @@ msgid "Plan admin organizations"
 msgstr "Plānu administrēšanas organizācijas"
 
 #: src/people/wagtail_admin.py
+msgid "Role"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "role"
+msgid "No role"
+msgstr "loma"
+
+#: src/people/wagtail_admin.py
+msgid "Edit this person"
+msgstr "Rediģēt šo personu"
+
+#: src/people/wagtail_admin.py
 msgid "Deactivate"
 msgstr "Deaktivizēt"
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit this person"
+msgid "Deactivate this person"
+msgstr "Rediģēt šo personu"
 
 #: src/people/wagtail_admin.py
 msgid "Create a password reset link"
@@ -7656,10 +7648,6 @@ msgid "View site as it looks for this user"
 msgstr ""
 
 #: src/people/wagtail_admin.py
-msgid "Are you sure you want to deactivate this person?"
-msgstr "Vai esat pārliecināts, ka vēlaties deaktivizēt šo personu?"
-
-#: src/people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr "Šai personai nav piekļuves administratora saskarnei. Parasti tas ir tāpēc, ka viņiem nav piešķirtas nekādas rīcības vai rādītāji."
 
@@ -7668,14 +7656,18 @@ msgid "last login"
 msgstr "pēdējā pieteikšanās"
 
 #: src/people/wagtail_admin.py
-msgid "contact for indicators"
-msgstr "kontaktinformācija par rādītājiem"
-
-#: src/people/wagtail_admin.py
 #, fuzzy
 #| msgid "participated in training"
 msgid "Attended training"
 msgstr "piedalījās apmācībās"
+
+#: src/people/wagtail_admin.py
+msgid "contact for indicators"
+msgstr "kontaktinformācija par rādītājiem"
+
+#: src/people/wagtail_admin.py
+msgid "Are you sure you want to deactivate this person?"
+msgstr "Vai esat pārliecināts, ka vēlaties deaktivizēt šo personu?"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -7966,27 +7958,9 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Tādējādi tiks atcelta šādu rīcību atzīmēšana kā pabeigtas:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
-msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' svītrots."
-
-#: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
 msgstr ""
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
-msgid "unpublished draft"
-msgstr "publicēts vietnē"
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "contact for actions"
-msgid "Go back to listing"
-msgstr "kontaktinformācija par rīcībām"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -8280,13 +8254,71 @@ msgstr "paslēpt kategorijas identifikatorus"
 msgid "Copy identifier"
 msgstr "identifikators"
 
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Saving…"
-msgstr "Ietaupot…"
+#, python-format
+#~ msgid "The %(model_name)s could not be saved as it is locked"
+#~ msgstr "Portālu %(model_name)s nevarēja saglabāt, jo tas ir bloķēts"
 
-#: templates/modeladmin/create.html
-msgid "Save"
-msgstr "Saglabāt"
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created."
+#~ msgstr "%(model_name)s '%(object)s' izveidots."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' ir plānots publicēt."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' izveidots un plānots publicēt."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' ir pieejams, un šī versija ir plānota publicēšanai."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' updated and published."
+#~ msgstr "%(model_name)s '%(object)s' atjaunināts un publicēts."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and published."
+#~ msgstr "%(model_name)s '%(object)s' izveidots un publicēts."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' ir iesniegts rediģēšanai."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' izveidots un iesniegts rediģēšanai."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+#~ msgstr "Darbplūsma vietnē %(model_name)s '%(object)s' ir atsākta."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+#~ msgstr "Darbplūsma vietnē %(model_name)s '%(object)s' ir atcelta."
+
+#~ msgid "Unlock"
+#~ msgstr "Atbloķēt"
+
+#~ msgid "Cancel scheduled publish"
+#~ msgstr "Atcelt plānoto publicēšanu"
+
+#, python-format
+#~ msgid "Confirm deletion of %(model_name)s"
+#~ msgstr "Apstiprināt dzēšanu %(model_name)s"
+
+#~ msgid "Yes, delete"
+#~ msgstr "Jā, dzēst"
+
+#~ msgid "No, don't delete"
+#~ msgstr "Nē, neizdzēst"
+
+#~ msgid "Saving…"
+#~ msgstr "Ietaupot…"
+
+#~ msgid "Save"
+#~ msgstr "Saglabāt"
 
 #~ msgid "Object type"
 #~ msgstr "Objekta tips"
@@ -8674,9 +8706,6 @@ msgstr "Saglabāt"
 
 #~ msgid "Choose another person"
 #~ msgstr "Izvēlieties citu personu"
-
-#~ msgid "Edit this person"
-#~ msgstr "Rediģēt šo personu"
 
 #~ msgctxt "person's role"
 #~ msgid "title"

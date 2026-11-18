@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 15:53+0200\n"
+"POT-Creation-Date: 2026-11-18 20:11+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -189,7 +189,7 @@ msgstr "Pyydetty"
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/wagtail_hooks.py
 #: src/people/templates/people/person_actions_menu.html
-#: src/people/wagtail_admin.py templates/modeladmin/create.html
+#: src/people/wagtail_admin.py
 msgid "Actions"
 msgstr "Toiminnot"
 
@@ -340,28 +340,26 @@ msgstr "Yhteyshenkilöt"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark as complete for report %s"
-msgstr "Merkitse valmiiksi raporttia %s varten"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
-msgstr "Merkitse tämä toimenpide valmiiksi raporttia %s varten"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Peru valmiiksi merkitseminen raporttia %s varten"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Peru tämän toimenpiteen valmiiksi merkitseminen raporttia %s varten"
+msgid "%(model_name)s '%(object)s' approved and published."
+msgstr "%(model_name)s '%(object)s' on päivitetty ja julkaistu."
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "Kenttä \"%(attribute_type)s\": %(message)s"
+
+#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
+#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Tunniste"
+
+#: src/actions/action_admin.py src/actions/blocks/filters.py
+msgid "Primary organization"
+msgstr "Pääorganisaatio"
+
+#: src/actions/action_admin.py
+msgid "Last updated"
+msgstr "Viimeksi päivitetty"
 
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
@@ -371,19 +369,6 @@ msgstr "Kenttä \"%(attribute_type)s\": %(message)s"
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Toimenpiteet"
-
-#: src/actions/action_admin.py
-msgid "Last updated"
-msgstr "Viimeksi päivitetty"
-
-#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
-msgid "Name"
-msgstr "Nimi"
 
 #: src/actions/action_admin.py src/actions/category_admin.py
 #: src/admin_site/wagtail_hooks.py src/indicators/wagtail_admin.py
@@ -426,96 +411,61 @@ msgid "Dependencies"
 msgstr "Riippuvuudet"
 
 #: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking as complete for report %s"
+msgstr "Peru valmiiksi merkitseminen raporttia %s varten"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking this action as complete for the report %s"
+msgstr "Peru tämän toimenpiteen valmiiksi merkitseminen raporttia %s varten"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark as complete for report %s"
+msgstr "Merkitse valmiiksi raporttia %s varten"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark this action as complete for the report %s"
+msgstr "Merkitse tämä toimenpide valmiiksi raporttia %s varten"
+
+#: src/actions/action_admin.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+msgid "Edit"
+msgstr "Muokkaa"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Edit '%(title)s'"
+msgstr "Muokkaa kohdetta '%(title)s'"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+msgid "Delete"
+msgstr "Poista"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Delete '%(title)s'"
+msgstr "Poista '%(title)s'"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+msgid "View live"
+msgstr "Näytä julkaistu"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+#, python-format
+msgid "View %s live"
+msgstr "Näytä julkaistu %s"
+
+#: src/actions/action_admin.py
 msgid "Resubmit for moderation"
 msgstr "Lähetä uudelleen moderointiin"
 
 #: src/actions/action_admin.py
 msgid "Cancel moderation"
 msgstr "Peruuta moderointi"
-
-#: src/actions/action_admin.py src/orgs/wagtail_admin.py
-#: templates/modeladmin/edit.html
-msgid "Delete"
-msgstr "Poista"
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "The %(model_name)s could not be saved as it is locked"
-msgstr "Kohdetta %(model_name)s ei voitu tallentaa, koska se on lukittu"
-
-#: src/actions/action_admin_mixins.py src/admin_site/wagtail.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated."
-msgstr "%(model_name)s '%(object)s' päivitetty."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created."
-msgstr "%(model_name)s '%(object)s' luotu."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' on ajastettu julkaisua varten."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' on luotu ja ajastettu julkaisua varten."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' on jo julkinen ja tämä versio on ajastettu julkaistavaksi."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated and published."
-msgstr "%(model_name)s '%(object)s' on päivitetty ja julkaistu."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and published."
-msgstr "%(model_name)s '%(object)s' on luotu ja julkaistu."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr "%(model_name)s '%(object)s' on lähetetty moderoitavaksi."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr "%(model_name)s '%(object)s' luotu ja lähetetty moderoitavaksi."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on käynnistetty uudelleen."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on peruutettu."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' approved and published."
-msgstr "%(model_name)s '%(object)s' on päivitetty ja julkaistu."
-
-#: src/actions/action_admin_mixins.py
-msgid "Unlock"
-msgstr "Poista lukitus"
-
-#: src/actions/action_admin_mixins.py
-msgid "Cancel scheduled publish"
-msgstr "Peruuta ajastettu julkaisu"
-
-#: src/actions/action_admin_mixins.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/admin_site/wagtail.py src/orgs/wagtail_admin.py
-msgid "Edit"
-msgstr "Muokkaa"
 
 #: src/actions/action_fields.py src/actions/tests/fixtures_stream_block.py
 msgid "Action dependencies"
@@ -589,6 +539,12 @@ msgstr "Sama organisaatio toistuu vastuutahona"
 msgid "Person occurs multiple times as contact person"
 msgstr "Sama henkilö toistuu yhteyshenkilönä"
 
+#: src/actions/api.py
+#, fuzzy
+#| msgid "attribute type"
+msgid "Unknown attribute type"
+msgstr "ominaisuustyyppi"
+
 #: src/actions/api.py src/actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
 msgstr "Tämä valintavaihtoehto on arkistoitu, eikä sitä voi valita uudeksi arvoksi."
@@ -614,6 +570,12 @@ msgstr "Sinulla ei ole oikeutta muuttaa roolissa \"%(role)s\" toimivia yhteyshen
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr "Sinulla ei ole oikeutta muuttaa roolissa \"%(role)s\" toimivia vastuutahoja toimenpiteessä \"%(action)s\"."
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "The organization is not included in the plan"
+msgid "The organization is not available for the plan"
+msgstr "Organisaatiota ei ole toimenpideohjelmassa"
 
 #: src/actions/api.py
 msgid "You do not have permission to change the responsible parties of this task."
@@ -1112,10 +1074,6 @@ msgstr "Syvyys"
 #: src/actions/blocks/filters.py
 msgid "Responsible party"
 msgstr "Vastuutaho"
-
-#: src/actions/blocks/filters.py
-msgid "Primary organization"
-msgstr "Pääorganisaatio"
 
 #: src/actions/blocks/filters.py
 #: src/actions/templates/actions/chooser_results.html
@@ -1972,7 +1930,7 @@ msgstr "Yksikkö voidaan asettaa vain numeerisille kentille."
 msgid "If no primary language is set, there may not be other languages."
 msgstr "Jos ensisijaista kieltä ei ole asetettu, muita kieliä ei voi olla."
 
-#: src/actions/models/attributes.py
+#: src/actions/models/attributes.py src/admin_site/models.py
 msgid "This value is only allowed for action fields."
 msgstr "Tämä arvo on sallittu vain toimenpiteiden kentille."
 
@@ -2584,6 +2542,14 @@ msgstr "Kenelle pääsy voidaan myöntää"
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
 msgstr "Näytetään pääsyä pyytäville sekä sähköpostiviestissä, jossa kerrotaan, ettei pyyntöä hyväksytty. Esimerkiksi: ”Pääsy myönnetään vain ministeriön henkilöstölle.”"
+
+#: src/actions/models/plan.py
+msgid "Ask for feedback on pledges"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Show a rating scale and comment form at the bottom of each pledge page."
+msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Link to terms of use for pledge accounts"
@@ -3289,10 +3255,14 @@ msgstr "Valitse kaikki keskeneräiset"
 msgid "Select"
 msgstr "Valitse"
 
-#: src/actions/templates/actions/bulk_approve.html src/copying/views.py
-#: src/reports/spreadsheets/excel_report.py
-msgid "Identifier"
-msgstr "Tunniste"
+#: src/actions/templates/actions/bulk_approve.html
+#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/audit_logging/templates/site_history_results.html src/copying/views.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Name"
+msgstr "Nimi"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Current task"
@@ -3476,10 +3446,6 @@ msgstr "Et voi samanaikaisesti valita olemassa olevaa organisaatiota ja luoda uu
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
 msgstr "Toimenpideohjelman ensisijainen kieli (%(plan_lang)s) poikkeaa organisaation ensisijaisesta kielestä (%(org_lang)s). Varmista, että tämä on tarkoituksellista."
 
-#: src/actions/wagtail_admin.py src/admin_site/wagtail.py
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Yleisen luokan tyyppiä \"%(removed_cct)\" ei voitu poistaa toimenpideohjelmasta, koska siinä on luokkia, joiden luokan tyyppi vastaa sitä."
-
 #: src/actions/wagtail_admin.py
 msgid "General administrators"
 msgstr "Yleiset ylläpitäjät"
@@ -3565,6 +3531,10 @@ msgstr ""
 #| msgid "Enable community engagement"
 msgid "Community engagement"
 msgstr "Ota kansalaisosallistuminen käyttöön"
+
+#: src/actions/wagtail_admin.py
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Yleisen luokan tyyppiä \"%(removed_cct)\" ei voitu poistaa toimenpideohjelmasta, koska siinä on luokkia, joiden luokan tyyppi vastaa sitä."
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -3875,8 +3845,7 @@ msgstr "Kirjautumistapaa ei saatu selville. Sähköpostiosoitteen loppuosa saatt
 msgid "Password authentication is required, but the user has no password."
 msgstr "Salasanatodennus vaaditaan, mutta käyttäjällä ei ole salasanaa."
 
-#: src/admin_site/mixins.py templates/modeladmin/create.html
-#: templates/modeladmin/edit.html
+#: src/admin_site/mixins.py
 msgid "Save and continue editing"
 msgstr "Tallenna ja jatka muokkaamista"
 
@@ -4046,17 +4015,17 @@ msgstr "Julkinen kenttä"
 msgid "Non-public field"
 msgstr "Ei-julkinen kenttä"
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
 msgstr "Kohteiden poistaminen ei onnistunut. Poista ensin sellaiset %(name)s jotka ovat vielä käytössä."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
 msgstr "Käytössä: \"%(instance)s\""
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
@@ -4093,13 +4062,9 @@ msgid "Add %(schema_name)s"
 msgstr "Lisää: %(schema_name)s"
 
 #: src/admin_site/wagtail.py
-msgid "View live"
-msgstr "Näytä julkaistu"
-
-#: src/admin_site/wagtail.py
 #, python-format
-msgid "View %s live"
-msgstr "Näytä julkaistu %s"
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' päivitetty."
 
 #: src/admin_site/wagtail_admin.py
 msgid "Email domains"
@@ -5413,7 +5378,7 @@ msgstr "Älä näytä tämän mittarin arvoja taulukkona mittarisivulla."
 msgid "hide from indicator list"
 msgstr "muut mittarit"
 
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/indicators/wagtail_admin.py
 msgid "Has data"
 msgstr "On dataa"
 
@@ -5562,6 +5527,34 @@ msgstr ""
 msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
 msgstr ""
 
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, python-format
+msgid "%(model_name)s could not be deleted"
+msgstr "%(model_name)s: poistaminen ei onnistunut"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, fuzzy, python-format
+#| msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
+msgid "'%(instance_name)s' is shown in content blocks on the following pages. Deleting it would break these pages. Remove the indicator from their content blocks first:"
+msgstr "”%(instance_name)s” on käytössä ”Raporttien vertailu” -lohkossa toimenpiteiden sivuilla. Sen poistaminen rikkoisi nämä sivut. Jos halusit poistaa raporttien vertailun toimenpiteiden sivuilta, poista lohko sen sijaan seuraavilta sivuilta:"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, fuzzy
+#| msgid "You do not have access to the public site."
+msgid "A page you don't have access to"
+msgstr "Sinulla ei ole pääsyä julkiselle sivustolle."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+msgid "unpublished draft"
+msgstr "julkaisematon luonnos"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+msgid "Go back to listing"
+msgstr "Palaa luetteloon"
+
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -5588,22 +5581,6 @@ msgstr "Tulos"
 #: src/indicators/wagtail_admin.py
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Kaavioissa näytettävän lasketun arvon nimi (mittarin data × tekijä), esim. \"Ajoneuvojen päästöt\""
-
-#: src/indicators/wagtail_admin.py
-msgid "Show indicators"
-msgstr "Näytä mittarit"
-
-#: src/indicators/wagtail_admin.py
-msgid "in active plan"
-msgstr "aktiivisessa toimenpideohjelmassa"
-
-#: src/indicators/wagtail_admin.py
-msgid "not in active plan"
-msgstr "ei mukana toimenpideohjelmassa"
-
-#: src/indicators/wagtail_admin.py
-msgid "all"
-msgstr "kaikki"
 
 #: src/indicators/wagtail_admin.py
 msgid "Choose a quantity"
@@ -5663,6 +5640,22 @@ msgstr "Mittarin tekijät"
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr "Olet vaihtanut toiseen toimenpideohjelmaan tämän mittarin muokkaamisen aikana. Mittari tallennettiin edelleen alkuperäiseen toimenpideohjelmaan \"%s\"."
+
+#: src/indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr "Näytä mittarit"
+
+#: src/indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr "ei mukana toimenpideohjelmassa"
+
+#: src/indicators/wagtail_admin.py
+msgid "all"
+msgstr "kaikki"
+
+#: src/indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr "aktiivisessa toimenpideohjelmassa"
 
 #: src/indicators/wagtail_admin.py
 msgid "none"
@@ -5753,6 +5746,18 @@ msgstr "Tekijät"
 msgid "Relationships"
 msgstr "Yhteydet"
 
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit rights"
+msgid "Edit properties"
+msgstr "Muokkausoikeudet"
+
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgid "The indicator is still shown on pages. Remove it from the content blocks of these pages first."
+msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+
 #: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
@@ -5763,13 +5768,13 @@ msgid "Dimensions must be the same as in all indicators linked to this one"
 msgstr "Dimensioiden täytyy olla samat kuin kaikissa tähän mittariin linkitetyissä mittareissa"
 
 #: src/indicators/wagtail_admin.py
-msgid "Common indicators"
-msgstr "Yleiset mittarit"
-
-#: src/indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+
+#: src/indicators/wagtail_admin.py
+msgid "Common indicators"
+msgstr "Yleiset mittarit"
 
 #: src/indicators/wagtail_hooks.py
 msgid "Update values"
@@ -6212,11 +6217,11 @@ msgstr "Herätteiden sisältö"
 msgid "Notification preferences"
 msgstr "Heräteasetukset"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search term"
 msgstr "Hakusana"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search"
 msgstr "Haku"
 
@@ -6325,11 +6330,6 @@ msgid "Permissions"
 msgstr "Käyttöoikeudet"
 
 #: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Edit '%(title)s'"
-msgstr "Muokkaa kohdetta '%(title)s'"
-
-#: src/orgs/wagtail_admin.py
 msgid "Copy"
 msgstr "Kopioi"
 
@@ -6337,11 +6337,6 @@ msgstr "Kopioi"
 #, python-format
 msgid "Copy '%(title)s'"
 msgstr "Kopioi '%(title)s'"
-
-#: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Delete '%(title)s'"
-msgstr "Poista '%(title)s'"
 
 #: src/orgs/wagtail_admin.py
 msgid "Add suborganization"
@@ -6880,21 +6875,8 @@ msgstr "%(model_name)s '%(object)s' poistettu."
 
 #: src/people/templates/people/delete.html
 #, python-format
-msgid "Confirm deletion of %(model_name)s"
-msgstr "Varmista kohteen %(model_name)s poistaminen"
-
-#: src/people/templates/people/delete.html
-#, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
 msgstr "'%(instance_name)s' on yhteydessä seuraaviin kohteisiin. Ole hyvä ja varmista poistaminen:"
-
-#: src/people/templates/people/delete.html
-msgid "Yes, delete"
-msgstr "Kyllä, poista"
-
-#: src/people/templates/people/delete.html
-msgid "No, don't delete"
-msgstr "Ei, älä poista"
 
 #: src/people/templates/people/view_as_user.html
 #: src/reports/report_formatters.py templates/aplans/confirmation.html
@@ -6968,14 +6950,6 @@ msgid "Viewer"
 msgstr "Katselija"
 
 #: src/people/wagtail_admin.py
-msgid "Role"
-msgstr "Rooli"
-
-#: src/people/wagtail_admin.py
-msgid "No role"
-msgstr "Ei roolia"
-
-#: src/people/wagtail_admin.py
 msgid "Access to public site only"
 msgstr "Pääsy vain julkiselle sivustolle"
 
@@ -6996,8 +6970,26 @@ msgid "Plan admin organizations"
 msgstr "Ylläpitäjä organisaatioille"
 
 #: src/people/wagtail_admin.py
+msgid "Role"
+msgstr "Rooli"
+
+#: src/people/wagtail_admin.py
+msgid "No role"
+msgstr "Ei roolia"
+
+#: src/people/wagtail_admin.py
+msgid "Edit this person"
+msgstr "Muokkaa tätä henkilöä"
+
+#: src/people/wagtail_admin.py
 msgid "Deactivate"
 msgstr "Poista käytöstä"
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit this person"
+msgid "Deactivate this person"
+msgstr "Muokkaa tätä henkilöä"
 
 #: src/people/wagtail_admin.py
 msgid "Create a password reset link"
@@ -7008,10 +7000,6 @@ msgid "View site as it looks for this user"
 msgstr "Käytä palvelua tämän käyttäjän näkökulmasta"
 
 #: src/people/wagtail_admin.py
-msgid "Are you sure you want to deactivate this person?"
-msgstr "Haluatko varmasti poistaa käytöstä tämän henkilön?"
-
-#: src/people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr "Tällä henkilöllä ei ole pääsyä ylläpitoon. Tämä johtuu yleensä siitä, ettei hänelle ole määritetty yhtäkään toimenpidettä tai indikaattoria."
 
@@ -7020,12 +7008,16 @@ msgid "last login"
 msgstr "kirjautunut viimeksi"
 
 #: src/people/wagtail_admin.py
+msgid "Attended training"
+msgstr "Osallistunut koulutukseen"
+
+#: src/people/wagtail_admin.py
 msgid "contact for indicators"
 msgstr "yhteyshenkilönä mittareille"
 
 #: src/people/wagtail_admin.py
-msgid "Attended training"
-msgstr "Osallistunut koulutukseen"
+msgid "Are you sure you want to deactivate this person?"
+msgstr "Haluatko varmasti poistaa käytöstä tämän henkilön?"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -7309,21 +7301,8 @@ msgstr "Seuraavien toimenpiteiden merkitseminen valmiiksi raporttia varten perut
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s: poistaminen ei onnistunut"
-
-#: src/reports/templates/reports/report_type_delete.html
-#, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
 msgstr "”%(instance_name)s” on käytössä ”Raporttien vertailu” -lohkossa toimenpiteiden sivuilla. Sen poistaminen rikkoisi nämä sivut. Jos halusit poistaa raporttien vertailun toimenpiteiden sivuilta, poista lohko sen sijaan seuraavilta sivuilta:"
-
-#: src/reports/templates/reports/report_type_delete.html
-msgid "unpublished draft"
-msgstr "julkaisematon luonnos"
-
-#: src/reports/templates/reports/report_type_delete.html
-msgid "Go back to listing"
-msgstr "Palaa luetteloon"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7589,13 +7568,71 @@ msgstr "Kopioi tunniste %(identifier)s"
 msgid "Copy identifier"
 msgstr "Kopioi tunniste"
 
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Saving…"
-msgstr "Tallennetaan…"
+#, python-format
+#~ msgid "The %(model_name)s could not be saved as it is locked"
+#~ msgstr "Kohdetta %(model_name)s ei voitu tallentaa, koska se on lukittu"
 
-#: templates/modeladmin/create.html
-msgid "Save"
-msgstr "Tallenna ja poistu"
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created."
+#~ msgstr "%(model_name)s '%(object)s' luotu."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' on ajastettu julkaisua varten."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' on luotu ja ajastettu julkaisua varten."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' on jo julkinen ja tämä versio on ajastettu julkaistavaksi."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' updated and published."
+#~ msgstr "%(model_name)s '%(object)s' on päivitetty ja julkaistu."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and published."
+#~ msgstr "%(model_name)s '%(object)s' on luotu ja julkaistu."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' on lähetetty moderoitavaksi."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' luotu ja lähetetty moderoitavaksi."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+#~ msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on käynnistetty uudelleen."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+#~ msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on peruutettu."
+
+#~ msgid "Unlock"
+#~ msgstr "Poista lukitus"
+
+#~ msgid "Cancel scheduled publish"
+#~ msgstr "Peruuta ajastettu julkaisu"
+
+#, python-format
+#~ msgid "Confirm deletion of %(model_name)s"
+#~ msgstr "Varmista kohteen %(model_name)s poistaminen"
+
+#~ msgid "Yes, delete"
+#~ msgstr "Kyllä, poista"
+
+#~ msgid "No, don't delete"
+#~ msgstr "Ei, älä poista"
+
+#~ msgid "Saving…"
+#~ msgstr "Tallennetaan…"
+
+#~ msgid "Save"
+#~ msgstr "Tallenna ja poistu"
 
 #~ msgid "Object type"
 #~ msgstr "Objektin tyyppi"
@@ -7977,9 +8014,6 @@ msgstr "Tallenna ja poistu"
 #~ msgid "Choose another person"
 #~ msgstr "Valitse toinen henkilö"
 
-#~ msgid "Edit this person"
-#~ msgstr "Muokkaa tätä henkilöä"
-
 #~ msgctxt "person's role"
 #~ msgid "title"
 #~ msgstr "titteli"
@@ -8265,9 +8299,6 @@ msgstr "Tallenna ja poistu"
 
 #~ msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
 #~ msgstr "Useimmiten host-nimi, eli kaikki @-merkin oikealla puolella työntekijöiden sähköpostiosoitteissa"
-
-#~ msgid "attribute type"
-#~ msgstr "ominaisuustyyppi"
 
 #, python-format
 #~ msgid "Add another %(model)s"

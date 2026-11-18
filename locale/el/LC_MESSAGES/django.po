@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 15:53+0200\n"
+"POT-Creation-Date: 2026-11-18 20:11+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -203,7 +203,7 @@ msgstr "Απαιτούμενο"
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/wagtail_hooks.py
 #: src/people/templates/people/person_actions_menu.html
-#: src/people/wagtail_admin.py templates/modeladmin/create.html
+#: src/people/wagtail_admin.py
 #, fuzzy
 #| msgid "Actions"
 msgid "Actions"
@@ -370,29 +370,27 @@ msgstr "Πρόσωπα επικοινωνίας"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark as complete for report %s"
-msgstr "Χαρακτηρίστε ως ολοκληρωμένο για αναφορά %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
-msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρωμένη για την έκθεση %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Αναίρεση της επισήμανσης αυτής της ενέργειας ως ολοκληρωμένης για την αναφορά %s"
+msgid "%(model_name)s '%(object)s' approved and published."
+msgstr "%(model_name)s '%(object)s' εγκρίθηκε και δημοσιεύθηκε."
 
 #: src/actions/action_admin.py
 #, fuzzy, python-format
 #| msgid "%(attribute_type)s (text)"
 msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "%(attribute_type)s (κείμενο)"
+
+#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
+#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Αναγνωριστικό"
+
+#: src/actions/action_admin.py src/actions/blocks/filters.py
+msgid "Primary organization"
+msgstr "Πρωτοβάθμια οργάνωση"
+
+#: src/actions/action_admin.py
+msgid "Last updated"
+msgstr "Τελευταία ενημέρωση"
 
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
@@ -404,19 +402,6 @@ msgstr "%(attribute_type)s (κείμενο)"
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Δράσεις"
-
-#: src/actions/action_admin.py
-msgid "Last updated"
-msgstr "Τελευταία ενημέρωση"
-
-#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
-msgid "Name"
-msgstr "Όνομα"
 
 #: src/actions/action_admin.py src/actions/category_admin.py
 #: src/admin_site/wagtail_hooks.py src/indicators/wagtail_admin.py
@@ -459,96 +444,62 @@ msgid "Dependencies"
 msgstr "Εξαρτήσεις"
 
 #: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking as complete for report %s"
+msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking this action as complete for the report %s"
+msgstr "Αναίρεση της επισήμανσης αυτής της ενέργειας ως ολοκληρωμένης για την αναφορά %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark as complete for report %s"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο για αναφορά %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark this action as complete for the report %s"
+msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρωμένη για την έκθεση %s"
+
+#: src/actions/action_admin.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, fuzzy, python-format
+#| msgid "site title"
+msgid "Edit '%(title)s'"
+msgstr "τίτλος ιστότοπου"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+msgid "Delete"
+msgstr "Διαγραφή"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Delete '%(title)s'"
+msgstr ""
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+msgid "View live"
+msgstr "Προβολή live"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+#, python-format
+msgid "View %s live"
+msgstr "Δείτε το %s live"
+
+#: src/actions/action_admin.py
 msgid "Resubmit for moderation"
 msgstr "Επανυποβολή για έλεγχο"
 
 #: src/actions/action_admin.py
 msgid "Cancel moderation"
 msgstr "Ακύρωση της μετριοπάθειας"
-
-#: src/actions/action_admin.py src/orgs/wagtail_admin.py
-#: templates/modeladmin/edit.html
-msgid "Delete"
-msgstr "Διαγραφή"
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "The %(model_name)s could not be saved as it is locked"
-msgstr "Το %(model_name)s δεν μπορούσε να αποθηκευτεί καθώς είναι κλειδωμένο"
-
-#: src/actions/action_admin_mixins.py src/admin_site/wagtail.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated."
-msgstr "%(model_name)s '%(object)s' ενημερώθηκε."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created."
-msgstr "%(model_name)s '%(object)s' δημιουργήθηκε."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' έχει προγραμματιστεί για δημοσίευση."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και προγραμματίστηκε για δημοσίευση."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' είναι ζωντανή και αυτή η έκδοση έχει προγραμματιστεί για δημοσίευση."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated and published."
-msgstr "%(model_name)s '%(object)s' ενημερώθηκε και δημοσιεύθηκε."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and published."
-msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και δημοσιεύθηκε."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr "%(model_name)s '%(object)s' έχει υποβληθεί για έλεγχο."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και υποβλήθηκε για έλεγχο."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr "Η ροή εργασιών στο %(model_name)s '%(object)s' έχει επανεκκινήσει."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr "Η ροή εργασίας στο %(model_name)s '%(object)s' έχει ακυρωθεί."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' approved and published."
-msgstr "%(model_name)s '%(object)s' εγκρίθηκε και δημοσιεύθηκε."
-
-#: src/actions/action_admin_mixins.py
-msgid "Unlock"
-msgstr "Ξεκλειδώστε το"
-
-#: src/actions/action_admin_mixins.py
-msgid "Cancel scheduled publish"
-msgstr "Ακύρωση προγραμματισμένης δημοσίευσης"
-
-#: src/actions/action_admin_mixins.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/admin_site/wagtail.py src/orgs/wagtail_admin.py
-msgid "Edit"
-msgstr "Επεξεργασία"
 
 #: src/actions/action_fields.py src/actions/tests/fixtures_stream_block.py
 msgid "Action dependencies"
@@ -622,6 +573,12 @@ msgstr "Ο οργανισμός εμφανίζεται πολλές φορές �
 msgid "Person occurs multiple times as contact person"
 msgstr "Το πρόσωπο εμφανίζεται πολλές φορές ως πρόσωπο επαφής"
 
+#: src/actions/api.py
+#, fuzzy
+#| msgid "%(attribute_type)s (text)"
+msgid "Unknown attribute type"
+msgstr "%(attribute_type)s (κείμενο)"
+
 #: src/actions/api.py src/actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
 msgstr ""
@@ -647,6 +604,12 @@ msgstr ""
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr ""
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "The organization is not included in the plan"
+msgid "The organization is not available for the plan"
+msgstr "Ο οργανισμός δεν περιλαμβάνεται στο σχέδιο"
 
 #: src/actions/api.py
 #, fuzzy
@@ -1201,10 +1164,6 @@ msgstr "Βάθος"
 #: src/actions/blocks/filters.py
 msgid "Responsible party"
 msgstr "Υπεύθυνος"
-
-#: src/actions/blocks/filters.py
-msgid "Primary organization"
-msgstr "Πρωτοβάθμια οργάνωση"
 
 #: src/actions/blocks/filters.py
 #: src/actions/templates/actions/chooser_results.html
@@ -2116,7 +2075,7 @@ msgstr "Η μονάδα πρέπει να χρησιμοποιείται μόν�
 msgid "If no primary language is set, there may not be other languages."
 msgstr "Εάν δεν έχει οριστεί κύρια γλώσσα, δεν πρέπει να υπάρχουν άλλες γλώσσες"
 
-#: src/actions/models/attributes.py
+#: src/actions/models/attributes.py src/admin_site/models.py
 #, fuzzy
 #| msgid "This value is only allowed for action fields"
 msgid "This value is only allowed for action fields."
@@ -2761,6 +2720,14 @@ msgstr ""
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Ask for feedback on pledges"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Show a rating scale and comment form at the bottom of each pledge page."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3550,10 +3517,14 @@ msgstr "σε εξέλιξη"
 msgid "Select"
 msgstr ""
 
-#: src/actions/templates/actions/bulk_approve.html src/copying/views.py
-#: src/reports/spreadsheets/excel_report.py
-msgid "Identifier"
-msgstr "Αναγνωριστικό"
+#: src/actions/templates/actions/bulk_approve.html
+#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/audit_logging/templates/site_history_results.html src/copying/views.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Name"
+msgstr "Όνομα"
 
 #: src/actions/templates/actions/bulk_approve.html
 msgid "Current task"
@@ -3755,12 +3726,6 @@ msgstr ""
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
 msgstr ""
 
-#: src/actions/wagtail_admin.py src/admin_site/wagtail.py
-#, fuzzy
-#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Δεν ήταν δυνατή η αφαίρεση του κοινού τύπου κατηγορίας '{removed_cct}' από το σχέδιο, επειδή υπάρχουν κατηγορίες με τον αντίστοιχο τύπο κατηγορίας."
-
 #: src/actions/wagtail_admin.py
 msgid "General administrators"
 msgstr "Γενικοί διαχειριστές"
@@ -3856,6 +3821,12 @@ msgstr ""
 #| msgid "comment"
 msgid "Community engagement"
 msgstr "σχόλιο"
+
+#: src/actions/wagtail_admin.py
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Δεν ήταν δυνατή η αφαίρεση του κοινού τύπου κατηγορίας '{removed_cct}' από το σχέδιο, επειδή υπάρχουν κατηγορίες με τον αντίστοιχο τύπο κατηγορίας."
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -4210,8 +4181,7 @@ msgstr "Δεν μπορεί να προσδιοριστεί η μέθοδος ε
 msgid "Password authentication is required, but the user has no password."
 msgstr "Απαιτείται έλεγχος ταυτότητας με κωδικό πρόσβασης, αλλά ο χρήστης δεν έχει κωδικό πρόσβασης."
 
-#: src/admin_site/mixins.py templates/modeladmin/create.html
-#: templates/modeladmin/edit.html
+#: src/admin_site/mixins.py
 msgid "Save and continue editing"
 msgstr "Αποθήκευση και συνέχιση της επεξεργασίας"
 
@@ -4391,17 +4361,17 @@ msgstr "Δημόσιο πεδίο"
 msgid "Non-public field"
 msgstr "Μη δημόσιο πεδίο"
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
 msgstr "Σφάλμα διαγραφής στοιχείων. Δοκιμάστε πρώτα να διαγράψετε τυχόν %(name)s που είναι σε χρήση."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
 msgstr "Σε χρήση: \"%(instance)s\"."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s δεν μπόρεσε να δημιουργηθεί λόγω σφαλμάτων."
@@ -4443,13 +4413,9 @@ msgid "Add %(schema_name)s"
 msgstr "Προσθέστε %(schema_name)s"
 
 #: src/admin_site/wagtail.py
-msgid "View live"
-msgstr "Προβολή live"
-
-#: src/admin_site/wagtail.py
 #, python-format
-msgid "View %s live"
-msgstr "Δείτε το %s live"
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' ενημερώθηκε."
 
 #: src/admin_site/wagtail_admin.py
 msgid "Email domains"
@@ -5945,7 +5911,7 @@ msgstr "Επιλέξτε τον τρόπο διάταξης των δεικτώ�
 msgid "hide from indicator list"
 msgstr "άλλοι δείκτες"
 
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/indicators/wagtail_admin.py
 msgid "Has data"
 msgstr "Έχει δεδομένα"
 
@@ -6100,6 +6066,38 @@ msgstr ""
 msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
 msgstr ""
 
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s could not be deleted"
+msgstr "%(model_name)s '%(object)s' διαγράφεται."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, python-format
+msgid "'%(instance_name)s' is shown in content blocks on the following pages. Deleting it would break these pages. Remove the indicator from their content blocks first:"
+msgstr ""
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, fuzzy
+#| msgid "You do not have access to the public site."
+msgid "A page you don't have access to"
+msgstr "Δεν έχετε πρόσβαση στον δημόσιο ιστότοπο."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "published at"
+msgid "unpublished draft"
+msgstr "που δημοσιεύτηκε στο"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "Back to own user"
+msgid "Go back to listing"
+msgstr "Πίσω στο δικό σας χρήστη"
+
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -6126,22 +6124,6 @@ msgstr ""
 #: src/indicators/wagtail_admin.py
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr ""
-
-#: src/indicators/wagtail_admin.py
-msgid "Show indicators"
-msgstr "Εμφάνιση δεικτών"
-
-#: src/indicators/wagtail_admin.py
-msgid "in active plan"
-msgstr "σε ενεργό σχέδιο"
-
-#: src/indicators/wagtail_admin.py
-msgid "not in active plan"
-msgstr "όχι σε ενεργό σχέδιο"
-
-#: src/indicators/wagtail_admin.py
-msgid "all"
-msgstr "όλα"
 
 #: src/indicators/wagtail_admin.py
 msgid "Choose a quantity"
@@ -6203,6 +6185,22 @@ msgstr "Δείκτης για δράσεις"
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr ""
+
+#: src/indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr "Εμφάνιση δεικτών"
+
+#: src/indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr "όχι σε ενεργό σχέδιο"
+
+#: src/indicators/wagtail_admin.py
+msgid "all"
+msgstr "όλα"
+
+#: src/indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr "σε ενεργό σχέδιο"
 
 #: src/indicators/wagtail_admin.py
 msgid "none"
@@ -6307,6 +6305,16 @@ msgstr ""
 msgid "Relationships"
 msgstr "Σχέσεις"
 
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit rights"
+msgid "Edit properties"
+msgstr "Επεξεργασία δικαιωμάτων"
+
+#: src/indicators/wagtail_admin.py
+msgid "The indicator is still shown on pages. Remove it from the content blocks of these pages first."
+msgstr ""
+
 #: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
@@ -6317,13 +6325,13 @@ msgid "Dimensions must be the same as in all indicators linked to this one"
 msgstr "Οι διαστάσεις πρέπει να είναι οι ίδιες όπως σε όλους τους δείκτες που συνδέονται με αυτόν"
 
 #: src/indicators/wagtail_admin.py
-msgid "Common indicators"
-msgstr "Κοινοί δείκτες"
-
-#: src/indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Αυτός ο κοινός δείκτης έχει δείκτες συνδεδεμένους με αυτόν, οπότε η ποσότητα, η μονάδα και οι διαστάσεις δεν μπορούν να επεξεργαστούν. Τρέχουσα ποσότητα: %(quantity)s; μονάδα: %(unit)s; διαστάσεις: %(dimensions)s"
+
+#: src/indicators/wagtail_admin.py
+msgid "Common indicators"
+msgstr "Κοινοί δείκτες"
 
 #: src/indicators/wagtail_hooks.py
 #, fuzzy
@@ -6738,11 +6746,11 @@ msgstr "Περιεχόμενο κοινοποίησης"
 msgid "Notification preferences"
 msgstr "Προτιμήσεις ειδοποιήσεων"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search term"
 msgstr ""
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search"
 msgstr ""
 
@@ -6853,12 +6861,6 @@ msgid "Permissions"
 msgstr "Δικαιώματα"
 
 #: src/orgs/wagtail_admin.py
-#, fuzzy, python-format
-#| msgid "site title"
-msgid "Edit '%(title)s'"
-msgstr "τίτλος ιστότοπου"
-
-#: src/orgs/wagtail_admin.py
 #, fuzzy
 #| msgid "Choose plan"
 msgid "Copy"
@@ -6867,11 +6869,6 @@ msgstr "Επιλέξτε σχέδιο"
 #: src/orgs/wagtail_admin.py
 #, python-format
 msgid "Copy '%(title)s'"
-msgstr ""
-
-#: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Delete '%(title)s'"
 msgstr ""
 
 #: src/orgs/wagtail_admin.py
@@ -7446,21 +7443,8 @@ msgstr "%(model_name)s '%(object)s' διαγράφεται."
 
 #: src/people/templates/people/delete.html
 #, python-format
-msgid "Confirm deletion of %(model_name)s"
-msgstr "Επιβεβαιώστε τη διαγραφή των %(model_name)s"
-
-#: src/people/templates/people/delete.html
-#, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
 msgstr "Το '%(instance_name)s' είναι συνδεδεμένο με τα ακόλουθα στοιχεία. Παρακαλώ επαληθεύστε τη διαγραφή:"
-
-#: src/people/templates/people/delete.html
-msgid "Yes, delete"
-msgstr "Ναι, διαγράψτε"
-
-#: src/people/templates/people/delete.html
-msgid "No, don't delete"
-msgstr "Όχι, μη διαγράψετε"
 
 #: src/people/templates/people/view_as_user.html
 #: src/reports/report_formatters.py templates/aplans/confirmation.html
@@ -7542,16 +7526,6 @@ msgid "Viewer"
 msgstr "Προβολή live"
 
 #: src/people/wagtail_admin.py
-msgid "Role"
-msgstr ""
-
-#: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "role"
-msgid "No role"
-msgstr "ρόλος"
-
-#: src/people/wagtail_admin.py
 msgid "Access to public site only"
 msgstr "Πρόσβαση μόνο σε δημόσιο χώρο"
 
@@ -7572,8 +7546,28 @@ msgid "Plan admin organizations"
 msgstr "Οργανισμοί διαχείρισης σχεδίου"
 
 #: src/people/wagtail_admin.py
+msgid "Role"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "role"
+msgid "No role"
+msgstr "ρόλος"
+
+#: src/people/wagtail_admin.py
+msgid "Edit this person"
+msgstr "Επεξεργαστείτε αυτό το άτομο"
+
+#: src/people/wagtail_admin.py
 msgid "Deactivate"
 msgstr "Απενεργοποίηση"
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit this person"
+msgid "Deactivate this person"
+msgstr "Επεξεργαστείτε αυτό το άτομο"
 
 #: src/people/wagtail_admin.py
 msgid "Create a password reset link"
@@ -7584,10 +7578,6 @@ msgid "View site as it looks for this user"
 msgstr "Προβολή του ιστότοπου όπως φαίνεται για αυτόν τον χρήστη"
 
 #: src/people/wagtail_admin.py
-msgid "Are you sure you want to deactivate this person?"
-msgstr "Είστε σίγουροι ότι θέλετε να απενεργοποιήσετε αυτό το άτομο;"
-
-#: src/people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr "Αυτό το άτομο δεν έχει πρόσβαση στη διεπαφή διαχειριστή. Αυτό συμβαίνει συνήθως επειδή δεν του έχουν εκχωρηθεί ενέργειες ή δείκτες."
 
@@ -7596,14 +7586,18 @@ msgid "last login"
 msgstr "τελευταία σύνδεση"
 
 #: src/people/wagtail_admin.py
-msgid "contact for indicators"
-msgstr "επαφή για δείκτες"
-
-#: src/people/wagtail_admin.py
 #, fuzzy
 #| msgid "participated in training"
 msgid "Attended training"
 msgstr "συμμετείχε σε εκπαίδευση"
+
+#: src/people/wagtail_admin.py
+msgid "contact for indicators"
+msgstr "επαφή για δείκτες"
+
+#: src/people/wagtail_admin.py
+msgid "Are you sure you want to deactivate this person?"
+msgstr "Είστε σίγουροι ότι θέλετε να απενεργοποιήσετε αυτό το άτομο;"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -7894,27 +7888,9 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Αυτό θα αναιρέσει τη σήμανση των ακόλουθων ενεργειών ως ολοκληρωμένων:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
-msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' διαγράφεται."
-
-#: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
 msgstr ""
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
-msgid "unpublished draft"
-msgstr "που δημοσιεύτηκε στο"
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "Back to own user"
-msgid "Go back to listing"
-msgstr "Πίσω στο δικό σας χρήστη"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -8211,13 +8187,71 @@ msgstr "απόκρυψη αναγνωριστικών κατηγοριών"
 msgid "Copy identifier"
 msgstr "αναγνωριστικό"
 
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Saving…"
-msgstr "Εξοικονόμηση…"
+#, python-format
+#~ msgid "The %(model_name)s could not be saved as it is locked"
+#~ msgstr "Το %(model_name)s δεν μπορούσε να αποθηκευτεί καθώς είναι κλειδωμένο"
 
-#: templates/modeladmin/create.html
-msgid "Save"
-msgstr "Αποθήκευση"
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created."
+#~ msgstr "%(model_name)s '%(object)s' δημιουργήθηκε."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' έχει προγραμματιστεί για δημοσίευση."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και προγραμματίστηκε για δημοσίευση."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' είναι ζωντανή και αυτή η έκδοση έχει προγραμματιστεί για δημοσίευση."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' updated and published."
+#~ msgstr "%(model_name)s '%(object)s' ενημερώθηκε και δημοσιεύθηκε."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and published."
+#~ msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και δημοσιεύθηκε."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' έχει υποβληθεί για έλεγχο."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και υποβλήθηκε για έλεγχο."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+#~ msgstr "Η ροή εργασιών στο %(model_name)s '%(object)s' έχει επανεκκινήσει."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+#~ msgstr "Η ροή εργασίας στο %(model_name)s '%(object)s' έχει ακυρωθεί."
+
+#~ msgid "Unlock"
+#~ msgstr "Ξεκλειδώστε το"
+
+#~ msgid "Cancel scheduled publish"
+#~ msgstr "Ακύρωση προγραμματισμένης δημοσίευσης"
+
+#, python-format
+#~ msgid "Confirm deletion of %(model_name)s"
+#~ msgstr "Επιβεβαιώστε τη διαγραφή των %(model_name)s"
+
+#~ msgid "Yes, delete"
+#~ msgstr "Ναι, διαγράψτε"
+
+#~ msgid "No, don't delete"
+#~ msgstr "Όχι, μη διαγράψετε"
+
+#~ msgid "Saving…"
+#~ msgstr "Εξοικονόμηση…"
+
+#~ msgid "Save"
+#~ msgstr "Αποθήκευση"
 
 #~ msgid "Object type"
 #~ msgstr "Τύπος αντικειμένου"
@@ -8629,9 +8663,6 @@ msgstr "Αποθήκευση"
 
 #~ msgid "Choose another person"
 #~ msgstr "Επιλέξτε ένα άλλο άτομο"
-
-#~ msgid "Edit this person"
-#~ msgstr "Επεξεργαστείτε αυτό το άτομο"
 
 #~ msgctxt "person's role"
 #~ msgid "title"
