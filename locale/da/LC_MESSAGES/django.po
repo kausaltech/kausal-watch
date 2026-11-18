@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 15:53+0200\n"
+"POT-Creation-Date: 2026-11-18 20:11+0200\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -208,7 +208,7 @@ msgstr "Påkrævet"
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/wagtail_hooks.py
 #: src/people/templates/people/person_actions_menu.html
-#: src/people/wagtail_admin.py templates/modeladmin/create.html
+#: src/people/wagtail_admin.py
 msgid "Actions"
 msgstr "Handlinger"
 
@@ -371,28 +371,26 @@ msgstr "Kontaktpersoner"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark as complete for report %s"
-msgstr "Marker som færdig til rapport %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
-msgstr "Marker denne handling som fuldført for rapporten %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Fortryd markering som færdig for rapport %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Fortryd markering af denne handling som fuldført for rapporten %s"
+msgid "%(model_name)s '%(object)s' approved and published."
+msgstr "%(model_name)s '%(object)s' godkendt og offentliggjort."
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "Felt \"%(attribute_type)s\": %(message)s"
+
+#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
+#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Identifikator"
+
+#: src/actions/action_admin.py src/actions/blocks/filters.py
+msgid "Primary organization"
+msgstr "Primær organisation"
+
+#: src/actions/action_admin.py
+msgid "Last updated"
+msgstr "Sidst opdateret"
 
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
@@ -402,19 +400,6 @@ msgstr "Felt \"%(attribute_type)s\": %(message)s"
 msgctxt "Action model"
 msgid "Actions"
 msgstr "Handlinger"
-
-#: src/actions/action_admin.py
-msgid "Last updated"
-msgstr "Sidst opdateret"
-
-#: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/audit_logging/templates/site_history_results.html src/copying/views.py
-#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
-msgid "Name"
-msgstr "Navn"
 
 #: src/actions/action_admin.py src/actions/category_admin.py
 #: src/admin_site/wagtail_hooks.py src/indicators/wagtail_admin.py
@@ -457,96 +442,61 @@ msgid "Dependencies"
 msgstr "Afhængigheder"
 
 #: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking as complete for report %s"
+msgstr "Fortryd markering som færdig for rapport %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Undo marking this action as complete for the report %s"
+msgstr "Fortryd markering af denne handling som fuldført for rapporten %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark as complete for report %s"
+msgstr "Marker som færdig til rapport %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Mark this action as complete for the report %s"
+msgstr "Marker denne handling som fuldført for rapporten %s"
+
+#: src/actions/action_admin.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+msgid "Edit"
+msgstr "Redigere"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Edit '%(title)s'"
+msgstr "Rediger '%(title)s'"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+msgid "Delete"
+msgstr "Slet"
+
+#: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#, python-format
+msgid "Delete '%(title)s'"
+msgstr "Slet '%(title)s'"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+msgid "View live"
+msgstr "Se live"
+
+#: src/actions/action_admin.py src/indicators/wagtail_admin.py
+#, python-format
+msgid "View %s live"
+msgstr "Se %s live"
+
+#: src/actions/action_admin.py
 msgid "Resubmit for moderation"
 msgstr "Send igen til moderation"
 
 #: src/actions/action_admin.py
 msgid "Cancel moderation"
 msgstr "Annuller moderation"
-
-#: src/actions/action_admin.py src/orgs/wagtail_admin.py
-#: templates/modeladmin/edit.html
-msgid "Delete"
-msgstr "Slet"
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "The %(model_name)s could not be saved as it is locked"
-msgstr "%(model_name)s kunne ikke gemmes, da den er låst"
-
-#: src/actions/action_admin_mixins.py src/admin_site/wagtail.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated."
-msgstr "%(model_name)s '%(object)s' opdateret."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created."
-msgstr "%(model_name)s '%(object)s' oprettet."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' er blevet planlagt til udgivelse."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' oprettet og planlagt til udgivelse."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' er live, og denne version er planlagt til udgivelse."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' updated and published."
-msgstr "%(model_name)s '%(object)s' opdateret og offentliggjort."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and published."
-msgstr "%(model_name)s '%(object)s' opdateret og offentliggjort."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr "%(model_name)s '%(object)s' oprettet og sendt til moderation."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr "Workflow på %(model_name)s '%(object)s' er blevet genstartet."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr "Workflow på %(model_name)s '%(object)s' er blevet annulleret."
-
-#: src/actions/action_admin_mixins.py
-#, python-format
-msgid "%(model_name)s '%(object)s' approved and published."
-msgstr "%(model_name)s '%(object)s' godkendt og offentliggjort."
-
-#: src/actions/action_admin_mixins.py
-msgid "Unlock"
-msgstr "Lås op"
-
-#: src/actions/action_admin_mixins.py
-msgid "Cancel scheduled publish"
-msgstr "Annuller planlagt publicering"
-
-#: src/actions/action_admin_mixins.py
-#: src/admin_site/templates/admin_site/own_indicators_panel.html
-#: src/admin_site/wagtail.py src/orgs/wagtail_admin.py
-msgid "Edit"
-msgstr "Redigere"
 
 #: src/actions/action_fields.py src/actions/tests/fixtures_stream_block.py
 msgid "Action dependencies"
@@ -620,6 +570,12 @@ msgstr "Organisation optræder flere gange som ansvarlig part"
 msgid "Person occurs multiple times as contact person"
 msgstr "Person optræder flere gange som kontaktperson"
 
+#: src/actions/api.py
+#, fuzzy
+#| msgid "attribute type"
+msgid "Unknown attribute type"
+msgstr "attributtype"
+
 #: src/actions/api.py src/actions/models/attributes.py
 msgid "This choice option is archived and cannot be selected as a new value."
 msgstr "Denne valgmulighed er arkiveret og kan ikke vælges som ny værdi."
@@ -645,6 +601,12 @@ msgstr "Du har ikke tilladelse til at ændre kontaktpersoner med rollen \"%(role
 #, python-format
 msgid "You do not have permission to change responsible parties with role \"%(role)s\" on action \"%(action)s\"."
 msgstr "Du har ikke tilladelse til at ændre ansvarlige parter med rollen \"%(role)s\" på handlingen \"%(action)s\"."
+
+#: src/actions/api.py
+#, fuzzy
+#| msgid "The organization is not included in the plan"
+msgid "The organization is not available for the plan"
+msgstr "Organisationen er ikke med i planen"
 
 #: src/actions/api.py
 #, fuzzy
@@ -1150,10 +1112,6 @@ msgstr "Dybde"
 #: src/actions/blocks/filters.py
 msgid "Responsible party"
 msgstr "Ansvarlig part"
-
-#: src/actions/blocks/filters.py
-msgid "Primary organization"
-msgstr "Primær organisation"
 
 #: src/actions/blocks/filters.py
 #: src/actions/templates/actions/chooser_results.html
@@ -2021,7 +1979,7 @@ msgstr "Enhed må kun angives for numeriske felter."
 msgid "If no primary language is set, there may not be other languages."
 msgstr "Hvis der ikke er angivet et primært sprog, må der ikke være andre sprog."
 
-#: src/actions/models/attributes.py
+#: src/actions/models/attributes.py src/admin_site/models.py
 msgid "This value is only allowed for action fields."
 msgstr "Denne værdi er kun tilladt for handlingsfelter."
 
@@ -2638,6 +2596,14 @@ msgstr "Vis billedaccent"
 
 #: src/actions/models/plan.py
 msgid "Shown to people requesting access, and in the email telling them their request was not approved. For example: \"Access is only given to staff of the ministry.\""
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Ask for feedback on pledges"
+msgstr ""
+
+#: src/actions/models/plan.py
+msgid "Show a rating scale and comment form at the bottom of each pledge page."
 msgstr ""
 
 #: src/actions/models/plan.py
@@ -3375,10 +3341,14 @@ msgstr "i gang"
 msgid "Select"
 msgstr ""
 
-#: src/actions/templates/actions/bulk_approve.html src/copying/views.py
-#: src/reports/spreadsheets/excel_report.py
-msgid "Identifier"
-msgstr "Identifikator"
+#: src/actions/templates/actions/bulk_approve.html
+#: src/actions/templates/actions/chooser_results.html src/admin_site/models.py
+#: src/admin_site/templates/admin_site/own_indicators_panel.html
+#: src/audit_logging/templates/site_history_results.html src/copying/views.py
+#: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_tasks_sheet.py
+msgid "Name"
+msgstr "Navn"
 
 #: src/actions/templates/actions/bulk_approve.html
 #, fuzzy
@@ -3570,10 +3540,6 @@ msgstr "Du kan ikke både vælge en eksisterende organisation og oprette en ny."
 msgid "The primary language of the plan (%(plan_lang)s) differs from the primary language of the organization (%(org_lang)s). Please make sure this is intentional."
 msgstr "Planens primære sprog (%(plan_lang)s) er forskelligt fra organisationens primære sprog (%(org_lang)s). Kontroller, at dette er tilsigtet."
 
-#: src/actions/wagtail_admin.py src/admin_site/wagtail.py
-msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
-msgstr "Den fælles kategoritype \"%(removed_cct)\" kunne ikke fjernes fra planen, fordi der findes kategorier med den tilsvarende kategoritype."
-
 #: src/actions/wagtail_admin.py
 msgid "General administrators"
 msgstr "Generelle administratorer"
@@ -3659,6 +3625,10 @@ msgstr ""
 #| msgid "Enable community engagement"
 msgid "Community engagement"
 msgstr "Aktiver borgerinddragelse"
+
+#: src/actions/wagtail_admin.py
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Den fælles kategoritype \"%(removed_cct)\" kunne ikke fjernes fra planen, fordi der findes kategorier med den tilsvarende kategoritype."
 
 #: src/actions/wagtail_admin.py
 msgid "Plan features"
@@ -3980,8 +3950,7 @@ msgstr "Godkendelsesmetoden kan ikke bestemmes. E-mailadressens domæne er mulig
 msgid "Password authentication is required, but the user has no password."
 msgstr "Godkendelse med adgangskode er påkrævet, men brugeren har ingen adgangskode."
 
-#: src/admin_site/mixins.py templates/modeladmin/create.html
-#: templates/modeladmin/edit.html
+#: src/admin_site/mixins.py
 msgid "Save and continue editing"
 msgstr "Gem og fortsæt med at redigere"
 
@@ -4155,17 +4124,17 @@ msgstr "Offentligt felt"
 msgid "Non-public field"
 msgstr "Ikke-offentligt felt"
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
 msgstr "Fejl ved sletning af elementer. Prøv først at slette enhver %(name)s, der er i brug."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
 msgstr "I brug: \"%(instance)s\"."
 
-#: src/admin_site/viewsets.py src/admin_site/wagtail.py
+#: src/admin_site/viewsets.py
 #, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s kunne ikke oprettes på grund af fejl."
@@ -4202,13 +4171,9 @@ msgid "Add %(schema_name)s"
 msgstr "Tilføj %(schema_name)s"
 
 #: src/admin_site/wagtail.py
-msgid "View live"
-msgstr "Se live"
-
-#: src/admin_site/wagtail.py
 #, python-format
-msgid "View %s live"
-msgstr "Se %s live"
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' opdateret."
 
 #: src/admin_site/wagtail_admin.py
 msgid "Email domains"
@@ -5526,7 +5491,7 @@ msgstr "Vis ikke denne indikators værdier i en tabel på indikatorsiden."
 msgid "hide from indicator list"
 msgstr "Andre indikatorer"
 
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/indicators/wagtail_admin.py
 msgid "Has data"
 msgstr "Har data"
 
@@ -5677,6 +5642,38 @@ msgstr ""
 msgid "Values for dimension categories cannot be normalized, so websites may not offer to show the graph of this indicator normalized by \"%(normalizer)s\"."
 msgstr ""
 
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s could not be deleted"
+msgstr "%(model_name)s '%(object)s' oprettet."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, python-format
+msgid "'%(instance_name)s' is shown in content blocks on the following pages. Deleting it would break these pages. Remove the indicator from their content blocks first:"
+msgstr ""
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#, fuzzy
+#| msgid "You do not have access to the public site."
+msgid "A page you don't have access to"
+msgstr "Du har ikke adgang til den offentlige side."
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "published at"
+msgid "unpublished draft"
+msgstr "udgivet kl"
+
+#: src/indicators/templates/indicators/indicator_delete.html
+#: src/reports/templates/reports/report_type_delete.html
+#, fuzzy
+#| msgid "Back to own user"
+msgid "Go back to listing"
+msgstr "Tilbage til egen bruger"
+
 #: src/indicators/templates/site_summary/indicators.html
 #, python-format
 msgid ""
@@ -5703,22 +5700,6 @@ msgstr "Resultat"
 #: src/indicators/wagtail_admin.py
 msgid "The name of the computed value (indicator data × factor) shown in charts, e.g. \"Vehicle emissions\""
 msgstr "Navnet på den beregnede værdi (indikatordata × faktor), der vises i diagrammer, f.eks. \"Køretøjsudledninger\""
-
-#: src/indicators/wagtail_admin.py
-msgid "Show indicators"
-msgstr "Vis indikatorer"
-
-#: src/indicators/wagtail_admin.py
-msgid "in active plan"
-msgstr "i aktiv plan"
-
-#: src/indicators/wagtail_admin.py
-msgid "not in active plan"
-msgstr "ikke i aktiv plan"
-
-#: src/indicators/wagtail_admin.py
-msgid "all"
-msgstr "alle"
 
 #: src/indicators/wagtail_admin.py
 msgid "Choose a quantity"
@@ -5778,6 +5759,22 @@ msgstr "Indikatorfaktorer"
 #, python-format
 msgid "While editing this indicator you have switched to a different plan. This indicator was still saved with the original plan \"%s\"."
 msgstr "Du har skiftet til en anden plan, mens du redigerede denne indikator. Indikatoren blev alligevel gemt med den oprindelige plan \"%s\"."
+
+#: src/indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr "Vis indikatorer"
+
+#: src/indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr "ikke i aktiv plan"
+
+#: src/indicators/wagtail_admin.py
+msgid "all"
+msgstr "alle"
+
+#: src/indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr "i aktiv plan"
 
 #: src/indicators/wagtail_admin.py
 msgid "none"
@@ -5868,6 +5865,16 @@ msgstr "Faktorer"
 msgid "Relationships"
 msgstr "Relationer"
 
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit rights"
+msgid "Edit properties"
+msgstr "Rediger rettigheder"
+
+#: src/indicators/wagtail_admin.py
+msgid "The indicator is still shown on pages. Remove it from the content blocks of these pages first."
+msgstr ""
+
 #: src/indicators/wagtail_admin.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_indicators_sheet.py
 msgid "Unit"
@@ -5878,13 +5885,13 @@ msgid "Dimensions must be the same as in all indicators linked to this one"
 msgstr "Dimensioner skal være de samme som i alle indikatorer knyttet til denne"
 
 #: src/indicators/wagtail_admin.py
-msgid "Common indicators"
-msgstr "Fælles indikatorer"
-
-#: src/indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Denne fælles indikator har indikatorer knyttet til sig, så mængde, enhed og dimensioner kan ikke redigeres. Aktuel mængde: %(quantity)s; enhed: %(unit)s; dimensioner: %(dimensions)s"
+
+#: src/indicators/wagtail_admin.py
+msgid "Common indicators"
+msgstr "Fælles indikatorer"
 
 #: src/indicators/wagtail_hooks.py
 msgid "Update values"
@@ -6290,11 +6297,11 @@ msgstr "Meddelelses indhold"
 msgid "Notification preferences"
 msgstr "Notifikationspræferencer"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search term"
 msgstr "Søgeord"
 
-#: src/orgs/chooser.py
+#: src/orgs/chooser.py src/people/wagtail_admin.py
 msgid "Search"
 msgstr "Søg"
 
@@ -6403,11 +6410,6 @@ msgid "Permissions"
 msgstr "Rettigheder"
 
 #: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Edit '%(title)s'"
-msgstr "Rediger '%(title)s'"
-
-#: src/orgs/wagtail_admin.py
 msgid "Copy"
 msgstr "Kopiér"
 
@@ -6415,11 +6417,6 @@ msgstr "Kopiér"
 #, python-format
 msgid "Copy '%(title)s'"
 msgstr "Kopiér '%(title)s'"
-
-#: src/orgs/wagtail_admin.py
-#, python-format
-msgid "Delete '%(title)s'"
-msgstr "Slet '%(title)s'"
 
 #: src/orgs/wagtail_admin.py
 msgid "Add suborganization"
@@ -6958,21 +6955,8 @@ msgstr "%(model_name)s '%(object)s' oprettet."
 
 #: src/people/templates/people/delete.html
 #, python-format
-msgid "Confirm deletion of %(model_name)s"
-msgstr "Bekræft sletning af %(model_name)s"
-
-#: src/people/templates/people/delete.html
-#, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
 msgstr "'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft venligst sletning:"
-
-#: src/people/templates/people/delete.html
-msgid "Yes, delete"
-msgstr "Ja, slet"
-
-#: src/people/templates/people/delete.html
-msgid "No, don't delete"
-msgstr "Nej, slet ikke"
 
 #: src/people/templates/people/view_as_user.html
 #: src/reports/report_formatters.py templates/aplans/confirmation.html
@@ -7052,16 +7036,6 @@ msgid "Viewer"
 msgstr "Se"
 
 #: src/people/wagtail_admin.py
-msgid "Role"
-msgstr ""
-
-#: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "role"
-msgid "No role"
-msgstr "rolle"
-
-#: src/people/wagtail_admin.py
 msgid "Access to public site only"
 msgstr "Kun adgang til det offentlige site"
 
@@ -7082,8 +7056,28 @@ msgid "Plan admin organizations"
 msgstr "Organisationer som planadministrator"
 
 #: src/people/wagtail_admin.py
+msgid "Role"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "role"
+msgid "No role"
+msgstr "rolle"
+
+#: src/people/wagtail_admin.py
+msgid "Edit this person"
+msgstr "Rediger denne person"
+
+#: src/people/wagtail_admin.py
 msgid "Deactivate"
 msgstr "Deaktiver"
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Edit this person"
+msgid "Deactivate this person"
+msgstr "Rediger denne person"
 
 #: src/people/wagtail_admin.py
 msgid "Create a password reset link"
@@ -7094,10 +7088,6 @@ msgid "View site as it looks for this user"
 msgstr "Se siden, som den ser ud for denne bruger"
 
 #: src/people/wagtail_admin.py
-msgid "Are you sure you want to deactivate this person?"
-msgstr "Er du sikker på, at du vil deaktivere denne person?"
-
-#: src/people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr "Denne person har ikke adgang til administrationsgrænsefladen. Det skyldes typisk, at der ikke er tildelt personen nogen handlinger eller indikatorer."
 
@@ -7106,14 +7096,18 @@ msgid "last login"
 msgstr "sidste login"
 
 #: src/people/wagtail_admin.py
-msgid "contact for indicators"
-msgstr "kontakt for indikatorer"
-
-#: src/people/wagtail_admin.py
 #, fuzzy
 #| msgid "participated in training"
 msgid "Attended training"
 msgstr "deltaget i træning"
+
+#: src/people/wagtail_admin.py
+msgid "contact for indicators"
+msgstr "kontakt for indikatorer"
+
+#: src/people/wagtail_admin.py
+msgid "Are you sure you want to deactivate this person?"
+msgstr "Er du sikker på, at du vil deaktivere denne person?"
 
 #: src/reports/blocks/action_content.py
 msgid "Action field"
@@ -7398,27 +7392,9 @@ msgid "This will undo marking the following actions as complete:"
 msgstr "Dette vil markere følgende handlinger som fuldførte:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
-msgid "%(model_name)s could not be deleted"
-msgstr "%(model_name)s '%(object)s' oprettet."
-
-#: src/reports/templates/reports/report_type_delete.html
 #, python-format
 msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the action details pages. Deleting it would break these pages. If you wanted to remove the report comparison from the action details pages, remove the block from the following pages instead:"
 msgstr ""
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "published at"
-msgid "unpublished draft"
-msgstr "udgivet kl"
-
-#: src/reports/templates/reports/report_type_delete.html
-#, fuzzy
-#| msgid "Back to own user"
-msgid "Go back to listing"
-msgstr "Tilbage til egen bruger"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7686,13 +7662,71 @@ msgstr "Kopiér identifikator %(identifier)s"
 msgid "Copy identifier"
 msgstr "Kopiér identifikator"
 
-#: templates/modeladmin/create.html templates/modeladmin/edit.html
-msgid "Saving…"
-msgstr "Gemmer…"
+#, python-format
+#~ msgid "The %(model_name)s could not be saved as it is locked"
+#~ msgstr "%(model_name)s kunne ikke gemmes, da den er låst"
 
-#: templates/modeladmin/create.html
-msgid "Save"
-msgstr "Gemme"
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created."
+#~ msgstr "%(model_name)s '%(object)s' oprettet."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' er blevet planlagt til udgivelse."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' oprettet og planlagt til udgivelse."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+#~ msgstr "%(model_name)s '%(object)s' er live, og denne version er planlagt til udgivelse."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' updated and published."
+#~ msgstr "%(model_name)s '%(object)s' opdateret og offentliggjort."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and published."
+#~ msgstr "%(model_name)s '%(object)s' opdateret og offentliggjort."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#, python-format
+#~ msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+#~ msgstr "%(model_name)s '%(object)s' oprettet og sendt til moderation."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+#~ msgstr "Workflow på %(model_name)s '%(object)s' er blevet genstartet."
+
+#, python-format
+#~ msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+#~ msgstr "Workflow på %(model_name)s '%(object)s' er blevet annulleret."
+
+#~ msgid "Unlock"
+#~ msgstr "Lås op"
+
+#~ msgid "Cancel scheduled publish"
+#~ msgstr "Annuller planlagt publicering"
+
+#, python-format
+#~ msgid "Confirm deletion of %(model_name)s"
+#~ msgstr "Bekræft sletning af %(model_name)s"
+
+#~ msgid "Yes, delete"
+#~ msgstr "Ja, slet"
+
+#~ msgid "No, don't delete"
+#~ msgstr "Nej, slet ikke"
+
+#~ msgid "Saving…"
+#~ msgstr "Gemmer…"
+
+#~ msgid "Save"
+#~ msgstr "Gemme"
 
 #~ msgid "Object type"
 #~ msgstr "Objekttype"
@@ -8120,9 +8154,6 @@ msgstr "Gemme"
 #~ msgid "Choose another person"
 #~ msgstr "Vælg en anden person"
 
-#~ msgid "Edit this person"
-#~ msgstr "Rediger denne person"
-
 #~ msgctxt "person's role"
 #~ msgid "title"
 #~ msgstr "titel"
@@ -8435,9 +8466,6 @@ msgstr "Gemme"
 
 #~ msgid "Report"
 #~ msgstr "Rapport"
-
-#~ msgid "attribute type"
-#~ msgstr "attributtype"
 
 #, python-format
 #~ msgid "Add another %(model)s"
