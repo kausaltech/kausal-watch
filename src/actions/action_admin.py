@@ -367,8 +367,11 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
             obj.save()
 
         user = self._user
-        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
-        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
+        # When saving a model instance, we only save the editable attributes. When serializing a draft (`commit` is
+        # false), only the attribute types that are fields of this form end up in it, which excludes the read-only ones.
+        # A type missing from a draft means its stored value is unchanged: forms and displays fall back to that value,
+        # and publishing leaves it alone. Copying the stored value into the draft instead would turn it stale, and
+        # publishing the draft would undo any change made to it meanwhile, e.g., in the bulk attribute editor.
         if commit:
             attribute_types = obj.get_editable_attribute_types(user)
         else:

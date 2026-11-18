@@ -70,18 +70,16 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
                 rev = self.instance.get_latest_revision()
                 assert rev is not None
                 draft_attributes = DraftAttributes.from_revision_content(rev.content.get('attributes'))
-                try:
-                    attribute_value = draft_attributes.get_value_for_attribute_type(self.panel.attribute_type)
-                except KeyError:
-                    return ''
-                if attribute_value.should_exist_in_database():
+                attribute_value = self.panel.attribute_type.get_draft_value(draft_attributes)
+                # Without a value in the draft, the stored one below still applies
+                if attribute_value is not None:
+                    if not attribute_value.should_exist_in_database():
+                        return ''
                     attribute = attribute_value.instantiate_attribute(self.panel.attribute_type, self.instance)
                     if not self.panel.language:
                         return str(attribute)
                     with translation.override(self.panel.language):
                         return str(attribute)
-
-                return ''
 
             def get_value() -> str:
                 return ' '.join(str(x) for x in self.panel.attribute_type.get_attributes(self.instance))
@@ -451,6 +449,20 @@ class AttributeType(ABC, Generic[T]):
         """Return None if there is no data for this attribute type."""
         pass
 
+    def get_draft_value(self, draft_attributes: DraftAttributes | None) -> AttributeValue | None:
+        """
+        Return the value of this attribute type in `draft_attributes`, or None if the draft does not contain it.
+
+        A draft only contains the attribute types that were fields in its author's form. When it lacks this type,
+        the value stored in the database still applies, so callers fall back to that.
+        """
+        if draft_attributes is None:
+            return None
+        try:
+            return draft_attributes.get_value_for_attribute_type(self)
+        except KeyError:
+            return None
+
     @abstractmethod
     def xlsx_values(
         self,
@@ -615,14 +627,10 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
         draft_attributes: DraftAttributes | None = None,
     ) -> list[FormField[Any]]:
         initial_choice = None
-        if draft_attributes:
-            try:
-                attribute_value = draft_attributes.get_value_for_attribute_type(self)
-            except KeyError:
-                pass
-            else:
-                assert isinstance(attribute_value, OrderedChoiceAttributeValue)
-                initial_choice = attribute_value.option
+        attribute_value = self.get_draft_value(draft_attributes)
+        if attribute_value is not None:
+            assert isinstance(attribute_value, OrderedChoiceAttributeValue)
+            initial_choice = attribute_value.option
         elif obj:
             c = self.get_attributes(obj).first()
             if c:
@@ -692,14 +700,10 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
         from actions.models.category import Category
 
         initial_categories: list[Category] | None = None
-        if draft_attributes:
-            try:
-                attribute_value = draft_attributes.get_value_for_attribute_type(self)
-            except KeyError:
-                pass
-            else:
-                assert isinstance(attribute_value, CategoryChoiceAttributeValue)
-                initial_categories = list(attribute_value.categories)
+        attribute_value = self.get_draft_value(draft_attributes)
+        if attribute_value is not None:
+            assert isinstance(attribute_value, CategoryChoiceAttributeValue)
+            initial_categories = list(attribute_value.categories)
         elif obj:
             c = self.get_attributes(obj).first()
             if c:
@@ -765,7 +769,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             name += f'_{language}'
         return name
 
-    def get_all_form_fields(  # noqa: PLR0912,C901
+    def get_all_form_fields(  # noqa: C901
         self,
         user: User,
         plan: Plan,
@@ -774,14 +778,10 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
     ) -> list[FormField]:
         draft_attribute: OptionalChoiceWithTextAttributeValue | None = None
         committed_attribute: models.AttributeChoiceWithText | None = None
-        if draft_attributes:
-            try:
-                attribute_value = draft_attributes.get_value_for_attribute_type(self)
-            except KeyError:
-                pass
-            else:
-                assert isinstance(attribute_value, OptionalChoiceWithTextAttributeValue)
-                draft_attribute = attribute_value
+        attribute_value = self.get_draft_value(draft_attributes)
+        if attribute_value is not None:
+            assert isinstance(attribute_value, OptionalChoiceWithTextAttributeValue)
+            draft_attribute = attribute_value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
         editable = self.is_editable(user, plan, obj)
@@ -909,14 +909,10 @@ class GenericTextAttributeType(AttributeType[T]):
     ) -> list[FormField]:
         draft_attribute: GenericTextAttributeAttributeValue | None = None
         committed_attribute: T | None = None
-        if draft_attributes:
-            try:
-                attribute_value = draft_attributes.get_value_for_attribute_type(self)
-            except KeyError:
-                pass
-            else:
-                assert isinstance(attribute_value, GenericTextAttributeAttributeValue)
-                draft_attribute = attribute_value
+        attribute_value = self.get_draft_value(draft_attributes)
+        if attribute_value is not None:
+            assert isinstance(attribute_value, GenericTextAttributeAttributeValue)
+            draft_attribute = attribute_value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
         editable = self.is_editable(user, plan, obj)
@@ -1010,14 +1006,10 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
         draft_attributes: DraftAttributes | None = None,
     ) -> list[FormField]:
         initial_value = None
-        if draft_attributes:
-            try:
-                attribute_value = draft_attributes.get_value_for_attribute_type(self)
-            except KeyError:
-                pass
-            else:
-                assert isinstance(attribute_value, NumericAttributeValue)
-                initial_value = attribute_value.value
+        attribute_value = self.get_draft_value(draft_attributes)
+        if attribute_value is not None:
+            assert isinstance(attribute_value, NumericAttributeValue)
+            initial_value = attribute_value.value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
             if committed_attribute:
