@@ -142,6 +142,16 @@ Each Django app follows consistent naming conventions for different functionalit
   sentry_sdk.capture_message('Unexpected condition: webhook config not found', level='warning')
   ```
 - Use appropriate Sentry levels: `"debug"`, `"info"`, `"warning"`, `"error"`, `"fatal"`
+- Never silently discard invalid input. When code tolerates invalid data by skipping all or part
+  of it (e.g., dropping an invalid list item while still processing the rest of the list), report
+  it to Sentry so we become aware of the problem:
+  ```python
+  for item in items:
+      if not is_valid(item):
+          sentry_sdk.capture_message('Skipping invalid item', level='warning', extras={'item': item})
+          continue
+      process(item)
+  ```
 
 ### Type Annotation Conventions
 - Use modern Python 3.13+ type annotation syntax:
