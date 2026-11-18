@@ -197,7 +197,7 @@ class IdentifierField(models.CharField[_IDT, _IDT]):
 
 
 class OrderedModel(models.Model):
-    """Like wagtailorderable.models.Orderable, but with additional functionality in filter_siblings()."""
+    """A model ordered by its `order` field among the siblings that `filter_siblings()` returns."""
 
     order: models.PositiveIntegerField[int, int] = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
@@ -232,7 +232,7 @@ class OrderedModel(models.Model):
             errors.append(checks.Warning('filter_siblings() not defined', hint='Implement filter_siblings() method', obj=cls))
         return errors
 
-    # Probably for compatibility with things that expect a `sort_order` field as in wagtailorderable.models.Orderable
+    # Probably for compatibility with things that expect a `sort_order` field, as Wagtail's `Orderable` has
     @property
     def sort_order(self):
         return self.order

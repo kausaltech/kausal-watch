@@ -271,12 +271,10 @@ INSTALLED_APPS = [
     'wagtail.search',
     'wagtail.admin',
     'wagtail',
-    'wagtail_modeladmin',  # deprecated; https://docs.wagtail.org/en/stable/reference/contrib/modeladmin/migrating_to_snippets.html
     'wagtail_localize',
     'wagtail_localize.locales',  # replaces `wagtail.locales`
     'wagtailautocomplete',
     'generic_chooser',
-    'wagtailorderable',
     'wagtailgeowidget',
     'wagtail_color_panel',
     'modelcluster',

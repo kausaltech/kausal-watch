@@ -145,8 +145,6 @@ dependencies = [
   "wagtail-generic-chooser",
   "wagtail-grapple",
   "wagtail-localize",
-  "wagtail-modeladmin",
-  "wagtail-orderable",
   "wagtailgeowidget",
   "xlsxwriter",
 ]
@@ -301,11 +299,9 @@ module = [
   "uwsgidecorators.*",
   "viztracer.*",
   "wagtail_localize.*",
-  "wagtail_modeladmin.*",
   "wagtail.*",
   "wagtailautocomplete.*",
   "wagtailgeowidget.*",
-  "wagtailorderable.*",
   "willow.*",
   "xlsxwriter.*",
 ]
