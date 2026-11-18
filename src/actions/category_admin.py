@@ -64,8 +64,6 @@ if TYPE_CHECKING:
     from django.http.request import HttpRequest
     from wagtail.admin.views.generic.base import BreadcrumbItem
 
-    from wagtail_modeladmin.views import InstanceSpecificView
-
     from users.models import User
 
 
@@ -122,7 +120,7 @@ class PanelFormMixin:
 
 
 class InitialPlanFormMixin:
-    """Like `InitializeFormWithInitialPlanMixin`, for snippet views."""
+    """Pass the plan that was active when the form was opened to the form as `initial_plan_id`."""
 
     request: HttpRequest
 
@@ -354,36 +352,6 @@ def get_category_panel(request: HttpRequest, instance: Category) -> AplansTabbed
     }
     base_form_class = type('CategoryAdminForm', (CategoryAdminForm,), {**attribute_fields, '_user': user})
     return AplansTabbedInterface[Category, CategoryAdminForm](tabs, base_form_class=base_form_class).bind_to_model(Category)
-
-
-if TYPE_CHECKING:
-
-    class ModelAdminMixinBase[M: Model](InstanceSpecificView[M]):
-        pass
-
-else:
-
-    class ModelAdminMixinBase[M: Model]:
-        pass
-
-
-# Used by the category grid editor in kausal-extensions
-class CategoryTypeQueryParameterMixin[M: Model](ModelAdminMixinBase[M]):
-    @property
-    def index_url(self):
-        return append_query_parameter(self.request, super().index_url, 'category_type')
-
-    @property
-    def create_url(self):
-        return append_query_parameter(self.request, super().create_url, 'category_type')
-
-    @property
-    def edit_url(self):
-        return append_query_parameter(self.request, super().edit_url, 'category_type')
-
-    @property
-    def delete_url(self):
-        return append_query_parameter(self.request, super().delete_url, 'category_type')
 
 
 def get_category_type_from_request(request: HttpRequest) -> CategoryType | None:

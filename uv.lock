@@ -2011,8 +2011,6 @@ dependencies = [
     { name = "wagtail-generic-chooser" },
     { name = "wagtail-grapple" },
     { name = "wagtail-localize" },
-    { name = "wagtail-modeladmin" },
-    { name = "wagtail-orderable" },
     { name = "wagtailgeowidget" },
     { name = "xlsxwriter" },
 ]
@@ -2170,8 +2168,6 @@ requires-dist = [
     { name = "wagtail-generic-chooser" },
     { name = "wagtail-grapple" },
     { name = "wagtail-localize" },
-    { name = "wagtail-modeladmin" },
-    { name = "wagtail-orderable" },
     { name = "wagtailgeowidget" },
     { name = "xlsxwriter" },
 ]
@@ -4420,30 +4416,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/50/09/edc4a6a17edcdf78d2a5bf8395e68f991c709d101aad0ce4fc636b0f9ef0/wagtail_localize-1.14.5.tar.gz", hash = "sha256:7e21bb845bd0142a554a8ddb5819450782107dac94756a90f56085991a4c318d", size = 1189851, upload-time = "2026-08-19T15:11:22.001Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/64/59c70f0c48e37bcec2706963adbe5a577e178bdf56790f10e581ffff8f35/wagtail_localize-1.14.5-py3-none-any.whl", hash = "sha256:c08841d1d982e238b4cf5fb8e5d4cace82cf8e8d255fd0db4fa11dd874d7c0fd", size = 535341, upload-time = "2026-08-19T15:11:20.441Z" },
-]
-
-[[package]]
-name = "wagtail-modeladmin"
-version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "wagtail" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/78/8b/3b8e9dd3c4293c46074f55869b50d7e593e2ba810df18908c7ef7850c042/wagtail_modeladmin-2.5.0.tar.gz", hash = "sha256:0f86e96d5172437e14f6e5fd986bae9648f499c117dff3bf6b2f9844ea9f440e", size = 116438, upload-time = "2026-09-25T09:12:12.725Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/fc/2c7af64d7529c19eb5fa82cb02027cb182fff0ba2605c1eca6d344dccd24/wagtail_modeladmin-2.5.0-py3-none-any.whl", hash = "sha256:909c6238dc95371b97dc23651a5a9d8aeb9c3d1660ed0349b4a3e31c8fb8dc0d", size = 266034, upload-time = "2026-09-25T09:12:10.925Z" },
-]
-
-[[package]]
-name = "wagtail-orderable"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "wagtail" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/0a/f7948c3ef5cf92f5d8e7ec1fab5342e7b7d11d3b04d6b7dba870b90d3f0f/wagtail-orderable-1.2.0.tar.gz", hash = "sha256:3355f91d09cd711960a03d83d2783d35b38735da6cd51fc9ab28fdbf635da050", size = 10066, upload-time = "2023-06-02T16:14:29.903Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/7b/718d6ff17d63e4596d8b8e97d37347f6946ebfc9b61d02367cd5ef7c44ce/wagtail_orderable-1.2.0-py3-none-any.whl", hash = "sha256:b1b951013630cfb6ab13b189a51cfcc78faa668f6b3bd8811359b331e2666763", size = 9838, upload-time = "2023-06-02T16:14:27.94Z" },
 ]
 
 [[package]]
