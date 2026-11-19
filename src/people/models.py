@@ -268,36 +268,44 @@ class Person(SearchableModel[PersonQuerySet], BasePerson, IndirectPlanRelatedMod
             for ind in indicators:
                 plans.update(ind.plans.all())
 
-        client = None
-        if plans:
-            # actions.models imports Person, so top-level Plan import here would deadlock at boot.
-            from actions.models.plan import Plan
+        domain_client = self.get_client_for_email_domain()
+        if not plans:
+            return domain_client
 
-            plan_ids: list[int] = [p.pk if isinstance(p, Plan) else p for p in plans]
-            primary_rows = ClientPlan.objects.filter(plan_id__in=plan_ids, is_primary=True).values_list(
-                'plan_id',
-                'client_id',
-            )
-            plans_with_primary = {plan_id for plan_id, _client_id in primary_rows}
-            primary_client_ids = {client_id for _plan_id, client_id in primary_rows}
-            if len(primary_client_ids) == 1 and plans_with_primary == set(plan_ids):
-                client = Client.objects.get(pk=next(iter(primary_client_ids)))
-            else:
-                clients = Client.objects.filter(plans__plan__in=plan_ids).distinct()
-                if len(clients) == 1:
-                    client = clients[0]
-                elif user is not None and not user.is_superuser:
-                    logger.warning(
-                        'Invalid number of clients found for %s [Person-%d]: %d'
-                        % (
-                            self.email,
-                            self.id,
-                            len(clients),
-                        )
-                    )
-        if not client:
-            client = self.get_client_for_email_domain()
-        return client
+        # actions.models imports Person, so top-level Plan import here would deadlock at boot.
+        from actions.models.plan import Plan
+
+        plan_ids = {p.pk if isinstance(p, Plan) else p for p in plans}
+        # The email domain says which of a plan's clients the person belongs to, so it wins over the plan's
+        # primary client. A plan can be shared by clients with different login methods, and the primary client
+        # (the plan's owner) is not necessarily the one whose identity provider this person uses.
+        if domain_client is not None and self._client_has_all_plans(domain_client, plan_ids):
+            return domain_client
+        client = self._get_client_for_plans(plan_ids, warn=user is not None and not user.is_superuser)
+        # Keep the email-domain fallback even though it may not serve all of the person's plans: the login method
+        # depends on it for people whose plans belong to several clients.
+        return client or domain_client
+
+    @staticmethod
+    def _client_has_all_plans(client: Client, plan_ids: set[int]) -> bool:
+        client_plan_ids = set(ClientPlan.objects.filter(client=client, plan_id__in=plan_ids).values_list('plan_id', flat=True))
+        return client_plan_ids == plan_ids
+
+    def _get_client_for_plans(self, plan_ids: set[int], warn: bool) -> Client | None:
+        primary_rows = ClientPlan.objects.filter(plan_id__in=plan_ids, is_primary=True).values_list(
+            'plan_id',
+            'client_id',
+        )
+        plans_with_primary = {plan_id for plan_id, _client_id in primary_rows}
+        primary_client_ids = {client_id for _plan_id, client_id in primary_rows}
+        if len(primary_client_ids) == 1 and plans_with_primary == plan_ids:
+            return Client.objects.get(pk=next(iter(primary_client_ids)))
+        clients = Client.objects.filter(plans__plan__in=plan_ids).distinct()
+        if len(clients) == 1:
+            return clients[0]
+        if warn:
+            logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (self.email, self.id, len(clients)))
+        return None
 
     def get_notification_context(self):
         client = self.get_admin_client()

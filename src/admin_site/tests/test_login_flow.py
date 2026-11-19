@@ -51,6 +51,13 @@ class TestResolveLoginMethod:
         result = resolve_login_method(sso_user.email, None)
         assert result.method == 'azure_ad'
 
+    def test_sso_user_of_non_primary_client(self, sso_user: User, plan: Plan):
+        # The plan is owned by another client that logs in with Google; the user's email domain belongs to the
+        # plan's other client, whose login method they must get.
+        ClientPlanFactory.create(plan=plan, client__auth_backend=Client.AuthBackend.GOOGLE, is_primary=True)
+        result = resolve_login_method(sso_user.email, None)
+        assert result.method == 'azure_ad'
+
     def test_unknown_user(self):
         with pytest.raises(LoginMethodError) as exc_info:
             resolve_login_method('nobody@example.com', None)

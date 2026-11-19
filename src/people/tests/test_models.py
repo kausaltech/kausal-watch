@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from actions.tests.factories import PlanFactory
-from admin_site.tests.factories import ClientFactory, ClientPlanFactory
+from admin_site.models import Client
+from admin_site.tests.factories import ClientFactory, ClientPlanFactory, EmailDomainsFactory
 from orgs.tests.factories import OrganizationFactory
 from people.models import Person
 from people.tests.factories import PersonFactory
@@ -203,6 +204,36 @@ def test_get_admin_client_refuses_primary_when_some_plans_lack_it():
     person = PersonFactory.create(general_admin_plans=[plan_a, plan_b])
 
     assert person.get_admin_client() is None
+
+
+def test_get_admin_client_prefers_email_domain_client_over_primary():
+    """
+    Regression: a plan shared by two clients made all its admins log in with the primary client's method.
+
+    The person's email domain belongs to the non-primary client, whose login method is the one they use.
+    """
+    primary = ClientFactory.create(name='Primary tenant', auth_backend=Client.AuthBackend.GOOGLE)
+    other = ClientFactory.create(name='Other tenant', auth_backend=Client.AuthBackend.AZURE_AD)
+    EmailDomainsFactory.create(client=other, domain='other.example.com')
+    plan = PlanFactory.create(primary_client=primary)
+    ClientPlanFactory.create(plan=plan, client=other)
+
+    person = PersonFactory.create(email='person@other.example.com', general_admin_plans=[plan])
+
+    assert person.get_admin_client() == other
+
+
+def test_get_admin_client_ignores_email_domain_client_not_on_all_plans():
+    primary = ClientFactory.create(name='Primary tenant')
+    other = ClientFactory.create(name='Other tenant')
+    EmailDomainsFactory.create(client=other, domain='other.example.com')
+    plan_a = PlanFactory.create(primary_client=primary)
+    plan_b = PlanFactory.create(primary_client=primary)
+    ClientPlanFactory.create(plan=plan_a, client=other)
+
+    person = PersonFactory.create(email='person@other.example.com', general_admin_plans=[plan_a, plan_b])
+
+    assert person.get_admin_client() == primary
 
 
 @pytest.mark.parametrize('value', [None, True, False])
