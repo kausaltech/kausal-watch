@@ -89,7 +89,7 @@ class AdminMiddleware(MiddlewareMixin):
 
         # If it's an admin method that changes something, invalidate Plan-related
         # GraphQL cache.
-        if request.method in ('POST', 'PUT', 'DELETE'):
+        if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
             ADMIN_IGNORE_PATHS = [
                 '/admin/editing-sessions/',
                 '/admin/login/',
@@ -99,7 +99,8 @@ class AdminMiddleware(MiddlewareMixin):
             plan_to_invalidate: Plan | None = None
             if rest_api_path_match:
                 plan_id = int(rest_api_path_match.group(1))
-                plan_to_invalidate = Plan.objects.get(id=plan_id)
+                # A missing plan is the view's to answer with a 404
+                plan_to_invalidate = Plan.objects.filter(id=plan_id).first()
             elif re.match(r'^/(admin|wadmin)/', request.path):
                 plan_to_invalidate = plan
                 if any(request.path.startswith(ignore_path) for ignore_path in ADMIN_IGNORE_PATHS):
