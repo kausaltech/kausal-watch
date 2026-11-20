@@ -8527,6 +8527,18 @@ msgid "Users"
 msgstr "Usuários"
 
 #: src/users/models.py
+msgid "You do not have permission to edit this action."
+msgstr "Você não tem permissão para editar esta ação."
+
+#: src/users/models.py
+msgid "This action is moderated. Edit it in the action editor to submit your changes for review."
+msgstr "Esta ação é moderada. Edite-a no editor de ações para enviar suas alterações para revisão."
+
+#: src/users/models.py
+msgid "This action has unpublished changes. Edit it in the action editor, so that your changes are not lost when the draft is published."
+msgstr "Esta ação tem alterações não publicadas. Edite-a no editor de ações para que suas alterações não se percam quando o rascunho for publicado."
+
+#: src/users/models.py
 #, fuzzy
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nenhuma permissão para remover o usuário pertencente a planos que você não está gerenciando."
