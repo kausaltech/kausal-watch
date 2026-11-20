@@ -3957,11 +3957,6 @@ msgstr "Seitenansicht als anderer Benutzer"
 msgid "Back to own user"
 msgstr "Zurück zum eigenen Benutzer"
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " Nach %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
 msgstr "Administration"
@@ -8202,3 +8197,7 @@ msgstr "Kennung kopieren"
 
 #~ msgid "You do not have permissions for removing users."
 #~ msgstr "Sie haben keine Berechtigung zum Entfernen von Benutzern."
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Nach %(filter_title)s "

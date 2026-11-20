@@ -595,18 +595,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dal-admin-filters"
-version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django-autocomplete-light" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/04/f4a819221df65552d4a37ab230e79f23de9b16bc48f99b894080079e955d/dal_admin_filters-1.1.0.tar.gz", hash = "sha256:0b60f85a1c21c08dc41de68615c65fb220e8c6968e6e488248155f34e41e200c", size = 8388, upload-time = "2021-07-04T10:54:06.1Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/8e/af83c87628c002b6e7f2f5a414e4ef7364cb3f0cc8af248698d9f894b54c/dal_admin_filters-1.1.0-py3-none-any.whl", hash = "sha256:40be33e446b22eb23e914a6174831420bcbf632cdd5220a9249c869d0e9d797d", size = 7470, upload-time = "2021-07-04T10:54:04.246Z" },
-]
-
-[[package]]
 name = "daphne"
 version = "4.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1913,7 +1901,6 @@ dependencies = [
     { name = "channels-redis" },
     { name = "coreapi" },
     { name = "cryptography" },
-    { name = "dal-admin-filters" },
     { name = "diffsync" },
     { name = "django" },
     { name = "django-anymail", extra = ["sendgrid"] },
@@ -2070,7 +2057,6 @@ requires-dist = [
     { name = "channels-redis" },
     { name = "coreapi" },
     { name = "cryptography" },
-    { name = "dal-admin-filters" },
     { name = "diffsync" },
     { name = "django" },
     { name = "django-anymail", extras = ["mailgun", "mailjet", "sendgrid"] },

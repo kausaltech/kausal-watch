@@ -247,7 +247,6 @@ INSTALLED_APPS = [
     'admin_site.apps.AdminSiteStatic',
     'dal',
     'dal_select2',
-    'dal_admin_filters',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
