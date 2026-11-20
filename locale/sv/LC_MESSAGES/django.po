@@ -3985,11 +3985,6 @@ msgstr "Visar webbplatsen som en annan användare"
 msgid "Back to own user"
 msgstr "Tillbaka till egen användare"
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " Av %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
 msgstr "Administration"
@@ -8391,3 +8386,7 @@ msgstr "Kopiera identifierare"
 
 #~ msgid "Log out"
 #~ msgstr "Logga ut"
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Av %(filter_title)s "

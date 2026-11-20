@@ -4070,11 +4070,6 @@ msgstr ""
 msgid "Back to own user"
 msgstr ""
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr ""
-
 #: src/admin_site/templates/wagtailadmin/base.html
 #, fuzzy
 #| msgid "Can administrate all actions"

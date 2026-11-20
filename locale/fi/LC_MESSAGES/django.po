@@ -3986,11 +3986,6 @@ msgstr "Sivuston käyttö toisena käyttäjänä"
 msgid "Back to own user"
 msgstr "Takaisin omaan tunnukseen"
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
 msgstr "Ylläpito"
@@ -8385,3 +8380,7 @@ msgstr "Kopioi tunniste"
 
 #~ msgid "has goals"
 #~ msgstr "on tavoitteita"
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " %(filter_title)s "
