@@ -912,10 +912,9 @@ def test_action_responsible_party_swap_should_succeed(plan_admin_user, action, c
         'tasks-INITIAL_FORMS': '0',
         'links-TOTAL_FORMS': '0',
         'links-INITIAL_FORMS': '0',
-        'contact_persons_editor-TOTAL_FORMS': '0',
-        'contact_persons_editor-INITIAL_FORMS': '0',
-        'contact_persons_moderator-TOTAL_FORMS': '0',
-        'contact_persons_moderator-INITIAL_FORMS': '0',
+        # The plan doesn't distinguish contact person roles, so there is a single formset for them
+        'contact_persons-TOTAL_FORMS': '0',
+        'contact_persons-INITIAL_FORMS': '0',
     }
 
     # Execute the POST request - this should succeed with a redirect
@@ -1054,6 +1053,8 @@ def test_action_contact_person_swap_should_succeed(plan_admin_user, action, clie
 
     # Setup: Create the plan's client association
     ClientPlanFactory.create(plan=action.plan)
+    action.plan.features.has_action_contact_person_roles = True
+    action.plan.features.save()
 
     # Create two persons
     person_a = PersonFactory.create()
@@ -1152,6 +1153,7 @@ def test_stale_form_adding_existing_contact_person_is_rejected(plan_admin_user, 
     workflow = WorkflowFactory.create()
     WorkflowTaskFactory.create(workflow=workflow)
     action.plan.features.moderation_workflow = workflow
+    action.plan.features.has_action_contact_person_roles = True
     action.plan.features.save()
     person_a = PersonFactory.create()
     person_b = PersonFactory.create()

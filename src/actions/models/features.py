@@ -263,6 +263,10 @@ class PlanFeatures(PlanRelatedModelWithRevision):
 
     def clean(self) -> None:
         super().clean()
+        if self.contact_persons_hide_moderators and not self.has_action_contact_person_roles:
+            # Without roles, every new contact person is a moderator, so all of them would be hidden. Not tied to a field,
+            # as plan admins don't have these in their form.
+            raise ValidationError(_('Hiding moderators requires contact persons to have different roles.'))
         if self.enable_community_engagement and self.plan.primary_client_id is None:
             raise ValidationError({
                 'enable_community_engagement': _('Community engagement requires a primary client to be set on the plan.'),

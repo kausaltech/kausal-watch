@@ -152,6 +152,9 @@ MODELS_WITH_ROLES: list[tuple[type[ModelWithRole[Any]], str, type[Model], str]] 
     (ActionResponsibleParty, 'responsible_parties', Organization, 'organization'),
 ]
 
+# Key of the formset for all roles in the formsets passed to `ActionAdminForm.save_related_objects_with_role()`
+ALL_ROLES = object()
+
 
 class CustomizedFieldAccessMixin[M: Model](BaseModelForm[M]):
     """Helpers for a model form whose fields field customization may leave out or disable."""
@@ -320,6 +323,10 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
                 formset = cast('dict', self.formsets).pop(f'{relation_name}_{role}', None)
                 if formset:
                     formsets[role] = formset
+            # If roles aren't distinguished, there is a single formset for all of them instead.
+            formset = cast('dict', self.formsets).pop(relation_name, None)
+            if formset:
+                formsets[ALL_ROLES] = formset
             if formsets:
                 role_based_formsets_by_relation[relation_name] = (_cls, formsets)
 
@@ -401,17 +408,21 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
 
     def save_related_objects_with_role(self, manager, formsets, original_objects, commit=True):
         """
-        Save the related objects from the given role-specific formsets.
+        Save the related objects from the given formsets, which are keyed by role.
 
-        For contact persons: If the plan does not distinguish contact persons by role, then there are no role-specific
-        formsets and the contact persons (in the formset `contact_persons`) are saved in `super().save()`.
+        If the plan does not distinguish contact persons by role, there is a single formset for them instead, keyed by
+        `ALL_ROLES`. The roles are invisible then and have no effect (see `ActionContactPerson.moderators_q()`), so they
+        are left as they are, and new objects get the default role.
         """
+        wrapped_attr = next(attr for _cls, _name, _model, attr in MODELS_WITH_ROLES if manager.model == _cls)
         saved_objects = []  # but not yet committed
         deleted_objects = []
         order = 0
         for role, formset in formsets.items():
             saved_instances = formset.save(commit=False)
             for instance in saved_instances:
+                if role is ALL_ROLES:
+                    continue
                 if role is None:
                     instance.role = None
                 else:
@@ -449,17 +460,8 @@ class ActionAdminForm(CustomizedFieldAccessMixin[Action], WagtailAdminModelForm[
         # The formsets have only been called with commit=False so far, so if we really should commit, we need to save
         # the instances with commit=True.
         if commit:
-            # Check if we need special handling for organization/person swaps
-            # wrapped_object_attr is the 4th element in MODELS_WITH_ROLES tuple
-            wrapped_attr = None
-            for _cls, _relation_name, _wrapped_model, _wrapped_attr in MODELS_WITH_ROLES:
-                if manager.model == _cls:
-                    wrapped_attr = _wrapped_attr
-                    break
-
             # Renormalize PKs to avoid swap conflicts
-            if wrapped_attr:
-                self._renormalize_pks_for_swaps(original_objects, saved_objects, wrapped_attr)
+            self._renormalize_pks_for_swaps(original_objects, saved_objects, wrapped_attr)
 
             # Now commit with renormalized PKs
             manager.commit()
@@ -539,12 +541,14 @@ class ModelWithRoleReadOnlyInlinePanel(Panel):
         relation_name: str | None = None,
         filter_by_role: bool = False,
         role: ModelWithRole.Role | None = None,
+        show_labels: bool = True,
         *args,
         **kwargs,
     ):
         self.filter_by_role = filter_by_role
         self.role = role
         self.relation_name = relation_name
+        self.show_labels = show_labels
         super().__init__(*args, **kwargs)
 
     def clone_kwargs(self):
@@ -552,6 +556,7 @@ class ModelWithRoleReadOnlyInlinePanel(Panel):
         result['filter_by_role'] = self.filter_by_role
         result['role'] = self.role
         result['relation_name'] = self.relation_name
+        result['show_labels'] = self.show_labels
         return result
 
     class BoundPanel(Panel.BoundPanel):
@@ -566,7 +571,7 @@ class ModelWithRoleReadOnlyInlinePanel(Panel):
                 qs = manager.all()
             context['items'] = [
                 {
-                    'label': el.get_label() if hasattr(el, 'get_label') else '',
+                    'label': el.get_label() if self.panel.show_labels and hasattr(el, 'get_label') else '',
                     'value': el.get_value() if hasattr(el, 'get_value') else str(el),
                 }
                 for el in qs
@@ -612,13 +617,14 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         relation_name: str,
         _cls: type[ModelWithRole],
         editable_roles: Iterable[ModelWithRole.Role | None] | None = None,
+        read_only: bool = False,
         **kwargs: Unpack[PanelGroupInitArgs],
     ):
         """
         Display inline panels for contact persons, optionally separated by roles.
 
         If `editable_roles` is None, a single inline panel will be shown for all contact persons without distuinguishing
-        them by roles.
+        them by roles. It is editable unless `read_only` is set, in which case it doesn't show the roles either.
 
         Otherwise an inline panel will be included for each role, no matter if it is included in `editable_roles`. The
         type of the panel will differ, however, depending on whether contact persons with that role can be edited.
@@ -627,9 +633,12 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         self.relation_name = relation_name
         self._cls = _cls
         self.editable_roles = editable_roles
+        self.read_only = read_only
         children: list[Panel] = []
         assert _cls  # TODO: Didn't really check when or if it can actually be None
-        if editable_roles is None:
+        if editable_roles is None and read_only:
+            children.append(ModelWithRoleReadOnlyInlinePanel(relation_name, filter_by_role=False, show_labels=False))
+        elif editable_roles is None:
             panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=False)
             assert panel is not None
             children.append(panel)
@@ -655,6 +664,7 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         kwargs['relation_name'] = self.relation_name
         kwargs['_cls'] = self._cls
         kwargs['editable_roles'] = self.editable_roles
+        kwargs['read_only'] = self.read_only
         return kwargs
 
 
@@ -1631,11 +1641,15 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
         relation_name: str,
         model_cls: type[ModelWithRole[Any]],
         get_editable_roles_method: str,
+        split_by_role: bool,
     ) -> list[Panel]:
         """
         Handle field customization panels for both contact persons and responsible parties.
 
         This method creates appropriate panels based on user permissions and field customizations.
+
+        If `split_by_role` is set, there is a panel for each role, editable if the user may edit objects with that role.
+        Otherwise there is a single panel for all objects, editable if the user may edit objects of any role.
         """
         user = user_or_bust(request.user)
         plan = user.get_active_admin_plan()
@@ -1645,18 +1659,15 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
         if is_editable:
             is_visible = True
 
-        if plan.features.has_action_contact_person_roles or is_editable:
-            editable_roles = getattr(request.user, get_editable_roles_method)(instance)
-        else:
-            editable_roles = []
+        editable_roles = getattr(user, get_editable_roles_method)(instance) if is_editable else []
 
         panel_cls = gate_panel_visibility(RelatedModelWithRolePanel, is_visible=is_visible)
-        panel = panel_cls(
-            action=instance,
-            relation_name=relation_name,
-            _cls=model_cls,
-            editable_roles=editable_roles,
-        )
+        if split_by_role:
+            panel = panel_cls(action=instance, relation_name=relation_name, _cls=model_cls, editable_roles=editable_roles)
+        else:
+            panel = panel_cls(
+                action=instance, relation_name=relation_name, _cls=model_cls, editable_roles=None, read_only=not editable_roles
+            )
 
         return [panel]
 
@@ -1668,6 +1679,7 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
             relation_name='contact_persons',
             model_cls=ActionContactPerson,
             get_editable_roles_method='get_editable_contact_person_roles',
+            split_by_role=instance.plan.features.has_action_contact_person_roles,
         )
 
     def get_task_panels(self, user: User, plan: Plan, instance: Action | None) -> list[Panel[Any]]:
@@ -1729,6 +1741,7 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
             relation_name='responsible_parties',
             model_cls=ActionResponsibleParty,
             get_editable_roles_method='get_editable_responsible_party_roles',
+            split_by_role=True,
         )
 
 

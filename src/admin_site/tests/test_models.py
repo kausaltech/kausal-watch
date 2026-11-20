@@ -44,6 +44,9 @@ def test_built_in_field_customization_is_action_field_editable_by(
     unauthenticated = AnonymousUser()
     # Create an authenticated user that's unprivileged for this action because they are a contact for another action
     unprivileged = ActionContactFactory.create().person.user
+    # Without roles, editors would act as moderators
+    action.plan.features.has_action_contact_person_roles = True
+    action.plan.features.save()
     editor = ActionContactFactory.create(action=action, role=ActionContactPerson.Role.EDITOR).person.user
     moderator = ActionContactFactory.create(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
     assert not built_in_field_customization.is_instance_editable_by(unauthenticated, action.plan, action)
@@ -84,6 +87,9 @@ def test_built_in_field_customization_is_action_field_visible_for(
     unauthenticated = AnonymousUser()
     # Create an authenticated user that's unprivileged for this action because they are a contact for another action
     unprivileged = ActionContactFactory.create().person.user
+    # Without roles, editors would act as moderators
+    action.plan.features.has_action_contact_person_roles = True
+    action.plan.features.save()
     editor = ActionContactFactory.create(action=action, role=ActionContactPerson.Role.EDITOR).person.user
     moderator = ActionContactFactory.create(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
     assert built_in_field_customization.is_instance_visible_for(unauthenticated, action.plan, action) == expect_unauthenticated

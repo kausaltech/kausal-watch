@@ -49,6 +49,9 @@ def edit_post_data(action: Action, **overrides: object) -> dict[str, object]:
         'identifier': action.identifier,
         'name': action.name,
         'visibility': 'public',
+        # Plans that don't distinguish contact person roles have a single formset for them
+        'contact_persons-TOTAL_FORMS': '0',
+        'contact_persons-INITIAL_FORMS': '0',
         'contact_persons_moderator-TOTAL_FORMS': '0',
         'contact_persons_moderator-INITIAL_FORMS': '0',
         'contact_persons_editor-TOTAL_FORMS': '0',
@@ -135,11 +138,16 @@ def test_cascade_deleted_child_leaves_the_draft_untouched(plan: Plan):
     assert [row['pk'] for row in revision.content['related_indicators']] == [action_indicator.pk]
 
 
+@pytest.mark.parametrize('has_roles', [True, False])
 def test_action_can_be_saved_after_contact_person_was_deleted(
-    plan_admin_user: User, action: Action, client: django.test.client.Client
+    plan_admin_user: User, action: Action, client: django.test.client.Client, has_roles: bool
 ):
     ClientPlanFactory.create(plan=action.plan)
     enable_moderation_workflow(action.plan)
+    action.plan.features.has_action_contact_person_roles = has_roles
+    action.plan.features.save()
+    # Without roles, the contact persons are edited in a single formset
+    formset = 'contact_persons_moderator' if has_roles else 'contact_persons'
     person = PersonFactory.create(organization=action.plan.organization)
     contact_person = ActionContactFactory.create(action=action, person=person, role=ActionContactPerson.Role.MODERATOR)
     action.save_revision()
@@ -153,13 +161,13 @@ def test_action_can_be_saved_after_contact_person_was_deleted(
     post_data = edit_post_data(
         action,
         **{
-            'contact_persons_moderator-TOTAL_FORMS': '1',
-            'contact_persons_moderator-INITIAL_FORMS': '1',
-            'contact_persons_moderator-MIN_NUM_FORMS': '0',
-            'contact_persons_moderator-MAX_NUM_FORMS': '1000',
-            'contact_persons_moderator-0-id': draft_contact_person.pk or '',
-            'contact_persons_moderator-0-person': person.pk,
-            'contact_persons_moderator-0-ORDER': '1',
+            f'{formset}-TOTAL_FORMS': '1',
+            f'{formset}-INITIAL_FORMS': '1',
+            f'{formset}-MIN_NUM_FORMS': '0',
+            f'{formset}-MAX_NUM_FORMS': '1000',
+            f'{formset}-0-id': draft_contact_person.pk or '',
+            f'{formset}-0-person': person.pk,
+            f'{formset}-0-ORDER': '1',
         },
     )
     edit_url = action.get_admin_edit_url()

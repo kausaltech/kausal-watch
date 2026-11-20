@@ -93,6 +93,8 @@ def enable_moderation(plan: Plan, task_count: int = 1) -> None:
         task = ActionModeratorApprovalTask.objects.create(name=f'Moderation step {i}', active=True)
         WorkflowTaskFactory.create(workflow=workflow, task=task, sort_order=i)
     plan.features.moderation_workflow = workflow
+    # Without roles, editors would act as moderators
+    plan.features.has_action_contact_person_roles = True
     plan.features.save()
 
 

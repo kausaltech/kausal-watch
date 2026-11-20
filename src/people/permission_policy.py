@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from kausal_common.users import user_or_bust
 
-from actions.models import ActionContactPerson
 from admin_site.permissions import PlanContextPermissionPolicy
 from orgs.models import Organization
 from people.models import Person
@@ -20,8 +19,7 @@ class PersonPermissionPolicy(PlanContextPermissionPolicy):
     Decide about people with the roles of the user in the active plan.
 
     Users may always edit themselves. Otherwise editing and deleting a person needs the rights of
-    `User.can_edit_or_delete_person_within_plan()`, and creating one needs plan admin rights or a
-    contact person role other than editor.
+    `User.can_edit_or_delete_person_within_plan()`, and creating one needs plan admin rights.
     """
 
     def __init__(self):
@@ -43,22 +41,9 @@ class PersonPermissionPolicy(PlanContextPermissionPolicy):
     def user_has_permission(self, user, action):
         if action != 'add':
             return super().user_has_permission(user, action)
+        # Only plan admins may create people, also in the person choosers. Contact persons may not, whatever their role.
         user = user_or_bust(user)
-        plan = self._get_plan(user)
-        if user.is_general_admin_for_plan(plan):
-            return True
-        person = user.get_corresponding_person()
-        # FIXME: there is some hardcoding of assumptions about contact person roles here.
-        # These should be moved to a role-based system.
-        if (
-            not ActionContactPerson.objects
-            .filter(action__plan=plan)
-            .filter(person=person)
-            .exclude(role=ActionContactPerson.Role.EDITOR)
-        ):
-            # Only persons with role other than editor can add persons
-            return False
-        return super().user_has_permission(user, action)
+        return user.is_general_admin_for_plan(self._get_plan(user))
 
     def user_has_permission_for_instance(self, user, action, instance):
         if action not in ('change', 'delete'):

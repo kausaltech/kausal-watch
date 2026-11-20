@@ -33,6 +33,11 @@ class PersonChooserMixin(ChosenFromOfferedObjectsMixin[Person], BasePersonChoose
     def get_chosen_queryset(self):
         return self.get_object_list()
 
+    def user_can_create(self, user) -> bool:
+        # The model permission that contact persons get doesn't know the plan's rules for adding persons. This decides
+        # about the create tab, which comes after this class in the view's MRO.
+        return Person.permission_policy().user_has_permission(user, 'add')
+
 
 class PersonModelChooserCreateTabMixin(BasePersonModelChooserCreateTabMixin):
     def get_initial(self):

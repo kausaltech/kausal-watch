@@ -1836,10 +1836,32 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
         return str(self.person)
 
     def is_moderator(self) -> bool:
+        """Return whether the stored role is moderator; see `moderators_q()` for who acts as a moderator."""
         return self.role == self.Role.MODERATOR
 
     @classmethod
+    def moderators_q(cls) -> Q:
+        """
+        Return a filter for the contact persons who act as moderators.
+
+        In a plan that does not distinguish contact person roles, the stored roles are invisible and have no effect:
+        every contact person acts as a moderator, e.g., when approving changes or accessing fields restricted to
+        moderators.
+        """
+        return Q(role=cls.Role.MODERATOR) | Q(action__plan__features__has_action_contact_person_roles=False)
+
+    @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> Sequence[Role]:
+        """
+        Return the roles whose contact persons `person` may edit in `action`.
+
+        Plan admins may edit all roles; they are handled by `User.get_editable_contact_person_roles()` before this is
+        called. In a plan that does not distinguish contact person roles, nobody else may edit contact persons: the
+        stored roles are invisible there and almost always the default "moderator", so letting moderators edit editors
+        would let practically every contact person edit the others.
+        """
+        if not action.plan.features.has_action_contact_person_roles:
+            return []
         is_moderator = (
             person is not None
             and action.contact_persons.filter(
