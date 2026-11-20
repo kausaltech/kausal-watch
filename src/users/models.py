@@ -38,6 +38,37 @@ class ModerationAction(StrEnum):
     APPROVE = auto()
 
 
+class ActionReadOnlyReason(StrEnum):
+    """
+    Why a user may not edit an action, and its tasks, directly in the live data.
+
+    The table editors write to the live action without a draft or the moderation workflow, so they may only be used
+    where the user could also publish the action in the admin form.
+    """
+
+    NOT_PERMITTED = auto()
+    """The user may not edit the action at all."""
+    NEEDS_MODERATION = auto()
+    """The plan is moderated and the user may not publish the action, so their changes must go through review."""
+    PENDING_DRAFT = auto()
+    """The action has an unpublished draft, which would overwrite a live edit when it is published."""
+
+    @property
+    def message(self) -> str:
+        match self:
+            case ActionReadOnlyReason.NOT_PERMITTED:
+                return str(_('You do not have permission to edit this action.'))
+            case ActionReadOnlyReason.NEEDS_MODERATION:
+                return str(_('This action is moderated. Edit it in the action editor to submit your changes for review.'))
+            case ActionReadOnlyReason.PENDING_DRAFT:
+                return str(
+                    _(
+                        'This action has unpublished changes. Edit it in the action editor, so that your changes are '
+                        'not lost when the draft is published.'
+                    )
+                )
+
+
 @dataclass
 class UserPermissionCache:
     user: User
@@ -599,6 +630,48 @@ class User(AbstractUser):
 
     def can_approve_action(self, action: Action):
         return self._check_moderation_permissions(ModerationAction.APPROVE, action)
+
+    def get_action_read_only_reason(self, action: Action) -> ActionReadOnlyReason | None:
+        """
+        Tell why the user may not edit `action` or its tasks in the live data, or return None if they may.
+
+        Editing the live data, as the table editors do, skips drafts and the moderation workflow. So on a moderated
+        plan it needs the right to publish the action. An unpublished draft blocks it for everyone, on any plan,
+        because publishing the draft would silently undo the edit.
+        """
+        if not self.can_modify_action(action=action, plan=action.plan):
+            return ActionReadOnlyReason.NOT_PERMITTED
+        if action.plan.features.enable_moderation_workflow and not self.can_publish_action(action):
+            return ActionReadOnlyReason.NEEDS_MODERATION
+        if action.has_unpublished_changes:
+            return ActionReadOnlyReason.PENDING_DRAFT
+        return None
+
+    def can_edit_action_live(self, action: Action) -> bool:
+        """Tell whether the user may edit `action` and its tasks without a draft; see `get_action_read_only_reason()`."""
+        return self.get_action_read_only_reason(action) is None
+
+    def check_can_edit_action_live(self, action: Action) -> None:
+        """Raise `PermissionDenied`, with the reason as its message, unless the user may edit `action` live."""
+        reason = self.get_action_read_only_reason(action)
+        if reason is not None:
+            raise PermissionDenied(reason.message)
+
+    def can_edit_some_action_live(self, plan: Plan) -> bool:
+        """
+        Tell whether the user may edit at least one action of `plan` without a draft.
+
+        This decides whether the action table editor is offered at all. It ignores pending drafts, which come and go,
+        and checks only the right to edit and, on a moderated plan, to publish.
+        """
+        if self.is_general_admin_for_plan(plan):
+            return True
+        from actions.models import Action
+
+        actions = Action.objects.qs.filter(plan=plan).modifiable_by(self).without_merged_unless_admin(self)
+        if plan.features.enable_moderation_workflow:
+            actions = actions.publishable_by(self)
+        return actions.exists()
 
     def can_create_indicator(self, plan):
         if self.is_superuser:
