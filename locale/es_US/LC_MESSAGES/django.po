@@ -7303,6 +7303,18 @@ msgid "Users"
 msgstr ""
 
 #: src/users/models.py
+msgid "You do not have permission to edit this action."
+msgstr ""
+
+#: src/users/models.py
+msgid "This action is moderated. Edit it in the action editor to submit your changes for review."
+msgstr ""
+
+#: src/users/models.py
+msgid "This action has unpublished changes. Edit it in the action editor, so that your changes are not lost when the draft is published."
+msgstr ""
+
+#: src/users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
 
