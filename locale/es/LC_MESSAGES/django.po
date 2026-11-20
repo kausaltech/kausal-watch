@@ -4294,11 +4294,6 @@ msgstr "Ver el sitio tal y como lo ve este usuario"
 msgid "Back to own user"
 msgstr "Volver al propio usuario"
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " Por %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
 msgstr "Administración"
@@ -8711,3 +8706,7 @@ msgstr "Copiar identificador"
 
 #~ msgid "Automatic notifications"
 #~ msgstr "Notificaciones automáticas"
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Por %(filter_title)s "

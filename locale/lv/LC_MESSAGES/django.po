@@ -4376,11 +4376,6 @@ msgstr "Skatīt %s tiešraidē"
 msgid "Back to own user"
 msgstr ""
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " Līdz %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 #, fuzzy
 #| msgid "Can administrate all actions"
@@ -8873,3 +8868,7 @@ msgstr "identifikators"
 
 #~ msgid "Enable moderation workflow"
 #~ msgstr "Moderēšanas darbplūsmas iespējošana"
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Līdz %(filter_title)s "

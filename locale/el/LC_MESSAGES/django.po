@@ -4330,11 +4330,6 @@ msgstr "Προβολή του ιστότοπου όπως φαίνεται γι�
 msgid "Back to own user"
 msgstr "Πίσω στο δικό σας χρήστη"
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, python-format
-msgid " By %(filter_title)s "
-msgstr " Με %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 msgid "Administration"
 msgstr "Διοίκηση"
@@ -8798,3 +8793,7 @@ msgstr "αναγνωριστικό"
 
 #~ msgid "An optional logo for this organization"
 #~ msgstr "Ένα προαιρετικό λογότυπο για αυτόν τον οργανισμό"
+
+#, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Με %(filter_title)s "

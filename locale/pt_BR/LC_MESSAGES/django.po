@@ -4551,11 +4551,6 @@ msgstr "Veja %s ao vivo"
 msgid "Back to own user"
 msgstr ""
 
-#: src/admin_site/templates/dal_admin_filters/autocomplete-filter.html
-#, fuzzy, python-format
-msgid " By %(filter_title)s "
-msgstr " Por %(filter_title)s "
-
 #: src/admin_site/templates/wagtailadmin/base.html
 #, fuzzy
 msgid "Administration"
@@ -9314,3 +9309,7 @@ msgstr "Copiar identificador"
 #, fuzzy
 #~ msgid "Either SVG or image must be set"
 #~ msgstr "O SVG ou a imagem devem ser definidos"
+
+#, fuzzy, python-format
+#~ msgid " By %(filter_title)s "
+#~ msgstr " Por %(filter_title)s "
