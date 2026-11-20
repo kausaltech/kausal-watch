@@ -55,6 +55,7 @@ from audit_logging.models import PlanScopedModel, PlanScopedModelLogEntry
 from orgs.models import Organization
 from pages.apps import post_reorder_categories
 from people.models import Person
+from users.models import ActionReadOnlyReason
 
 from .deferred_ops import DeferredDatabaseOperationsMixin
 from .models import (
@@ -262,6 +263,42 @@ plan_router.register(
 )
 
 
+# What the action list sends when moving an action, and what the table sends for an action it only shifts. The
+# `version` keeps the optimistic-concurrency check on the move.
+POSITION_ONLY_UPDATE_FIELDS = frozenset({'id', 'uuid', 'version', 'parent', 'left_sibling', 'name', 'identifier'})
+
+
+def is_position_only_update(view: View, action: Action) -> bool:
+    """
+    Tell whether the request changes nothing about `action` but its position.
+
+    A full update must carry the name, so it may be there too, as may the UUID, but only with their current values. The
+    identifier must be there, unchanged: `ActionSerializer` generates a new one for a row without it on plans that hide
+    them.
+    """
+    request: Request | None = getattr(view, 'request', None)
+    if request is None:
+        return False
+    data = request.data
+    if isinstance(data, list):
+        rows = [row for row in data if isinstance(row, dict) and row.get('id') == action.pk]
+        if len(rows) != 1:
+            return False
+        row = rows[0]
+    elif isinstance(data, dict):
+        row = data
+    else:
+        return False
+    if not set(row) <= POSITION_ONLY_UPDATE_FIELDS:
+        return False
+    return (
+        row.get('identifier') == action.identifier
+        and str(row.get('uuid', action.uuid)) == str(action.uuid)
+        # The name is written back trimmed, which would change a stored name with surrounding whitespace
+        and ('name' not in row or row['name'] == action.name == action.name.strip())
+    )
+
+
 class ActionPermission(WatchObjectPermissions):
     model = Action
 
@@ -271,7 +308,17 @@ class ActionPermission(WatchObjectPermissions):
         match perm:
             case 'actions.change_action':
                 assert obj is None or isinstance(obj, Action)
-                return user.can_modify_action(action=obj, plan=plan)
+                if obj is None:
+                    return user.can_modify_action(plan=plan)
+                # These endpoints write the live action, bypassing drafts and moderation
+                reason = user.get_action_read_only_reason(obj)
+                if reason is None:
+                    return True
+                if reason == ActionReadOnlyReason.PENDING_DRAFT and is_position_only_update(view, obj):
+                    # Publishing a draft keeps the live order (see `Action.publish()`), so a draft does not stand in
+                    # the way of moving the action
+                    return True
+                raise exceptions.PermissionDenied(reason.message)
             case 'actions.add_action':
                 assert obj is None
                 return user.can_create_action(plan=plan)
@@ -1285,7 +1332,7 @@ class ActionSerializer(  # type: ignore[misc]
     BulkSerializerValidationInstanceMixin[Action],
     PlanRelatedModelSerializer[Action],
 ):
-    _modifiable_actions_cache: ActionQuerySet
+    _read_only_lookup: tuple[set[int], set[int] | None]
 
     uuid = serializers.UUIDField(required=False)
     # `updated_at` is a display-only "last modified" timestamp; the server stamps
@@ -1336,21 +1383,52 @@ class ActionSerializer(  # type: ignore[misc]
 
         if user is not None:
             fields['modifiable_by_user'] = serializers.SerializerMethodField()
+            fields['read_only_reason'] = serializers.SerializerMethodField()
 
         return fields
 
-    def get_modifiable_by_user(self, action: Action):
-        if hasattr(self, '_modifiable_actions_cache'):
-            return action in self._modifiable_actions_cache
+    def _get_read_only_lookup(self) -> tuple[set[int], set[int] | None] | None:
+        """
+        Return the IDs of the actions the user may modify and, on a moderated plan, of those they may publish.
+
+        The table editor asks for every row, so this is computed once per serializer from the view's queryset.
+        """
+        if hasattr(self, '_read_only_lookup'):
+            return self._read_only_lookup
         request: Request | None = self.context.get('request')
-        if request is None:
-            return False
-        user = user_or_none(request.user)
         view = self.context.get('view')
+        user = user_or_none(request.user) if request is not None else None
         if user is None or view is None:
-            return False
-        self._modifiable_actions_cache = view.get_queryset().modifiable_by(user)
-        return action in self._modifiable_actions_cache
+            return None
+        actions: ActionQuerySet = view.get_queryset()
+        modifiable = set(actions.modifiable_by(user).without_merged_unless_admin(user).values_list('pk', flat=True))
+        publishable = None
+        if self.plan.features.enable_moderation_workflow:
+            publishable = set(actions.publishable_by(user).values_list('pk', flat=True))
+        self._read_only_lookup = (modifiable, publishable)
+        return self._read_only_lookup
+
+    def _get_read_only_reason(self, action: Action) -> ActionReadOnlyReason | None:
+        """Tell why the user may not edit `action` here; the counterpart of `User.get_action_read_only_reason()`."""
+        lookup = self._get_read_only_lookup()
+        if lookup is None:
+            return ActionReadOnlyReason.NOT_PERMITTED
+        modifiable, publishable = lookup
+        if action.pk not in modifiable:
+            return ActionReadOnlyReason.NOT_PERMITTED
+        if publishable is not None and action.pk not in publishable:
+            return ActionReadOnlyReason.NEEDS_MODERATION
+        if action.has_unpublished_changes:
+            return ActionReadOnlyReason.PENDING_DRAFT
+        return None
+
+    def get_modifiable_by_user(self, action: Action) -> bool:
+        return self._get_read_only_reason(action) is None
+
+    @extend_schema_field(serializers.ChoiceField(choices=[r.value for r in ActionReadOnlyReason], allow_null=True))
+    def get_read_only_reason(self, action: Action) -> str | None:
+        reason = self._get_read_only_reason(action)
+        return None if reason is None else reason.value
 
     def to_representation(self, value):
         self.context['_current_instance'] = value
@@ -2438,7 +2516,27 @@ class ActionTaskSerializer(
         self._validate_completion_date(data)
         for relation_name in TASK_ASSIGNMENT_FIELDS:
             self._validate_assignments(data, relation_name)
+        self._check_actions_editable(data)
         return data
+
+    def _check_actions_editable(self, data: dict[str, Any]) -> None:
+        """
+        Check that the user may edit the task's action live, on create and when the task moves to another action.
+
+        The permission class checks only the action a task already belongs to, which leaves out the action a new
+        task is created on or an existing one is moved to.
+        """
+        new_action: Action | None = data.get('action')
+        task = self._instance
+        if new_action is None or (task is not None and new_action.pk == task.action.pk):
+            return
+        request: Request | None = self.context.get('request')
+        user = user_or_none(request.user) if request is not None else None
+        if user is None:
+            raise exceptions.NotAuthenticated()
+        user.check_can_edit_action_live(new_action)
+        if task is not None:
+            user.check_can_edit_action_live(task.action)
 
     def _validate_completion_date(self, data: dict[str, Any]) -> None:
         """Check that the completion date is not in the future, but only if this save changes it."""
@@ -2602,7 +2700,11 @@ class ActionTaskPermission(WatchObjectPermissions):
             action = obj.action
         else:
             action = None
-        if perm in (f'actions.{op}_actiontask' for op in ('change', 'add', 'delete')):
-            plan = get_plan_from_view(view)
-            return user.can_modify_action(action=action, plan=plan)
-        return False
+        if perm not in (f'actions.{op}_actiontask' for op in ('change', 'add', 'delete')):
+            return False
+        if action is None:
+            # The target action of a new task is checked in `ActionTaskSerializer.validate()`
+            return user.can_modify_action(plan=get_plan_from_view(view))
+        # These endpoints write the live task, bypassing the action's drafts and moderation
+        user.check_can_edit_action_live(action)
+        return True

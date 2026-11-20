@@ -38,6 +38,7 @@ from wagtail.models import (
     RevisionMixin,
     Task,
     TaskState,
+    Workflow,
     WorkflowMixin,
 )
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -86,7 +87,6 @@ if typing.TYPE_CHECKING:
     from modelcluster.fields import PK
     from wagtail.models import (
         SerializableData,
-        Workflow,
     )
 
     from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany, RevManyQS
@@ -126,6 +126,41 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action'], Pl
             query |= Q(plan__in=person.general_admin_plans.all())
             query |= Q(contact_persons__person=person)
         return self.filter(query).distinct()
+
+    def without_merged_unless_admin(self, user: User) -> Self:
+        """
+        Leave out merged actions, except for the plan admins of their plans.
+
+        `User.can_modify_action()` lets only admins edit merged actions, but `modifiable_by()` does not tell them apart.
+        """
+        if user.is_superuser:
+            return self
+        person = user.get_corresponding_person()
+        admin_plans = person.general_admin_plans.all() if person is not None else []
+        return self.filter(Q(merged_with__isnull=True) | Q(plan__in=admin_plans))
+
+    def publishable_by(self, user: User) -> Self:
+        """
+        Filter to the actions the user may publish.
+
+        The queryset counterpart of `User.can_publish_action()`: superusers and plan admins may publish; on a plan
+        whose moderation workflow has at most one step, so do the moderators among the action's contact persons.
+        Organization admins may not: the contact persons' editor and moderator roles are the only way to grant
+        moderation rights.
+        """
+        if user.is_superuser:
+            return self
+        person = user.get_corresponding_person()
+        if person is None:
+            return self.none()
+        # Like `User.can_publish_action()`, which rejects only workflows of more than one step
+        single_step_workflows = Workflow.objects.annotate(step_count=Count('workflow_tasks')).filter(step_count__lte=1)
+        moderated_actions = ActionContactPerson.objects.filter(ActionContactPerson.moderators_q(), person=person)
+        query = Q(plan__in=person.general_admin_plans.all()) | Q(
+            plan__features__moderation_workflow__in=single_step_workflows,
+            pk__in=moderated_actions.values('action_id'),
+        )
+        return self.filter(query)
 
     def user_is_contact_for(self, user: User):
         person = user.get_corresponding_person()
