@@ -11,14 +11,14 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.db.models import Exists, F, ManyToManyField, Model, OneToOneRel, OuterRef, Prefetch, Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
-from django.forms import BooleanField, CharField, ChoiceField, ModelMultipleChoiceField, TextInput
+from django.forms import BooleanField, CharField, ChoiceField, HiddenInput, IntegerField, ModelMultipleChoiceField, TextInput
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.html import format_html, format_html_join
-from django.utils.text import capfirst
+from django.utils.text import capfirst, format_lazy
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.forms.choosers import BaseFilterForm
@@ -35,7 +35,7 @@ from kausal_common.users import user_or_bust
 from aplans.utils import naturaltime
 
 from actions.category_admin import PanelFormMixin
-from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan, PlanPublicSiteViewer
+from actions.models import Action, ActionContactPerson, GeneralPlanAdmin, Plan, PlanPublicSiteViewer
 from actions.perms import get_people_with_login_rights
 from admin_site.mixins import ActivatePermissionHelperPlanContextMixin
 from admin_site.scoped_choosers import (
@@ -144,6 +144,14 @@ class PersonFormForGeneralAdmin(PersonForm):
         widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
         label=_('Plan admin organizations'),
     )
+    # The plan the form was opened in. The person's actions are those of the active plan, so saving the form after
+    # switching plans in another tab would change the actions of a plan whose actions the form didn't show.
+    form_plan = IntegerField(widget=HiddenInput, required=False)
+    contact_person_role = ChoiceField(
+        choices=[('', '---------'), *ActionContactPerson.Role.choices],
+        required=False,
+        label=_('Contact person role in newly added actions'),
+    )
 
     def __init__(self, *args, **kwargs):
         plan = kwargs['plan']
@@ -159,6 +167,8 @@ class PersonFormForGeneralAdmin(PersonForm):
 
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
+        self._added_contact_for_actions: set[Action] = set()
+        self.fields['form_plan'].initial = self.plan.pk
         # Public-site access is available for every plan, so the access level is always offered.
         if initial.get('access_level') == self.AccessLevel.PUBLIC_SITE_ONLY:
             del self.fields['organization_plan_admin_orgs']
@@ -169,15 +179,54 @@ class PersonFormForGeneralAdmin(PersonForm):
             cast('ModelMultipleChoiceField[Any]', self.fields['organization_plan_admin_orgs']).queryset = (
                 Organization.objects.get_queryset().available_for_plan(self.plan).filter(dissolution_date=None)
             )
+        if 'contact_for_actions_unordered' in self.fields:
+            # The person may be a contact person in other plans too, but those links are not ours to edit.
+            plan_actions = Action.objects.filter(plan=self.plan)
+            cast('ModelMultipleChoiceField[Any]', self.fields['contact_for_actions_unordered']).queryset = plan_actions
+            if self.instance.pk is not None:
+                self.initial['contact_for_actions_unordered'] = list(
+                    self.instance.contact_for_actions_unordered.filter(plan=self.plan).values_list('pk', flat=True)
+                )
+        self._set_up_contact_person_role_field()
+
+    def _set_up_contact_person_role_field(self) -> None:
+        if 'contact_for_actions_unordered' not in self.fields or not self.plan.features.has_action_contact_person_roles:
+            # Without roles, new contact persons are moderators, as the moderation workflow only lets them approve.
+            del self.fields['contact_person_role']
+            return
+        help_text = _(
+            'Required if you add actions above. Moderators can choose the editors of the action and, if there is '
+            "moderation, approve changes; editors can't. You can change the roles on the action's page."
+        )
+        if self.plan.features.contact_persons_hide_moderators:
+            help_text = format_lazy('{} {}', help_text, _('Moderators are not shown on the public site.'))
+        self.fields['contact_person_role'].help_text = help_text
+
+    def _get_added_contact_for_actions(self, contact_for_actions: models.QuerySet[Action]) -> set[Action]:
+        chosen = set(contact_for_actions.filter(plan=self.plan))
+        if self.instance.pk is None:
+            return chosen
+        return chosen - set(self.instance.contact_for_actions_unordered.filter(plan=self.plan))
 
     def clean(self):
         cleaned_data = super().clean()
         assert cleaned_data is not None
+        form_plan = cleaned_data.get('form_plan')
+        if form_plan is not None and form_plan != self.plan.pk:
+            raise ValidationError(
+                _('You have switched to a different plan since opening this page. Please reload it and try again.')
+            )
         access_level = cleaned_data.get('access_level')
         is_plan_admin = cleaned_data.get('is_admin_for_active_plan')
         organization_plan_admin_orgs = cleaned_data.get('organization_plan_admin_orgs')
         contact_for_actions = cleaned_data.get('contact_for_actions_unordered')
         if contact_for_actions is not None:
+            # Saving adds exactly these, so that it never adds an action we didn't check the role for.
+            self._added_contact_for_actions = self._get_added_contact_for_actions(contact_for_actions)
+            # There is no default role, as the roles decide whether someone's contact details are public, say.
+            role_is_missing = 'contact_person_role' in self.fields and not cleaned_data.get('contact_person_role')
+            if role_is_missing and self._added_contact_for_actions:
+                self.add_error('contact_person_role', _('Choose the role of the person in the actions you added.'))
             contact_for_actions = contact_for_actions.filter(plan=self.plan)
         if access_level == self.AccessLevel.PUBLIC_SITE_ONLY:  # noqa: SIM102
             if is_plan_admin or organization_plan_admin_orgs or contact_for_actions:
@@ -185,6 +234,32 @@ class PersonFormForGeneralAdmin(PersonForm):
                     'Person cannot have admin responsibilities while also being restricted to only public site access.',
                 )
         return cleaned_data
+
+    def _get_role_for_new_contact_persons(self) -> ActionContactPerson.Role:
+        role = self.cleaned_data.get('contact_person_role')
+        if not role:
+            # Plans without roles don't show the role, but the moderation workflow still only lets moderators approve.
+            return ActionContactPerson.Role.MODERATOR
+        return ActionContactPerson.Role(role)
+
+    def _save_m2m(self) -> None:
+        # Django saves the field with `set()`, which would give new contact persons the model's default role.
+        contact_for_actions = self.cleaned_data.pop('contact_for_actions_unordered', None)
+        try:
+            super()._save_m2m()
+        finally:
+            if contact_for_actions is not None:
+                self.cleaned_data['contact_for_actions_unordered'] = contact_for_actions
+        if contact_for_actions is None:
+            return
+        # Only change the links to the active plan's actions; the links to other plans' actions are not ours to edit.
+        chosen = set(contact_for_actions.filter(plan=self.plan))
+        existing = set(self.instance.contact_for_actions_unordered.filter(plan=self.plan))
+        self.instance.contact_for_actions_unordered.remove(*(existing - chosen))
+        # Add only what `clean()` checked, even if a link it found has been removed since. Existing links are skipped.
+        self.instance.contact_for_actions_unordered.add(
+            *self._added_contact_for_actions, through_defaults={'role': self._get_role_for_new_contact_persons()}
+        )
 
     def save(self, commit=True):
         instance = super().save(commit)
@@ -256,6 +331,8 @@ def get_person_panel(request: HttpRequest, instance: Person) -> TabbedInterface:
                 widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
             )
         )
+        if plan.features.has_action_contact_person_roles:
+            basic_panels.append(FieldPanel('contact_person_role'))
     else:
         form_class = PersonForm
 

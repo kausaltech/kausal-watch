@@ -57,6 +57,9 @@ def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_ta
     workflow = workflow_factory()
     workflow_task_factory(workflow=workflow)
     plan.features.moderation_workflow = workflow
+    # Without roles, editors would act as moderators
+    plan.features.has_action_contact_person_roles = True
+    plan.features.save()
     action_factory(plan=plan)
     return plan
 
@@ -68,6 +71,9 @@ def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workfl
     workflow_task_factory(workflow=workflow)
     workflow_task_factory(workflow=workflow)
     plan.features.moderation_workflow = workflow
+    # Without roles, editors would act as moderators
+    plan.features.has_action_contact_person_roles = True
+    plan.features.save()
     action_factory(plan=plan)
     return plan
 

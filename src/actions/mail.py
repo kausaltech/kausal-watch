@@ -52,7 +52,7 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         # TODO
         action = task_state.workflow_state.content_object
         assert isinstance(action, Action)
-        moderator_ids = action.contact_persons.filter(role=ActionContactPerson.Role.MODERATOR).values_list('person__user')
+        moderator_ids = action.contact_persons.filter(ActionContactPerson.moderators_q()).values_list('person__user')
         return User.objects.filter(id__in=moderator_ids)
 
     def send_emails(self, template_set, context, recipients, **kwargs):

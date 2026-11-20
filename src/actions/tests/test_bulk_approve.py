@@ -41,7 +41,9 @@ def multi_task_moderation_plan(plan_with_double_task_moderation):
 def superuser(moderation_plan):
     user = make_plan_admin(moderation_plan)
     user.is_superuser = True
-    user.save(update_fields=['is_superuser'])
+    # A superuser may administer every plan, so pin the active one; it would be the most recently created one otherwise
+    user.selected_admin_plan = moderation_plan
+    user.save(update_fields=['is_superuser', 'selected_admin_plan'])
     return user
 
 

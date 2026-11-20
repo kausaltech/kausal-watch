@@ -120,6 +120,9 @@ def test_existing_tasks_survive_saving_when_tasks_are_hidden(client, action, act
         'visibility': 'public',
         'links-TOTAL_FORMS': '0',
         'links-INITIAL_FORMS': '0',
+        # Plans that don't distinguish contact person roles have a single formset for them
+        'contact_persons-TOTAL_FORMS': '0',
+        'contact_persons-INITIAL_FORMS': '0',
         'contact_persons_editor-TOTAL_FORMS': '0',
         'contact_persons_editor-INITIAL_FORMS': '0',
         'contact_persons_moderator-TOTAL_FORMS': '0',

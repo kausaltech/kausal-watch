@@ -65,11 +65,14 @@ class UserPermissionCache:
 
         if not self.corresponding_person:
             return {}
-        acps = ActionContactPerson.objects.filter(person=self.corresponding_person)
+        acps = ActionContactPerson.objects.filter(person=self.corresponding_person).values_list(
+            'action_id', 'role', 'action__plan__features__has_action_contact_person_roles'
+        )
         by_role: dict[ActionContactPerson.Role, set[int]] = {role: set() for role in ActionContactPerson.Role}
-        for acp in acps:
-            role = ActionContactPerson.Role(acp.role)
-            by_role[role].add(acp.action_id)
+        for action_id, role, plan_has_roles in acps:
+            # Without roles, every contact person acts as a moderator; see `ActionContactPerson.moderators_q()`.
+            effective_role = ActionContactPerson.Role(role) if plan_has_roles else ActionContactPerson.Role.MODERATOR
+            by_role[effective_role].add(action_id)
         return by_role
 
     @cached_property
@@ -573,7 +576,7 @@ class User(AbstractUser):
     def _check_moderation_approve_permissions(self, action: Action, person: Person) -> bool:
         from actions.models.action import ActionContactPerson
 
-        return action.contact_persons.filter(role=ActionContactPerson.Role.MODERATOR, person=person).exists()
+        return action.contact_persons.filter(ActionContactPerson.moderators_q(), person=person).exists()
 
     def _check_moderation_permissions(self, moderation_action: ModerationAction, action: Action) -> bool:
         # Only called currently if a plan has a moderation workflow enabled

@@ -82,6 +82,9 @@ def _post_action(client, user, action, extra_data):
         'links-INITIAL_FORMS': '0',
         'tasks-TOTAL_FORMS': '0',
         'tasks-INITIAL_FORMS': '0',
+        # Plans that don't distinguish contact person roles have a single formset for them
+        'contact_persons-TOTAL_FORMS': '0',
+        'contact_persons-INITIAL_FORMS': '0',
         'contact_persons_editor-TOTAL_FORMS': '0',
         'contact_persons_editor-INITIAL_FORMS': '0',
         'contact_persons_moderator-TOTAL_FORMS': '0',

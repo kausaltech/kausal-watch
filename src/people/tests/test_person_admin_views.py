@@ -244,6 +244,138 @@ def test_public_site_viewer_cannot_be_a_plan_admin(admin_client, plan_with_pages
     assert not Person.objects.filter(email='grace@example.com').exists()
 
 
+def _set_roles(plan, *, has_roles: bool, hide_moderators: bool = False) -> None:
+    plan.features.has_action_contact_person_roles = has_roles
+    plan.features.contact_persons_hide_moderators = hide_moderators
+    plan.features.save()
+
+
+@pytest.mark.parametrize('role', [ActionContactPerson.Role.EDITOR, ActionContactPerson.Role.MODERATOR])
+def test_contact_persons_added_with_the_person_form_get_the_chosen_role(admin_client, plan_with_pages, role):
+    _set_roles(plan_with_pages, has_roles=True)
+    action = ActionFactory.create(plan=plan_with_pages)
+    add_path, data = _creation_data(admin_client, plan_with_pages)
+    data.update({'contact_for_actions_unordered': [action.pk], 'contact_person_role': role})
+    assert admin_client.post(add_path, data).status_code == 302
+    assert ActionContactPerson.objects.get(action=action, person__email='grace@example.com').role == role
+
+
+def test_person_form_requires_a_role_for_added_actions_in_a_plan_with_roles(admin_client, plan_with_pages):
+    _set_roles(plan_with_pages, has_roles=True)
+    action = ActionFactory.create(plan=plan_with_pages)
+    add_path, data = _creation_data(admin_client, plan_with_pages)
+    data['contact_for_actions_unordered'] = [action.pk]
+    response = admin_client.post(add_path, data)
+    assert response.status_code == 200
+    assert 'contact_person_role' in response.context['form'].errors
+    assert not Person.objects.filter(email='grace@example.com').exists()
+
+
+def test_person_form_needs_no_role_without_added_actions(admin_client, plan_with_pages):
+    _set_roles(plan_with_pages, has_roles=True)
+    add_path, data = _creation_data(admin_client, plan_with_pages)
+    assert admin_client.post(add_path, data).status_code == 302
+
+
+def test_person_form_has_no_role_choice_in_a_plan_without_roles(admin_client, plan_with_pages):
+    _set_roles(plan_with_pages, has_roles=False)
+    action = ActionFactory.create(plan=plan_with_pages)
+    add_path, data = _creation_data(admin_client, plan_with_pages)
+    assert 'contact_person_role' not in admin_client.get(add_path).context['form'].fields
+    data['contact_for_actions_unordered'] = [action.pk]
+    assert admin_client.post(add_path, data).status_code == 302
+    contact = ActionContactPerson.objects.get(action=action, person__email='grace@example.com')
+    # The moderation workflow only lets moderators approve, and the role can't be seen or changed in this plan
+    assert contact.role == ActionContactPerson.Role.MODERATOR
+
+
+@pytest.mark.parametrize('hide_moderators', [True, False])
+def test_person_form_says_whether_moderators_are_shown_publicly(admin_client, plan_with_pages, hide_moderators):
+    _set_roles(plan_with_pages, has_roles=True, hide_moderators=hide_moderators)
+    add_path = _add_path(admin_client.get(PEOPLE_PATH).content)
+    assert add_path is not None
+    help_text = str(admin_client.get(add_path).context['form'].fields['contact_person_role'].help_text)
+    assert ('not shown on the public site' in help_text) is hide_moderators
+
+
+def test_editing_with_the_person_form_keeps_existing_contact_person_roles(admin_client, plan_with_pages):
+    _set_roles(plan_with_pages, has_roles=True)
+    existing = ActionContactFactory.create(
+        action=ActionFactory.create(plan=plan_with_pages), role=ActionContactPerson.Role.MODERATOR
+    )
+    person = existing.person
+    new_action = ActionFactory.create(plan=plan_with_pages)
+    path = _edit_path(person)
+    data = _post_data(admin_client.get(path).context['form'])
+    data.update({
+        'contact_for_actions_unordered': [existing.action.pk, new_action.pk],
+        'contact_person_role': ActionContactPerson.Role.EDITOR,
+    })
+    assert admin_client.post(path, data).status_code == 302
+    roles = dict(ActionContactPerson.objects.filter(person=person).values_list('action', 'role'))
+    assert roles == {existing.action.pk: ActionContactPerson.Role.MODERATOR, new_action.pk: ActionContactPerson.Role.EDITOR}
+
+
+def test_person_form_does_not_recreate_a_link_removed_after_validation(admin_client, admin_user, plan_with_pages):
+    """A link that another admin removes between validation and saving must not come back without a chosen role."""
+    _set_roles(plan_with_pages, has_roles=True)
+    existing = ActionContactFactory.create(
+        action=ActionFactory.create(plan=plan_with_pages), role=ActionContactPerson.Role.EDITOR
+    )
+    person = existing.person
+    page_form = admin_client.get(_edit_path(person)).context['form']
+    form = type(page_form)(data=_post_data(page_form), instance=person, plan=plan_with_pages, user=admin_user)
+    assert form.is_valid(), form.errors
+    existing.delete()
+    form.save()
+    assert not ActionContactPerson.objects.filter(person=person).exists()
+
+
+def test_person_form_rejects_a_save_after_switching_plans(admin_client, plan_with_pages):
+    """Saving a form opened in another plan would remove the person's actions in the active plan unseen."""
+    other_plan = PlanFactory.create()
+    contact = ActionContactFactory.create(action=ActionFactory.create(plan=plan_with_pages))
+    person = contact.person
+    path = _edit_path(person)
+    data = _post_data(admin_client.get(path).context['form'])
+    assert 'form_plan' in admin_client.get(path).content.decode()
+    data['form_plan'] = other_plan.pk
+    data['contact_for_actions_unordered'] = []
+    response = admin_client.post(path, data)
+    assert response.status_code == 200
+    assert response.context['form'].non_field_errors()
+    assert ActionContactPerson.objects.filter(pk=contact.pk).exists()
+
+
+def test_person_form_rejects_adding_an_action_of_another_plan(admin_client, plan_with_pages):
+    other_action = ActionFactory.create(plan=PlanFactory.create())
+    add_path, data = _creation_data(admin_client, plan_with_pages)
+    data['contact_for_actions_unordered'] = [other_action.pk]
+    response = admin_client.post(add_path, data)
+    assert response.status_code == 200
+    assert 'contact_for_actions_unordered' in response.context['form'].errors
+    assert not ActionContactPerson.objects.filter(action=other_action).exists()
+
+
+def test_person_form_leaves_contact_persons_of_other_plans_alone(admin_client, plan_with_pages):
+    person = _person(plan_with_pages)
+    elsewhere = ActionContactFactory.create(
+        action=ActionFactory.create(plan=PlanFactory.create()), person=person, role=ActionContactPerson.Role.EDITOR
+    )
+    here = ActionContactFactory.create(action=ActionFactory.create(plan=plan_with_pages), person=person)
+    path = _edit_path(person)
+    form = admin_client.get(path).context['form']
+    # The form shows only the active plan's actions, so the other plan's ones can't seem to be removable
+    assert list(form.fields['contact_for_actions_unordered'].queryset) == [here.action]
+    assert list(form.initial['contact_for_actions_unordered']) == [here.action.pk]
+    data = _post_data(form)
+    data['contact_for_actions_unordered'] = []
+    assert admin_client.post(path, data).status_code == 302
+    assert not ActionContactPerson.objects.filter(pk=here.pk).exists()
+    elsewhere.refresh_from_db()
+    assert elsewhere.role == ActionContactPerson.Role.EDITOR
+
+
 def test_editing_saves_organization_plan_admins(admin_client, plan_with_pages):
     person = _contact_person(plan_with_pages)
     path = _edit_path(person)
@@ -268,15 +400,22 @@ def test_contact_person_edits_themselves_with_the_basic_form(client, plan_with_p
     assert client.get(_edit_path(_person(plan_with_pages))).status_code == 302
 
 
-@pytest.mark.parametrize(
-    ('role', 'can_create'), [(ActionContactPerson.Role.MODERATOR, True), (ActionContactPerson.Role.EDITOR, False)]
-)
-def test_contact_person_creates_people_unless_an_editor(client, plan_with_pages, role, can_create):
+@pytest.mark.parametrize('has_roles', [True, False])
+@pytest.mark.parametrize('role', [ActionContactPerson.Role.MODERATOR, ActionContactPerson.Role.EDITOR])
+def test_contact_person_cannot_create_people(client, plan_with_pages, has_roles, role):
     ClientPlanFactory.create(plan=plan_with_pages)
+    plan_with_pages.features.has_action_contact_person_roles = has_roles
+    plan_with_pages.features.save()
     contact = _contact_person(plan_with_pages, role=role)
     assert contact.user is not None
     client.force_login(contact.user)
-    assert (_add_path(client.get(PEOPLE_PATH).content) is not None) is can_create
+    response = client.get(PEOPLE_PATH)
+    assert response.status_code == 200
+    assert _add_path(response.content) is None
+
+
+def test_plan_admin_can_create_people(admin_client, plan_with_pages):
+    assert _add_path(admin_client.get(PEOPLE_PATH).content) is not None
 
 
 def test_deactivate_page_lists_linked_objects(admin_client, plan_with_pages):
@@ -346,6 +485,34 @@ def test_person_chooser_searches_own_plan_people_by_full_name(admin_client, plan
     assert f'/admin/snippets/choose/people/person/chosen/{match.pk}/' in content
     assert f'/chosen/{other.pk}/' not in content
     assert f'/chosen/{other_plan.pk}/' not in content
+
+
+@pytest.mark.parametrize('chooser', ['person_chooser', 'task_person_chooser'])
+@pytest.mark.parametrize('is_plan_admin', [True, False])
+def test_person_chooser_lets_only_plan_admins_create_people(client, plan_with_pages, chooser, is_plan_admin):
+    ClientPlanFactory.create(plan=plan_with_pages)
+    # Roles on, so the moderator would be the most privileged contact person
+    plan_with_pages.features.has_action_contact_person_roles = True
+    plan_with_pages.features.save()
+    contact = _contact_person(plan_with_pages, role=ActionContactPerson.Role.MODERATOR)
+    if is_plan_admin:
+        plan_with_pages.general_admins.add(contact)
+    assert contact.user is not None
+    client.force_login(contact.user)
+    url = reverse(f'{chooser}:choose')
+
+    assert ('-create-form' in client.get(url).content.decode()) is is_plan_admin
+    response = client.post(
+        url,
+        {
+            'person-chooser-create-form-first_name': 'Grace',
+            'person-chooser-create-form-last_name': 'Hopper',
+            'person-chooser-create-form-email': 'grace@example.com',
+            'person-chooser-create-form-organization': plan_with_pages.organization.pk,
+        },
+    )
+    assert response.status_code in (200, 302)
+    assert Person.objects.filter(email='grace@example.com').exists() is is_plan_admin
 
 
 def test_resetting_a_password(admin_client, plan_with_pages):
