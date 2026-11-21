@@ -76,6 +76,7 @@ env = environ.FileAwareEnv(
     SINGLE_TENANT_SPECIFIC_ENTRA_CLIENT_SECRET=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
+    ELASTICSEARCH_INDEX_PREFIX=(str, ''),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
@@ -183,6 +184,7 @@ if 'KEY_PREFIX' not in CACHES['default']:
     CACHES['default']['KEY_PREFIX'] = PROJECT_NAME
 
 ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
+ELASTICSEARCH_INDEX_PREFIX = env('ELASTICSEARCH_INDEX_PREFIX')
 
 SECRET_KEY = env('SECRET_KEY')
 SECRET_KEY_FALLBACKS = cast('list[str]', env('SECRET_KEY_FALLBACKS'))
@@ -900,7 +902,7 @@ if ELASTICSEARCH_URL:
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
             'BACKEND': 'search.backends',
             'URLS': [ELASTICSEARCH_URL],
-            'INDEX_PREFIX': 'watch-%s_' % lang,
+            'INDEX_PREFIX': f'{ELASTICSEARCH_INDEX_PREFIX}watch-{lang}_',
             'TIMEOUT': 10,
             'LANGUAGE_CODE': lang,
             'INDEX_SETTINGS': {
