@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, Unpack
 
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
@@ -92,7 +93,26 @@ class PlanScopedModelLogEntryManager(
         return retval
 
     def viewable_by_user(self, user: User):  # type: ignore[override]
-        return super().viewable_by_user(user).filter(plan__isnull=False, plan__in=user.get_adminable_plans())
+        # Wagtail's implementation caches the content types the user may see on the user object, under a
+        # name that all log models share, computed from the entries of whichever log model asks first. The
+        # registry keeps the log models in a set, so in some processes that is `ModelLogEntry`, and entries
+        # of content types that only occur here are hidden. Hence the separate cache.
+        qs = self.all() if user.is_superuser else self.filter(content_type_id__in=self._allowed_content_type_ids(user))
+        return qs.filter(plan__isnull=False, plan__in=user.get_adminable_plans())
+
+    def _allowed_content_type_ids(self, user: User) -> set[int]:
+        cached: set[int] | None = getattr(user, '_plan_scoped_log_allowed_content_type_ids', None)
+        if cached is not None:
+            return cached
+        used_content_type_ids = self.values_list('content_type_id', flat=True).distinct()
+        permissions = Permission.objects.filter(content_type_id__in=used_content_type_ids).select_related('content_type')
+        allowed = {
+            permission.content_type_id
+            for permission in permissions
+            if user.has_perm(f'{permission.content_type.app_label}.{permission.codename}')
+        }
+        user._plan_scoped_log_allowed_content_type_ids = allowed  # type: ignore[attr-defined]
+        return allowed
 
     def for_instance(self, instance: PlanScopedModel):
         return self.filter(
