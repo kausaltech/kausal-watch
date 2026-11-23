@@ -20,6 +20,7 @@ from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
 
 from kausal_common.asgi.middleware import HTTPMiddleware, WebSocketMiddleware
+from kausal_common.sentry.startup import server_startup_span
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,8 +32,6 @@ if TYPE_CHECKING:
     from mcp_server.auth import MCPAuthMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
-
-django_asgi_app = get_asgi_application()
 
 
 class AuthGraphQLProtocolTypeRouter(ProtocolTypeRouter):
@@ -97,7 +96,10 @@ class AuthGraphQLProtocolTypeRouter(ProtocolTypeRouter):
         super().__init__(type_routing)
 
 
-application = AuthGraphQLProtocolTypeRouter()
+with server_startup_span('ASGI application startup'):
+    django_asgi_app = get_asgi_application()
+    application = AuthGraphQLProtocolTypeRouter()
+
 if os.getenv('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'):
     from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
     from opentelemetry.trace import NoOpTracerProvider

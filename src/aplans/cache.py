@@ -360,7 +360,7 @@ class WatchObjectCache:
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)
         if plan_cache is None:
-            with sentry_sdk.start_span(op='cache.fetch', name='init plan cache'):
+            with sentry_sdk.start_span(name='init plan cache', attributes={'sentry.op': 'cache.fetch'}):
                 plan = PlanSpecificCache.fetch(plan_id)
                 plan_cache = PlanSpecificCache(plan)
             self.plan_caches[plan_id] = plan_cache

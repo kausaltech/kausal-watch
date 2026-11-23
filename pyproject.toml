@@ -125,7 +125,7 @@ dependencies = [
   "requests",
   "rich",
   "s3cmd",
-  "sentry-sdk[opentelemetry]",
+  "sentry-sdk",
   "setuptools<80",
   "social-auth-app-django",
   "starlette",
