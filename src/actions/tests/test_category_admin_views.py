@@ -277,17 +277,17 @@ def test_editing_category_offers_change_log_message(admin_client, plan_with_page
 
     add_path = response['Location']
     message_page = admin_client.get(add_path)
-    assert message_page.context['skip_url'] == CATEGORIES_PATH
+    assert message_page.context['skip_url'] == _categories_path(category_type)
     response = admin_client.post(add_path, {'category': category.pk, 'content': 'Renamed'})
     assert response.status_code == 302
-    assert response['Location'] == CATEGORIES_PATH
+    assert response['Location'] == _categories_path(category_type)
     message = CategoryChangeLogMessage.objects.get(category=category)
     assert message.content == 'Renamed'
     edit_path = f'/admin/snippets/actions/categorychangelogmessage/edit/{message.pk}/'
     data = post_data(admin_client.get(edit_path).context['form'])
     response = admin_client.post(edit_path, data)
     assert response.status_code == 302
-    assert response['Location'] == f'{CATEGORIES_PATH}edit/{category.pk}/'
+    assert response['Location'] == f'{CATEGORIES_PATH}edit/{category.pk}/?category_type={category_type.pk}'
 
 
 def test_editing_category_saves_attributes(admin_client, category_type):

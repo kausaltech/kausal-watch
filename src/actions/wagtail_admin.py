@@ -95,7 +95,7 @@ from . import (
     category_admin,  # noqa: F401
     pledge_admin,  # noqa: F401
 )
-from .category_admin import PanelFormMixin
+from .category_admin import PanelFormMixin, get_categories_index_url
 from .models import (
     Action,
     ActionChangeLogMessage,
@@ -1761,12 +1761,26 @@ class CategoryChangeLogMessageCreateView(
 ):
     success_url_name = 'wagtailsnippets_actions_category:list'
 
+    # Categories are listed per type, so return to the list of the category's type
+    def get_success_url(self):
+        category = self.get_related_object()
+        if category is None:
+            return super().get_success_url()
+        return get_categories_index_url(category.type)
+
+    def get_skip_url(self) -> str:
+        return self.get_success_url()
+
 
 class CategoryChangeLogMessageEditView(
     CategoryChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category],
 ):
     success_url_name = 'wagtailsnippets_actions_category:edit'
+
+    def get_success_url(self):
+        assert self.object is not None
+        return f'{super().get_success_url()}?category_type={self.object.category.type_id}'
 
 
 class CategoryChangeLogMessageDeleteView(
