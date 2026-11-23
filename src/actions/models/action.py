@@ -1529,10 +1529,9 @@ class Action(
             target_revision = self.live_revision
         if target_revision is None:
             return None
-        try:
-            return ActionChangeLogMessage.objects.get(action=self, revision=target_revision)
-        except ActionChangeLogMessage.DoesNotExist:
-            return None
+        # Without moderation, the message written when creating an action and the one written after the
+        # first edit are both tied to the first revision, so several messages may match.
+        return ActionChangeLogMessage.objects.filter(action=self, revision=target_revision).order_by('-created_at', '-pk').first()
 
     def get_workflow(self) -> Workflow | None:
         return self.plan.features.moderation_workflow

@@ -169,6 +169,23 @@ class TestChangeLogWithoutModeration:
         assert result is not None
         assert result['content'] == message_text
 
+    def test_message_after_first_edit_replaces_creation_message(
+        self,
+        graphql_client_query_data,
+    ):
+        response = self.client.post(get_action_create_url(), data=get_minimal_action_post_data())
+        submit_change_log_message(self.client, response, 'Created the action')
+        action = self.plan.actions.first()
+        assert action is not None
+
+        edit_post_data = get_minimal_action_post_data(identifier=action.identifier, name='Updated Action Name')
+        response = self.client.post(get_action_edit_url(action.pk), data=edit_post_data)
+        submit_change_log_message(self.client, response, 'Updated the action')
+
+        result = query_change_log_message(graphql_client_query_data, action.id)
+        assert result is not None
+        assert result['content'] == 'Updated the action'
+
     def test_no_change_log_message_returns_null(
         self,
         graphql_client_query_data,
