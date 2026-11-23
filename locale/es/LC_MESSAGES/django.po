@@ -3987,6 +3987,14 @@ msgid "Category change history messages"
 msgstr "Páginas de tipo categoría"
 
 #: src/actions/wagtail_hooks.py
+msgid "Overdue"
+msgstr ""
+
+#: src/actions/wagtail_hooks.py
+msgid "Your submissions in moderation"
+msgstr ""
+
+#: src/actions/wagtail_hooks.py
 #, fuzzy
 #| msgid "Unpublished"
 msgid "Plan published"
