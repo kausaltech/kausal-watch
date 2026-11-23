@@ -12,9 +12,11 @@ from django.conf import settings
 from django.contrib import messages as django_messages
 from django.contrib.admin.utils import quote
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, prefetch_related_objects
 from django.forms import BaseModelForm, BaseModelFormSet, ModelChoiceField
+from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
@@ -38,9 +40,15 @@ from wagtail.admin.utils import get_latest_str
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.admin.widgets.button import ListingButton
 from wagtail.log_actions import registry as log_registry
-from wagtail.snippets.models import register_snippet
+from wagtail.models import TaskState
+from wagtail.snippets.models import SnippetAdminURLFinder, register_snippet
 from wagtail.snippets.side_panels import SnippetStatusSidePanel
-from wagtail.snippets.views.snippets import UnpublishView, WorkflowHistoryDetailView, WorkflowHistoryView
+from wagtail.snippets.views.snippets import (
+    UnpublishView,
+    WorkflowActionView,
+    WorkflowHistoryDetailView,
+    WorkflowHistoryView,
+)
 
 from dal import autocomplete, forward as dal_forward
 
@@ -55,6 +63,7 @@ from actions.chooser import ActionChooser
 from actions.models.action import _renormalize_pks_for_unique_constraint
 from actions.models.plan import Plan
 from admin_site.field_customization import collect_customizable_field_names, register_customizable_fields
+from admin_site.mixins import OfferPlanSwitchMixin
 from admin_site.models import BuiltInFieldCustomization
 from admin_site.utils import FieldLabelRenderer, admin_req
 from admin_site.viewsets import (
@@ -1201,7 +1210,18 @@ class ActionWorkflowHistoryDetailView(InstancePermissionCheckedMixin, WorkflowHi
     pass
 
 
-class ActionRevisionsCompareView(WatchRevisionsCompareView[Action]):
+class ActionAdminURLFinder(SnippetAdminURLFinder):
+    """Link to actions in all of the user's plans; their pages switch to the action's plan first."""
+
+    def get_edit_url(self, instance):
+        if self.user is not None:
+            policy = cast('ActionPermissionPolicy', Action.permission_policy())
+            if not policy.user_has_permission_in_own_plan(user_or_bust(self.user), 'change', instance):
+                return None
+        return self.construct_edit_url(instance)
+
+
+class ActionRevisionsCompareView(OfferPlanSwitchMixin, WatchRevisionsCompareView[Action]):
     def get_edit_handler(self):
         with ctx_instance.activate(self.object):
             return _get_action_viewset().build_edit_handler(instance_being_edited=self.object).bind_to_model(Action)
@@ -1214,13 +1234,38 @@ class ActionRevisionsCompareView(WatchRevisionsCompareView[Action]):
             return response
 
 
+class ActionWorkflowActionView(WorkflowActionView):
+    """
+    Approve or request changes from the front page's moderation panel.
+
+    Wagtail checks the user's rights on the action in the URL, but acts on the task state in the URL,
+    so the task state must belong to that action. Unlike the other action views, it also acts on actions
+    outside the active plan, as the front page lists the reviews of all the user's plans. Wagtail's group
+    approval tasks let their group's members act regardless of plan, so the user must also be able to edit
+    the action, as on its edit page.
+    """
+
+    def get_task_state(self):
+        policy = cast('ActionPermissionPolicy', Action.permission_policy())
+        if not policy.user_has_permission_in_own_plan(user_or_bust(self.request.user), 'change', self.object):
+            raise PermissionDenied
+        task_state = super().get_task_state()
+        workflow_state = task_state.workflow_state
+        if (
+            task_state.status != TaskState.STATUS_IN_PROGRESS
+            or workflow_state.base_content_type_id != ContentType.objects.get_for_model(Action).pk
+            or workflow_state.object_id != str(self.object.pk)
+        ):
+            raise Http404
+        return task_state
+
+
 # Views of Wagtail's snippet viewset that are not offered for actions
 DISABLED_URL_NAMES = frozenset({
     'lock',
     'unlock',
     'revisions_revert',
     'revisions_unschedule',
-    'workflow_action',
 })
 
 
@@ -1242,8 +1287,15 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
     history_view_class = ActionHistoryView
     revisions_compare_view_class = ActionRevisionsCompareView
     workflow_history_view_class = ActionWorkflowHistoryView
+    workflow_action_view_class = ActionWorkflowActionView
     workflow_history_detail_view_class = ActionWorkflowHistoryDetailView
     bulk_approve_view_class = BulkApproveView
+
+    @property
+    def url_finder_class(self):
+        return type(
+            'ActionAdminURLFinder', (ActionAdminURLFinder,), {'model': Action, 'edit_url_name': self.get_url_name('edit')}
+        )
 
     # The form is built per request in `build_edit_handler()`; this one only serves the registration
     edit_handler = ObjectList([FieldPanel('name')], base_form_class=ActionAdminForm)

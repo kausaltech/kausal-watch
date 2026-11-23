@@ -3776,6 +3776,14 @@ msgid "Category change history messages"
 msgstr "Massnahmenzeitpläne"
 
 #: src/actions/wagtail_hooks.py
+msgid "Overdue"
+msgstr ""
+
+#: src/actions/wagtail_hooks.py
+msgid "Your submissions in moderation"
+msgstr ""
+
+#: src/actions/wagtail_hooks.py
 msgid "Plan published"
 msgstr ""
 

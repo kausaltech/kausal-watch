@@ -88,6 +88,7 @@ if typing.TYPE_CHECKING:
     from wagtail.models import (
         SerializableData,
     )
+    from wagtail.models.workflows import TaskStateQuerySet
 
     from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany, RevManyQS
     from kausal_common.users import UserOrAnon
@@ -2667,3 +2668,27 @@ class ActionModeratorApprovalTask(Task):
                 ('reject', _('Request changes'), True),
             ]
         return []
+
+    def get_task_states_user_can_moderate(self, user: User, **kwargs) -> TaskStateQuerySet[TaskState]:
+        """
+        Return the in-progress task states of the actions the user may approve, in all of the user's plans.
+
+        Follows `User.can_approve_action()`, except that a superuser gets only the active plan and the plans they
+        administer or moderate in, not every plan: Wagtail's front page panel renders a row for each of these.
+        """
+        approvable = Q(pk__in=[])
+        person = user.get_corresponding_person()
+        if person is not None:
+            moderator = ActionContactPerson.objects.filter(
+                ActionContactPerson.moderators_q(), action=OuterRef('pk'), person=person
+            )
+            approvable = Q(plan__in=person.general_admin_plans.all()) | Exists(moderator)
+        if user.is_superuser and (active_plan := user.get_active_admin_plan(required=False)) is not None:
+            approvable |= Q(plan=active_plan)
+        actions = Action.objects.filter(approvable)
+        return TaskState.objects.filter(
+            task=self,
+            status=TaskState.STATUS_IN_PROGRESS,
+            workflow_state__base_content_type=ContentType.objects.get_for_model(Action),
+            workflow_state__object_id__in=actions.annotate(pk_str=Cast('pk', models.CharField())).values('pk_str'),
+        )
