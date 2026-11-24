@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-24 12:47+0200\n"
+"POT-Creation-Date: 2026-11-24 12:57+0200\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -4729,6 +4729,10 @@ msgstr ""
 #| msgid "Edit this quantity"
 msgid "Edit this item"
 msgstr "Rediģēt šo daudzumu"
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
+msgstr ""
 
 #: src/audit_logging/views.py
 #, fuzzy

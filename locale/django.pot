@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-24 12:47+0200\n"
+"POT-Creation-Date: 2026-11-24 12:57+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4263,6 +4263,10 @@ msgstr ""
 
 #: src/audit_logging/templates/site_history_results.html
 msgid "Edit this item"
+msgstr ""
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
 msgstr ""
 
 #: src/audit_logging/views.py

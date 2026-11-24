@@ -34,6 +34,9 @@
                         {% else %}
                             {{ entry.label }}
                         {% endif %}
+                        {% if entry.change_log_message_content %}
+                            <div class="w-help-text" title="{{ entry.change_log_message_content }}">{% if entry.change_log_message_content_is_current %}{% trans "Current text:" %} {% endif %}{{ entry.change_log_message_content|truncatechars:200 }}</div>
+                        {% endif %}
                     </td>
                     <td>
                         {{ entry.plan }}

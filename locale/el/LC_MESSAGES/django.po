@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-24 12:47+0200\n"
+"POT-Creation-Date: 2026-11-24 12:57+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -4677,6 +4677,10 @@ msgstr ""
 #| msgid "Edit this quantity"
 msgid "Edit this item"
 msgstr "Επεξεργασία αυτής της ποσότητας"
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
+msgstr ""
 
 #: src/audit_logging/views.py
 #, fuzzy

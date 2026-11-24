@@ -13,6 +13,7 @@ from wagtail.models.audit_log import BaseLogEntry, BaseLogEntryManager, LogEntry
 
 from kausal_common.users import user_or_none
 
+from admin_site.models import BaseChangeLogMessage
 from pages.models import AplansPage
 from users.models import User
 
@@ -26,6 +27,9 @@ if TYPE_CHECKING:
     from aplans.utils import IndirectPlanRelatedModel, PlanRelatedModel
 
     from actions.models import Plan
+
+# Key in a log entry's `data` that holds the text of the change history message the entry is about
+CHANGE_LOG_MESSAGE_CONTENT_KEY = 'change_log_message_content'
 
 type PlanScopedPageModel = AplansPage
 type PlanScopedModel = PlanRelatedModel | IndirectPlanRelatedModel
@@ -69,6 +73,9 @@ class PlanScopedModelLogEntryManager(
             raise ValueError('Attempted to log an action for object %r with empty primary key' % (instance,))
 
         kwargs['data'] = kwargs.get('data') or {}
+        if isinstance(instance, BaseChangeLogMessage):
+            # Keep the text as it was when logged, since the message may be edited or deleted later
+            kwargs['data'] = {**kwargs['data'], CHANGE_LOG_MESSAGE_CONTENT_KEY: instance.content}
         title = kwargs.pop('title', None)
         if not title:
             title = self.get_instance_title(instance)
