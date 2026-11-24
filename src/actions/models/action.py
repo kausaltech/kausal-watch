@@ -1517,21 +1517,31 @@ class Action(
             cp.person = cp.person.get_redacted_copy(plan)
         return visible_contact_persons
 
-    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
+    def get_public_change_log_revision_id(self) -> int | None:
+        """Return the ID of the revision that the change history message of the live version is tied to."""
         if not self.live_revision:
             return None
         # When publishing, Wagtail creates a new revision, but the previous revision's id
         # is stored in the live revision. Currently the change history message is always
         # connected to that previous version, pre-publishing
-        target_revision = self.live_revision.content['latest_revision']
-        if target_revision is None and self.get_workflow() is None:
+        target_revision_id: int | None = self.live_revision.content['latest_revision']
+        if target_revision_id is None and self.get_workflow() is None:
             # For newly created actions there only exists one revision, the live one
-            target_revision = self.live_revision
-        if target_revision is None:
+            target_revision_id = self.live_revision.pk
+        return target_revision_id
+
+    def get_public_change_log_message(self) -> BaseChangeLogMessage | None:
+        target_revision_id = self.get_public_change_log_revision_id()
+        if target_revision_id is None:
             return None
         # Without moderation, the message written when creating an action and the one written after the
         # first edit are both tied to the first revision, so several messages may match.
-        return ActionChangeLogMessage.objects.filter(action=self, revision=target_revision).order_by('-created_at', '-pk').first()
+        return (
+            ActionChangeLogMessage.objects
+            .filter(action=self, revision_id=target_revision_id)
+            .order_by('-created_at', '-pk')
+            .first()
+        )
 
     def get_workflow(self) -> Workflow | None:
         return self.plan.features.moderation_workflow

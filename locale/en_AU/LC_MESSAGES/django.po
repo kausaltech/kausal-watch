@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-24 12:47+0200\n"
 "PO-Revision-Date: 2026-09-28 07:54+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: English (Australia) <https://weblate.kausal.tech/projects/watch/django/en_AU/>\n"
@@ -409,6 +409,19 @@ msgid "Dependencies"
 msgstr ""
 
 #: src/actions/action_admin.py
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "To add a change history message, save the action, or submit its changes for moderation."
+msgstr "synchronise with pages"
+
+#: src/actions/action_admin.py src/actions/category_admin.py
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "Change history messages"
+msgstr "synchronise with pages"
+
+#: src/actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
 msgstr ""
@@ -431,6 +444,7 @@ msgstr ""
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Edit"
 msgstr ""
 
@@ -440,6 +454,7 @@ msgid "Edit '%(title)s'"
 msgstr ""
 
 #: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Delete"
 msgstr ""
 
@@ -1039,6 +1054,7 @@ msgstr ""
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
 #: src/reports/blocks/action_content.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Status"
 msgstr ""
 
@@ -4385,6 +4401,7 @@ msgid "Changed by"
 msgstr ""
 
 #: src/audit_logging/templates/site_history_results.html
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Date / Time"
 msgstr ""
 
@@ -7586,6 +7603,34 @@ msgstr "synchronise with pages"
 #: templates/aplans/change_log_message_create.html
 msgid "Skip"
 msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Author"
+msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Message"
+msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Shown on the public site"
+msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Not yet published"
+msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "No change history messages have been written yet."
+msgstr "synchronise with pages"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "synchronize with pages"
+msgid "Add change history message"
+msgstr "synchronise with pages"
 
 #: templates/aplans/panels/choice_option_archive_panel.html
 msgid "Archived"

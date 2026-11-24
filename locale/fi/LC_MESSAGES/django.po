@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-24 12:47+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -411,6 +411,15 @@ msgid "Dependencies"
 msgstr "Riippuvuudet"
 
 #: src/actions/action_admin.py
+msgid "To add a change history message, save the action, or submit its changes for moderation."
+msgstr "Lisätäksesi muutoskuvauksen tallenna toimenpide tai lähetä sen muutokset moderointiin."
+
+#: src/actions/action_admin.py src/actions/category_admin.py
+#: src/indicators/wagtail_admin.py
+msgid "Change history messages"
+msgstr "Muutoskuvaukset"
+
+#: src/actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
 msgstr "Peru valmiiksi merkitseminen raporttia %s varten"
@@ -433,6 +442,7 @@ msgstr "Merkitse tämä toimenpide valmiiksi raporttia %s varten"
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Edit"
 msgstr "Muokkaa"
 
@@ -442,6 +452,7 @@ msgid "Edit '%(title)s'"
 msgstr "Muokkaa kohdetta '%(title)s'"
 
 #: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Delete"
 msgstr "Poista"
 
@@ -1040,6 +1051,7 @@ msgstr "Toteutusvaihe"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
 #: src/reports/blocks/action_content.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Status"
 msgstr "Tila"
 
@@ -4287,6 +4299,7 @@ msgid "Changed by"
 msgstr "Muutoksen tekijä"
 
 #: src/audit_logging/templates/site_history_results.html
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Date / Time"
 msgstr "Päivämäärä / aika"
 
@@ -7446,6 +7459,30 @@ msgstr "Nykyinen muutoskuvaus"
 msgid "Skip"
 msgstr "Ohita"
 
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Author"
+msgstr "Tekijä"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Message"
+msgstr "Kuvaus"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Shown on the public site"
+msgstr "Näkyy julkisella sivustolla"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Not yet published"
+msgstr "Ei vielä julkaistu"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "No change history messages have been written yet."
+msgstr "Muutoskuvauksia ei ole vielä kirjoitettu."
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Add change history message"
+msgstr "Lisää muutoskuvaus"
+
 #: templates/aplans/panels/choice_option_archive_panel.html
 msgid "Archived"
 msgstr "Arkistoitu"
@@ -7677,9 +7714,6 @@ msgstr "Kopioi tunniste"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Ei ole yhteyshenkilö"
-
-#~ msgid "Allow logging in to the public website"
-#~ msgstr "Salli kirjautuminen julkiselle sivustolle"
 
 #~ msgid "Should users be able to have authenticated sessions in the public UI?"
 #~ msgstr "Voivatko käyttäjät kirjautua julkiselle sivustolle?"

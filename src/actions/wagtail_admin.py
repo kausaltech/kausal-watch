@@ -95,6 +95,7 @@ from . import (
     category_admin,  # noqa: F401
     pledge_admin,  # noqa: F401
 )
+from .admin_utils import may_write_change_log_message
 from .category_admin import PanelFormMixin, get_categories_index_url
 from .models import (
     Action,
@@ -1620,6 +1621,10 @@ class ActionChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixi
             return False
         return user_or_bust(self.request.user).can_modify_action(action=related_obj)
 
+    @override
+    def get_related_object_plan(self, related_obj: Action) -> Plan:
+        return related_obj.plan
+
 
 class ActionChangeLogMessageCreateView(
     ActionChangeLogMessageRelatedObjectMixin,
@@ -1644,6 +1649,14 @@ class ActionChangeLogMessageCreateView(
             return related_obj.live_revision
         return None
 
+    def dispatch(self, request, *args, **kwargs):
+        action = self.get_related_object()
+        revision = self.get_revision()
+        user = user_or_bust(request.user)
+        if action is not None and not may_write_change_log_message(user, action, revision.pk if revision else None):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
         revision = self.get_revision()
@@ -1658,14 +1671,25 @@ class ActionChangeLogMessageCreateView(
         return context
 
 
+class ActionChangeLogMessageInstanceMixin(ActionChangeLogMessageRelatedObjectMixin):
+    object: ActionChangeLogMessage
+
+    @override
+    def check_related_object_permission(self, related_obj: Action | None) -> bool:
+        if not super().check_related_object_permission(related_obj):
+            return False
+        assert related_obj is not None
+        return may_write_change_log_message(user_or_bust(self.request.user), related_obj, self.object.revision_id)
+
+
 class ActionChangeLogMessageEditView(
-    ActionChangeLogMessageRelatedObjectMixin, BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]
+    ActionChangeLogMessageInstanceMixin, BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]
 ):
     success_url_name = 'wagtailsnippets_actions_action:edit'
 
 
 class ActionChangeLogMessageDeleteView(
-    ActionChangeLogMessageRelatedObjectMixin, BaseChangeLogMessageDeleteView[ActionChangeLogMessage, Action]
+    ActionChangeLogMessageInstanceMixin, BaseChangeLogMessageDeleteView[ActionChangeLogMessage, Action]
 ):
     pass
 
@@ -1753,6 +1777,10 @@ class CategoryChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMi
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
+
+    @override
+    def get_related_object_plan(self, related_obj: Category) -> Plan:
+        return related_obj.type.plan
 
 
 class CategoryChangeLogMessageCreateView(

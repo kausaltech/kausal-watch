@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
     from actions.models.action import BaseChangeLogMessage
+    from actions.models.plan import Plan
 
 
 class ObjectWithPublicChangeLogMessage(Protocol):
@@ -322,6 +323,10 @@ class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLog
     def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
 
+    def get_related_object_plan(self, _related_obj: RelatedModel) -> Plan | None:
+        """Return the plan the object belongs to, or None if it may belong to several, like an indicator."""
+        return None
+
 
 class BaseChangeLogMessageCreateView[
     M: models.Model,
@@ -357,6 +362,11 @@ class BaseChangeLogMessageCreateView[
     def dispatch(self, request, *args, **kwargs):
         related_obj = self.get_related_object()
         if not self.check_related_object_permission(related_obj):
+            raise PermissionDenied
+        # A message is saved for the active plan, which may have changed since the form was opened
+        assert related_obj is not None
+        related_plan = self.get_related_object_plan(related_obj)
+        if related_plan is not None and related_plan != user_or_bust(request.user).get_active_admin_plan():
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 

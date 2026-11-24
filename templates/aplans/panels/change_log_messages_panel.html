@@ -1,0 +1,51 @@
+{% load i18n wagtailadmin_tags %}
+{% if items %}
+    <table class="listing">
+        <thead>
+            <tr>
+                <th>{% trans "Date / Time" %}</th>
+                <th>{% trans "Author" %}</th>
+                <th>{% trans "Message" %}</th>
+                <th>{% trans "Status" %}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.message.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                    <td>
+                        {% if item.message.created_by %}
+                            {% include "wagtailadmin/shared/user_avatar.html" with user=item.message.created_by username=item.message.created_by.get_full_name %}
+                        {% endif %}
+                    </td>
+                    <td style="white-space: pre-wrap;">{{ item.message.content_i18n }}</td>
+                    <td>
+                        {% if item.is_public %}
+                            <span class="w-status w-status--primary">{% trans "Shown on the public site" %}</span>
+                        {% elif item.is_pending %}
+                            <span class="w-status">{% trans "Not yet published" %}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.edit_url %}
+                            <a href="{{ item.edit_url }}" class="button button-small button-secondary">{% trans "Edit" %}</a>
+                        {% endif %}
+                        {% if item.delete_url %}
+                            <a href="{{ item.delete_url }}" class="button button-small no">{% trans "Delete" %}</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>{% trans "No change history messages have been written yet." %}</p>
+{% endif %}
+{% if add_url %}
+    <p>
+        <a href="{{ add_url }}" class="button bicolor button--icon">{% icon name="plus" wrapped=1 %}{% trans "Add change history message" %}</a>
+    </p>
+{% elif add_unavailable_text %}
+    <p class="help-block help-info">{{ add_unavailable_text }}</p>
+{% endif %}
