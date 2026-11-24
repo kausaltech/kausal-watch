@@ -450,6 +450,7 @@ class TestPublishRights:
         assert not action.live
 
 
+@pytest.mark.usefixtures('moderation_ui')
 class TestModerationStatus:
     def test_side_panel_tells_who_last_published(self, client, action, plan_admin):
         h.post_edit(client, plan_admin, action, 'publish', name='New name')
@@ -820,3 +821,28 @@ class TestComparingCategories:
         [change] = self.changes(client, action, compare_with_live=True)
         assert 'Energy' in change
         assert 'Transport' in change
+
+
+class TestModerationUiSetting:
+    """The moderation UI is hidden unless `ENABLE_ACTION_MODERATION_UI` is set."""
+
+    def test_edit_page_has_no_status_side_panel_by_default(self, client, action, plan_admin):
+        response = h.get_edit_page(client, plan_admin, action)
+
+        assert 'data-side-panel="status"' not in response.content.decode()
+
+    def test_edit_page_does_not_track_who_else_is_editing_by_default(self, client, action, plan_admin):
+        response = h.get_edit_page(client, plan_admin, action)
+
+        assert response.context['editing_sessions'] is None
+
+    @pytest.mark.parametrize('enabled', [False, True], ids=['by_default', 'when_enabled'])
+    def test_history_offers_comparison_only_when_enabled(self, client, settings, action, plan_admin, enabled):
+        settings.ENABLE_ACTION_MODERATION_UI = enabled
+        h.post_edit(client, plan_admin, action, 'publish', name='First name')
+        h.post_edit(client, plan_admin, action, 'publish', name='Second name')
+
+        response = client.get(h.history_url(action))
+
+        assert response.status_code == 200
+        assert (f'/history/{action.pk}/revisions/compare/' in response.content.decode()) is enabled

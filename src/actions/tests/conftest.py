@@ -81,3 +81,9 @@ def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workfl
 @pytest.fixture
 def action_task_list_url(plan):
     return reverse('action-task-list', args=(plan.pk,))
+
+
+@pytest.fixture
+def moderation_ui(settings):
+    """Show the action edit page's status side panel, editing sessions and revision comparison links."""
+    settings.ENABLE_ACTION_MODERATION_UI = True
