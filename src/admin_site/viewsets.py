@@ -424,6 +424,9 @@ class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPu
 
 class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):
     add_to_admin_menu = False
+    # Whether a message may be deleted depends on its object, and for actions on its revision, which the policy of the
+    # bulk action does not check
+    bulk_delete_enabled = False
     icon = 'doc-full'
     page_title = pgettext_lazy('page title', 'Add change history message')
     plan_filter_path: str
