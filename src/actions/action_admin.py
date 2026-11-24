@@ -61,6 +61,7 @@ from admin_site.viewsets import (
     InstancePermissionCheckedMixin,
     WatchCreateView,
     WatchEditView,
+    WatchHistoryView,
     WatchIndexView,
     WatchRevisionsCompareView,
     WatchViewSet,
@@ -898,7 +899,14 @@ class ActionEditView(
             context['user_can_unlock'] = False
         return context
 
+    def get_editing_sessions(self):
+        if not settings.ENABLE_ACTION_MODERATION_UI:
+            return None
+        return super().get_editing_sessions()
+
     def get_side_panels(self):
+        if not settings.ENABLE_ACTION_MODERATION_UI:
+            return MediaContainer()
         side_panels = super().get_side_panels()
         for side_panel in side_panels:
             if isinstance(side_panel, SnippetStatusSidePanel):
@@ -1178,6 +1186,13 @@ class ActionUnpublishView(InstancePermissionCheckedMixin, UnpublishView):
     pass
 
 
+class ActionHistoryView(WatchHistoryView):
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        if not settings.ENABLE_ACTION_MODERATION_UI:
+            self.revisions_compare_url_name = None
+
+
 class ActionWorkflowHistoryView(InstancePermissionCheckedMixin, WorkflowHistoryView):
     pass
 
@@ -1224,6 +1239,7 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
     add_view_class = ActionCreateView
     edit_view_class = ActionEditView
     unpublish_view_class = ActionUnpublishView
+    history_view_class = ActionHistoryView
     revisions_compare_view_class = ActionRevisionsCompareView
     workflow_history_view_class = ActionWorkflowHistoryView
     workflow_history_detail_view_class = ActionWorkflowHistoryDetailView

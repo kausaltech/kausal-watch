@@ -110,6 +110,7 @@ env = environ.FileAwareEnv(
     KAUSAL_PATHS_URL=(str, ''),
     DISABLE_WAGTAIL_EDITING_SESSION_PING=(bool, False),
     ENABLE_MCP_SERVER=(bool, False),
+    ENABLE_ACTION_MODERATION_UI=(bool, False),
     GDAL_LIBRARY_PATH=(str, ''),
     GEOS_LIBRARY_PATH=(str, ''),
     REDIRECT_HOSTNAMES=(list, []),
@@ -532,6 +533,8 @@ else:
         },
     }
 ENABLE_MCP_SERVER = cast('bool', env('ENABLE_MCP_SERVER'))
+# The action edit page's status side panel, editing sessions and revision comparison links
+ENABLE_ACTION_MODERATION_UI = cast('bool', env('ENABLE_ACTION_MODERATION_UI'))
 
 if REDIS_URL and not os.getenv('FASTMCP_DOCKET_URL'):
     os.environ['FASTMCP_DOCKET_URL'] = REDIS_URL

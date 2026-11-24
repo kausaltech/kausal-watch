@@ -309,6 +309,7 @@ def test_save_button_says_draft_only_where_saves_are_drafts(client, moderated, e
     assert save_button_label(client.get(h.edit_url(action))) == edit_label
 
 
+@pytest.mark.usefixtures('moderation_ui')
 @pytest.mark.parametrize('moderated', [False, True])
 def test_edit_page_tracks_who_else_is_editing(client, moderated):
     plan = PlanFactory.create()
