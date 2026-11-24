@@ -211,3 +211,16 @@ def test_indicator_contact_group_syncs_immediately_when_assignment_is_removed(or
 
     assert not user.groups.filter(pk=generic_group.pk).exists()
     assert not user.groups.filter(pk=plan.contact_person_group.pk).exists()
+
+
+@pytest.mark.parametrize('group_name', ['Plan admins', 'Action contact persons', 'Indicator contact persons'])
+def test_migrate_gives_groups_permissions_of_apps_after_actions(group_name):
+    """
+    The groups get permissions of apps that come after `actions` in INSTALLED_APPS.
+
+    Permissions are created app by app during `migrate`, so on a fresh database the groups lacked them when synced too
+    early. This test only shows that on a fresh test database, as in CI.
+    """
+    group = Group.objects.get(name=group_name)
+
+    assert group.permissions.filter(content_type__app_label='audit_logging', codename='view_planscopedmodellogentry').exists()
