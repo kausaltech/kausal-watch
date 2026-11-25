@@ -18,6 +18,7 @@ from django.forms import BaseModelForm, BaseModelFormSet, ModelChoiceField
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import childformset_factory
@@ -1553,6 +1554,10 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
         return MarkActionAsCompleteView.as_view(index_url_name=self.get_url_name('list'), complete=False)
 
     @property
+    def resubmit_action_for_report_view(self):
+        return MarkActionAsCompleteView.as_view(index_url_name=self.get_url_name('list'), resubmit=True)
+
+    @property
     def bulk_approve_in_moderation_view(self):
         return self.bulk_approve_view_class.as_view(model=self.model)
 
@@ -1570,6 +1575,11 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                 self.undo_marking_action_as_complete_view,
                 name='undo_marking_action_as_complete',
             ),
+            path(
+                'resubmit_action_for_report/<str:action_pk>/<str:report_pk>/',
+                self.resubmit_action_for_report_view,
+                name='resubmit_action_for_report',
+            ),
             path('bulk_approve_in_moderation/', self.bulk_approve_in_moderation_view, name='bulk_approve_in_moderation'),
         ]
 
@@ -1582,23 +1592,40 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
             if report.type.only_plan_admins_can_mark_actions_as_complete and not user.is_general_admin_for_plan(report.type.plan):
                 continue
             args = (quote(instance.pk), quote(report.pk))
-            if instance.is_complete_for_report(report):
-                button = ListingButton(
-                    _('Undo submission for %s') % report_label(report),
-                    url=reverse(self.get_url_name('undo_marking_action_as_complete'), args=args),
-                    icon_name='fontawesome-rotate-left',
-                    attrs={'title': _('Undo submitting this action to the report %s') % report_label(report)},
-                )
+            submitted_at = instance.submitted_at_for_report(report)
+            if submitted_at is None:
+                report_buttons = [
+                    ListingButton(
+                        _('Submit for %s') % report_label(report),
+                        url=reverse(self.get_url_name('mark_action_as_complete'), args=args),
+                        icon_name='upload',
+                        attrs={'title': _('Submit this action to the report %s') % report_label(report)},
+                    ),
+                ]
             else:
-                button = ListingButton(
-                    _('Submit for %s') % report_label(report),
-                    url=reverse(self.get_url_name('mark_action_as_complete'), args=args),
-                    icon_name='upload',
-                    attrs={'title': _('Submit this action to the report %s') % report_label(report)},
-                )
-            # The action list's menu puts the reporting items in a section of their own (`AdminButton.section`)
-            button.section = _('Reporting')  # type: ignore[attr-defined]
-            buttons.append(button)
+                submitted_on = date_format(timezone.localtime(submitted_at), 'SHORT_DATE_FORMAT')
+                report_buttons = [
+                    ListingButton(
+                        _('Resubmit for %(report)s (submitted %(date)s)')
+                        % {'report': report_label(report), 'date': submitted_on},
+                        url=reverse(self.get_url_name('resubmit_action_for_report'), args=args),
+                        icon_name='resubmit',
+                        attrs={
+                            'title': _('Replace the submission of this action to the report %s with its current data')
+                            % report_label(report),
+                        },
+                    ),
+                    ListingButton(
+                        _('Undo submission for %s') % report_label(report),
+                        url=reverse(self.get_url_name('undo_marking_action_as_complete'), args=args),
+                        icon_name='fontawesome-rotate-left',
+                        attrs={'title': _('Undo submitting this action to the report %s') % report_label(report)},
+                    ),
+                ]
+            for button in report_buttons:
+                # The action list's menu puts the reporting items in a section of their own (`AdminButton.section`)
+                button.section = _('Reporting')  # type: ignore[attr-defined]
+            buttons.extend(report_buttons)
         return buttons
 
     def get_index_view_buttons(self, user: User, instance: Action, plan: Plan) -> list[ListingButton]:
