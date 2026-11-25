@@ -7,7 +7,7 @@ from grapple.helpers import register_streamfield_block
 
 class ReportTypeChooserBlock(blocks.ChooserBlock):
     class Meta:
-        label = _('Report type')
+        label = _('Report template')
 
     @cached_property
     def target_model(self):
@@ -32,4 +32,4 @@ class ReportTypeFieldChooserBlock(blocks.CharBlock):
     # CharField.__init__(), and set it to autocomplete. Serialization to JSON
     # makes this awkward, though.
     class Meta:
-        label = _('Report type field')
+        label = _('Report template field')

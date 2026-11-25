@@ -106,7 +106,7 @@ class ReportMenuItem(MenuItem):
         self.base_url = reverse('wagtailsnippets_reports_report:list')
         url = f'{self.base_url}?report_type={report_type.id}'
         label = report_type.name
-        super().__init__(label, url, **kwargs)
+        super().__init__(label, url, icon_name='doc-full', **kwargs)
 
     def is_active(self, request):
         report_type = request.GET.get('report_type')
@@ -118,11 +118,20 @@ class ReportMenu(Menu):
         user = user_or_bust(request.user)
         cache = get_admin_cache(request)
         plan = cache.plan
-        items = []
+        items: list[MenuItem] = []
         if user.is_general_admin_for_plan(plan):
             for report_type in plan.report_types.all():
                 item = ReportMenuItem(report_type)
                 items.append(item)
+            items.append(
+                MenuItem(
+                    _('Report templates'),
+                    reverse('wagtailsnippets_reports_reporttype:list'),
+                    icon_name='cog',
+                    # Set it apart from the menu items of the templates above it, if there are any
+                    classname='sidebar-menu-item__link--separated' if items else '',
+                )
+            )
         return items
 
 

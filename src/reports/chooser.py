@@ -32,7 +32,7 @@ class ReportTypeChooserMixin(ChosenFromOfferedObjectsMixin[ReportType], ModelCho
         return objs
 
     def user_can_create(self, user):
-        # Don't let users create report types in the chooser
+        # Don't let users create report templates in the chooser
         return False
 
 
@@ -41,14 +41,14 @@ class ReportTypeChooserViewSet(ModelChooserViewSet):
 
     icon = 'doc-full'
     model = ReportType
-    page_title = _('Choose a report type')
+    page_title = _('Choose a report template')
     per_page = 30
     fields = ['name']
 
 
 class ReportTypeChooser(AdminChooser):
-    choose_one_text = _('Choose a report type')
-    choose_another_text = _('Choose another report type')
+    choose_one_text = _('Choose a report template')
+    choose_another_text = _('Choose another report template')
     model = ReportType
     choose_modal_url_name = 'report_type_chooser:choose'
 
