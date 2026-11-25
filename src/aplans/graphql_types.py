@@ -120,6 +120,10 @@ class AdminButton(graphene.ObjectType[Any]):
     title = graphene.String(required=False)
     target = graphene.String(required=False)
     icon = graphene.String(required=False)
+    section = graphene.String(
+        required=False,
+        description='Heading of the menu section the button belongs to, e.g. "Reporting"; none for the main section.',
+    )
 
 
 class ExportPdfRequest(graphene.ObjectType[Any]):
