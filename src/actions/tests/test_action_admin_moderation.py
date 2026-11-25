@@ -232,7 +232,7 @@ class TestApproving:
         h.post_workflow_action(client, moderator, action, 'approve', {'comment': 'Please check the figures next time'})
 
         assert workflow_statuses(action) == ['approved']
-        emails = [email for email in mailoutbox if editor.email in email.to]
+        emails = [email for email in mailoutbox if editor.email in email.to and 'approved' in email.subject]
         assert len(emails) == 1
         assert 'with a comment' in emails[0].subject
         assert 'Please check the figures next time' in emails[0].body
@@ -242,7 +242,7 @@ class TestApproving:
 
         h.post_workflow_action(client, moderator, action, 'approve')
 
-        emails = [email for email in mailoutbox if editor.email in email.to]
+        emails = [email for email in mailoutbox if editor.email in email.to and 'approved' in email.subject]
         assert len(emails) == 1
         assert 'with a comment' not in emails[0].subject
 

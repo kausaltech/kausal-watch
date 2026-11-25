@@ -22,6 +22,7 @@ from users.perms import create_permissions
 from .mail import (
     ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
     ActionModeratorCancelTaskStateSubmissionEmailNotifier,
+    ActionSubmissionReceivedEmailNotifier,
     WorkflowStateApprovalWithCommentEmailNotifier,
 )
 from .models import (
@@ -72,6 +73,7 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
+action_submission_received_email_notifier = ActionSubmissionReceivedEmailNotifier()
 workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
 
 
@@ -210,6 +212,10 @@ def register_signal_handlers():
     task_submitted.connect(
         action_moderator_approval_task_submission_email_notifier,
         dispatch_uid='action_moderator_approval_task_submitted_email_notification',
+    )
+    task_submitted.connect(
+        action_submission_received_email_notifier,
+        dispatch_uid='action_submission_received_email_notification',
     )
     task_cancelled.connect(
         action_moderator_cancel_task_submission_email_notifier,

@@ -1,0 +1,12 @@
+{% extends 'wagtailadmin/notifications/base.txt' %}
+{% load wagtailadmin_tags i18n %}
+{% base_url_setting default="" as base_url %}
+
+{% block content %}{% latest_str object as title %}{% admin_edit_url object user as edit_url %}
+{% blocktrans trimmed with title=title|safe task=task.name|safe model_name=model_name|safe asvar message %}
+    Your {{ model_name }} "{{ title }}" has been submitted for approval to moderation stage "{{ task }}". You will be notified when it has been reviewed.
+{% endblocktrans %}{{ message|capfirst|safe }}
+{% if edit_url %}
+{% blocktrans trimmed with model_name=model_name|safe asvar edit_message %}
+    You can view the {{ model_name }} here:{% endblocktrans %}{{ edit_message|capfirst|safe }} {{ base_url }}{{ edit_url }}{% endif %}
+{% endblock %}
