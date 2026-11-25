@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-24 12:57+0200\n"
+"POT-Creation-Date: 2026-11-25 12:36+0200\n"
 "PO-Revision-Date: 2026-06-09 11:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -1089,7 +1089,6 @@ msgstr "Implementeringsfase"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
 #: src/reports/blocks/action_content.py
-#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Status"
 msgstr "Status"
 

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-24 12:57+0200\n"
+"POT-Creation-Date: 2026-11-25 12:36+0200\n"
 "PO-Revision-Date: 2026-10-28 14:29+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1051,7 +1051,6 @@ msgstr "Toteutusvaihe"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
 #: src/reports/blocks/action_content.py
-#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Status"
 msgstr "Tila"
 

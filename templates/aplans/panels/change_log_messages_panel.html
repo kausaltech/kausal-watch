@@ -6,33 +6,33 @@
                 <th>{% trans "Date / Time" %}</th>
                 <th>{% trans "Author" %}</th>
                 <th>{% trans "Message" %}</th>
-                <th>{% trans "Status" %}</th>
-                <th></th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
                 <tr>
-                    <td>{{ item.message.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
-                    <td>
+                    <td style="vertical-align: top;">{{ item.message.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+                    <td style="vertical-align: top;">
                         {% if item.message.created_by %}
                             {% include "wagtailadmin/shared/user_avatar.html" with user=item.message.created_by username=item.message.created_by.get_full_name %}
                         {% endif %}
                     </td>
-                    <td style="white-space: pre-wrap;">{{ item.message.content_i18n }}</td>
-                    <td>
+                    <td class="title" style="vertical-align: top;">
                         {% if item.is_public %}
                             <span class="w-status w-status--primary">{% trans "Shown on the public site" %}</span>
                         {% elif item.is_pending %}
                             <span class="w-status">{% trans "Not yet published" %}</span>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if item.edit_url %}
-                            <a href="{{ item.edit_url }}" class="button button-small button-secondary">{% trans "Edit" %}</a>
-                        {% endif %}
-                        {% if item.delete_url %}
-                            <a href="{{ item.delete_url }}" class="button button-small no">{% trans "Delete" %}</a>
+                        <div class="change-log-message-content" style="white-space: pre-wrap;">{{ item.message.content_i18n }}</div>
+                        {% if item.edit_url or item.delete_url %}
+                            <ul class="actions">
+                                {% if item.edit_url %}
+                                    <li><a href="{{ item.edit_url }}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
+                                {% endif %}
+                                {% if item.delete_url %}
+                                    <li><a href="{{ item.delete_url }}" class="button button-small button-secondary no">{% trans "Delete" %}</a></li>
+                                {% endif %}
+                            </ul>
                         {% endif %}
                     </td>
                 </tr>

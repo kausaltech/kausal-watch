@@ -40,7 +40,7 @@ def message_rows(html: str) -> dict[str, str]:
     rows = re.findall(r'<tr>(.*?)</tr>', html, flags=re.DOTALL)
     result = {}
     for row in rows:
-        match = re.search(r'<td style="white-space: pre-wrap;">(.*?)</td>', row, flags=re.DOTALL)
+        match = re.search(r'<div class="change-log-message-content"[^>]*>(.*?)</div>', row, flags=re.DOTALL)
         if match:
             result[match.group(1)] = row
     return result
