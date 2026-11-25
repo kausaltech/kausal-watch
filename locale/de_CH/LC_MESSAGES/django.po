@@ -3367,6 +3367,26 @@ msgstr ""
 msgid "Item %(index)s of %(total)s"
 msgstr ""
 
+#: src/actions/templates/actions/notifications/task_state_submitted.txt
+#, python-format
+msgid "Submitted by %(name)s."
+msgstr ""
+
+#: src/actions/templates/actions/notifications/task_state_submission_received_subject.txt
+#, python-format
+msgid "Your %(model_name)s \"%(title)s\" has been submitted for moderation"
+msgstr ""
+
+#: src/actions/templates/actions/notifications/task_state_submission_received.txt
+#, python-format
+msgid "You can view the %(model_name)s here:"
+msgstr ""
+
+#: src/actions/templates/actions/notifications/task_state_submission_received.txt
+#, python-format
+msgid "Your %(model_name)s \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\". You will be notified when it has been reviewed."
+msgstr ""
+
 #: src/actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
