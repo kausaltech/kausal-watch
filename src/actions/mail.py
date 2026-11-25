@@ -36,6 +36,7 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         # Without a user, the finder skips the permission check; the recipients are not logged in
         context['admin_url_finder'] = AdminURLFinder(None)
         context['model_name'] = content_object._meta.verbose_name
+        context['submitter'] = task_state.revision.user if task_state.revision else task_state.workflow_state.requested_by
         return context
 
     def get_valid_recipients(self, instance, **kwargs):
@@ -102,6 +103,8 @@ class ActionModeratorApprovalTaskStateSubmissionEmailNotifier(BaseActionModerato
     """A notifier to send updates for ActionModeratorApprovalTask submission events."""
 
     notification = 'submitted'
+    # Our templates extend Wagtail's to name the submitter
+    template_directory = 'actions/notifications/'
 
 
 class ActionModeratorCancelTaskStateSubmissionEmailNotifier(BaseActionModeratorApprovalTaskStateEmailNotifier):

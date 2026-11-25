@@ -1,0 +1,6 @@
+{% extends 'wagtailadmin/notifications/task_state_submitted.txt' %}
+{% load i18n %}
+
+{% block content %}{{ block.super }}{% if submitter %}
+{% blocktrans trimmed with name=submitter|safe %}Submitted by {{ name }}.{% endblocktrans %}
+{% endif %}{% endblock %}
