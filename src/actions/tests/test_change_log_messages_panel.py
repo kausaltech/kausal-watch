@@ -83,6 +83,14 @@ def add_message_from_tab(client: Client, action: Action, content: str) -> None:
     assert response.status_code == 302
 
 
+def confirm_deletion(client: Client, delete_url: str):
+    """Open the delete link and submit the confirmation form it shows, as the browser does."""
+    confirmation = client.get(delete_url).content.decode().replace('&amp;', '&')
+    form_action = re.search(r'<form action="([^"]*/delete/[^"]*)" method="POST">', confirmation)
+    assert form_action is not None
+    return client.post(form_action.group(1))
+
+
 class TestActionTab:
     def test_lists_messages_newest_first_with_author(self, client: Client, admin_user: User, action: Action):
         create_message(action, 'First message', admin_user)
@@ -165,7 +173,7 @@ class TestActionTab:
         delete_url = re.search(r'href="([^"]*actionchangelogmessage/delete/[^"]*)"', content)
         assert delete_url is not None
 
-        response = client.post(delete_url.group(1))
+        response = confirm_deletion(client, delete_url.group(1))
 
         assert response.status_code == 302
         assert response['Location'] == edit_url
@@ -429,6 +437,21 @@ def test_indicator_tab_leaves_out_messages_of_other_plans(client: Client, plan: 
 
     assert 'Own plan' in content
     assert 'Other plan' not in content
+
+
+def test_deleting_category_message_returns_to_category(client: Client, plan: Plan, admin_user: User):
+    category = CategoryFactory.create(type=CategoryTypeFactory.create(plan=plan))
+    CategoryChangeLogMessage.objects.create(category=category, plan=plan, content='Category message')
+    client.force_login(admin_user)
+    edit_url = reverse('wagtailsnippets_actions_category:edit', args=[category.pk]) + f'?category_type={category.type.pk}'
+    content = client.get(edit_url).content.decode().replace('&amp;', '&')
+    delete_url = re.search(r'href="([^"]*categorychangelogmessage/delete/[^"]*)"', content)
+    assert delete_url is not None
+
+    response = confirm_deletion(client, delete_url.group(1))
+
+    assert response['Location'] == edit_url
+    assert not CategoryChangeLogMessage.objects.filter(category=category).exists()
 
 
 def test_category_tab_lists_messages(client: Client, plan: Plan, admin_user: User):

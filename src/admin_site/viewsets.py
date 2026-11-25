@@ -10,6 +10,7 @@ from django.db.models.functions import Cast
 from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.functional import cached_property, classproperty
+from django.utils.http import urlencode
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
@@ -17,6 +18,7 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.ui.components import MediaContainer
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn
+from wagtail.admin.utils import get_valid_next_url_from_request
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 from wagtail.log_actions import registry as log_registry
 from wagtail.models import Page
@@ -451,7 +453,13 @@ class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPubl
 class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], SnippetDeleteView
 ):
-    pass
+    def get_delete_url(self):
+        # The confirmation form posts to this URL, so it must keep the page to return to after deleting
+        url = super().get_delete_url()
+        next_url = get_valid_next_url_from_request(self.request)
+        if not next_url:
+            return url
+        return f'{url}?{urlencode({"next": next_url})}'
 
 
 class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):
