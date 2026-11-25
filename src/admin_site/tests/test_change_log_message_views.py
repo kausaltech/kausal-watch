@@ -7,6 +7,7 @@ import pytest
 from actions.models.action import ActionChangeLogMessage
 from actions.tests.factories import ActionFactory, PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
+from audit_logging.models import PlanScopedModelLogEntry
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
@@ -50,3 +51,21 @@ def test_edit_form_has_no_side_panel(client, action, plan_admin):
 
     assert response.status_code == 200
     assert not has_side_panel(response)
+
+
+@pytest.mark.parametrize('model_name', ['actionchangelogmessage', 'indicatorchangelogmessage', 'categorychangelogmessage'])
+def test_message_listing_orders_by_last_update(client, action, plan_admin, model_name):
+    """
+    The listing's default ordering is by the latest log entry, which Wagtail only finds for its own log model.
+
+    Change history messages are logged to `PlanScopedModelLogEntry`, so the listing failed.
+    """
+    message = ActionChangeLogMessage.objects.create(action=action, plan=action.plan, content='Changed', created_by=plan_admin)
+    PlanScopedModelLogEntry.objects.log_action(message, 'wagtail.create', user=plan_admin)
+    client.force_login(plan_admin)
+
+    response = client.get(reverse(f'wagtailsnippets_actions_{model_name}:list'))
+
+    assert response.status_code == 200
+    if model_name == 'actionchangelogmessage':
+        assert response.context['object_list'][0]._updated_at is not None

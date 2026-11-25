@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import models
-from django.db.models import Model, ProtectedError, QuerySet
+from django.db.models import Model, OuterRef, ProtectedError, QuerySet, Subquery
+from django.db.models.functions import Cast
 from django.forms.models import ModelForm
 from django.urls import reverse
 from django.utils.functional import cached_property, classproperty
@@ -16,6 +18,7 @@ from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.ui.components import MediaContainer
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+from wagtail.log_actions import registry as log_registry
 from wagtail.models import Page
 from wagtail.permissions import policy_registry
 from wagtail.snippets.bulk_actions.delete import DeleteBulkAction
@@ -156,6 +159,25 @@ class WatchIndexView[ModelT: Model, QS: QuerySet[Any] = QuerySet[ModelT]](
         if getattr(getattr(self.model, 'snippet_viewset', None), 'bulk_delete_enabled', True):
             return columns
         return [column for column in columns if not isinstance(column, BulkActionsCheckboxColumn)]
+
+    def _annotate_queryset_updated_at(self, queryset: QS) -> QS:
+        # Wagtail only annotates models logged to its own `ModelLogEntry`, but still orders by the annotation, so the
+        # default listing of a plan-related model, which is logged to `PlanScopedModelLogEntry`, failed.
+        from audit_logging.models import PlanScopedModelLogEntry
+
+        # The stubs say it takes an instance, but Wagtail passes the model class, too
+        if log_registry.get_log_model_for_model(queryset.model) is not PlanScopedModelLogEntry:  # type: ignore[arg-type]
+            return super()._annotate_queryset_updated_at(queryset)
+        latest_log = (
+            PlanScopedModelLogEntry.objects
+            .filter(
+                content_type=ContentType.objects.get_for_model(queryset.model, for_concrete_model=False),
+                object_id=Cast(OuterRef('pk'), models.CharField()),
+            )
+            .order_by('-timestamp', '-pk')
+            .values('timestamp')[:1]
+        )
+        return queryset.annotate(_updated_at=Subquery(latest_log))
 
 
 class InstancePermissionCheckedMixin(PermissionCheckedMixin):
