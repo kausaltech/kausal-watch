@@ -2663,7 +2663,7 @@ class ActionModeratorApprovalTask(Task):
         if user.can_approve_action(obj):
             return [
                 ('approve', _('Approve'), False),
-                # ("approve", _("Approve with comment"), True),
+                ('approve', _('Approve with comment'), True),
                 ('reject', _('Request changes'), True),
             ]
         return []
