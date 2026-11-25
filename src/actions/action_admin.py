@@ -82,6 +82,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from people.chooser import TaskPersonChooser
 from people.models import Person
+from reports.utils import report_label
 from reports.views import MarkActionAsCompleteView
 
 from .admin_utils import change_log_message_url_or_none
@@ -1583,16 +1584,20 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
             args = (quote(instance.pk), quote(report.pk))
             if instance.is_complete_for_report(report):
                 button = ListingButton(
-                    _('Undo marking as complete for report %s') % report.name,
+                    _('Undo submission for %s') % report_label(report),
                     url=reverse(self.get_url_name('undo_marking_action_as_complete'), args=args),
-                    attrs={'title': _('Undo marking this action as complete for the report %s') % str(report)},
+                    icon_name='fontawesome-rotate-left',
+                    attrs={'title': _('Undo submitting this action to the report %s') % report_label(report)},
                 )
             else:
                 button = ListingButton(
-                    _('Mark as complete for report %s') % report.name,
+                    _('Submit for %s') % report_label(report),
                     url=reverse(self.get_url_name('mark_action_as_complete'), args=args),
-                    attrs={'title': _('Mark this action as complete for the report %s') % str(report)},
+                    icon_name='upload',
+                    attrs={'title': _('Submit this action to the report %s') % report_label(report)},
                 )
+            # The action list's menu puts the reporting items in a section of their own (`AdminButton.section`)
+            button.section = _('Reporting')  # type: ignore[attr-defined]
             buttons.append(button)
         return buttons
 
