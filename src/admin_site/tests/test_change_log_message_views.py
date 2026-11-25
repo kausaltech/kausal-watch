@@ -69,3 +69,14 @@ def test_message_listing_orders_by_last_update(client, action, plan_admin, model
     assert response.status_code == 200
     if model_name == 'actionchangelogmessage':
         assert response.context['object_list'][0]._updated_at is not None
+
+
+def test_deleting_without_next_returns_to_the_action(client, action, plan_admin):
+    """Deleting from the message's own edit page, which passes no `next`, returns to the message's action."""
+    message = ActionChangeLogMessage.objects.create(action=action, plan=action.plan, content='Changed', created_by=plan_admin)
+    client.force_login(plan_admin)
+
+    response = client.post(reverse('wagtailsnippets_actions_actionchangelogmessage:delete', args=[message.pk]))
+
+    assert response['Location'] == reverse('wagtailsnippets_actions_action:edit', args=[action.pk])
+    assert not ActionChangeLogMessage.objects.filter(pk=message.pk).exists()

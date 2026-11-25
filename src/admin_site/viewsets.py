@@ -340,12 +340,17 @@ class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLog
     request: HttpRequest
     related_field_name: str
     related_model: type[Model]
+    # URL name of the related object's edit view, where editing or deleting a message returns to
+    related_edit_url_name: str
 
     def get_related_object_by_pk(self, pk: str) -> RelatedModel | None:
         return cast('RelatedModel | None', self.related_model._default_manager.filter(pk=pk).first())
 
     def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
+
+    def get_related_object_edit_url(self, related_obj: RelatedModel) -> str:
+        return reverse(self.related_edit_url_name, args=[related_obj.pk])  # type: ignore[attr-defined]
 
     def get_related_object_plan(self, _related_obj: RelatedModel) -> Plan | None:
         """Return the plan the object belongs to, or None if it may belong to several, like an indicator."""
@@ -439,20 +444,24 @@ class ChangeLogMessageInstanceViewMixin[RelatedModel: ObjectWithPublicChangeLogM
 class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], WatchEditView[M]
 ):
-    success_url_name: str
-
     def get_side_panels(self):
         return MediaContainer()
 
     def get_success_url(self):
         assert self.object is not None
-        related_obj = getattr(self.object, self.related_field_name)
-        return reverse(self.success_url_name, args=[related_obj.pk])
+        return self.get_related_object_edit_url(getattr(self.object, self.related_field_name))
 
 
 class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], SnippetDeleteView
 ):
+    def get_success_url(self):
+        # The messages are listed on the edit page of their object, not on their own listing
+        next_url = get_valid_next_url_from_request(self.request)
+        if next_url:
+            return next_url
+        return self.get_related_object_edit_url(getattr(self.object, self.related_field_name))
+
     def get_delete_url(self):
         # The confirmation form posts to this URL, so it must keep the page to return to after deleting
         url = super().get_delete_url()

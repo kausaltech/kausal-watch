@@ -481,3 +481,19 @@ def test_no_message_for_another_plans_action_after_switching_plans(client: Clien
     # Wagtail answers a denied permission with a redirect to the dashboard
     assert response['Location'] == reverse('wagtailadmin_home')
     assert not ActionChangeLogMessage.objects.filter(action=action).exists()
+
+
+def test_deleting_indicator_and_category_messages_without_next_returns_to_their_object(
+    client: Client, plan: Plan, admin_user: User
+):
+    indicator = IndicatorFactory.create(organization=plan.organization, common=None, plans=[plan])
+    indicator_message = IndicatorChangeLogMessage.objects.create(indicator=indicator, plan=plan, content='Indicator')
+    category = CategoryFactory.create(type=CategoryTypeFactory.create(plan=plan))
+    category_message = CategoryChangeLogMessage.objects.create(category=category, plan=plan, content='Category')
+    client.force_login(admin_user)
+
+    response = client.post(reverse('wagtailsnippets_actions_indicatorchangelogmessage:delete', args=[indicator_message.pk]))
+    assert response['Location'] == reverse('wagtailsnippets_indicators_indicator:edit', args=[indicator.pk])
+    response = client.post(reverse('wagtailsnippets_actions_categorychangelogmessage:delete', args=[category_message.pk]))
+    category_edit_url = reverse('wagtailsnippets_actions_category:edit', args=[category.pk])
+    assert response['Location'] == f'{category_edit_url}?category_type={category.type.pk}'

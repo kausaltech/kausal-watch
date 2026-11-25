@@ -82,6 +82,7 @@ class PageChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[
     # Change log messages can be attached to any page, not just `AplansPage` subclasses, so look
     # the related object up through the base `Page` model rather than through `related_model`.
     related_model = Page
+    related_edit_url_name = 'wagtailadmin_pages:edit'
 
     def check_related_object_permission(self, related_obj: Page | None) -> bool:
         if related_obj is None:
@@ -126,7 +127,7 @@ class PageChangeLogMessageEditView(
     PageChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[PageChangeLogMessage, AplansPage],
 ):
-    success_url_name = 'wagtailadmin_pages:edit'
+    pass
 
 
 class PageChangeLogMessageDeleteView(

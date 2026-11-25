@@ -1614,6 +1614,7 @@ register_snippet(PlanViewSet)
 class ActionChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Action]):
     related_field_name = 'action'
     related_model = Action
+    related_edit_url_name = 'wagtailsnippets_actions_action:edit'
 
     @override
     def check_related_object_permission(self, related_obj: Action | None) -> bool:
@@ -1685,7 +1686,7 @@ class ActionChangeLogMessageInstanceMixin(ActionChangeLogMessageRelatedObjectMix
 class ActionChangeLogMessageEditView(
     ActionChangeLogMessageInstanceMixin, BaseChangeLogMessageEditView[ActionChangeLogMessage, Action]
 ):
-    success_url_name = 'wagtailsnippets_actions_action:edit'
+    pass
 
 
 class ActionChangeLogMessageDeleteView(
@@ -1709,6 +1710,7 @@ register_snippet(ActionChangeLogMessageViewSet)
 class IndicatorChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Indicator]):
     related_field_name = 'indicator'
     related_model = Indicator
+    related_edit_url_name = 'wagtailsnippets_indicators_indicator:edit'
 
     @override
     def check_related_object_permission(self, related_obj: Indicator | None) -> bool:
@@ -1746,7 +1748,7 @@ class IndicatorChangeLogMessageEditView(
     IndicatorChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[IndicatorChangeLogMessage, Indicator],
 ):
-    success_url_name = 'wagtailsnippets_indicators_indicator:edit'
+    pass
 
 
 class IndicatorChangeLogMessageDeleteView(
@@ -1771,12 +1773,18 @@ register_snippet(IndicatorChangeLogMessageViewSet)
 class CategoryChangeLogMessageRelatedObjectMixin(ChangeLogMessageRelatedObjectMixin[Category]):
     related_field_name = 'category'
     related_model = Category
+    related_edit_url_name = 'wagtailsnippets_actions_category:edit'
 
     @override
     def check_related_object_permission(self, related_obj: Category | None) -> bool:
         if related_obj is None:
             return False
         return user_or_bust(self.request.user).can_modify_category(category=related_obj)
+
+    @override
+    def get_related_object_edit_url(self, related_obj: Category) -> str:
+        # Categories are listed per type
+        return f'{super().get_related_object_edit_url(related_obj)}?category_type={related_obj.type_id}'
 
     @override
     def get_related_object_plan(self, related_obj: Category) -> Plan:
@@ -1804,11 +1812,7 @@ class CategoryChangeLogMessageEditView(
     CategoryChangeLogMessageRelatedObjectMixin,
     BaseChangeLogMessageEditView[CategoryChangeLogMessage, Category],
 ):
-    success_url_name = 'wagtailsnippets_actions_category:edit'
-
-    def get_success_url(self):
-        assert self.object is not None
-        return f'{super().get_success_url()}?category_type={self.object.category.type_id}'
+    pass
 
 
 class CategoryChangeLogMessageDeleteView(
