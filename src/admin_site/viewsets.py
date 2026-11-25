@@ -8,12 +8,14 @@ from django.db import models
 from django.db.models import Model, OuterRef, ProtectedError, QuerySet, Subquery
 from django.db.models.functions import Cast
 from django.forms.models import ModelForm
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import cached_property, classproperty
 from django.utils.http import urlencode
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
+from wagtail.admin.admin_url_finder import AdminURLFinder
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.ui.components import MediaContainer
@@ -52,9 +54,10 @@ from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from django.http import HttpRequest
+    from wagtail.admin.views.generic.base import BreadcrumbItem
 
     from actions.models.action import BaseChangeLogMessage
     from actions.models.plan import Plan
@@ -329,6 +332,23 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
         return super().get_form_class(for_update)
 
 
+def replace_index_breadcrumb(
+    items: Sequence[BreadcrumbItem], index_url: str, related_obj: object | None, related_url: str | None
+) -> list[BreadcrumbItem]:
+    """
+    Replace the breadcrumb of a change log message listing with the object the message is about.
+
+    The messages are listed on the edit page of their object, so the listing is not offered.
+    """
+    result: list[BreadcrumbItem] = []
+    for item in items:
+        if item['url'] != index_url:
+            result.append(item)
+        elif related_obj is not None and related_url:
+            result.append({'url': related_url, 'label': str(related_obj)})
+    return result
+
+
 class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLogMessage]:
     """
     Tie a change log message view to the object the message is about.
@@ -399,6 +419,11 @@ class BaseChangeLogMessageCreateView[
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get_breadcrumbs_items(self):
+        related_obj = self.get_related_object()
+        related_url = self.get_related_object_edit_url(related_obj) if related_obj is not None else None
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
+
     def get_page_subtitle(self):
         related_obj = self.get_related_object()
         if related_obj is not None:
@@ -451,6 +476,11 @@ class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPubl
         assert self.object is not None
         return self.get_related_object_edit_url(getattr(self.object, self.related_field_name))
 
+    def get_breadcrumbs_items(self):
+        related_obj = getattr(self.object, self.related_field_name)
+        related_url = self.get_related_object_edit_url(related_obj)
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
+
 
 class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], SnippetDeleteView
@@ -471,6 +501,20 @@ class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPu
         return f'{url}?{urlencode({"next": next_url})}'
 
 
+class ChangeLogMessageIndexView[ModelT: Model](WatchIndexView[ModelT]):
+    """Send visitors of a change log message listing to the dashboard; messages are listed on their object's edit page."""
+
+    def dispatch(self, request, *args, **kwargs):
+        return redirect('wagtailadmin_home')
+
+
+class ChangeLogMessageHistoryView(WatchHistoryView):
+    def get_breadcrumbs_items(self):
+        related_obj = self.object.get_instance()
+        related_url = AdminURLFinder(self.request.user).get_edit_url(related_obj)
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
+
+
 class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):
     add_to_admin_menu = False
     # Whether a message may be deleted depends on its object, and for actions on its revision, which the policy of the
@@ -480,6 +524,8 @@ class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = Wagta
     page_title = pgettext_lazy('page title', 'Add change history message')
     plan_filter_path: str
     create_template_name = 'aplans/change_log_message_create.html'
+    index_view_class = ChangeLogMessageIndexView
+    history_view_class = ChangeLogMessageHistoryView
 
     panels = [
         FieldPanel('content'),
