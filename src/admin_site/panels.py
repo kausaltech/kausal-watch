@@ -45,6 +45,7 @@ class ChangeLogMessagesPanel(Panel):
         *args,
         add_unavailable_text: StrOrPromise | None = None,
         get_message_check: Callable[[Any, User], Callable[[Any], bool]] | None = None,
+        get_notice: Callable[[Any, User], StrOrPromise | None] | None = None,
         **kwargs,
     ):
         """
@@ -52,11 +53,13 @@ class ChangeLogMessagesPanel(Panel):
 
         `get_add_url(obj, user)` returns the URL for adding a message to the object, or None if the user can't add one
         now, in which case the panel shows `add_unavailable_text`. `get_message_check(obj, user)` returns a check
-        whether the user may edit and delete a message, on top of the permission to edit the object.
+        whether the user may edit and delete a message, on top of the permission to edit the object. `get_notice(obj,
+        user)` may return a text to show instead of `add_unavailable_text`, e.g. why the user can't change anything.
         """
         self.get_add_url = get_add_url
         self.add_unavailable_text = add_unavailable_text
         self.get_message_check = get_message_check
+        self.get_notice = get_notice
         super().__init__(*args, **kwargs)
 
     def clone_kwargs(self):
@@ -64,6 +67,7 @@ class ChangeLogMessagesPanel(Panel):
         kwargs['get_add_url'] = self.get_add_url
         kwargs['add_unavailable_text'] = self.add_unavailable_text
         kwargs['get_message_check'] = self.get_message_check
+        kwargs['get_notice'] = self.get_notice
         return kwargs
 
     class BoundPanel(Panel.BoundPanel[Any, Any, Any]):
@@ -144,5 +148,6 @@ class ChangeLogMessagesPanel(Panel):
             context = super().get_context_data(parent_context)
             context['items'] = self.get_items()
             context['add_url'] = self.panel.get_add_url(self.saved_object, user_or_bust(self.request.user))
-            context['add_unavailable_text'] = self.panel.add_unavailable_text
+            notice = self.panel.get_notice(self.saved_object, user_or_bust(self.request.user)) if self.panel.get_notice else None
+            context['add_unavailable_text'] = notice or self.panel.add_unavailable_text
             return context

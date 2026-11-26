@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-25 12:36+0200\n"
+"POT-Creation-Date: 2026-11-26 11:55+0200\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -391,6 +391,10 @@ msgstr "Organización primaria"
 #: src/actions/action_admin.py
 msgid "Last updated"
 msgstr "Última actualización"
+
+#: src/actions/action_admin.py
+msgid "While the action is locked for you, you can't add, edit or delete its change history messages."
+msgstr "Mientras la acción esté bloqueada para usted, no puede añadir, editar ni eliminar sus mensajes del historial de cambios."
 
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py

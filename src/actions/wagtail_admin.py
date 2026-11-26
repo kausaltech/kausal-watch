@@ -95,7 +95,7 @@ from . import (
     category_admin,  # noqa: F401
     pledge_admin,  # noqa: F401
 )
-from .admin_utils import may_write_change_log_message
+from .admin_utils import may_change_change_log_message, may_write_change_log_message
 from .category_admin import PanelFormMixin, get_categories_index_url
 from .models import (
     Action,
@@ -1680,7 +1680,7 @@ class ActionChangeLogMessageInstanceMixin(ActionChangeLogMessageRelatedObjectMix
         if not super().check_related_object_permission(related_obj):
             return False
         assert related_obj is not None
-        return may_write_change_log_message(user_or_bust(self.request.user), related_obj, self.object.revision_id)
+        return may_change_change_log_message(user_or_bust(self.request.user), related_obj, self.object.revision_id)
 
 
 class ActionChangeLogMessageEditView(

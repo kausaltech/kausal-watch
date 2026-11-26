@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import re
 from typing import TYPE_CHECKING
 
@@ -32,6 +33,7 @@ pytestmark = pytest.mark.django_db
 TAB_HEADING = 'Change history messages'
 PUBLIC_BADGE = 'Shown on the public site'
 PENDING_BADGE = 'Not yet published'
+LOCKED_TEXT = "While the action is locked for you, you can't add, edit or delete its change history messages."
 ADD_UNAVAILABLE_TEXT = 'To add a change history message, save the action, or submit its changes for moderation.'
 
 
@@ -328,18 +330,45 @@ class TestActionStatusWithModeration:
         assert client.post(delete_url)['Location'] == denied
         assert list(ActionChangeLogMessage.objects.filter(action=action).values_list('content', flat=True)) == ['Approved']
 
-    def test_editor_can_write_message_for_submitted_changes(self, client: Client, plan: Plan):
+    def test_editor_cannot_change_messages_while_action_awaits_moderation(self, client: Client, plan: Plan):
         plan.features.has_action_contact_person_roles = True
         plan.features.save()
         action = self.publish_with_message(client, plan, 'Approved')
         self.submit(client, action, 'Submitted again')
+        action.refresh_from_db()
+        submitted = ActionChangeLogMessage.objects.get(action=action, content='Submitted again')
         client.force_login(make_contact_person(action))
 
-        add_message_from_tab(client, action, 'From editor')
+        # The action is locked for the editor, who is not a reviewer, so the tab offers nothing to change
+        content = html.unescape(client.get(get_action_edit_url(action.pk)).content.decode())
+        assert LOCKED_TEXT in content
+        assert 'actionchangelogmessage/add/' not in content
+        rows = message_rows(content)
+        assert 'actionchangelogmessage/edit/' not in rows['Approved'] + rows['Submitted again']
 
-        rows = message_rows(client.get(get_action_edit_url(action.pk)).content.decode())
-        assert PENDING_BADGE in rows['From editor']
-        assert 'actionchangelogmessage/edit/' in rows['From editor']
+        # Nor can the editor change the submitted message, which the reviewers are about to approve
+        edit_url = reverse('wagtailsnippets_actions_actionchangelogmessage:edit', args=[submitted.pk])
+        assert client.post(edit_url, data={'content': 'Changed'})['Location'] == reverse('wagtailadmin_home')
+        submitted.refresh_from_db()
+        assert submitted.content == 'Submitted again'
+
+    def test_editor_can_add_message_after_submitting(self, client: Client, plan: Plan):
+        """Submitting changes leads to adding a message, which must work although the action is now locked."""
+        plan.features.has_action_contact_person_roles = True
+        plan.features.save()
+        action = self.publish_with_message(client, plan, 'Approved')
+        editor = make_contact_person(action)
+        self.submit(client, action, 'Submitted again')
+        action.refresh_from_db()
+        client.force_login(editor)
+
+        add_url = reverse('wagtailsnippets_actions_actionchangelogmessage:add')
+        data = {'action': action.pk, 'revision': action.latest_revision_id, 'content': 'From editor'}
+        response = client.post(add_url, data=data)
+
+        assert response.status_code == 302
+        assert response['Location'] != reverse('wagtailadmin_home')
+        assert ActionChangeLogMessage.objects.filter(action=action, content='From editor').exists()
 
     def test_query_count_for_editor_does_not_grow_with_messages(self, client: Client, plan: Plan):
         plan.features.has_action_contact_person_roles = True

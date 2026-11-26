@@ -85,7 +85,12 @@ from people.chooser import TaskPersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
-from .admin_utils import change_log_message_url_or_none, get_change_log_message_revision_check, may_write_change_log_message
+from .admin_utils import (
+    change_log_message_url_or_none,
+    get_change_log_message_change_check,
+    is_locked_for_user,
+    may_write_change_log_message,
+)
 from .bulk_approve import BulkApproveView
 from .category_admin import InitialPlanFormMixin, PanelFormMixin
 from .models.action import (
@@ -1241,14 +1246,21 @@ def _get_change_log_message_add_url(action: Action, user: User) -> str | None:
         return None
     else:
         revision_id = action.get_public_change_log_revision_id()
-    if revision_id is None or not may_write_change_log_message(user, action, revision_id):
+    # A locked action's edit page can't be used for anything; the submission of changes asks for a message instead
+    if revision_id is None or is_locked_for_user(action, user) or not may_write_change_log_message(user, action, revision_id):
         return None
     return f'{reverse("wagtailsnippets_actions_actionchangelogmessage:add")}?action={action.pk}&revision={revision_id}'
 
 
 def _get_change_log_message_check(action: Action, user: User) -> Callable[[ActionChangeLogMessage], bool]:
-    check_revision = get_change_log_message_revision_check(user, action)
+    check_revision = get_change_log_message_change_check(user, action)
     return lambda message: check_revision(message.revision_id)
+
+
+def _get_change_log_message_notice(action: Action, user: User) -> StrOrPromise | None:
+    if is_locked_for_user(action, user):
+        return _("While the action is locked for you, you can't add, edit or delete its change history messages.")
+    return None
 
 
 class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
@@ -1551,6 +1563,7 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                             'To add a change history message, save the action, or submit its changes for moderation.'
                         ),
                         get_message_check=_get_change_log_message_check,
+                        get_notice=_get_change_log_message_notice,
                     )
                 ],
                 heading=_('Change history messages'),
