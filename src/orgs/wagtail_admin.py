@@ -27,6 +27,7 @@ from users.models import User
 from .models import Organization, OrganizationMetadataAdmin, OrganizationQuerySet
 from .views import (
     CreateChildNodeView,
+    OrganizationCopyView,
     OrganizationCreateView,
     OrganizationDeleteView,
     OrganizationEditView,
@@ -167,6 +168,7 @@ class OrganizationViewSet(SnippetViewSet[Organization, OrganizationForm, Organiz
     permission_policy = OrganizationPermissionPolicy(model)  # pyright: ignore[reportAssignmentType]
     index_view_class = OrganizationIndexView
     add_view_class = OrganizationCreateView
+    copy_view_class = OrganizationCopyView
     edit_view_class = OrganizationEditView
     delete_view_class = OrganizationDeleteView
     search_fields = ['name', 'abbreviation']
@@ -378,7 +380,7 @@ class OrganizationViewSet(SnippetViewSet[Organization, OrganizationForm, Organiz
             change_related_to_plan_button = self._exclude_organization_from_active_plan_button(instance)
         else:
             change_related_to_plan_button = self._include_organization_in_active_plan_button(instance)
-        if instance.user_can_change_related_to_plan(user, plan) and instance.is_root():
+        if instance.is_root() and instance.user_can_change_related_to_plan(user, plan):
             buttons.append(change_related_to_plan_button)
 
         return buttons

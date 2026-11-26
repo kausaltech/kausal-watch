@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 from wagtail.admin import messages
 from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+from wagtail.snippets.views.snippets import CopyView
 
 from kausal_common.organizations.views import (
     CreateChildNodeView as BaseCreateChildNodeView,
@@ -34,6 +35,62 @@ class OrganizationCreateView(BaseOrganizationCreateView):
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         plan.related_organizations.add(org)
         return result
+
+
+# Fields that a copy must not take over from its source: identity, tree bookkeeping, revisions
+# and audit fields. `path` and `depth` are kept so that the form can preselect the source's parent;
+# treebeard assigns new ones when the copy is saved. `distinct_name` is not recomputed on save and
+# would keep the source's name. The logo is left out because it may be an image from another
+# tenant's collection, and sharing one image between organizations ties their media together.
+_COPY_EXCLUDED_FIELDS = frozenset({
+    'id',
+    'uuid',
+    'numchild',
+    'distinct_name',
+    'logo',
+    'latest_revision',
+    'created_time',
+    'created_by',
+    'last_modified_time',
+    'last_modified_by',
+})
+
+
+class OrganizationCopyView(OrganizationCreateView, CopyView):
+    """
+    Create a new organization prefilled from an existing one.
+
+    Wagtail's own copy view binds the form to the source object itself, so saving the "copy"
+    overwrote the source. Organizations are shared across tenants and every admin may view all of
+    them, so that let a plan admin rename or move another tenant's organization. Here the form is
+    always bound to a new, unsaved instance.
+    """
+
+    def get_initial_form_instance(self) -> Organization:
+        # Wagtail's `get_object` checks that the user may view or change the source. Deliberately
+        # no super() call: Wagtail's implementation returns the source object itself.
+        source: Organization = self.get_object()
+        values = {
+            field.attname: getattr(source, field.attname)
+            for field in Organization._meta.concrete_fields
+            if field.name not in _COPY_EXCLUDED_FIELDS
+        }
+        return Organization(**values)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Wagtail's create template posts to the add view. Post back here instead, so that the
+        # copied fields which the form does not show (classification, dates, language) are kept.
+        context['action_url'] = self.request.path
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # The base view also offers the instance's current parent even if the user cannot edit it,
+        # so that editing does not silently turn an organization into a root. For a copy that
+        # parent may belong to another tenant, so offer only the parents the user may edit.
+        kwargs['parent_choices'] = Organization.get_parent_choices(user=admin_req(self.request).user)
+        return kwargs
 
 
 class OrganizationEditView(BaseOrganizationEditView):

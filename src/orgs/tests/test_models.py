@@ -182,4 +182,5 @@ def test_organization_user_can_change_related_to_plan_organization_plan_admin_ge
 
 def test_organization_user_can_change_related_to_plan_organization_plan_admin_false():
     opa = OrganizationPlanAdminFactory.create()
+    assert opa.person.user is not None
     assert not opa.organization.user_can_change_related_to_plan(opa.person.user, opa.plan)
