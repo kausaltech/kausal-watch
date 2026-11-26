@@ -239,10 +239,7 @@ class Report(PlanRelatedModelWithRevision):
     show_in_reporting_tab = models.BooleanField(
         default=True,
         verbose_name=_('Show in action reporting tab'),
-        help_text=_(
-            "Show this report in the actions' reporting tab, where editors see an action's values in it and submit "
-            'the action while the report is open.'
-        ),
+        help_text=_("Show this report to editors on each action's Reporting tab."),
     )
 
     # The fields are copied from the report type when this report is completed.
