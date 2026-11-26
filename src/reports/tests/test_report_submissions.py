@@ -59,6 +59,17 @@ def test_report_listing_shows_dates_status_and_submissions(admin_client, report,
     assert '1 / 2' in content
 
 
+def test_report_listing_does_not_count_submissions_of_deleted_actions(
+    admin_client, plan_admin_user, report, submitted_action, unsubmitted_action
+):
+    unsubmitted_action.mark_as_complete_for_report(report, plan_admin_user)
+    # The report keeps the deleted action's snapshot, but the action is no longer one of the plan's
+    unsubmitted_action.delete()
+    assert ActionSnapshot.objects.filter(report=report).count() == 2
+    content = admin_client.get(REPORTS_PATH, {'report_type': report.type.pk}).content.decode()
+    assert '1 / 1' in content
+
+
 def test_report_listing_shows_completed_reports_as_complete(admin_client, plan_admin_user, report, submitted_action):
     report.mark_as_complete(plan_admin_user)
     content = admin_client.get(REPORTS_PATH, {'report_type': report.type.pk}).content.decode()

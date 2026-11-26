@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import quote
-from django.db.models import Count, IntegerField, OuterRef, Subquery
-from django.db.models.functions import Cast
+from django.db.models import Count, IntegerField, OuterRef, QuerySet, Subquery
+from django.db.models.functions import Cast, Coalesce
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils.formats import date_format
@@ -24,7 +24,7 @@ from actions.models import Action
 from admin_site.forms import WatchAdminModelForm
 from admin_site.viewsets import WatchCreateView, WatchDeleteView, WatchEditView, WatchIndexView, WatchViewSet
 
-from .models import Report, ReportType
+from .models import ActionSnapshot, Report, ReportType
 from .submissions import get_action_submissions
 from .template_editor import (
     CreateReportingFieldView,
@@ -235,15 +235,26 @@ class ReportIndexView(ReportTypeQueryParameterMixin, WatchIndexView[Report]):
         return super().get(request, *args, **kwargs)
 
     def get_base_queryset(self):
-        actions_of_plan = Action.objects.filter(plan=OuterRef('type__plan')).order_by().values('plan').annotate(count=Count('pk'))
-        submitted_action_ids = Cast('action_snapshots__action_version__object_id', output_field=IntegerField())
+        actions_of_plan = Action.objects.filter(plan=OuterRef('type__plan')).order_by()
+        # Only the plan's current actions count as submitted: the report keeps the snapshots of deleted actions too
+        submitted_action_ids = (
+            ActionSnapshot.objects
+            .filter(report=OuterRef(OuterRef('pk')))
+            .annotate(action_id=Cast('action_version__object_id', output_field=IntegerField()))
+            .values('action_id')
+        )
+        submitted_actions_of_plan = actions_of_plan.filter(pk__in=submitted_action_ids)
+
+        def count(actions: QuerySet[Action]) -> Coalesce:
+            return Coalesce(Subquery(actions.values('plan').annotate(count=Count('pk')).values('count')), 0)
+
         return (
             super()
             .get_base_queryset()
             .filter(type=self.report_type)
             .annotate(
-                submitted_action_count=Count(submitted_action_ids, distinct=True),
-                action_count=Subquery(actions_of_plan.values('count')),
+                submitted_action_count=count(submitted_actions_of_plan),
+                action_count=count(actions_of_plan),
             )
         )
 
