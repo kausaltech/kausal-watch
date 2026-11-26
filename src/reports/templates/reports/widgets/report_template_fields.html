@@ -1,0 +1,5 @@
+{# Read and written by the drag-and-drop editor, which ReportTemplateFieldsPanel mounts in the div #}
+<input type="hidden" name="{{ widget.name }}" id="{{ widget.attrs.id|default:widget.name }}" value="{{ widget.value }}">
+{{ definitions|json_script:definitions_id }}
+{{ editor_props|json_script:editor_props_id }}
+<div id="{{ editor_id }}"></div>

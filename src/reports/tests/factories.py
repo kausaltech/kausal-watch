@@ -104,4 +104,3 @@ class ReportFactory(DjangoModelFactory[Report]):
         'responsible_parties': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
     })
     is_complete = False
-    is_public = False

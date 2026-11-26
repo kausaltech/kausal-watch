@@ -54,3 +54,17 @@ def test_values_for_action_without_snapshot(graphql_client_query_data, plan):
 def test_values_for_action_unknown_id(graphql_client_query_data, plan):
     values = query_values_for_action(graphql_client_query_data, plan, action_id='foobar')
     assert all(v is None for v in values)
+
+
+@pytest.mark.usefixtures('plan_with_report_and_attributes')
+def test_values_for_action_are_formatted(graphql_client_query_data, plan, report_with_all_attributes, user):
+    action = plan.actions.first()
+    action.mark_as_complete_for_report(report_with_all_attributes, user)
+    data = graphql_client_query_data(
+        VALUES_FOR_ACTION_QUERY.replace('__typename', '__typename formattedValue'),
+        variables=dict(plan=plan.identifier, actionIdentifier=action.identifier),
+    )
+    values = [value for report in data['plan']['reportTypes'][0]['reports'] for value in report['valuesForAction'] or []]
+    phases = [value for value in values if value['__typename'] == 'ActionImplementationPhaseReportValue']
+    assert phases
+    assert all(isinstance(value['formattedValue'], str) for value in phases)

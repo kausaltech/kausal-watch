@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
@@ -8,11 +8,14 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.utils.formats import date_format
 from django.utils.functional import cached_property
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 from wagtail.admin.views.generic.base import BaseObjectMixin, WagtailAdminTemplateMixin
@@ -24,16 +27,28 @@ from kausal_common.users import user_or_bust
 
 from actions.models import Action, Plan
 
+from .blocks.report_comparison_block import comparable_fields
 from .export import export_dashboard_report_for_plan
-from .models import ActionListPageNotFoundError, ActionSnapshot, Report
+from .models import ActionListPageNotFoundError, ActionSnapshot, Report, ReportType
+from .submissions import get_action_submissions, user_can_submit_action
+from .utils import report_label
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from indicators.models import Indicator
 
 ALLOWED_EXPORT_FORMATS = {'xlsx', 'csv'}
 ALL_FIELDS = 'all'
 
 
 class MarkActionAsCompleteView(WagtailAdminTemplateMixin, TemplateView):
+    """Submit an action to a report, resubmit it, or undo the submission, after a confirmation."""
+
     complete = True
-    template_name = 'aplans/confirmation.html'
+    # Replace an earlier submission (`complete` stays True: the action ends up submitted)
+    resubmit = False
+    template_name = 'reports/submit_action_confirmation.html'
     header_icon = 'kausal-action'
     index_url_name: str | None = None
     action: Action
@@ -50,19 +65,21 @@ class MarkActionAsCompleteView(WagtailAdminTemplateMixin, TemplateView):
         return reverse(self.index_url_name)
 
     def get_page_title(self):
+        if self.resubmit:
+            return _('Resubmit action to report')
         if self.complete:
-            return _('Mark action as complete')
-        return _('Undo marking action as complete')
+            return _('Submit action to report')
+        return _('Undo action submission')
+
+    def submitted_at(self) -> str | None:
+        """Return the date of the submission that a resubmission replaces, formatted for display."""
+        submitted_at = self.action.submitted_at_for_report(self.report)
+        if submitted_at is None:
+            return None
+        return date_format(timezone.localtime(submitted_at), 'DATE_FORMAT')
 
     def check_action_permitted(self, user):
-        if not user.can_modify_action(self.action):
-            return False
-        report_type = self.report.type
-        if report_type.plan_id != self.action.plan_id:
-            return False
-        if report_type.only_plan_admins_can_mark_actions_as_complete:
-            return user.is_general_admin_for_plan(self.action.plan)
-        return True
+        return user_can_submit_action(user, self.action, self.report)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
@@ -71,34 +88,78 @@ class MarkActionAsCompleteView(WagtailAdminTemplateMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_meta_title(self):
-        if self.complete:
-            msg = _('Confirm marking action %(action)s as complete for report %(report)s')
+        if self.resubmit:
+            msg = _('Confirm resubmitting action %(action)s to report %(report)s')
+        elif self.complete:
+            msg = _('Confirm submitting action %(action)s to report %(report)s')
         else:
-            msg = _('Confirm undoing marking action %(action)s as complete for report %(report)s')
-        return msg % {'action': self.action, 'report': self.report}
+            msg = _('Confirm undoing the submission of action %(action)s to report %(report)s')
+        return msg % {'action': self.action, 'report': report_label(self.report)}
 
     def confirmation_message(self):
+        params = {'action': self.action, 'report': report_label(self.report)}
+        if self.resubmit:
+            msg = _(
+                "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its "
+                'submission from %(date)s with the current data of the action.'
+            )
+            return msg % {**params, 'date': self.submitted_at()}
         if self.complete:
-            msg = _("Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?")
+            msg = _("Do you want to submit the action '%(action)s' to the report '%(report)s'?")
         else:
-            msg = _("Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?")
-        return msg % {'action': self.action, 'report': self.report}
+            msg = _("Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?")
+        return msg % params
+
+    def get_frozen_indicators(self) -> list[Indicator]:
+        """Return the indicators whose current data the submission captures, as `Report.freeze_indicators_of_action` does."""
+        indicators = self.report.get_indicators_to_freeze().filter(related_actions__action=self.action)
+        return list(indicators.select_related('latest_value', 'unit').order_by('name'))
+
+    @cached_property
+    def next_url(self) -> str | None:
+        """Return the page that asked for the confirmation, such as the report's submissions, if it is on this site."""
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}, require_https=self.request.is_secure()
+        ):
+            return next_url
+        return None
+
+    @property
+    def return_url(self) -> str:
+        """Return where to go after confirming or cancelling: the page that asked, or else the action list."""
+        return self.next_url or self.index_url
+
+    def has_unpublished_changes(self) -> bool:
+        """Return whether the action has changes, e.g. waiting for approval, that the submission leaves out."""
+        return bool(self.action.plan.features.enable_moderation_workflow and self.action.has_unpublished_changes)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.complete:
+            context['frozen_indicators'] = self.get_frozen_indicators()
+            context['has_unpublished_changes'] = self.has_unpublished_changes()
+        return context
 
     def post(self, request, *args, **kwargs):
         try:
-            if self.complete:
+            if self.resubmit:
+                self.action.resubmit_for_report(self.report, self.request.user)
+            elif self.complete:
                 self.action.mark_as_complete_for_report(self.report, self.request.user)
             else:
                 self.action.undo_marking_as_complete_for_report(self.report, self.request.user)
         except ValueError as e:
             messages.error(request, str(e))
-            return redirect(self.index_url)
-        if self.complete:
-            msg = _("Action '%(action)s' has been marked as complete for report '%(report)s'.")
+            return redirect(self.return_url)
+        if self.resubmit:
+            msg = _("Action '%(action)s' has been resubmitted to the report '%(report)s'.")
+        elif self.complete:
+            msg = _("Action '%(action)s' has been submitted to the report '%(report)s'.")
         else:
-            msg = _("Action '%(action)s' is no longer marked as complete for report '%(report)s'.")
-        messages.success(request, msg % {'action': self.action, 'report': self.report})
-        return redirect(self.index_url)
+            msg = _("The submission of action '%(action)s' to the report '%(report)s' has been undone.")
+        messages.success(request, msg % {'action': self.action, 'report': report_label(self.report)})
+        return redirect(self.return_url)
 
 
 class DownloadReportView(BaseObjectMixin[Report], View):
@@ -153,8 +214,7 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.complete:
-            complete_actions = Action.objects.qs.complete_for_report(self.report)
-            context['affected_actions'] = self.report.type.plan.actions.exclude(id__in=complete_actions)
+            context.update(self.get_completion_context())
         else:
             action_ids = (
                 ActionSnapshot.objects
@@ -164,6 +224,27 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
             )
             context['affected_actions'] = Action.objects.filter(id__in=action_ids)
         return context
+
+    def get_completion_context(self) -> dict[str, Any]:
+        """
+        Return what completing the report captures.
+
+        Actions not yet submitted are captured with their current data. On moderated plans, that is their published
+        version, and a submitted action may also have changes waiting for approval that its submission does not include.
+        """
+        submissions = get_action_submissions(self.report)
+        moderated = self.report.type.plan.features.enable_moderation_workflow
+        return {
+            'action_count': len(submissions),
+            'unsubmitted': [submission for submission in submissions if submission.submitted_at is None],
+            'submitted_count': sum(1 for submission in submissions if submission.submitted_at is not None),
+            'moderated': moderated,
+            'submitted_with_pending_changes': [
+                submission
+                for submission in submissions
+                if moderated and submission.submitted_at is not None and submission.action.has_unpublished_changes
+            ],
+        }
 
     def post(self, request, *args, **kwargs):
         user = user_or_bust(self.request.user)
@@ -185,7 +266,8 @@ class MarkReportAsCompleteView(BaseObjectMixin[Report], WagtailAdminTemplateMixi
     @cached_property
     def index_url(self):
         assert self.index_url_name is not None
-        return reverse(self.index_url_name)
+        # Reports are only listed by report template, so return to the listing of this report's template
+        return f'{reverse(self.index_url_name)}?report_type={self.report.type_id}'
 
 
 def export_report_view(request, plan_identifier):
@@ -238,3 +320,18 @@ def export_report_view(request, plan_identifier):
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+class ReportFieldOptionsView(View):
+    """List the fields a report comparison block can compare, for a template of a plan the user administers."""
+
+    http_method_names = ['get']
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        # A page of another plan than the active one can be edited too, so allow any plan the user administers
+        plans = user_or_bust(request.user).get_adminable_plans()
+        try:
+            report_type = ReportType.objects.get(plan__in=plans, pk=int(request.GET.get('report_type', '')))
+        except ReportType.DoesNotExist, ValueError:
+            raise Http404 from None
+        return JsonResponse({'fields': [{'id': id_, 'label': label} for id_, label in comparable_fields(report_type)]})

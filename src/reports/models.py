@@ -66,11 +66,19 @@ class ActionListPageNotFoundError(Exception):
 class ReportType(PlanRelatedModelWithRevision):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    description = models.TextField(
+        blank=True,
+        verbose_name=_('description'),
+        help_text=_('What the template is for, e.g. who receives its reports and when'),
+    )
     fields: StreamField[StreamValue] = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)  # type: ignore[misc, assignment]  # FIXME: Should not be nullable?
     only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
         default=False,
-        verbose_name=_('Only plan admins can mark actions as complete'),
-        help_text=_('Only plan admins can mark actions as complete for reports of this type'),
+        verbose_name=_('Only plan admins can submit actions for reporting'),
+        help_text=_(
+            'Submitting an action ensures the action data at that point in time is used in the final report. When on, '
+            'only plan administrators can submit individual actions for a report. Other users can still edit actions.'
+        ),
     )
     public_fields: ClassVar[list[str]] = [
         'id',
@@ -82,8 +90,8 @@ class ReportType(PlanRelatedModelWithRevision):
     id: int
 
     class Meta:
-        verbose_name = _('report type')
-        verbose_name_plural = _('report types')
+        verbose_name = _('report template')
+        verbose_name_plural = _('report templates')
 
     @classmethod
     def permission_policy(cls) -> PlanRelatedPermissionPolicy:
@@ -169,7 +177,6 @@ class ReportType(PlanRelatedModelWithRevision):
             start_date=timezone.now().date(),
             end_date=timezone.now().date(),
             is_complete=False,
-            is_public=True,
             fields=None,
         )
 
@@ -229,17 +236,12 @@ class Report(PlanRelatedModelWithRevision):
         verbose_name=_('complete'),
         help_text=_('Set if report cannot be changed anymore'),
     )
-    is_public = models.BooleanField(
-        default=False,
-        verbose_name=_('public'),
-        help_text=_('Set if report can be shown to the public'),
-    )
     show_in_reporting_tab = models.BooleanField(
         default=True,
-        verbose_name=_('Show in reporting tab'),
+        verbose_name=_('Show in action reporting tab'),
         help_text=_(
-            'Set if the values from this report should be shown in the reporting tab when editing the action. '
-            'The values are shown only if this report has been marked as complete.'
+            "Show this report in the actions' reporting tab, where editors see an action's values in it and submit "
+            'the action while the report is open.'
         ),
     )
 
