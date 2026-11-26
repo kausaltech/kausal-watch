@@ -45,6 +45,16 @@ class OrganizationClass(BaseOrganizationClass):
     pass
 
 
+def _general_admin_plans(user: User) -> list[Plan]:
+    """
+    Return the plans the user is a general admin of.
+
+    `User.get_adminable_plans` also returns plans where the user is only an action or indicator
+    contact person; those must not grant rights on the plan's organizations.
+    """
+    return [plan for plan in user.get_adminable_plans() if user.is_general_admin_for_plan(plan)]
+
+
 class OrganizationQuerySet(BaseOrganizationQuerySet['Organization'], PermissionedQuerySet['Organization']):  # type: ignore[override]
     @override
     def editable_by_user(self, user: User) -> Self:
@@ -64,11 +74,11 @@ class OrganizationQuerySet(BaseOrganizationQuerySet['Organization'], Permissione
         # For now, for general plan admins, we allow editing all organizations related to the plan
         # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the commented-out code
         # above
-        adminable_plans = user.get_adminable_plans()
-        if not adminable_plans:
+        general_admin_plans = _general_admin_plans(user)
+        if not general_admin_plans:
             return self.none()
         q = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
-        for plan in adminable_plans:
+        for plan in general_admin_plans:
             available_orgs = Organization.objects.get_queryset().available_for_plan(plan)
             q |= Q(pk__in=available_orgs)
         return self.filter(q)
@@ -263,29 +273,52 @@ class Organization(BaseOrganization, IndirectPlanRelatedModel, Node[Organization
 
         return name
 
+    def _user_is_metadata_admin(self, user: User) -> bool:
+        """Return whether the user is a metadata admin of this organization or one of its ancestors."""
+        person = user.get_corresponding_person()
+        if not person:
+            return False
+        ancestors = self.get_ancestors() | Organization.objects.get_queryset().filter(pk=self.pk)
+        intersection = ancestors & person.metadata_adminable_organizations.all()
+        return intersection.exists()
+
     def user_can_edit(self, user: User):
         if user.is_superuser:
             return True
-        person = user.get_corresponding_person()
-        if person:
-            ancestors = self.get_ancestors() | Organization.objects.get_queryset().filter(pk=self.pk)
-            intersection = ancestors & person.metadata_adminable_organizations.all()
-            if intersection.exists():
-                return True
+        if self._user_is_metadata_admin(user):
+            return True
 
         # For now, for general plan admins, we allow editing all organizations related to the plan
         # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the code above
-        if not user.is_general_admin_for_plan():
-            return False
-        for plan in user.get_adminable_plans():
+        for plan in _general_admin_plans(user):
             available_orgs = Organization.objects.get_queryset().available_for_plan(plan)
             if available_orgs.filter(pk=self.pk).exists():
                 return True
 
         return False
 
-    def user_can_change_related_to_plan(self, user, plan):
-        return user.is_general_admin_for_plan(plan)
+    def user_can_change_related_to_plan(self, user: User, plan: Plan) -> bool:
+        """
+        Return whether the user may include this organization in, or exclude it from, the plan.
+
+        Organizations are shared across tenants. Including one in a plan makes it and its
+        descendants editable by the plan's admins (see `user_can_edit`), so a plan admin must not
+        be able to include another tenant's organization. Only root organizations the plan can
+        already reach, or that the user administers as metadata admin, qualify.
+        """
+        if user.is_superuser:
+            return True
+        if not user.is_general_admin_for_plan(plan):
+            return False
+        # Removing an existing link only narrows access, so it is allowed for any directly related
+        # organization (links to non-root organizations can come from the REST API or the create view).
+        if plan.related_organizations.filter(pk=self.pk).exists():
+            return True
+        if not self.is_root():
+            return False
+        if Organization.objects.available_for_plan(plan).filter(pk=self.pk).exists():
+            return True
+        return self._user_is_metadata_admin(user)
 
     @classmethod
     def make_orgs_by_path(cls, orgs: Iterable[Organization]) -> dict[str, Organization]:
