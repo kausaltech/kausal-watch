@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.admin.panels import HelpPanel
@@ -33,7 +34,9 @@ class FieldBlockWithHelpPanel(ActionReportContentField):
         if label is None:
             label = self.label
         heading = f'{label} ({snapshot.report})'
-        return HelpPanel(value, heading=heading)
+        # The value comes from user-editable data (e.g., text attributes a contact person can edit), and Wagtail's
+        # help panel template renders its content with `|safe`, so it must be escaped here.
+        return HelpPanel(format_html('{}', value), heading=heading)
 
 
 @register_streamfield_block
