@@ -429,10 +429,9 @@ msgid "Submit for %s"
 msgstr ""
 
 #: src/actions/action_admin.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "Submit this action to the report %s"
-msgstr "Markiere diese Massnahme für den Bericht %s als abgeschlossen"
+msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
@@ -1552,40 +1551,34 @@ msgid "The report %s is already marked as complete."
 msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "The action is already marked as complete for report %s."
+#, python-format
 msgid "The action has already been submitted to the report %s."
-msgstr "Die Massnahme ist für den Bericht %s bereits als abgeschlossen markiert."
+msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Submitted action '%(action)s' to report '%(report)s'"
-msgstr "Massnahme „%(action)s“ für Bericht „%(report)s“ als abgeschlossen markiert"
+msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "The action has not been submitted to the report %s yet."
-msgstr "Markiere diese Massnahme für den Bericht %s als abgeschlossen"
+msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Resubmitted action '%(action)s' to report '%(report)s'"
-msgstr "Massnahme „%(action)s“ für Bericht „%(report)s“ als abgeschlossen markiert"
+msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Undo marking this action as complete for the report %s"
+#, python-format
 msgid "Cannot undo the submission as the action has %s snapshots for the report"
-msgstr "Abschliessen für Bericht %s rückgängig machen"
+msgstr ""
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Undid submitting action '%(action)s' to report '%(report)s'"
-msgstr "Markieren der Massnahme „%(action)s“ als abgeschlossen für Bericht „%(report)s“ wurde rückgängig gemacht"
+msgstr ""
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
 #: src/reports/report_formatters.py
@@ -2469,10 +2462,8 @@ msgid "plan features"
 msgstr ""
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Action contact persons have different roles"
 msgid "Hiding moderators requires contact persons to have different roles."
-msgstr "Massnahmenansprechpersonen haben unterschiedliche Rollen"
+msgstr ""
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -7217,16 +7208,12 @@ msgid "Moderators are not shown on the public site."
 msgstr ""
 
 #: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "%s has been added to the action in the meantime. Please reload the page and try again."
 msgid "You have switched to a different plan since opening this page. Please reload it and try again."
-msgstr "%s wurde der Massnahme in der Zwischenzeit hinzugefügt. Bitte laden Sie die Seite neu und versuchen Sie es erneut."
+msgstr ""
 
 #: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "Choose how to order indicators in the action pages"
 msgid "Choose the role of the person in the actions you added."
-msgstr "Wählen Sie, wie die Indikatoren auf den Massnahmenseiten sortiert werden sollen"
+msgstr ""
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -7345,36 +7332,28 @@ msgid "Choose a public action field of the chosen template."
 msgstr ""
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose a quantity"
 msgid "Choose a report template"
-msgstr "Wähle eine Grösse"
+msgstr ""
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose another quantity"
 msgid "Choose another report template"
-msgstr "Wähle eine andere Grösse"
+msgstr ""
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose a report"
-msgstr "Wähle eine Grösse"
+msgstr ""
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose another report"
-msgstr "Wähle eine andere Grösse"
+msgstr ""
 
 #: src/reports/models.py
 msgid "What the template is for, e.g. who receives its reports and when"
 msgstr ""
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Only plan admins can mark actions as complete"
 msgid "Only plan admins can submit actions for reporting"
-msgstr "Nur Planadministratoren können Massnahmen als abgeschlossen markieren"
+msgstr ""
 
 #: src/reports/models.py
 msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
@@ -7565,20 +7544,16 @@ msgid "Level %(level)d"
 msgstr ""
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "Has primary organizations for actions"
 msgid "Containing organization"
-msgstr "Hat Hauptorganisationen für Massnahmen"
+msgstr ""
 
 #: src/reports/template_editor.py
 msgid "Categories as assigned"
 msgstr ""
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "%s has been added to the action in the meantime. Please reload the page and try again."
 msgid "The fields could not be read. Reload the page and try again."
-msgstr "%s wurde der Massnahme in der Zwischenzeit hinzugefügt. Bitte laden Sie die Seite neu und versuchen Sie es erneut."
+msgstr ""
 
 #: src/reports/template_editor.py
 msgid "The field could not be read."
@@ -7609,10 +7584,8 @@ msgid "They will be captured using their current values."
 msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
-#| msgid "Connected actions"
 msgid "Unsubmitted actions"
-msgstr "Verbundene Massnahmen"
+msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
@@ -7640,10 +7613,8 @@ msgid "Undo marking as complete"
 msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
-#| msgid "Mark action as complete"
 msgid "Submit actions and mark as complete"
-msgstr "Massnahme als abgeschlossen markieren"
+msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #: src/reports/wagtail_admin.py
@@ -7655,10 +7626,9 @@ msgid "Report completed"
 msgstr ""
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy, python-format
-#| msgid "action status updates"
+#, python-format
 msgid "Action submitted %(date)s"
-msgstr "Massnahmenstatusaktualisierungen"
+msgstr ""
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 #: src/reports/templates/reports/panels/report_submissions_panel.html
@@ -7675,18 +7645,15 @@ msgid "Resubmit"
 msgstr ""
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
-#| msgid "The report %s does not belong to the plan of this action."
 msgid "No reports are shown in the reporting tab of this plan's actions."
-msgstr "Der Bericht %s gehört nicht zum Plan dieser Massnahme."
+msgstr ""
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy, python-format
-#| msgid "Action category"
+#, python-format
 msgid "%(counter)s action"
 msgid_plural "%(counter)s actions"
-msgstr[0] "Massnahmenkategorie"
-msgstr[1] "Massnahmenkategorie"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #, python-format
@@ -7699,11 +7666,8 @@ msgid "%(not_submitted_count)s not submitted"
 msgstr ""
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
-#| msgctxt "Action model"
-#| msgid "Action"
 msgid "Action"
-msgstr "Massnahme"
+msgstr ""
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Submitted"
@@ -7731,10 +7695,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: src/reports/templates/reports/panels/report_template_panel.html
-#, fuzzy
-#| msgid "There is already an action with this identifier."
 msgid "No fields are configured on this template."
-msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
+msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7742,13 +7704,11 @@ msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the actio
 msgstr "„%(instance_name)s“ wird von einem „Berichtevergleich“-Block auf den Massnahmen-Detailseiten verwendet. Das Löschen würde diese Seiten beschädigen. Wenn Sie den Berichtevergleich von den Massnahmen-Detailseiten entfernen wollten, entfernen Sie stattdessen den Block von den folgenden Seiten:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-#| msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+#, python-format
 msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] "Beim Löschen dieses Berichtstyps werden auch sein Bericht und die %(snapshot_count)s darin gespeicherten Massnahmen-Snapshots dauerhaft gelöscht."
-msgstr[1] "Beim Löschen dieses Berichtstyps werden auch seine %(counter)s Berichte und die %(snapshot_count)s darin gespeicherten Massnahmen-Snapshots dauerhaft gelöscht."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
@@ -7789,22 +7749,19 @@ msgid "Undo action submission"
 msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm resubmitting action %(action)s to report %(report)s"
-msgstr "Bestätige das Markieren der Massnahme %(action)s als abgeschlossen für den Bericht %(report)s"
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm submitting action %(action)s to report %(report)s"
-msgstr "Bestätige das Markieren der Massnahme %(action)s als abgeschlossen für den Bericht %(report)s"
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
-msgstr "Bestätige das Rückgängigmachen des Markierens der Massnahme %(action)s als abgeschlossen für den Bericht %(report)s"
+msgstr ""
 
 #: src/reports/views.py
 #, python-format
@@ -7812,34 +7769,29 @@ msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s
 msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+#, python-format
 msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
-msgstr "Möchten Sie die Massnahme „%(action)s“ für den Bericht „%(report)s“ wirklich als abgeschlossen markieren?"
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+#, python-format
 msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
-msgstr "Möchten Sie die Markierung der Massnahme „%(action)s“ als abgeschlossen für den Bericht „%(report)s“ wirklich rückgängig machen?"
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, python-format
 msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
-msgstr "Die Massnahme „%(action)s“ wurde für den Bericht „%(report)s“ als abgeschlossen markiert."
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, python-format
 msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
-msgstr "Die Massnahme „%(action)s“ wurde für den Bericht „%(report)s“ als abgeschlossen markiert."
+msgstr ""
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
-msgstr "Markieren der Massnahme „%(action)s“ als abgeschlossen für Bericht „%(report)s“ wurde rückgängig gemacht"
+msgstr ""
 
 #: src/reports/views.py
 msgid "Mark report as complete"
@@ -7870,10 +7822,8 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "The report type is still used on action pages. Remove the report comparison blocks first."
 msgid "The report template is still used on action pages. Remove the report comparison blocks first."
-msgstr "Der Berichtstyp wird noch auf Massnahmenseiten verwendet. Entfernen Sie zuerst die Berichtevergleich-Blöcke."
+msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "Edit template"
@@ -7918,10 +7868,8 @@ msgid "Open"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Action field"
 msgid "Actions submitted"
-msgstr "Massnahmenfeld"
+msgstr ""
 
 #: src/reports/wagtail_admin.py
 msgid "The period during which action data for this report is collected."
@@ -7932,10 +7880,8 @@ msgid "Report details"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Action statuses"
 msgid "Action submissions"
-msgstr "Massnahmenstatus"
+msgstr ""
 
 #: src/users/apps.py
 msgid "Users"

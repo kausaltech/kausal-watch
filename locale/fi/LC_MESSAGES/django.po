@@ -420,26 +420,24 @@ msgid "Dependencies"
 msgstr "Riippuvuudet"
 
 #: src/actions/action_admin.py
-#, fuzzy, python-format
-#| msgid "Field for %s"
+#, python-format
 msgid "Submit for %s"
-msgstr "Kohteen %s kenttä"
+msgstr "Lähetä raporttiin %s"
 
 #: src/actions/action_admin.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "Submit this action to the report %s"
-msgstr "Merkitse tämä toimenpide valmiiksi raporttia %s varten"
+msgstr "Lähetä tämä toimenpide raporttiin %s"
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Resubmit for %(report)s (submitted %(date)s)"
-msgstr ""
+msgstr "Lähetä uudelleen raporttiin %(report)s (lähetetty %(date)s)"
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Replace the submission of this action to the report %s with its current data"
-msgstr ""
+msgstr "Korvaa tämän toimenpiteen lähetys raporttiin %s sen nykyisillä tiedoilla"
 
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -1536,40 +1534,34 @@ msgid "The report %s is already marked as complete."
 msgstr "Raportti on jo merkitty valmiiksi."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "The action is already marked as complete for report %s."
+#, python-format
 msgid "The action has already been submitted to the report %s."
-msgstr "Toimenpide on jo merkitty valmiiksi raporttia %s varten."
+msgstr "Toimenpide on jo lähetetty raporttiin %s."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Submitted action '%(action)s' to report '%(report)s'"
-msgstr "Toimenpide '%(action)s' merkitty valmiiksi raporttia '%(report)s' varten"
+msgstr "Toimenpide '%(action)s' lähetettiin raporttiin '%(report)s'"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "The action has not been submitted to the report %s yet."
-msgstr "Merkitse tämä toimenpide valmiiksi raporttia %s varten"
+msgstr "Toimenpidettä ei ole vielä lähetetty raporttiin %s."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Resubmitted action '%(action)s' to report '%(report)s'"
-msgstr "Toimenpide '%(action)s' merkitty valmiiksi raporttia '%(report)s' varten"
+msgstr "Toimenpide '%(action)s' lähetettiin uudelleen raporttiin '%(report)s'"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Undo marking this action as complete for the report %s"
+#, python-format
 msgid "Cannot undo the submission as the action has %s snapshots for the report"
-msgstr "Peru tämän toimenpiteen valmiiksi merkitseminen raporttia %s varten"
+msgstr "Lähetystä ei voi perua, koska toimenpiteellä on raporttia varten %s tallennetta"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "Undid submitting action '%(action)s' to report '%(report)s'"
-msgstr "Toimenpiteen '%(action)s' merkitseminen valmiiksi raporttia '%(report)s' varten peruttiin"
+msgstr "Toimenpiteen '%(action)s' lähetys raporttiin '%(report)s' peruttiin"
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
 #: src/reports/report_formatters.py
@@ -2425,10 +2417,8 @@ msgid "plan features"
 msgstr "toimenpiteen ominaisuudet"
 
 #: src/actions/models/features.py
-#, fuzzy
-#| msgid "Action contact persons have different roles"
 msgid "Hiding moderators requires contact persons to have different roles."
-msgstr "Toimenpiteiden yhteyshenkilöillä on eri rooleja"
+msgstr "Moderoijien piilottaminen edellyttää, että yhteyshenkilöillä on eri rooleja."
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -4101,10 +4091,8 @@ msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
 
 #: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Report types"
 msgid "Report templates"
-msgstr "Raporttityypit"
+msgstr "Raporttipohjat"
 
 #: src/admin_site/wagtail_hooks.py
 msgid "User handbook"
@@ -7004,27 +6992,23 @@ msgstr "Ylläpitäjä organisaatioille"
 
 #: src/people/wagtail_admin.py
 msgid "Contact person role in newly added actions"
-msgstr ""
+msgstr "Yhteyshenkilön rooli lisätyissä toimenpiteissä"
 
 #: src/people/wagtail_admin.py
 msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
-msgstr ""
+msgstr "Pakollinen, jos lisäät toimenpiteitä yllä. Moderoijat voivat valita toimenpiteen muokkaajat ja, jos käytössä on moderointi, hyväksyä muutokset; muokkaajat eivät voi. Voit muuttaa rooleja toimenpiteen sivulla."
 
 #: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "You do not have access to the public site."
 msgid "Moderators are not shown on the public site."
-msgstr "Sinulla ei ole pääsyä julkiselle sivustolle."
+msgstr "Moderoijia ei näytetä julkisella sivustolla."
 
 #: src/people/wagtail_admin.py
 msgid "You have switched to a different plan since opening this page. Please reload it and try again."
-msgstr ""
+msgstr "Olet vaihtanut toiseen toimenpideohjelmaan tämän sivun avaamisen jälkeen. Lataa sivu uudelleen ja yritä uudestaan."
 
 #: src/people/wagtail_admin.py
-#, fuzzy
-#| msgid "Choose how to order indicators in the action pages"
 msgid "Choose the role of the person in the actions you added."
-msgstr "Valitse kuinka mittarit järjestetään toimenpiteiden sivuilla"
+msgstr "Valitse henkilön rooli lisäämissäsi toimenpiteissä."
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -7103,101 +7087,78 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr "Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä raporttiin."
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Report type"
 msgid "Report template"
-msgstr "Raporttityyppi"
+msgstr "Raporttipohja"
 
 #: src/reports/blocks/choosers.py
-#, fuzzy
-#| msgid "Reports"
 msgid "Report"
-msgstr "Raportit"
+msgstr "Raportti"
 
 #: src/reports/blocks/choosers.py
-#, fuzzy
-#| msgid "Report type field"
 msgid "Report template field"
-msgstr "Raporttityypin kenttä"
+msgstr "Raporttipohjan kenttä"
 
 #: src/reports/blocks/report_comparison_block.py
-#, fuzzy
-#| msgid "The report is not marked as complete."
 msgid "The completed reports of the template to compare."
-msgstr "Raporttia ei ole merkitty valmiiksi."
+msgstr "Pohjan valmiit raportit, joita verrataan."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "The field of the template whose values are compared. Only public fields can be compared."
-msgstr ""
+msgstr "Pohjan kenttä, jonka arvoja verrataan. Vain julkisia kenttiä voi verrata."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Report comparison"
 msgstr "Raporttien vertailu"
 
 #: src/reports/blocks/report_comparison_block.py
-#, fuzzy, python-format
-#| msgid "The report is not marked as complete."
+#, python-format
 msgid "\"%(report)s\" is not a report of the chosen template."
-msgstr "Raporttia ei ole merkitty valmiiksi."
+msgstr "\"%(report)s\" ei ole valitun pohjan raportti."
 
 #: src/reports/blocks/report_comparison_block.py
 #, python-format
 msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
-msgstr ""
+msgstr "\"%(report)s\" ei ole valmis. Vain valmiita raportteja voi verrata."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Choose a public action field of the chosen template."
-msgstr ""
+msgstr "Valitse valitun pohjan julkinen toimenpidekenttä."
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose a report type"
 msgid "Choose a report template"
-msgstr "Valitse raporttityyppi"
+msgstr "Valitse raporttipohja"
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose another report type"
 msgid "Choose another report template"
-msgstr "Valitse toinen raporttityyppi"
+msgstr "Valitse toinen raporttipohja"
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose a report type"
 msgid "Choose a report"
-msgstr "Valitse raporttityyppi"
+msgstr "Valitse raportti"
 
 #: src/reports/chooser.py
-#, fuzzy
-#| msgid "Choose another report type"
 msgid "Choose another report"
-msgstr "Valitse toinen raporttityyppi"
+msgstr "Valitse toinen raportti"
 
 #: src/reports/models.py
 msgid "What the template is for, e.g. who receives its reports and when"
-msgstr ""
+msgstr "Mihin pohjaa käytetään, esim. kuka saa sen raportit ja milloin"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Only plan admins can mark actions as complete"
 msgid "Only plan admins can submit actions for reporting"
-msgstr "Vain toimenpideohjelman ylläpitäjät voivat merkitä toimenpiteitä valmiiksi"
+msgstr "Vain toimenpideohjelman ylläpitäjät voivat lähettää toimenpiteitä raportointiin"
 
 #: src/reports/models.py
 msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
-msgstr ""
+msgstr "Kun toimenpide lähetetään, lopullisessa raportissa käytetään toimenpiteen sen hetkisiä tietoja. Kun asetus on päällä, vain toimenpideohjelman ylläpitäjät voivat lähettää yksittäisiä toimenpiteitä raporttiin. Muut käyttäjät voivat edelleen muokata toimenpiteitä."
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "report type"
 msgid "report template"
-msgstr "raportin tyyppi"
+msgstr "raporttipohja"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "report types"
 msgid "report templates"
-msgstr "raporttien tyypit"
+msgstr "raporttipohjat"
 
 #: src/reports/models.py
 #, python-format
@@ -7213,14 +7174,12 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Aseta jos raporttia ei voi enää muuttaa"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Show in reporting tab"
 msgid "Show in action reporting tab"
-msgstr "näytä raportointi-välilehdessä"
+msgstr "Näytä toimenpiteen Raportointi-välilehdellä"
 
 #: src/reports/models.py
 msgid "Show this report to editors on each action's Reporting tab."
-msgstr ""
+msgstr "Näytä tämä raportti muokkaajille jokaisen toimenpiteen Raportointi-välilehdellä."
 
 #: src/reports/models.py
 msgid "report"
@@ -7391,81 +7350,68 @@ msgstr "vastuuorganisaatiot"
 
 #: src/reports/template_editor.py
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
-#| msgid "[not included]"
 msgid "Not included"
-msgstr "[ei mukana]"
+msgstr "Ei mukana"
 
 #: src/reports/template_editor.py
-#, fuzzy, python-format
-#| msgid "Heading %(level)d"
+#, python-format
 msgid "Level %(level)d"
-msgstr "Otsikko %(level)d"
+msgstr "Taso %(level)d"
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "Level of containing organization"
 msgid "Containing organization"
-msgstr "Organisaatiohierarkian taso"
+msgstr "Yläorganisaatio"
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "Category page"
 msgid "Categories as assigned"
-msgstr "Luokkasivu"
+msgstr "Kategoriat sellaisinaan"
 
 #: src/reports/template_editor.py
 msgid "The fields could not be read. Reload the page and try again."
-msgstr ""
+msgstr "Kenttiä ei voitu lukea. Lataa sivu uudelleen ja yritä uudestaan."
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "This field cannot be customized."
 msgid "The field could not be read."
-msgstr "Tätä kenttää ei voi mukauttaa."
+msgstr "Kenttää ei voitu lukea."
 
 #: src/reports/template_editor.py
-#, fuzzy
-#| msgid "character limit for text fields"
 msgid "Enter a name for the field."
-msgstr "merkkimäärärajoitus tekstikentille"
+msgstr "Anna kentälle nimi."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
-msgstr ""
+msgstr "Kun raportti <i>%(report)s</i> merkitään valmiiksi, sen toimenpiteiden ja mittareiden tiedot lukitaan eikä siihen voi enää lähettää toimenpiteitä. Toimenpiteiden tila ei muutu."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "%(counter)s of %(total)s actions has not been submitted"
 msgid_plural "%(counter)s of %(total)s actions have not been submitted"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(counter)s/%(total)s toimenpiteestä ei ole lähetetty"
+msgstr[1] "%(counter)s/%(total)s toimenpiteestä ei ole lähetetty"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "They will be captured using their current published versions."
-msgstr ""
+msgstr "Ne tallennetaan niiden nykyisinä julkaistuina versioina."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "They will be captured using their current values."
-msgstr ""
+msgstr "Ne tallennetaan niiden nykyisillä arvoilla."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
-#| msgid "Submitted at"
 msgid "Unsubmitted actions"
-msgstr "Lähetetty"
+msgstr "Lähettämättömät toimenpiteet"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
-msgstr ""
+msgstr "Näissä lähetetyissä toimenpiteissä on hyväksyntää odottavia muutoksia. Raportti säilyttää niiden lähetetyt versiot ilman muutoksia; lähetä toimenpide uudelleen, kun sen muutokset on julkaistu, jotta ne tulevat mukaan."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "The submitted action will use its submitted values."
 msgid_plural "The %(counter)s submitted actions will use their submitted values."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Lähetetyssä toimenpiteessä käytetään sen lähetettyjä arvoja."
+msgstr[1] "%(counter)s lähetetyssä toimenpiteessä käytetään niiden lähetettyjä arvoja."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -7474,7 +7420,7 @@ msgstr "Haluatko todella perua raportin <i>%(report)s</i> merkitsemisen valmiiks
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This also undoes the submissions that completing the report made for these actions:"
-msgstr ""
+msgstr "Tämä peruu myös lähetykset, jotka raportin valmiiksi merkitseminen teki näille toimenpiteille:"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #: src/reports/wagtail_admin.py
@@ -7482,10 +7428,8 @@ msgid "Undo marking as complete"
 msgstr "Peru valmiiksi merkitseminen"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
-#| msgid "Mark action as complete"
 msgid "Submit actions and mark as complete"
-msgstr "Merkitse toimenpide valmiiksi"
+msgstr "Lähetä toimenpiteet ja merkitse valmiiksi"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #: src/reports/wagtail_admin.py
@@ -7493,100 +7437,81 @@ msgid "Mark as complete"
 msgstr "Merkitse valmiiksi"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
-#| msgid "completed"
 msgid "Report completed"
-msgstr "valmis"
+msgstr "Raportti valmis"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy, python-format
-#| msgid "action status updates"
+#, python-format
 msgid "Action submitted %(date)s"
-msgstr "toimenpiteiden tilannepäivitykset"
+msgstr "Toimenpide lähetetty %(date)s"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
-#| msgid "Not started"
 msgid "Not submitted"
-msgstr "Ei aloitettu"
+msgstr "Ei lähetetty"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Submit action for report"
-msgstr ""
+msgstr "Lähetä toimenpide raporttiin"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy
-#| msgid "Result"
 msgid "Resubmit"
-msgstr "Tulos"
+msgstr "Lähetä uudelleen"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
-#| msgid "These are sent when a visitor has left feedback for this action."
 msgid "No reports are shown in the reporting tab of this plan's actions."
-msgstr "Näitä herätteitä lähetetään kun sivuston vierailija on antanut palautetta tästä toimenpiteestä."
+msgstr "Tämän toimenpideohjelman toimenpiteiden Raportointi-välilehdellä ei näytetä raportteja."
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy, python-format
-#| msgid "%(counter)s waiting"
-#| msgid_plural "%(counter)s waiting"
+#, python-format
 msgid "%(counter)s action"
 msgid_plural "%(counter)s actions"
-msgstr[0] "%(counter)s odottaa"
-msgstr[1] "%(counter)s odottaa"
+msgstr[0] "%(counter)s toimenpide"
+msgstr[1] "%(counter)s toimenpidettä"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #, python-format
 msgid "%(submitted_count)s submitted"
-msgstr ""
+msgstr "%(submitted_count)s lähetetty"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #, python-format
 msgid "%(not_submitted_count)s not submitted"
-msgstr ""
+msgstr "%(not_submitted_count)s lähettämättä"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
-#| msgctxt "Action model"
-#| msgid "Action"
 msgid "Action"
 msgstr "Toimenpide"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
-#| msgid "Submitted by"
 msgid "Submitted"
-msgstr "Lähettäjä"
+msgstr "Lähetetty"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Undo"
-msgstr ""
+msgstr "Peru"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy, python-format
-#| msgid "Update goals"
+#, python-format
 msgid "%(date)s by %(user)s"
-msgstr "Päivitä tavoitteet"
+msgstr "%(date)s, %(user)s"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "Undo submission"
-msgstr ""
+msgstr "Peru lähetys"
 
 #: src/reports/templates/reports/panels/report_template_panel.html
 #, python-format
 msgid "%(counter)s field configured on this template:"
 msgid_plural "%(counter)s fields configured on this template:"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Tähän pohjaan on määritetty %(counter)s kenttä:"
+msgstr[1] "Tähän pohjaan on määritetty %(counter)s kenttää:"
 
 #: src/reports/templates/reports/panels/report_template_panel.html
-#, fuzzy
-#| msgid "This field is already customized in this plan."
 msgid "No fields are configured on this template."
-msgstr "Tämä kenttä on jo mukautettu tässä toimenpideohjelmassa."
+msgstr "Tähän pohjaan ei ole määritetty kenttiä."
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7594,112 +7519,94 @@ msgid "'%(instance_name)s' is used by a \"Report comparison\" block on the actio
 msgstr "”%(instance_name)s” on käytössä ”Raporttien vertailu” -lohkossa toimenpiteiden sivuilla. Sen poistaminen rikkoisi nämä sivut. Jos halusit poistaa raporttien vertailun toimenpiteiden sivuilta, poista lohko sen sijaan seuraavilta sivuilta:"
 
 #: src/reports/templates/reports/report_type_delete.html
-#, fuzzy, python-format
-#| msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-#| msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+#, python-format
 msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen raportin ja siihen tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
-msgstr[1] "Tämän raporttityypin poistaminen poistaa pysyvästi myös sen %(counter)s raporttia ja niihin tallennetut toimenpiteiden tallenteet (%(snapshot_count)s kpl)."
+msgstr[0] "Raporttipohjan poistaminen poistaa pysyvästi myös sen raportin ja siihen tallennetut %(snapshot_count)s toimenpiteiden tallennetta."
+msgstr[1] "Raporttipohjan poistaminen poistaa pysyvästi myös sen %(counter)s raporttia ja niihin tallennetut %(snapshot_count)s toimenpiteiden tallennetta."
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
-msgstr ""
+msgstr "Tässä toimenpiteessä on muutoksia, joita ei ole vielä julkaistu, esimerkiksi hyväksyntää odottavia muutoksia. Raporttiin tulee toimenpiteen julkaistu versio ilman näitä muutoksia."
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "The current values of the action's indicators are captured with it as part of the report:"
-msgstr ""
+msgstr "Toimenpiteen mittareiden nykyiset arvot tallennetaan sen mukana osaksi raporttia:"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy, python-format
-#| msgctxt "change log message"
-#| msgid "%(verbose_name)s: \"%(instance)s\" (%(date)s)."
+#, python-format
 msgid "Current: %(value)s %(unit)s (%(date)s)"
-msgstr "%(verbose_name)s: \"%(instance)s\" (%(date)s)."
+msgstr "Nykyinen: %(value)s %(unit)s (%(date)s)"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy
-#| msgid "Goal value"
 msgid "No values yet"
-msgstr "Tavoitearvo"
+msgstr "Ei vielä arvoja"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy
-#| msgid "Submitted by"
 msgid "Submit"
-msgstr "Lähettäjä"
+msgstr "Lähetä"
 
 #: src/reports/utils.py
 #, python-format
 msgid "%(template)s • %(report)s"
-msgstr ""
+msgstr "%(template)s • %(report)s"
 
 #: src/reports/views.py
-#, fuzzy
-#| msgid "Resubmit for moderation"
 msgid "Resubmit action to report"
-msgstr "Lähetä uudelleen moderointiin"
+msgstr "Lähetä toimenpide uudelleen raporttiin"
 
 #: src/reports/views.py
 msgid "Submit action to report"
-msgstr ""
+msgstr "Lähetä toimenpide raporttiin"
 
 #: src/reports/views.py
 msgid "Undo action submission"
-msgstr ""
+msgstr "Peru toimenpiteen lähetys"
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm resubmitting action %(action)s to report %(report)s"
-msgstr "Varmista toimenpiteen %(action)s merkitseminen valmiiksi raporttia %(report)s varten"
+msgstr "Vahvista toimenpiteen %(action)s lähettäminen uudelleen raporttiin %(report)s"
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm submitting action %(action)s to report %(report)s"
-msgstr "Varmista toimenpiteen %(action)s merkitseminen valmiiksi raporttia %(report)s varten"
+msgstr "Vahvista toimenpiteen %(action)s lähettäminen raporttiin %(report)s"
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#, python-format
 msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
-msgstr "Varmista että toimenpiteen %(action)s merkitseminen valmiiksi raporttia %(report)s varten perutaan"
+msgstr "Vahvista toimenpiteen %(action)s raporttiin %(report)s lähettämisen peruminen"
 
 #: src/reports/views.py
 #, python-format
 msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
-msgstr ""
+msgstr "Haluatko lähettää toimenpiteen '%(action)s' uudelleen raporttiin '%(report)s'? Tämä korvaa sen %(date)s tehdyn lähetyksen toimenpiteen nykyisillä tiedoilla."
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+#, python-format
 msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
-msgstr "Haluatko todella merkitä toimenpiteen '%(action)s' valmiiksi raporttia '%(report)s' varten?"
+msgstr "Haluatko lähettää toimenpiteen '%(action)s' raporttiin '%(report)s'?"
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+#, python-format
 msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
-msgstr "Haluatko todella perua toimenpiteen '%(action)s' merkitsemisen valmiiksi raporttia '%(report)s' varten?"
+msgstr "Haluatko perua toimenpiteen '%(action)s' lähetyksen raporttiin '%(report)s'?"
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, python-format
 msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
-msgstr "Toimenpide '%(action)s' on merkitty valmiiksi raporttia '%(report)s' varten."
+msgstr "Toimenpide '%(action)s' on lähetetty uudelleen raporttiin '%(report)s'."
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, python-format
 msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
-msgstr "Toimenpide '%(action)s' on merkitty valmiiksi raporttia '%(report)s' varten."
+msgstr "Toimenpide '%(action)s' on lähetetty raporttiin '%(report)s'."
 
 #: src/reports/views.py
-#, fuzzy, python-format
-#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, python-format
 msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
-msgstr "Toimenpiteen '%(action)s' merkitseminen valmiiksi raporttia '%(report)s' varten peruttiin"
+msgstr "Toimenpiteen '%(action)s' lähetys raporttiin '%(report)s' on peruttu."
 
 #: src/reports/views.py
 msgid "Mark report as complete"
@@ -7730,16 +7637,12 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Raportti '%(report)s' ei ole enää merkitty valmiiksi."
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "The report type is still used on action pages. Remove the report comparison blocks first."
 msgid "The report template is still used on action pages. Remove the report comparison blocks first."
-msgstr "Raporttityyppi on yhä käytössä toimenpiteiden sivuilla. Poista ensin raporttien vertailu -lohkot."
+msgstr "Raporttipohjaa käytetään yhä toimenpidesivuilla. Poista ensin raporttien vertailulohkot."
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "template"
 msgid "Edit template"
-msgstr "mallinne"
+msgstr "Muokkaa pohjaa"
 
 #: src/reports/wagtail_admin.py
 msgid "Download XLSX"
@@ -7760,51 +7663,40 @@ msgstr "Merkitse tämä raportti valmiiksi"
 #: src/reports/wagtail_admin.py
 #, python-format
 msgid "%(start)s – %(end)s"
-msgstr ""
+msgstr "%(start)s – %(end)s"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy, python-format
-#| msgid "Item %(index)s of %(total)s"
+#, python-format
 msgid "%(submitted)s / %(total)s"
-msgstr "Kohde %(index)s / %(total)s"
+msgstr "%(submitted)s / %(total)s"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Date format"
 msgid "Date range"
-msgstr "Päivämäärän muoto"
+msgstr "Aikaväli"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Completed"
 msgid "Complete"
 msgstr "Valmis"
 
 #: src/reports/wagtail_admin.py
 msgid "Open"
-msgstr ""
+msgstr "Avoin"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Action field"
 msgid "Actions submitted"
-msgstr "Toimenpiteen kenttä"
+msgstr "Lähetetyt toimenpiteet"
 
 #: src/reports/wagtail_admin.py
 msgid "The period during which action data for this report is collected."
-msgstr ""
+msgstr "Ajanjakso, jonka aikana tämän raportin toimenpidetiedot kerätään."
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Report types"
 msgid "Report details"
-msgstr "Raporttityypit"
+msgstr "Raportin tiedot"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Action statuses"
 msgid "Action submissions"
-msgstr "Toimenpiteen tilat"
+msgstr "Toimenpiteiden lähetykset"
 
 #: src/users/apps.py
 msgid "Users"

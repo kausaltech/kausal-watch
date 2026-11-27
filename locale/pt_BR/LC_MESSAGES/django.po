@@ -451,25 +451,24 @@ msgid "Dependencies"
 msgstr ""
 
 #: src/actions/action_admin.py
-#, fuzzy, python-format
+#, python-format
 msgid "Submit for %s"
-msgstr "Campo para %s"
+msgstr "Enviar para %s"
 
 #: src/actions/action_admin.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "Submit this action to the report %s"
-msgstr "Marque essa ação como concluída para o relatório %s"
+msgstr "Enviar esta ação para o relatório %s"
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Resubmit for %(report)s (submitted %(date)s)"
-msgstr ""
+msgstr "Reenviar para %(report)s (enviado em %(date)s)"
 
 #: src/actions/action_admin.py
 #, python-format
 msgid "Replace the submission of this action to the report %s with its current data"
-msgstr ""
+msgstr "Substituir o envio desta ação para o relatório %s pelos seus dados atuais"
 
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -1738,36 +1737,34 @@ msgid "The report %s is already marked as complete."
 msgstr "O relatório já está marcado como completo."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
+#, python-format
 msgid "The action has already been submitted to the report %s."
-msgstr "A ação já está marcada como concluída para o relatório %s."
+msgstr "A ação já foi enviada para o relatório %s."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
+#, python-format
 msgid "Submitted action '%(action)s' to report '%(report)s'"
-msgstr "Marcou a ação '%(action)s' como concluída para o relatório '%(report)s'"
+msgstr "Ação '%(action)s' enviada para o relatório '%(report)s'"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Mark this action as complete for the report %s"
+#, python-format
 msgid "The action has not been submitted to the report %s yet."
-msgstr "Marque essa ação como concluída para o relatório %s"
+msgstr "A ação ainda não foi enviada para o relatório %s."
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
+#, python-format
 msgid "Resubmitted action '%(action)s' to report '%(report)s'"
-msgstr "Marcou a ação '%(action)s' como concluída para o relatório '%(report)s'"
+msgstr "Ação '%(action)s' reenviada para o relatório '%(report)s'"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
-#| msgid "Undo marking this action as complete for the report %s"
+#, python-format
 msgid "Cannot undo the submission as the action has %s snapshots for the report"
-msgstr "Desfazer a marcação dessa ação como concluída para o relatório %s"
+msgstr "Não é possível desfazer o envio porque a ação tem %s instantâneos para o relatório"
 
 #: src/actions/models/action.py
-#, fuzzy, python-format
+#, python-format
 msgid "Undid submitting action '%(action)s' to report '%(report)s'"
-msgstr "Anular a marcação da ação '%(action)s' como concluída para o relatório '%(report)s'"
+msgstr "Envio da ação '%(action)s' para o relatório '%(report)s' desfeito"
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
 #: src/reports/report_formatters.py
@@ -2799,9 +2796,8 @@ msgid "plan features"
 msgstr "recursos do plano"
 
 #: src/actions/models/features.py
-#, fuzzy
 msgid "Hiding moderators requires contact persons to have different roles."
-msgstr "As pessoas de contato da ação têm funções diferentes"
+msgstr "Ocultar os moderadores exige que as pessoas de contato tenham papéis diferentes."
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -4668,9 +4664,8 @@ msgid "Email domains"
 msgstr "Domínios de e-mail"
 
 #: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Report templates"
-msgstr "Tipos de relatório"
+msgstr "Modelos de relatório"
 
 #: src/admin_site/wagtail_hooks.py
 msgid "User handbook"
@@ -8040,25 +8035,23 @@ msgstr "Organizações administradoras de planos"
 
 #: src/people/wagtail_admin.py
 msgid "Contact person role in newly added actions"
-msgstr ""
+msgstr "Papel da pessoa de contato nas ações adicionadas"
 
 #: src/people/wagtail_admin.py
 msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
-msgstr ""
+msgstr "Obrigatório se você adicionar ações acima. Os moderadores podem escolher os editores da ação e, se houver moderação, aprovar alterações; os editores não. Você pode alterar os papéis na página da ação."
 
 #: src/people/wagtail_admin.py
-#, fuzzy
 msgid "Moderators are not shown on the public site."
-msgstr "Você não tem acesso ao site público."
+msgstr "Os moderadores não são exibidos no site público."
 
 #: src/people/wagtail_admin.py
 msgid "You have switched to a different plan since opening this page. Please reload it and try again."
-msgstr ""
+msgstr "Você mudou para outro plano desde que abriu esta página. Recarregue-a e tente novamente."
 
 #: src/people/wagtail_admin.py
-#, fuzzy
 msgid "Choose the role of the person in the actions you added."
-msgstr "pessoas de contato do indicador"
+msgstr "Escolha o papel da pessoa nas ações que você adicionou."
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -8151,28 +8144,24 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr "Além da própria organização, uma unidade organizacional que contém a organização está incluída no relatório. Contando a partir da organização raiz de nível superior no nível 1, qual nível na hierarquia organizacional deve ser usado para encontrar essa organização que a contém? Se estiver vazio, não adicione a organização que a contém ao relatório."
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Report template"
-msgstr "Tipo de relatório"
+msgstr "Modelo de relatório"
 
 #: src/reports/blocks/choosers.py
-#, fuzzy
 msgid "Report"
-msgstr "Relatórios"
+msgstr "Relatório"
 
 #: src/reports/blocks/choosers.py
-#, fuzzy
 msgid "Report template field"
-msgstr "Campo Tipo de relatório"
+msgstr "Campo do modelo de relatório"
 
 #: src/reports/blocks/report_comparison_block.py
-#, fuzzy
 msgid "The completed reports of the template to compare."
-msgstr "O relatório não está marcado como completo."
+msgstr "Os relatórios concluídos do modelo a comparar."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "The field of the template whose values are compared. Only public fields can be compared."
-msgstr ""
+msgstr "O campo do modelo cujos valores são comparados. Somente campos públicos podem ser comparados."
 
 #: src/reports/blocks/report_comparison_block.py
 #, fuzzy
@@ -8180,61 +8169,54 @@ msgid "Report comparison"
 msgstr "Comparação de relatórios"
 
 #: src/reports/blocks/report_comparison_block.py
-#, fuzzy, python-format
+#, python-format
 msgid "\"%(report)s\" is not a report of the chosen template."
-msgstr "O relatório não está marcado como completo."
+msgstr "\"%(report)s\" não é um relatório do modelo escolhido."
 
 #: src/reports/blocks/report_comparison_block.py
 #, python-format
 msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
-msgstr ""
+msgstr "\"%(report)s\" não está concluído. Somente relatórios concluídos podem ser comparados."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Choose a public action field of the chosen template."
-msgstr ""
+msgstr "Escolha um campo público de ação do modelo escolhido."
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose a report template"
-msgstr "Escolha um tipo de relatório"
+msgstr "Escolher um modelo de relatório"
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose another report template"
-msgstr "Selecionar outro tipo de relatório"
+msgstr "Escolher outro modelo de relatório"
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose a report"
-msgstr "Escolha um tipo de relatório"
+msgstr "Escolher um relatório"
 
 #: src/reports/chooser.py
-#, fuzzy
 msgid "Choose another report"
-msgstr "Selecionar outro tipo de relatório"
+msgstr "Escolher outro relatório"
 
 #: src/reports/models.py
 msgid "What the template is for, e.g. who receives its reports and when"
-msgstr ""
+msgstr "Para que serve o modelo, por exemplo, quem recebe seus relatórios e quando"
 
 #: src/reports/models.py
-#, fuzzy
 msgid "Only plan admins can submit actions for reporting"
-msgstr "Confirmar a ação de desfazer a marcação %(action)s como completa para o relatório %(report)s"
+msgstr "Somente administradores do plano podem enviar ações para relatórios"
 
 #: src/reports/models.py
 msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
-msgstr ""
+msgstr "Ao enviar uma ação, os dados da ação naquele momento são usados no relatório final. Quando ativado, somente administradores do plano podem enviar ações individuais para um relatório. Outros usuários ainda podem editar as ações."
 
 #: src/reports/models.py
-#, fuzzy
 msgid "report template"
-msgstr "tipo de relatório"
+msgstr "modelo de relatório"
 
 #: src/reports/models.py
-#, fuzzy
 msgid "report templates"
-msgstr "tipos de relatório"
+msgstr "modelos de relatório"
 
 #: src/reports/models.py
 #, python-format
@@ -8252,13 +8234,12 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Definir se o relatório não puder mais ser alterado"
 
 #: src/reports/models.py
-#, fuzzy
 msgid "Show in action reporting tab"
-msgstr "mostrar na guia de relatórios"
+msgstr "Mostrar na aba Relatórios da ação"
 
 #: src/reports/models.py
 msgid "Show this report to editors on each action's Reporting tab."
-msgstr ""
+msgstr "Mostrar este relatório aos editores na aba Relatórios de cada ação."
 
 #: src/reports/models.py
 #, fuzzy
@@ -8424,73 +8405,68 @@ msgstr "organizações responsáveis"
 
 #: src/reports/template_editor.py
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
 msgid "Not included"
-msgstr "[não incluído]."
+msgstr "Não incluído"
 
 #: src/reports/template_editor.py
-#, fuzzy, python-format
+#, python-format
 msgid "Level %(level)d"
-msgstr "Título %(level)d"
+msgstr "Nível %(level)d"
 
 #: src/reports/template_editor.py
-#, fuzzy
 msgid "Containing organization"
-msgstr "Nível de organização de contenção"
+msgstr "Organização superior"
 
 #: src/reports/template_editor.py
-#, fuzzy
 msgid "Categories as assigned"
-msgstr "Página da categoria"
+msgstr "Categorias conforme atribuídas"
 
 #: src/reports/template_editor.py
 msgid "The fields could not be read. Reload the page and try again."
-msgstr ""
+msgstr "Não foi possível ler os campos. Recarregue a página e tente novamente."
 
 #: src/reports/template_editor.py
 msgid "The field could not be read."
-msgstr ""
+msgstr "Não foi possível ler o campo."
 
 #: src/reports/template_editor.py
-#, fuzzy
 msgid "Enter a name for the field."
-msgstr "limite de caracteres para campos de texto"
+msgstr "Insira um nome para o campo."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
-msgstr ""
+msgstr "Marcar o relatório <i>%(report)s</i> como concluído congela os dados das suas ações e indicadores e o fecha para envios. Isso não altera o status de nenhuma ação."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "%(counter)s of %(total)s actions has not been submitted"
 msgid_plural "%(counter)s of %(total)s actions have not been submitted"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(counter)s de %(total)s ações não foi enviada"
+msgstr[1] "%(counter)s de %(total)s ações não foram enviadas"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "They will be captured using their current published versions."
-msgstr ""
+msgstr "Elas serão registradas com suas versões publicadas atuais."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "They will be captured using their current values."
-msgstr ""
+msgstr "Elas serão registradas com seus valores atuais."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
 msgid "Unsubmitted actions"
-msgstr "publicado em"
+msgstr "Ações não enviadas"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
-msgstr ""
+msgstr "Estas ações enviadas têm alterações aguardando aprovação. O relatório mantém as versões enviadas, sem as alterações; reenvie uma ação depois que as alterações forem publicadas para incluí-las."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "The submitted action will use its submitted values."
 msgid_plural "The %(counter)s submitted actions will use their submitted values."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "A ação enviada usará seus valores enviados."
+msgstr[1] "As %(counter)s ações enviadas usarão seus valores enviados."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, fuzzy, python-format
@@ -8499,7 +8475,7 @@ msgstr "Você realmente deseja desfazer a marcação do relatório <i>%(report)s
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This also undoes the submissions that completing the report made for these actions:"
-msgstr ""
+msgstr "Isso também desfaz os envios que a conclusão do relatório fez para estas ações:"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #: src/reports/wagtail_admin.py
@@ -8508,9 +8484,8 @@ msgid "Undo marking as complete"
 msgstr "Desfazer a marcação como concluída"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy
 msgid "Submit actions and mark as complete"
-msgstr "Marcar a ação como concluída"
+msgstr "Enviar ações e marcar como concluído"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #: src/reports/wagtail_admin.py
@@ -8519,88 +8494,81 @@ msgid "Mark as complete"
 msgstr "Marcar como concluído"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
 msgid "Report completed"
-msgstr "concluído"
+msgstr "Relatório concluído"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy, python-format
+#, python-format
 msgid "Action submitted %(date)s"
-msgstr "atualizações do status da ação"
+msgstr "Ação enviada em %(date)s"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
-#| msgid "Not started"
 msgid "Not submitted"
-msgstr "Não iniciado"
+msgstr "Não enviada"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Submit action for report"
-msgstr ""
+msgstr "Enviar ação para o relatório"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "Resubmit"
-msgstr ""
+msgstr "Reenviar"
 
 #: src/reports/templates/reports/panels/action_reports_panel.html
-#, fuzzy
 msgid "No reports are shown in the reporting tab of this plan's actions."
-msgstr "Elas são enviadas quando um visitante deixa um feedback para essa ação."
+msgstr "Nenhum relatório é exibido na aba Relatórios das ações deste plano."
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy, python-format
+#, python-format
 msgid "%(counter)s action"
 msgid_plural "%(counter)s actions"
-msgstr[0] "categoria comum"
-msgstr[1] "categoria comum"
+msgstr[0] "%(counter)s ação"
+msgstr[1] "%(counter)s ações"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #, python-format
 msgid "%(submitted_count)s submitted"
-msgstr ""
+msgstr "%(submitted_count)s enviadas"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #, python-format
 msgid "%(not_submitted_count)s not submitted"
-msgstr ""
+msgstr "%(not_submitted_count)s não enviadas"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
 msgid "Action"
 msgstr "Ação"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy
 msgid "Submitted"
-msgstr "atualizado por"
+msgstr "Enviada"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Undo"
-msgstr ""
+msgstr "Desfazer"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
-#, fuzzy, python-format
+#, python-format
 msgid "%(date)s by %(user)s"
-msgstr "Atualizado em"
+msgstr "%(date)s por %(user)s"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "Undo submission"
-msgstr ""
+msgstr "Desfazer envio"
 
 #: src/reports/templates/reports/panels/report_template_panel.html
 #, python-format
 msgid "%(counter)s field configured on this template:"
 msgid_plural "%(counter)s fields configured on this template:"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%(counter)s campo configurado neste modelo:"
+msgstr[1] "%(counter)s campos configurados neste modelo:"
 
 #: src/reports/templates/reports/panels/report_template_panel.html
-#, fuzzy
 msgid "No fields are configured on this template."
-msgstr "A organização já está incluída no plano"
+msgstr "Nenhum campo está configurado neste modelo."
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -8611,94 +8579,91 @@ msgstr ""
 #, python-format
 msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
 msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Excluir este modelo de relatório também exclui permanentemente o seu relatório e os %(snapshot_count)s instantâneos de ações salvos nele."
+msgstr[1] "Excluir este modelo de relatório também exclui permanentemente os seus %(counter)s relatórios e os %(snapshot_count)s instantâneos de ações salvos neles."
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
-msgstr ""
+msgstr "Esta ação tem alterações que ainda não foram publicadas, por exemplo alterações aguardando aprovação. O relatório recebe a versão publicada da ação, sem essas alterações."
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "The current values of the action's indicators are captured with it as part of the report:"
-msgstr ""
+msgstr "Os valores atuais dos indicadores da ação são registrados com ela como parte do relatório:"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 #, python-format
 msgid "Current: %(value)s %(unit)s (%(date)s)"
-msgstr ""
+msgstr "Atual: %(value)s %(unit)s (%(date)s)"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy
 msgid "No values yet"
-msgstr "valor"
+msgstr "Ainda sem valores"
 
 #: src/reports/templates/reports/submit_action_confirmation.html
-#, fuzzy
 msgid "Submit"
-msgstr "atualizado por"
+msgstr "Enviar"
 
 #: src/reports/utils.py
 #, python-format
 msgid "%(template)s • %(report)s"
-msgstr ""
+msgstr "%(template)s • %(report)s"
 
 #: src/reports/views.py
-#, fuzzy
 msgid "Resubmit action to report"
-msgstr "Reenviar para moderação"
+msgstr "Reenviar ação para o relatório"
 
 #: src/reports/views.py
 msgid "Submit action to report"
-msgstr ""
+msgstr "Enviar ação para o relatório"
 
 #: src/reports/views.py
 msgid "Undo action submission"
-msgstr ""
+msgstr "Desfazer envio da ação"
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Confirm resubmitting action %(action)s to report %(report)s"
-msgstr "Confirmar a ação de marcação %(action)s como completa para o relatório %(report)s"
+msgstr "Confirmar o reenvio da ação %(action)s para o relatório %(report)s"
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Confirm submitting action %(action)s to report %(report)s"
-msgstr "Confirmar a ação de marcação %(action)s como completa para o relatório %(report)s"
+msgstr "Confirmar o envio da ação %(action)s para o relatório %(report)s"
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
-msgstr "Confirmar a ação de desfazer a marcação %(action)s como completa para o relatório %(report)s"
+msgstr "Confirmar o cancelamento do envio da ação %(action)s para o relatório %(report)s"
 
 #: src/reports/views.py
 #, python-format
 msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
-msgstr ""
+msgstr "Deseja reenviar a ação '%(action)s' para o relatório '%(report)s'? Isso substitui o envio de %(date)s pelos dados atuais da ação."
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
-msgstr "Você realmente deseja marcar a ação '%(action)s' como concluída para o relatório '%(report)s'?"
+msgstr "Deseja enviar a ação '%(action)s' para o relatório '%(report)s'?"
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
-msgstr "Você realmente deseja desfazer a marcação da ação '%(action)s' como concluída para o relatório '%(report)s'?"
+msgstr "Deseja desfazer o envio da ação '%(action)s' para o relatório '%(report)s'?"
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
-msgstr "A ação '%(action)s' foi marcada como concluída para o relatório '%(report)s'."
+msgstr "A ação '%(action)s' foi reenviada para o relatório '%(report)s'."
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
-msgstr "A ação '%(action)s' foi marcada como concluída para o relatório '%(report)s'."
+msgstr "A ação '%(action)s' foi enviada para o relatório '%(report)s'."
 
 #: src/reports/views.py
-#, fuzzy, python-format
+#, python-format
 msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
-msgstr "Anular a marcação da ação '%(action)s' como concluída para o relatório '%(report)s'"
+msgstr "O envio da ação '%(action)s' para o relatório '%(report)s' foi desfeito."
 
 #: src/reports/views.py
 #, fuzzy
@@ -8732,12 +8697,11 @@ msgstr "O relatório '%(report)s' não está mais marcado como completo."
 
 #: src/reports/wagtail_admin.py
 msgid "The report template is still used on action pages. Remove the report comparison blocks first."
-msgstr ""
+msgstr "O modelo de relatório ainda é usado em páginas de ações. Remova primeiro os blocos de comparação de relatórios."
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Edit template"
-msgstr "modelo"
+msgstr "Editar modelo"
 
 #: src/reports/wagtail_admin.py
 #, fuzzy
@@ -8762,47 +8726,40 @@ msgstr "Marcar este relatório como concluído"
 #: src/reports/wagtail_admin.py
 #, python-format
 msgid "%(start)s – %(end)s"
-msgstr ""
+msgstr "%(start)s – %(end)s"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy, python-format
-#| msgid "Item %(index)s of %(total)s"
+#, python-format
 msgid "%(submitted)s / %(total)s"
-msgstr "Item %(index)s de %(total)s"
+msgstr "%(submitted)s / %(total)s"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Date range"
-msgstr "Formato da data"
+msgstr "Intervalo de datas"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
-#| msgid "Completed"
 msgid "Complete"
 msgstr "Concluído"
 
 #: src/reports/wagtail_admin.py
 msgid "Open"
-msgstr ""
+msgstr "Aberto"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Actions submitted"
-msgstr "Campo de ação"
+msgstr "Ações enviadas"
 
 #: src/reports/wagtail_admin.py
 msgid "The period during which action data for this report is collected."
-msgstr ""
+msgstr "O período durante o qual os dados das ações para este relatório são coletados."
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Report details"
-msgstr "Tipos de relatório"
+msgstr "Detalhes do relatório"
 
 #: src/reports/wagtail_admin.py
-#, fuzzy
 msgid "Action submissions"
-msgstr "Status das ações"
+msgstr "Envios de ações"
 
 #: src/users/apps.py
 #, fuzzy
