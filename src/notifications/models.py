@@ -4,7 +4,7 @@ import datetime
 import logging
 import typing
 from email.utils import formataddr
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import reversion
 from django.conf import settings
@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.query import QuerySet
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -41,6 +42,7 @@ if typing.TYPE_CHECKING:
     from actions.models.plan import Plan
     from admin_site.models import Client
     from admin_site.permissions import PlanRelatedPermissionPolicy, PlanSpecificSingletonModelSuperuserPermissionPolicy
+    from users.models import User
 
     from .recipients import EmailRecipient, NotificationRecipient
 
@@ -633,3 +635,59 @@ class ActionContactPersonNotificationPreferences(models.Model):
 
     def __str__(self) -> str:
         return str(self.action_contact_person)
+
+
+class InboxNotificationQuerySet(QuerySet['InboxNotification']):
+    def unread(self) -> Self:
+        return self.filter(read_at__isnull=True, archived_at__isnull=True)
+
+    def unarchived(self) -> Self:
+        return self.filter(archived_at__isnull=True)
+
+
+class InboxNotification(models.Model):
+    """A notification in a user's inbox in the admin."""
+
+    class Type(models.TextChoices):
+        ACTION_SUBMITTED = 'action_submitted', _('Action waiting for review')
+        ACTION_CHANGES_REQUESTED = 'action_changes_requested', _('Changes requested on an action')
+        ACTION_APPROVED = 'action_approved', _('Action approved')
+        ACTION_WITHDRAWN = 'action_withdrawn', _('Action withdrawn from moderation')
+
+    recipient: FK[User] = models.ForeignKey(
+        'users.User', on_delete=models.CASCADE, related_name='inbox_notifications', verbose_name=_('recipient')
+    )
+    plan: FK[Plan | None] = models.ForeignKey(
+        'actions.Plan', on_delete=models.CASCADE, null=True, blank=True, related_name='+', verbose_name=_('plan')
+    )
+    type = models.CharField(max_length=50, choices=Type.choices, verbose_name=_('type'))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.CharField(max_length=255, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    # The object's title when the notification was created, for when the object no longer exists
+    object_title = models.CharField(max_length=1000, blank=True)
+    actor: FK[User | None] = models.ForeignKey(
+        'users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name=_('actor')
+    )
+    comment = models.TextField(blank=True, verbose_name=_('comment'))
+    created_at = models.DateTimeField(default=timezone.now, verbose_name=_('created at'))
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name=_('read at'))
+    archived_at = models.DateTimeField(null=True, blank=True, verbose_name=_('archived at'))
+
+    objects: ClassVar[InboxNotificationQuerySet] = InboxNotificationQuerySet.as_manager()  # type: ignore[assignment]
+
+    class Meta:
+        ordering = ('-created_at', '-pk')
+        verbose_name = _('inbox notification')
+        verbose_name_plural = _('inbox notifications')
+        indexes = [
+            models.Index(
+                fields=['recipient'],
+                condition=Q(read_at__isnull=True, archived_at__isnull=True),
+                name='inbox_unread_by_recipient',
+            ),
+            models.Index(fields=['recipient', '-created_at'], name='inbox_by_recipient_newest'),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.get_type_display()}: {self.object_title} -> {self.recipient}'

@@ -19,6 +19,7 @@ from people.models import Person
 from users.models import User
 from users.perms import create_permissions
 
+from . import inbox_notifications
 from .mail import (
     ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
     ActionModeratorCancelTaskStateSubmissionEmailNotifier,
@@ -207,6 +208,7 @@ def sync_permissions(sender, **kwargs):
 
 def register_signal_handlers():
     register_draft_reference_cleanup()
+    inbox_notifications.register_signal_handlers()
     task_submitted.connect(
         action_moderator_approval_task_submission_email_notifier,
         dispatch_uid='action_moderator_approval_task_submitted_email_notification',
