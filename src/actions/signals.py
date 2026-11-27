@@ -2,6 +2,7 @@ import logging
 from contextlib import suppress
 from typing import Any
 
+from django.apps import apps
 from django.db.models.signals import m2m_changed, post_delete, post_migrate, post_save, pre_save
 from django.dispatch import receiver
 from wagtail.admin.signal_handlers import workflow_approval_email_notifier as _wagtail_workflow_approval_notifier
@@ -199,7 +200,11 @@ post_delete.connect(sync_deleted_person_user_groups, sender=Person)
 
 
 def sync_permissions(sender, **kwargs):
-    if sender.label != 'actions':
+    # `post_migrate` is sent once per app with models, in the order of INSTALLED_APPS, and each app's permissions are
+    # created by its own signal. The groups get permissions of many apps, so sync them only after the last one.
+    # Otherwise, on a fresh database, they lack the permissions of the apps after `actions`, such as `audit_logging`.
+    last_app = [app_config for app_config in apps.get_app_configs() if app_config.models_module is not None][-1]
+    if sender.label != last_app.label:
         return
     print('Syncing permissions')
     sync_group_permissions()

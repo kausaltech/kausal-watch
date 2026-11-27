@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-26 11:55+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -392,6 +392,10 @@ msgstr "Πρωτοβάθμια οργάνωση"
 msgid "Last updated"
 msgstr "Τελευταία ενημέρωση"
 
+#: src/actions/action_admin.py
+msgid "While the action is locked for you, you can't add, edit or delete its change history messages."
+msgstr ""
+
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
@@ -444,6 +448,19 @@ msgid "Dependencies"
 msgstr "Εξαρτήσεις"
 
 #: src/actions/action_admin.py
+#, fuzzy
+#| msgid "Action schedules"
+msgid "To add a change history message, save the action, or submit its changes for moderation."
+msgstr "Χρονοδιαγράμματα δράσης"
+
+#: src/actions/action_admin.py src/actions/category_admin.py
+#: src/indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Change history messages"
+msgstr "χρονοδιαγράμματα δράσης"
+
+#: src/actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
 msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
@@ -466,6 +483,7 @@ msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρ�
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Edit"
 msgstr "Επεξεργασία"
 
@@ -476,6 +494,7 @@ msgid "Edit '%(title)s'"
 msgstr "τίτλος ιστότοπου"
 
 #: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Delete"
 msgstr "Διαγραφή"
 
@@ -4660,6 +4679,7 @@ msgid "Changed by"
 msgstr "δημιουργήθηκε από"
 
 #: src/audit_logging/templates/site_history_results.html
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Date / Time"
 msgstr ""
 
@@ -4668,6 +4688,10 @@ msgstr ""
 #| msgid "Edit this quantity"
 msgid "Edit this item"
 msgstr "Επεξεργασία αυτής της ποσότητας"
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
+msgstr ""
 
 #: src/audit_logging/views.py
 #, fuzzy
@@ -8044,6 +8068,40 @@ msgstr "χρονοδιαγράμματα δράσης"
 msgid "Skip"
 msgstr ""
 
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "author"
+msgid "Author"
+msgstr "συγγραφέας"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Message"
+msgstr ""
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "Allow logging in to the public website"
+msgid "Shown on the public site"
+msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "Unpublished"
+msgid "Not yet published"
+msgstr "Αδημοσίευτο"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "Action schedules"
+msgid "No change history messages have been written yet."
+msgstr "Χρονοδιαγράμματα δράσης"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+#, fuzzy
+#| msgid "Action schedules"
+msgid "Add change history message"
+msgstr "Χρονοδιαγράμματα δράσης"
+
 #: templates/aplans/panels/choice_option_archive_panel.html
 #, fuzzy
 #| msgid "archived at"
@@ -8298,9 +8356,6 @@ msgstr "αναγνωριστικό"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Δεν είναι πρόσωπο επαφής"
-
-#~ msgid "Allow logging in to the public website"
-#~ msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
 
 #~ msgid "Should users be able to have authenticated sessions in the public UI?"
 #~ msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"

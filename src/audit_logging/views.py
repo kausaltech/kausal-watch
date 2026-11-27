@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any
+
 from django.contrib.auth import get_user_model
 from django.db.models import IntegerField, Value
 from django.forms import CheckboxSelectMultiple
@@ -16,9 +19,44 @@ from wagtail.permissions import ModelPermissionPolicy
 
 import django_filters
 
-from audit_logging.models import PlanScopedModelLogEntry
+from admin_site.models import BaseChangeLogMessage
+from audit_logging.models import CHANGE_LOG_MESSAGE_CONTENT_KEY, PlanScopedModelLogEntry
+
+if TYPE_CHECKING:
+    from wagtail.models.audit_log import BaseLogEntry
 
 LOG_MODELS_TO_EXCLUDE = (ModelLogEntry, PageLogEntry)
+
+
+def annotate_change_log_message_content(log_entries: list[BaseLogEntry]) -> None:
+    """
+    Set `change_log_message_content` on log entries about change history messages to the message's text.
+
+    Entries logged since the text is stored in the entry have the text as it was then. For older entries,
+    use the message's current text, if it still exists, and set `change_log_message_content_is_current`.
+    """
+    missing: dict[type[BaseChangeLogMessage], list[PlanScopedModelLogEntry]] = defaultdict(list)
+    for entry in log_entries:
+        # Change history messages are plan-related models, so their entries are always of this model
+        # Entries of deleted content types have no content type
+        if not isinstance(entry, PlanScopedModelLogEntry) or entry.content_type is None:
+            continue
+        model = entry.content_type.model_class()
+        if model is None or not issubclass(model, BaseChangeLogMessage):
+            continue
+        content = (entry.data or {}).get(CHANGE_LOG_MESSAGE_CONTENT_KEY)
+        if content is not None:
+            entry.change_log_message_content = content  # type: ignore[attr-defined]
+            continue
+        missing[model].append(entry)
+    for model, entries in missing.items():
+        messages = model._default_manager.select_related('plan').in_bulk([entry.object_id for entry in entries])
+        for entry in entries:
+            message: Any = messages.get(int(entry.object_id))
+            if message is not None:
+                entry.change_log_message_content = message.content_i18n  # type: ignore[attr-defined]
+                # The message may have been edited since, so this is not necessarily what was logged
+                entry.change_log_message_content_is_current = True  # type: ignore[attr-defined]
 
 
 class CustomSiteHistoryReportFilterSet(SiteHistoryReportFilterSet):
@@ -109,3 +147,8 @@ class PlanScopedLogEntriesView(LogEntriesView):
         if queryset is None:
             return None
         return queryset.order_by('-timestamp')
+
+    def decorate_paginated_queryset(self, queryset):
+        log_entries = super().decorate_paginated_queryset(queryset)
+        annotate_change_log_message_content(log_entries)
+        return log_entries

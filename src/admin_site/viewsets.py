@@ -2,20 +2,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import models
-from django.db.models import Model, ProtectedError, QuerySet
+from django.db.models import Model, OuterRef, ProtectedError, QuerySet, Subquery
+from django.db.models.functions import Cast
 from django.forms.models import ModelForm
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import cached_property, classproperty
+from django.utils.http import urlencode
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, pgettext_lazy
 from wagtail.admin import messages
+from wagtail.admin.admin_url_finder import AdminURLFinder
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels.field_panel import FieldPanel
 from wagtail.admin.ui.components import MediaContainer
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn
+from wagtail.admin.utils import get_valid_next_url_from_request
 from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+from wagtail.log_actions import registry as log_registry
 from wagtail.models import Page
 from wagtail.permissions import policy_registry
 from wagtail.snippets.bulk_actions.delete import DeleteBulkAction
@@ -47,11 +54,13 @@ from admin_site.permissions import PlanRelatedPermissionPolicy
 from admin_site.utils import admin_req
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from django.http import HttpRequest
+    from wagtail.admin.views.generic.base import BreadcrumbItem
 
     from actions.models.action import BaseChangeLogMessage
+    from actions.models.plan import Plan
 
 
 class ObjectWithPublicChangeLogMessage(Protocol):
@@ -155,6 +164,25 @@ class WatchIndexView[ModelT: Model, QS: QuerySet[Any] = QuerySet[ModelT]](
         if getattr(getattr(self.model, 'snippet_viewset', None), 'bulk_delete_enabled', True):
             return columns
         return [column for column in columns if not isinstance(column, BulkActionsCheckboxColumn)]
+
+    def _annotate_queryset_updated_at(self, queryset: QS) -> QS:
+        # Wagtail only annotates models logged to its own `ModelLogEntry`, but still orders by the annotation, so the
+        # default listing of a plan-related model, which is logged to `PlanScopedModelLogEntry`, failed.
+        from audit_logging.models import PlanScopedModelLogEntry
+
+        # The stubs say it takes an instance, but Wagtail passes the model class, too
+        if log_registry.get_log_model_for_model(queryset.model) is not PlanScopedModelLogEntry:  # type: ignore[arg-type]
+            return super()._annotate_queryset_updated_at(queryset)
+        latest_log = (
+            PlanScopedModelLogEntry.objects
+            .filter(
+                content_type=ContentType.objects.get_for_model(queryset.model, for_concrete_model=False),
+                object_id=Cast(OuterRef('pk'), models.CharField()),
+            )
+            .order_by('-timestamp', '-pk')
+            .values('timestamp')[:1]
+        )
+        return queryset.annotate(_updated_at=Subquery(latest_log))
 
 
 class InstancePermissionCheckedMixin(PermissionCheckedMixin):
@@ -304,6 +332,23 @@ class WatchViewSet[ModelT: Model, FormT: ModelForm[Any] = WagtailAdminModelForm[
         return super().get_form_class(for_update)
 
 
+def replace_index_breadcrumb(
+    items: Sequence[BreadcrumbItem], index_url: str, related_obj: object | None, related_url: str | None
+) -> list[BreadcrumbItem]:
+    """
+    Replace the breadcrumb of a change log message listing with the object the message is about.
+
+    The messages are listed on the edit page of their object, so the listing is not offered.
+    """
+    result: list[BreadcrumbItem] = []
+    for item in items:
+        if item['url'] != index_url:
+            result.append(item)
+        elif related_obj is not None and related_url:
+            result.append({'url': related_url, 'label': str(related_obj)})
+    return result
+
+
 class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLogMessage]:
     """
     Tie a change log message view to the object the message is about.
@@ -315,12 +360,21 @@ class ChangeLogMessageRelatedObjectMixin[RelatedModel: ObjectWithPublicChangeLog
     request: HttpRequest
     related_field_name: str
     related_model: type[Model]
+    # URL name of the related object's edit view, where editing or deleting a message returns to
+    related_edit_url_name: str
 
     def get_related_object_by_pk(self, pk: str) -> RelatedModel | None:
         return cast('RelatedModel | None', self.related_model._default_manager.filter(pk=pk).first())
 
     def check_related_object_permission(self, _related_obj: RelatedModel | None) -> bool:
         raise NotImplementedError
+
+    def get_related_object_edit_url(self, related_obj: RelatedModel) -> str:
+        return reverse(self.related_edit_url_name, args=[related_obj.pk])  # type: ignore[attr-defined]
+
+    def get_related_object_plan(self, _related_obj: RelatedModel) -> Plan | None:
+        """Return the plan the object belongs to, or None if it may belong to several, like an indicator."""
+        return None
 
 
 class BaseChangeLogMessageCreateView[
@@ -358,7 +412,17 @@ class BaseChangeLogMessageCreateView[
         related_obj = self.get_related_object()
         if not self.check_related_object_permission(related_obj):
             raise PermissionDenied
+        # A message is saved for the active plan, which may have changed since the form was opened
+        assert related_obj is not None
+        related_plan = self.get_related_object_plan(related_obj)
+        if related_plan is not None and related_plan != user_or_bust(request.user).get_active_admin_plan():
+            raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs_items(self):
+        related_obj = self.get_related_object()
+        related_url = self.get_related_object_edit_url(related_obj) if related_obj is not None else None
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
 
     def get_page_subtitle(self):
         related_obj = self.get_related_object()
@@ -405,29 +469,63 @@ class ChangeLogMessageInstanceViewMixin[RelatedModel: ObjectWithPublicChangeLogM
 class BaseChangeLogMessageEditView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], WatchEditView[M]
 ):
-    success_url_name: str
-
     def get_side_panels(self):
         return MediaContainer()
 
     def get_success_url(self):
         assert self.object is not None
+        return self.get_related_object_edit_url(getattr(self.object, self.related_field_name))
+
+    def get_breadcrumbs_items(self):
         related_obj = getattr(self.object, self.related_field_name)
-        return reverse(self.success_url_name, args=[related_obj.pk])
+        related_url = self.get_related_object_edit_url(related_obj)
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
 
 
 class BaseChangeLogMessageDeleteView[M: models.Model, RelatedModel: ObjectWithPublicChangeLogMessage](
     ChangeLogMessageInstanceViewMixin[RelatedModel], SnippetDeleteView
 ):
-    pass
+    def get_success_url(self):
+        # The messages are listed on the edit page of their object, not on their own listing
+        next_url = get_valid_next_url_from_request(self.request)
+        if next_url:
+            return next_url
+        return self.get_related_object_edit_url(getattr(self.object, self.related_field_name))
+
+    def get_delete_url(self):
+        # The confirmation form posts to this URL, so it must keep the page to return to after deleting
+        url = super().get_delete_url()
+        next_url = get_valid_next_url_from_request(self.request)
+        if not next_url:
+            return url
+        return f'{url}?{urlencode({"next": next_url})}'
+
+
+class ChangeLogMessageIndexView[ModelT: Model](WatchIndexView[ModelT]):
+    """Send visitors of a change log message listing to the dashboard; messages are listed on their object's edit page."""
+
+    def dispatch(self, request, *args, **kwargs):
+        return redirect('wagtailadmin_home')
+
+
+class ChangeLogMessageHistoryView(WatchHistoryView):
+    def get_breadcrumbs_items(self):
+        related_obj = self.object.get_instance()
+        related_url = AdminURLFinder(self.request.user).get_edit_url(related_obj)
+        return replace_index_breadcrumb(super().get_breadcrumbs_items(), reverse(self.index_url_name), related_obj, related_url)
 
 
 class BaseChangeLogMessageViewSet[M: models.Model, FormT: ModelForm[Any] = WagtailAdminModelForm[Any]](WatchViewSet[M, FormT]):
     add_to_admin_menu = False
+    # Whether a message may be deleted depends on its object, and for actions on its revision, which the policy of the
+    # bulk action does not check
+    bulk_delete_enabled = False
     icon = 'doc-full'
     page_title = pgettext_lazy('page title', 'Add change history message')
     plan_filter_path: str
     create_template_name = 'aplans/change_log_message_create.html'
+    index_view_class = ChangeLogMessageIndexView
+    history_view_class = ChangeLogMessageHistoryView
 
     panels = [
         FieldPanel('content'),

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-26 11:55+0200\n"
 "PO-Revision-Date: 2026-09-28 07:53+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -392,6 +392,10 @@ msgstr "Organización primaria"
 msgid "Last updated"
 msgstr "Última actualización"
 
+#: src/actions/action_admin.py
+msgid "While the action is locked for you, you can't add, edit or delete its change history messages."
+msgstr "Mientras la acción esté bloqueada para usted, no puede añadir, editar ni eliminar sus mensajes del historial de cambios."
+
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
@@ -444,6 +448,15 @@ msgid "Dependencies"
 msgstr "Dependencias"
 
 #: src/actions/action_admin.py
+msgid "To add a change history message, save the action, or submit its changes for moderation."
+msgstr "Para añadir un mensaje del historial de cambios, guarde la acción o envíe sus cambios para moderación."
+
+#: src/actions/action_admin.py src/actions/category_admin.py
+#: src/indicators/wagtail_admin.py
+msgid "Change history messages"
+msgstr "Mensajes del historial de cambios"
+
+#: src/actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
 msgstr "Deshacer el marcado como completo para el informe %s"
@@ -466,6 +479,7 @@ msgstr "Marcar esta acción como completa para el informe %s"
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Edit"
 msgstr "Editar"
 
@@ -476,6 +490,7 @@ msgid "Edit '%(title)s'"
 msgstr "título del sitio"
 
 #: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Delete"
 msgstr "Borrar"
 
@@ -4624,6 +4639,7 @@ msgid "Changed by"
 msgstr "creado por"
 
 #: src/audit_logging/templates/site_history_results.html
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Date / Time"
 msgstr ""
 
@@ -4632,6 +4648,10 @@ msgstr ""
 #| msgid "Edit this quantity"
 msgid "Edit this item"
 msgstr "Editar esta cantidad"
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
+msgstr "Texto actual:"
 
 #: src/audit_logging/views.py
 #, fuzzy
@@ -7987,6 +8007,30 @@ msgstr "calendarios de actuación"
 msgid "Skip"
 msgstr ""
 
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Author"
+msgstr "Autor"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Message"
+msgstr "Mensaje"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Shown on the public site"
+msgstr "Se muestra en el sitio público"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Not yet published"
+msgstr "Aún no publicado"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "No change history messages have been written yet."
+msgstr "Todavía no se ha escrito ningún mensaje del historial de cambios."
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Add change history message"
+msgstr "Añadir mensaje del historial de cambios"
+
 #: templates/aplans/panels/choice_option_archive_panel.html
 #, fuzzy
 #| msgid "archived at"
@@ -8232,9 +8276,6 @@ msgstr "Copiar identificador"
 
 #~ msgid "Not a contact person"
 #~ msgstr "No es una persona de contacto"
-
-#~ msgid "Allow logging in to the public website"
-#~ msgstr "Permitir el acceso al sitio web público"
 
 #~ msgid "Should users be able to have authenticated sessions in the public UI?"
 #~ msgstr "¿Deberían los usuarios poder tener sesiones autenticadas en la interfaz de usuario pública?"

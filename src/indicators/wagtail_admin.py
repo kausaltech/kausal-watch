@@ -56,6 +56,7 @@ from aplans.wagtail_utils import _get_category_fields
 from actions.category_admin import InitialPlanFormMixin, PanelFormMixin
 from actions.models.plan import Plan
 from admin_site.field_customization import register_customizable_fields
+from admin_site.panels import ChangeLogMessagesPanel
 from admin_site.utils import admin_req
 from admin_site.viewsets import (
     InstancePermissionCheckedMixin,
@@ -1131,12 +1132,21 @@ def _get_relationships_tab(instance: Indicator | None = None) -> ObjectList:
     return ObjectList(panels, heading=_('Relationships'))
 
 
+def get_change_log_message_url(indicator: Indicator) -> str:
+    change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
+    return f'{change_log_create_url}?indicator={indicator.pk}'
+
+
 def get_indicator_panel(request: HttpRequest, instance: Indicator) -> IndicatorEditHandler:
     tabs = [
         _get_basic_information_tab(instance, request),
         _get_contact_persons_tab(),
         _get_reporting_tab(),
         _get_relationships_tab(instance),
+        ObjectList(
+            [ChangeLogMessagesPanel(get_add_url=lambda indicator, _user: get_change_log_message_url(indicator))],
+            heading=_('Change history messages'),
+        ),
         *get_translation_tabs(instance, request),
     ]
     return IndicatorEditHandler(tabs).bind_to_model(Indicator)
@@ -1163,8 +1173,7 @@ class IndicatorCreateView(InitialPlanFormMixin, IndicatorInstanceContextMixin, P
         # if they may modify the indicator in that plan. They may not, for instance, if they switched
         # plans while the form was open, in which case the indicator was saved for the original plan.
         if plan.features.enable_change_log and user.can_modify_indicator(self.object, plan=plan):
-            change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-            return f'{change_log_create_url}?indicator={self.object.pk}'
+            return get_change_log_message_url(self.object)
         return super().get_success_url()
 
 
@@ -1200,8 +1209,7 @@ class IndicatorEditView(
             self.request.session.pop('_active_tab', None)
         plan = user_or_bust(self.request.user).get_active_admin_plan()
         if plan.features.enable_change_log:
-            change_log_create_url = reverse('wagtailsnippets_actions_indicatorchangelogmessage:add')
-            return f'{change_log_create_url}?indicator={self.object.pk}'
+            return get_change_log_message_url(self.object)
         # Redirect to the factors panel so the user can access the data editor link.
         if redirect_to_factors:
             return reverse(self.edit_url_name, args=[quote(self.object.pk)]) + '#panel-child-relationships-factors-section'

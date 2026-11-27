@@ -65,6 +65,7 @@ from actions.models.plan import Plan
 from admin_site.field_customization import collect_customizable_field_names, register_customizable_fields
 from admin_site.mixins import OfferPlanSwitchMixin
 from admin_site.models import BuiltInFieldCustomization
+from admin_site.panels import ChangeLogMessagesPanel
 from admin_site.utils import FieldLabelRenderer, admin_req
 from admin_site.viewsets import (
     InstancePermissionCheckedMixin,
@@ -93,7 +94,12 @@ from people.chooser import TaskPersonChooser
 from people.models import Person
 from reports.views import MarkActionAsCompleteView
 
-from .admin_utils import change_log_message_url_or_none
+from .admin_utils import (
+    change_log_message_url_or_none,
+    get_change_log_message_change_check,
+    is_locked_for_user,
+    may_write_change_log_message,
+)
 from .bulk_approve import BulkApproveView
 from .category_admin import InitialPlanFormMixin, PanelFormMixin
 from .models.action import (
@@ -105,7 +111,7 @@ from .models.action import (
 from .validation import TASK_DUE_DATE_REQUIRED_MESSAGE, get_action_dates_error, get_task_completion_date_error
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from django.db.models import Model
     from django.http import HttpRequest
@@ -118,7 +124,7 @@ if typing.TYPE_CHECKING:
     from actions.permission_policy import ActionPermissionPolicy
     from users.models import User
 
-    from .models.action import ModelWithRole
+    from .models.action import ActionChangeLogMessage, ModelWithRole
 
 
 logger = logging.getLogger(__name__)
@@ -1269,6 +1275,39 @@ DISABLED_URL_NAMES = frozenset({
 })
 
 
+def _get_change_log_message_add_url(action: Action, user: User) -> str | None:
+    """
+    Return the URL for adding a change history message from the action's edit page, if a message can be added.
+
+    A message must be tied to the revision that the public site will look it up by. For changes waiting for moderation,
+    that is their latest revision. Changes saved as a draft but not yet submitted have no such revision, since submitting
+    saves a new one; the submission asks for a message instead. Otherwise it is the revision that the public site looks
+    up for the live version, which an action that has never been saved in the admin does not have.
+    """
+    moderation = action.plan.features.enable_moderation_workflow
+    if moderation and action.workflow_in_progress:
+        revision_id = action.latest_revision_id
+    elif moderation and (action.has_unpublished_changes or action.latest_revision_id != action.live_revision_id):
+        return None
+    else:
+        revision_id = action.get_public_change_log_revision_id()
+    # A locked action's edit page can't be used for anything; the submission of changes asks for a message instead
+    if revision_id is None or is_locked_for_user(action, user) or not may_write_change_log_message(user, action, revision_id):
+        return None
+    return f'{reverse("wagtailsnippets_actions_actionchangelogmessage:add")}?action={action.pk}&revision={revision_id}'
+
+
+def _get_change_log_message_check(action: Action, user: User) -> Callable[[ActionChangeLogMessage], bool]:
+    check_revision = get_change_log_message_change_check(user, action)
+    return lambda message: check_revision(message.revision_id)
+
+
+def _get_change_log_message_notice(action: Action, user: User) -> StrOrPromise | None:
+    if is_locked_for_user(action, user):
+        return _("While the action is locked for you, you can't add, edit or delete its change history messages.")
+    return None
+
+
 class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
     model = Action
     url_prefix = 'actions/action'
@@ -1566,6 +1605,22 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
                 ),
             ]
             all_tabs.append(ObjectList(dependency_panels, heading=_('Dependencies')))
+
+        all_tabs.append(
+            ObjectList(
+                [
+                    ChangeLogMessagesPanel(
+                        get_add_url=_get_change_log_message_add_url,
+                        add_unavailable_text=_(
+                            'To add a change history message, save the action, or submit its changes for moderation.'
+                        ),
+                        get_message_check=_get_change_log_message_check,
+                        get_notice=_get_change_log_message_notice,
+                    )
+                ],
+                heading=_('Change history messages'),
+            )
+        )
 
         i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs

@@ -36,6 +36,7 @@ from aplans.utils import append_query_parameter
 
 from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.models.plan import Plan
+from admin_site.panels import ChangeLogMessagesPanel
 from admin_site.viewsets import (
     InstancePermissionCheckedMixin,
     WatchCreateView,
@@ -342,6 +343,10 @@ def get_category_panel(request: HttpRequest, instance: Category) -> AplansTabbed
 
     tabs: list[Panel[Any]] = [
         ObjectList(panels, heading=_('Basic information')),
+        ObjectList(
+            [ChangeLogMessagesPanel(get_add_url=lambda category, _user: get_change_log_message_url(category))],
+            heading=_('Change history messages'),
+        ),
         *get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels),
     ]
 

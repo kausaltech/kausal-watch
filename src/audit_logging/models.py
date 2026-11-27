@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, Unpack
 
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
@@ -12,6 +13,7 @@ from wagtail.models.audit_log import BaseLogEntry, BaseLogEntryManager, LogEntry
 
 from kausal_common.users import user_or_none
 
+from admin_site.models import BaseChangeLogMessage
 from pages.models import AplansPage
 from users.models import User
 
@@ -25,6 +27,9 @@ if TYPE_CHECKING:
     from aplans.utils import IndirectPlanRelatedModel, PlanRelatedModel
 
     from actions.models import Plan
+
+# Key in a log entry's `data` that holds the text of the change history message the entry is about
+CHANGE_LOG_MESSAGE_CONTENT_KEY = 'change_log_message_content'
 
 type PlanScopedPageModel = AplansPage
 type PlanScopedModel = PlanRelatedModel | IndirectPlanRelatedModel
@@ -68,6 +73,9 @@ class PlanScopedModelLogEntryManager(
             raise ValueError('Attempted to log an action for object %r with empty primary key' % (instance,))
 
         kwargs['data'] = kwargs.get('data') or {}
+        if isinstance(instance, BaseChangeLogMessage):
+            # Keep the text as it was when logged, since the message may be edited or deleted later
+            kwargs['data'] = {**kwargs['data'], CHANGE_LOG_MESSAGE_CONTENT_KEY: instance.content}
         title = kwargs.pop('title', None)
         if not title:
             title = self.get_instance_title(instance)
@@ -92,7 +100,26 @@ class PlanScopedModelLogEntryManager(
         return retval
 
     def viewable_by_user(self, user: User):  # type: ignore[override]
-        return super().viewable_by_user(user).filter(plan__isnull=False, plan__in=user.get_adminable_plans())
+        # Wagtail's implementation caches the content types the user may see on the user object, under a
+        # name that all log models share, computed from the entries of whichever log model asks first. The
+        # registry keeps the log models in a set, so in some processes that is `ModelLogEntry`, and entries
+        # of content types that only occur here are hidden. Hence the separate cache.
+        qs = self.all() if user.is_superuser else self.filter(content_type_id__in=self._allowed_content_type_ids(user))
+        return qs.filter(plan__isnull=False, plan__in=user.get_adminable_plans())
+
+    def _allowed_content_type_ids(self, user: User) -> set[int]:
+        cached: set[int] | None = getattr(user, '_plan_scoped_log_allowed_content_type_ids', None)
+        if cached is not None:
+            return cached
+        used_content_type_ids = self.values_list('content_type_id', flat=True).distinct()
+        permissions = Permission.objects.filter(content_type_id__in=used_content_type_ids).select_related('content_type')
+        allowed = {
+            permission.content_type_id
+            for permission in permissions
+            if user.has_perm(f'{permission.content_type.app_label}.{permission.codename}')
+        }
+        user._plan_scoped_log_allowed_content_type_ids = allowed  # type: ignore[attr-defined]
+        return allowed
 
     def for_instance(self, instance: PlanScopedModel):
         return self.filter(

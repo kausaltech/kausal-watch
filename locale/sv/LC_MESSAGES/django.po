@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-26 11:55+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -360,6 +360,10 @@ msgstr "Primär organisation"
 msgid "Last updated"
 msgstr "Senast uppdaterad"
 
+#: src/actions/action_admin.py
+msgid "While the action is locked for you, you can't add, edit or delete its change history messages."
+msgstr "Så länge åtgärden är låst för dig kan du inte lägga till, redigera eller ta bort dess ändringshistorikmeddelanden."
+
 #: src/actions/action_admin.py src/actions/apps.py src/actions/models/plan.py
 #: src/content/models.py src/indicators/wagtail_admin.py
 #: src/reports/spreadsheets/excel_report.py
@@ -410,6 +414,15 @@ msgid "Dependencies"
 msgstr "Beroenden"
 
 #: src/actions/action_admin.py
+msgid "To add a change history message, save the action, or submit its changes for moderation."
+msgstr "Spara åtgärden eller skicka in dess ändringar för moderering för att lägga till ett ändringshistorikmeddelande."
+
+#: src/actions/action_admin.py src/actions/category_admin.py
+#: src/indicators/wagtail_admin.py
+msgid "Change history messages"
+msgstr "Ändringshistorikmeddelanden"
+
+#: src/actions/action_admin.py
 #, python-format
 msgid "Undo marking as complete for report %s"
 msgstr "Ångra markering som slutförd för rapport %s"
@@ -432,6 +445,7 @@ msgstr "Markera denna åtgärd som slutförd för rapporten %s"
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
 #: src/orgs/wagtail_admin.py src/people/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Edit"
 msgstr "Redigera"
 
@@ -441,6 +455,7 @@ msgid "Edit '%(title)s'"
 msgstr "Redigera '%(title)s'"
 
 #: src/actions/action_admin.py src/orgs/wagtail_admin.py
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Delete"
 msgstr "Radera"
 
@@ -4294,12 +4309,17 @@ msgid "Changed by"
 msgstr "Ändrad av"
 
 #: src/audit_logging/templates/site_history_results.html
+#: templates/aplans/panels/change_log_messages_panel.html
 msgid "Date / Time"
 msgstr "Datum/tid"
 
 #: src/audit_logging/templates/site_history_results.html
 msgid "Edit this item"
 msgstr "Redigera detta objekt"
+
+#: src/audit_logging/templates/site_history_results.html
+msgid "Current text:"
+msgstr "Nuvarande text:"
 
 #: src/audit_logging/views.py
 msgctxt "page title for history of changes"
@@ -7414,6 +7434,30 @@ msgstr "Nuvarande ändringshistorikmeddelande"
 msgid "Skip"
 msgstr "Hoppa över"
 
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Author"
+msgstr "Författare"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Message"
+msgstr "Meddelande"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Shown on the public site"
+msgstr "Visas på den publika webbplatsen"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Not yet published"
+msgstr "Ännu inte publicerat"
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "No change history messages have been written yet."
+msgstr "Inga ändringshistorikmeddelanden har skrivits ännu."
+
+#: templates/aplans/panels/change_log_messages_panel.html
+msgid "Add change history message"
+msgstr "Lägg till ändringshistorikmeddelande"
+
 #: templates/aplans/panels/choice_option_archive_panel.html
 msgid "Archived"
 msgstr "Arkiverad"
@@ -7645,9 +7689,6 @@ msgstr "Kopiera identifierare"
 
 #~ msgid "Not a contact person"
 #~ msgstr "Inte en kontaktperson"
-
-#~ msgid "Allow logging in to the public website"
-#~ msgstr "Tillåt inloggning på den offentliga webbplatsen"
 
 #~ msgid "Should users be able to have authenticated sessions in the public UI?"
 #~ msgstr "Ska användare kunna ha autentiserade sessioner i det publika användargränssnittet?"
