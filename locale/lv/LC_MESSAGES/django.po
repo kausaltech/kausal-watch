@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-27 15:43+0200\n"
 "PO-Revision-Date: 2026-09-28 07:50+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -255,6 +255,8 @@ msgstr ""
 
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/templates/actions/bulk_approve.html
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/templates/reports/submit_action_confirmation.html
 #: templates/aplans/plan_publish_confirmation.html
 #, fuzzy
 #| msgid "Cancelled"
@@ -384,7 +386,9 @@ msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "%(attribute_type)s (teksts)"
 
 #: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+#: src/copying/views.py src/reports/action_reporting.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Identifier"
 msgstr "Identifikators"
 
@@ -439,6 +443,11 @@ msgstr "iekšējās piezīmes"
 msgid "Internal notes for plan administrators"
 msgstr "iekšējās piezīmes plānu administratoriem"
 
+#: src/actions/action_admin.py src/admin_site/wagtail_hooks.py
+#: src/reports/apps.py src/reports/blocks/report_comparison_block.py
+msgid "Reports"
+msgstr "Ziņojumi"
+
 #: src/actions/action_admin.py src/indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Ziņošana"
@@ -454,24 +463,26 @@ msgid "Dependencies"
 msgstr ""
 
 #: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Atcelt ziņojuma atzīmēšanu kā pabeigtu %s"
+#, fuzzy, python-format
+#| msgid "Field for %s"
+msgid "Submit for %s"
+msgstr "Lauks %s"
 
 #: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Atcelt šīs rīcības atzīmēšanu kā pabeigtu ziņojumam %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark as complete for report %s"
-msgstr "Atzīmēt kā pabeigtu ziņojumam %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
+#, fuzzy, python-format
+#| msgid "Mark this action as complete for the report %s"
+msgid "Submit this action to the report %s"
 msgstr "Atzīmējiet šo rīcību kā pabeigtu ziņojumam %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Resubmit for %(report)s (submitted %(date)s)"
+msgstr ""
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Replace the submission of this action to the report %s with its current data"
+msgstr ""
 
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -744,7 +755,7 @@ msgstr "Lauks %s"
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
 msgstr ""
 
-#: src/actions/attribute_type_admin.py
+#: src/actions/attribute_type_admin.py src/reports/wagtail_admin.py
 msgid "Fields"
 msgstr "Lauki"
 
@@ -821,6 +832,8 @@ msgstr "Sadaļa"
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/choosers.py
 #: src/actions/blocks/filters.py
 #: src/admin_site/built_in_field_customization_admin.py
+#: src/reports/blocks/report_comparison_block.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Field"
 msgstr "Laukums"
 
@@ -1138,7 +1151,7 @@ msgid "Implementation phase"
 msgstr "Īstenošanas posms"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
-#: src/reports/blocks/action_content.py
+#: src/reports/blocks/action_content.py src/reports/wagtail_admin.py
 msgid "Status"
 msgstr "Statuss"
 
@@ -1182,7 +1195,7 @@ msgstr "Atbildīgā puse"
 #: src/actions/templates/actions/chooser_results.html
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
-#: src/reports/spreadsheets/excel_report.py
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Plāns"
@@ -1362,7 +1375,7 @@ msgstr "Izvēlieties plānu"
 msgid "Choose another plan"
 msgstr "Izvēlieties citu plānu"
 
-#: src/actions/chooser.py
+#: src/actions/chooser.py src/reports/blocks/choosers.py
 msgid "Choose a field"
 msgstr "Izvēlēties lauku"
 
@@ -1430,7 +1443,7 @@ msgstr "Vadošā rindkopa"
 
 #: src/actions/models/action.py src/actions/models/plan.py
 #: src/actions/models/pledge.py src/indicators/models/common_indicator.py
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/reports/models.py
 msgid "description"
 msgstr "apraksts"
 
@@ -1653,23 +1666,39 @@ msgid "The report %s is already marked as complete."
 msgstr "Ziņojums jau ir atzīmēts kā pabeigts."
 
 #: src/actions/models/action.py
-#, python-format
-msgid "The action is already marked as complete for report %s."
+#, fuzzy, python-format
+#| msgid "The action is already marked as complete for report %s."
+msgid "The action has already been submitted to the report %s."
 msgstr "Rīcība jau ir atzīmēta kā pabeigta ziņojumam %s."
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, fuzzy, python-format
+#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgid "Submitted action '%(action)s' to report '%(report)s'"
 msgstr "Atzīmēta rīcība '%(action)s' kā pabeigta ziņojumam '%(report)s'"
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr "Nav iespējams atcelt rīcības atzīmēšanu kā pabeigtu, jo ir %s momentuzņēmumi"
+#, fuzzy, python-format
+#| msgid "Mark this action as complete for the report %s"
+msgid "The action has not been submitted to the report %s yet."
+msgstr "Atzīmējiet šo rīcību kā pabeigtu ziņojumam %s"
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, fuzzy, python-format
+#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgid "Resubmitted action '%(action)s' to report '%(report)s'"
+msgstr "Atzīmēta rīcība '%(action)s' kā pabeigta ziņojumam '%(report)s'"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "Undo marking this action as complete for the report %s"
+msgid "Cannot undo the submission as the action has %s snapshots for the report"
+msgstr "Atcelt šīs rīcības atzīmēšanu kā pabeigtu ziņojumam %s"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgid "Undid submitting action '%(action)s' to report '%(report)s'"
 msgstr "Atcelta rīcības '%(action)s' atzīmēšana kā pabeigta ziņojumam '%(report)s'"
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
@@ -2084,7 +2113,7 @@ msgstr "Ikonas"
 msgid "field"
 msgstr "lauks"
 
-#: src/actions/models/attributes.py src/reports/wagtail_admin.py
+#: src/actions/models/attributes.py
 msgid "fields"
 msgstr "lauki"
 
@@ -2606,6 +2635,12 @@ msgstr "plāna funkcija"
 #: src/actions/models/features.py
 msgid "plan features"
 msgstr "plāna funkcijas"
+
+#: src/actions/models/features.py
+#, fuzzy
+#| msgid "Action contact persons have different roles"
+msgid "Hiding moderators requires contact persons to have different roles."
+msgstr "Rīcības kontaktpersonām ir dažādas lomas"
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -4466,9 +4501,11 @@ msgstr "%(model_name)s '%(object)s' atjaunināts."
 msgid "Email domains"
 msgstr "E-pasta domēni"
 
-#: src/admin_site/wagtail_hooks.py src/reports/apps.py
-msgid "Reports"
-msgstr "Ziņojumi"
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report templates"
+msgstr "Pārskatu veidi"
 
 #: src/admin_site/wagtail_hooks.py
 msgid "User handbook"
@@ -4636,7 +4673,7 @@ msgstr ""
 msgid "Contact persons with \"moderator\" role"
 msgstr "Kontaktpersonas ar \"moderatora\" lomu"
 
-#: src/aplans/utils.py
+#: src/aplans/utils.py src/reports/wagtail_admin.py
 msgid "Visibility"
 msgstr "Redzamība"
 
@@ -4735,7 +4772,7 @@ msgstr "Saskaņā ar rīcības plānu"
 msgid "Content"
 msgstr "Saturs"
 
-#: src/content/models.py src/feedback/models.py
+#: src/content/models.py src/feedback/models.py src/reports/action_reporting.py
 #: src/reports/spreadsheets/excel_report.py
 #, fuzzy
 #| msgid "Action"
@@ -5364,7 +5401,7 @@ msgstr "Indikatoru dati"
 msgid "Connected actions"
 msgstr "saistītās rīcības"
 
-#: src/indicators/blocks/layout.py
+#: src/indicators/blocks/layout.py src/reports/template_editor.py
 #, fuzzy
 #| msgid "Category levels"
 msgid "Category level"
@@ -6910,7 +6947,7 @@ msgstr "Metadatu administratori"
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
 msgstr "Personas, kas var rediģēt šīs organizācijas un apakšorganizāciju datus, bet ne ar plānu saistītu saturu"
 
-#: src/orgs/wagtail_admin.py
+#: src/orgs/wagtail_admin.py src/reports/wagtail_admin.py
 msgid "Permissions"
 msgstr "Atļaujas"
 
@@ -7579,6 +7616,7 @@ msgid "Organization admin"
 msgstr "Organizācija"
 
 #: src/people/wagtail_admin.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 #, fuzzy
 #| msgid "Contact persons"
 msgid "Contact person"
@@ -7609,6 +7647,30 @@ msgstr ""
 #: src/people/wagtail_admin.py
 msgid "Plan admin organizations"
 msgstr "Plānu administrēšanas organizācijas"
+
+#: src/people/wagtail_admin.py
+msgid "Contact person role in newly added actions"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Set if report can be shown to the public"
+msgid "Moderators are not shown on the public site."
+msgstr "Iestatiet, vai ziņojumu var rādīt publiski"
+
+#: src/people/wagtail_admin.py
+msgid "You have switched to a different plan since opening this page. Please reload it and try again."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Choose the role of the person in the actions you added."
+msgstr "rādītāju kontaktpersonas"
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -7664,6 +7726,16 @@ msgstr "kontaktinformācija par rādītājiem"
 msgid "Are you sure you want to deactivate this person?"
 msgstr "Vai esat pārliecināts, ka vēlaties deaktivizēt šo personu?"
 
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Atzīmēts kā pabeigts ar"
+
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Atzīmēts kā pabeigts"
+
 #: src/reports/blocks/action_content.py
 msgid "Action field"
 msgstr "Rīcības lauks"
@@ -7681,47 +7753,100 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr "Papildus pašai organizācijai pārskatā ir iekļauta arī organizatoriskā vienība, kurā ietilpst organizācija. Sākot no augstākā līmeņa saknes organizācijas 1. līmenī, kurš organizatoriskās hierarhijas līmenis jāizmanto, lai atrastu šo saturošo organizāciju? Ja tas ir atstāts tukšs, ziņojumā nepievienojiet saturošo organizāciju."
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+#, fuzzy
+#| msgid "Report type"
+msgid "Report template"
 msgstr "Ziņojuma veids"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+#, fuzzy
+#| msgid "Reports"
+msgid "Report"
+msgstr "Ziņojumi"
+
+#: src/reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type field"
+msgid "Report template field"
 msgstr "Ziņojuma tipa lauks"
 
 #: src/reports/blocks/report_comparison_block.py
-msgid "UUID of report field"
-msgstr "Ziņojuma lauka UUID"
+#, fuzzy
+#| msgid "The report is not marked as complete."
+msgid "The completed reports of the template to compare."
+msgstr "Ziņojums nav atzīmēts kā pabeigts."
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "The field of the template whose values are compared. Only public fields can be compared."
+msgstr ""
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Report comparison"
 msgstr "Pārskatu salīdzinājums"
 
+#: src/reports/blocks/report_comparison_block.py
+#, fuzzy, python-format
+#| msgid "The report is not marked as complete."
+msgid "\"%(report)s\" is not a report of the chosen template."
+msgstr "Ziņojums nav atzīmēts kā pabeigts."
+
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
+msgstr ""
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "Choose a public action field of the chosen template."
+msgstr ""
+
 #: src/reports/chooser.py
-msgid "Choose a report type"
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr "Izvēlieties ziņojuma veidu"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report template"
+msgstr "Izvēlieties citu ziņojuma veidu"
+
+#: src/reports/chooser.py
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report"
+msgstr "Izvēlieties ziņojuma veidu"
+
+#: src/reports/chooser.py
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report"
 msgstr "Izvēlieties citu ziņojuma veidu"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete"
-msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
+msgid "What the template is for, e.g. who receives its reports and when"
+msgstr ""
 
 #: src/reports/models.py
 #, fuzzy
 #| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can submit actions for reporting"
 msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
 
 #: src/reports/models.py
-msgid "report type"
+msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
+msgstr ""
+
+#: src/reports/models.py
+#, fuzzy
+#| msgid "report type"
+msgid "report template"
 msgstr "ziņojuma veids"
 
 #: src/reports/models.py
-msgid "report types"
+#, fuzzy
+#| msgid "report types"
+msgid "report templates"
 msgstr "ziņojumu veidi"
 
 #: src/reports/models.py
@@ -7738,21 +7863,13 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Iestatīts, ja ziņojumu vairs nevar mainīt"
 
 #: src/reports/models.py
-msgid "public"
-msgstr "publiski"
-
-#: src/reports/models.py
-msgid "Set if report can be shown to the public"
-msgstr "Iestatiet, vai ziņojumu var rādīt publiski"
-
-#: src/reports/models.py
 #, fuzzy
 #| msgid "show in reporting tab"
-msgid "Show in reporting tab"
+msgid "Show in action reporting tab"
 msgstr "parādīt ziņošanas cilnē"
 
 #: src/reports/models.py
-msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
+msgid "Show this report to editors on each action's Reporting tab."
 msgstr ""
 
 #: src/reports/models.py
@@ -7913,7 +8030,7 @@ msgid "Completion date"
 msgstr "pabeigšanas datums"
 
 #: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
+#: src/reports/tests/test_tasks_sheet.py src/reports/wagtail_admin.py
 msgid "Details"
 msgstr ""
 
@@ -7924,20 +8041,83 @@ msgstr ""
 msgid "Responsible organizations"
 msgstr "atbildīgās organizācijas"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete by"
-msgstr "Atzīmēts kā pabeigts ar"
+#: src/reports/template_editor.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "[not included]"
+msgid "Not included"
+msgstr "[nav iekļauts]"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete at"
-msgstr "Atzīmēts kā pabeigts"
+#: src/reports/template_editor.py
+#, fuzzy, python-format
+#| msgid "Heading %(level)d"
+msgid "Level %(level)d"
+msgstr "Virsraksts %(level)d"
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "Level of containing organization"
+msgid "Containing organization"
+msgstr "Organizācijas līmenis, kas satur"
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "Category page"
+msgid "Categories as assigned"
+msgstr "Kategorijas lapa"
+
+#: src/reports/template_editor.py
+msgid "The fields could not be read. Reload the page and try again."
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "The field could not be read."
+msgstr ""
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "character limit for text fields"
+msgid "Enter a name for the field."
+msgstr "teksta lauku rakstzīmju ierobežojums"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr "Vai tiešām vēlaties atzīmēt pārskatu <i>%(report)s</i> kā pabeigtu?"
+msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "%(counter)s of %(total)s actions has not been submitted"
+msgid_plural "%(counter)s of %(total)s actions have not been submitted"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current published versions."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current values."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, fuzzy
+#| msgid "published at"
+msgid "Unsubmitted actions"
+msgstr "publicēts vietnē"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "The submitted action will use its submitted values."
+msgid_plural "The %(counter)s submitted actions will use their submitted values."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -7945,12 +8125,118 @@ msgid "Do you really want to undo marking the report <i>%(report)s</i> as comple
 msgstr "Vai tiešām vēlaties atcelt ziņojuma <i>%(report)s</i> atzīmēšanu kā pabeigtu?"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will mark the following actions as complete:"
-msgstr "Šādas rīcības tiks atzīmētas kā pabeigtas:"
+msgid "This also undoes the submissions that completing the report made for these actions:"
+msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will undo marking the following actions as complete:"
-msgstr "Tādējādi tiks atcelta šādu rīcību atzīmēšana kā pabeigtas:"
+#: src/reports/wagtail_admin.py
+msgid "Undo marking as complete"
+msgstr "Atcelt atzīmēšanu kā pabeigtu"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, fuzzy
+#| msgid "Mark action as complete"
+msgid "Submit actions and mark as complete"
+msgstr "Atzīmēt rīcību kā pabeigtu"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/wagtail_admin.py
+msgid "Mark as complete"
+msgstr "Atzīmēt kā pabeigtu"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "completed"
+msgid "Report completed"
+msgstr "pabeigts"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy, python-format
+#| msgid "action status updates"
+msgid "Action submitted %(date)s"
+msgstr "rīcības statusa atjauninājumi"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "Not started"
+msgid "Not submitted"
+msgstr "Nav uzsākta"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Submit action for report"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Resubmit"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "These are sent when a visitor has left feedback for this action."
+msgid "No reports are shown in the reporting tab of this plan's actions."
+msgstr "Tie tiek nosūtīti, ja apmeklētājs ir atstājis atsauksmi par šo rīcību."
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy, python-format
+#| msgid "common category"
+msgid "%(counter)s action"
+msgid_plural "%(counter)s actions"
+msgstr[0] "kopējā kategorija"
+msgstr[1] "kopējā kategorija"
+msgstr[2] "kopējā kategorija"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(submitted_count)s submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(not_submitted_count)s not submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "Action"
+msgid "Action"
+msgstr "Rīcība"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "updated by"
+msgid "Submitted"
+msgstr "atjaunināja"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Undo"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy, python-format
+#| msgid "Updated at"
+msgid "%(date)s by %(user)s"
+msgstr "Atjaunināts vietnē"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Undo submission"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, python-format
+msgid "%(counter)s field configured on this template:"
+msgid_plural "%(counter)s fields configured on this template:"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, fuzzy
+#| msgid "The organization is already included in the plan"
+msgid "No fields are configured on this template."
+msgstr "Organizācija jau ir iekļauta plānā"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7959,49 +8245,108 @@ msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
-#: src/reports/views.py
-msgid "Mark action as complete"
-msgstr "Atzīmēt rīcību kā pabeigtu"
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
+msgstr ""
 
-#: src/reports/views.py
-msgid "Undo marking action as complete"
-msgstr "Atcelt rīcības atzīmēšanu kā pabeigtu"
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "The current values of the action's indicators are captured with it as part of the report:"
+msgstr ""
 
-#: src/reports/views.py
+#: src/reports/templates/reports/submit_action_confirmation.html
 #, python-format
-msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Current: %(value)s %(unit)s (%(date)s)"
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, fuzzy
+#| msgid "value"
+msgid "No values yet"
+msgstr "vērtība"
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, fuzzy
+#| msgid "updated by"
+msgid "Submit"
+msgstr "atjaunināja"
+
+#: src/reports/utils.py
+#, python-format
+msgid "%(template)s • %(report)s"
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy
+#| msgid "Resubmit for moderation"
+msgid "Resubmit action to report"
+msgstr "Atkārtoti iesniedziet moderēšanai"
+
+#: src/reports/views.py
+msgid "Submit action to report"
+msgstr ""
+
+#: src/reports/views.py
+msgid "Undo action submission"
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Confirm resubmitting action %(action)s to report %(report)s"
 msgstr "Apstiprināt, ka rīcība %(action)s ir atzīmēta kā pabeigta ziņojumam. %(report)s"
 
 #: src/reports/views.py
-#, python-format
-msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#, fuzzy, python-format
+#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Confirm submitting action %(action)s to report %(report)s"
+msgstr "Apstiprināt, ka rīcība %(action)s ir atzīmēta kā pabeigta ziņojumam. %(report)s"
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
 msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
 msgstr "Vai tiešām vēlaties atzīmēt rīcību '%(action)s' kā pabeigtu ziņojumam '%(report)s'?"
 
 #: src/reports/views.py
-#, python-format
-msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+#, fuzzy, python-format
+#| msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
 msgstr "Vai tiešām vēlaties atcelt rīcības '%(action)s' atzīšanu par pabeigtu ziņojumam '%(report)s'?"
 
 #: src/reports/views.py
-#, python-format
-msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, fuzzy, python-format
+#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
 msgstr "Rīcība '%(action)s' ir atzīmēta kā pabeigta ziņojumam '%(report)s'."
 
 #: src/reports/views.py
-#, python-format
-msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr "Rīcība '%(action)s' vairs nav atzīmēta kā pabeigta ziņojumam '%(report)s'."
+#, fuzzy, python-format
+#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
+msgstr "Rīcība '%(action)s' ir atzīmēta kā pabeigta ziņojumam '%(report)s'."
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
+msgstr "Atcelta rīcības '%(action)s' atzīmēšana kā pabeigta ziņojumam '%(report)s'"
 
 #: src/reports/views.py
 msgid "Mark report as complete"
@@ -8032,12 +8377,14 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Ziņojums '%(report)s' vairs nav atzīmēts kā pabeigts."
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Pārskatu veidi"
+#, fuzzy
+#| msgid "template"
+msgid "Edit template"
+msgstr "veidne"
 
 #: src/reports/wagtail_admin.py
 msgid "Download XLSX"
@@ -8048,20 +8395,60 @@ msgid "Download report as spreadsheet file"
 msgstr "Lejupielādēt ziņojumu kā izklājlapas failu"
 
 #: src/reports/wagtail_admin.py
-msgid "Undo marking as complete"
-msgstr "Atcelt atzīmēšanu kā pabeigtu"
-
-#: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
 msgstr "Atcelt šī ziņojuma atzīšanu par pabeigtu"
 
 #: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Atzīmēt kā pabeigtu"
-
-#: src/reports/wagtail_admin.py
 msgid "Mark this report as complete"
 msgstr "Atzīmējiet šo ziņojumu kā pabeigtu"
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(submitted)s / %(total)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date range"
+msgstr "Kontaktinformācija"
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Completed"
+msgid "Complete"
+msgstr "Pabeigts"
+
+#: src/reports/wagtail_admin.py
+msgid "Open"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Actions submitted"
+msgstr "Rīcības lauks"
+
+#: src/reports/wagtail_admin.py
+msgid "The period during which action data for this report is collected."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report details"
+msgstr "Pārskatu veidi"
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Action statuses"
+msgid "Action submissions"
+msgstr "Rīcības statusi"
 
 #: src/users/apps.py
 msgid "Users"
@@ -8260,6 +8647,46 @@ msgstr "paslēpt kategorijas identifikatorus"
 #| msgid "identifier"
 msgid "Copy identifier"
 msgstr "identifikators"
+
+#, python-format
+#~ msgid "Undo marking as complete for report %s"
+#~ msgstr "Atcelt ziņojuma atzīmēšanu kā pabeigtu %s"
+
+#, python-format
+#~ msgid "Mark as complete for report %s"
+#~ msgstr "Atzīmēt kā pabeigtu ziņojumam %s"
+
+#, python-format
+#~ msgid "Cannot undo marking action as complete as there are %s snapshots"
+#~ msgstr "Nav iespējams atcelt rīcības atzīmēšanu kā pabeigtu, jo ir %s momentuzņēmumi"
+
+#~ msgid "UUID of report field"
+#~ msgstr "Ziņojuma lauka UUID"
+
+#, fuzzy
+#~| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#~ msgid "Only plan admins can mark actions as complete for reports of this type"
+#~ msgstr "Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam %(report)s"
+
+#~ msgid "public"
+#~ msgstr "publiski"
+
+#, python-format
+#~ msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
+#~ msgstr "Vai tiešām vēlaties atzīmēt pārskatu <i>%(report)s</i> kā pabeigtu?"
+
+#~ msgid "This will mark the following actions as complete:"
+#~ msgstr "Šādas rīcības tiks atzīmētas kā pabeigtas:"
+
+#~ msgid "This will undo marking the following actions as complete:"
+#~ msgstr "Tādējādi tiks atcelta šādu rīcību atzīmēšana kā pabeigtas:"
+
+#~ msgid "Undo marking action as complete"
+#~ msgstr "Atcelt rīcības atzīmēšanu kā pabeigtu"
+
+#, python-format
+#~ msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
+#~ msgstr "Rīcība '%(action)s' vairs nav atzīmēta kā pabeigta ziņojumam '%(report)s'."
 
 #, python-format
 #~ msgid "The %(model_name)s could not be saved as it is locked"

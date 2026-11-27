@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-27 15:43+0200\n"
 "PO-Revision-Date: 2026-09-28 07:51+0000\n"
 "Last-Translator: Deleted User <noreply+11@weblate.org>\n"
 "Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>\n"
@@ -252,6 +252,8 @@ msgstr ""
 
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/templates/actions/bulk_approve.html
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/templates/reports/submit_action_confirmation.html
 #: templates/aplans/plan_publish_confirmation.html
 #, fuzzy
 #| msgid "Cancelled"
@@ -380,7 +382,9 @@ msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "%(attribute_type)s (κείμενο)"
 
 #: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+#: src/copying/views.py src/reports/action_reporting.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Identifier"
 msgstr "Αναγνωριστικό"
 
@@ -431,6 +435,11 @@ msgstr "Εσωτερικές σημειώσεις"
 msgid "Internal notes for plan administrators"
 msgstr "Εσωτερικές σημειώσεις για τους διαχειριστές των προγραμμάτων"
 
+#: src/actions/action_admin.py src/admin_site/wagtail_hooks.py
+#: src/reports/apps.py src/reports/blocks/report_comparison_block.py
+msgid "Reports"
+msgstr "Αναφορές"
+
 #: src/actions/action_admin.py src/indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Αναφορά"
@@ -444,24 +453,26 @@ msgid "Dependencies"
 msgstr "Εξαρτήσεις"
 
 #: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
+#, fuzzy, python-format
+#| msgid "Field for %s"
+msgid "Submit for %s"
+msgstr "Πεδίο για %s"
 
 #: src/actions/action_admin.py
-#, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Αναίρεση της επισήμανσης αυτής της ενέργειας ως ολοκληρωμένης για την αναφορά %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark as complete for report %s"
-msgstr "Χαρακτηρίστε ως ολοκληρωμένο για αναφορά %s"
-
-#: src/actions/action_admin.py
-#, python-format
-msgid "Mark this action as complete for the report %s"
+#, fuzzy, python-format
+#| msgid "Mark this action as complete for the report %s"
+msgid "Submit this action to the report %s"
 msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρωμένη για την έκθεση %s"
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Resubmit for %(report)s (submitted %(date)s)"
+msgstr ""
+
+#: src/actions/action_admin.py
+#, python-format
+msgid "Replace the submission of this action to the report %s with its current data"
+msgstr ""
 
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -729,7 +740,7 @@ msgstr "Πεδίο για %s"
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
 msgstr ""
 
-#: src/actions/attribute_type_admin.py
+#: src/actions/attribute_type_admin.py src/reports/wagtail_admin.py
 msgid "Fields"
 msgstr "Πεδία"
 
@@ -806,6 +817,8 @@ msgstr "Τμήμα"
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/choosers.py
 #: src/actions/blocks/filters.py
 #: src/admin_site/built_in_field_customization_admin.py
+#: src/reports/blocks/report_comparison_block.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Field"
 msgstr "Πεδίο"
 
@@ -1123,7 +1136,7 @@ msgid "Implementation phase"
 msgstr "Φάση υλοποίησης"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
-#: src/reports/blocks/action_content.py
+#: src/reports/blocks/action_content.py src/reports/wagtail_admin.py
 msgid "Status"
 msgstr "Κατάσταση"
 
@@ -1169,7 +1182,7 @@ msgstr "Υπεύθυνος"
 #: src/actions/templates/actions/chooser_results.html
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
-#: src/reports/spreadsheets/excel_report.py
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Σχέδιο"
@@ -1347,7 +1360,7 @@ msgstr "Επιλέξτε ένα σχέδιο"
 msgid "Choose another plan"
 msgstr "Επιλέξτε άλλο πρόγραμμα"
 
-#: src/actions/chooser.py
+#: src/actions/chooser.py src/reports/blocks/choosers.py
 msgid "Choose a field"
 msgstr "Επιλέξτε ένα πεδίο"
 
@@ -1415,7 +1428,7 @@ msgstr "Επικεφαλής παράγραφος"
 
 #: src/actions/models/action.py src/actions/models/plan.py
 #: src/actions/models/pledge.py src/indicators/models/common_indicator.py
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/reports/models.py
 msgid "description"
 msgstr "περιγραφή"
 
@@ -1634,23 +1647,39 @@ msgid "The report %s is already marked as complete."
 msgstr "Η έκθεση έχει ήδη επισημανθεί ως πλήρης."
 
 #: src/actions/models/action.py
-#, python-format
-msgid "The action is already marked as complete for report %s."
+#, fuzzy, python-format
+#| msgid "The action is already marked as complete for report %s."
+msgid "The action has already been submitted to the report %s."
 msgstr "Η ενέργεια έχει ήδη επισημανθεί ως ολοκληρωμένη για την έκθεση %s."
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+#, fuzzy, python-format
+#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgid "Submitted action '%(action)s' to report '%(report)s'"
 msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'"
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr "Δεν είναι δυνατή η αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης, καθώς υπάρχουν στιγμιότυπα %s"
+#, fuzzy, python-format
+#| msgid "Mark this action as complete for the report %s"
+msgid "The action has not been submitted to the report %s yet."
+msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρωμένη για την έκθεση %s"
 
 #: src/actions/models/action.py
-#, python-format
-msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+#, fuzzy, python-format
+#| msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgid "Resubmitted action '%(action)s' to report '%(report)s'"
+msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "Undo marking this action as complete for the report %s"
+msgid "Cannot undo the submission as the action has %s snapshots for the report"
+msgstr "Αναίρεση της επισήμανσης αυτής της ενέργειας ως ολοκληρωμένης για την αναφορά %s"
+
+#: src/actions/models/action.py
+#, fuzzy, python-format
+#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgid "Undid submitting action '%(action)s' to report '%(report)s'"
 msgstr "Αναίρεση της επισήμανσης της ενέργειας \"%(action)s\" ως ολοκληρωμένης για την έκθεση \"%(report)s\""
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
@@ -2059,7 +2088,7 @@ msgstr "Εικόνες"
 msgid "field"
 msgstr "πεδίο"
 
-#: src/actions/models/attributes.py src/reports/wagtail_admin.py
+#: src/actions/models/attributes.py
 msgid "fields"
 msgstr "πεδία"
 
@@ -2563,6 +2592,12 @@ msgstr "χαρακτηριστικό του πλάνου"
 #: src/actions/models/features.py
 msgid "plan features"
 msgstr "χαρακτηριστικά του προγράμματος"
+
+#: src/actions/models/features.py
+#, fuzzy
+#| msgid "Action contact persons have different roles"
+msgid "Hiding moderators requires contact persons to have different roles."
+msgstr "Τα πρόσωπα επαφής της δράσης έχουν διαφορετικούς ρόλους"
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -4416,9 +4451,11 @@ msgstr "%(model_name)s '%(object)s' ενημερώθηκε."
 msgid "Email domains"
 msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
 
-#: src/admin_site/wagtail_hooks.py src/reports/apps.py
-msgid "Reports"
-msgstr "Αναφορές"
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report templates"
+msgstr "Τύποι αναφορών"
 
 #: src/admin_site/wagtail_hooks.py
 msgid "User handbook"
@@ -4584,7 +4621,7 @@ msgstr ""
 msgid "Contact persons with \"moderator\" role"
 msgstr "Πρόσωπα επικοινωνίας με ρόλο \"συντονιστή\""
 
-#: src/aplans/utils.py
+#: src/aplans/utils.py src/reports/wagtail_admin.py
 msgid "Visibility"
 msgstr "Ορατότητα"
 
@@ -4683,7 +4720,7 @@ msgstr "Σύμφωνα με το σχέδιο δράσης"
 msgid "Content"
 msgstr "Περιεχόμενο"
 
-#: src/content/models.py src/feedback/models.py
+#: src/content/models.py src/feedback/models.py src/reports/action_reporting.py
 #: src/reports/spreadsheets/excel_report.py
 #, fuzzy
 #| msgid "Action"
@@ -5310,7 +5347,7 @@ msgstr "Δείκτης Αιτιώδης αλυσίδα"
 msgid "Connected actions"
 msgstr "σχετικές δράσεις"
 
-#: src/indicators/blocks/layout.py
+#: src/indicators/blocks/layout.py src/reports/template_editor.py
 #, fuzzy
 #| msgid "Category levels"
 msgid "Category level"
@@ -6851,7 +6888,7 @@ msgstr "Διαχειριστές μεταδεδομένων"
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
 msgstr "Άτομα που μπορούν να επεξεργάζονται δεδομένα αυτού του οργανισμού και των υποοργανισμών, αλλά όχι περιεχόμενο συγκεκριμένου σχεδίου"
 
-#: src/orgs/wagtail_admin.py
+#: src/orgs/wagtail_admin.py src/reports/wagtail_admin.py
 msgid "Permissions"
 msgstr "Δικαιώματα"
 
@@ -7509,6 +7546,7 @@ msgid "Organization admin"
 msgstr "Οργανισμός"
 
 #: src/people/wagtail_admin.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 #, fuzzy
 #| msgid "Contact persons"
 msgid "Contact person"
@@ -7539,6 +7577,30 @@ msgstr "Πρόσβαση στην τοποθεσία"
 #: src/people/wagtail_admin.py
 msgid "Plan admin organizations"
 msgstr "Οργανισμοί διαχείρισης σχεδίου"
+
+#: src/people/wagtail_admin.py
+msgid "Contact person role in newly added actions"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "You do not have access to the public site."
+msgid "Moderators are not shown on the public site."
+msgstr "Δεν έχετε πρόσβαση στον δημόσιο ιστότοπο."
+
+#: src/people/wagtail_admin.py
+msgid "You have switched to a different plan since opening this page. Please reload it and try again."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+#, fuzzy
+#| msgid "Choose how to order indicators in the action pages"
+msgid "Choose the role of the person in the actions you added."
+msgstr "Επιλέξτε τον τρόπο διάταξης των δεικτών στις σελίδες δράσης"
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -7594,6 +7656,16 @@ msgstr "επαφή για δείκτες"
 msgid "Are you sure you want to deactivate this person?"
 msgstr "Είστε σίγουροι ότι θέλετε να απενεργοποιήσετε αυτό το άτομο;"
 
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Σημειώθηκε ως πλήρης από"
+
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Σημειώθηκε ως πλήρης στο"
+
 #: src/reports/blocks/action_content.py
 msgid "Action field"
 msgstr "Πεδίο δράσης"
@@ -7611,47 +7683,100 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr "Εκτός από τον ίδιο τον οργανισμό, στην έκθεση περιλαμβάνεται και μια οργανωτική μονάδα που περιέχει τον οργανισμό. Μετρώντας από τον κορυφαίο ριζικό οργανισμό στο επίπεδο 1, ποιο επίπεδο της οργανωτικής ιεραρχίας πρέπει να χρησιμοποιηθεί για να βρεθεί αυτός ο οργανισμός που περιέχει; Εάν παραμείνει κενό, μην προσθέσετε τον οργανισμό που περιέχει στην αναφορά."
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+#, fuzzy
+#| msgid "Report type"
+msgid "Report template"
 msgstr "Τύπος έκθεσης"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+#, fuzzy
+#| msgid "Reports"
+msgid "Report"
+msgstr "Αναφορές"
+
+#: src/reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type field"
+msgid "Report template field"
 msgstr "Πεδίο τύπου αναφοράς"
 
 #: src/reports/blocks/report_comparison_block.py
-msgid "UUID of report field"
-msgstr "UUID του πεδίου αναφοράς"
+#, fuzzy
+#| msgid "The report is not marked as complete."
+msgid "The completed reports of the template to compare."
+msgstr "Η έκθεση δεν χαρακτηρίζεται ως πλήρης."
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "The field of the template whose values are compared. Only public fields can be compared."
+msgstr ""
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Report comparison"
 msgstr "Σύγκριση εκθέσεων"
 
+#: src/reports/blocks/report_comparison_block.py
+#, fuzzy, python-format
+#| msgid "The report is not marked as complete."
+msgid "\"%(report)s\" is not a report of the chosen template."
+msgstr "Η έκθεση δεν χαρακτηρίζεται ως πλήρης."
+
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
+msgstr ""
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "Choose a public action field of the chosen template."
+msgstr ""
+
 #: src/reports/chooser.py
-msgid "Choose a report type"
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report template"
 msgstr "Επιλέξτε έναν τύπο αναφοράς"
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report template"
+msgstr "Επιλέξτε έναν άλλο τύπο αναφοράς"
+
+#: src/reports/chooser.py
+#, fuzzy
+#| msgid "Choose a report type"
+msgid "Choose a report"
+msgstr "Επιλέξτε έναν τύπο αναφοράς"
+
+#: src/reports/chooser.py
+#, fuzzy
+#| msgid "Choose another report type"
+msgid "Choose another report"
 msgstr "Επιλέξτε έναν άλλο τύπο αναφοράς"
 
 #: src/reports/models.py
-#, fuzzy
-#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete"
-msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
+msgid "What the template is for, e.g. who receives its reports and when"
+msgstr ""
 
 #: src/reports/models.py
 #, fuzzy
 #| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can submit actions for reporting"
 msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
 
 #: src/reports/models.py
-msgid "report type"
+msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
+msgstr ""
+
+#: src/reports/models.py
+#, fuzzy
+#| msgid "report type"
+msgid "report template"
 msgstr "τύπος έκθεσης"
 
 #: src/reports/models.py
-msgid "report types"
+#, fuzzy
+#| msgid "report types"
+msgid "report templates"
 msgstr "τύποι αναφορών"
 
 #: src/reports/models.py
@@ -7668,21 +7793,13 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Ορίζεται εάν η έκθεση δεν μπορεί πλέον να αλλάξει"
 
 #: src/reports/models.py
-msgid "public"
-msgstr "δημόσια"
-
-#: src/reports/models.py
-msgid "Set if report can be shown to the public"
-msgstr "Ορίστε αν η έκθεση μπορεί να προβληθεί στο κοινό"
-
-#: src/reports/models.py
 #, fuzzy
 #| msgid "show in reporting tab"
-msgid "Show in reporting tab"
+msgid "Show in action reporting tab"
 msgstr "εμφάνιση στην καρτέλα αναφοράς"
 
 #: src/reports/models.py
-msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
+msgid "Show this report to editors on each action's Reporting tab."
 msgstr ""
 
 #: src/reports/models.py
@@ -7843,7 +7960,7 @@ msgid "Completion date"
 msgstr "ημερομηνία ολοκλήρωσης"
 
 #: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
+#: src/reports/tests/test_tasks_sheet.py src/reports/wagtail_admin.py
 msgid "Details"
 msgstr ""
 
@@ -7854,20 +7971,81 @@ msgstr ""
 msgid "Responsible organizations"
 msgstr "υπεύθυνες οργανώσεις"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete by"
-msgstr "Σημειώθηκε ως πλήρης από"
+#: src/reports/template_editor.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "[not included]"
+msgid "Not included"
+msgstr "[δεν περιλαμβάνεται]"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete at"
-msgstr "Σημειώθηκε ως πλήρης στο"
+#: src/reports/template_editor.py
+#, fuzzy, python-format
+#| msgid "Heading %(level)d"
+msgid "Level %(level)d"
+msgstr "Κεφαλή %(level)d"
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "Level of containing organization"
+msgid "Containing organization"
+msgstr "Επίπεδο οργάνωσης που περιέχει"
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "Category page"
+msgid "Categories as assigned"
+msgstr "Σελίδα κατηγορίας"
+
+#: src/reports/template_editor.py
+msgid "The fields could not be read. Reload the page and try again."
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "The field could not be read."
+msgstr ""
+
+#: src/reports/template_editor.py
+#, fuzzy
+#| msgid "character limit for text fields"
+msgid "Enter a name for the field."
+msgstr "όριο χαρακτήρων για τα πεδία κειμένου"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr "Θέλετε πραγματικά να επισημάνετε την έκθεση <i>%(report)s</i> ως ολοκληρωμένη;"
+msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "%(counter)s of %(total)s actions has not been submitted"
+msgid_plural "%(counter)s of %(total)s actions have not been submitted"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current published versions."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current values."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, fuzzy
+#| msgid "published at"
+msgid "Unsubmitted actions"
+msgstr "που δημοσιεύτηκε στο"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "The submitted action will use its submitted values."
+msgid_plural "The %(counter)s submitted actions will use their submitted values."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -7875,12 +8053,116 @@ msgid "Do you really want to undo marking the report <i>%(report)s</i> as comple
 msgstr "Θέλετε πραγματικά να αναιρέσετε τη σήμανση της έκθεσης <i>%(report)s</i> ως ολοκληρωμένης;"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will mark the following actions as complete:"
-msgstr "Αυτό θα επισημάνει τις ακόλουθες ενέργειες ως ολοκληρωμένες:"
+msgid "This also undoes the submissions that completing the report made for these actions:"
+msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will undo marking the following actions as complete:"
-msgstr "Αυτό θα αναιρέσει τη σήμανση των ακόλουθων ενεργειών ως ολοκληρωμένων:"
+#: src/reports/wagtail_admin.py
+msgid "Undo marking as complete"
+msgstr "Αναίρεση σήμανσης ως ολοκληρωμένη"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, fuzzy
+#| msgid "Mark action as complete"
+msgid "Submit actions and mark as complete"
+msgstr "Σημειώστε την ενέργεια ως ολοκληρωμένη"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/wagtail_admin.py
+msgid "Mark as complete"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "completed"
+msgid "Report completed"
+msgstr "ολοκληρωμένο"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy, python-format
+#| msgid "action status updates"
+msgid "Action submitted %(date)s"
+msgstr "ενημερώσεις κατάστασης δράσης"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "Not started"
+msgid "Not submitted"
+msgstr "Δεν έχει ξεκινήσει"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Submit action for report"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Resubmit"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, fuzzy
+#| msgid "These are sent when a visitor has left feedback for this action."
+msgid "No reports are shown in the reporting tab of this plan's actions."
+msgstr "Αυτά αποστέλλονται όταν ένας επισκέπτης έχει αφήσει σχόλια για αυτή την ενέργεια."
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy, python-format
+#| msgid "common category"
+msgid "%(counter)s action"
+msgid_plural "%(counter)s actions"
+msgstr[0] "κοινή κατηγορία"
+msgstr[1] "κοινή κατηγορία"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(submitted_count)s submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(not_submitted_count)s not submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "Action"
+msgid "Action"
+msgstr "Δράση"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy
+#| msgid "updated by"
+msgid "Submitted"
+msgstr "ενημερώθηκε από"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Undo"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, fuzzy, python-format
+#| msgid "Updated at"
+msgid "%(date)s by %(user)s"
+msgstr "Ενημερώθηκε στις"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Undo submission"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, python-format
+msgid "%(counter)s field configured on this template:"
+msgid_plural "%(counter)s fields configured on this template:"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, fuzzy
+#| msgid "The organization is already included in the plan"
+msgid "No fields are configured on this template."
+msgstr "Ο οργανισμός περιλαμβάνεται ήδη στο σχέδιο"
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7889,48 +8171,107 @@ msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/reports/views.py
-msgid "Mark action as complete"
-msgstr "Σημειώστε την ενέργεια ως ολοκληρωμένη"
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
+msgstr ""
 
-#: src/reports/views.py
-msgid "Undo marking action as complete"
-msgstr "Αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης"
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "The current values of the action's indicators are captured with it as part of the report:"
+msgstr ""
 
-#: src/reports/views.py
+#: src/reports/templates/reports/submit_action_confirmation.html
 #, python-format
-msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Current: %(value)s %(unit)s (%(date)s)"
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, fuzzy
+#| msgid "value"
+msgid "No values yet"
+msgstr "αξία"
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, fuzzy
+#| msgid "updated by"
+msgid "Submit"
+msgstr "ενημερώθηκε από"
+
+#: src/reports/utils.py
+#, python-format
+msgid "%(template)s • %(report)s"
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy
+#| msgid "Resubmit for moderation"
+msgid "Resubmit action to report"
+msgstr "Επανυποβολή για έλεγχο"
+
+#: src/reports/views.py
+msgid "Submit action to report"
+msgstr ""
+
+#: src/reports/views.py
+msgid "Undo action submission"
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Confirm resubmitting action %(action)s to report %(report)s"
 msgstr "Επιβεβαίωση της επισήμανσης της δράσης %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
 
 #: src/reports/views.py
-#, python-format
-msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#, fuzzy, python-format
+#| msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Confirm submitting action %(action)s to report %(report)s"
+msgstr "Επιβεβαίωση της επισήμανσης της δράσης %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
 msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
+msgstr ""
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
 msgstr "Θέλετε πραγματικά να επισημάνετε την ενέργεια '%(action)s' ως ολοκληρωμένη για την έκθεση '%(report)s';"
 
 #: src/reports/views.py
-#, python-format
-msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+#, fuzzy, python-format
+#| msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
 msgstr "Θέλετε πραγματικά να αναιρέσετε τη σήμανση της ενέργειας \"%(action)s\" ως ολοκληρωμένης για την έκθεση \"%(report)s\";"
 
 #: src/reports/views.py
-#, python-format
-msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+#, fuzzy, python-format
+#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
 msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'."
 
 #: src/reports/views.py
-#, python-format
-msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr "Η ενέργεια '%(action)s' δεν χαρακτηρίζεται πλέον ως ολοκληρωμένη για την έκθεση '%(report)s'."
+#, fuzzy, python-format
+#| msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
+msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'."
+
+#: src/reports/views.py
+#, fuzzy, python-format
+#| msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
+msgstr "Αναίρεση της επισήμανσης της ενέργειας \"%(action)s\" ως ολοκληρωμένης για την έκθεση \"%(report)s\""
 
 #: src/reports/views.py
 msgid "Mark report as complete"
@@ -7961,12 +8302,14 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Η αναφορά '%(report)s' δεν χαρακτηρίζεται πλέον ως πλήρης."
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Τύποι αναφορών"
+#, fuzzy
+#| msgid "template"
+msgid "Edit template"
+msgstr "πρότυπο"
 
 #: src/reports/wagtail_admin.py
 msgid "Download XLSX"
@@ -7977,20 +8320,60 @@ msgid "Download report as spreadsheet file"
 msgstr "Κατεβάστε την έκθεση ως αρχείο λογιστικού φύλλου"
 
 #: src/reports/wagtail_admin.py
-msgid "Undo marking as complete"
-msgstr "Αναίρεση σήμανσης ως ολοκληρωμένη"
-
-#: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
 msgstr "Αναίρεση της επισήμανσης αυτής της αναφοράς ως ολοκληρωμένης"
 
 #: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
-
-#: src/reports/wagtail_admin.py
 msgid "Mark this report as complete"
 msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(submitted)s / %(total)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Date format"
+msgid "Date range"
+msgstr "Μορφή ημερομηνίας"
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Completed"
+msgid "Complete"
+msgstr "Ολοκληρωμένο"
+
+#: src/reports/wagtail_admin.py
+msgid "Open"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Actions submitted"
+msgstr "Πεδίο δράσης"
+
+#: src/reports/wagtail_admin.py
+msgid "The period during which action data for this report is collected."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Report types"
+msgid "Report details"
+msgstr "Τύποι αναφορών"
+
+#: src/reports/wagtail_admin.py
+#, fuzzy
+#| msgid "Action statuses"
+msgid "Action submissions"
+msgstr "Καταστάσεις δράσης"
 
 #: src/users/apps.py
 msgid "Users"
@@ -8193,6 +8576,49 @@ msgstr "απόκρυψη αναγνωριστικών κατηγοριών"
 #| msgid "identifier"
 msgid "Copy identifier"
 msgstr "αναγνωριστικό"
+
+#, python-format
+#~ msgid "Undo marking as complete for report %s"
+#~ msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
+
+#, python-format
+#~ msgid "Mark as complete for report %s"
+#~ msgstr "Χαρακτηρίστε ως ολοκληρωμένο για αναφορά %s"
+
+#, python-format
+#~ msgid "Cannot undo marking action as complete as there are %s snapshots"
+#~ msgstr "Δεν είναι δυνατή η αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης, καθώς υπάρχουν στιγμιότυπα %s"
+
+#~ msgid "UUID of report field"
+#~ msgstr "UUID του πεδίου αναφοράς"
+
+#, fuzzy
+#~| msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+#~ msgid "Only plan admins can mark actions as complete for reports of this type"
+#~ msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
+
+#~ msgid "public"
+#~ msgstr "δημόσια"
+
+#~ msgid "Set if report can be shown to the public"
+#~ msgstr "Ορίστε αν η έκθεση μπορεί να προβληθεί στο κοινό"
+
+#, python-format
+#~ msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
+#~ msgstr "Θέλετε πραγματικά να επισημάνετε την έκθεση <i>%(report)s</i> ως ολοκληρωμένη;"
+
+#~ msgid "This will mark the following actions as complete:"
+#~ msgstr "Αυτό θα επισημάνει τις ακόλουθες ενέργειες ως ολοκληρωμένες:"
+
+#~ msgid "This will undo marking the following actions as complete:"
+#~ msgstr "Αυτό θα αναιρέσει τη σήμανση των ακόλουθων ενεργειών ως ολοκληρωμένων:"
+
+#~ msgid "Undo marking action as complete"
+#~ msgstr "Αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης"
+
+#, python-format
+#~ msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
+#~ msgstr "Η ενέργεια '%(action)s' δεν χαρακτηρίζεται πλέον ως ολοκληρωμένη για την έκθεση '%(report)s'."
 
 #, python-format
 #~ msgid "The %(model_name)s could not be saved as it is locked"

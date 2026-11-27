@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-27 15:43+0200\n"
 "PO-Revision-Date: 2026-03-11 10:21+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -231,6 +231,8 @@ msgstr "Om personen begär åtkomst igen visas begäran i den här listan märkt
 
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/templates/actions/bulk_approve.html
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/templates/reports/submit_action_confirmation.html
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Cancel"
 msgstr "Avbryt"
@@ -348,7 +350,9 @@ msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr "Fält \"%(attribute_type)s\": %(message)s"
 
 #: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+#: src/copying/views.py src/reports/action_reporting.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Identifier"
 msgstr "Identifierare"
 
@@ -397,6 +401,11 @@ msgstr "Interna anteckningar"
 msgid "Internal notes for plan administrators"
 msgstr "Interna anteckningar för planadministratörer"
 
+#: src/actions/action_admin.py src/admin_site/wagtail_hooks.py
+#: src/reports/apps.py src/reports/blocks/report_comparison_block.py
+msgid "Reports"
+msgstr "Rapporter"
+
 #: src/actions/action_admin.py src/indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Rapportering"
@@ -411,23 +420,23 @@ msgstr "Beroenden"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Undo marking as complete for report %s"
-msgstr "Ångra markering som slutförd för rapport %s"
+msgid "Submit for %s"
+msgstr "Skicka in till %s"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Undo marking this action as complete for the report %s"
-msgstr "Ångra markeringen av denna åtgärd som slutförd för rapporten %s"
+msgid "Submit this action to the report %s"
+msgstr "Skicka in den här åtgärden till rapporten %s"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark as complete for report %s"
-msgstr "Markera som färdig för rapport %s"
+msgid "Resubmit for %(report)s (submitted %(date)s)"
+msgstr "Skicka in igen till %(report)s (inskickad %(date)s)"
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark this action as complete for the report %s"
-msgstr "Markera denna åtgärd som slutförd för rapporten %s"
+msgid "Replace the submission of this action to the report %s with its current data"
+msgstr "Ersätt den här åtgärdens inskickning till rapporten %s med dess aktuella uppgifter"
 
 #: src/actions/action_admin.py
 #: src/admin_site/templates/admin_site/own_indicators_panel.html
@@ -687,7 +696,7 @@ msgstr "Fält för %s"
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
 msgstr "Valalternativet \"%(name)s\" används fortfarande och arkiverades därför i stället för att tas bort. Befintliga referenser fungerar även i fortsättningen, men alternativet visas inte för nya val. Använd knappen \"Återställ från arkiv\" på alternativet för att återställa det."
 
-#: src/actions/attribute_type_admin.py
+#: src/actions/attribute_type_admin.py src/reports/wagtail_admin.py
 msgid "Fields"
 msgstr "Fält"
 
@@ -763,6 +772,8 @@ msgstr "Sektion"
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/choosers.py
 #: src/actions/blocks/filters.py
 #: src/admin_site/built_in_field_customization_admin.py
+#: src/reports/blocks/report_comparison_block.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Field"
 msgstr "Fält"
 
@@ -1038,7 +1049,7 @@ msgid "Implementation phase"
 msgstr "Fas"
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
-#: src/reports/blocks/action_content.py
+#: src/reports/blocks/action_content.py src/reports/wagtail_admin.py
 msgid "Status"
 msgstr "Status"
 
@@ -1078,7 +1089,7 @@ msgstr "Ansvarig part"
 #: src/actions/templates/actions/chooser_results.html
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
-#: src/reports/spreadsheets/excel_report.py
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr "Planen"
@@ -1247,7 +1258,7 @@ msgstr "Välj en plan"
 msgid "Choose another plan"
 msgstr "Välj en annan plan"
 
-#: src/actions/chooser.py
+#: src/actions/chooser.py src/reports/blocks/choosers.py
 msgid "Choose a field"
 msgstr "Välj ett fält"
 
@@ -1311,7 +1322,7 @@ msgstr "Ingress"
 
 #: src/actions/models/action.py src/actions/models/plan.py
 #: src/actions/models/pledge.py src/indicators/models/common_indicator.py
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/reports/models.py
 msgid "description"
 msgstr "beskrivning"
 
@@ -1523,23 +1534,33 @@ msgstr "Rapporten är redan markerad som fullständig."
 
 #: src/actions/models/action.py
 #, python-format
-msgid "The action is already marked as complete for report %s."
-msgstr "Åtgärden är redan markerad som slutförd för rapport %s."
+msgid "The action has already been submitted to the report %s."
+msgstr "Åtgärden har redan skickats in till rapporten %s."
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Marked action '%(action)s' as complete for report '%(report)s'"
-msgstr "Markerade åtgärd '%(action)s' som slutförd för rapport '%(report)s'"
+msgid "Submitted action '%(action)s' to report '%(report)s'"
+msgstr "Skickade in åtgärden '%(action)s' till rapporten '%(report)s'"
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr "Kan inte ångra märkningsåtgärden som slutförd eftersom det finns %s ögonblicksbilder"
+msgid "The action has not been submitted to the report %s yet."
+msgstr "Åtgärden har inte skickats in till rapporten %s ännu."
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
-msgstr "Undid märkning åtgärd '%(action)s' som komplett för rapport '%(report)s'"
+msgid "Resubmitted action '%(action)s' to report '%(report)s'"
+msgstr "Skickade in åtgärden '%(action)s' igen till rapporten '%(report)s'"
+
+#: src/actions/models/action.py
+#, python-format
+msgid "Cannot undo the submission as the action has %s snapshots for the report"
+msgstr "Inskickningen kan inte ångras eftersom åtgärden har %s ögonblicksbilder för rapporten"
+
+#: src/actions/models/action.py
+#, python-format
+msgid "Undid submitting action '%(action)s' to report '%(report)s'"
+msgstr "Ångrade inskickningen av åtgärden '%(action)s' till rapporten '%(report)s'"
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
 #: src/reports/report_formatters.py
@@ -1917,7 +1938,7 @@ msgstr "Ikon"
 msgid "field"
 msgstr "fält"
 
-#: src/actions/models/attributes.py src/reports/wagtail_admin.py
+#: src/actions/models/attributes.py
 msgid "fields"
 msgstr "fält"
 
@@ -2393,6 +2414,10 @@ msgstr "plan funktion"
 #: src/actions/models/features.py
 msgid "plan features"
 msgstr "plan funktion"
+
+#: src/actions/models/features.py
+msgid "Hiding moderators requires contact persons to have different roles."
+msgstr "För att dölja moderatorer måste kontaktpersonerna ha olika roller."
 
 #: src/actions/models/features.py
 msgid "Community engagement requires a primary client to be set on the plan."
@@ -4064,9 +4089,9 @@ msgstr "%(model_name)s '%(object)s' uppdaterad."
 msgid "Email domains"
 msgstr "E -postdomäner"
 
-#: src/admin_site/wagtail_hooks.py src/reports/apps.py
-msgid "Reports"
-msgstr "Rapporter"
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+msgid "Report templates"
+msgstr "Rapportmallar"
 
 #: src/admin_site/wagtail_hooks.py
 msgid "User handbook"
@@ -4228,7 +4253,7 @@ msgstr "Om angivna visas dessa instruktioner för administratörer i stället f�
 msgid "Contact persons with \"moderator\" role"
 msgstr "Kontaktpersoner med rollen \"moderator\""
 
-#: src/aplans/utils.py
+#: src/aplans/utils.py src/reports/wagtail_admin.py
 msgid "Visibility"
 msgstr "Synlighet"
 
@@ -4311,7 +4336,7 @@ msgstr "Enligt handlingsplanen"
 msgid "Content"
 msgstr "Innehåll"
 
-#: src/content/models.py src/feedback/models.py
+#: src/content/models.py src/feedback/models.py src/reports/action_reporting.py
 #: src/reports/spreadsheets/excel_report.py
 msgctxt "Action model"
 msgid "Action"
@@ -4862,7 +4887,7 @@ msgstr "Indikatorvisualisering"
 msgid "Connected actions"
 msgstr "Kopplade åtgärder"
 
-#: src/indicators/blocks/layout.py
+#: src/indicators/blocks/layout.py src/reports/template_editor.py
 msgid "Category level"
 msgstr "Kategorinivå"
 
@@ -6280,7 +6305,7 @@ msgstr "Administratörer av metadata"
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
 msgstr "Personer som kan redigera data för denna organisation och underorganisationer men inget planspecifikt innehåll"
 
-#: src/orgs/wagtail_admin.py
+#: src/orgs/wagtail_admin.py src/reports/wagtail_admin.py
 msgid "Permissions"
 msgstr "Behörigheter"
 
@@ -6897,6 +6922,7 @@ msgid "Organization admin"
 msgstr "Organisationsadministratör"
 
 #: src/people/wagtail_admin.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Contact person"
 msgstr "Kontaktperson"
 
@@ -6923,6 +6949,26 @@ msgstr "Tillträde till webbplatsen"
 #: src/people/wagtail_admin.py
 msgid "Plan admin organizations"
 msgstr "Organisationer som planadministratör"
+
+#: src/people/wagtail_admin.py
+msgid "Contact person role in newly added actions"
+msgstr "Kontaktpersonens roll i nyligen tillagda åtgärder"
+
+#: src/people/wagtail_admin.py
+msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
+msgstr "Obligatoriskt om du lägger till åtgärder ovan. Moderatorer kan välja åtgärdens redaktörer och, om det finns moderering, godkänna ändringar; det kan inte redaktörer. Du kan ändra rollerna på åtgärdens sida."
+
+#: src/people/wagtail_admin.py
+msgid "Moderators are not shown on the public site."
+msgstr "Moderatorer visas inte på den publika webbplatsen."
+
+#: src/people/wagtail_admin.py
+msgid "You have switched to a different plan since opening this page. Please reload it and try again."
+msgstr "Du har bytt till en annan plan sedan du öppnade den här sidan. Ladda om den och försök igen."
+
+#: src/people/wagtail_admin.py
+msgid "Choose the role of the person in the actions you added."
+msgstr "Välj personens roll i de åtgärder du lade till."
 
 #: src/people/wagtail_admin.py
 msgid "Role"
@@ -6974,6 +7020,16 @@ msgstr "kontakt för indikatorer"
 msgid "Are you sure you want to deactivate this person?"
 msgstr "Är du säker på att du vill avaktivera den här personen?"
 
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Markerad som slutförd av"
+
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Markerad som slutförd"
+
 #: src/reports/blocks/action_content.py
 msgid "Action field"
 msgstr "Åtgärdsfält"
@@ -6991,44 +7047,78 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr "Förutom själva organisationen ingår en organisationsenhet som innehåller organisationen i rapporten. Räknat från den översta rotorganisationen på nivå 1, vilken nivå i organisationshierarkin ska användas för att hitta den innehållande organisationen? Om det är tomt, lägg inte till den innehållande organisationen i rapporten."
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
-msgstr "Rapporttyp"
+msgid "Report template"
+msgstr "Rapportmall"
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
-msgstr "Rapporttypsfält"
+msgid "Report"
+msgstr "Rapport"
+
+#: src/reports/blocks/choosers.py
+msgid "Report template field"
+msgstr "Fält i rapportmall"
 
 #: src/reports/blocks/report_comparison_block.py
-msgid "UUID of report field"
-msgstr "UUID för rapportfält"
+msgid "The completed reports of the template to compare."
+msgstr "Mallens slutförda rapporter som ska jämföras."
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "The field of the template whose values are compared. Only public fields can be compared."
+msgstr "Det fält i mallen vars värden jämförs. Endast publika fält kan jämföras."
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Report comparison"
 msgstr "Rapportjämförelse"
 
-#: src/reports/chooser.py
-msgid "Choose a report type"
-msgstr "Välj en rapporttyp"
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not a report of the chosen template."
+msgstr "\"%(report)s\" är inte en rapport från den valda mallen."
+
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
+msgstr "\"%(report)s\" är inte slutförd. Endast slutförda rapporter kan jämföras."
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "Choose a public action field of the chosen template."
+msgstr "Välj ett publikt åtgärdsfält från den valda mallen."
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
-msgstr "Välj en annan rapporttyp"
+msgid "Choose a report template"
+msgstr "Välj en rapportmall"
+
+#: src/reports/chooser.py
+msgid "Choose another report template"
+msgstr "Välj en annan rapportmall"
+
+#: src/reports/chooser.py
+msgid "Choose a report"
+msgstr "Välj en rapport"
+
+#: src/reports/chooser.py
+msgid "Choose another report"
+msgstr "Välj en annan rapport"
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete"
-msgstr "Endast planadministratörer kan markera åtgärder som slutförda"
+msgid "What the template is for, e.g. who receives its reports and when"
+msgstr "Vad mallen används till, t.ex. vem som tar emot dess rapporter och när"
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete for reports of this type"
-msgstr "Endast planadministratörer kan markera åtgärder som slutförda för rapporter av denna typ"
+msgid "Only plan admins can submit actions for reporting"
+msgstr "Endast planadministratörer kan skicka in åtgärder för rapportering"
 
 #: src/reports/models.py
-msgid "report type"
-msgstr "rapporttyp"
+msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
+msgstr "När en åtgärd skickas in används åtgärdens uppgifter från den tidpunkten i den slutliga rapporten. När inställningen är på kan endast planadministratörer skicka in enskilda åtgärder till en rapport. Andra användare kan fortfarande redigera åtgärder."
 
 #: src/reports/models.py
-msgid "report types"
-msgstr "rapporttyper"
+msgid "report template"
+msgstr "rapportmall"
+
+#: src/reports/models.py
+msgid "report templates"
+msgstr "rapportmallar"
 
 #: src/reports/models.py
 #, python-format
@@ -7044,20 +7134,12 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Ange om rapporten inte längre kan ändras"
 
 #: src/reports/models.py
-msgid "public"
-msgstr "offentlig"
+msgid "Show in action reporting tab"
+msgstr "Visa på åtgärdens flik Rapportering"
 
 #: src/reports/models.py
-msgid "Set if report can be shown to the public"
-msgstr "Fastställa om rapporten kan visas för allmänheten"
-
-#: src/reports/models.py
-msgid "Show in reporting tab"
-msgstr "Visa i fliken Rapportering"
-
-#: src/reports/models.py
-msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
-msgstr "Ange om värdena från denna rapport ska visas i fliken Rapportering när åtgärden redigeras. Värdena visas endast om denna rapport har markerats som slutförd."
+msgid "Show this report to editors on each action's Reporting tab."
+msgstr "Visa den här rapporten för redaktörer på varje åtgärds flik Rapportering."
 
 #: src/reports/models.py
 msgid "report"
@@ -7213,7 +7295,7 @@ msgid "Completion date"
 msgstr "slutdatum"
 
 #: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
+#: src/reports/tests/test_tasks_sheet.py src/reports/wagtail_admin.py
 #, fuzzy
 #| msgid "details"
 msgid "Details"
@@ -7226,20 +7308,70 @@ msgstr "detaljer"
 msgid "Responsible organizations"
 msgstr "Ansvarig organisation"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete by"
-msgstr "Markerad som slutförd av"
+#: src/reports/template_editor.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Not included"
+msgstr "Inte med"
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete at"
-msgstr "Markerad som slutförd"
+#: src/reports/template_editor.py
+#, python-format
+msgid "Level %(level)d"
+msgstr "Nivå %(level)d"
+
+#: src/reports/template_editor.py
+msgid "Containing organization"
+msgstr "Överordnad organisation"
+
+#: src/reports/template_editor.py
+msgid "Categories as assigned"
+msgstr "Kategorier som tilldelade"
+
+#: src/reports/template_editor.py
+msgid "The fields could not be read. Reload the page and try again."
+msgstr "Fälten kunde inte läsas. Ladda om sidan och försök igen."
+
+#: src/reports/template_editor.py
+msgid "The field could not be read."
+msgstr "Fältet kunde inte läsas."
+
+#: src/reports/template_editor.py
+msgid "Enter a name for the field."
+msgstr "Ange ett namn för fältet."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr "Vill du verkligen markera rapporten <i>%(report)s</i> som fullständig?"
+msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
+msgstr "När rapporten <i>%(report)s</i> markeras som slutförd fryses uppgifterna för dess åtgärder och indikatorer och den stängs för inskickningar. Det ändrar inte statusen för någon åtgärd."
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "%(counter)s of %(total)s actions has not been submitted"
+msgid_plural "%(counter)s of %(total)s actions have not been submitted"
+msgstr[0] "%(counter)s av %(total)s åtgärder har inte skickats in"
+msgstr[1] "%(counter)s av %(total)s åtgärder har inte skickats in"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current published versions."
+msgstr "De sparas med sina nuvarande publicerade versioner."
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current values."
+msgstr "De sparas med sina nuvarande värden."
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "Unsubmitted actions"
+msgstr "Åtgärder som inte skickats in"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
+msgstr "De här inskickade åtgärderna har ändringar som väntar på godkännande. Rapporten behåller deras inskickade versioner utan ändringarna; skicka in en åtgärd igen när ändringarna har publicerats för att ta med dem."
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "The submitted action will use its submitted values."
+msgid_plural "The %(counter)s submitted actions will use their submitted values."
+msgstr[0] "Den inskickade åtgärden använder sina inskickade värden."
+msgstr[1] "De %(counter)s inskickade åtgärderna använder sina inskickade värden."
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -7247,12 +7379,99 @@ msgid "Do you really want to undo marking the report <i>%(report)s</i> as comple
 msgstr "Vill du verkligen ångra att du markerade rapporten <i>%(report)s</i> som fullständig?"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will mark the following actions as complete:"
-msgstr "Detta kommer att markera följande åtgärder som slutförda:"
+msgid "This also undoes the submissions that completing the report made for these actions:"
+msgstr "Detta ångrar också de inskickningar som slutförandet av rapporten gjorde för de här åtgärderna:"
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will undo marking the following actions as complete:"
-msgstr "Detta kommer att ångra markeringen av följande åtgärder som slutförda:"
+#: src/reports/wagtail_admin.py
+msgid "Undo marking as complete"
+msgstr "Ångra markering som slutförd"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "Submit actions and mark as complete"
+msgstr "Skicka in åtgärder och markera som slutförd"
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/wagtail_admin.py
+msgid "Mark as complete"
+msgstr "Markera som slutförd"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Report completed"
+msgstr "Rapport slutförd"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, python-format
+msgid "Action submitted %(date)s"
+msgstr "Åtgärd inskickad %(date)s"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Not submitted"
+msgstr "Inte inskickad"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Submit action for report"
+msgstr "Skicka in åtgärd till rapport"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Resubmit"
+msgstr "Skicka in igen"
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "No reports are shown in the reporting tab of this plan's actions."
+msgstr "Inga rapporter visas på fliken Rapportering för den här planens åtgärder."
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(counter)s action"
+msgid_plural "%(counter)s actions"
+msgstr[0] "%(counter)s åtgärd"
+msgstr[1] "%(counter)s åtgärder"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(submitted_count)s submitted"
+msgstr "%(submitted_count)s inskickade"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(not_submitted_count)s not submitted"
+msgstr "%(not_submitted_count)s inte inskickade"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Action"
+msgstr "Åtgärd"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Submitted"
+msgstr "Inskickad"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Undo"
+msgstr "Ångra"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(date)s by %(user)s"
+msgstr "%(date)s av %(user)s"
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Undo submission"
+msgstr "Ångra inskickning"
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, python-format
+msgid "%(counter)s field configured on this template:"
+msgid_plural "%(counter)s fields configured on this template:"
+msgstr[0] "%(counter)s fält har konfigurerats i den här mallen:"
+msgstr[1] "%(counter)s fält har konfigurerats i den här mallen:"
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+msgid "No fields are configured on this template."
+msgstr "Inga fält har konfigurerats i den här mallen."
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
@@ -7261,48 +7480,93 @@ msgstr "”%(instance_name)s” används av ett block för ”Rapportjämförels
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
-msgstr[0] "Om du raderar den här rapporttypen raderas även dess rapport och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i den permanent."
-msgstr[1] "Om du raderar den här rapporttypen raderas även dess %(counter)s rapporter och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i dem permanent."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgstr[0] "Om du tar bort den här rapportmallen tas även dess rapport och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i den bort permanent."
+msgstr[1] "Om du tar bort den här rapportmallen tas även dess %(counter)s rapporter och de %(snapshot_count)s ögonblicksbilder av åtgärder som sparats i dem bort permanent."
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
+msgstr "Den här åtgärden har ändringar som inte har publicerats ännu, till exempel ändringar som väntar på godkännande. Rapporten får den publicerade versionen av åtgärden utan dessa ändringar."
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "The current values of the action's indicators are captured with it as part of the report:"
+msgstr "De aktuella värdena för åtgärdens indikatorer sparas med den som en del av rapporten:"
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, python-format
+msgid "Current: %(value)s %(unit)s (%(date)s)"
+msgstr "Aktuellt: %(value)s %(unit)s (%(date)s)"
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "No values yet"
+msgstr "Inga värden ännu"
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Submit"
+msgstr "Skicka in"
+
+#: src/reports/utils.py
+#, python-format
+msgid "%(template)s • %(report)s"
+msgstr "%(template)s • %(report)s"
 
 #: src/reports/views.py
-msgid "Mark action as complete"
-msgstr "Markera åtgärden som slutförd"
+msgid "Resubmit action to report"
+msgstr "Skicka in åtgärd till rapport igen"
 
 #: src/reports/views.py
-msgid "Undo marking action as complete"
-msgstr "Ångra markering av åtgärd som slutförd"
+msgid "Submit action to report"
+msgstr "Skicka in åtgärd till rapport"
+
+#: src/reports/views.py
+msgid "Undo action submission"
+msgstr "Ångra inskickning av åtgärd"
 
 #: src/reports/views.py
 #, python-format
-msgid "Confirm marking action %(action)s as complete for report %(report)s"
-msgstr "Bekräfta märkningsåtgärden %(action)s som slutförd för rapport %(report)s"
+msgid "Confirm resubmitting action %(action)s to report %(report)s"
+msgstr "Bekräfta att åtgärden %(action)s skickas in igen till rapporten %(report)s"
 
 #: src/reports/views.py
 #, python-format
-msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgstr "Bekräfta ångra märkningsåtgärd %(action)s som slutförd för rapport %(report)s"
+msgid "Confirm submitting action %(action)s to report %(report)s"
+msgstr "Bekräfta att åtgärden %(action)s skickas in till rapporten %(report)s"
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr "Vill du verkligen markera åtgärden '%(action)s' som slutförd för rapporten '%(report)s'?"
+msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
+msgstr "Bekräfta att inskickningen av åtgärden %(action)s till rapporten %(report)s ångras"
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr "Vill du verkligen ångra att du markerade åtgärden '%(action)s' som slutförd för rapporten '%(report)s'?"
+msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
+msgstr "Vill du skicka in åtgärden '%(action)s' till rapporten '%(report)s' igen? Det ersätter inskickningen från %(date)s med åtgärdens aktuella uppgifter."
 
 #: src/reports/views.py
 #, python-format
-msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
-msgstr "Åtgärd '%(action)s' har markerats som slutförd för rapport '%(report)s'."
+msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
+msgstr "Vill du skicka in åtgärden '%(action)s' till rapporten '%(report)s'?"
 
 #: src/reports/views.py
 #, python-format
-msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr "Åtgärden '%(action)s' är inte längre markerad som slutförd för rapporten '%(report)s'."
+msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
+msgstr "Vill du ångra inskickningen av åtgärden '%(action)s' till rapporten '%(report)s'?"
+
+#: src/reports/views.py
+#, python-format
+msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
+msgstr "Åtgärden '%(action)s' har skickats in igen till rapporten '%(report)s'."
+
+#: src/reports/views.py
+#, python-format
+msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
+msgstr "Åtgärden '%(action)s' har skickats in till rapporten '%(report)s'."
+
+#: src/reports/views.py
+#, python-format
+msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
+msgstr "Inskickningen av åtgärden '%(action)s' till rapporten '%(report)s' har ångrats."
 
 #: src/reports/views.py
 msgid "Mark report as complete"
@@ -7333,12 +7597,12 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr "Rapporten '%(report)s' är inte längre markerad som komplett."
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
-msgstr "Rapporttypen används fortfarande på åtgärdssidor. Ta bort blocken för rapportjämförelse först."
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
+msgstr "Rapportmallen används fortfarande på åtgärdssidor. Ta först bort blocken för rapportjämförelse."
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
-msgstr "Rapporttyper"
+msgid "Edit template"
+msgstr "Redigera mall"
 
 #: src/reports/wagtail_admin.py
 msgid "Download XLSX"
@@ -7349,20 +7613,50 @@ msgid "Download report as spreadsheet file"
 msgstr "Ladda ner rapporten som kalkylblad"
 
 #: src/reports/wagtail_admin.py
-msgid "Undo marking as complete"
-msgstr "Ångra markering som slutförd"
-
-#: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
 msgstr "Ångra markeringen av denna rapport som fullständig"
 
 #: src/reports/wagtail_admin.py
-msgid "Mark as complete"
-msgstr "Markera som slutförd"
-
-#: src/reports/wagtail_admin.py
 msgid "Mark this report as complete"
 msgstr "Markera denna rapport som fullständig"
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr "%(start)s – %(end)s"
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(submitted)s / %(total)s"
+msgstr "%(submitted)s / %(total)s"
+
+#: src/reports/wagtail_admin.py
+msgid "Date range"
+msgstr "Datumintervall"
+
+#: src/reports/wagtail_admin.py
+msgid "Complete"
+msgstr "Slutförd"
+
+#: src/reports/wagtail_admin.py
+msgid "Open"
+msgstr "Öppen"
+
+#: src/reports/wagtail_admin.py
+msgid "Actions submitted"
+msgstr "Inskickade åtgärder"
+
+#: src/reports/wagtail_admin.py
+msgid "The period during which action data for this report is collected."
+msgstr "Den period under vilken åtgärdsuppgifter samlas in för den här rapporten."
+
+#: src/reports/wagtail_admin.py
+msgid "Report details"
+msgstr "Rapportuppgifter"
+
+#: src/reports/wagtail_admin.py
+msgid "Action submissions"
+msgstr "Åtgärdernas inskickningar"
 
 #: src/users/apps.py
 msgid "Users"
@@ -7534,6 +7828,50 @@ msgstr "Kopiera identifierare %(identifier)s"
 #: templates/aplans/plan_title_cell.html
 msgid "Copy identifier"
 msgstr "Kopiera identifierare"
+
+#, python-format
+#~ msgid "Undo marking as complete for report %s"
+#~ msgstr "Ångra markering som slutförd för rapport %s"
+
+#, python-format
+#~ msgid "Mark as complete for report %s"
+#~ msgstr "Markera som färdig för rapport %s"
+
+#, python-format
+#~ msgid "Cannot undo marking action as complete as there are %s snapshots"
+#~ msgstr "Kan inte ångra märkningsåtgärden som slutförd eftersom det finns %s ögonblicksbilder"
+
+#~ msgid "UUID of report field"
+#~ msgstr "UUID för rapportfält"
+
+#~ msgid "Only plan admins can mark actions as complete for reports of this type"
+#~ msgstr "Endast planadministratörer kan markera åtgärder som slutförda för rapporter av denna typ"
+
+#~ msgid "public"
+#~ msgstr "offentlig"
+
+#~ msgid "Set if report can be shown to the public"
+#~ msgstr "Fastställa om rapporten kan visas för allmänheten"
+
+#~ msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
+#~ msgstr "Ange om värdena från denna rapport ska visas i fliken Rapportering när åtgärden redigeras. Värdena visas endast om denna rapport har markerats som slutförd."
+
+#, python-format
+#~ msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
+#~ msgstr "Vill du verkligen markera rapporten <i>%(report)s</i> som fullständig?"
+
+#~ msgid "This will mark the following actions as complete:"
+#~ msgstr "Detta kommer att markera följande åtgärder som slutförda:"
+
+#~ msgid "This will undo marking the following actions as complete:"
+#~ msgstr "Detta kommer att ångra markeringen av följande åtgärder som slutförda:"
+
+#~ msgid "Undo marking action as complete"
+#~ msgstr "Ångra markering av åtgärd som slutförd"
+
+#, python-format
+#~ msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
+#~ msgstr "Åtgärden '%(action)s' är inte längre markerad som slutförd för rapporten '%(report)s'."
 
 #, python-format
 #~ msgid "The %(model_name)s could not be saved as it is locked"
