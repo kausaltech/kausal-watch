@@ -1,0 +1,40 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags %}
+
+{% block titletag %}{{ view.get_page_title }}{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title=view.get_page_title icon=view.header_icon %}
+
+    <div class="nice-padding inbox">
+        {% if has_unread %}
+            <form method="POST" action="{% url 'notifications_inbox_mark_all_read' %}" class="inbox__toolbar">
+                {% csrf_token %}
+                <button type="submit" class="button button-small button-secondary">{% trans "Mark all as read" %}</button>
+            </form>
+        {% endif %}
+
+        {% if rows %}
+            <ul class="inbox__list">
+                {% for notification, message in rows %}
+                    <li class="inbox__item{% if not notification.read_at %} inbox__item--unread{% endif %}">
+                        <a href="{% url 'notifications_inbox_open' notification.pk %}" class="inbox__link">
+                            {% if not notification.read_at %}<span class="visuallyhidden">{% trans "Unread:" %}</span>{% endif %}
+                            {{ message }}
+                        </a>
+                        {% if notification.comment %}
+                            <blockquote class="inbox__comment">{{ notification.comment|linebreaksbr }}</blockquote>
+                        {% endif %}
+                        <div class="inbox__meta">
+                            {% if notification.plan %}{{ notification.plan.name }} · {% endif %}
+                            {% human_readable_date notification.created_at %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% include "wagtailadmin/shared/pagination_nav.html" with items=page_obj linkurl=request.path %}
+        {% else %}
+            <p>{% trans "You have no notifications." %}</p>
+        {% endif %}
+    </div>
+{% endblock %}

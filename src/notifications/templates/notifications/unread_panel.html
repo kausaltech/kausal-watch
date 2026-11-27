@@ -1,0 +1,8 @@
+{% load i18n wagtailadmin_tags %}
+<section class="panel summary nice-padding unread-notifications-panel">
+    <p>
+        {% icon name="fontawesome-bell" classname="default" %}
+        {{ label }}.
+        <a href="{{ inbox_url }}">{% trans "Open inbox" %}</a>
+    </p>
+</section>
