@@ -7667,7 +7667,7 @@ msgstr ""
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Action"
-msgstr ""
+msgstr "Massnahme"
 
 #: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Submitted"
@@ -7729,7 +7729,7 @@ msgstr ""
 
 #: src/reports/templates/reports/submit_action_confirmation.html
 msgid "Submit"
-msgstr ""
+msgstr "Einreichen"
 
 #: src/reports/utils.py
 #, python-format
