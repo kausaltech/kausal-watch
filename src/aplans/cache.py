@@ -313,8 +313,14 @@ class PlanSpecificCache:
         return self.attribute_choice_options[pk]
 
     @cached_property
-    def latest_reports(self) -> list[Report]:
-        qs = Report.objects.filter(type__plan=self.plan).order_by('type', '-start_date').distinct('type')
+    def open_reports(self) -> list[Report]:
+        """Return the plan's reports that actions can still be submitted to, by template and newest first."""
+        qs = (
+            Report.objects
+            .filter(type__plan=self.plan, is_complete=False)
+            .select_related('type__plan')
+            .order_by('type__name', 'type_id', '-start_date', '-pk')
+        )
         return list(qs)
 
     @classmethod

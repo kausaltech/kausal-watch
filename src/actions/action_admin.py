@@ -1576,10 +1576,8 @@ class ActionViewSet(WatchViewSet[Action, ActionAdminForm]):
 
     def _get_report_buttons(self, user: User, instance: Action, plan: Plan) -> list[ListingButton]:
         buttons: list[ListingButton] = []
-        # For each report type, one button for the latest report of that type
-        for report in get_admin_cache(ctx_request.get_admin_request()).latest_reports:
-            if report.is_complete:
-                continue
+        # One button for each report that is still open, whether or not it is shown in the action's reporting tab
+        for report in get_admin_cache(ctx_request.get_admin_request()).open_reports:
             if report.type.only_plan_admins_can_mark_actions_as_complete and not user.is_general_admin_for_plan(report.type.plan):
                 continue
             args = (quote(instance.pk), quote(report.pk))

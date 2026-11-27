@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
@@ -72,6 +73,35 @@ def test_action_menu_offers_submitting_in_a_reporting_section(rf, plan_admin_use
     [button] = _reporting_buttons(rf, plan_admin_user, action)
     assert button.label == 'Submit for Quarterly report • Q3 2026'
     assert button.section == 'Reporting'
+    assert button.url == h.mark_as_complete_url(action, report.pk)
+
+
+def test_action_menu_offers_every_open_report_newest_first(rf, plan_admin_user, action, report):
+    report.start_date, report.end_date = datetime.date(2026, 7, 1), datetime.date(2026, 9, 30)
+    report.save()
+    older = ReportFactory.create(
+        type=report.type, name='Q2 2026', start_date=datetime.date(2026, 4, 1), end_date=datetime.date(2026, 6, 30)
+    )
+    # The reporting tab setting only hides the report from the tab: actions can still be submitted to it
+    hidden = ReportFactory.create(
+        type=report.type,
+        name='Q1 2026',
+        start_date=datetime.date(2026, 1, 1),
+        end_date=datetime.date(2026, 3, 31),
+        show_in_reporting_tab=False,
+    )
+    labels = [button.label for button in _reporting_buttons(rf, plan_admin_user, action)]
+    assert labels == [f'Submit for Quarterly report • {r.name}' for r in (report, older, hidden)]
+
+
+def test_action_menu_offers_older_open_reports_when_the_newest_is_complete(rf, plan_admin_user, action, report):
+    report.start_date, report.end_date = datetime.date(2026, 7, 1), datetime.date(2026, 9, 30)
+    report.save()
+    newest = ReportFactory.create(
+        type=report.type, name='Q4 2026', start_date=datetime.date(2026, 10, 1), end_date=datetime.date(2026, 12, 31)
+    )
+    newest.mark_as_complete(plan_admin_user)
+    [button] = _reporting_buttons(rf, plan_admin_user, action)
     assert button.url == h.mark_as_complete_url(action, report.pk)
 
 
