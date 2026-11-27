@@ -10,6 +10,7 @@ from django.db.models.fields import Field
 from django.utils import timezone
 from django.utils.formats import date_format, number_format
 from django.utils.html import escape
+from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _, pgettext
 from wagtail import fields
 
@@ -175,8 +176,8 @@ class ActionSimpleFieldFormatter(ReportFieldFormatter):
         field = Action._meta.get_field(field_name)
         if not isinstance(field, Field):
             raise TypeError('Do not use ActionSimpleFieldFormatter for relations')
-        verbose_name = field.verbose_name
-        return [str(verbose_name)]
+        # Field names are lowercase, but the labels head the spreadsheet's columns and the reporting tab's rows
+        return [capfirst(str(field.verbose_name))]
 
     def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
@@ -280,8 +281,8 @@ class ActionSingleRelatedModelFieldFormatter(ReportFieldFormatter):
         field = Action._meta.get_field(field_name)
         if not isinstance(field, Field):
             raise TypeError('Do not use ActionSimpleFieldFormatter for relations')
-        verbose_name = field.verbose_name
-        return [str(verbose_name)]
+        # Field names are lowercase, but the labels head the spreadsheet's columns and the reporting tab's rows
+        return [capfirst(str(field.verbose_name))]
 
     def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
@@ -350,7 +351,7 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
             related_model,
         )
         formatted = []
-        for t in tasks:
+        for t in self._in_task_order(tasks):
             data = t.data
             state = next(str(s[1]) for s in ActionTask.STATES if s[0] == data['state'])
             if data['state'] == ActionTask.COMPLETED:
@@ -369,6 +370,22 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
                 line += f' — {assignees}'
             formatted.append(line)
         return ['\n'.join(formatted)]
+
+    @staticmethod
+    def _in_task_order(tasks: list[SerializedVersion]) -> list[SerializedVersion]:
+        """
+        Return the tasks in the order of the action's task list: latest due date first, and tasks without one before.
+
+        A submission's tasks come in the order they were saved in, and an action's current tasks in the database's, so
+        both are sorted to read the same way.
+        """
+
+        def key(task: SerializedVersion) -> tuple[bool, str, int]:
+            due_at = task.data.get('due_at')
+            # Serialized dates may be dates or ISO strings, which sort the same way as text
+            return (due_at is None, str(due_at or ''), int(task.data['id']))
+
+        return sorted(tasks, key=key, reverse=True)
 
     @staticmethod
     def _plan_of_action(report: ExcelReport, action: dict) -> Plan | None:

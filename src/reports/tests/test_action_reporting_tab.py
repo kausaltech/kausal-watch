@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from actions.tests.factories import ActionImplementationPhaseFactory
+from actions.tests.factories import ActionImplementationPhaseFactory, ActionTaskFactory
 from admin_site.tests.factories import ClientPlanFactory
 from reports.action_reporting import REPORTS_PER_TEMPLATE, get_action_report_tables
 from reports.tests.factories import ReportFactory, ReportTypeFactory
@@ -85,6 +85,28 @@ def test_completed_report_offers_no_submission(plan_admin_user, action, report_t
     assert column.submitted_at is None
     assert column.submit_url is None
     assert column.resubmit_url is None
+
+
+def test_submitted_and_current_tasks_are_listed_in_the_same_order(plan_with_pages, plan_admin_user, action):
+    report_type = ReportTypeFactory.create(plan=plan_with_pages, name='Task report', fields__0='tasks')
+    # Saved oldest due date first, which is the order a submission keeps them in
+    for name, due_at in (('Draft', datetime.date(2021, 1, 1)), ('Publish', datetime.date(2022, 1, 1))):
+        ActionTaskFactory.create(action=action, name=name, due_at=due_at)
+    submitted = _report(report_type, 'Q3 2026', datetime.date(2026, 7, 1))
+    _report(report_type, 'Q4 2026', datetime.date(2026, 10, 1))
+    action.mark_as_complete_for_report(submitted, plan_admin_user)
+
+    [table] = get_action_report_tables(action, plan_admin_user)
+    [(_label, [current, submitted_tasks])] = table.rows
+    assert current == submitted_tasks
+    assert current.index('Publish') < current.index('Draft')
+
+
+def test_field_labels_start_with_a_capital_letter(plan_with_pages, plan_admin_user, action):
+    report_type = ReportTypeFactory.create(plan=plan_with_pages, fields__0='description', fields__1='primary_org')
+    _report(report_type, 'Q3 2026', datetime.date(2026, 7, 1))
+    [table] = get_action_report_tables(action, plan_admin_user)
+    assert table.labels == ['Description', 'Primary organization']
 
 
 def test_editor_without_permission_to_submit_sees_values_only(action_contact_person_user, action, report_type):
