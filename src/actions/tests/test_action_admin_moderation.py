@@ -138,7 +138,8 @@ class TestButtons:
     def test_moderator_can_approve_or_request_changes_while_in_moderation(self, client, action, editor, moderator):
         submit(client, editor, action)
 
-        assert menu(client, moderator, action) == ['action-save', 'action-cancel-workflow', 'approve', 'reject']
+        # 'approve' twice: Approve, and Approve with comment
+        assert menu(client, moderator, action) == ['action-save', 'action-cancel-workflow', 'approve', 'approve', 'reject']
 
     def test_editor_can_resubmit_or_cancel_after_changes_were_requested(self, client, action, editor, moderator):
         submit(client, editor, action)
@@ -224,6 +225,26 @@ class TestApproving:
         assert action.name == 'Draft name'
         assert not action.has_unpublished_changes
         assert action.live_revision == action.latest_revision
+
+    def test_approval_with_a_comment_emails_the_comment_to_the_submitter(self, client, mailoutbox, action, editor, moderator):
+        submit(client, editor, action)
+
+        h.post_workflow_action(client, moderator, action, 'approve', {'comment': 'Please check the figures next time'})
+
+        assert workflow_statuses(action) == ['approved']
+        emails = [email for email in mailoutbox if editor.email in email.to and 'approved' in email.subject]
+        assert len(emails) == 1
+        assert 'with a comment' in emails[0].subject
+        assert 'Please check the figures next time' in emails[0].body
+
+    def test_approval_without_a_comment_sends_the_plain_approval_email(self, client, mailoutbox, action, editor, moderator):
+        submit(client, editor, action)
+
+        h.post_workflow_action(client, moderator, action, 'approve')
+
+        emails = [email for email in mailoutbox if editor.email in email.to and 'approved' in email.subject]
+        assert len(emails) == 1
+        assert 'with a comment' not in emails[0].subject
 
     def test_editor_cannot_approve(self, client, action, editor):
         submit(client, editor, action)

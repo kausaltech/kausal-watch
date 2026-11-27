@@ -1,0 +1,1 @@
+{% include 'wagtailadmin/notifications/task_state_submitted_subject.txt' %}

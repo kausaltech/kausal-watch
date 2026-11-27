@@ -36,6 +36,7 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         # Without a user, the finder skips the permission check; the recipients are not logged in
         context['admin_url_finder'] = AdminURLFinder(None)
         context['model_name'] = content_object._meta.verbose_name
+        context['submitter'] = task_state.revision.user if task_state.revision else task_state.workflow_state.requested_by
         return context
 
     def get_valid_recipients(self, instance, **kwargs):
@@ -102,6 +103,42 @@ class ActionModeratorApprovalTaskStateSubmissionEmailNotifier(BaseActionModerato
     """A notifier to send updates for ActionModeratorApprovalTask submission events."""
 
     notification = 'submitted'
+    # Our templates extend Wagtail's to name the submitter
+    template_directory = 'actions/notifications/'
+
+
+class ActionSubmissionReceivedEmailNotifier(BaseActionModeratorApprovalTaskStateEmailNotifier):
+    """Confirm to the person who submitted an action for moderation that it was received."""
+
+    # Follows the user's preference for submission notifications
+    notification = 'submitted'
+
+    def get_template_set(self, instance, **kwargs):
+        base = 'actions/notifications/task_state_submission_received'
+        return {'subject': f'{base}_subject.txt', 'text': f'{base}.txt', 'html': f'{base}.txt'}
+
+    def get_recipient_users(self, task_state, **kwargs):
+        user = kwargs.get('user')
+        workflow_state = task_state.workflow_state
+        if user is None or not isinstance(workflow_state.content_object, Action):
+            return set()
+        first_task = (
+            workflow_state.workflow.workflow_tasks
+            .filter(task__active=True)
+            .order_by('sort_order')
+            .values_list('task', flat=True)
+            .first()
+        )
+        sent_back_before = (
+            TaskState.objects
+            .filter(workflow_state=workflow_state, task=task_state.task, status=TaskState.STATUS_REJECTED)
+            .exclude(pk=task_state.pk)
+            .exists()
+        )
+        # A submission or a resubmission, not an approval that moved the action to the next step
+        if task_state.task_id != first_task and not sent_back_before:
+            return set()
+        return {user}
 
 
 class ActionModeratorCancelTaskStateSubmissionEmailNotifier(BaseActionModeratorApprovalTaskStateEmailNotifier):
