@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-18 20:11+0200\n"
+"POT-Creation-Date: 2026-11-27 15:43+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -226,6 +226,8 @@ msgstr ""
 
 #: src/access_requests/templates/access_requests/panel.html
 #: src/actions/templates/actions/bulk_approve.html
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/templates/reports/submit_action_confirmation.html
 #: templates/aplans/plan_publish_confirmation.html
 msgid "Cancel"
 msgstr ""
@@ -343,7 +345,9 @@ msgid "Field \"%(attribute_type)s\": %(message)s"
 msgstr ""
 
 #: src/actions/action_admin.py src/actions/templates/actions/bulk_approve.html
-#: src/copying/views.py src/reports/spreadsheets/excel_report.py
+#: src/copying/views.py src/reports/action_reporting.py
+#: src/reports/spreadsheets/excel_report.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Identifier"
 msgstr ""
 
@@ -392,6 +396,11 @@ msgstr ""
 msgid "Internal notes for plan administrators"
 msgstr ""
 
+#: src/actions/action_admin.py src/admin_site/wagtail_hooks.py
+#: src/reports/apps.py src/reports/blocks/report_comparison_block.py
+msgid "Reports"
+msgstr ""
+
 #: src/actions/action_admin.py src/indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr ""
@@ -406,22 +415,22 @@ msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Undo marking as complete for report %s"
+msgid "Submit for %s"
 msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Undo marking this action as complete for the report %s"
+msgid "Submit this action to the report %s"
 msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark as complete for report %s"
+msgid "Resubmit for %(report)s (submitted %(date)s)"
 msgstr ""
 
 #: src/actions/action_admin.py
 #, python-format
-msgid "Mark this action as complete for the report %s"
+msgid "Replace the submission of this action to the report %s with its current data"
 msgstr ""
 
 #: src/actions/action_admin.py
@@ -678,7 +687,7 @@ msgstr ""
 msgid "Choice option '%(name)s' is still in use, so it was archived rather than deleted. Existing references continue to resolve; the option is hidden from new selections. Use the \"Unarchive\" button on the option to restore it."
 msgstr ""
 
-#: src/actions/attribute_type_admin.py
+#: src/actions/attribute_type_admin.py src/reports/wagtail_admin.py
 msgid "Fields"
 msgstr ""
 
@@ -754,6 +763,8 @@ msgstr ""
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/choosers.py
 #: src/actions/blocks/filters.py
 #: src/admin_site/built_in_field_customization_admin.py
+#: src/reports/blocks/report_comparison_block.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
 msgid "Field"
 msgstr ""
 
@@ -1029,7 +1040,7 @@ msgid "Implementation phase"
 msgstr ""
 
 #: src/actions/blocks/category_page_layout.py src/actions/blocks/filters.py
-#: src/reports/blocks/action_content.py
+#: src/reports/blocks/action_content.py src/reports/wagtail_admin.py
 msgid "Status"
 msgstr ""
 
@@ -1069,7 +1080,7 @@ msgstr ""
 #: src/actions/templates/actions/chooser_results.html
 #: src/actions/wagtail_admin.py
 #: src/audit_logging/templates/site_history_results.html
-#: src/reports/spreadsheets/excel_report.py
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
 #: src/reports/tests/test_tasks_sheet.py
 msgid "Plan"
 msgstr ""
@@ -1238,7 +1249,7 @@ msgstr ""
 msgid "Choose another plan"
 msgstr ""
 
-#: src/actions/chooser.py
+#: src/actions/chooser.py src/reports/blocks/choosers.py
 msgid "Choose a field"
 msgstr ""
 
@@ -1302,7 +1313,7 @@ msgstr ""
 
 #: src/actions/models/action.py src/actions/models/plan.py
 #: src/actions/models/pledge.py src/indicators/models/common_indicator.py
-#: src/indicators/models/indicator.py
+#: src/indicators/models/indicator.py src/reports/models.py
 msgid "description"
 msgstr ""
 
@@ -1510,22 +1521,32 @@ msgstr ""
 
 #: src/actions/models/action.py
 #, python-format
-msgid "The action is already marked as complete for report %s."
+msgid "The action has already been submitted to the report %s."
 msgstr ""
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgid "Submitted action '%(action)s' to report '%(report)s'"
 msgstr ""
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Cannot undo marking action as complete as there are %s snapshots"
+msgid "The action has not been submitted to the report %s yet."
 msgstr ""
 
 #: src/actions/models/action.py
 #, python-format
-msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgid "Resubmitted action '%(action)s' to report '%(report)s'"
+msgstr ""
+
+#: src/actions/models/action.py
+#, python-format
+msgid "Cannot undo the submission as the action has %s snapshots for the report"
+msgstr ""
+
+#: src/actions/models/action.py
+#, python-format
+msgid "Undid submitting action '%(action)s' to report '%(report)s'"
 msgstr ""
 
 #: src/actions/models/action.py src/reports/blocks/action_content.py
@@ -1904,7 +1925,7 @@ msgstr ""
 msgid "field"
 msgstr ""
 
-#: src/actions/models/attributes.py src/reports/wagtail_admin.py
+#: src/actions/models/attributes.py
 msgid "fields"
 msgstr ""
 
@@ -2377,6 +2398,10 @@ msgstr ""
 
 #: src/actions/models/features.py
 msgid "plan features"
+msgstr ""
+
+#: src/actions/models/features.py
+msgid "Hiding moderators requires contact persons to have different roles."
 msgstr ""
 
 #: src/actions/models/features.py
@@ -4023,8 +4048,8 @@ msgstr ""
 msgid "Email domains"
 msgstr ""
 
-#: src/admin_site/wagtail_hooks.py src/reports/apps.py
-msgid "Reports"
+#: src/admin_site/wagtail_hooks.py src/reports/wagtail_admin.py
+msgid "Report templates"
 msgstr ""
 
 #: src/admin_site/wagtail_hooks.py
@@ -4187,7 +4212,7 @@ msgstr ""
 msgid "Contact persons with \"moderator\" role"
 msgstr ""
 
-#: src/aplans/utils.py
+#: src/aplans/utils.py src/reports/wagtail_admin.py
 msgid "Visibility"
 msgstr ""
 
@@ -4270,7 +4295,7 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: src/content/models.py src/feedback/models.py
+#: src/content/models.py src/feedback/models.py src/reports/action_reporting.py
 #: src/reports/spreadsheets/excel_report.py
 msgctxt "Action model"
 msgid "Action"
@@ -4819,7 +4844,7 @@ msgstr ""
 msgid "Connected actions"
 msgstr ""
 
-#: src/indicators/blocks/layout.py
+#: src/indicators/blocks/layout.py src/reports/template_editor.py
 msgid "Category level"
 msgstr ""
 
@@ -6215,7 +6240,7 @@ msgstr ""
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
 msgstr ""
 
-#: src/orgs/wagtail_admin.py
+#: src/orgs/wagtail_admin.py src/reports/wagtail_admin.py
 msgid "Permissions"
 msgstr ""
 
@@ -6832,6 +6857,7 @@ msgid "Organization admin"
 msgstr ""
 
 #: src/people/wagtail_admin.py
+#: src/reports/templates/reports/panels/report_submissions_panel.html
 msgid "Contact person"
 msgstr ""
 
@@ -6857,6 +6883,26 @@ msgstr ""
 
 #: src/people/wagtail_admin.py
 msgid "Plan admin organizations"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Contact person role in newly added actions"
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Required if you add actions above. Moderators can choose the editors of the action and, if there is moderation, approve changes; editors can't. You can change the roles on the action's page."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Moderators are not shown on the public site."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "You have switched to a different plan since opening this page. Please reload it and try again."
+msgstr ""
+
+#: src/people/wagtail_admin.py
+msgid "Choose the role of the person in the actions you added."
 msgstr ""
 
 #: src/people/wagtail_admin.py
@@ -6907,6 +6953,16 @@ msgstr ""
 msgid "Are you sure you want to deactivate this person?"
 msgstr ""
 
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr ""
+
+#: src/reports/action_reporting.py src/reports/spreadsheets/excel_report.py
+#: src/reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr ""
+
 #: src/reports/blocks/action_content.py
 msgid "Action field"
 msgstr ""
@@ -6924,43 +6980,77 @@ msgid "In addition to the organization itself, an organizational unit containing
 msgstr ""
 
 #: src/reports/blocks/choosers.py src/reports/wagtail_admin.py
-msgid "Report type"
+msgid "Report template"
 msgstr ""
 
 #: src/reports/blocks/choosers.py
-msgid "Report type field"
+msgid "Report"
+msgstr ""
+
+#: src/reports/blocks/choosers.py
+msgid "Report template field"
 msgstr ""
 
 #: src/reports/blocks/report_comparison_block.py
-msgid "UUID of report field"
+msgid "The completed reports of the template to compare."
+msgstr ""
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "The field of the template whose values are compared. Only public fields can be compared."
 msgstr ""
 
 #: src/reports/blocks/report_comparison_block.py
 msgid "Report comparison"
 msgstr ""
 
-#: src/reports/chooser.py
-msgid "Choose a report type"
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not a report of the chosen template."
+msgstr ""
+
+#: src/reports/blocks/report_comparison_block.py
+#, python-format
+msgid "\"%(report)s\" is not complete. Only completed reports can be compared."
+msgstr ""
+
+#: src/reports/blocks/report_comparison_block.py
+msgid "Choose a public action field of the chosen template."
 msgstr ""
 
 #: src/reports/chooser.py
-msgid "Choose another report type"
+msgid "Choose a report template"
+msgstr ""
+
+#: src/reports/chooser.py
+msgid "Choose another report template"
+msgstr ""
+
+#: src/reports/chooser.py
+msgid "Choose a report"
+msgstr ""
+
+#: src/reports/chooser.py
+msgid "Choose another report"
 msgstr ""
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete"
+msgid "What the template is for, e.g. who receives its reports and when"
 msgstr ""
 
 #: src/reports/models.py
-msgid "Only plan admins can mark actions as complete for reports of this type"
+msgid "Only plan admins can submit actions for reporting"
 msgstr ""
 
 #: src/reports/models.py
-msgid "report type"
+msgid "Submitting an action ensures the action data at that point in time is used in the final report. When on, only plan administrators can submit individual actions for a report. Other users can still edit actions."
 msgstr ""
 
 #: src/reports/models.py
-msgid "report types"
+msgid "report template"
+msgstr ""
+
+#: src/reports/models.py
+msgid "report templates"
 msgstr ""
 
 #: src/reports/models.py
@@ -6977,19 +7067,11 @@ msgid "Set if report cannot be changed anymore"
 msgstr ""
 
 #: src/reports/models.py
-msgid "public"
+msgid "Show in action reporting tab"
 msgstr ""
 
 #: src/reports/models.py
-msgid "Set if report can be shown to the public"
-msgstr ""
-
-#: src/reports/models.py
-msgid "Show in reporting tab"
-msgstr ""
-
-#: src/reports/models.py
-msgid "Set if the values from this report should be shown in the reporting tab when editing the action. The values are shown only if this report has been marked as complete."
+msgid "Show this report to editors on each action's Reporting tab."
 msgstr ""
 
 #: src/reports/models.py
@@ -7128,7 +7210,7 @@ msgid "Completion date"
 msgstr ""
 
 #: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_tasks_sheet.py
+#: src/reports/tests/test_tasks_sheet.py src/reports/wagtail_admin.py
 msgid "Details"
 msgstr ""
 
@@ -7137,20 +7219,70 @@ msgstr ""
 msgid "Responsible organizations"
 msgstr ""
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete by"
+#: src/reports/template_editor.py
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Not included"
 msgstr ""
 
-#: src/reports/spreadsheets/excel_report.py
-#: src/reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete at"
+#: src/reports/template_editor.py
+#, python-format
+msgid "Level %(level)d"
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "Containing organization"
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "Categories as assigned"
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "The fields could not be read. Reload the page and try again."
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "The field could not be read."
+msgstr ""
+
+#: src/reports/template_editor.py
+msgid "Enter a name for the field."
 msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
+msgid "Marking the report <i>%(report)s</i> as complete freezes the data of its actions and indicators and closes it to submissions. It does not change the status of any action."
 msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "%(counter)s of %(total)s actions has not been submitted"
+msgid_plural "%(counter)s of %(total)s actions have not been submitted"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current published versions."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "They will be captured using their current values."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "Unsubmitted actions"
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "These submitted actions have changes waiting for approval. The report keeps their submitted versions, without the changes; resubmit an action after its changes are published to include them."
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "The submitted action will use its submitted values."
+msgid_plural "The %(counter)s submitted actions will use their submitted values."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -7158,11 +7290,98 @@ msgid "Do you really want to undo marking the report <i>%(report)s</i> as comple
 msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will mark the following actions as complete:"
+msgid "This also undoes the submissions that completing the report made for these actions:"
 msgstr ""
 
 #: src/reports/templates/reports/mark_report_as_complete_confirmation.html
-msgid "This will undo marking the following actions as complete:"
+#: src/reports/wagtail_admin.py
+msgid "Undo marking as complete"
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "Submit actions and mark as complete"
+msgstr ""
+
+#: src/reports/templates/reports/mark_report_as_complete_confirmation.html
+#: src/reports/wagtail_admin.py
+msgid "Mark as complete"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Report completed"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#, python-format
+msgid "Action submitted %(date)s"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Not submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "Submit action for report"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Resubmit"
+msgstr ""
+
+#: src/reports/templates/reports/panels/action_reports_panel.html
+msgid "No reports are shown in the reporting tab of this plan's actions."
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(counter)s action"
+msgid_plural "%(counter)s actions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(submitted_count)s submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(not_submitted_count)s not submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Action"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Submitted"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+msgid "Undo"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#, python-format
+msgid "%(date)s by %(user)s"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_submissions_panel.html
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Undo submission"
+msgstr ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+#, python-format
+msgid "%(counter)s field configured on this template:"
+msgid_plural "%(counter)s fields configured on this template:"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reports/templates/reports/panels/report_template_panel.html
+msgid "No fields are configured on this template."
 msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
@@ -7172,47 +7391,92 @@ msgstr ""
 
 #: src/reports/templates/reports/report_type_delete.html
 #, python-format
-msgid "Deleting this report type also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
-msgid_plural "Deleting this report type also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
+msgid "Deleting this report template also permanently deletes its report and the %(snapshot_count)s action snapshots saved in it."
+msgid_plural "Deleting this report template also permanently deletes its %(counter)s reports and the %(snapshot_count)s action snapshots saved in them."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/reports/views.py
-msgid "Mark action as complete"
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "This action has changes that have not been published yet, for example changes waiting for approval. The report gets the published version of the action, without these changes."
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "The current values of the action's indicators are captured with it as part of the report:"
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+#, python-format
+msgid "Current: %(value)s %(unit)s (%(date)s)"
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "No values yet"
+msgstr ""
+
+#: src/reports/templates/reports/submit_action_confirmation.html
+msgid "Submit"
+msgstr ""
+
+#: src/reports/utils.py
+#, python-format
+msgid "%(template)s • %(report)s"
 msgstr ""
 
 #: src/reports/views.py
-msgid "Undo marking action as complete"
+msgid "Resubmit action to report"
+msgstr ""
+
+#: src/reports/views.py
+msgid "Submit action to report"
+msgstr ""
+
+#: src/reports/views.py
+msgid "Undo action submission"
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgid "Confirm resubmitting action %(action)s to report %(report)s"
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgid "Confirm submitting action %(action)s to report %(report)s"
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Confirm undoing the submission of action %(action)s to report %(report)s"
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+msgid "Do you want to resubmit the action '%(action)s' to the report '%(report)s'? This replaces its submission from %(date)s with the current data of the action."
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgid "Do you want to submit the action '%(action)s' to the report '%(report)s'?"
 msgstr ""
 
 #: src/reports/views.py
 #, python-format
-msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
+msgid "Do you want to undo submitting the action '%(action)s' to the report '%(report)s'?"
+msgstr ""
+
+#: src/reports/views.py
+#, python-format
+msgid "Action '%(action)s' has been resubmitted to the report '%(report)s'."
+msgstr ""
+
+#: src/reports/views.py
+#, python-format
+msgid "Action '%(action)s' has been submitted to the report '%(report)s'."
+msgstr ""
+
+#: src/reports/views.py
+#, python-format
+msgid "The submission of action '%(action)s' to the report '%(report)s' has been undone."
 msgstr ""
 
 #: src/reports/views.py
@@ -7244,11 +7508,11 @@ msgid "Report '%(report)s' is no longer marked as complete."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "The report type is still used on action pages. Remove the report comparison blocks first."
+msgid "The report template is still used on action pages. Remove the report comparison blocks first."
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Report types"
+msgid "Edit template"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
@@ -7260,19 +7524,49 @@ msgid "Download report as spreadsheet file"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Undo marking as complete"
-msgstr ""
-
-#: src/reports/wagtail_admin.py
 msgid "Undo marking this report as complete"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Mark as complete"
+msgid "Mark this report as complete"
 msgstr ""
 
 #: src/reports/wagtail_admin.py
-msgid "Mark this report as complete"
+#, python-format
+msgid "%(start)s – %(end)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+#, python-format
+msgid "%(submitted)s / %(total)s"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Date range"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Complete"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Open"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Actions submitted"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "The period during which action data for this report is collected."
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Report details"
+msgstr ""
+
+#: src/reports/wagtail_admin.py
+msgid "Action submissions"
 msgstr ""
 
 #: src/users/apps.py
