@@ -6,14 +6,18 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.translation import override
 from wagtail.admin.admin_url_finder import AdminURLFinder
-from wagtail.admin.mail import EmailNotificationMixin, Notifier, WorkflowStateApprovalEmailNotifier
+from wagtail.admin.mail import (
+    EmailNotificationMixin,
+    GroupApprovalTaskStateSubmissionEmailNotifier,
+    Notifier,
+    WorkflowStateApprovalEmailNotifier,
+)
 from wagtail.models import TaskState
 
 from aplans.email_sender import EmailSender
 
-from users.models import User
-
-from .models import Action, ActionContactPerson
+from .models import Action
+from .moderation_recipients import get_step_reviewers
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +52,11 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         self.notification = actual_notification
         return result
 
+    def can_handle(self, instance, **kwargs):
+        return super().can_handle(instance, **kwargs) and isinstance(instance.workflow_state.content_object, Action)
+
     def get_recipient_users(self, task_state, **kwargs):
-        # TODO
-        action = task_state.workflow_state.content_object
-        assert isinstance(action, Action)
-        moderator_ids = action.contact_persons.filter(ActionContactPerson.moderators_q()).values_list('person__user')
-        return User.objects.filter(id__in=moderator_ids)
+        return get_step_reviewers(task_state, exclude=kwargs.get('user'))
 
     def send_emails(self, template_set, context, recipients, **kwargs):
         """Overridden just to modify the From: and Reply-To: headers."""
@@ -150,3 +153,10 @@ class WorkflowStateApprovalWithCommentEmailNotifier(WorkflowStateApprovalEmailNo
         result = super().get_valid_recipients(instance, **kwargs)
         self.notification = actual_notification
         return result
+
+
+class NonActionGroupApprovalTaskStateSubmissionEmailNotifier(GroupApprovalTaskStateSubmissionEmailNotifier):
+    """Wagtail's group step email, for everything but actions, whose reviewers get our own email."""
+
+    def can_handle(self, instance, **kwargs):
+        return super().can_handle(instance, **kwargs) and not isinstance(instance.workflow_state.content_object, Action)

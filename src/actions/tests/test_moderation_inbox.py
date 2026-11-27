@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.contrib.auth.models import Group
+
 import pytest
 
 from actions.tests import action_admin_helpers as h
@@ -106,3 +108,18 @@ def test_nothing_is_created_without_the_moderation_ui(client, settings, action, 
     submit(client, editor, action)
 
     assert inbox() == []
+
+
+def test_group_step_reaches_only_members_who_can_edit_the_action(client, plan, action, editor, moderator):
+    group = Group.objects.create(name='Reviewers')
+    h.add_group_step(plan, group)
+    plan_admin = h.make_plan_admin(plan)
+    other_plan_admin = h.make_plan_admin(PlanFactory.create())
+    for user in (plan_admin, other_plan_admin, moderator):
+        user.groups.add(group)
+    submit(client, editor, action)
+    InboxNotification.objects.all().delete()
+
+    h.post_workflow_action(client, moderator, action, 'approve')
+
+    assert inbox() == [(plan_admin.email, Type.ACTION_SUBMITTED)]

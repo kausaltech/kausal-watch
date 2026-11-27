@@ -76,7 +76,7 @@ def test_inbox_lists_only_own_notifications(client, action, moderator, editor):
     assert response.status_code == 200
     assert [n.type for n, _ in response.context['rows']] == [Type.ACTION_SUBMITTED]
     content = response.content.decode()
-    assert f'submitted the action &quot;{action}&quot; for review' in content
+    assert f'The action &quot;{action}&quot; is waiting for your review.' in content
     assert 'Have a look' in content
 
 

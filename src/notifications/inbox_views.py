@@ -49,7 +49,7 @@ def notification_message(notification: InboxNotification) -> str:
     T = InboxNotification.Type
     match notification.type:
         case T.ACTION_SUBMITTED:
-            return _('%(actor)s submitted the action "%(title)s" for review.') % params
+            return _('The action "%(title)s" is waiting for your review.') % params
         case T.ACTION_CHANGES_REQUESTED:
             return _('%(actor)s requested changes to the action "%(title)s".') % params
         case T.ACTION_APPROVED:

@@ -8,17 +8,14 @@ from wagtail.signals import task_cancelled, task_submitted, workflow_approved, w
 
 from notifications.inbox import notify
 from notifications.models import InboxNotification
-from users.models import User
 
-from .models import Action, ActionContactPerson
+from .models import Action
+from .moderation_recipients import get_step_reviewers
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from users.models import User
 
-
-def _action_moderators(action: Action) -> QuerySet[User]:
-    moderator_ids = action.contact_persons.filter(ActionContactPerson.moderators_q()).values_list('person__user')
-    return User.objects.filter(id__in=moderator_ids)
+    pass
 
 
 def _action_of(workflow_state: WorkflowState) -> Action | None:
@@ -35,11 +32,11 @@ def _comment(workflow_state: WorkflowState) -> str:
     return task_state.specific.get_comment() or ''
 
 
-def _notify_moderators(task_state: TaskState, type: InboxNotification.Type, user: User | None) -> None:
+def _notify_reviewers(task_state: TaskState, type: InboxNotification.Type, user: User | None) -> None:
     action = _action_of(task_state.workflow_state)
     if action is None:
         return
-    notify(_action_moderators(action), type, action, plan=action.plan, actor=user)
+    notify(get_step_reviewers(task_state), type, action, plan=action.plan, actor=user)
 
 
 def _notify_requester(workflow_state: WorkflowState, type: InboxNotification.Type, user: User | None) -> None:
@@ -51,11 +48,11 @@ def _notify_requester(workflow_state: WorkflowState, type: InboxNotification.Typ
 
 
 def on_task_submitted(sender, instance: TaskState, user: User | None = None, **kwargs) -> None:
-    _notify_moderators(instance, InboxNotification.Type.ACTION_SUBMITTED, user)
+    _notify_reviewers(instance, InboxNotification.Type.ACTION_SUBMITTED, user)
 
 
 def on_task_cancelled(sender, instance: TaskState, user: User | None = None, **kwargs) -> None:
-    _notify_moderators(instance, InboxNotification.Type.ACTION_WITHDRAWN, user)
+    _notify_reviewers(instance, InboxNotification.Type.ACTION_WITHDRAWN, user)
 
 
 def on_workflow_rejected(sender, instance: WorkflowState, user: User | None = None, **kwargs) -> None:

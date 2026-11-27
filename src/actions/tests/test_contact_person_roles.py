@@ -14,6 +14,7 @@ from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 from actions.mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier
 from actions.models import Action, ActionContactPerson, Plan
+from actions.models.action import ActionModeratorApprovalTask
 from actions.tests.action_admin_helpers import edit_url
 from actions.tests.factories import (
     ActionContactFactory,
@@ -210,7 +211,8 @@ def test_contact_person_added_in_a_plan_without_roles_gets_the_default_role(clie
 def test_editor_acts_as_moderator_only_in_a_plan_without_roles(has_roles, is_moderator):
     plan = _plan(has_roles=has_roles)
     workflow = WorkflowFactory.create()
-    WorkflowTaskFactory.create(workflow=workflow)
+    task = ActionModeratorApprovalTask.objects.create(name='Moderation', active=True)
+    WorkflowTaskFactory.create(workflow=workflow, task=task)
     plan.features.moderation_workflow = workflow
     plan.features.save()
     action = ActionFactory.create(plan=plan)
@@ -219,7 +221,7 @@ def test_editor_acts_as_moderator_only_in_a_plan_without_roles(has_roles, is_mod
     assert user is not None
 
     assert user._check_moderation_approve_permissions(action, editor.person) is is_moderator
-    task_state = SimpleNamespace(workflow_state=SimpleNamespace(content_object=action))
+    task_state = SimpleNamespace(workflow_state=SimpleNamespace(content_object=action), task=task)
     recipients = ActionModeratorApprovalTaskStateSubmissionEmailNotifier().get_recipient_users(task_state)
     assert (user in recipients) is is_moderator
     assert user.has_contact_person_role_for_action(Role.MODERATOR, action) is is_moderator

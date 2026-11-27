@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib.messages import get_messages
 from django.urls import reverse
+from wagtail.models import GroupApprovalTask, WorkflowTask
 
 from bs4 import BeautifulSoup
 
@@ -20,6 +21,7 @@ from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import Group
     from django.test import Client
     from django.test.client import _MonkeyPatchedWSGIResponse as HttpResponse
 
@@ -96,6 +98,17 @@ def enable_moderation(plan: Plan, task_count: int = 1) -> None:
     # Without roles, editors would act as moderators
     plan.features.has_action_contact_person_roles = True
     plan.features.save()
+
+
+def add_group_step(plan: Plan, group: Group) -> None:
+    """Append a step reviewed by the given group to the plan's moderation workflow."""
+    task = GroupApprovalTask(name='Group step', active=True)
+    task.save()
+    task.groups.add(group)
+    workflow = plan.features.moderation_workflow
+    assert workflow is not None
+    step_count = WorkflowTask._default_manager.filter(workflow=workflow).count()
+    WorkflowTaskFactory.create(workflow=workflow, task=task, sort_order=step_count)
 
 
 def make_superuser(plan: Plan) -> User:

@@ -4,8 +4,11 @@ from typing import Any
 
 from django.db.models.signals import m2m_changed, post_delete, post_migrate, post_save, pre_save
 from django.dispatch import receiver
-from wagtail.admin.signal_handlers import workflow_approval_email_notifier as _wagtail_workflow_approval_notifier
-from wagtail.models import WorkflowState
+from wagtail.admin.signal_handlers import (
+    task_submission_email_notifier as _wagtail_group_task_submission_notifier,
+    workflow_approval_email_notifier as _wagtail_workflow_approval_notifier,
+)
+from wagtail.models import TaskState, WorkflowState
 from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
 from anymail.signals import post_send, pre_send
@@ -23,6 +26,7 @@ from . import inbox_notifications
 from .mail import (
     ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
     ActionModeratorCancelTaskStateSubmissionEmailNotifier,
+    NonActionGroupApprovalTaskStateSubmissionEmailNotifier,
     WorkflowStateApprovalWithCommentEmailNotifier,
 )
 from .models import (
@@ -74,6 +78,7 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
 workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
+group_task_submission_email_notifier = NonActionGroupApprovalTaskStateSubmissionEmailNotifier()
 
 
 MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
@@ -216,6 +221,16 @@ def register_signal_handlers():
     task_cancelled.connect(
         action_moderator_cancel_task_submission_email_notifier,
         dispatch_uid='action_moderator_cancel_task_submitted_email_notification',
+    )
+    task_submitted.disconnect(
+        _wagtail_group_task_submission_notifier,
+        sender=TaskState,
+        dispatch_uid='group_approval_task_submitted_email_notification',
+    )
+    task_submitted.connect(
+        group_task_submission_email_notifier,
+        sender=TaskState,
+        dispatch_uid='group_approval_task_submitted_email_notification',
     )
     workflow_approved.disconnect(
         _wagtail_workflow_approval_notifier,
